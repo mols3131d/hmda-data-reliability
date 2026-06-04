@@ -1,0 +1,18 @@
+glob_matcher: doublestar
+
+pre-commit:
+  exclude:
+    - "**/archive/**"
+    - "**/*cache*/**"
+    - "**/*tmp*/**"
+
+  commands:
+    rumdl-check:
+      glob: "*.md"
+      run: uv run rumdl check {staged_files}
+    ruff-check:
+      glob: "*.py"
+      run: uv run ruff check {staged_files}
+    ty-check:
+      glob: "*.py"
+      run: uv run ty check
