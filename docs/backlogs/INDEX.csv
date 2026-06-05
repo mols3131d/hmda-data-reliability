@@ -1,0 +1,2 @@
+title,description
+데이터 플랫폼 핵심 구간 구성,NYC Taxi 데이터를 적재하고 Iceberg table과 metadata 조회 경로를 준비한다.
