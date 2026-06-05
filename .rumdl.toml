@@ -1,14 +1,9 @@
 [global]
-disable = ["MD025", "MD033", "MD041"]
+disable = ["MD013", "MD025", "MD033", "MD041"]
 exclude = ["tmp/", "*.tmp.md", "node_modules", "dist", "build"]
 
 [MD004]
 style = "dash"
-
-[MD013]
-line-length = 120
-code-blocks = false
-tables = false
 
 [MD029]
 style = "ordered"
