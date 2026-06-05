@@ -1,6 +1,7 @@
 data/**
 tmp/**
 .agents/skills
+.agents/workflows
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
