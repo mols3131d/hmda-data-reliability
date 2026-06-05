@@ -1,7 +1,9 @@
 data/**
 tmp/**
+dbt/.user.yml
 .agents/skills
 .agents/workflows
+pytest_report.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
