@@ -16,6 +16,7 @@
 ## Documentation & Commits
 
 - **Conciseness**: Keep docs concise and scannable.
+- **Docstrings**: Keep docstrings concise, typically 1-3 lines.
 - **Commit Messages**: Conventional Commits.
 
 ## Observability
