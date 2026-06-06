@@ -77,7 +77,10 @@ flowchart LR
 | YAML catalog | owner, SLA, grain, business context | severity, routing, report |
 | Dagster metadata | partition status, materialization result | freshness, backfill planning |
 
-## Incident Contract
+## Reliability Contract
+
+핵심 contract는 `project_pivot.reliability.contracts`에 둔다. Detector, Agent,
+Evaluation은 같은 Pydantic 모델을 공유한다.
 
 ```mermaid
 classDiagram
@@ -94,9 +97,54 @@ classDiagram
         string[] recommended_actions
         string human_review_status
     }
+
+    class Evidence {
+        string evidence_id
+        string source
+        string asset_name
+        string partition
+        datetime observed_at
+        string summary
+        object payload
+    }
+
+    class ProfileSnapshot {
+        string snapshot_id
+        string asset_name
+        string partition
+        datetime observed_at
+        int row_count
+        object null_rates
+        string schema_hash
+        datetime freshness_at
+        object metric_values
+    }
+
+    class LineageEvidence {
+        string lineage_id
+        string upstream_asset
+        string[] downstream_assets
+        string dbt_manifest_path
+        string dbt_run_results_path
+    }
+
+    class Approval {
+        string approval_id
+        string incident_id
+        string status
+        string requested_by
+        datetime requested_at
+        string approved_by
+        datetime approved_at
+    }
+
+    Incident --> Evidence : evidence_refs
+    ProfileSnapshot --> Incident : detector input
+    LineageEvidence --> Incident : affected_assets
+    Approval --> Incident : incident_id
 ```
 
-`human_review_status`가 `approved`일 때만 partition overwrite, backfill, validation workflow를 실행한다.
+`Approval.status`가 `approved`이고 승인자와 승인 시각이 있을 때만 partition overwrite, backfill, validation workflow를 실행한다.
 
 ## MVP 경계
 

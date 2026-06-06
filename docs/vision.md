@@ -7,7 +7,7 @@
 이 프로젝트의 목표는 데이터 파이프라인 성공 여부를 확인하는 도구가 아니다. 품질 이상이 발생했을 때 필요한 판단 흐름을 하나의 incident lifecycle로 묶는 것이다.
 
 - 이상 탐지 결과를 severity와 owner가 있는 incident로 승격한다.
-- profile, Iceberg metadata, dbt lineage, catalog 정보를 RCA evidence로 사용한다.
+- profile, table metadata, dbt lineage, catalog 정보를 RCA evidence로 사용한다.
 - downstream 영향 범위와 재처리 대상 partition을 명확히 산출한다.
 - dbt test remediation을 제안하고 compile 가능한 형태로 검증한다.
 - 위험 작업은 human approval 이후 Dagster workflow로 실행한다.

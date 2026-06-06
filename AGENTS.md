@@ -9,6 +9,7 @@
 ## Code Style & Architecture
 
 - **SRP**: Keep functions/classes focused. Extract helpers only when they reduce real complexity or duplication.
+- **One Class per File**: Organize major classes and domain models into individual files to enforce file-level Single Responsibility Principle (SRP).
 - **LangGraph**: Use `TypedDict` for State. Keep each node aligned to one meaningful workflow step.
 - **Structured Output**: Use Pydantic for LLM-facing structured outputs and external contracts.
 - **Idempotency**: Ingestion and dbt processes must overwrite target partitions or use deterministic upserts. No duplicate rows.
@@ -23,3 +24,7 @@
 
 - **Logging**: Never use `print()`. Use standard `logging` with structured context in `extra`.
 - **Exceptions**: Use custom exceptions for domain/application errors. Include useful context, but do not expose raw stack traces to users or API clients.
+
+---
+
+@`.agents/rules/*.md`
