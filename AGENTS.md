@@ -16,7 +16,7 @@
 ## Documentation & Commits
 
 - **Conciseness**: Keep docs concise and scannable.
-- **Commit Messages**: Write Korean Conventional Commits. Include the reason when it is not obvious from the diff.
+- **Commit Messages**: Conventional Commits.
 
 ## Observability
 
