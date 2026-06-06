@@ -1,19 +1,24 @@
 # AGENTS.md
 
-## Language & Documentation
+## Language & Terminology
 
-- **Korean (KO) Priority**: Write all comments, docstrings, markdown docs, logs in clear Korean.
-  - *Exception*: Variable names, class names, API specs stay standard English.
-- **Commit Messages**: KO. Follow 'Conventional Commits'. Explain "Why".
+- **Korean Priority**: Write user-facing docs, comments, docstrings, and logs in clear Korean when adding or changing them.
+  - Keep identifiers, API specs, error codes, and standard technical terms in English.
+  - Avoid comments that merely repeat the code.
 
 ## Code Style & Architecture
 
-- **SRP**: 1 function/class = 1 task. 1 LangGraph node = 1 logic step.
-- **Type Hints**: Explicit `typing` everywhere. `TypedDict` mandatory for LangGraph State.
-- **Pydantic Validation**: Structured Output via Pydantic for LLM. Prevent hallucination.
-- **Idempotency**: Ingestion/dbt must overwrite partition. No duplicate data.
+- **SRP**: Keep functions/classes focused. Extract helpers only when they reduce real complexity or duplication.
+- **LangGraph**: Use `TypedDict` for State. Keep each node aligned to one meaningful workflow step.
+- **Structured Output**: Use Pydantic for LLM-facing structured outputs and external contracts.
+- **Idempotency**: Ingestion and dbt processes must overwrite target partitions or use deterministic upserts. No duplicate rows.
+
+## Documentation & Commits
+
+- **Conciseness**: Keep docs concise and scannable.
+- **Commit Messages**: Write Korean Conventional Commits. Include the reason when it is not obvious from the diff.
 
 ## Observability
 
-- **Logging**: No `print()`. Use standard `logging` with JSON context in `extra`.
-- **Exceptions**: Custom errors with detailed context. No raw stacktrace.
+- **Logging**: Never use `print()`. Use standard `logging` with structured context in `extra`.
+- **Exceptions**: Use custom exceptions for domain/application errors. Include useful context, but do not expose raw stack traces to users or API clients.
