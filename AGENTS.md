@@ -19,6 +19,7 @@
 - **Conciseness**: Keep docs short/scannable.
 - **Docstrings**: 1-3 lines.
 - **Commit Messages**: Conventional Commits.
+- **Visualization**: Using tables, Mermaid, or ASCII art; if complex, provide HTML.
 
 ## Observability
 
