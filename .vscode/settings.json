@@ -1,1 +1,9 @@
-{ "[markdown]": { "editor.defaultFormatter": "rvben.rumdl" } }
+{
+  "[markdown]": {
+    "editor.defaultFormatter": "rvben.rumdl"
+  },
+  "workbench.editorAssociations": {
+    "*.mo.py": "marimo-notebook",
+    "*_mo.py": "marimo-notebook",
+  },
+}
