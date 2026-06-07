@@ -19,7 +19,7 @@
 - **Conciseness**: Keep docs short/scannable.
 - **Docstrings**: 1-3 lines.
 - **Commit Messages**: Conventional Commits.
-- **Visualization**: 단순 시각화는 Markdown/Mermaid/인라인 HTML을 사용하고, 복잡한 시각화는 별도 HTML 파일로 분리 생성 후 상대 경로 링크로 연결합니다.
+- **Visualization**: 단순 시각화는 Markdown/Mermaid/ASCII art/인라인 HTML을 사용하고, 복잡한 시각화는 별도 HTML 파일로 분리 생성 후 상대 경로 링크로 연결합니다.
 
 ## Observability
 
