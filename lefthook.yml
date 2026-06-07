@@ -7,12 +7,18 @@ pre-commit:
     - "**/*tmp*/**"
 
   commands:
-    rumdl-check:
+    rumdl-fmt:
       glob: "*.md"
-      run: uv run rumdl check {staged_files}
-    ruff-check:
+      run: uv run rumdl fmt {staged_files}
+      stage_fixed: true
+    ruff-fix:
       glob: "*.py"
-      run: uv run ruff check {staged_files}
+      run: uv run ruff check --fix {staged_files}
+      stage_fixed: true
+    ruff-format:
+      glob: "*.py"
+      run: uv run ruff format {staged_files}
+      stage_fixed: true
     ty-check:
       glob: "*.py"
       run: uv run ty check
