@@ -16,7 +16,9 @@ ROOT: Final[Path] = Path(__file__).resolve().parents[1]
 class IndexTarget:
     """인덱싱 대상 디렉터리 설정."""
 
-    def __init__(self, source_dir: Path, index_file: Path, fields: list[str], sort_key: str) -> None:
+    def __init__(
+        self, source_dir: Path, index_file: Path, fields: list[str], sort_key: str
+    ) -> None:
         self.source_dir = source_dir
         self.index_file = index_file
         self.fields = fields
@@ -107,7 +109,9 @@ def should_index(path: Path) -> bool:
     return not any(path.name.endswith(suffix) for suffix in SKIP_SUFFIXES)
 
 
-def build_row(frontmatter: dict[str, str | list[str]], target: IndexTarget) -> dict[str, str]:
+def build_row(
+    frontmatter: dict[str, str | list[str]], target: IndexTarget
+) -> dict[str, str]:
     """문서 하나를 CSV row로 변환한다."""
     return {field: csv_value(frontmatter.get(field)) for field in target.fields}
 
@@ -133,7 +137,11 @@ def archive_inactive_adrs() -> int:
         moved_count += 1
         LOGGER.info(
             "ADR archive 이동 완료",
-            extra={"source_file": str(path), "target_file": str(target_path), "status": status},
+            extra={
+                "source_file": str(path),
+                "target_file": str(target_path),
+                "status": status,
+            },
         )
 
     return moved_count
@@ -142,7 +150,9 @@ def archive_inactive_adrs() -> int:
 def write_index(target: IndexTarget) -> int:
     """대상 디렉터리의 INDEX.csv를 갱신하고 row 수를 반환한다."""
     target.index_file.parent.mkdir(parents=True, exist_ok=True)
-    paths = sorted(path for path in target.source_dir.glob("*.md") if should_index(path))
+    paths = sorted(
+        path for path in target.source_dir.glob("*.md") if should_index(path)
+    )
     rows = []
     for path in paths:
         frontmatter = parse_frontmatter(path)

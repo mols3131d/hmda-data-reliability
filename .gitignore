@@ -4,6 +4,7 @@ dbt/.user.yml
 .agents/skills
 .agents/workflows
 pytest_report.html
+scratch/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
