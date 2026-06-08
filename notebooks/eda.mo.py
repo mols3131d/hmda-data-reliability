@@ -92,7 +92,7 @@ def _(mo):
 def _(mo):
     _df = mo.sql(
         f"""
-        SELECT 
+        SELECT
             column_name,
             data_type
         FROM

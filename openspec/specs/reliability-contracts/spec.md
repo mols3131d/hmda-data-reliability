@@ -1,13 +1,13 @@
 # reliability-contracts Specification
 
 ## Purpose
-TBD
+데이터 신뢰성 인시던트, 근거, 프로파일, 계보 영향, 승인 상태를 일관된 contract로 교환하기 위한 요구사항을 정의한다.
 
 ## Requirements
 
 ### Requirement: Incident contract
 
-시스템은 Data Reliability Incident를 구조화된 contract로 표현해야 한다.
+시스템은 Data Reliability Incident를 구조화된 contract로 표현해야 한다(SHALL).
 
 #### Scenario: 유효한 incident 생성
 
@@ -18,7 +18,7 @@ TBD
 
 ### Requirement: Evidence contract
 
-시스템은 RCA와 영향 분석에 사용할 evidence를 독립적으로 참조 가능한 contract로 표현해야 한다.
+시스템은 RCA와 영향 분석에 사용할 evidence를 독립적으로 참조 가능한 contract로 표현해야 한다(SHALL).
 
 #### Scenario: evidence 참조
 
@@ -29,7 +29,7 @@ TBD
 
 ### Requirement: ProfileSnapshot contract
 
-시스템은 Detector 입력 지표를 `ProfileSnapshot`으로 표현해야 한다.
+시스템은 Detector 입력 지표를 `ProfileSnapshot`으로 표현해야 한다(SHALL).
 
 #### Scenario: profile 기반 탐지 입력
 
@@ -40,7 +40,7 @@ TBD
 
 ### Requirement: LineageEvidence contract
 
-시스템은 downstream 영향 범위를 `LineageEvidence`로 표현해야 한다.
+시스템은 downstream 영향 범위를 `LineageEvidence`로 표현해야 한다(SHALL).
 
 #### Scenario: downstream 영향 범위 계산 결과
 
@@ -51,7 +51,7 @@ TBD
 
 ### Requirement: Approval contract
 
-시스템은 위험 작업 실행 여부를 `Approval` contract로 표현해야 한다.
+시스템은 위험 작업 실행 여부를 `Approval` contract로 표현해야 한다(SHALL).
 
 #### Scenario: 승인된 작업만 실행 가능
 
