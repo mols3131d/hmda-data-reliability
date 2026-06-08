@@ -1,6 +1,13 @@
 {
   "version": 1,
   "skills": {
+    "agent-asset-studio": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/agent-asset-studio/SKILL.md",
+      "computedHash": "75a7fb2eafec91474ced5839e15c486c4bab7429bda7706772dae29eb6e267ce"
+    },
     "cavecrew": {
       "source": "JuliusBrussee/caveman",
       "ref": "main",
@@ -42,6 +49,27 @@
       "sourceType": "github",
       "skillPath": "skills/caveman-review/SKILL.md",
       "computedHash": "fb7214a1c5793bae6ba8b1be4329e2e6f40dbec6dd911dfb335ad29f09c316a1"
+    },
+    "code-builder-colony": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/code-builder-colony/SKILL.md",
+      "computedHash": "8f3533bb34ce4119de93fda000aec36231481c0f11e0ec81d4db678ad19f561c"
+    },
+    "code-reviewer-colony": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/code-reviewer-colony/SKILL.md",
+      "computedHash": "c8ce36f0f8bbba12efa9b4865719a05a60310b450a5a75b3d730fbc9b0bb4863"
+    },
+    "document-studio": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/document-studio/SKILL.md",
+      "computedHash": "47f3b6ec3af26b289ed09429eb74909b26baa8084b2c0ea5e980d8ba7a5a40be"
     }
   }
 }
