@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: stg_yellow_tripdata
+    description: "raw yellow tripdata를 분석용 컬럼 계약으로 정리한 staging 모델"
+    columns:
+      - name: pickup_at
+        data_tests:
+          - not_null
+      - name: dropoff_at
+        data_tests:
+          - not_null
+      - name: pickup_date
+        data_tests:
+          - not_null
+      - name: pickup_location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_taxi_zones')
+                field: location_id
+      - name: dropoff_location_id
+        data_tests:
+          - not_null
+      - name: passenger_count
+      - name: total_amount
+      - name: source_partition
+        data_tests:
+          - not_null
+      - name: source_file
+        data_tests:
+          - not_null
+
+  - name: stg_taxi_zones
+    description: "taxi zone lookup을 표준 컬럼명으로 정리한 staging 모델"
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - unique
+      - name: borough
+        data_tests:
+          - not_null
+      - name: zone
+        data_tests:
+          - not_null
+      - name: service_zone
+        data_tests:
+          - not_null

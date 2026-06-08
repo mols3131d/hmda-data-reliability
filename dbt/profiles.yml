@@ -1,0 +1,8 @@
+project_pivot:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('PROJECT_PIVOT_DUCKDB_PATH', 'data/project_pivot.duckdb') }}"
+      schema: main
+      threads: 4

@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: mart_daily_taxi_trips
+    description: "일자와 pickup 지역 grain의 택시 운행 지표 mart"
+    columns:
+      - name: mart_grain_key
+        data_tests:
+          - not_null
+          - unique
+      - name: pickup_date
+        data_tests:
+          - not_null
+      - name: pickup_location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_taxi_zones')
+                field: location_id
+      - name: trip_count
+        data_tests:
+          - not_null
+      - name: total_amount
+        data_tests:
+          - not_null
+      - name: average_total_amount
+        data_tests:
+          - not_null
+      - name: total_passenger_count
+        data_tests:
+          - not_null

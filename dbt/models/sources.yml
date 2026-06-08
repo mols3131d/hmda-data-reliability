@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    description: "인제스션이 DuckDB에 적재한 원천 택시 데이터"
+    tables:
+      - name: yellow_tripdata
+        description: "NYC Yellow Taxi trip 원천 데이터"
+        columns:
+          - name: tpep_pickup_datetime
+            data_tests:
+              - not_null
+          - name: PULocationID
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('raw', 'taxi_zones')
+                    field: LocationID
+          - name: source_partition
+            data_tests:
+              - not_null
+      - name: taxi_zones
+        description: "NYC Taxi zone lookup 원천 데이터"
+        columns:
+          - name: LocationID
+            data_tests:
+              - not_null
+              - unique
