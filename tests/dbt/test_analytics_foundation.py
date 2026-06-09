@@ -34,9 +34,11 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
     _run_dbt(database_path, "debug")
     _run_dbt(database_path, "build")
     first_stats = _mart_stats(database_path)
+    first_metric_rows = _mart_metric_rows(database_path)
 
     _run_dbt(database_path, "build")
     second_stats = _mart_stats(database_path)
+    second_metric_rows = _mart_metric_rows(database_path)
 
     manifest_path = DBT_PROJECT_DIR / "target" / "manifest.json"
     run_results_path = DBT_PROJECT_DIR / "target" / "run_results.json"
@@ -59,6 +61,12 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
         dependency=_node_id(manifest, "model", "stg_yellow_tripdata"),
     )
     assert first_stats == second_stats == (4, 4)
+    assert first_metric_rows == second_metric_rows == [
+        ("2024-01-01", 1, 4, 56.0, 14.0, 4),
+        ("2024-01-02", 1, 4, 56.0, 14.0, 4),
+        ("2024-01-03", 1, 4, 56.0, 14.0, 4),
+        ("2024-01-04", 1, 4, 56.0, 14.0, 4),
+    ]
 
 
 def _run_dbt(database_path: Path, command: str) -> None:
@@ -137,6 +145,36 @@ def _mart_stats(database_path: Path) -> tuple[int, int]:
         ).fetchone()
     assert result is not None
     return int(result[0]), int(result[1])
+
+
+def _mart_metric_rows(
+    database_path: Path,
+) -> list[tuple[str, int, int, float, float, int]]:
+    with DuckDBConnectionManager(database_path, read_only=True) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                cast(pickup_date as varchar) AS pickup_date,
+                pickup_location_id,
+                trip_count,
+                total_amount,
+                average_total_amount,
+                total_passenger_count
+            FROM marts.mart_daily_taxi_trips
+            ORDER BY pickup_date, pickup_location_id
+            """
+        ).fetchall()
+    return [
+        (
+            str(row[0]),
+            int(row[1]),
+            int(row[2]),
+            float(row[3]),
+            float(row[4]),
+            int(row[5]),
+        )
+        for row in rows
+    ]
 
 
 def _node_id(manifest: dict[str, object], resource_type: str, name: str) -> str | None:

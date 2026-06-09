@@ -18,6 +18,13 @@ sources:
                   arguments:
                     to: source('raw', 'taxi_zones')
                     field: LocationID
+          - name: DOLocationID
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('raw', 'taxi_zones')
+                    field: LocationID
           - name: source_partition
             data_tests:
               - not_null

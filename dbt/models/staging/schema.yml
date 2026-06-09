@@ -23,6 +23,10 @@ models:
       - name: dropoff_location_id
         data_tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_taxi_zones')
+                field: location_id
       - name: passenger_count
       - name: total_amount
       - name: source_partition
