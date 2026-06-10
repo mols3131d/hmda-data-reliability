@@ -43,6 +43,12 @@ from project_pivot.reliability.profiling import (
     calculate_schema_hash,
     create_profile_snapshot,
 )
+from project_pivot.reliability.remediation import (
+    RemediationDraft,
+    RemediationDraftRequest,
+    RemediationState,
+    create_remediation_draft,
+)
 
 __all__ = [
     "Approval",
@@ -67,6 +73,9 @@ __all__ = [
     "ProfileSnapshot",
     "ProfileSnapshotError",
     "ProfileSnapshotRequest",
+    "RemediationDraft",
+    "RemediationDraftRequest",
+    "RemediationState",
     "TableMetadataEvidenceError",
     "TableMetadataEvidenceRequest",
     "calculate_schema_hash",
@@ -74,6 +83,7 @@ __all__ = [
     "create_profile_snapshot",
     "create_table_metadata_evidence",
     "analyze_dbt_impact",
+    "create_remediation_draft",
     "detect_basic_incidents",
     "validate_contract",
 ]
