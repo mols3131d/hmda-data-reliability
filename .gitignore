@@ -4,7 +4,11 @@ dbt/.user.yml
 .agents/skills
 .agents/workflows
 pytest_report.html
-scratch/
+scratch/*
+!scratch/docs/
+scratch/docs/*
+!scratch/docs/foundation_readiness.md
+!scratch/docs/pipeline_walkthrough.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -23,10 +23,8 @@ def _(mo):
 
 @app.cell
 def _():
-    from _notebook_init import notebook_init
-    import duckdb
     import marimo as mo
-    import polars as pl
+    from _notebook_init import notebook_init
 
     notebook_init()
     return (mo,)
@@ -56,7 +54,7 @@ def _(data_path, mo):
 @app.cell
 def _(mo):
     _df = mo.sql(
-        f"""
+        """
         SELECT
             *
         FROM
@@ -81,7 +79,7 @@ def _(data_path, mo):
 @app.cell
 def _(mo):
     _df = mo.sql(
-        f"""
+        """
         PRAGMA table_info (my_table)
         """
     )
@@ -91,7 +89,7 @@ def _(mo):
 @app.cell
 def _(mo):
     _df = mo.sql(
-        f"""
+        """
         SELECT
             column_name,
             data_type

@@ -4,10 +4,11 @@ from project_pivot.reliability.contracts import (
     HumanReviewStatus,
     can_execute_risky_action,
 )
+from tests.reliability.conftest import SyntheticIncidentFixture
 
 
 def test_synthetic_incident_fixture_has_required_contract_links(
-    synthetic_incident_fixture,
+    synthetic_incident_fixture: SyntheticIncidentFixture,
 ) -> None:
     """Synthetic fixture가 incident/evidence/lineage 연결을 보존하는지 검증한다."""
     fixture = synthetic_incident_fixture
@@ -20,7 +21,9 @@ def test_synthetic_incident_fixture_has_required_contract_links(
     assert not can_execute_risky_action(fixture.approval)
 
 
-def test_contracts_dump_to_json_stable_values(synthetic_incident_fixture) -> None:
+def test_contracts_dump_to_json_stable_values(
+    synthetic_incident_fixture: SyntheticIncidentFixture,
+) -> None:
     """Contract의 JSON 직렬화 값이 안정적인 문자열로 나오는지 검증한다."""
     fixture = synthetic_incident_fixture
 

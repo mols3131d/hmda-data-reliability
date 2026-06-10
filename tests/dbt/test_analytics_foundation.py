@@ -198,7 +198,9 @@ def _depends_on(
     node_id = _node_id(manifest, "model", model_name)
     if node_id is None:
         return False
-    node = manifest["nodes"][node_id]
+    manifest_nodes = manifest["nodes"]
+    assert isinstance(manifest_nodes, dict)
+    node = manifest_nodes[node_id]
     assert isinstance(node, dict)
     depends_on = node["depends_on"]
     assert isinstance(depends_on, dict)

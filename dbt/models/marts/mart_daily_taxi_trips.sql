@@ -10,7 +10,7 @@ select
     count(*) as trip_count,
     sum(yellow_trips.total_amount) as total_amount,
     avg(yellow_trips.total_amount) as average_total_amount,
-    sum(yellow_trips.passenger_count) as total_passenger_count
+    sum(coalesce(yellow_trips.passenger_count, 0)) as total_passenger_count
 from {{ ref('stg_yellow_tripdata') }} as yellow_trips
 left join {{ ref('stg_taxi_zones') }} as zones
     on yellow_trips.pickup_location_id = zones.location_id
