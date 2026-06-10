@@ -9,6 +9,10 @@ class ReliabilityError(Exception):
     """Reliability application error base class."""
 
 
+class ProfileSnapshotError(ReliabilityError):
+    """Profile snapshot calculation failed."""
+
+
 class TableMetadataEvidenceError(ReliabilityError):
     """Table metadata evidence lookup failed."""
 
