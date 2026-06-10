@@ -14,6 +14,13 @@ from project_pivot.reliability.contracts import (
     can_execute_risky_action,
     validate_contract,
 )
+from project_pivot.reliability.detection import (
+    BasicIncidentDetector,
+    DetectionRequest,
+    DetectionResult,
+    DetectionThresholds,
+    detect_basic_incidents,
+)
 from project_pivot.reliability.errors import (
     ContractValidationError,
     ProfileSnapshotError,
@@ -34,7 +41,11 @@ from project_pivot.reliability.profiling import (
 __all__ = [
     "Approval",
     "ApprovalStatus",
+    "BasicIncidentDetector",
     "ContractValidationError",
+    "DetectionRequest",
+    "DetectionResult",
+    "DetectionThresholds",
     "DuckDBProfileSnapshotBuilder",
     "DuckDBTableMetadataEvidenceBuilder",
     "Evidence",
@@ -53,5 +64,6 @@ __all__ = [
     "can_execute_risky_action",
     "create_profile_snapshot",
     "create_table_metadata_evidence",
+    "detect_basic_incidents",
     "validate_contract",
 ]
