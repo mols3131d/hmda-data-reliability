@@ -26,6 +26,12 @@ from project_pivot.reliability.errors import (
     ProfileSnapshotError,
     TableMetadataEvidenceError,
 )
+from project_pivot.reliability.impact import (
+    DbtImpactAnalyzer,
+    ImpactAnalysisRequest,
+    ImpactAnalysisResult,
+    analyze_dbt_impact,
+)
 from project_pivot.reliability.metadata import (
     DuckDBTableMetadataEvidenceBuilder,
     TableMetadataEvidenceRequest,
@@ -46,6 +52,7 @@ __all__ = [
     "DetectionRequest",
     "DetectionResult",
     "DetectionThresholds",
+    "DbtImpactAnalyzer",
     "DuckDBProfileSnapshotBuilder",
     "DuckDBTableMetadataEvidenceBuilder",
     "Evidence",
@@ -54,6 +61,8 @@ __all__ = [
     "Incident",
     "IncidentSeverity",
     "IncidentStatus",
+    "ImpactAnalysisRequest",
+    "ImpactAnalysisResult",
     "LineageEvidence",
     "ProfileSnapshot",
     "ProfileSnapshotError",
@@ -64,6 +73,7 @@ __all__ = [
     "can_execute_risky_action",
     "create_profile_snapshot",
     "create_table_metadata_evidence",
+    "analyze_dbt_impact",
     "detect_basic_incidents",
     "validate_contract",
 ]
