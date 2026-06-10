@@ -22,6 +22,8 @@ from project_pivot.reliability.detection import (
     detect_basic_incidents,
 )
 from project_pivot.reliability.errors import (
+    ApprovalGateError,
+    BackfillValidationError,
     ContractValidationError,
     ProfileSnapshotError,
     TableMetadataEvidenceError,
@@ -43,6 +45,12 @@ from project_pivot.reliability.profiling import (
     calculate_schema_hash,
     create_profile_snapshot,
 )
+from project_pivot.reliability.recovery import (
+    ApprovalBackfillValidator,
+    ApprovedBackfillRequest,
+    BackfillValidationResult,
+    execute_approved_backfill,
+)
 from project_pivot.reliability.remediation import (
     RemediationDraft,
     RemediationDraftRequest,
@@ -52,7 +60,12 @@ from project_pivot.reliability.remediation import (
 
 __all__ = [
     "Approval",
+    "ApprovalBackfillValidator",
+    "ApprovalGateError",
     "ApprovalStatus",
+    "ApprovedBackfillRequest",
+    "BackfillValidationError",
+    "BackfillValidationResult",
     "BasicIncidentDetector",
     "ContractValidationError",
     "DetectionRequest",
@@ -85,5 +98,6 @@ __all__ = [
     "analyze_dbt_impact",
     "create_remediation_draft",
     "detect_basic_incidents",
+    "execute_approved_backfill",
     "validate_contract",
 ]

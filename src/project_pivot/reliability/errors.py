@@ -13,6 +13,14 @@ class ProfileSnapshotError(ReliabilityError):
     """Profile snapshot calculation failed."""
 
 
+class ApprovalGateError(ReliabilityError):
+    """Approval gate rejected execution."""
+
+
+class BackfillValidationError(ReliabilityError):
+    """Approved backfill validation failed."""
+
+
 class TableMetadataEvidenceError(ReliabilityError):
     """Table metadata evidence lookup failed."""
 
