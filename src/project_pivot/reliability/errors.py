@@ -9,6 +9,10 @@ class ReliabilityError(Exception):
     """Reliability application error base class."""
 
 
+class TableMetadataEvidenceError(ReliabilityError):
+    """Table metadata evidence lookup failed."""
+
+
 class ContractValidationError(ReliabilityError):
     """Contract validation failed."""
 
@@ -29,4 +33,3 @@ class ContractValidationError(ReliabilityError):
             for item in error.errors()
         ]
         return cls(contract_name=contract_name, details=details)
-
