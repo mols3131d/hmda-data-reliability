@@ -9,6 +9,7 @@ scratch/*
 scratch/docs/*
 !scratch/docs/foundation_readiness.md
 !scratch/docs/pipeline_walkthrough.md
+.tmp_*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
