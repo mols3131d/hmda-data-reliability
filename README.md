@@ -4,16 +4,19 @@ project-pivot은 로컬 파일 기반 lakehouse MVP다. DuckDB raw 적재, dbt �
 
 ## 실행 진입점
 
-### Python runner
+### CLI
 
 ```bash
-env UV_CACHE_DIR=/tmp/uv-cache PYTHONPATH=src uv run python -c "from project_pivot.pipeline import MvpPipelineRunRequest, run_mvp_pipeline; result = run_mvp_pipeline(MvpPipelineRunRequest(run_dbt_build=False)); print(result.model_dump_json(indent=2))"
+uv run python scripts/run_mvp_pipeline.py \
+  --output scratch/evaluation/pipeline_run_result.json
 ```
+
+dbt까지 실행하려면 `--run-dbt-build`를 추가한다.
 
 ### FastAPI
 
 ```bash
-env UV_CACHE_DIR=/tmp/uv-cache PYTHONPATH=src uv run uvicorn project_pivot.api.app:app --host 127.0.0.1 --port 8000
+PYTHONPATH=src uv run uvicorn project_pivot.api.app:app --host 127.0.0.1 --port 8000
 ```
 
 ```bash
@@ -25,7 +28,7 @@ curl -X POST http://127.0.0.1:8000/pipeline/run \
 ### Dagster
 
 ```bash
-env UV_CACHE_DIR=/tmp/uv-cache PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.dagster.definitions
+PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.dagster.definitions
 ```
 
 Dagster job 이름은 `mvp_pipeline_job`이고 asset 순서는 `raw_taxi_data -> dbt_analytics -> mvp_incident_lifecycle`이다.
@@ -33,7 +36,7 @@ Dagster job 이름은 `mvp_pipeline_job`이고 asset 순서는 `raw_taxi_data ->
 ## 검증
 
 ```bash
-env UV_CACHE_DIR=/tmp/uv-cache uv run ruff check src tests
-env UV_CACHE_DIR=/tmp/uv-cache uv run mypy src tests
-env UV_CACHE_DIR=/tmp/uv-cache uv run pytest tests/pipeline tests/api tests/orchestration
+uv run ruff check src tests
+uv run mypy src tests
+uv run pytest tests/pipeline tests/api tests/orchestration
 ```
