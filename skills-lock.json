@@ -1,69 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "agent-asset-studio": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/agent-asset-studio/SKILL.md",
-      "computedHash": "75a7fb2eafec91474ced5839e15c486c4bab7429bda7706772dae29eb6e267ce"
-    },
-    "cavecrew": {
-      "source": "JuliusBrussee/caveman",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "skills/cavecrew/SKILL.md",
-      "computedHash": "505d836228d1c5e14834ff5d62aad72390c7d27f79c6aa7f9a7a55ed6606d6a2"
-    },
-    "caveman": {
-      "source": "JuliusBrussee/caveman",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "skills/caveman/SKILL.md",
-      "computedHash": "dfbf85749fd474feeb0bbe60c779795ecd5dbec0083299b56e68916bc3ddd8c9"
-    },
-    "caveman-commit": {
-      "source": "JuliusBrussee/caveman",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "skills/caveman-commit/SKILL.md",
-      "computedHash": "f456ea0564875e46858890ac39ee701ecb9c601c72a2da1e6ce6bd5f9fc5d817"
-    },
-    "caveman-compress": {
-      "source": "JuliusBrussee/caveman",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "skills/caveman-compress/SKILL.md",
-      "computedHash": "b8cbfec00b620f0944960a9bb4072f262cf816c1d3c82e6dbded35c30b4c5d0b"
-    },
-    "caveman-help": {
-      "source": "JuliusBrussee/caveman",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "skills/caveman-help/SKILL.md",
-      "computedHash": "2c21437427e98df1eacabaa0b055b5256a308b2191feea3ca2df6a9418e76cb1"
-    },
-    "caveman-review": {
-      "source": "JuliusBrussee/caveman",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "skills/caveman-review/SKILL.md",
-      "computedHash": "fb7214a1c5793bae6ba8b1be4329e2e6f40dbec6dd911dfb335ad29f09c316a1"
-    },
-    "code-builder-colony": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/code-builder-colony/SKILL.md",
-      "computedHash": "8f3533bb34ce4119de93fda000aec36231481c0f11e0ec81d4db678ad19f561c"
-    },
-    "code-reviewer-colony": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/code-reviewer-colony/SKILL.md",
-      "computedHash": "c8ce36f0f8bbba12efa9b4865719a05a60310b450a5a75b3d730fbc9b0bb4863"
-    },
     "dagster-expert": {
       "source": "dagster-io/skills",
       "ref": "master",
@@ -77,13 +14,6 @@
       "sourceType": "github",
       "skillPath": "skills/dignified-python/skills/dignified-python/SKILL.md",
       "computedHash": "af77280f19bc321a9456d4695f13e6b9d9822766a0faeff2e198acea375fd5b3"
-    },
-    "document-studio": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/document-studio/SKILL.md",
-      "computedHash": "47f3b6ec3af26b289ed09429eb74909b26baa8084b2c0ea5e980d8ba7a5a40be"
     }
   }
 }

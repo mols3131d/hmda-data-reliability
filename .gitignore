@@ -1,11 +1,12 @@
-data/**
+.agents/skills/*
+.agents/workflows/*
+.tmp_*
 tmp/**
+data/**
 dbt/.user.yml
-.agents/skills
-.agents/workflows
 pytest_report.html
 scratch/*
-.tmp_*
+*.tmp*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
