@@ -2,12 +2,12 @@
 
 from dagster import Definitions, define_asset_job
 
-from project_pivot.orchestration.dagster.assets import (
+from project_pivot.orchestration.defs.assets import (
     dbt_analytics,
     mvp_incident_lifecycle,
     raw_taxi_data,
 )
-from project_pivot.orchestration.dagster.resource import MvpPipelineDagsterResource
+from project_pivot.orchestration.defs.resource import MvpPipelineDagsterResource
 
 mvp_pipeline_job = define_asset_job(
     "mvp_pipeline_job",

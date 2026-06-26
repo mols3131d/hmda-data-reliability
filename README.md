@@ -28,7 +28,7 @@ curl -X POST http://127.0.0.1:8000/pipeline/run \
 ### Dagster
 
 ```bash
-PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.dagster.definitions
+PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.definitions
 ```
 
 Dagster job 이름은 `mvp_pipeline_job`이고 asset 순서는 `raw_taxi_data -> dbt_analytics -> mvp_incident_lifecycle`이다.

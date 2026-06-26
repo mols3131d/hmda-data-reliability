@@ -67,4 +67,4 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 directory_type = "project"
 
 [tool.dg.project]
-root_module = "project_pivot.orchestration.dagster"
+root_module = "project_pivot.orchestration"

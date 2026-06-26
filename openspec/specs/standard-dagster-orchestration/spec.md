@@ -6,7 +6,7 @@
 
 #### Scenario: Running Dagster dev server
 
-- **WHEN** 사용자가 `env UV_CACHE_DIR=/tmp/uv-cache PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.dagster.definitions` 명령어를 실행할 때
+- **WHEN** 사용자가 `PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.definitions` 명령어를 실행할 때
 - **THEN** 시스템은 로컬 Dagster 웹 UI를 기동해야 합니다.
 - **AND** `raw_taxi_data`, `dbt_analytics`, `mvp_incident_lifecycle` asset과 `mvp_pipeline_job`을 로드해야 합니다.
 

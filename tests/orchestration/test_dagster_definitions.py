@@ -5,14 +5,14 @@ from pathlib import Path
 from dagster import AssetKey, materialize
 from pytest import MonkeyPatch
 
-from project_pivot.orchestration.dagster import assets as dagster_assets
-from project_pivot.orchestration.dagster.assets import (
+from project_pivot.orchestration.definitions import defs
+from project_pivot.orchestration.defs import assets as dagster_assets
+from project_pivot.orchestration.defs.assets import (
     dbt_analytics,
     mvp_incident_lifecycle,
     raw_taxi_data,
 )
-from project_pivot.orchestration.dagster.definitions import defs
-from project_pivot.orchestration.dagster.resource import MvpPipelineDagsterResource
+from project_pivot.orchestration.defs.resource import MvpPipelineDagsterResource
 from project_pivot.pipeline import (
     DbtBuildResult,
     MvpLifecycleResult,

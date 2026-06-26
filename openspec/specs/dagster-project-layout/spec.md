@@ -18,7 +18,7 @@
 
 - **WHEN** 개발자가 `src/project_pivot/orchestration/defs/` 폴더를 확인할 때
 - **THEN** Dagster asset 정의와 resource 정의가 해당 폴더 하위 Python 모듈에 있어야 합니다.
-- **AND** `src/project_pivot/orchestration/dagster/` 중첩 패키지는 없어야 합니다.
+- **AND** 이전 Dagster 중첩 패키지는 없어야 합니다.
 
 ### Requirement: Dagster entrypoint remains definitions module
 

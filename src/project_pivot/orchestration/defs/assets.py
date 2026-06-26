@@ -2,7 +2,7 @@
 
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 
-from project_pivot.orchestration.dagster.resource import MvpPipelineDagsterResource
+from project_pivot.orchestration.defs.resource import MvpPipelineDagsterResource
 from project_pivot.pipeline import load_raw_data, run_dbt_build, run_incident_lifecycle
 
 
