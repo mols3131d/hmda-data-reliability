@@ -5,7 +5,6 @@ tmp/**
 data/**
 dbt/.user.yml
 pytest_report.html
-scratch/*
 *.tmp*
 
 # Byte-compiled / optimized / DLL files
