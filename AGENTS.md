@@ -1,11 +1,5 @@
 # AGENTS.md
 
-## Language
-
-- **Korean Priority**: Add/change user docs/comments/logs in Korean.
-  - Keep identifiers/API specs/error codes in English.
-  - Avoid repeating code in comments.
-
 ## Code Style
 
 - **SRP**: Keep functions/classes focused. Extract helpers only to reduce complexity/duplication.
