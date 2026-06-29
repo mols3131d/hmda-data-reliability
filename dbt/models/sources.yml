@@ -3,35 +3,23 @@ version: 2
 sources:
   - name: raw
     schema: raw
-    description: "인제스션이 DuckDB에 적재한 원천 택시 데이터"
+    description: "인제스션이 DuckDB에 적재한 HMDA 원천 데이터"
     tables:
-      - name: yellow_tripdata
-        description: "NYC Yellow Taxi trip 원천 데이터"
+      - name: hmda_loans
+        description: "HMDA 공개 LAR 대출 신청 원천 데이터"
         columns:
-          - name: tpep_pickup_datetime
+          - name: activity_year
             data_tests:
               - not_null
-          - name: PULocationID
+          - name: loan_purpose
             data_tests:
               - not_null
-              - relationships:
-                  arguments:
-                    to: source('raw', 'taxi_zones')
-                    field: LocationID
-          - name: DOLocationID
+          - name: action_taken
             data_tests:
               - not_null
-              - relationships:
-                  arguments:
-                    to: source('raw', 'taxi_zones')
-                    field: LocationID
-          - name: source_partition
+          - name: source_file
             data_tests:
               - not_null
-      - name: taxi_zones
-        description: "NYC Taxi zone lookup 원천 데이터"
-        columns:
-          - name: LocationID
+          - name: source_year
             data_tests:
               - not_null
-              - unique

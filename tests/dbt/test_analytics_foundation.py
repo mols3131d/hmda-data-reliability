@@ -7,12 +7,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from project_pivot.taxi_data import (
-    DuckDBConnectionManager,
-    load_taxi_zones,
-    load_yellow_tripdata,
-)
-from project_pivot.taxi_data.sql import quote_string_literal
+from project_pivot.hmda_data import DuckDBConnectionManager, load_hmda_loans
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DBT_PROJECT_DIR = PROJECT_ROOT / "dbt"
@@ -24,12 +19,10 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
     """임시 DuckDB raw fixture로 dbt build 계약을 검증한다."""
 
     database_path = tmp_path / "project_pivot.duckdb"
-    zone_csv_path = _write_zone_csv(tmp_path)
-    tripdata_path = _write_tripdata_parquet(tmp_path)
+    hmda_csv_path = _write_hmda_csv(tmp_path)
 
     with DuckDBConnectionManager(database_path) as connection:
-        load_taxi_zones(connection, zone_csv_path)
-        load_yellow_tripdata(connection, [tripdata_path])
+        load_hmda_loans(connection, [hmda_csv_path])
 
     _run_dbt(database_path, "debug")
     _run_dbt(database_path, "build")
@@ -45,27 +38,23 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     assert run_results_path.exists()
-    assert _node_id(manifest, "model", "stg_yellow_tripdata") is not None
-    assert _node_id(manifest, "model", "stg_taxi_zones") is not None
-    assert _node_id(manifest, "model", "mart_daily_taxi_trips") is not None
-    assert "source.project_pivot.raw.yellow_tripdata" in manifest["sources"]
-    assert "source.project_pivot.raw.taxi_zones" in manifest["sources"]
+    assert _node_id(manifest, "model", "stg_hmda_loans") is not None
+    assert _node_id(manifest, "model", "mart_hmda_loan_outcomes") is not None
+    assert "source.project_pivot.raw.hmda_loans" in manifest["sources"]
     assert _depends_on(
         manifest,
-        model_name="stg_yellow_tripdata",
-        dependency="source.project_pivot.raw.yellow_tripdata",
+        model_name="stg_hmda_loans",
+        dependency="source.project_pivot.raw.hmda_loans",
     )
     assert _depends_on(
         manifest,
-        model_name="mart_daily_taxi_trips",
-        dependency=_node_id(manifest, "model", "stg_yellow_tripdata"),
+        model_name="mart_hmda_loan_outcomes",
+        dependency=_node_id(manifest, "model", "stg_hmda_loans"),
     )
-    assert first_stats == second_stats == (4, 4)
+    assert first_stats == second_stats == (2, 2)
     assert first_metric_rows == second_metric_rows == [
-        ("2024-01-01", 1, 4, 56.0, 14.0, 4),
-        ("2024-01-02", 1, 4, 56.0, 14.0, 4),
-        ("2024-01-03", 1, 4, 56.0, 14.0, 4),
-        ("2024-01-04", 1, 4, 56.0, 14.0, 4),
+        (2025, "CA", 1, 2, 2, 0, 1.0, 400000.0, 125.0),
+        (2025, "NY", 31, 2, 0, 2, 0.0, 400000.0, 95.0),
     ]
 
 
@@ -84,52 +73,20 @@ def _run_dbt(database_path: Path, command: str) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def _write_zone_csv(tmp_path: Path) -> Path:
-    path = tmp_path / "taxi_zone_lookup.csv"
+def _write_hmda_csv(tmp_path: Path) -> Path:
+    path = tmp_path / "year_2025.csv"
     path.write_text(
         "\n".join(
             [
-                "LocationID,Borough,Zone,service_zone",
-                "1,EWR,Newark Airport,EWR",
-                "2,Queens,Jamaica Bay,Boro Zone",
+                "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,county_code",
+                "2025,1,1,350000,120,CA,06001",
+                "2025,1,2,450000,130,CA,06001",
+                "2025,31,3,420000,95,NY,36061",
+                "2025,31,7,380000,95,NY,36061",
             ]
         ),
         encoding="utf-8",
     )
-    return path
-
-
-def _write_tripdata_parquet(tmp_path: Path) -> Path:
-    path = tmp_path / "yellow_tripdata_2024-01.parquet"
-    target_path = quote_string_literal(str(path))
-    with DuckDBConnectionManager() as connection:
-        connection.execute(
-            f"""
-            COPY (
-                SELECT
-                    1 AS VendorID,
-                    TIMESTAMP '2024-01-01 08:00:00'
-                        + day_offset * INTERVAL '1 day'
-                        + row_number * INTERVAL '1 minute'
-                        AS tpep_pickup_datetime,
-                    TIMESTAMP '2024-01-01 08:15:00'
-                        + day_offset * INTERVAL '1 day'
-                        + row_number * INTERVAL '1 minute'
-                        AS tpep_dropoff_datetime,
-                    1::BIGINT AS passenger_count,
-                    3.5 + row_number AS trip_distance,
-                    1 AS PULocationID,
-                    2 AS DOLocationID,
-                    1::BIGINT AS payment_type,
-                    10.0 AS fare_amount,
-                    12.5 + row_number AS total_amount
-                FROM range(4) AS days(day_offset)
-                CROSS JOIN range(4) AS rows(row_number)
-            )
-            TO {target_path}
-            (FORMAT PARQUET)
-            """
-        )
     return path
 
 
@@ -140,7 +97,7 @@ def _mart_stats(database_path: Path) -> tuple[int, int]:
             SELECT
                 count(*) AS row_count,
                 count(DISTINCT mart_grain_key) AS grain_count
-            FROM marts.mart_daily_taxi_trips
+            FROM marts.mart_hmda_loan_outcomes
             """
         ).fetchone()
     assert result is not None
@@ -149,29 +106,35 @@ def _mart_stats(database_path: Path) -> tuple[int, int]:
 
 def _mart_metric_rows(
     database_path: Path,
-) -> list[tuple[str, int, int, float, float, int]]:
+) -> list[tuple[int, str, int, int, int, int, float, float, float]]:
     with DuckDBConnectionManager(database_path, read_only=True) as connection:
         rows = connection.execute(
             """
             SELECT
-                cast(pickup_date as varchar) AS pickup_date,
-                pickup_location_id,
-                trip_count,
-                total_amount,
-                average_total_amount,
-                total_passenger_count
-            FROM marts.mart_daily_taxi_trips
-            ORDER BY pickup_date, pickup_location_id
+                activity_year,
+                state_code,
+                loan_purpose,
+                application_count,
+                approval_count,
+                denial_count,
+                approval_rate,
+                average_loan_amount,
+                average_income
+            FROM marts.mart_hmda_loan_outcomes
+            ORDER BY activity_year, state_code, loan_purpose
             """
         ).fetchall()
     return [
         (
-            str(row[0]),
-            int(row[1]),
+            int(row[0]),
+            str(row[1]),
             int(row[2]),
-            float(row[3]),
-            float(row[4]),
+            int(row[3]),
+            int(row[4]),
             int(row[5]),
+            float(row[6]),
+            float(row[7]),
+            float(row[8]),
         )
         for row in rows
     ]

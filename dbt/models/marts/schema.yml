@@ -1,32 +1,31 @@
 version: 2
 
 models:
-  - name: mart_daily_taxi_trips
-    description: "일자와 pickup 지역 grain의 택시 운행 지표 mart"
+  - name: mart_hmda_loan_outcomes
+    description: "activity_year, state_code, loan_purpose grain의 HMDA 대출 결과 mart"
     columns:
       - name: mart_grain_key
         data_tests:
           - not_null
           - unique
-      - name: pickup_date
+      - name: activity_year
         data_tests:
           - not_null
-      - name: pickup_location_id
+      - name: state_code
         data_tests:
           - not_null
-          - relationships:
-              arguments:
-                to: ref('stg_taxi_zones')
-                field: location_id
-      - name: trip_count
+      - name: loan_purpose
         data_tests:
           - not_null
-      - name: total_amount
+      - name: application_count
         data_tests:
           - not_null
-      - name: average_total_amount
+      - name: approval_count
         data_tests:
           - not_null
-      - name: total_passenger_count
+      - name: denial_count
         data_tests:
           - not_null
+      - name: approval_rate
+      - name: average_loan_amount
+      - name: average_income
