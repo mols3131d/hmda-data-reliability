@@ -20,11 +20,10 @@ uv run dbt debug --project-dir dbt
 
 ## 모델 계약
 
-- `stg_yellow_tripdata`: trip 시간, 지역, 금액, 파티션 컬럼 정리
-- `stg_taxi_zones`: taxi zone lookup 정리
-- `mart_daily_taxi_trips`: `pickup_date`, `pickup_location_id` daily grain
+- `stg_hmda_loans`: HMDA 신청 연도, 지역, 대출 목적, action, 금액/소득 컬럼 정리
+- `mart_hmda_loan_outcomes`: `activity_year`, `state_code`, `loan_purpose` grain
 
-`mart_daily_taxi_trips.pickup_date`는 후속 Dagster daily partition key 후보로 유지한다.
+`mart_hmda_loan_outcomes.activity_year`는 후속 Dagster source year 기준 materialization 후보로 유지한다.
 
 ## Artifact
 

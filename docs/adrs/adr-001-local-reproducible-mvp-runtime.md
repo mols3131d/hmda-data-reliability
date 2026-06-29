@@ -19,7 +19,7 @@ related-files:
 
 ## Context (배경)
 
-이 프로젝트의 목적은 production cloud 배포가 아니라 Data Reliability Incident lifecycle을 재현 가능하게 보여주는 것이다. 포트폴리오 사용자는 로컬 환경에서 ingestion, profiling, detection, RCA, remediation, evaluation 흐름을 반복 실행할 수 있어야 한다.
+이 프로젝트의 목적은 production cloud 배포가 아니라 Data Reliability Incident lifecycle을 재현 가능하게 보여주는 것이다. 사용자는 로컬 환경에서 ingestion, profiling, detection, RCA, remediation, evaluation 흐름을 반복 실행할 수 있어야 한다.
 
 ## Decision (결정)
 

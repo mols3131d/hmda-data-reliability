@@ -29,7 +29,7 @@ class: "backlog"
 
 ## Todo
 
-- [ ] raw_taxi ➔ staging ➔ mart dbt 모델 작성
+- [ ] raw_hmda ➔ staging ➔ mart dbt 모델 작성
 - [ ] dbt test 및 manifest 아티팩트 생성 자동화 스크립트 작성
 
 ## Acceptance Criteria

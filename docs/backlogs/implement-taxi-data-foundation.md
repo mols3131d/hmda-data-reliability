@@ -10,6 +10,8 @@ class: "backlog"
 
 # NYC Taxi 데이터 파운데이션 구축
 
+> 보관 문서: 현재 기본 구현 방향은 HMDA 대출 데이터 파운데이션이다. 이 문서는 이전 Taxi 기준 backlog 기록으로만 유지한다.
+
 ## Context
 
 - 1단계(Reliability Contracts) 정의 완료.
