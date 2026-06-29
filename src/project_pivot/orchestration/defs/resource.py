@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -15,9 +14,9 @@ class MvpPipelineDagsterResource(ConfigurableResource[Any]):
     """Dagster에서 MVP pipeline request를 만드는 config resource."""
 
     database_path: str = "data/project_pivot.duckdb"
-    source_root: str = "data/raw/tlc"
-    year: int = 2024
-    partition_date: str = "2024-01-15"
+    source_root: str = "data/raw/hmda"
+    source_year: int = 2025
+    source_file: str | None = None
     report_path: str = "scratch/evaluation/dagster_pipeline_report.md"
     run_dbt_build: bool = True
     run_backfill: bool = False
@@ -29,8 +28,8 @@ class MvpPipelineDagsterResource(ConfigurableResource[Any]):
         return MvpPipelineRunRequest(
             database_path=Path(self.database_path),
             source_root=Path(self.source_root),
-            year=self.year,
-            partition_date=date.fromisoformat(self.partition_date),
+            source_year=self.source_year,
+            source_file=self.source_file,
             report_path=Path(self.report_path),
             run_dbt_build=self.run_dbt_build,
             run_backfill=self.run_backfill,

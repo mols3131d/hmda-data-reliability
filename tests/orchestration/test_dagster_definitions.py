@@ -8,9 +8,9 @@ from pytest import MonkeyPatch
 from project_pivot.orchestration.definitions import defs
 from project_pivot.orchestration.defs import assets as dagster_assets
 from project_pivot.orchestration.defs.assets import (
-    dbt_analytics,
+    dbt_loan_analytics,
     mvp_incident_lifecycle,
-    raw_taxi_data,
+    raw_hmda_loans,
 )
 from project_pivot.orchestration.defs.resource import MvpPipelineDagsterResource
 from project_pivot.pipeline import (
@@ -32,22 +32,22 @@ def test_dagster_definitions_expose_medallion_assets_and_job() -> None:
     job = defs.resolve_job_def("mvp_pipeline_job")
 
     assert asset_keys == {
-        "raw_taxi_data",
-        "dbt_analytics",
+        "raw_hmda_loans",
+        "dbt_loan_analytics",
         "mvp_incident_lifecycle",
     }
     assert job.name == "mvp_pipeline_job"
 
-    raw_node = asset_graph.get(AssetKey("raw_taxi_data"))
-    dbt_node = asset_graph.get(AssetKey("dbt_analytics"))
+    raw_node = asset_graph.get(AssetKey("raw_hmda_loans"))
+    dbt_node = asset_graph.get(AssetKey("dbt_loan_analytics"))
     lifecycle_node = asset_graph.get(AssetKey("mvp_incident_lifecycle"))
 
     assert raw_node.group_name == "bronze"
     assert dbt_node.group_name == "silver_gold"
     assert lifecycle_node.group_name == "control"
     assert raw_node.parent_keys == set()
-    assert dbt_node.parent_keys == {AssetKey("raw_taxi_data")}
-    assert lifecycle_node.parent_keys == {AssetKey("dbt_analytics")}
+    assert dbt_node.parent_keys == {AssetKey("raw_hmda_loans")}
+    assert lifecycle_node.parent_keys == {AssetKey("dbt_loan_analytics")}
 
 
 def test_dagster_materialization_records_metadata(
@@ -61,8 +61,8 @@ def test_dagster_materialization_records_metadata(
             database_path=tmp_path / "project_pivot.duckdb",
             source_root=tmp_path / "raw",
             source_file_count=2,
-            taxi_zones_row_count=3,
-            yellow_tripdata_row_count=4,
+            source_year=2025,
+            hmda_loans_row_count=4,
         )
 
     def run_dbt_build_stub(_request: MvpPipelineRunRequest) -> DbtBuildResult:
@@ -83,7 +83,7 @@ def test_dagster_materialization_records_metadata(
             current_row_count=1,
             detected_incident_types=["volume_drop"],
             evidence_refs=["ev_volume_drop"],
-            affected_assets=["stg_yellow_tripdata"],
+            affected_assets=["stg_hmda_loans"],
             recommended_actions=["validate_source_partition"],
             backfill_actions=["prepare_partition_backfill"],
             validation_actions=["rerun_profile_snapshot"],
@@ -102,18 +102,21 @@ def test_dagster_materialization_records_metadata(
     )
 
     result = materialize(
-        [raw_taxi_data, dbt_analytics, mvp_incident_lifecycle],
+        [raw_hmda_loans, dbt_loan_analytics, mvp_incident_lifecycle],
         resources={"pipeline": MvpPipelineDagsterResource()},
     )
 
     assert result.success
-    raw_materialization = result.asset_materializations_for_node("raw_taxi_data")[0]
-    dbt_materialization = result.asset_materializations_for_node("dbt_analytics")[0]
+    raw_materialization = result.asset_materializations_for_node("raw_hmda_loans")[0]
+    dbt_materialization = result.asset_materializations_for_node(
+        "dbt_loan_analytics"
+    )[0]
     lifecycle_materialization = result.asset_materializations_for_node(
         "mvp_incident_lifecycle"
     )[0]
 
-    assert "yellow_tripdata_row_count" in raw_materialization.metadata
+    assert "hmda_loans_row_count" in raw_materialization.metadata
+    assert "source_year" in raw_materialization.metadata
     assert "manifest_path" in dbt_materialization.metadata
     assert "detected_incident_types" in lifecycle_materialization.metadata
     assert "evaluation_report_path" in lifecycle_materialization.metadata

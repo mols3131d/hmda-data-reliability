@@ -7,7 +7,7 @@ from project_pivot.pipeline import load_raw_data, run_dbt_build, run_incident_li
 
 
 @asset(group_name="bronze", kinds={"duckdb", "python"})
-def raw_taxi_data(
+def raw_hmda_loans(
     context: AssetExecutionContext,
     pipeline: MvpPipelineDagsterResource,
 ) -> MaterializeResult[None]:
@@ -15,24 +15,22 @@ def raw_taxi_data(
 
     result = load_raw_data(pipeline.to_request())
     context.log.info(
-        "raw taxi data 적재 완료",
-        extra={"yellow_tripdata_row_count": result.yellow_tripdata_row_count},
+        "raw HMDA loans 적재 완료",
+        extra={"hmda_loans_row_count": result.hmda_loans_row_count},
     )
     return MaterializeResult(
         metadata={
             "database_path": MetadataValue.path(str(result.database_path)),
             "source_root": MetadataValue.path(str(result.source_root)),
             "source_file_count": MetadataValue.int(result.source_file_count),
-            "taxi_zones_row_count": MetadataValue.int(result.taxi_zones_row_count),
-            "yellow_tripdata_row_count": MetadataValue.int(
-                result.yellow_tripdata_row_count
-            ),
+            "source_year": MetadataValue.int(result.source_year),
+            "hmda_loans_row_count": MetadataValue.int(result.hmda_loans_row_count),
         }
     )
 
 
-@asset(deps=[raw_taxi_data], group_name="silver_gold", kinds={"dbt"})
-def dbt_analytics(
+@asset(deps=[raw_hmda_loans], group_name="silver_gold", kinds={"dbt"})
+def dbt_loan_analytics(
     context: AssetExecutionContext,
     pipeline: MvpPipelineDagsterResource,
 ) -> MaterializeResult[None]:
@@ -61,7 +59,7 @@ def dbt_analytics(
     )
 
 
-@asset(deps=[dbt_analytics], group_name="control", kinds={"python"})
+@asset(deps=[dbt_loan_analytics], group_name="control", kinds={"python"})
 def mvp_incident_lifecycle(
     context: AssetExecutionContext,
     pipeline: MvpPipelineDagsterResource,
