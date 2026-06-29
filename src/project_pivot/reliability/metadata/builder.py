@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import duckdb
 
+from project_pivot.hmda_data.ingestion.common import table_row_count
+from project_pivot.hmda_data.sql import qualify_table_name
 from project_pivot.reliability.contracts import Evidence, EvidenceSource
 from project_pivot.reliability.errors import TableMetadataEvidenceError
 from project_pivot.reliability.metadata.request import TableMetadataEvidenceRequest
 from project_pivot.reliability.profiling import calculate_schema_hash
-from project_pivot.taxi_data.ingestion.common import table_row_count
-from project_pivot.taxi_data.sql import qualify_table_name
 
 
 class DuckDBTableMetadataEvidenceBuilder:

@@ -13,7 +13,7 @@ def test_validate_contract_wraps_pydantic_validation_error() -> None:
             Incident,
             {
                 "incident_id": "inc_without_evidence",
-                "asset_name": "mart.daily_taxi_revenue",
+                "asset_name": "mart.hmda_loan_outcomes",
                 "partition": "2026-06-05",
                 "incident_type": "volume_drop",
                 "severity": "high",

@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, HTTPException
 
+from project_pivot.hmda_data.errors import HMDADataLoadError
 from project_pivot.pipeline import (
     MvpPipelineRunRequest,
     MvpPipelineRunResult,
@@ -9,7 +10,6 @@ from project_pivot.pipeline import (
     run_mvp_pipeline,
 )
 from project_pivot.reliability.errors import ReliabilityError
-from project_pivot.taxi_data.errors import TaxiDataLoadError
 
 
 def create_app() -> FastAPI:
@@ -25,7 +25,7 @@ def create_app() -> FastAPI:
     async def run_pipeline(request: MvpPipelineRunRequest) -> MvpPipelineRunResult:
         try:
             return run_mvp_pipeline(request)
-        except (PipelineRuntimeError, ReliabilityError, TaxiDataLoadError) as exc:
+        except (PipelineRuntimeError, ReliabilityError, HMDADataLoadError) as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return application

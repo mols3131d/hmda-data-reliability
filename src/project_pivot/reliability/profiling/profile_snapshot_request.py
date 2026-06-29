@@ -6,6 +6,8 @@ from datetime import UTC, date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+type ProfilePartition = date | int | str
+
 
 class ProfileSnapshotRequest(BaseModel):
     """DuckDB asset partition profile 계산 입력."""
@@ -15,7 +17,7 @@ class ProfileSnapshotRequest(BaseModel):
     asset_name: str
     table_name: str
     partition_column: str
-    partition: date
+    partition: ProfilePartition
     profile_columns: tuple[str, ...] = Field(default_factory=tuple)
     freshness_column: str | None = None
     observed_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

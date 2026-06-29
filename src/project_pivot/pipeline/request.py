@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -14,21 +14,20 @@ class MvpPipelineRunRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     database_path: Path = Path("data/project_pivot.duckdb")
-    source_root: Path = Path("data/raw/tlc")
-    year: int = Field(default=2024, ge=2000, le=2100)
-    partition_date: date = date(2024, 1, 15)
-    asset_name: str = "source.project_pivot.raw.yellow_tripdata"
-    raw_table_name: str = "raw.yellow_tripdata"
-    partition_column: str = "tpep_pickup_datetime"
-    profile_columns: tuple[str, ...] = ("total_amount", "passenger_count")
-    freshness_column: str = "tpep_dropoff_datetime"
+    source_root: Path = Path("data/raw/hmda")
+    source_year: int = Field(default=2025, ge=2000, le=2100)
+    source_file: str | None = None
+    asset_name: str = "source.project_pivot.raw.hmda_loans"
+    raw_table_name: str = "raw.hmda_loans"
+    partition_column: str = "activity_year"
+    profile_columns: tuple[str, ...] = ("loan_amount", "income")
+    freshness_column: str | None = None
     observed_at: datetime | None = None
     dbt_project_dir: Path = Path("dbt")
     dbt_profiles_dir: Path = Path("dbt")
     dbt_manifest_path: Path = Path("dbt/target/manifest.json")
     dbt_run_results_path: Path = Path("dbt/target/run_results.json")
     report_path: Path = Path("scratch/evaluation/pipeline_run_report.md")
-    zone_csv_path: Path | None = None
     run_dbt_build: bool = True
     run_backfill: bool = False
     simulate_row_count_ratio: float = Field(default=0.25, gt=0, le=1)
@@ -38,10 +37,11 @@ class MvpPipelineRunRequest(BaseModel):
         "raw_table_name",
         "partition_column",
         "freshness_column",
+        "source_file",
     )
     @classmethod
-    def _validate_non_empty(cls, value: str) -> str:
-        if not value.strip():
+    def _validate_non_empty(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
             msg = "값은 비어 있을 수 없습니다."
             raise ValueError(msg)
         return value

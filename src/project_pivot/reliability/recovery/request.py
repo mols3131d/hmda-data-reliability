@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import date
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from project_pivot.hmda_data.ingestion import HMDA_LOANS_TABLE
 from project_pivot.reliability.contracts import Approval
 from project_pivot.reliability.profiling import ProfileSnapshotRequest
-from project_pivot.taxi_data.ingestion import YELLOW_TRIPDATA_TABLE
 
 
 class ApprovedBackfillRequest(BaseModel):
@@ -18,33 +17,34 @@ class ApprovedBackfillRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, arbitrary_types_allowed=True)
 
     approval: Approval
-    parquet_paths: tuple[Path, ...] = Field(min_length=1)
-    partition_date: date
+    source_paths: tuple[Path, ...] = Field(min_length=1)
+    source_year: int = Field(ge=2000, le=2100)
+    source_file: str | None = None
     profile_request: ProfileSnapshotRequest
-    table_name: str = YELLOW_TRIPDATA_TABLE
+    table_name: str = HMDA_LOANS_TABLE
 
-    @field_validator("parquet_paths", mode="before")
+    @field_validator("source_paths", mode="before")
     @classmethod
-    def _coerce_parquet_paths(cls, value: object) -> tuple[Path, ...]:
+    def _coerce_source_paths(cls, value: object) -> tuple[Path, ...]:
         if isinstance(value, str | Path):
             return (Path(value),)
         if isinstance(value, list | tuple):
             return tuple(Path(path) for path in value)
-        msg = "parquet_paths는 path 목록이어야 합니다."
+        msg = "source_paths는 path 목록이어야 합니다."
         raise ValueError(msg)
 
-    @field_validator("table_name")
+    @field_validator("table_name", "source_file")
     @classmethod
-    def _validate_table_name(cls, value: str) -> str:
-        if not value.strip():
-            msg = "table_name은 비어 있을 수 없습니다."
+    def _validate_optional_text(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            msg = "값은 비어 있을 수 없습니다."
             raise ValueError(msg)
         return value
 
     @model_validator(mode="after")
     def _validate_profile_partition(self) -> ApprovedBackfillRequest:
-        if self.profile_request.partition != self.partition_date:
-            msg = "profile_request.partition은 partition_date와 같아야 합니다."
+        if str(self.profile_request.partition) != str(self.source_year):
+            msg = "profile_request.partition은 source_year와 같아야 합니다."
             raise ValueError(msg)
         if self.profile_request.table_name != self.table_name:
             msg = "profile_request.table_name은 table_name과 같아야 합니다."
@@ -55,17 +55,19 @@ class ApprovedBackfillRequest(BaseModel):
 def approved_backfill_request(
     *,
     approval: Approval,
-    parquet_paths: tuple[Path, ...],
-    partition_date: date,
+    source_paths: tuple[Path, ...],
+    source_year: int,
     profile_request: ProfileSnapshotRequest,
-    table_name: str = YELLOW_TRIPDATA_TABLE,
+    table_name: str = HMDA_LOANS_TABLE,
+    source_file: str | None = None,
 ) -> ApprovedBackfillRequest:
     """명시 인자로 approved backfill 요청을 만든다."""
 
     return ApprovedBackfillRequest(
         approval=approval,
-        parquet_paths=parquet_paths,
-        partition_date=partition_date,
+        source_paths=source_paths,
+        source_year=source_year,
+        source_file=source_file,
         profile_request=profile_request,
         table_name=table_name,
     )

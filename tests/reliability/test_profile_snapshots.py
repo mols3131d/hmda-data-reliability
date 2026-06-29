@@ -7,12 +7,12 @@ from datetime import UTC, date, datetime
 
 import duckdb
 
+from project_pivot.hmda_data import DuckDBConnectionManager
 from project_pivot.reliability import (
     ProfileSnapshotRequest,
     calculate_schema_hash,
     create_profile_snapshot,
 )
-from project_pivot.taxi_data import DuckDBConnectionManager
 
 
 def test_create_profile_snapshot_for_partition() -> None:
@@ -26,9 +26,9 @@ def test_create_profile_snapshot_for_partition() -> None:
             ProfileSnapshotRequest(
                 asset_name="raw.profile_test",
                 table_name="raw.profile_test",
-                partition_column="pickup_at",
+                partition_column="partition_at",
                 partition=date(2024, 1, 1),
-                profile_columns=("total_amount", "passenger_count"),
+                profile_columns=("loan_amount", "passenger_count"),
                 freshness_column="loaded_at",
                 observed_at=observed_at,
             ),
@@ -53,9 +53,9 @@ def test_profile_snapshot_calculates_null_rate_freshness_and_json() -> None:
             ProfileSnapshotRequest(
                 asset_name="raw.profile_test",
                 table_name="raw.profile_test",
-                partition_column="pickup_at",
+                partition_column="partition_at",
                 partition=date(2024, 1, 1),
-                profile_columns=("total_amount", "passenger_count"),
+                profile_columns=("loan_amount", "passenger_count"),
                 freshness_column="loaded_at",
                 observed_at=observed_at,
             ),
@@ -65,12 +65,12 @@ def test_profile_snapshot_calculates_null_rate_freshness_and_json() -> None:
 
     assert snapshot.null_rates == {
         "passenger_count": 0.0,
-        "total_amount": 0.5,
+        "loan_amount": 0.5,
     }
-    assert snapshot.metric_values["total_amount.null_count"] == 1.0
+    assert snapshot.metric_values["loan_amount.null_count"] == 1.0
     assert snapshot.freshness_at == datetime(2024, 1, 2, 9, 30, tzinfo=UTC)
     assert payload["row_count"] == 2
-    assert payload["null_rates"]["total_amount"] == 0.5
+    assert payload["null_rates"]["loan_amount"] == 0.5
     assert payload["freshness_at"] == "2024-01-02T09:30:00Z"
 
 
@@ -99,16 +99,16 @@ def test_empty_partition_uses_zero_null_rates_and_observed_freshness() -> None:
             ProfileSnapshotRequest(
                 asset_name="raw.profile_test",
                 table_name="raw.profile_test",
-                partition_column="pickup_at",
+                partition_column="partition_at",
                 partition=date(2024, 1, 3),
-                profile_columns=("total_amount",),
+                profile_columns=("loan_amount",),
                 freshness_column="loaded_at",
                 observed_at=observed_at,
             ),
         )
 
     assert snapshot.row_count == 0
-    assert snapshot.null_rates["total_amount"] == 0.0
+    assert snapshot.null_rates["loan_amount"] == 0.0
     assert snapshot.freshness_at == observed_at
     assert snapshot.metric_values["freshness_used_fallback"] == 1.0
 
@@ -118,9 +118,9 @@ def _create_profile_table(connection: duckdb.DuckDBPyConnection) -> None:
     connection.execute(
         """
         CREATE TABLE raw.profile_test (
-            pickup_at TIMESTAMP,
+            partition_at TIMESTAMP,
             loaded_at TIMESTAMP,
-            total_amount DOUBLE,
+            loan_amount DOUBLE,
             passenger_count BIGINT
         )
         """

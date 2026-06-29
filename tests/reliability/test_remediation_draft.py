@@ -45,7 +45,7 @@ def test_null_spike_draft_contains_dbt_test_suggestion() -> None:
     incident = _incident("null_spike")
     evidence = _evidence(
         incident_type="null_spike",
-        payload={"column": "total_amount", "current_null_rate": 0.2},
+        payload={"column": "loan_amount", "current_null_rate": 0.2},
     )
 
     draft = create_remediation_draft(
@@ -74,12 +74,12 @@ def test_draft_preserves_affected_assets_and_serializes_to_json() -> None:
     )
     payload = json.loads(draft.model_dump_json())
 
-    assert draft.affected_assets == ["stg_yellow_tripdata", "mart_daily_taxi_trips"]
+    assert draft.affected_assets == ["stg_hmda_loans", "mart_hmda_loan_outcomes"]
     assert payload["incident_type"] == "schema_drift"
     assert payload["evidence_refs"] == ["ev_2024_01_01"]
     assert payload["affected_assets"] == [
-        "stg_yellow_tripdata",
-        "mart_daily_taxi_trips",
+        "stg_hmda_loans",
+        "mart_hmda_loan_outcomes",
     ]
 
 
@@ -90,7 +90,7 @@ def _incident(
 ) -> Incident:
     return Incident(
         incident_id=f"inc_{incident_type}_2024_01_01",
-        asset_name="raw.taxi_trips",
+        asset_name="raw.hmda_loans",
         partition="2024-01-01",
         incident_type=incident_type,
         severity=IncidentSeverity.HIGH,
@@ -105,7 +105,7 @@ def _evidence(incident_type: str, payload: dict[str, object]) -> Evidence:
     return Evidence(
         evidence_id="ev_2024_01_01",
         source=EvidenceSource.PROFILE,
-        asset_name="raw.taxi_trips",
+        asset_name="raw.hmda_loans",
         partition="2024-01-01",
         observed_at=datetime(2026, 6, 10, 0, 0, tzinfo=UTC),
         summary=f"{incident_type} evidence",
@@ -115,9 +115,9 @@ def _evidence(incident_type: str, payload: dict[str, object]) -> Evidence:
 
 def _lineage() -> LineageEvidence:
     return LineageEvidence(
-        lineage_id="lineage_raw_taxi_trips_2024_01_01",
-        upstream_asset="raw.taxi_trips",
-        downstream_assets=["stg_yellow_tripdata", "mart_daily_taxi_trips"],
+        lineage_id="lineage_raw_hmda_loans_2025",
+        upstream_asset="raw.hmda_loans",
+        downstream_assets=["stg_hmda_loans", "mart_hmda_loan_outcomes"],
         dbt_manifest_path="dbt/target/manifest.json",
         dbt_run_results_path="dbt/target/run_results.json",
     )

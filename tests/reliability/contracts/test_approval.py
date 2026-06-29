@@ -19,7 +19,7 @@ def test_approved_approval_requires_approver_and_time() -> None:
     with pytest.raises(ValidationError):
         Approval(
             approval_id="approval_missing_review",
-            incident_id="inc_daily_taxi_revenue_2026_06_05",
+            incident_id="inc_hmda_loan_outcomes_2026_06_05",
             status=ApprovalStatus.APPROVED,
             requested_by="data-platform",
             requested_at=requested_at,
@@ -31,7 +31,7 @@ def test_only_approved_approval_allows_execution() -> None:
     requested_at = datetime(2026, 6, 6, 0, 0, tzinfo=UTC)
     approved = Approval(
         approval_id="approval_approved",
-        incident_id="inc_daily_taxi_revenue_2026_06_05",
+        incident_id="inc_hmda_loan_outcomes_2026_06_05",
         status=ApprovalStatus.APPROVED,
         requested_by="data-platform",
         requested_at=requested_at,
@@ -40,7 +40,7 @@ def test_only_approved_approval_allows_execution() -> None:
     )
     pending = Approval(
         approval_id="approval_pending",
-        incident_id="inc_daily_taxi_revenue_2026_06_05",
+        incident_id="inc_hmda_loan_outcomes_2026_06_05",
         status=ApprovalStatus.PENDING,
         requested_by="data-platform",
         requested_at=requested_at,

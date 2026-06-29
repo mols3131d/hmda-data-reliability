@@ -9,12 +9,12 @@ from typing import Any
 
 import duckdb
 
+from project_pivot.hmda_data.sql import qualify_table_name, quote_identifier
 from project_pivot.reliability.contracts import ProfileSnapshot
 from project_pivot.reliability.errors import ProfileSnapshotError
 from project_pivot.reliability.profiling.profile_snapshot_request import (
     ProfileSnapshotRequest,
 )
-from project_pivot.taxi_data.sql import qualify_table_name, quote_identifier
 
 
 class DuckDBProfileSnapshotBuilder:
@@ -41,14 +41,15 @@ class DuckDBProfileSnapshotBuilder:
         except duckdb.Error as exc:
             msg = (
                 "profile snapshot 계산에 실패했습니다: "
-                f"table={request.table_name}, partition={request.partition.isoformat()}"
+                f"table={request.table_name}, "
+                f"partition={_partition_label(request.partition)}"
             )
             raise ProfileSnapshotError(msg) from exc
 
         return ProfileSnapshot(
             snapshot_id=_snapshot_id(request.asset_name, request.partition),
             asset_name=request.asset_name,
-            partition=request.partition.isoformat(),
+            partition=_partition_label(request.partition),
             observed_at=request.observed_at,
             row_count=metrics.row_count,
             null_rates=metrics.null_rates,
@@ -135,19 +136,21 @@ def _calculate_partition_metrics(
         select_parts.append(
             f"max({quote_identifier(request.freshness_column)}) AS freshness_value"
         )
+    partition_filter, partition_params = _partition_filter(request)
 
     result = connection.execute(
         f"""
         SELECT {", ".join(select_parts)}
         FROM {qualify_table_name(request.table_name)}
-        WHERE CAST({quote_identifier(request.partition_column)} AS DATE) = ?
+        WHERE {partition_filter}
         """,
-        [request.partition],
+        partition_params,
     ).fetchone()
     if result is None:
         msg = (
             "profile metric 조회 결과가 없습니다: "
-            f"table={request.table_name}, partition={request.partition.isoformat()}"
+            f"table={request.table_name}, "
+            f"partition={_partition_label(request.partition)}"
         )
         raise ProfileSnapshotError(msg)
 
@@ -228,10 +231,26 @@ def _normalize_freshness(value: object, fallback: datetime) -> datetime:
     raise ProfileSnapshotError(msg)
 
 
-def _snapshot_id(asset_name: str, partition: date) -> str:
+def _partition_label(partition: date | int | str) -> str:
+    if isinstance(partition, date):
+        return partition.isoformat()
+    return str(partition)
+
+
+def _partition_filter(request: ProfileSnapshotRequest) -> tuple[str, list[object]]:
+    quoted_column = quote_identifier(request.partition_column)
+    if isinstance(request.partition, date):
+        return f"CAST({quoted_column} AS DATE) = ?", [request.partition]
+    return (
+        f"CAST({quoted_column} AS VARCHAR) = ?",
+        [_partition_label(request.partition)],
+    )
+
+
+def _snapshot_id(asset_name: str, partition: date | int | str) -> str:
     normalized_asset = "".join(
         character if character.isalnum() else "_"
         for character in asset_name.lower()
     ).strip("_")
-    normalized_partition = partition.isoformat().replace("-", "_")
+    normalized_partition = _partition_label(partition).replace("-", "_")
     return f"profile_{normalized_asset}_{normalized_partition}"

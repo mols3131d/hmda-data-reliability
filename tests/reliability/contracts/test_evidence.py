@@ -10,9 +10,9 @@ def test_evidence_contract_accepts_structured_payload() -> None:
     observed_at = datetime(2026, 6, 6, 0, 0, tzinfo=UTC)
 
     evidence = Evidence(
-        evidence_id="ev_profile_daily_taxi_revenue_2026_06_05",
+        evidence_id="ev_profile_hmda_loan_outcomes_2026_06_05",
         source=EvidenceSource.PROFILE,
-        asset_name="mart.daily_taxi_revenue",
+        asset_name="mart.hmda_loan_outcomes",
         partition="2026-06-05",
         observed_at=observed_at,
         summary="row_count가 baseline 대비 급감했다.",

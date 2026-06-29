@@ -15,7 +15,7 @@ def test_incident_requires_evidence_ref() -> None:
     with pytest.raises(ValidationError):
         Incident(
             incident_id="inc_without_evidence",
-            asset_name="mart.daily_taxi_revenue",
+            asset_name="mart.hmda_loan_outcomes",
             partition="2026-06-05",
             incident_type="volume_drop",
             severity=IncidentSeverity.HIGH,

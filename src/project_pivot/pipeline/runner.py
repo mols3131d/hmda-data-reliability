@@ -7,6 +7,11 @@ import subprocess
 from datetime import UTC, datetime
 from typing import cast
 
+from project_pivot.hmda_data import (
+    DuckDBConnectionManager,
+    discover_hmda_files,
+    load_hmda_loans_partition,
+)
 from project_pivot.pipeline.dbt_result import DbtBuildResult
 from project_pivot.pipeline.errors import PipelineRuntimeError
 from project_pivot.pipeline.lifecycle_result import MvpLifecycleResult
@@ -34,12 +39,6 @@ from project_pivot.reliability import (
 )
 from project_pivot.reliability.detection import DetectionResult
 from project_pivot.reliability.impact import ImpactAnalysisResult
-from project_pivot.taxi_data import (
-    DuckDBConnectionManager,
-    discover_yellow_tripdata_files,
-    load_taxi_zones,
-    load_yellow_tripdata,
-)
 
 
 def run_mvp_pipeline(request: MvpPipelineRunRequest) -> MvpPipelineRunResult:
@@ -59,26 +58,22 @@ def run_mvp_pipeline(request: MvpPipelineRunRequest) -> MvpPipelineRunResult:
 def load_raw_data(request: MvpPipelineRunRequest) -> RawLoadResult:
     """원천 파일을 DuckDB raw table로 멱등 적재한다."""
 
-    yellow_tripdata_paths = discover_yellow_tripdata_files(
-        request.source_root,
-        year=request.year,
-    )
-    zone_csv_path = (
-        request.zone_csv_path or request.source_root / "taxi_zone_lookup.csv"
-    )
+    hmda_paths = discover_hmda_files(request.source_root)
     with DuckDBConnectionManager(request.database_path) as connection:
-        taxi_zones_row_count = load_taxi_zones(connection, zone_csv_path)
-        yellow_tripdata_row_count = load_yellow_tripdata(
+        hmda_loans_row_count = load_hmda_loans_partition(
             connection,
-            yellow_tripdata_paths,
+            hmda_paths,
+            request.source_year,
+            source_file=request.source_file,
             table_name=request.raw_table_name,
         )
     return RawLoadResult(
         database_path=request.database_path,
         source_root=request.source_root,
-        source_file_count=len(yellow_tripdata_paths),
-        taxi_zones_row_count=taxi_zones_row_count,
-        yellow_tripdata_row_count=yellow_tripdata_row_count,
+        source_file_count=len(hmda_paths),
+        source_year=request.source_year,
+        source_file=request.source_file,
+        hmda_loans_row_count=hmda_loans_row_count,
     )
 
 
@@ -127,7 +122,7 @@ def run_incident_lifecycle(request: MvpPipelineRunRequest) -> MvpLifecycleResult
         asset_name=request.asset_name,
         table_name=request.raw_table_name,
         partition_column=request.partition_column,
-        partition=request.partition_date,
+        partition=request.source_year,
         profile_columns=request.profile_columns,
         freshness_column=request.freshness_column,
         observed_at=observed_at,
@@ -180,30 +175,24 @@ def run_incident_lifecycle(request: MvpPipelineRunRequest) -> MvpLifecycleResult
                 )
             )
         if request.run_backfill and primary_detection is not None:
-            source_path = (
-                request.source_root
-                / f"yellow_tripdata_{request.partition_date:%Y-%m}.parquet"
-            )
             approval = Approval(
-                approval_id=f"approval_pipeline_{request.partition_date.isoformat()}",
+                approval_id=f"approval_{primary_detection.incident.incident_id}",
                 incident_id=primary_detection.incident.incident_id,
                 status=ApprovalStatus.APPROVED,
-                requested_by="data-platform",
+                requested_by="mvp_pipeline",
                 requested_at=observed_at,
-                approved_by="data-owner",
+                approved_by="mvp_pipeline",
                 approved_at=observed_at,
-                requested_actions=(
-                    remediation_draft.backfill_actions
-                    if remediation_draft is not None
-                    else []
-                ),
+                requested_actions=["overwrite_partition", "rerun_profile_snapshot"],
+                reason="MVP pipeline 자동 복구 검증",
             )
             backfill_result = execute_approved_backfill(
                 connection,
                 ApprovedBackfillRequest(
                     approval=approval,
-                    parquet_paths=(source_path,),
-                    partition_date=request.partition_date,
+                    source_paths=tuple(discover_hmda_files(request.source_root)),
+                    source_year=request.source_year,
+                    source_file=request.source_file,
                     profile_request=profile_request,
                     table_name=request.raw_table_name,
                 ),

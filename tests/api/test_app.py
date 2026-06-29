@@ -106,10 +106,10 @@ def test_pipeline_run_endpoint_returns_pipeline_result(
             status="completed",
             raw_load=RawLoadResult(
                 database_path=Path("data/project_pivot.duckdb"),
-                source_root=Path("data/raw/tlc"),
+                source_root=Path("data/raw/hmda"),
                 source_file_count=1,
-                taxi_zones_row_count=2,
-                yellow_tripdata_row_count=4,
+                source_year=2025,
+                hmda_loans_row_count=4,
             ),
             dbt_build=None,
             lifecycle=MvpLifecycleResult(
@@ -118,7 +118,7 @@ def test_pipeline_run_endpoint_returns_pipeline_result(
                 current_row_count=1,
                 detected_incident_types=["volume_drop"],
                 evidence_refs=["ev_1"],
-                affected_assets=["mart_daily_taxi_trips"],
+                affected_assets=["mart_hmda_loan_outcomes"],
                 recommended_actions=["prepare_partition_backfill"],
                 backfill_actions=["prepare_partition_backfill"],
                 validation_actions=["rerun_profile_snapshot"],
@@ -136,7 +136,7 @@ def test_pipeline_run_endpoint_returns_pipeline_result(
         "/pipeline/run",
         json_payload={
             "database_path": "data/project_pivot.duckdb",
-            "source_root": "data/raw/tlc",
+            "source_root": "data/raw/hmda",
             "run_dbt_build": False,
         },
     )

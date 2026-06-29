@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Sequence
-from datetime import date
 from pathlib import Path
 
+from project_pivot.hmda_data.errors import HMDADataLoadError
 from project_pivot.logger import configure_logging, get_logger
 from project_pivot.pipeline.errors import PipelineRuntimeError
 from project_pivot.pipeline.request import MvpPipelineRunRequest
 from project_pivot.pipeline.runner import run_mvp_pipeline
 from project_pivot.reliability.errors import ReliabilityError
-from project_pivot.taxi_data.errors import TaxiDataLoadError
 
 logger = get_logger(__name__)
 
@@ -34,10 +33,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="pipeline result JSON 저장 경로.",
     )
     run.add_argument("--database", type=Path, default=Path("data/project_pivot.duckdb"))
-    run.add_argument("--source-root", type=Path, default=Path("data/raw/tlc"))
-    run.add_argument("--year", type=int, default=2024)
-    run.add_argument("--partition-date", type=_parse_date, default=date(2024, 1, 15))
-    run.add_argument("--zone-csv", type=Path)
+    run.add_argument("--source-root", type=Path, default=Path("data/raw/hmda"))
+    run.add_argument("--source-year", type=int, default=2025)
+    run.add_argument("--source-file")
     run.add_argument(
         "--report-path",
         type=Path,
@@ -79,9 +77,8 @@ def _run_pipeline(args: argparse.Namespace) -> int:
     request = MvpPipelineRunRequest(
         database_path=args.database,
         source_root=args.source_root,
-        year=args.year,
-        partition_date=args.partition_date,
-        zone_csv_path=args.zone_csv,
+        source_year=args.source_year,
+        source_file=args.source_file,
         report_path=args.report_path,
         run_dbt_build=args.run_dbt_build,
         run_backfill=args.run_backfill,
@@ -89,7 +86,7 @@ def _run_pipeline(args: argparse.Namespace) -> int:
     )
     try:
         result = run_mvp_pipeline(request)
-    except (PipelineRuntimeError, ReliabilityError, TaxiDataLoadError) as exc:
+    except (PipelineRuntimeError, ReliabilityError, HMDADataLoadError) as exc:
         logger.error("MVP pipeline 실행 실패", extra={"error": str(exc)})
         return 1
 
@@ -97,15 +94,6 @@ def _run_pipeline(args: argparse.Namespace) -> int:
     args.output.write_text(result.model_dump_json(indent=2), encoding="utf-8")
     logger.info("MVP pipeline 결과 저장 완료", extra={"output_path": str(args.output)})
     return 0
-
-
-def _parse_date(value: str) -> date:
-    try:
-        return date.fromisoformat(value)
-    except ValueError as exc:
-        msg = "날짜는 YYYY-MM-DD 형식이어야 합니다."
-        raise argparse.ArgumentTypeError(msg) from exc
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

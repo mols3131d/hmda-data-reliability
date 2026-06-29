@@ -6,12 +6,12 @@ from datetime import UTC, datetime
 
 import pytest
 
+from project_pivot.hmda_data import DuckDBConnectionManager
 from project_pivot.reliability import (
     TableMetadataEvidenceError,
     TableMetadataEvidenceRequest,
     create_table_metadata_evidence,
 )
-from project_pivot.taxi_data import DuckDBConnectionManager
 
 
 def test_create_table_metadata_evidence_contains_schema_and_row_count() -> None:
@@ -23,14 +23,12 @@ def test_create_table_metadata_evidence_contains_schema_and_row_count() -> None:
         connection.execute(
             """
             CREATE TABLE raw.metadata_test (
-                pickup_date DATE,
-                trip_count BIGINT
+                activity_year INTEGER,
+                application_count BIGINT
             )
             """
         )
-        connection.execute(
-            "INSERT INTO raw.metadata_test VALUES (DATE '2024-01-01', 10)"
-        )
+        connection.execute("INSERT INTO raw.metadata_test VALUES (2025, 10)")
 
         evidence = create_table_metadata_evidence(
             connection,
@@ -49,8 +47,8 @@ def test_create_table_metadata_evidence_contains_schema_and_row_count() -> None:
     assert evidence.payload["row_count"] == 1
     assert str(evidence.payload["schema_hash"]).startswith("sha256:")
     assert evidence.payload["columns"] == [
-        {"name": "pickup_date", "type": "DATE", "nullable": "YES"},
-        {"name": "trip_count", "type": "BIGINT", "nullable": "YES"},
+        {"name": "activity_year", "type": "INTEGER", "nullable": "YES"},
+        {"name": "application_count", "type": "BIGINT", "nullable": "YES"},
     ]
 
 

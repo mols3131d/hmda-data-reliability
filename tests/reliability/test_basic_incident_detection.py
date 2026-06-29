@@ -14,8 +14,8 @@ from project_pivot.reliability import (
 
 def test_detector_returns_no_incident_for_normal_profile() -> None:
     """threshold를 넘지 않는 profile pair는 incident를 만들지 않는다."""
-    baseline = _snapshot(row_count=100, null_rates={"total_amount": 0.01})
-    current = _snapshot(row_count=95, null_rates={"total_amount": 0.02})
+    baseline = _snapshot(row_count=100, null_rates={"loan_amount": 0.01})
+    current = _snapshot(row_count=95, null_rates={"loan_amount": 0.02})
 
     results = detect_basic_incidents(
         DetectionRequest(
@@ -51,8 +51,8 @@ def test_detector_creates_volume_drop_incident_and_evidence() -> None:
 
 def test_detector_creates_null_spike_incident_and_evidence() -> None:
     """null spike incident와 대상 컬럼 payload를 검증한다."""
-    baseline = _snapshot(row_count=100, null_rates={"total_amount": 0.01})
-    current = _snapshot(row_count=100, null_rates={"total_amount": 0.20})
+    baseline = _snapshot(row_count=100, null_rates={"loan_amount": 0.01})
+    current = _snapshot(row_count=100, null_rates={"loan_amount": 0.20})
 
     result = detect_basic_incidents(
         DetectionRequest(baseline=baseline, current=current)
@@ -60,7 +60,7 @@ def test_detector_creates_null_spike_incident_and_evidence() -> None:
 
     assert result.incident.incident_type == "null_spike"
     assert result.incident.severity == "medium"
-    assert result.evidence.payload["column"] == "total_amount"
+    assert result.evidence.payload["column"] == "loan_amount"
     assert result.evidence.payload["baseline_null_rate"] == 0.01
     assert result.evidence.payload["current_null_rate"] == 0.20
 
@@ -126,12 +126,12 @@ def _snapshot(
 ) -> ProfileSnapshot:
     observed_at = datetime(2026, 6, 10, 0, 0, tzinfo=UTC)
     return ProfileSnapshot(
-        snapshot_id="profile_raw_taxi_2024_01_01",
-        asset_name="raw.taxi_trips",
+        snapshot_id="profile_raw_hmda_loans_2025",
+        asset_name="raw.hmda_loans",
         partition="2024-01-01",
         observed_at=observed_at,
         row_count=row_count,
-        null_rates=null_rates or {"total_amount": 0.01},
+        null_rates=null_rates or {"loan_amount": 0.01},
         schema_hash=schema_hash,
         freshness_at=freshness_at or datetime(2024, 1, 2, 12, 0, tzinfo=UTC),
         metric_values={"row_count": float(row_count)},

@@ -18,7 +18,7 @@ def test_impact_analysis_finds_downstream_from_source(tmp_path: Path) -> None:
     """source asset에서 staging/mart downstream을 계산한다."""
     manifest_path = _write_manifest(tmp_path)
     run_results_path = _write_run_results(tmp_path)
-    incident = _incident("source.project_pivot.raw.yellow_tripdata")
+    incident = _incident("source.project_pivot.raw.hmda_loans")
 
     result = analyze_dbt_impact(
         ImpactAnalysisRequest(
@@ -29,12 +29,12 @@ def test_impact_analysis_finds_downstream_from_source(tmp_path: Path) -> None:
     )
 
     assert result.lineage_evidence.downstream_assets == [
-        "stg_yellow_tripdata",
-        "mart_daily_taxi_trips",
+        "stg_hmda_loans",
+        "mart_hmda_loan_outcomes",
     ]
     assert result.incident.affected_assets == [
-        "stg_yellow_tripdata",
-        "mart_daily_taxi_trips",
+        "stg_hmda_loans",
+        "mart_hmda_loan_outcomes",
     ]
 
 
@@ -45,28 +45,28 @@ def test_impact_analysis_resolves_model_name_and_node_id(tmp_path: Path) -> None
 
     by_name = analyze_dbt_impact(
         ImpactAnalysisRequest(
-            incident=_incident("stg_yellow_tripdata"),
+            incident=_incident("stg_hmda_loans"),
             dbt_manifest_path=manifest_path,
             dbt_run_results_path=run_results_path,
         )
     )
     by_node_id = analyze_dbt_impact(
         ImpactAnalysisRequest(
-            incident=_incident("model.project_pivot.stg_yellow_tripdata"),
+            incident=_incident("model.project_pivot.stg_hmda_loans"),
             dbt_manifest_path=manifest_path,
             dbt_run_results_path=run_results_path,
         )
     )
 
-    assert by_name.incident.affected_assets == ["mart_daily_taxi_trips"]
-    assert by_node_id.incident.affected_assets == ["mart_daily_taxi_trips"]
+    assert by_name.incident.affected_assets == ["mart_hmda_loan_outcomes"]
+    assert by_node_id.incident.affected_assets == ["mart_hmda_loan_outcomes"]
 
 
 def test_impact_analysis_builds_lineage_evidence_paths(tmp_path: Path) -> None:
     """LineageEvidence path와 incident 연결을 검증한다."""
     manifest_path = _write_manifest(tmp_path)
     run_results_path = _write_run_results(tmp_path)
-    incident = _incident("source.project_pivot.raw.yellow_tripdata")
+    incident = _incident("source.project_pivot.raw.hmda_loans")
 
     result = analyze_dbt_impact(
         ImpactAnalysisRequest(
@@ -99,30 +99,30 @@ def _write_manifest(tmp_path: Path) -> Path:
     manifest_path = tmp_path / "manifest.json"
     manifest = {
         "sources": {
-            "source.project_pivot.raw.yellow_tripdata": {
-                "name": "yellow_tripdata",
+            "source.project_pivot.raw.hmda_loans": {
+                "name": "hmda_loans",
                 "schema": "raw",
                 "resource_type": "source",
                 "depends_on": {"nodes": []},
             }
         },
         "nodes": {
-            "model.project_pivot.stg_yellow_tripdata": {
-                "name": "stg_yellow_tripdata",
-                "alias": "stg_yellow_tripdata",
+            "model.project_pivot.stg_hmda_loans": {
+                "name": "stg_hmda_loans",
+                "alias": "stg_hmda_loans",
                 "schema": "staging",
                 "resource_type": "model",
                 "depends_on": {
-                    "nodes": ["source.project_pivot.raw.yellow_tripdata"]
+                    "nodes": ["source.project_pivot.raw.hmda_loans"]
                 },
             },
-            "model.project_pivot.mart_daily_taxi_trips": {
-                "name": "mart_daily_taxi_trips",
-                "alias": "mart_daily_taxi_trips",
+            "model.project_pivot.mart_hmda_loan_outcomes": {
+                "name": "mart_hmda_loan_outcomes",
+                "alias": "mart_hmda_loan_outcomes",
                 "schema": "marts",
                 "resource_type": "model",
                 "depends_on": {
-                    "nodes": ["model.project_pivot.stg_yellow_tripdata"]
+                    "nodes": ["model.project_pivot.stg_hmda_loans"]
                 },
             },
         },

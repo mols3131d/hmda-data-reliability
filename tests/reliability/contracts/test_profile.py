@@ -15,11 +15,11 @@ def test_profile_snapshot_rejects_invalid_null_rate() -> None:
     with pytest.raises(ValidationError):
         ProfileSnapshot(
             snapshot_id="profile_invalid",
-            asset_name="mart.daily_taxi_revenue",
+            asset_name="mart.hmda_loan_outcomes",
             partition="2026-06-05",
             observed_at=observed_at,
             row_count=12_000,
-            null_rates={"total_amount": 1.2},
+            null_rates={"loan_amount": 1.2},
             schema_hash="sha256:synthetic-schema",
             freshness_at=observed_at,
         )
