@@ -9,12 +9,12 @@ from typing import Any
 
 import duckdb
 
-from project_pivot.hmda_data.sql import qualify_table_name, quote_identifier
 from project_pivot.reliability.contracts import ProfileSnapshot
 from project_pivot.reliability.errors import ProfileSnapshotError
 from project_pivot.reliability.profiling.profile_snapshot_request import (
     ProfileSnapshotRequest,
 )
+from project_pivot.shared.sql import qualify_table_name, quote_identifier
 
 
 class DuckDBProfileSnapshotBuilder:

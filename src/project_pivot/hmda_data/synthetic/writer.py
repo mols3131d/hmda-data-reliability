@@ -8,8 +8,8 @@ from pathlib import Path
 import duckdb
 
 from project_pivot.hmda_data.errors import SyntheticCaseError
-from project_pivot.hmda_data.sql import quote_string_literal
 from project_pivot.logger import get_logger
+from project_pivot.shared.sql import quote_string_literal
 
 LOGGER = get_logger(__name__)
 

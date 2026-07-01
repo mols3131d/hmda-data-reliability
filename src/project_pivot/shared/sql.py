@@ -1,6 +1,4 @@
-"""DuckDB SQL 식별자 헬퍼."""
-
-from __future__ import annotations
+"""DuckDB SQL 식별자와 리터럴 헬퍼."""
 
 
 def quote_identifier(identifier: str) -> str:

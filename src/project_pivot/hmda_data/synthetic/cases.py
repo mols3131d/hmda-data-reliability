@@ -9,13 +9,13 @@ from pathlib import Path
 import duckdb
 
 from project_pivot.hmda_data.errors import SyntheticCaseError
-from project_pivot.hmda_data.sql import quote_identifier
 from project_pivot.hmda_data.synthetic.source import (
     require_columns,
     source_paths_parameter,
     source_union_sql,
 )
 from project_pivot.hmda_data.synthetic.writer import write_case_file
+from project_pivot.shared.sql import quote_identifier
 
 
 def row_count_drop(

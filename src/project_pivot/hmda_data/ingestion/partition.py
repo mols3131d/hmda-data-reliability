@@ -12,11 +12,10 @@ from project_pivot.hmda_data.errors import HMDADataLoadError
 from project_pivot.hmda_data.ingestion.common import (
     HMDA_LOANS_TABLE,
     LOGGER,
-    ensure_schema,
-    table_row_count,
     validate_required_columns,
 )
-from project_pivot.hmda_data.sql import qualify_table_name, quote_identifier
+from project_pivot.shared.duckdb import ensure_schema, table_row_count
+from project_pivot.shared.sql import qualify_table_name, quote_identifier
 
 
 def load_hmda_loans_partition(

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from project_pivot.hmda_data import DuckDBConnectionManager
-from project_pivot.hmda_data.sql import quote_string_literal
+from project_pivot.shared.sql import quote_string_literal
 
 
 @pytest.fixture
