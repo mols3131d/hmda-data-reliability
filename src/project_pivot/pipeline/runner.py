@@ -7,11 +7,8 @@ import subprocess
 from datetime import UTC, datetime
 from typing import cast
 
-from project_pivot.hmda_data import (
-    DuckDBConnectionManager,
-    discover_hmda_files,
-    load_hmda_loans_partition,
-)
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans_partition
 from project_pivot.pipeline.dbt_result import DbtBuildResult
 from project_pivot.pipeline.errors import PipelineRuntimeError
 from project_pivot.pipeline.lifecycle_result import MvpLifecycleResult

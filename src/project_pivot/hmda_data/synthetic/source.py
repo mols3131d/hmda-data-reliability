@@ -11,6 +11,8 @@ from project_pivot.hmda_data.errors import SyntheticCaseError
 
 
 def source_paths_parameter(source_paths: Sequence[str | Path]) -> list[str]:
+    """합성 케이스 원천 파일 경로를 DuckDB 파라미터로 정규화한다."""
+
     if not source_paths:
         msg = "HMDA 합성 데이터 원천 파일이 없습니다."
         raise SyntheticCaseError(msg)
@@ -31,6 +33,8 @@ def require_columns(
     source_paths: Sequence[str | Path],
     required_columns: set[str],
 ) -> None:
+    """원천 파일에 필요한 컬럼이 모두 있는지 검증한다."""
+
     existing_columns = source_columns(connection, source_paths)
     missing_columns = sorted(required_columns.difference(existing_columns))
     if missing_columns:
@@ -42,6 +46,8 @@ def source_columns(
     connection: duckdb.DuckDBPyConnection,
     source_paths: Sequence[str | Path],
 ) -> set[str]:
+    """원천 CSV/Parquet 파일의 컬럼명을 조회한다."""
+
     try:
         rows = connection.execute(
             f"DESCRIBE SELECT * FROM ({source_union_sql(source_paths)}) LIMIT 0",
@@ -54,12 +60,16 @@ def source_columns(
 
 
 def source_union_sql(source_paths: Sequence[str | Path]) -> str:
+    """여러 원천 파일을 이름 기준 UNION ALL 하는 SQL을 만든다."""
+
     paths = [Path(path) for path in source_paths]
     selects = [_reader_sql(path) for path in paths]
     return "\nUNION ALL BY NAME\n".join(selects)
 
 
 def _reader_sql(path: Path) -> str:
+    """파일 확장자에 맞는 DuckDB reader SQL을 반환한다."""
+
     if path.suffix.lower() == ".csv":
         return """
             SELECT *

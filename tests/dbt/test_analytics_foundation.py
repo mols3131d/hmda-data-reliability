@@ -7,7 +7,8 @@ import os
 import subprocess
 from pathlib import Path
 
-from project_pivot.hmda_data import DuckDBConnectionManager, load_hmda_loans
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.hmda_data import load_hmda_loans
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DBT_PROJECT_DIR = PROJECT_ROOT / "dbt"

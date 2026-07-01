@@ -8,6 +8,7 @@ from pathlib import Path
 
 import duckdb
 
+from project_pivot.data_platform.sql import quote_identifier
 from project_pivot.hmda_data.errors import SyntheticCaseError
 from project_pivot.hmda_data.synthetic.source import (
     require_columns,
@@ -15,7 +16,6 @@ from project_pivot.hmda_data.synthetic.source import (
     source_union_sql,
 )
 from project_pivot.hmda_data.synthetic.writer import write_case_file
-from project_pivot.shared.sql import quote_identifier
 
 
 def row_count_drop(
@@ -186,12 +186,16 @@ def freshness_delay(
 
 
 def validate_fraction(value: float, name: str) -> None:
+    """비율 인자가 0보다 크고 1 이하인지 검증한다."""
+
     if not 0 < value <= 1:
         msg = f"{name}은 0보다 크고 1 이하이어야 합니다: {value}"
         raise SyntheticCaseError(msg)
 
 
 def _ranked_sample_query(source_paths: Sequence[str | Path]) -> str:
+    """연도별 안정적 샘플 순위를 붙인 원천 조회 SQL을 만든다."""
+
     source_query = source_union_sql(source_paths)
     return f"""
         SELECT

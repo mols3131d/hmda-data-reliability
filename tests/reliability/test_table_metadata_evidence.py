@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from project_pivot.hmda_data import DuckDBConnectionManager
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.reliability import (
     TableMetadataEvidenceError,
     TableMetadataEvidenceRequest,

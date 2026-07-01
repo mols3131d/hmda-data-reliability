@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from project_pivot.hmda_data import DuckDBConnectionManager, load_hmda_loans_partition
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.hmda_data import load_hmda_loans_partition
 
 
 def test_load_hmda_loans_partition_filters_by_source_year(

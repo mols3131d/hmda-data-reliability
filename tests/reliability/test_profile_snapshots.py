@@ -7,7 +7,7 @@ from datetime import UTC, date, datetime
 
 import duckdb
 
-from project_pivot.hmda_data import DuckDBConnectionManager
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.reliability import (
     ProfileSnapshotRequest,
     calculate_schema_hash,

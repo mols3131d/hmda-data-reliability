@@ -6,9 +6,9 @@ from collections.abc import Iterable
 
 import duckdb
 
+from project_pivot.data_platform.duckdb import table_columns
 from project_pivot.hmda_data.errors import HMDADataValidationError
 from project_pivot.logger import get_logger
-from project_pivot.shared.duckdb import table_columns
 
 HMDA_LOANS_TABLE = "raw.hmda_loans"
 REQUIRED_HMDA_COLUMNS = frozenset(

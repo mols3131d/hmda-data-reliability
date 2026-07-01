@@ -6,11 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from project_pivot.hmda_data import (
-    DuckDBConnectionManager,
-    discover_hmda_files,
-    load_hmda_loans,
-)
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDADataValidationError
 
 

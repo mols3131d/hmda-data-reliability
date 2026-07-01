@@ -8,8 +8,8 @@ from pathlib import Path
 import duckdb
 import pytest
 
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import (
-    DuckDBConnectionManager,
     freshness_delay,
     null_spike,
     row_count_drop,

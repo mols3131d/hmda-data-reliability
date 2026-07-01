@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from project_pivot.hmda_data import HMDA_LOANS_TABLE, DuckDBConnectionManager
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.hmda_data import HMDA_LOANS_TABLE
 from project_pivot.reliability import (
     Approval,
     ApprovalGateError,
