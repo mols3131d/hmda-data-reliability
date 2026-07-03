@@ -27,9 +27,11 @@ class DuckDBConnectionManager:
     ) -> None:
         """DuckDB 연결 옵션을 저장한다."""
 
-        self.database_path = Path(database_path) if database_path is not None else None
-        self.read_only = read_only
-        self.cleanup_on_close = cleanup_on_close
+        self.database_path: Path | None = (
+            Path(database_path) if database_path is not None else None
+        )
+        self.read_only: bool = read_only
+        self.cleanup_on_close: bool = cleanup_on_close
         self._connection: duckdb.DuckDBPyConnection | None = None
 
     def __enter__(self) -> duckdb.DuckDBPyConnection:
