@@ -20,6 +20,7 @@ def discover_hmda_files(raw_dir: str | Path) -> list[Path]:
 
     supported_paths: list[Path] = []
     ignored_paths: list[str] = []
+
     for path in sorted(directory.iterdir()):
         if not path.is_file():
             continue
