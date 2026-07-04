@@ -1,8 +1,11 @@
 # mvp-pipeline-runtime Specification
 
 ## Purpose
+
 로컬 MVP pipeline을 Python runner, Dagster, FastAPI에서 동일 계약으로 실행한다.
+
 ## Requirements
+
 ### Requirement: Shared MVP pipeline runner
 
 시스템은 ingestion, dbt build, incident lifecycle을 하나의 공용 runner로 실행해야 한다(SHALL).

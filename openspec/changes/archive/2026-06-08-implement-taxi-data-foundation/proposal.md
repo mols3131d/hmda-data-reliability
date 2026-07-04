@@ -13,6 +13,7 @@
 ## Capabilities
 
 ### New Capabilities
+
 - `taxi-data-foundation`: NYC Taxi 데이터를 로드하고 인시던트 시나리오를 시뮬레이션하기 위한 합성 결함 데이터를 주입 및 쿼리 가능하게 제공하는 품질 파운데이션 기능.
 
 ### Modified Capabilities

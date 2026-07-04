@@ -1,6 +1,7 @@
 # reliability-contracts Specification
 
 ## Purpose
+
 데이터 신뢰성 인시던트, 근거, 프로파일, 계보 영향, 승인 상태를 일관된 contract로 교환하기 위한 요구사항을 정의한다.
 
 ## Requirements

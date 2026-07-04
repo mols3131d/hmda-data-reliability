@@ -13,6 +13,7 @@
 ## Capabilities
 
 ### New Capabilities
+
 - `partition-ingestion`: 픽업 시간 기반으로 일자 파티션을 구분하고, 이상치를 보존한 상태에서 매개변수 기반으로 단일 파티션을 멱등하게 적재(Overwrite)하는 수집 기능.
 
 ### Modified Capabilities

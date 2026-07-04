@@ -7,12 +7,14 @@
 ## Goals / Non-Goals
 
 **Goals:**
+
 - 기본 원천 데이터 경로를 `data/raw/hmda`로 전환한다.
 - `taxi_data` 중심 모듈을 HMDA/loan 중심 모듈로 대체할 구현 계획을 고정한다.
 - DuckDB raw, dbt staging/mart, Dagster asset, CLI, 테스트, 문서의 도메인 용어를 일관되게 바꾼다.
 - TLC 의존 코드를 기본 경로에서 제거해 새 데이터 제품 방향이 혼재되지 않게 한다.
 
 **Non-Goals:**
+
 - HMDA 원천 데이터를 다운로드하는 네트워크 클라이언트는 포함하지 않는다.
 - 신용 점수 모델, 승인 정책 최적화, SHAP 등 ML 모델링은 이번 전환 범위에 포함하지 않는다.
 - 기존 reliability contract 자체를 재설계하지 않는다. 필요한 입력 asset 명칭과 evidence metadata만 새 도메인에 맞춘다.

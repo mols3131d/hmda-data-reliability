@@ -14,9 +14,11 @@
 ## Capabilities
 
 ### New Capabilities
+
 - `hmda-data-foundation`: `data/raw/hmda` 원천 파일을 로컬 DuckDB raw 레이어에 안정적으로 적재하고 검증하는 계약을 정의한다.
 
 ### Modified Capabilities
+
 - `partition-ingestion`: 파티션 키와 멱등 적재 기준을 택시 일자 파티션에서 HMDA 연도/파일 파티션으로 전환한다.
 - `dbt-analytics-foundation`: raw taxi source, staging, mart 요구사항을 HMDA loan source, staging, mart 요구사항으로 전환한다.
 - `standard-dagster-orchestration`: Dagster asset key, asset metadata, materialization 순서를 HMDA 대출 데이터 흐름에 맞게 전환한다.

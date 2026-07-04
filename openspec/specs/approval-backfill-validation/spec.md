@@ -1,8 +1,11 @@
 # approval-backfill-validation Specification
 
 ## Purpose
+
 TBD - created by archiving change add-approval-backfill-validation. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Approval gate for backfill
 
 시스템은 backfill 실행 전에 `ApprovalStatus.APPROVED` 상태를 확인해야 한다(SHALL).
@@ -29,4 +32,3 @@ TBD - created by archiving change add-approval-backfill-validation. Update Purpo
 
 - **WHEN** 승인된 backfill이 성공할 때
 - **THEN** 결과는 갱신된 데이터를 기반으로 생성된 `ProfileSnapshot`을 포함해야 한다.
-

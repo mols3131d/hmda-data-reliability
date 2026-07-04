@@ -1,8 +1,11 @@
 # evaluation-report Specification
 
 ## Purpose
+
 TBD - created by archiving change add-evaluation-report. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Synthetic case aggregation
 
 시스템은 synthetic incident case 결과를 받아 detection/action 성공 여부와 전체 성공률을 계산해야 한다(SHALL).
@@ -29,4 +32,3 @@ TBD - created by archiving change add-evaluation-report. Update Purpose after ar
 
 - **WHEN** evaluation report writer를 실행할 때
 - **THEN** 출력 경로에 case별 기대/실제 detection과 action 성공 여부가 표시된 Markdown 파일이 생성되어야 한다.
-
