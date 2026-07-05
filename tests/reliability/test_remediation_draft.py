@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 
+import pytest
+
 from project_pivot.reliability import (
     Evidence,
     EvidenceSource,
@@ -15,6 +17,8 @@ from project_pivot.reliability import (
     RemediationDraftRequest,
     create_remediation_draft,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_volume_drop_draft_contains_backfill_and_validation_actions() -> None:

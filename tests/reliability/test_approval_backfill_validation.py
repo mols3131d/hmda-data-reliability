@@ -18,6 +18,8 @@ from project_pivot.reliability import (
     execute_approved_backfill,
 )
 
+pytestmark = pytest.mark.integration
+
 
 def test_pending_approval_blocks_before_source_access(tmp_path: Path) -> None:
     """미승인 요청은 source 파일을 보기 전에 차단된다."""

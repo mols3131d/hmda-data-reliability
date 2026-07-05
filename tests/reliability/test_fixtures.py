@@ -1,10 +1,14 @@
 """Serialization and fixture tests."""
 
+import pytest
+
 from project_pivot.reliability.contracts import (
     HumanReviewStatus,
     can_execute_risky_action,
 )
 from tests.reliability.conftest import SyntheticIncidentFixture
+
+pytestmark = pytest.mark.unit
 
 
 def test_synthetic_incident_fixture_has_required_contract_links(

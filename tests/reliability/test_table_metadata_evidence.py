@@ -13,6 +13,8 @@ from project_pivot.reliability import (
     create_table_metadata_evidence,
 )
 
+pytestmark = pytest.mark.component
+
 
 def test_create_table_metadata_evidence_contains_schema_and_row_count() -> None:
     """schema hash, columns, row_count payload를 검증한다."""

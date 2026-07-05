@@ -17,6 +17,8 @@ from project_pivot.hmda_data import (
 )
 from project_pivot.hmda_data.errors import SyntheticCaseError
 
+pytestmark = pytest.mark.component
+
 
 def test_synthetic_cases_expose_expected_defect_statistics(
     tmp_path: Path,

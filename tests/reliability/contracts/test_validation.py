@@ -5,6 +5,8 @@ import pytest
 from project_pivot.reliability.contracts import Incident, validate_contract
 from project_pivot.reliability.errors import ContractValidationError
 
+pytestmark = pytest.mark.unit
+
 
 def test_validate_contract_wraps_pydantic_validation_error() -> None:
     """Contract validation 실패가 domain exception으로 감싸지는지 검증한다."""

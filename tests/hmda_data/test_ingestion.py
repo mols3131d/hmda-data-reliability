@@ -10,6 +10,8 @@ from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDADataValidationError
 
+pytestmark = pytest.mark.component
+
 
 def test_discover_hmda_files_filters_supported_files(tmp_path: Path) -> None:
     """지원하는 CSV/Parquet 파일만 정렬해 찾는다."""

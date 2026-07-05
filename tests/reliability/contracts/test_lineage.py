@@ -1,11 +1,15 @@
 """Lineage contract tests."""
 
+import pytest
+
 from project_pivot.reliability.contracts import (
     Incident,
     IncidentSeverity,
     IncidentStatus,
     LineageEvidence,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_lineage_evidence_can_feed_incident_affected_assets() -> None:

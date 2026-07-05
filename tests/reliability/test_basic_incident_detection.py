@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
+
 from project_pivot.reliability import (
     DetectionRequest,
     DetectionThresholds,
     ProfileSnapshot,
     detect_basic_incidents,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_detector_returns_no_incident_for_normal_profile() -> None:

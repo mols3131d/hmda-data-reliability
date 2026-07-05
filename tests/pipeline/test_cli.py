@@ -13,6 +13,8 @@ from project_pivot.pipeline import (
 )
 from project_pivot.pipeline import cli as pipeline_cli
 
+pytestmark = pytest.mark.component
+
 
 def test_pipeline_cli_run_writes_result_json(
     monkeypatch: pytest.MonkeyPatch,

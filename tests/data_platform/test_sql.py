@@ -8,6 +8,8 @@ from project_pivot.data_platform.sql import (
     quote_string_literal,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def test_quote_identifier_escapes_double_quotes() -> None:
     """식별자 내부 double quote를 DuckDB 규칙으로 escape한다."""

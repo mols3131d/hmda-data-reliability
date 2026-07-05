@@ -19,6 +19,8 @@ from project_pivot.pipeline import (
     RawLoadResult,
 )
 
+pytestmark = pytest.mark.component
+
 api_app = importlib.import_module("project_pivot.api.app")
 
 

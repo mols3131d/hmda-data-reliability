@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from project_pivot.reliability import (
     ImpactAnalysisRequest,
     Incident,
@@ -12,6 +14,8 @@ from project_pivot.reliability import (
     IncidentStatus,
     analyze_dbt_impact,
 )
+
+pytestmark = pytest.mark.component
 
 
 def test_impact_analysis_finds_downstream_from_source(tmp_path: Path) -> None:

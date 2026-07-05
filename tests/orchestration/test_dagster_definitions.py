@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 from dagster import AssetKey, materialize
 from pytest import MonkeyPatch
 
@@ -19,6 +20,8 @@ from project_pivot.pipeline import (
     MvpPipelineRunRequest,
     RawLoadResult,
 )
+
+pytestmark = pytest.mark.integration
 
 
 def test_dagster_definitions_expose_medallion_assets_and_job() -> None:

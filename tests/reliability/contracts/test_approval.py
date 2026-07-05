@@ -11,6 +11,8 @@ from project_pivot.reliability.contracts import (
     can_execute_risky_action,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def test_approved_approval_requires_approver_and_time() -> None:
     """승인된 Approval이 승인자와 승인 시각을 요구하는지 검증한다."""

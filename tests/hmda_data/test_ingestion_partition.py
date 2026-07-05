@@ -4,8 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import load_hmda_loans_partition
+
+pytestmark = pytest.mark.component
 
 
 def test_load_hmda_loans_partition_filters_by_source_year(

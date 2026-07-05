@@ -9,6 +9,8 @@ from project_pivot.reliability.contracts import (
     IncidentStatus,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def test_incident_requires_evidence_ref() -> None:
     """Incident가 최소 1개 evidence 참조를 요구하는지 검증한다."""

@@ -7,6 +7,8 @@ from pydantic import ValidationError
 
 from project_pivot.reliability.contracts import ProfileSnapshot
 
+pytestmark = pytest.mark.unit
+
 
 def test_profile_snapshot_rejects_invalid_null_rate() -> None:
     """ProfileSnapshot이 허용 범위를 벗어난 null rate를 거부하는지 검증한다."""

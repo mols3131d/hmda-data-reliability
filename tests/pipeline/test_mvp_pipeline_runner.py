@@ -5,7 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from project_pivot.pipeline import MvpPipelineRunRequest, run_mvp_pipeline
+
+pytestmark = pytest.mark.integration
 
 
 def test_run_mvp_pipeline_without_dbt_build_creates_lifecycle_report(

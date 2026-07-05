@@ -5,12 +5,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from project_pivot.reliability import (
     EvaluationCaseResult,
     build_evaluation_report,
     render_evaluation_report_markdown,
     write_evaluation_report,
 )
+
+pytestmark = pytest.mark.component
 
 
 def test_evaluation_report_calculates_case_success_rates() -> None:

@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+
+pytestmark = pytest.mark.component
 
 
 def test_duckdb_connection_manager_removes_database_file(tmp_path: Path) -> None:

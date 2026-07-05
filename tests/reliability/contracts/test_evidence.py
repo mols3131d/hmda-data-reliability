@@ -2,7 +2,11 @@
 
 from datetime import UTC, datetime
 
+import pytest
+
 from project_pivot.reliability.contracts import Evidence, EvidenceSource
+
+pytestmark = pytest.mark.unit
 
 
 def test_evidence_contract_accepts_structured_payload() -> None:

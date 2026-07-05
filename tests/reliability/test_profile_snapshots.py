@@ -6,6 +6,7 @@ import json
 from datetime import UTC, date, datetime
 
 import duckdb
+import pytest
 
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.reliability import (
@@ -13,6 +14,8 @@ from project_pivot.reliability import (
     calculate_schema_hash,
     create_profile_snapshot,
 )
+
+pytestmark = pytest.mark.component
 
 
 def test_create_profile_snapshot_for_partition() -> None:
