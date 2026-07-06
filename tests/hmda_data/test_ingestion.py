@@ -7,7 +7,11 @@ from pathlib import Path
 import pytest
 
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans
+from project_pivot.hmda_data import (
+    discover_hmda_files,
+    load_hmda_loans,
+    load_hmda_loans_partition,
+)
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDADataValidationError
 
 pytestmark = pytest.mark.component
@@ -61,6 +65,30 @@ def test_load_hmda_loans_loads_csv_and_parquet_idempotently(
         ).fetchone()
 
     assert stats == (3, 2, 2024, 2025, 3)
+
+
+def test_load_hmda_loans_partition_after_full_load(
+    hmda_csv_path: Path,
+    hmda_parquet_path: Path,
+) -> None:
+    """전체 적재 후 파티션 적재가 같은 raw 스키마를 공유하는지 검증한다."""
+
+    with DuckDBConnectionManager() as connection:
+        assert load_hmda_loans(connection, [hmda_parquet_path]) == 1
+        assert load_hmda_loans_partition(connection, [hmda_csv_path], 2025) == 2
+
+        stats = connection.execute(
+            """
+            SELECT
+                count(*),
+                count(DISTINCT source_file_name),
+                min(source_year),
+                max(source_year)
+            FROM raw.hmda_loans
+            """
+        ).fetchone()
+
+    assert stats == (3, 2, 2024, 2025)
 
 
 def test_load_hmda_loans_wraps_duckdb_errors(tmp_path: Path) -> None:

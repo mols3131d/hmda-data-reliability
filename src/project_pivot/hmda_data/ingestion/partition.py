@@ -16,6 +16,12 @@ from project_pivot.hmda_data.ingestion.common import (
     LOGGER,
     validate_required_columns,
 )
+from project_pivot.hmda_data.ingestion.source_query import (
+    normalize_source_paths,
+    source_union_sql,
+)
+
+STAGING_TABLE = "__hmda_loans_partition_stage"
 
 
 def load_hmda_loans_partition(
@@ -28,9 +34,9 @@ def load_hmda_loans_partition(
 ) -> int:
     """HMDA source_year/source_file 파티션을 멱등 적재한다."""
 
-    paths = _normalize_source_paths(source_paths)
+    paths = normalize_source_paths(source_paths)
     try:
-        _ensure_hmda_loans_table(connection, paths, table_name)
+        ensure_hmda_loans_table(connection, paths, table_name)
     except duckdb.Error as exc:
         context = {
             "table_name": table_name,
@@ -40,14 +46,14 @@ def load_hmda_loans_partition(
         msg = "HMDA 파티션 테이블 초기화에 실패했습니다."
         raise HMDADataLoadError(msg, context=context) from exc
 
-    _overwrite_hmda_loans_partition(
+    overwrite_hmda_loans_partition(
         connection=connection,
         source_paths=paths,
         source_year=source_year,
         source_file=source_file,
         table_name=table_name,
     )
-    row_count = _partition_row_count(
+    row_count = partition_row_count(
         connection,
         table_name=table_name,
         source_year=source_year,
@@ -65,31 +71,16 @@ def load_hmda_loans_partition(
     return row_count
 
 
-def _normalize_source_paths(source_paths: Sequence[str | Path]) -> list[Path]:
-    if not source_paths:
-        msg = "적재할 HMDA CSV 또는 Parquet 파일이 없습니다."
-        raise HMDADataLoadError(msg)
-
-    paths = [Path(path) for path in source_paths]
-    unsupported_paths = [
-        path.as_posix()
-        for path in paths
-        if path.suffix.lower() not in {".csv", ".parquet"}
-    ]
-    if unsupported_paths:
-        msg = "지원하지 않는 HMDA 원천 파일 형식입니다."
-        raise HMDADataLoadError(msg, context={"unsupported_paths": unsupported_paths})
-    return paths
-
-
-def _ensure_hmda_loans_table(
+def ensure_hmda_loans_table(
     connection: duckdb.DuckDBPyConnection,
     source_paths: Sequence[Path],
     table_name: str,
 ) -> None:
+    """파티션 적재 대상 테이블을 빈 raw 스키마로 보장한다."""
+
     ensure_schema(connection)
     qualified_table = qualify_table_name(table_name)
-    query = _source_union_sql(source_paths)
+    query = source_union_sql(source_paths)
     connection.execute(
         f"""
         CREATE TABLE IF NOT EXISTS {qualified_table} AS
@@ -101,7 +92,7 @@ def _ensure_hmda_loans_table(
     )
 
 
-def _overwrite_hmda_loans_partition(
+def overwrite_hmda_loans_partition(
     *,
     connection: duckdb.DuckDBPyConnection,
     source_paths: Sequence[Path],
@@ -109,150 +100,145 @@ def _overwrite_hmda_loans_partition(
     source_file: str | None,
     table_name: str,
 ) -> None:
-    qualified_table = qualify_table_name(table_name)
-    staging_table = "__hmda_loans_partition_stage"
-    source_filter = _source_filter_sql(source_file)
-    delete_filter = _delete_filter_sql(source_file)
+    """source_year/source_file 파티션을 staging 테이블 기준으로 덮어쓴다."""
+
     transaction_started = False
     try:
-        connection.execute(
-            f"""
-            CREATE OR REPLACE TEMP TABLE {quote_identifier(staging_table)} AS
-            SELECT *
-            FROM ({_source_union_sql(source_paths)})
-            WHERE source_year = ?
-            {source_filter}
-            """,
-            [
-                *map(Path.as_posix, source_paths),
-                source_year,
-                *filter(None, [source_file]),
-            ],
+        _create_staging_table(
+            connection=connection,
+            source_paths=source_paths,
+            source_year=source_year,
+            source_file=source_file,
         )
-        validate_required_columns(connection, staging_table)
-        source_row_count = table_row_count(connection, staging_table)
-        if source_row_count == 0:
-            context = {
-                "table_name": table_name,
-                "source_year": source_year,
-                "source_file": source_file,
-            }
-            msg = "HMDA 소스 파티션에 적재할 행이 없습니다."
-            raise HMDADataLoadError(msg, context=context)
-
+        _validate_staging_rows(
+            connection=connection,
+            table_name=table_name,
+            source_year=source_year,
+            source_file=source_file,
+        )
         connection.execute("BEGIN TRANSACTION")
         transaction_started = True
-        connection.execute(
-            f"""
-            DELETE FROM {qualified_table}
-            WHERE source_year = ?
-            {delete_filter}
-            """,
-            [source_year, *filter(None, [source_file])],
-        )
-        connection.execute(
-            f"""
-            INSERT INTO {qualified_table}
-            SELECT *
-            FROM {quote_identifier(staging_table)}
-            """,
+        _replace_partition_rows(
+            connection=connection,
+            table_name=table_name,
+            source_year=source_year,
+            source_file=source_file,
         )
         connection.execute("COMMIT")
+        transaction_started = False
     except duckdb.Error as exc:
         if transaction_started:
             connection.execute("ROLLBACK")
-        context = {
-            "table_name": table_name,
-            "source_year": source_year,
-            "source_file": source_file,
-        }
+        context = _partition_context(table_name, source_year, source_file)
         msg = "HMDA 파티션 적재에 실패했습니다."
         raise HMDADataLoadError(msg, context=context) from exc
     finally:
         with suppress(duckdb.Error):
             connection.execute(
-                f"DROP TABLE IF EXISTS {quote_identifier(staging_table)}"
+                f"DROP TABLE IF EXISTS {quote_identifier(STAGING_TABLE)}"
             )
 
 
-def _partition_row_count(
+def partition_row_count(
     connection: duckdb.DuckDBPyConnection,
     *,
     table_name: str,
     source_year: int,
     source_file: str | None,
 ) -> int:
+    """적재된 source_year/source_file 파티션 행 수를 반환한다."""
+
     result = connection.execute(
         f"""
         SELECT count(*)
         FROM {qualify_table_name(table_name)}
         WHERE source_year = ?
-        {_delete_filter_sql(source_file)}
+        {_source_file_filter_sql(source_file)}
         """,
         [source_year, *filter(None, [source_file])],
     ).fetchone()
     if result is None:
-        context = {
-            "table_name": table_name,
-            "source_year": source_year,
-            "source_file": source_file,
-        }
+        context = _partition_context(table_name, source_year, source_file)
         msg = "HMDA 파티션 행 수를 조회할 수 없습니다."
         raise HMDADataLoadError(msg, context=context)
     return int(result[0])
 
 
-def _source_union_sql(source_paths: Sequence[Path]) -> str:
-    return "\nUNION ALL BY NAME\n".join(
-        _source_select_sql(path) for path in source_paths
+def _create_staging_table(
+    *,
+    connection: duckdb.DuckDBPyConnection,
+    source_paths: Sequence[Path],
+    source_year: int,
+    source_file: str | None,
+) -> None:
+    connection.execute(
+        f"""
+        CREATE OR REPLACE TEMP TABLE {quote_identifier(STAGING_TABLE)} AS
+        SELECT *
+        FROM ({source_union_sql(source_paths)})
+        WHERE source_year = ?
+        {_source_file_filter_sql(source_file)}
+        """,
+        [
+            *map(Path.as_posix, source_paths),
+            source_year,
+            *filter(None, [source_file]),
+        ],
     )
 
 
-def _source_select_sql(path: Path) -> str:
-    return f"""
-        SELECT
-            * EXCLUDE (filename),
-            filename AS source_file,
-            regexp_extract(filename, '[^/]+$', 0) AS source_file_name,
-            TRY_CAST(
-                regexp_extract(
-                    regexp_extract(filename, '[^/]+$', 0),
-                    '(\\d{{4}})',
-                    1
-                ) AS INTEGER
-            )
-                AS source_year,
-            current_timestamp AS ingested_at
-        FROM {_reader_sql(path)}
-    """
+def _validate_staging_rows(
+    *,
+    connection: duckdb.DuckDBPyConnection,
+    table_name: str,
+    source_year: int,
+    source_file: str | None,
+) -> None:
+    validate_required_columns(connection, STAGING_TABLE)
+    source_row_count = table_row_count(connection, STAGING_TABLE)
+    if source_row_count == 0:
+        context = _partition_context(table_name, source_year, source_file)
+        msg = "HMDA 소스 파티션에 적재할 행이 없습니다."
+        raise HMDADataLoadError(msg, context=context)
 
 
-def _reader_sql(path: Path) -> str:
-    suffix = path.suffix.lower()
-    if suffix == ".csv":
-        return """
-            read_csv_auto(
-                ?,
-                header = true,
-                nullstr = ['NA', ''],
-                sample_size = 200000,
-                ignore_errors = true,
-                filename = true
-            )
-        """
-    if suffix == ".parquet":
-        return "read_parquet(?, filename = true)"
-    msg = f"지원하지 않는 HMDA 원천 파일 형식입니다: {path}"
-    raise HMDADataLoadError(msg, context={"source_path": path.as_posix()})
+def _replace_partition_rows(
+    *,
+    connection: duckdb.DuckDBPyConnection,
+    table_name: str,
+    source_year: int,
+    source_file: str | None,
+) -> None:
+    connection.execute(
+        f"""
+        DELETE FROM {qualify_table_name(table_name)}
+        WHERE source_year = ?
+        {_source_file_filter_sql(source_file)}
+        """,
+        [source_year, *filter(None, [source_file])],
+    )
+    connection.execute(
+        f"""
+        INSERT INTO {qualify_table_name(table_name)}
+        SELECT *
+        FROM {quote_identifier(STAGING_TABLE)}
+        """,
+    )
 
 
-def _source_filter_sql(source_file: str | None) -> str:
+def _source_file_filter_sql(source_file: str | None) -> str:
     if source_file is None:
         return ""
     return "AND source_file_name = ?"
 
 
-def _delete_filter_sql(source_file: str | None) -> str:
-    if source_file is None:
-        return ""
-    return "AND source_file_name = ?"
+def _partition_context(
+    table_name: str,
+    source_year: int,
+    source_file: str | None,
+) -> dict[str, object]:
+    return {
+        "table_name": table_name,
+        "source_year": source_year,
+        "source_file": source_file,
+    }
