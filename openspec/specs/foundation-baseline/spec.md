@@ -22,7 +22,7 @@ scratch 입력 문서를 현재 repo의 foundation 완료 증거, 제외 범위,
 
 ### Requirement: Foundation evidence inventory
 
-시스템은 foundation 완료 증거를 OpenSpec archive, 현재 spec, 테스트 명령으로 추적 가능하게 제공해야 한다(SHALL). foundation 증거에는 reliability contract, taxi data foundation, partition ingestion, dbt analytics foundation이 포함되어야 한다(MUST).
+시스템은 foundation 완료 증거를 OpenSpec archive, 현재 spec, 테스트 명령으로 추적 가능하게 제공해야 한다(SHALL). foundation 증거에는 reliability contract, HMDA data foundation, partition ingestion, dbt analytics foundation이 포함되어야 한다(MUST).
 
 #### Scenario: 완료된 foundation capability 확인
 

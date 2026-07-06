@@ -2,7 +2,7 @@
 
 ## Purpose
 
-DuckDB raw 택시 데이터를 안정적인 dbt staging/mart 모델과 lineage artifact로 변환하는 분석 기반을 정의한다.
+DuckDB raw HMDA 데이터를 안정적인 dbt staging/mart 모델과 lineage artifact로 변환하는 분석 기반을 정의한다.
 
 ## Requirements
 
@@ -15,59 +15,57 @@ DuckDB raw 택시 데이터를 안정적인 dbt staging/mart 모델과 lineage a
 - **WHEN** 사용자가 dbt 프로젝트 디렉터리에서 설정 검증 명령을 실행할 때
 - **THEN** dbt는 DuckDB adapter와 profile 설정을 정상적으로 해석해야 한다.
 
-### Requirement: raw taxi source 선언
+### Requirement: raw HMDA source 선언
 
-시스템은 `raw.yellow_tripdata`와 `raw.taxi_zones`를 dbt source로 선언해야 한다(SHALL). source 선언은 후속 lineage artifact에서 raw 입력과 staging 모델의 의존 관계를 표현해야 한다(MUST).
+시스템은 HMDA raw 테이블을 dbt source로 선언해야 한다(SHALL). source 선언은 후속 lineage artifact에서 raw 입력과 staging 모델의 의존 관계를 표현해야 한다(MUST).
 
 #### Scenario: raw source lineage 연결
 
 - **WHEN** dbt가 프로젝트를 parse 또는 build할 때
-- **THEN** `manifest.json`에는 raw source와 이를 참조하는 staging 모델의 의존 관계가 포함되어야 한다.
+- **THEN** `manifest.json`에는 HMDA raw source와 이를 참조하는 staging 모델의 의존 관계가 포함되어야 한다.
 
-### Requirement: staging 모델 생성
+### Requirement: HMDA staging 모델 생성
 
-시스템은 raw 택시 운행 데이터와 택시 지역 데이터를 분석용 staging 모델로 변환해야 한다(SHALL). staging 모델명은 `stg_yellow_tripdata`, `stg_taxi_zones`로 고정해야 하며(MUST), 후속 mart와 Dagster asset에서 참조할 수 있는 안정된 컬럼명을 제공해야 한다(MUST).
+시스템은 raw HMDA 신청 데이터를 분석용 staging 모델로 변환해야 한다(SHALL). staging 모델명은 `stg_hmda_loans`로 고정해야 하며(MUST), 후속 mart와 Dagster asset에서 참조할 수 있는 안정된 컬럼명을 제공해야 한다(MUST).
 
-#### Scenario: staging 모델 빌드
+#### Scenario: HMDA staging 모델 빌드
 
-- **WHEN** raw 테이블이 준비된 상태에서 `dbt build`를 실행할 때
-- **THEN** 택시 운행 staging 모델과 택시 지역 staging 모델이 DuckDB에 생성되어야 한다.
+- **WHEN** raw HMDA 테이블이 준비된 상태에서 `dbt build`를 실행할 때
+- **THEN** HMDA 대출 신청 staging 모델이 DuckDB에 생성되어야 한다.
 
-#### Scenario: staging 컬럼 계약
+#### Scenario: HMDA staging 컬럼 계약
 
-- **WHEN** `stg_yellow_tripdata`를 조회할 때
-- **THEN** `pickup_at`, `dropoff_at`, `pickup_date`, `pickup_location_id`, `dropoff_location_id`, `passenger_count`, `total_amount`, `source_partition`, `source_file` 컬럼이 존재해야 한다.
-- **AND** `stg_taxi_zones`는 `location_id`, `borough`, `zone`, `service_zone` 컬럼을 제공해야 한다.
+- **WHEN** `stg_hmda_loans`를 조회할 때
+- **THEN** `activity_year`, `state_code`, `county_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income`, `source_file`, `source_year` 컬럼이 존재해야 한다.
 
-### Requirement: mart 모델 생성
+### Requirement: HMDA mart 모델 생성
 
-시스템은 staging 모델을 기반으로 `mart_daily_taxi_trips` 모델을 생성해야 한다(SHALL). mart grain은 `pickup_date`, `pickup_location_id` 단위로 고정해야 하며(MUST), 최소한 운행 건수, 총 요금, 평균 요금, 승객 수 집계 지표를 포함해야 한다(MUST).
+시스템은 staging 모델을 기반으로 `mart_hmda_loan_outcomes` 모델을 생성해야 한다(SHALL). mart grain은 `activity_year`, `state_code`, `loan_purpose` 단위로 고정해야 하며(MUST), 신청 건수, 승인 건수, 거절 건수, 승인율, 평균 대출 금액, 평균 소득 지표를 포함해야 한다(MUST).
 
-#### Scenario: mart 지표 생성
+#### Scenario: HMDA mart 지표 생성
 
 - **WHEN** staging 모델이 준비된 상태에서 mart 모델을 빌드할 때
-- **THEN** `pickup_date`, `pickup_location_id` 단위의 집계 행이 생성되고 핵심 지표 컬럼이 조회 가능해야 한다.
+- **THEN** `activity_year`, `state_code`, `loan_purpose` 단위의 집계 행이 생성되고 핵심 지표 컬럼이 조회 가능해야 한다.
 
-#### Scenario: mart grain 중복 방지
+#### Scenario: HMDA mart grain 중복 방지
 
-- **WHEN** `mart_daily_taxi_trips`를 조회할 때
-- **THEN** `pickup_date`, `pickup_location_id` 조합은 중복되지 않아야 한다.
+- **WHEN** `mart_hmda_loan_outcomes`를 조회할 때
+- **THEN** `activity_year`, `state_code`, `loan_purpose` 조합은 중복되지 않아야 한다.
 
 ### Requirement: dbt 테스트 적용
 
-시스템은 source, staging, mart 모델에 기본 dbt test를 적용해야 한다(SHALL). 테스트는 필수 컬럼 누락, null grain, 참조 관계 깨짐, mart grain 중복을 조기에 드러낼 수 있어야 한다(MUST).
+시스템은 HMDA source, staging, mart 모델에 기본 dbt test를 적용해야 한다(SHALL). 테스트는 필수 컬럼 누락, null grain, mart grain 중복을 조기에 드러낼 수 있어야 한다(MUST).
 
 #### Scenario: dbt build 테스트 실행
 
 - **WHEN** 사용자가 `dbt build`를 실행할 때
 - **THEN** 모델 빌드와 기본 dbt test가 함께 실행되고 결과가 성공 또는 실패 상태로 기록되어야 한다.
 
-#### Scenario: 최소 테스트 계약
+#### Scenario: HMDA 최소 테스트 계약
 
 - **WHEN** dbt test 정의를 확인할 때
-- **THEN** staging의 핵심 날짜/지역 컬럼에는 `not_null` 테스트가 적용되어야 한다.
+- **THEN** staging의 `activity_year`, `state_code`, `loan_purpose`, `action_taken` 컬럼에는 `not_null` 테스트가 적용되어야 한다.
 - **AND** mart grain에는 중복 방지 테스트가 적용되어야 한다.
-- **AND** staging 지역 키는 `stg_taxi_zones.location_id`와의 참조 관계를 검증해야 한다.
 
 ### Requirement: dbt artifact 생성
 
@@ -80,13 +78,13 @@ DuckDB raw 택시 데이터를 안정적인 dbt staging/mart 모델과 lineage a
 
 ### Requirement: Dagster asset 호환 모델 경계
 
-시스템은 후속 Dagster 도입 시 dbt 모델을 asset으로 감쌀 수 있도록 모델명, daily grain, partition 컬럼, artifact 경로를 안정적으로 유지해야 한다(SHALL). 이번 변경은 Dagster schedule, retry, backfill, asset definition을 구현하지 않아야 한다(MUST NOT).
+시스템은 후속 Dagster asset이 dbt 모델을 감쌀 수 있도록 모델명, mart grain, 파티션 컬럼, artifact 경로를 안정적으로 유지해야 한다(SHALL). 이번 변경은 Dagster schedule, retry, backfill, asset definition 신규 자동화를 구현하지 않아야 한다(MUST NOT).
 
 #### Scenario: dbt 모델과 Dagster asset 경계 연결
 
 - **WHEN** 후속 Dagster asset이 dbt 모델을 참조할 때
-- **THEN** `stg_yellow_tripdata`, `stg_taxi_zones`, `mart_daily_taxi_trips`는 dbt node id와 Dagster asset key로 일관되게 매핑 가능해야 한다.
-- **AND** `mart_daily_taxi_trips.pickup_date`는 daily partition key로 사용할 수 있어야 한다.
+- **THEN** `stg_hmda_loans`와 `mart_hmda_loan_outcomes`는 dbt node id와 Dagster asset key로 일관되게 매핑 가능해야 한다.
+- **AND** `mart_hmda_loan_outcomes.activity_year`는 연도 파티션 키로 사용할 수 있어야 한다.
 
 ### Requirement: dbt 변환 멱등성
 
@@ -94,5 +92,5 @@ DuckDB raw 택시 데이터를 안정적인 dbt staging/mart 모델과 lineage a
 
 #### Scenario: dbt build 재실행
 
-- **WHEN** 동일 DuckDB raw 데이터에 대해 `dbt build`를 2회 연속 실행할 때
-- **THEN** `mart_daily_taxi_trips`의 행 수와 `pickup_date`, `pickup_location_id` grain은 1회 실행 결과와 동일해야 한다.
+- **WHEN** 동일 DuckDB raw HMDA 데이터에 대해 `dbt build`를 2회 연속 실행할 때
+- **THEN** `mart_hmda_loan_outcomes`의 행 수와 `activity_year`, `state_code`, `loan_purpose` grain은 1회 실행 결과와 동일해야 한다.

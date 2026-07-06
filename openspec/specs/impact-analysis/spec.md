@@ -10,10 +10,10 @@ dbt lineage artifact로 downstream 영향을 계산하고 incident에 affected a
 
 시스템은 dbt `manifest.json`의 dependency graph를 읽어 특정 upstream asset의 downstream nodes를 계산해야 한다(SHALL).
 
-#### Scenario: source에서 mart까지 downstream 계산
+#### Scenario: HMDA source에서 mart까지 downstream 계산
 
-- **WHEN** upstream asset이 `source.project_pivot.raw.yellow_tripdata`일 때
-- **THEN** downstream asset 목록에는 해당 source를 참조하는 staging/mart nodes가 포함되어야 한다.
+- **WHEN** upstream asset이 `source.project_pivot.raw.hmda_loans`일 때
+- **THEN** downstream asset 목록에는 해당 source를 참조하는 `stg_hmda_loans`, `mart_hmda_loan_outcomes` nodes가 포함되어야 한다.
 
 ### Requirement: LineageEvidence generation
 
