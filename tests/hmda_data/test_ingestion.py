@@ -37,7 +37,10 @@ def test_discover_hmda_files_filters_supported_files(tmp_path: Path) -> None:
 def test_discover_hmda_files_rejects_missing_directory(tmp_path: Path) -> None:
     """없는 원천 디렉터리는 명확한 적재 예외로 실패한다."""
 
-    with pytest.raises(HMDADataLoadError, match="원천 디렉터리"):
+    with pytest.raises(
+        HMDADataLoadError,
+        match="원천 디렉터리",
+    ):
         discover_hmda_files(tmp_path / "missing")
 
 
@@ -98,7 +101,10 @@ def test_load_hmda_loans_wraps_duckdb_errors(tmp_path: Path) -> None:
 
     with (
         DuckDBConnectionManager() as connection,
-        pytest.raises(HMDADataLoadError, match="HMDA 원천 데이터 적재"),
+        pytest.raises(
+            HMDADataLoadError,
+            match="HMDA 원천 데이터 적재",
+        ),
     ):
         load_hmda_loans(connection, [missing_csv_path])
 
@@ -119,6 +125,9 @@ def test_load_hmda_loans_validates_required_columns(tmp_path: Path) -> None:
 
     with (
         DuckDBConnectionManager() as connection,
-        pytest.raises(HMDADataValidationError, match="필수 컬럼"),
+        pytest.raises(
+            HMDADataValidationError,
+            match="필수 컬럼",
+        ),
     ):
         load_hmda_loans(connection, [path])
