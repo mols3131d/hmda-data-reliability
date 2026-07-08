@@ -27,7 +27,7 @@ def row_count_drop(
 ) -> Path:
     """연도 분포를 보존하며 행 수를 대폭 줄인 파일을 생성한다."""
 
-    validate_fraction(sample_fraction, "sample_fraction")
+    _validate_fraction(sample_fraction, "sample_fraction")
     query = _ranked_sample_query(source_paths)
     query = f"""
         WITH ranked AS ({query})
@@ -58,8 +58,8 @@ def null_spike(
 ) -> Path:
     """핵심 분석 컬럼의 Null 비율이 급증한 파일을 생성한다."""
 
-    validate_fraction(null_fraction, "null_fraction")
-    validate_fraction(sample_fraction, "sample_fraction")
+    _validate_fraction(null_fraction, "null_fraction")
+    _validate_fraction(sample_fraction, "sample_fraction")
     require_columns(connection, source_paths, {target_column})
     target = quote_identifier(target_column)
     query = _ranked_sample_query(source_paths)
@@ -123,7 +123,7 @@ def schema_drift(
 ) -> Path:
     """핵심 컬럼 타입이 달라진 스키마 드리프트 파일을 생성한다."""
 
-    validate_fraction(sample_fraction, "sample_fraction")
+    _validate_fraction(sample_fraction, "sample_fraction")
     require_columns(connection, source_paths, {target_column})
     target = quote_identifier(target_column)
     query = _ranked_sample_query(source_paths)
@@ -158,7 +158,7 @@ def freshness_delay(
 ) -> Path:
     """observed_at을 오래된 시각으로 밀어 지연 파일을 생성한다."""
 
-    validate_fraction(sample_fraction, "sample_fraction")
+    _validate_fraction(sample_fraction, "sample_fraction")
     observed_at_value = observed_at or datetime.now(UTC) - timedelta(days=delay_days)
     query = _ranked_sample_query(source_paths)
     query = f"""
@@ -185,7 +185,7 @@ def freshness_delay(
     )
 
 
-def validate_fraction(value: float, name: str) -> None:
+def _validate_fraction(value: float, name: str) -> None:
     """비율 인자가 0보다 크고 1 이하인지 검증한다."""
 
     if not 0 < value <= 1:
