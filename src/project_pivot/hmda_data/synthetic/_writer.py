@@ -11,7 +11,7 @@ from project_pivot.data_platform.sql import quote_string_literal
 from project_pivot.hmda_data.errors import SyntheticCaseError
 from project_pivot.logger import get_logger
 
-LOGGER = get_logger(__name__)
+_LOGGER = get_logger(__name__)
 
 
 def write_case_file(
@@ -41,7 +41,7 @@ def write_case_file(
             f"case={case_name}, output_root={output_root}"
         )
         raise SyntheticCaseError(msg, context={"case_name": case_name}) from exc
-    LOGGER.debug(
+    _LOGGER.debug(
         "HMDA 합성 결함 파일 생성 완료",
         extra={"case_name": case_name, "target_path": str(target_path)},
     )

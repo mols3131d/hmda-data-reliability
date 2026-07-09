@@ -31,11 +31,11 @@ def source_union_sql(source_paths: Sequence[Path]) -> str:
     """여러 원천 파일을 이름 기준 UNION하는 SQL을 만든다."""
 
     return "\nUNION ALL BY NAME\n".join(
-        source_select_sql(path) for path in source_paths
+        _source_select_sql(path) for path in source_paths
     )
 
 
-def source_select_sql(path: Path) -> str:
+def _source_select_sql(path: Path) -> str:
     """원천 파일에서 raw.hmda_loans 스키마로 읽는 SELECT SQL을 만든다."""
 
     return f"""

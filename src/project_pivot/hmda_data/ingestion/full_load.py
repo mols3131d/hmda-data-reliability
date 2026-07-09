@@ -10,12 +10,12 @@ import duckdb
 from project_pivot.data_platform.duckdb import ensure_schema, table_row_count
 from project_pivot.data_platform.sql import qualify_table_name
 from project_pivot.hmda_data.errors import HMDADataLoadError
-from project_pivot.hmda_data.ingestion.common import (
+from project_pivot.hmda_data.ingestion._common import (
+    _LOGGER,
     HMDA_LOANS_TABLE,
-    LOGGER,
     validate_required_columns,
 )
-from project_pivot.hmda_data.ingestion.source_query import (
+from project_pivot.hmda_data.ingestion._source_query import (
     normalize_source_paths,
     source_union_sql,
 )
@@ -34,7 +34,7 @@ def load_hmda_loans(
         _create_hmda_loans_table(connection, paths, table_name=table_name)
         validate_required_columns(connection, table_name)
         row_count = table_row_count(connection, table_name)
-        LOGGER.debug(
+        _LOGGER.debug(
             "HMDA 원천 적재 완료",
             extra={
                 "table_name": table_name,
@@ -50,7 +50,7 @@ def load_hmda_loans(
             "table_name": table_name,
             "source_paths": [str(path) for path in paths],
         }
-        LOGGER.exception("HMDA 원천 적재 실패", extra=context)
+        _LOGGER.exception("HMDA 원천 적재 실패", extra=context)
         msg = f"HMDA 원천 데이터 적재에 실패했습니다: table={table_name}"
         raise HMDADataLoadError(msg, context=context) from exc
 

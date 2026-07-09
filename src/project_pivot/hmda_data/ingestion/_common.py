@@ -22,7 +22,7 @@ REQUIRED_HMDA_COLUMNS = frozenset(
         "county_code",
     }
 )
-LOGGER = get_logger("project_pivot.hmda_data.ingestion")
+_LOGGER = get_logger("project_pivot.hmda_data.ingestion")
 
 
 def validate_required_columns(
@@ -41,6 +41,6 @@ def validate_required_columns(
             "missing_columns": missing_columns,
             "actual_column_count": len(actual_columns),
         }
-        LOGGER.error("HMDA 핵심 컬럼 누락", extra=context)
+        _LOGGER.error("HMDA 핵심 컬럼 누락", extra=context)
         msg = "HMDA 원천 데이터에 필수 컬럼이 없습니다."
         raise HMDADataValidationError(msg, context=context)

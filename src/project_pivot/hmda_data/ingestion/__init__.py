@@ -1,6 +1,6 @@
 """HMDA 원천 데이터 적재 API."""
 
-from project_pivot.hmda_data.ingestion.common import (
+from project_pivot.hmda_data.ingestion._common import (
     HMDA_LOANS_TABLE,
     REQUIRED_HMDA_COLUMNS,
     validate_required_columns,

@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from project_pivot.hmda_data.errors import HMDADataLoadError
-from project_pivot.hmda_data.ingestion.common import LOGGER
+from project_pivot.hmda_data.ingestion._common import _LOGGER
 
-SUPPORTED_HMDA_EXTENSIONS = frozenset({".csv", ".parquet"})
+_SUPPORTED_HMDA_EXTENSIONS = frozenset({".csv", ".parquet"})
 
 
 def discover_hmda_files(raw_dir: str | Path) -> list[Path]:
@@ -24,13 +24,13 @@ def discover_hmda_files(raw_dir: str | Path) -> list[Path]:
     for path in sorted(directory.iterdir()):
         if not path.is_file():
             continue
-        if path.suffix.lower() in SUPPORTED_HMDA_EXTENSIONS:
+        if path.suffix.lower() in _SUPPORTED_HMDA_EXTENSIONS:
             supported_paths.append(path)
         else:
             ignored_paths.append(path.name)
 
     if ignored_paths:
-        LOGGER.info(
+        _LOGGER.info(
             "지원하지 않는 HMDA 원천 파일 제외",
             extra={"raw_dir": str(raw_dir), "ignored_files": ignored_paths},
         )
@@ -38,7 +38,7 @@ def discover_hmda_files(raw_dir: str | Path) -> list[Path]:
         msg = f"HMDA CSV 또는 Parquet 파일을 찾을 수 없습니다: {raw_dir}"
         raise HMDADataLoadError(msg, context={"raw_dir": str(raw_dir)})
 
-    LOGGER.debug(
+    _LOGGER.debug(
         "HMDA 원천 파일 발견",
         extra={"raw_dir": str(raw_dir), "file_count": len(supported_paths)},
     )
