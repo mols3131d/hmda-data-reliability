@@ -24,7 +24,7 @@ def write_case_file(
 ) -> Path:
     """합성 결함 케이스를 단일 Parquet 파일로 쓴다."""
 
-    case_dir = prepare_case_dir(output_root, case_name)
+    case_dir = _prepare_case_dir(output_root, case_name)
     target_path = case_dir / f"{case_name}.parquet"
     try:
         connection.execute(
@@ -48,7 +48,7 @@ def write_case_file(
     return target_path
 
 
-def prepare_case_dir(output_root: str | Path, case_name: str) -> Path:
+def _prepare_case_dir(output_root: str | Path, case_name: str) -> Path:
     """케이스 출력 디렉터리를 비우고 다시 생성한다."""
 
     case_dir = Path(output_root) / case_name
