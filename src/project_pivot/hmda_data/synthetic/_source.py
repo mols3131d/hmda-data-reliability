@@ -14,8 +14,7 @@ def source_paths_parameter(source_paths: Sequence[str | Path]) -> list[str]:
     """합성 케이스 원천 파일 경로를 DuckDB 파라미터로 정규화한다."""
 
     if not source_paths:
-        msg = "HMDA 합성 데이터 원천 파일이 없습니다."
-        raise SyntheticCaseError(msg)
+        raise SyntheticCaseError("HMDA 합성 데이터 원천 파일이 없습니다.")
     paths = [Path(path) for path in source_paths]
     unsupported_paths = [
         path.as_posix()
@@ -23,8 +22,10 @@ def source_paths_parameter(source_paths: Sequence[str | Path]) -> list[str]:
         if path.suffix.lower() not in {".csv", ".parquet"}
     ]
     if unsupported_paths:
-        msg = "지원하지 않는 HMDA 합성 원천 파일 형식입니다."
-        raise SyntheticCaseError(msg, context={"unsupported_paths": unsupported_paths})
+        raise SyntheticCaseError(
+            "지원하지 않는 HMDA 합성 원천 파일 형식입니다.",
+            context={"unsupported_paths": unsupported_paths},
+        )
     return [path.as_posix() for path in paths]
 
 
@@ -35,14 +36,14 @@ def require_columns(
 ) -> None:
     """원천 파일에 필요한 컬럼이 모두 있는지 검증한다."""
 
-    existing_columns = source_columns(connection, source_paths)
+    existing_columns = _source_columns(connection, source_paths)
     missing_columns = sorted(required_columns.difference(existing_columns))
     if missing_columns:
         msg = f"HMDA 원천 파일에 필요한 컬럼이 없습니다: {missing_columns}"
         raise SyntheticCaseError(msg, context={"missing_columns": missing_columns})
 
 
-def source_columns(
+def _source_columns(
     connection: duckdb.DuckDBPyConnection,
     source_paths: Sequence[str | Path],
 ) -> set[str]:
