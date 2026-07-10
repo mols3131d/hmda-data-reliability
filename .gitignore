@@ -6,6 +6,7 @@ data/**
 dbt/.user.yml
 pytest_report.html
 *.tmp*
+.codex
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
