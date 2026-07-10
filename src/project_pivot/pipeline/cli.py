@@ -8,15 +8,15 @@ from pathlib import Path
 
 from project_pivot.hmda_data.errors import HMDADataLoadError
 from project_pivot.logger import configure_logging, get_logger
-from project_pivot.pipeline.errors import PipelineRuntimeError
-from project_pivot.pipeline.request import MvpPipelineRunRequest
-from project_pivot.pipeline.runner import run_mvp_pipeline
+from project_pivot.pipeline._errors import PipelineRuntimeError
+from project_pivot.pipeline._request import MvpPipelineRunRequest
+from project_pivot.pipeline._runner import run_mvp_pipeline
 from project_pivot.reliability.errors import ReliabilityError
 
-logger = get_logger(__name__)
+_LOGGER = get_logger(__name__)
 
 
-def build_parser() -> argparse.ArgumentParser:
+def _build_parser() -> argparse.ArgumentParser:
     """MVP pipeline CLI 파서를 생성한다."""
 
     parser = argparse.ArgumentParser(prog="project-pivot-pipeline")
@@ -66,7 +66,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     """명령행 인자를 파싱하고 MVP pipeline을 실행한다."""
 
     configure_logging()
-    parser = build_parser()
+    parser = _build_parser()
     args = parser.parse_args(argv)
     if args.command == "run":
         return _run_pipeline(args)
@@ -87,12 +87,12 @@ def _run_pipeline(args: argparse.Namespace) -> int:
     try:
         result = run_mvp_pipeline(request)
     except (PipelineRuntimeError, ReliabilityError, HMDADataLoadError) as exc:
-        logger.error("MVP pipeline 실행 실패", extra={"error": str(exc)})
+        _LOGGER.error("MVP pipeline 실행 실패", extra={"error": str(exc)})
         return 1
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(result.model_dump_json(indent=2), encoding="utf-8")
-    logger.info("MVP pipeline 결과 저장 완료", extra={"output_path": str(args.output)})
+    _LOGGER.info("MVP pipeline 결과 저장 완료", extra={"output_path": str(args.output)})
     return 0
 
 if __name__ == "__main__":

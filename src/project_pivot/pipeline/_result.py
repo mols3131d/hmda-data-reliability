@@ -2,9 +2,9 @@
 
 from pydantic import BaseModel, ConfigDict
 
-from project_pivot.pipeline.dbt_result import DbtBuildResult
-from project_pivot.pipeline.lifecycle_result import MvpLifecycleResult
-from project_pivot.pipeline.raw_result import RawLoadResult
+from project_pivot.pipeline._dbt_result import DbtBuildResult
+from project_pivot.pipeline._lifecycle_result import MvpLifecycleResult
+from project_pivot.pipeline._raw_result import RawLoadResult
 
 
 class MvpPipelineRunResult(BaseModel):
