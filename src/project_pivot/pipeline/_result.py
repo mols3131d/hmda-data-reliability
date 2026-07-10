@@ -1,18 +1,18 @@
-"""MVP pipeline run result model."""
+"""Pipeline pipeline run result model."""
 
 from pydantic import BaseModel, ConfigDict
 
 from project_pivot.pipeline._dbt_result import DbtBuildResult
-from project_pivot.pipeline._lifecycle_result import MvpLifecycleResult
+from project_pivot.pipeline._lifecycle_result import LifecycleResult
 from project_pivot.pipeline._raw_result import RawLoadResult
 
 
-class MvpPipelineRunResult(BaseModel):
-    """MVP pipeline 전체 실행 결과."""
+class PipelineRunResult(BaseModel):
+    """Pipeline pipeline 전체 실행 결과."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     status: str
     raw_load: RawLoadResult
     dbt_build: DbtBuildResult | None
-    lifecycle: MvpLifecycleResult
+    lifecycle: LifecycleResult

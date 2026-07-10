@@ -4,18 +4,18 @@ from dagster import Definitions, define_asset_job
 
 from project_pivot.orchestration.defs.assets import (
     dbt_loan_analytics,
-    mvp_incident_lifecycle,
+    incident_lifecycle,
     raw_hmda_loans,
 )
-from project_pivot.orchestration.defs.resource import MvpPipelineDagsterResource
+from project_pivot.orchestration.defs.resource import PipelineDagsterResource
 
-mvp_pipeline_job = define_asset_job(
-    "mvp_pipeline_job",
-    selection=[raw_hmda_loans, dbt_loan_analytics, mvp_incident_lifecycle],
+pipeline_job = define_asset_job(
+    "pipeline_job",
+    selection=[raw_hmda_loans, dbt_loan_analytics, incident_lifecycle],
 )
 
 defs = Definitions(
-    assets=[raw_hmda_loans, dbt_loan_analytics, mvp_incident_lifecycle],
-    jobs=[mvp_pipeline_job],
-    resources={"pipeline": MvpPipelineDagsterResource()},
+    assets=[raw_hmda_loans, dbt_loan_analytics, incident_lifecycle],
+    jobs=[pipeline_job],
+    resources={"pipeline": PipelineDagsterResource()},
 )

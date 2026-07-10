@@ -1,11 +1,11 @@
-"""MVP incident lifecycle result model."""
+"""Pipeline incident lifecycle result model."""
 
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class MvpLifecycleResult(BaseModel):
+class LifecycleResult(BaseModel):
     """evidence부터 evaluation까지의 incident lifecycle 요약."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)

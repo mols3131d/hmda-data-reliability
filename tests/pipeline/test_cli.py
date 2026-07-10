@@ -1,4 +1,4 @@
-"""MVP pipeline CLI 테스트."""
+"""Pipeline pipeline CLI 테스트."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 from project_pivot.pipeline import (
-    MvpLifecycleResult,
-    MvpPipelineRunResult,
+    LifecycleResult,
+    PipelineRunResult,
     RawLoadResult,
 )
 from project_pivot.pipeline import cli as pipeline_cli
@@ -25,8 +25,8 @@ def test_pipeline_cli_run_writes_result_json(
     output_path = tmp_path / "result.json"
     report_path = tmp_path / "report.md"
 
-    def fake_run_pipeline(_request: object) -> MvpPipelineRunResult:
-        return MvpPipelineRunResult(
+    def fake_run_pipeline(_request: object) -> PipelineRunResult:
+        return PipelineRunResult(
             status="completed",
             raw_load=RawLoadResult(
                 database_path=Path("data/project_pivot.duckdb"),
@@ -36,7 +36,7 @@ def test_pipeline_cli_run_writes_result_json(
                 hmda_loans_row_count=4,
             ),
             dbt_build=None,
-            lifecycle=MvpLifecycleResult(
+            lifecycle=LifecycleResult(
                 metadata_row_count=4,
                 baseline_row_count=4,
                 current_row_count=1,
@@ -52,7 +52,7 @@ def test_pipeline_cli_run_writes_result_json(
             ),
         )
 
-    monkeypatch.setattr(pipeline_cli, "run_mvp_pipeline", fake_run_pipeline)
+    monkeypatch.setattr(pipeline_cli, "run_pipeline", fake_run_pipeline)
 
     exit_code = pipeline_cli.main(
         [

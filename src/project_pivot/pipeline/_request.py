@@ -1,4 +1,4 @@
-"""MVP pipeline 실행 요청 모델."""
+"""Pipeline pipeline 실행 요청 모델."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-class MvpPipelineRunRequest(BaseModel):
-    """로컬 MVP pipeline 실행 입력."""
+class PipelineRunRequest(BaseModel):
+    """로컬 Pipeline pipeline 실행 입력."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

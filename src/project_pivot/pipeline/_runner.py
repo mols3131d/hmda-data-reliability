@@ -1,4 +1,4 @@
-"""MVP pipeline runner."""
+"""Pipeline pipeline runner."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans_partition
 from project_pivot.pipeline._dbt_result import DbtBuildResult
 from project_pivot.pipeline._errors import PipelineRuntimeError
-from project_pivot.pipeline._lifecycle_result import MvpLifecycleResult
+from project_pivot.pipeline._lifecycle_result import LifecycleResult
 from project_pivot.pipeline._raw_result import RawLoadResult
-from project_pivot.pipeline._request import MvpPipelineRunRequest
-from project_pivot.pipeline._result import MvpPipelineRunResult
+from project_pivot.pipeline._request import PipelineRunRequest
+from project_pivot.pipeline._result import PipelineRunResult
 from project_pivot.reliability import (
     Approval,
     ApprovalStatus,
@@ -38,13 +38,13 @@ from project_pivot.reliability.detection import DetectionResult
 from project_pivot.reliability.impact import ImpactAnalysisResult
 
 
-def run_mvp_pipeline(request: MvpPipelineRunRequest) -> MvpPipelineRunResult:
-    """raw load부터 evaluation report까지 MVP pipeline을 실행한다."""
+def run_pipeline(request: PipelineRunRequest) -> PipelineRunResult:
+    """raw load부터 evaluation report까지 Pipeline pipeline을 실행한다."""
 
     raw_load = load_raw_data(request)
     dbt_build = run_dbt_build(request) if request.run_dbt_build else None
     lifecycle = run_incident_lifecycle(request)
-    return MvpPipelineRunResult(
+    return PipelineRunResult(
         status="completed",
         raw_load=raw_load,
         dbt_build=dbt_build,
@@ -52,7 +52,7 @@ def run_mvp_pipeline(request: MvpPipelineRunRequest) -> MvpPipelineRunResult:
     )
 
 
-def load_raw_data(request: MvpPipelineRunRequest) -> RawLoadResult:
+def load_raw_data(request: PipelineRunRequest) -> RawLoadResult:
     """원천 파일을 DuckDB raw table로 멱등 적재한다."""
 
     hmda_paths = discover_hmda_files(request.source_root)
@@ -74,7 +74,7 @@ def load_raw_data(request: MvpPipelineRunRequest) -> RawLoadResult:
     )
 
 
-def run_dbt_build(request: MvpPipelineRunRequest) -> DbtBuildResult:
+def run_dbt_build(request: PipelineRunRequest) -> DbtBuildResult:
     """dbt build를 실행하고 artifact 경로를 반환한다."""
 
     command = [
@@ -111,7 +111,7 @@ def run_dbt_build(request: MvpPipelineRunRequest) -> DbtBuildResult:
     )
 
 
-def run_incident_lifecycle(request: MvpPipelineRunRequest) -> MvpLifecycleResult:
+def run_incident_lifecycle(request: PipelineRunRequest) -> LifecycleResult:
     """evidence, detection, impact, remediation, recovery, evaluation을 실행한다."""
 
     observed_at = request.observed_at or datetime.now(UTC)
@@ -143,7 +143,7 @@ def run_incident_lifecycle(request: MvpPipelineRunRequest) -> MvpLifecycleResult
         )
         current = baseline.model_copy(
             update={
-                "snapshot_id": "profile_mvp_pipeline_current",
+                "snapshot_id": "profile_pipeline_current",
                 "row_count": current_row_count,
                 "metric_values": {"row_count": float(current_row_count)},
             }
@@ -176,12 +176,12 @@ def run_incident_lifecycle(request: MvpPipelineRunRequest) -> MvpLifecycleResult
                 approval_id=f"approval_{primary_detection.incident.incident_id}",
                 incident_id=primary_detection.incident.incident_id,
                 status=ApprovalStatus.APPROVED,
-                requested_by="mvp_pipeline",
+                requested_by="pipeline",
                 requested_at=observed_at,
-                approved_by="mvp_pipeline",
+                approved_by="pipeline",
                 approved_at=observed_at,
                 requested_actions=["overwrite_partition", "rerun_profile_snapshot"],
-                reason="MVP pipeline 자동 복구 검증",
+                reason="Pipeline pipeline 자동 복구 검증",
             )
             backfill_result = execute_approved_backfill(
                 connection,
@@ -212,7 +212,7 @@ def run_incident_lifecycle(request: MvpPipelineRunRequest) -> MvpLifecycleResult
     report = build_evaluation_report(
         [
             EvaluationCaseResult(
-                case_name="mvp_pipeline_volume_drop",
+                case_name="pipeline_volume_drop",
                 expected_incident_types=["volume_drop"],
                 detected_incident_types=detected_types,
                 required_actions=["prepare_partition_backfill"],
@@ -223,7 +223,7 @@ def run_incident_lifecycle(request: MvpPipelineRunRequest) -> MvpLifecycleResult
         generated_at=observed_at,
     )
     report_path = write_evaluation_report(report, request.report_path)
-    return MvpLifecycleResult(
+    return LifecycleResult(
         metadata_row_count=int(cast(int, metadata_evidence.payload["row_count"])),
         baseline_row_count=baseline.row_count,
         current_row_count=current_row_count,

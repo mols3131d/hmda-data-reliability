@@ -77,5 +77,5 @@ def test_write_evaluation_report_creates_markdown(tmp_path: Path) -> None:
 
     assert written_path == output_path
     assert content == render_evaluation_report_markdown(report)
-    assert "# MVP Evaluation Report" in content
+    assert "# Pipeline Evaluation Report" in content
     assert "| schema_drift | schema_drift | schema_drift | PASS | PASS |" in content

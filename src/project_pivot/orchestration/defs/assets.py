@@ -1,15 +1,15 @@
-"""Dagster assets for MVP pipeline."""
+"""Dagster assets for Pipeline pipeline."""
 
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 
-from project_pivot.orchestration.defs.resource import MvpPipelineDagsterResource
+from project_pivot.orchestration.defs.resource import PipelineDagsterResource
 from project_pivot.pipeline import load_raw_data, run_dbt_build, run_incident_lifecycle
 
 
 @asset(group_name="bronze", kinds={"duckdb", "python"})
 def raw_hmda_loans(
     context: AssetExecutionContext,
-    pipeline: MvpPipelineDagsterResource,
+    pipeline: PipelineDagsterResource,
 ) -> MaterializeResult[None]:
     """원천 파일을 raw DuckDB table로 적재한다."""
 
@@ -32,7 +32,7 @@ def raw_hmda_loans(
 @asset(deps=[raw_hmda_loans], group_name="silver_gold", kinds={"dbt"})
 def dbt_loan_analytics(
     context: AssetExecutionContext,
-    pipeline: MvpPipelineDagsterResource,
+    pipeline: PipelineDagsterResource,
 ) -> MaterializeResult[None]:
     """dbt staging/mart 모델과 테스트를 실행한다."""
 
@@ -60,15 +60,15 @@ def dbt_loan_analytics(
 
 
 @asset(deps=[dbt_loan_analytics], group_name="control", kinds={"python"})
-def mvp_incident_lifecycle(
+def incident_lifecycle(
     context: AssetExecutionContext,
-    pipeline: MvpPipelineDagsterResource,
+    pipeline: PipelineDagsterResource,
 ) -> MaterializeResult[None]:
     """evidence부터 evaluation까지 incident lifecycle을 실행한다."""
 
     result = run_incident_lifecycle(pipeline.to_request())
     context.log.info(
-        "mvp incident lifecycle 완료",
+        "incident lifecycle 완료",
         extra={
             "detected_incident_types": result.detected_incident_types,
         },

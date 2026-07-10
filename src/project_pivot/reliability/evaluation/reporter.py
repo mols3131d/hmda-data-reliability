@@ -36,7 +36,7 @@ def render_evaluation_report_markdown(report: EvaluationReport) -> str:
     """EvaluationReport를 Markdown 문서로 변환한다."""
 
     lines = [
-        "# MVP Evaluation Report",
+        "# Pipeline Evaluation Report",
         "",
         "## Summary",
         "",

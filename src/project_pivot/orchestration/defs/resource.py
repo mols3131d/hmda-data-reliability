@@ -1,4 +1,4 @@
-"""Dagster resource for MVP pipeline configuration."""
+"""Dagster resource for Pipeline pipeline configuration."""
 
 from __future__ import annotations
 
@@ -7,11 +7,11 @@ from typing import Any
 
 from dagster import ConfigurableResource
 
-from project_pivot.pipeline import MvpPipelineRunRequest
+from project_pivot.pipeline import PipelineRunRequest
 
 
-class MvpPipelineDagsterResource(ConfigurableResource[Any]):
-    """Dagster에서 MVP pipeline request를 만드는 config resource."""
+class PipelineDagsterResource(ConfigurableResource[Any]):
+    """Dagster에서 Pipeline pipeline request를 만드는 config resource."""
 
     database_path: str = "data/project_pivot.duckdb"
     source_root: str = "data/raw/hmda"
@@ -22,10 +22,10 @@ class MvpPipelineDagsterResource(ConfigurableResource[Any]):
     run_backfill: bool = False
     simulate_row_count_ratio: float = 0.25
 
-    def to_request(self) -> MvpPipelineRunRequest:
+    def to_request(self) -> PipelineRunRequest:
         """Dagster config를 pipeline request로 변환한다."""
 
-        return MvpPipelineRunRequest(
+        return PipelineRunRequest(
             database_path=Path(self.database_path),
             source_root=Path(self.source_root),
             source_year=self.source_year,

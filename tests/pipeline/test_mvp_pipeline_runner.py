@@ -1,4 +1,4 @@
-"""MVP pipeline runner 테스트."""
+"""Pipeline pipeline runner 테스트."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from project_pivot.pipeline import MvpPipelineRunRequest, run_mvp_pipeline
+from project_pivot.pipeline import PipelineRunRequest, run_pipeline
 
 pytestmark = pytest.mark.integration
 
 
-def test_run_mvp_pipeline_without_dbt_build_creates_lifecycle_report(
+def test_run_pipeline_without_dbt_build_creates_lifecycle_report(
     tmp_path: Path,
 ) -> None:
     """fixture artifact로 runner contract를 검증한다."""
@@ -24,8 +24,8 @@ def test_run_mvp_pipeline_without_dbt_build_creates_lifecycle_report(
     run_results_path = _write_run_results(tmp_path)
     report_path = tmp_path / "pipeline_report.md"
 
-    result = run_mvp_pipeline(
-        MvpPipelineRunRequest(
+    result = run_pipeline(
+        PipelineRunRequest(
             database_path=tmp_path / "project_pivot.duckdb",
             source_root=source_root,
             source_year=2025,
@@ -49,7 +49,7 @@ def test_run_mvp_pipeline_without_dbt_build_creates_lifecycle_report(
     assert report_path.exists()
 
 
-def test_run_mvp_pipeline_with_backfill_validates_hmda_partition(
+def test_run_pipeline_with_backfill_validates_hmda_partition(
     tmp_path: Path,
 ) -> None:
     """HMDA source_year partition backfill 경로를 검증한다."""
@@ -60,8 +60,8 @@ def test_run_mvp_pipeline_with_backfill_validates_hmda_partition(
     manifest_path = _write_manifest(tmp_path)
     run_results_path = _write_run_results(tmp_path)
 
-    result = run_mvp_pipeline(
-        MvpPipelineRunRequest(
+    result = run_pipeline(
+        PipelineRunRequest(
             database_path=tmp_path / "project_pivot.duckdb",
             source_root=source_root,
             source_year=2025,
