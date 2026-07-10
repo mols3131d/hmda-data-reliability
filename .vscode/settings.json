@@ -5,6 +5,16 @@
   "workbench.editorAssociations": {
     "*.mo.py": "marimo-notebook",
     "*_mo.py": "marimo-notebook",
+    "*.copilotmd": "vscode.markdown.preview.editor",
+    "{git,gitlens,conflictResolution,vscode-local-history}:/**/*.tc.json": "default",
+    "*.png": "imagePreview.previewEditor",
+    "*.svg": "default",
+    "{git,gitlens}:/**/*.{md,csv}": "default",
+    "{git,gitlens,git-graph}:/**/*.{md,csv,svg}": "default",
+    "{git,gitlens}:/**/*.{md,csv,svg}": "default",
+    "*.md": "vscode.markdown.preview.editor",
+    "*.csv": "default",
+    "*.py": "default"
   },
   "python.testing.pytestArgs": [
     "tests"
