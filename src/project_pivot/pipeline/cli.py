@@ -81,7 +81,9 @@ def _run_pipeline(args: argparse.Namespace) -> int:
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(result.model_dump_json(indent=2), encoding="utf-8")
-    _LOGGER.info("Pipeline pipeline 결과 저장 완료", extra={"output_path": str(args.output)})
+    _LOGGER.info(
+        "Pipeline pipeline 결과 저장 완료", extra={"output_path": str(args.output)}
+    )
     return 0
 
 

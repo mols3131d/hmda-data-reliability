@@ -1,4 +1,4 @@
-"""Pipeline pipeline 실행 요청 모델."""
+"""HMDA loans 파이프라인 실행 요청 모델."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class PipelineRunRequest(BaseModel):
-    """로컬 Pipeline pipeline 실행 입력."""
+    """현재 hmda_loans 데이터셋 처리를 위한 로컬 파이프라인 실행 입력."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
