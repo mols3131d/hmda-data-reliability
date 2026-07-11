@@ -31,6 +31,14 @@ def test_qualify_table_name_quotes_each_part() -> None:
     assert qualify_table_name('raw.hmda"loans') == '"raw"."hmda""loans"'
 
 
+def test_qualify_table_name_rejects_empty_parts() -> None:
+    """qualified table name의 빈 schema/table 조각을 거부한다."""
+
+    for table_name in ("raw.", ".loans"):
+        with pytest.raises(ValueError, match="식별자"):
+            qualify_table_name(table_name)
+
+
 def test_quote_string_literal_escapes_single_quotes() -> None:
     """문자열 리터럴 내부 single quote를 DuckDB 규칙으로 escape한다."""
 

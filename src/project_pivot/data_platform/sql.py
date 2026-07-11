@@ -14,7 +14,11 @@ def quote_identifier(identifier: str) -> str:
 def qualify_table_name(table_name: str) -> str:
     """schema.table 형식의 테이블명을 DuckDB 식별자로 변환한다."""
 
-    return ".".join(quote_identifier(part) for part in table_name.split("."))
+    parts = table_name.split(".")
+    if any(not part for part in parts):
+        msg = "식별자 조각은 비어 있을 수 없습니다."
+        raise ValueError(msg)
+    return ".".join(quote_identifier(part) for part in parts)
 
 
 def quote_string_literal(value: str) -> str:
