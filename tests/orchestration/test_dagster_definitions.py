@@ -123,3 +123,30 @@ def test_dagster_materialization_records_metadata(
     assert "manifest_path" in dbt_materialization.metadata
     assert "detected_incident_types" in lifecycle_materialization.metadata
     assert "evaluation_report_path" in lifecycle_materialization.metadata
+
+
+def test_skipped_dbt_build_records_boolean_metadata(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """건너뛴 dbt build를 실행 성공으로 표시하지 않는다."""
+
+    resource = PipelineDagsterResource(run_dbt_build=False)
+    monkeypatch.setattr(
+        dagster_assets,
+        "load_raw_data",
+        lambda _request: RawLoadResult(
+            database_path=Path("project_pivot.duckdb"),
+            source_root=Path("raw"),
+            source_file_count=1,
+            source_year=2025,
+            hmda_loans_row_count=1,
+        ),
+    )
+    result = materialize(
+        [raw_hmda_loans, dbt_loan_analytics],
+        resources={"pipeline": resource},
+    )
+    materialization = result.asset_materializations_for_node("dbt_loan_analytics")[0]
+
+    assert materialization.metadata["skipped"].value is True
+    assert materialization.metadata["succeeded"].value is False

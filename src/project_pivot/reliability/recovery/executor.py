@@ -12,6 +12,10 @@ from project_pivot.reliability.profiling import create_profile_snapshot
 from project_pivot.reliability.recovery.request import ApprovedBackfillRequest
 from project_pivot.reliability.recovery.result import BackfillValidationResult
 
+_REQUIRED_APPROVAL_ACTIONS = frozenset(
+    {"overwrite_partition", "rerun_profile_snapshot"}
+)
+
 
 class ApprovalBackfillValidator:
     """Approval gate 이후 backfill과 profile validation을 수행한다."""
@@ -67,11 +71,17 @@ def execute_approved_backfill(
 
 
 def _ensure_approved(request: ApprovedBackfillRequest) -> None:
-    if can_execute_risky_action(request.approval):
-        return
-    msg = (
-        "승인되지 않은 backfill 요청입니다: "
-        f"approval_id={request.approval.approval_id}, "
-        f"status={request.approval.status}"
+    if not can_execute_risky_action(request.approval):
+        msg = (
+            "승인되지 않은 backfill 요청입니다: "
+            f"approval_id={request.approval.approval_id}, "
+            f"status={request.approval.status}"
+        )
+        raise ApprovalGateError(msg)
+    missing_actions = _REQUIRED_APPROVAL_ACTIONS.difference(
+        request.approval.requested_actions
     )
-    raise ApprovalGateError(msg)
+    if missing_actions:
+        joined_actions = ", ".join(sorted(missing_actions))
+        msg = f"backfill 승인에 필요한 action이 없습니다: {joined_actions}"
+        raise ApprovalGateError(msg)

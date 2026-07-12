@@ -25,6 +25,14 @@ class TableMetadataEvidenceError(ReliabilityError):
     """Table metadata evidence lookup failed."""
 
 
+class ImpactAnalysisError(ReliabilityError):
+    """dbt artifact 영향 분석 실패를 나타낸다."""
+
+
+class RemediationError(ReliabilityError):
+    """Remediation workflow 실패를 나타낸다."""
+
+
 class ContractValidationError(ReliabilityError):
     """Contract validation failed."""
 

@@ -25,7 +25,9 @@ from project_pivot.reliability.errors import (
     ApprovalGateError,
     BackfillValidationError,
     ContractValidationError,
+    ImpactAnalysisError,
     ProfileSnapshotError,
+    RemediationError,
     TableMetadataEvidenceError,
 )
 from project_pivot.reliability.evaluation import (
@@ -88,6 +90,7 @@ __all__ = [
     "HumanReviewStatus",
     "ImpactAnalysisRequest",
     "ImpactAnalysisResult",
+    "ImpactAnalysisError",
     "Incident",
     "IncidentSeverity",
     "IncidentStatus",
@@ -95,6 +98,7 @@ __all__ = [
     "ProfileSnapshot",
     "ProfileSnapshotError",
     "ProfileSnapshotRequest",
+    "RemediationError",
     "TableMetadataEvidenceError",
     "TableMetadataEvidenceRequest",
     "calculate_schema_hash",

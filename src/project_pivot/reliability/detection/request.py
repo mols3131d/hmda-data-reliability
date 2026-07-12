@@ -33,4 +33,7 @@ class DetectionRequest(BaseModel):
         if self.baseline.asset_name != self.current.asset_name:
             msg = "baseline과 current asset_name은 같아야 합니다."
             raise ValueError(msg)
+        if self.baseline.partition != self.current.partition:
+            msg = "baseline과 current partition은 같아야 합니다."
+            raise ValueError(msg)
         return self

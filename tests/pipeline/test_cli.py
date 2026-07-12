@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -68,3 +69,35 @@ def test_pipeline_cli_run_writes_result_json(
     assert output_path.exists()
     assert '"status": "completed"' in output_path.read_text(encoding="utf-8")
     assert '"detected_incident_types": [' in output_path.read_text(encoding="utf-8")
+
+
+def test_pipeline_cli_returns_error_for_invalid_request() -> None:
+    """잘못된 CLI 입력은 stack trace 없이 실패 코드로 반환한다."""
+
+    assert (
+        pipeline_cli.main(
+            [
+                "run",
+                "--simulate-row-count-ratio",
+                "0",
+            ]
+        )
+        == 1
+    )
+
+
+def test_pipeline_cli_returns_error_when_output_write_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """결과 파일 쓰기 오류를 CLI 실패 코드로 변환한다."""
+
+    monkeypatch.setattr(
+        pipeline_cli,
+        "run_pipeline",
+        lambda _request: Mock(model_dump_json=Mock(return_value="{}")),
+    )
+    output_path = tmp_path / "output-directory"
+    output_path.mkdir()
+
+    assert pipeline_cli.main(["run", "--output", str(output_path)]) == 1

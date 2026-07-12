@@ -121,6 +121,16 @@ def test_detection_result_links_incident_to_evidence() -> None:
     assert result.evidence.partition == result.incident.partition
 
 
+def test_detection_request_rejects_different_partitions() -> None:
+    """서로 다른 partition의 profile 비교를 거부한다."""
+
+    baseline = _snapshot(row_count=100)
+    current = _snapshot(row_count=40).model_copy(update={"partition": "2025-01-01"})
+
+    with pytest.raises(ValueError, match="partition"):
+        DetectionRequest(baseline=baseline, current=current)
+
+
 def _snapshot(
     *,
     row_count: int,

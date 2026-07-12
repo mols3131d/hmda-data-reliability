@@ -41,8 +41,8 @@ def dbt_loan_analytics(
         context.log.info("dbt build 건너뜀")
         return MaterializeResult(
             metadata={
-                "succeeded": MetadataValue.text("true"),
-                "skipped": MetadataValue.text("true"),
+                "succeeded": MetadataValue.bool(False),
+                "skipped": MetadataValue.bool(True),
                 "reason": MetadataValue.text("run_dbt_build=false"),
             }
         )
@@ -50,8 +50,8 @@ def dbt_loan_analytics(
     context.log.info("dbt build 완료", extra={"return_code": result.return_code})
     return MaterializeResult(
         metadata={
-            "succeeded": MetadataValue.text(str(result.succeeded).lower()),
-            "skipped": MetadataValue.text("false"),
+            "succeeded": MetadataValue.bool(result.succeeded),
+            "skipped": MetadataValue.bool(False),
             "return_code": MetadataValue.int(result.return_code),
             "manifest_path": MetadataValue.path(str(result.manifest_path)),
             "run_results_path": MetadataValue.path(str(result.run_results_path)),

@@ -7,6 +7,8 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any
 
+from project_pivot.reliability.errors import ImpactAnalysisError
+
 
 class DbtManifestGraph:
     """dbt manifest nodes/sources dependency graph."""
@@ -18,7 +20,14 @@ class DbtManifestGraph:
 
     @classmethod
     def from_path(cls, path: Path) -> DbtManifestGraph:
-        manifest = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            msg = f"dbt manifest를 읽을 수 없습니다: path={path}"
+            raise ImpactAnalysisError(msg) from exc
+        if not isinstance(manifest, dict):
+            msg = f"dbt manifest root는 object여야 합니다: path={path}"
+            raise ImpactAnalysisError(msg)
         return cls(manifest)
 
     def downstream_assets(self, upstream_asset: str) -> list[str]:

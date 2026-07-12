@@ -131,3 +131,25 @@ def test_load_hmda_loans_validates_required_columns(tmp_path: Path) -> None:
         ),
     ):
         load_hmda_loans(connection, [path])
+
+
+def test_load_hmda_loans_rejects_malformed_csv_rows(tmp_path: Path) -> None:
+    """손상된 CSV 행을 조용히 버리지 않고 적재 실패로 반환한다."""
+
+    path = tmp_path / "malformed_2025.csv"
+    path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,county_code",
+                "2025,1,1,350000,120,CA,06001",
+                "2025,1,1,350000,120,CA,06001,unexpected",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises((HMDADataLoadError, HMDADataValidationError)),
+    ):
+        load_hmda_loans(connection, [path])

@@ -28,10 +28,16 @@ class ApprovedBackfillRequest(BaseModel):
     def _coerce_source_paths(cls, value: object) -> tuple[Path, ...]:
         if isinstance(value, str | Path):
             return (Path(value),)
-        if isinstance(value, list | tuple):
-            return tuple(Path(path) for path in value)
-        msg = "source_paths는 path 목록이어야 합니다."
-        raise ValueError(msg)
+        if not isinstance(value, list | tuple):
+            msg = "source_paths는 path 목록이어야 합니다."
+            raise ValueError(msg)
+        paths: list[Path] = []
+        for path in value:
+            if not isinstance(path, str | Path):
+                msg = "source_paths의 각 값은 path여야 합니다."
+                raise ValueError(msg)
+            paths.append(Path(path))
+        return tuple(paths)
 
     @field_validator("table_name", "source_file")
     @classmethod

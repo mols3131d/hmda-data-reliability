@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import HMDA_LOANS_TABLE
@@ -35,6 +36,26 @@ def test_pending_approval_blocks_before_source_access(tmp_path: Path) -> None:
             _request(
                 approval=_approval(ApprovalStatus.PENDING),
                 source_paths=(missing_source,),
+            ),
+        )
+
+
+def test_approval_without_backfill_actions_is_rejected(tmp_path: Path) -> None:
+    """다른 action 승인을 partition overwrite에 재사용하지 못하게 한다."""
+
+    approval = _approval(ApprovalStatus.APPROVED).model_copy(
+        update={"requested_actions": ["inspect_source"]}
+    )
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(ApprovalGateError, match="action"),
+    ):
+        execute_approved_backfill(
+            connection,
+            _request(
+                approval=approval,
+                source_paths=(tmp_path / "missing.csv",),
             ),
         )
 
@@ -74,6 +95,25 @@ def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
     ]
 
 
+def test_backfill_request_rejects_non_path_source_items() -> None:
+    """source_paths 원소 타입 오류를 Pydantic validation error로 반환한다."""
+
+    with pytest.raises(ValidationError, match="source_paths"):
+        ApprovedBackfillRequest.model_validate(
+            {
+                "approval": _approval(ApprovalStatus.PENDING),
+                "source_paths": [object()],
+                "source_year": 2025,
+                "profile_request": ProfileSnapshotRequest(
+                    asset_name=HMDA_LOANS_TABLE,
+                    table_name=HMDA_LOANS_TABLE,
+                    partition_column="activity_year",
+                    partition=2025,
+                ),
+            }
+        )
+
+
 def _request(
     *,
     approval: Approval,
@@ -106,7 +146,7 @@ def _approval(status: ApprovalStatus) -> Approval:
             requested_at=requested_at,
             approved_by="data-owner",
             approved_at=requested_at,
-            requested_actions=["prepare_partition_backfill"],
+            requested_actions=["overwrite_partition", "rerun_profile_snapshot"],
         )
     return Approval(
         approval_id=f"approval_{status}",

@@ -1,9 +1,13 @@
 """Serialization and fixture tests."""
 
+from math import nan
+
 import pytest
+from pydantic import ValidationError
 
 from project_pivot.reliability.contracts import (
     HumanReviewStatus,
+    ProfileSnapshot,
     can_execute_risky_action,
 )
 from tests.reliability.conftest import SyntheticIncidentFixture
@@ -40,3 +44,15 @@ def test_contracts_dump_to_json_stable_values(
     assert incident_json["human_review_status"] == "pending"
     assert evidence_json["source"] == "profile"
     assert profile_json["freshness_at"] == "2026-06-06T00:00:00Z"
+
+
+def test_profile_contract_rejects_non_finite_metrics(
+    synthetic_incident_fixture: SyntheticIncidentFixture,
+) -> None:
+    """NaN metric이 탐지 비교를 우회하지 못하게 한다."""
+
+    payload = synthetic_incident_fixture.profile_snapshot.model_dump()
+    payload["null_rates"] = {"loan_amount": nan}
+
+    with pytest.raises(ValidationError, match="finite"):
+        ProfileSnapshot.model_validate(payload)

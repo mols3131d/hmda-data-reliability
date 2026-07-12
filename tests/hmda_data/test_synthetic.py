@@ -16,6 +16,7 @@ from project_pivot.hmda_data import (
     schema_drift,
 )
 from project_pivot.hmda_data.errors import SyntheticCaseError
+from project_pivot.hmda_data.synthetic._writer import write_case_file
 
 pytestmark = pytest.mark.component
 
@@ -88,6 +89,28 @@ def test_synthetic_case_rejects_missing_columns(
             tmp_path / "cases",
             target_column="missing_column",
         )
+
+
+def test_write_case_file_rejects_parent_directory_case_name(tmp_path: Path) -> None:
+    """case name이 출력 root 밖의 디렉터리를 가리키지 못하게 한다."""
+
+    output_root = tmp_path / "cases"
+    sentinel = tmp_path / "keep.txt"
+    sentinel.write_text("keep", encoding="utf-8")
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="case_name"),
+    ):
+        write_case_file(
+            connection=connection,
+            case_name="..",
+            output_root=output_root,
+            query="SELECT 1",
+            params=[],
+        )
+
+    assert sentinel.exists()
 
 
 def _row_count(

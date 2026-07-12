@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from project_pivot.reliability import (
+    ImpactAnalysisError,
     ImpactAnalysisRequest,
     Incident,
     IncidentSeverity,
@@ -84,6 +85,35 @@ def test_impact_analysis_builds_lineage_evidence_paths(tmp_path: Path) -> None:
     assert result.lineage_evidence.dbt_manifest_path == str(manifest_path)
     assert result.lineage_evidence.dbt_run_results_path == str(run_results_path)
     assert result.incident.evidence_refs == incident.evidence_refs
+
+
+def test_impact_analysis_wraps_invalid_manifest(tmp_path: Path) -> None:
+    """잘못된 dbt manifest를 reliability 도메인 오류로 변환한다."""
+
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text("not-json", encoding="utf-8")
+
+    with pytest.raises(ImpactAnalysisError, match="manifest"):
+        analyze_dbt_impact(
+            ImpactAnalysisRequest(
+                incident=_incident("raw.hmda_loans"),
+                dbt_manifest_path=manifest_path,
+                dbt_run_results_path=tmp_path / "run_results.json",
+            )
+        )
+
+
+def test_impact_analysis_rejects_missing_run_results(tmp_path: Path) -> None:
+    """존재하지 않는 run results를 lineage evidence로 기록하지 않는다."""
+
+    with pytest.raises(ImpactAnalysisError, match="run results"):
+        analyze_dbt_impact(
+            ImpactAnalysisRequest(
+                incident=_incident("raw.hmda_loans"),
+                dbt_manifest_path=_write_manifest(tmp_path),
+                dbt_run_results_path=tmp_path / "missing.json",
+            )
+        )
 
 
 def _incident(asset_name: str) -> Incident:

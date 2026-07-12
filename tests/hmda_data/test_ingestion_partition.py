@@ -8,6 +8,7 @@ import pytest
 
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import load_hmda_loans_partition
+from project_pivot.hmda_data.errors import HMDADataLoadError
 
 pytestmark = pytest.mark.component
 
@@ -97,3 +98,20 @@ def test_load_hmda_loans_partition_preserves_outlier_rows(tmp_path: Path) -> Non
         ).fetchone()
 
     assert row == (99, 999999999999, -10, "ZZ", 99999)
+
+
+def test_load_hmda_loans_partition_handles_empty_source_file(
+    hmda_csv_path: Path,
+) -> None:
+    """빈 source_file도 SQL binding 오류 대신 도메인 오류로 반환한다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(HMDADataLoadError, match="적재할 행이 없습니다"),
+    ):
+        load_hmda_loans_partition(
+            connection,
+            [hmda_csv_path],
+            2025,
+            source_file="",
+        )

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, TypedDict, cast
+from typing import Any
 
 from langgraph.graph import END, StateGraph
+from typing_extensions import TypedDict
 
+from project_pivot.reliability.errors import RemediationError
 from project_pivot.reliability.remediation.draft import RemediationDraft
 from project_pivot.reliability.remediation.request import RemediationDraftRequest
 
@@ -28,11 +30,16 @@ def create_remediation_draft(request: RemediationDraftRequest) -> RemediationDra
 
     graph = _build_graph()
     final_state = graph.invoke({"request": request})
-    return cast(RemediationDraft, final_state["draft"])
+    draft = final_state.get("draft")
+    if not isinstance(draft, RemediationDraft):
+        msg = "remediation workflow가 draft를 생성하지 못했습니다."
+        raise RemediationError(msg)
+    return draft
 
 
 def _build_graph() -> Any:
-    graph = StateGraph(RemediationState)
+    # LangGraph의 TypedDict Protocol은 ty에서 구조적으로 인식되지 않는다.
+    graph = StateGraph(RemediationState)  # ty: ignore[invalid-argument-type]
     graph.add_node("triage", _triage_node)
     graph.add_node("rca", _rca_node)
     graph.add_node("plan", _plan_node)

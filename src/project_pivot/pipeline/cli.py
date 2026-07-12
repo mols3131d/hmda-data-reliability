@@ -6,6 +6,8 @@ import argparse
 from collections.abc import Sequence
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from project_pivot.hmda_data.errors import HMDADataLoadError
 from project_pivot.logger import configure_logging, get_logger
 from project_pivot.pipeline._errors import PipelineRuntimeError
@@ -63,24 +65,35 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _run_pipeline(args: argparse.Namespace) -> int:
-    request = PipelineRunRequest(
-        database_path=args.database,
-        source_root=args.source_root,
-        source_year=args.source_year,
-        source_file=args.source_file,
-        report_path=args.report_path,
-        run_dbt_build=args.run_dbt_build,
-        run_backfill=args.run_backfill,
-        simulate_row_count_ratio=args.simulate_row_count_ratio,
-    )
     try:
+        request = PipelineRunRequest(
+            database_path=args.database,
+            source_root=args.source_root,
+            source_year=args.source_year,
+            source_file=args.source_file,
+            report_path=args.report_path,
+            run_dbt_build=args.run_dbt_build,
+            run_backfill=args.run_backfill,
+            simulate_row_count_ratio=args.simulate_row_count_ratio,
+        )
         result = run_pipeline(request)
-    except (PipelineRuntimeError, ReliabilityError, HMDADataLoadError) as exc:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(result.model_dump_json(indent=2), encoding="utf-8")
+    except ValidationError as exc:
+        _LOGGER.error(
+            "Pipeline pipeline 입력 검증 실패",
+            extra={"error_count": exc.error_count()},
+        )
+        return 1
+    except (
+        PipelineRuntimeError,
+        ReliabilityError,
+        HMDADataLoadError,
+        OSError,
+    ) as exc:
         _LOGGER.error("Pipeline pipeline 실행 실패", extra={"error": str(exc)})
         return 1
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(result.model_dump_json(indent=2), encoding="utf-8")
     _LOGGER.info(
         "Pipeline pipeline 결과 저장 완료", extra={"output_path": str(args.output)}
     )

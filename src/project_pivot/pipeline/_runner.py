@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import time
 from datetime import UTC, datetime
 from typing import cast
 
@@ -36,6 +37,8 @@ from project_pivot.reliability import (
 )
 from project_pivot.reliability.detection import DetectionResult
 from project_pivot.reliability.impact import ImpactAnalysisResult
+
+_DBT_BUILD_TIMEOUT_SECONDS = 300
 
 
 def run_pipeline(request: PipelineRunRequest) -> PipelineRunResult:
@@ -89,19 +92,26 @@ def run_dbt_build(request: PipelineRunRequest) -> DbtBuildResult:
     env["PROJECT_PIVOT_DUCKDB_PATH"] = str(request.database_path)
     env["DBT_PROFILES_DIR"] = str(request.dbt_profiles_dir)
     env["DBT_SEND_ANONYMOUS_USAGE_STATS"] = "false"
-    result = subprocess.run(
-        command,
-        check=False,
-        capture_output=True,
-        env=env,
-        text=True,
-    )
-    if result.returncode != 0:
-        msg = (
-            "dbt build 실행에 실패했습니다: "
-            f"return_code={result.returncode}, stderr={result.stderr[-1000:]}"
+    started_at = time.time()
+    try:
+        result = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            env=env,
+            text=True,
+            timeout=_DBT_BUILD_TIMEOUT_SECONDS,
         )
+    except subprocess.TimeoutExpired as exc:
+        msg = f"dbt build 실행 시간이 {_DBT_BUILD_TIMEOUT_SECONDS}초를 초과했습니다."
+        raise PipelineRuntimeError(msg) from exc
+    except OSError as exc:
+        msg = "dbt build 프로세스를 시작할 수 없습니다."
+        raise PipelineRuntimeError(msg) from exc
+    if result.returncode != 0:
+        msg = f"dbt build 실행에 실패했습니다: return_code={result.returncode}"
         raise PipelineRuntimeError(msg)
+    _validate_dbt_artifacts(request, started_at=started_at)
     return DbtBuildResult(
         command=command,
         return_code=result.returncode,
@@ -109,6 +119,23 @@ def run_dbt_build(request: PipelineRunRequest) -> DbtBuildResult:
         run_results_path=request.dbt_run_results_path,
         succeeded=True,
     )
+
+
+def _validate_dbt_artifacts(
+    request: PipelineRunRequest,
+    *,
+    started_at: float,
+) -> None:
+    stale_before = started_at - 1.0
+    invalid_paths = [
+        path
+        for path in (request.dbt_manifest_path, request.dbt_run_results_path)
+        if not path.is_file() or path.stat().st_mtime < stale_before
+    ]
+    if invalid_paths:
+        joined_paths = ", ".join(str(path) for path in invalid_paths)
+        msg = f"dbt build artifact를 확인할 수 없습니다: {joined_paths}"
+        raise PipelineRuntimeError(msg)
 
 
 def run_incident_lifecycle(request: PipelineRunRequest) -> LifecycleResult:

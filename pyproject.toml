@@ -45,7 +45,9 @@ dev = [
 directory_type = "project"
 
 [tool.dg.project]
-root_module = "project_pivot.orchestration"
+root_module = "project_pivot"
+defs_module = "project_pivot.orchestration.defs"
+code_location_target_module = "project_pivot.orchestration.definitions"
 
 [tool.mypy]
 python_version = "3.13"

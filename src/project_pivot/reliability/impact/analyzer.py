@@ -1,6 +1,7 @@
 """dbt manifest 기반 impact analysis."""
 
 from project_pivot.reliability.contracts import LineageEvidence
+from project_pivot.reliability.errors import ImpactAnalysisError
 from project_pivot.reliability.impact.manifest import DbtManifestGraph
 from project_pivot.reliability.impact.request import ImpactAnalysisRequest
 from project_pivot.reliability.impact.result import ImpactAnalysisResult
@@ -13,6 +14,12 @@ class DbtImpactAnalyzer:
         """LineageEvidence와 affected assets가 채워진 incident를 반환한다."""
 
         graph = DbtManifestGraph.from_path(request.dbt_manifest_path)
+        if not request.dbt_run_results_path.is_file():
+            msg = (
+                "dbt run results를 찾을 수 없습니다: "
+                f"path={request.dbt_run_results_path}"
+            )
+            raise ImpactAnalysisError(msg)
         downstream_assets = graph.downstream_assets(request.incident.asset_name)
         lineage_evidence = LineageEvidence(
             lineage_id=_lineage_id(
