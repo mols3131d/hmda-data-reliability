@@ -51,6 +51,9 @@ def write_case_file(
 def _prepare_case_dir(output_root: str | Path, case_name: str) -> Path:
     """케이스 출력 디렉터리를 비우고 다시 생성한다."""
 
+    if not case_name or case_name in {".", ".."} or Path(case_name).name != case_name:
+        msg = "case_name은 단일 디렉터리 이름이어야 합니다."
+        raise SyntheticCaseError(msg, context={"case_name": case_name})
     case_dir = Path(output_root) / case_name
     if case_dir.exists():
         shutil.rmtree(case_dir)

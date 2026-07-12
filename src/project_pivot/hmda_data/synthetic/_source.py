@@ -78,8 +78,7 @@ def _reader_sql(path: Path) -> str:
                 ?,
                 header = true,
                 nullstr = ['NA', ''],
-                sample_size = 200000,
-                ignore_errors = true
+                sample_size = 200000
             )
         """
     if path.suffix.lower() == ".parquet":

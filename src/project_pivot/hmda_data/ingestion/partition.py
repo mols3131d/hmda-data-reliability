@@ -155,7 +155,7 @@ def _partition_row_count(
         WHERE source_year = ?
         {_source_file_filter_sql(source_file)}
         """,
-        [source_year, *filter(None, [source_file])],
+        [source_year, *_source_file_params(source_file)],
     ).fetchone()
     if result is None:
         context = _partition_context(table_name, source_year, source_file)
@@ -182,7 +182,7 @@ def _create_staging_table(
         [
             *map(Path.as_posix, source_paths),
             source_year,
-            *filter(None, [source_file]),
+            *_source_file_params(source_file),
         ],
     )
 
@@ -215,7 +215,7 @@ def _replace_partition_rows(
         WHERE source_year = ?
         {_source_file_filter_sql(source_file)}
         """,
-        [source_year, *filter(None, [source_file])],
+        [source_year, *_source_file_params(source_file)],
     )
     connection.execute(
         f"""
@@ -230,6 +230,10 @@ def _source_file_filter_sql(source_file: str | None) -> str:
     if source_file is None:
         return ""
     return "AND source_file_name = ?"
+
+
+def _source_file_params(source_file: str | None) -> list[str]:
+    return [] if source_file is None else [source_file]
 
 
 def _partition_context(

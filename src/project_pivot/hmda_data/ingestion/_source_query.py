@@ -65,7 +65,6 @@ def _reader_sql(path: Path) -> str:
                 header = true,
                 nullstr = ['NA', ''],
                 sample_size = 200000,
-                ignore_errors = true,
                 filename = true
             )
         """
