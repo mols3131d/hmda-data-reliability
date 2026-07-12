@@ -15,7 +15,7 @@ HMDA 원천 데이터와 품질 이상 테스트 데이터를 로컬 DuckDB에�
 
 ### Requirement: HMDA 원천 파일 로드
 
-시스템은 원천 데이터 디렉터리(`data/raw/hmda`)에서 HMDA CSV 또는 Parquet 파일을 읽어 DuckDB raw 테이블로 적재해야 한다(SHALL). 테이블 스키마는 DuckDB의 구조 감지 기능을 사용해 생성되어야 하며(MUST), 원천 추적을 위해 `source_file`, `source_year`, `ingested_at` 메타데이터를 보존해야 한다(MUST).
+시스템은 원천 데이터 디렉터리(`data/raw/hmda`)에서 HMDA CSV 또는 Parquet 파일을 읽어 DuckDB raw 테이블로 적재해야 한다(SHALL). 테이블 스키마는 DuckDB의 구조 감지 기능을 사용해 생성되어야 하며(MUST), 원천 추적을 위해 `source_file`, `source_file_name`, `source_year`, `ingested_at` 메타데이터를 보존해야 한다(MUST).
 
 #### Scenario: HMDA 원천 파일 적재
 

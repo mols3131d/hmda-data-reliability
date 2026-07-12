@@ -20,14 +20,19 @@ uv run dbt debug --project-dir dbt
 
 ## 모델 계약
 
-- `stg_hmda_loans`: HMDA 신청 연도, 지역, 대출 목적, action, 금액/소득 컬럼 정리
-- `mart_hmda_loan_outcomes`: `activity_year`, `state_code`, `loan_purpose` grain
+- source: `raw.hmda_loans`
+- staging: `stg_hmda_loans`
+  - `activity_year`, `state_code`, `county_code`, `loan_purpose`, `action_taken`
+  - `loan_amount`, `income`, `source_file`, `source_year`
+- mart: `mart_hmda_loan_outcomes`
+  - grain: `activity_year + state_code + loan_purpose`
+  - 지표: `application_count`, `approval_count`, `denial_count`, `approval_rate`, `average_loan_amount`, `average_income`
 
-`mart_hmda_loan_outcomes.activity_year`는 후속 Dagster source year 기준 materialization 후보로 유지한다.
+`action_taken` 값 `1`, `2`는 승인 건수, `3`, `7`은 거절 건수에 포함한다. mart의 `mart_grain_key`에는 `not_null`, `unique` 테스트를 적용한다.
 
 ## Artifact
 
 - `dbt/target/manifest.json`
 - `dbt/target/run_results.json`
 
-후속 profile, impact analysis, Dagster 도입 단계는 위 모델명과 artifact 경로를 기준으로 연결한다.
+`dbt_loan_analytics` asset이 dbt build를 실행하고 artifact 경로를 materialization metadata에 기록한다. `incident_lifecycle`은 artifact를 lineage와 영향 분석 입력으로 사용한다.

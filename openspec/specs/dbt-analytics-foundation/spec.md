@@ -78,11 +78,11 @@ DuckDB raw HMDA 데이터를 안정적인 dbt staging/mart 모델과 lineage art
 
 ### Requirement: Dagster asset 호환 모델 경계
 
-시스템은 후속 Dagster asset이 dbt 모델을 감쌀 수 있도록 모델명, mart grain, 파티션 컬럼, artifact 경로를 안정적으로 유지해야 한다(SHALL). 이번 변경은 Dagster schedule, retry, backfill, asset definition 신규 자동화를 구현하지 않아야 한다(MUST NOT).
+시스템은 `dbt_loan_analytics` asset이 dbt 모델을 실행할 수 있도록 모델명, mart grain, 파티션 컬럼, artifact 경로를 안정적으로 유지해야 한다(SHALL). schedule, sensor, cloud automation은 현재 범위에 포함하지 않아야 한다(MUST NOT).
 
 #### Scenario: dbt 모델과 Dagster asset 경계 연결
 
-- **WHEN** 후속 Dagster asset이 dbt 모델을 참조할 때
+- **WHEN** `dbt_loan_analytics` asset이 dbt 모델을 참조할 때
 - **THEN** `stg_hmda_loans`와 `mart_hmda_loan_outcomes`는 dbt node id와 Dagster asset key로 일관되게 매핑 가능해야 한다.
 - **AND** `mart_hmda_loan_outcomes.activity_year`는 연도 파티션 키로 사용할 수 있어야 한다.
 

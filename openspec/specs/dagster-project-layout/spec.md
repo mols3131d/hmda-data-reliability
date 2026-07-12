@@ -12,7 +12,7 @@ Dagster project layout이 표준 definitions entrypoint와 현재 HMDA asset con
 
 - **WHEN** 사용자가 `env UV_CACHE_DIR=/tmp/uv-cache DAGSTER_HOME=/tmp/project-pivot-dagster-home PYTHONPATH=src uv run dg list defs --json` 명령어를 실행할 때
 - **THEN** 시스템은 `project_pivot.orchestration.definitions`에서 Dagster definitions를 로드해야 합니다.
-- **AND** `raw_hmda_loans`, `dbt_loan_analytics`, `mvp_incident_lifecycle`, `mvp_pipeline_job`을 표시해야 합니다.
+- **AND** `raw_hmda_loans`, `dbt_loan_analytics`, `incident_lifecycle`, `pipeline_job`을 표시해야 합니다.
 
 ### Requirement: Dagster definitions live under defs directory
 
@@ -38,8 +38,8 @@ Dagster project layout이 표준 definitions entrypoint와 현재 HMDA asset con
 
 시스템은 폴더 구조 변경 후에도 기존 Dagster asset behavior를 유지해야(SHALL) 합니다.
 
-#### Scenario: Materializing MVP pipeline
+#### Scenario: Materializing pipeline
 
-- **WHEN** 사용자가 `mvp_pipeline_job`을 실행할 때
-- **THEN** 시스템은 `raw_hmda_loans`, `dbt_loan_analytics`, `mvp_incident_lifecycle` 순서로 실행해야 합니다.
+- **WHEN** 사용자가 `pipeline_job`을 실행할 때
+- **THEN** 시스템은 `raw_hmda_loans`, `dbt_loan_analytics`, `incident_lifecycle` 순서로 실행해야 합니다.
 - **AND** 각 asset의 group, dependency, materialization metadata는 유지되어야 합니다.
