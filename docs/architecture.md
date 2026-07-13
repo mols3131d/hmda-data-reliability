@@ -76,6 +76,9 @@ flowchart TB
 
 ## 실행 구조
 
+HMDA ingest를 작은 샘플부터 직접 확인하려면
+[HMDA ingest 눈으로 확인하기](hmda_ingestion_review_guide.md)를 따른다.
+
 ```mermaid
 flowchart TB
     rawAsset[raw_hmda_loans<br/>bronze]
