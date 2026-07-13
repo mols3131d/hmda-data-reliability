@@ -58,7 +58,7 @@ files = ["src", "tests"]
 addopts = "-n auto --timeout=60 --html=pytest_report.html --self-contained-html --strict-markers"
 markers = [
   "unit: pure function and isolated domain tests",
-  "component: package-level tests using local files or DuckDB",
+  "component: package-level tests using local files",
   "integration: cross-system workflow tests",
 ]
 pythonpath = ["src"]
