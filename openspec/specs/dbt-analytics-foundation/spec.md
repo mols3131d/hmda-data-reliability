@@ -64,7 +64,8 @@ DuckDB raw HMDA 데이터를 안정적인 dbt staging/mart 모델과 lineage art
 #### Scenario: HMDA 최소 테스트 계약
 
 - **WHEN** dbt test 정의를 확인할 때
-- **THEN** staging의 `activity_year`, `state_code`, `loan_purpose`, `action_taken` 컬럼에는 `not_null` 테스트가 적용되어야 한다.
+- **THEN** staging의 `activity_year`, `loan_purpose`, `action_taken` 컬럼에는 `not_null` 테스트가 적용되어야 한다.
+- **AND** 원천 데이터의 지역 미지정 신청을 보존하기 위해 staging의 `state_code` Null은 허용되어야 한다.
 - **AND** mart grain에는 중복 방지 테스트가 적용되어야 한다.
 
 ### Requirement: dbt artifact 생성
