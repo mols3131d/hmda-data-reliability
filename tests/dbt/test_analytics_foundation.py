@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -57,10 +58,14 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
         dependency=_node_id(manifest, "model", "stg_hmda_loans"),
     )
     assert first_stats == second_stats == (2, 2)
-    assert first_metric_rows == second_metric_rows == [
-        (2025, "CA", 1, 2, 2, 0, 1.0, 400000.0, 125.0),
-        (2025, "NY", 31, 2, 0, 2, 0.0, 400000.0, 95.0),
-    ]
+    assert (
+        first_metric_rows
+        == second_metric_rows
+        == [
+            (2025, "CA", 1, 2, 2, 0, 1.0, 400000.0, 125.0),
+            (2025, "NY", 31, 2, 0, 2, 0.0, 400000.0, 95.0),
+        ]
+    )
 
 
 def _run_dbt(database_path: Path, command: str) -> None:
@@ -146,11 +151,10 @@ def _mart_metric_rows(
 
 
 def _node_id(manifest: dict[str, object], resource_type: str, name: str) -> str | None:
-    nodes = manifest["nodes"]
-    assert isinstance(nodes, dict)
+    nodes = _object_dict(manifest["nodes"])
     for node_id, node in nodes.items():
-        assert isinstance(node, dict)
-        if node["resource_type"] == resource_type and node["name"] == name:
+        node_data = _object_dict(node)
+        if node_data["resource_type"] == resource_type and node_data["name"] == name:
             return str(node_id)
     return None
 
@@ -166,12 +170,14 @@ def _depends_on(
     node_id = _node_id(manifest, "model", model_name)
     if node_id is None:
         return False
-    manifest_nodes = manifest["nodes"]
-    assert isinstance(manifest_nodes, dict)
-    node = manifest_nodes[node_id]
-    assert isinstance(node, dict)
-    depends_on = node["depends_on"]
-    assert isinstance(depends_on, dict)
+    manifest_nodes = _object_dict(manifest["nodes"])
+    node = _object_dict(manifest_nodes[node_id])
+    depends_on = _object_dict(node["depends_on"])
     nodes = depends_on["nodes"]
     assert isinstance(nodes, list)
     return dependency in nodes
+
+
+def _object_dict(value: object) -> dict[str, object]:
+    assert isinstance(value, dict)
+    return cast(dict[str, object], value)

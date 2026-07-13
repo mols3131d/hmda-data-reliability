@@ -6,6 +6,7 @@ data/**
 dbt/.user.yml
 pytest_report.html
 *.tmp*
+*.origin*
 .codex
 
 # Byte-compiled / optimized / DLL files
