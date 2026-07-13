@@ -22,10 +22,9 @@ def _(mo):
 
 @app.cell
 def _():
+    import notebooks._notebook_init  # noqa: F401
     import marimo as mo
-    from _notebook_init import notebook_init
 
-    notebook_init()
     return (mo,)
 
 
