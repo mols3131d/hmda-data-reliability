@@ -31,14 +31,6 @@ def _(mo):
 
 @app.cell
 def _():
-    import sandbox._notebook_init  # noqa: F401
-
-
-    return
-
-
-@app.cell
-def _(notebook_initialized):
     from pathlib import Path
 
     import duckdb
@@ -50,10 +42,9 @@ def _(notebook_initialized):
         normalize_source_paths,
         source_union_sql,
     )
+    from sandboxes._notebook_init import notebook_init
 
-    if not notebook_initialized:
-        _message = "노트북 초기화가 완료되지 않았습니다."
-        raise RuntimeError(_message)
+    notebook_init()
     return (
         HMDADataLoadError,
         Path,

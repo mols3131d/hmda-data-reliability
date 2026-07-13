@@ -31,13 +31,6 @@ def _(mo):
 
 @app.cell
 def _():
-    import sandbox._notebook_init  # noqa: F401
-
-    return
-
-
-@app.cell
-def _(notebook_initialized):
     import duckdb
     import marimo as mo
     import polars as pl
@@ -48,10 +41,9 @@ def _(notebook_initialized):
         REQUIRED_HMDA_COLUMNS,
         validate_required_columns,
     )
+    from sandboxes._notebook_init import notebook_init
 
-    if not notebook_initialized:
-        _message = "노트북 초기화가 완료되지 않았습니다."
-        raise RuntimeError(_message)
+    notebook_init()
     return (
         HMDADataValidationError,
         REQUIRED_HMDA_COLUMNS,
@@ -115,7 +107,8 @@ def _(
 ):
     table_name = "hmda_contract"
     column_definitions = ", ".join(
-        f"{quote_identifier(column_name)} VARCHAR" for column_name in actual_column_names
+        f"{quote_identifier(column_name)} VARCHAR"
+        for column_name in actual_column_names
     )
 
     with duckdb.connect() as _connection:

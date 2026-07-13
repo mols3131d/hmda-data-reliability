@@ -30,14 +30,6 @@ def _(mo):
 
 @app.cell
 def _():
-    import sandbox._notebook_init  # noqa: F401
-
-
-    return
-
-
-@app.cell
-def _():
     from itertools import islice
     from pathlib import Path
 
@@ -46,15 +38,10 @@ def _():
     import polars as pl
 
     from project_pivot.pipeline import PipelineRunRequest, load_raw_data
+    from sandboxes._notebook_init import notebook_init
 
+    notebook_init()
     return Path, PipelineRunRequest, duckdb, islice, load_raw_data, mo, pl
-
-
-@app.cell
-def _(load_raw_data):
-    load_raw_data
-
-    return
 
 
 @app.cell
@@ -91,7 +78,8 @@ def _(mo):
             mo.md("## 1. 입력 범위 선택"),
             sample_row_count,
             mo.md(
-                "행 수를 바꾸면 샘플 파일과 샌드박스 DB가 같은 파티션으로 다시 적재됩니다."
+                "행 수를 바꾸면 샘플 파일과 샌드박스 DB가 같은 "
+                "파티션으로 다시 적재됩니다."
             ),
         ]
     )
@@ -146,7 +134,8 @@ def _(actual_sample_row_count, duckdb, mo, sample_path):
     mo.vstack(
         [
             mo.callout(
-                f"`{sample_path}`에 데이터 {actual_sample_row_count:,}행을 만들었습니다.",
+                f"`{sample_path}`에 데이터 "
+                f"{actual_sample_row_count:,}행을 만들었습니다.",
                 kind="success",
             ),
             mo.ui.table(sample_preview, selection=None, page_size=10),
@@ -310,7 +299,8 @@ def _(
         }
     )
     idempotent = (
-        first_load_result.hmda_loans_row_count == second_load_result.hmda_loans_row_count
+        first_load_result.hmda_loans_row_count
+        == second_load_result.hmda_loans_row_count
     )
     return idempotency_frame, idempotent
 
@@ -371,7 +361,9 @@ def _(
 
 @app.cell
 def _(dagster_command, mo, sandbox_paths):
-    path_lines = "\n".join(f"- {label}: `{path}`" for label, path in sandbox_paths.items())
+    path_lines = "\n".join(
+        f"- {label}: `{path}`" for label, path in sandbox_paths.items()
+    )
     mo.md(
         f"""
         ## 4. Dagster 실행과 비교

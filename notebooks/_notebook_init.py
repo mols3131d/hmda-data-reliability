@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
 
-
-def notebook_init():
-    os.chdir(Path(__file__).parent.parent.resolve())
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-notebook_init()
+def notebook_init() -> None:
+    os.chdir(PROJECT_ROOT)
