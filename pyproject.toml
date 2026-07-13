@@ -49,6 +49,9 @@ root_module = "project_pivot"
 defs_module = "project_pivot.orchestration.defs"
 code_location_target_module = "project_pivot.orchestration.definitions"
 
+[tool.marimo.runtime]
+pythonpath = [".", "src"]
+
 [tool.mypy]
 python_version = "3.13"
 strict = true
