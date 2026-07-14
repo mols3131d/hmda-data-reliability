@@ -1,5 +1,3 @@
-.agents/skills/*
-.agents/workflows/*
 .tmp_*
 tmp/**
 data/**

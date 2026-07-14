@@ -59,8 +59,8 @@ def _(manager, table_columns):
             table_name="raw.hmda_loans",
         )
 
-    print(f"컬럼 수: {len(columns)}")
-    print(*sorted(columns), sep=", ")
+    print(len(columns))
+    print(columns)
     return
 
 
