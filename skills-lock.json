@@ -1,6 +1,27 @@
 {
   "version": 1,
   "skills": {
+    "agent-asset-studio": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/agent-asset-studio/SKILL.md",
+      "computedHash": "7bb2a9a4012b3e77d81865d6d0a590e0a577fc38a37ce0b40e34edf6c46e7204"
+    },
+    "code-builder-colony": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/code-builder-colony/SKILL.md",
+      "computedHash": "379e948b357fe5da135b4f6df701c769c92c522ae0cd1f4720564711825298ec"
+    },
+    "code-reviewer-colony": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/code-reviewer-colony/SKILL.md",
+      "computedHash": "b6218ca38e36f16837bc684157d2011fce4cc031ca14b1b59b7008510bd141bd"
+    },
     "dagster-expert": {
       "source": "dagster-io/skills",
       "ref": "master",
@@ -14,6 +35,20 @@
       "sourceType": "github",
       "skillPath": "skills/dignified-python/skills/dignified-python/SKILL.md",
       "computedHash": "af77280f19bc321a9456d4695f13e6b9d9822766a0faeff2e198acea375fd5b3"
+    },
+    "document-studio": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/document-studio/SKILL.md",
+      "computedHash": "ae26e9b2224efb982a67adef5caec5cc1f877a43bb83cb45f1e8958bd3b072dc"
+    },
+    "sandbox-creator": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/sandbox-creator/SKILL.md",
+      "computedHash": "e34cf13f023ed8f9c6e2762605847f559e25a379c200af5cbc4ee05407ab2e01"
     }
   }
 }
