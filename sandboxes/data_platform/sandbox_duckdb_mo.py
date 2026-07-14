@@ -16,7 +16,6 @@ app = marimo.App()
 def _():
     from project_pivot.data_platform.duckdb import (
         DuckDBConnectionManager,
-        ensure_schema,
         table_columns,
         table_row_count,
     )
