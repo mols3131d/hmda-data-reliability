@@ -8,6 +8,7 @@ pytest_report.html
 *.tmp*
 *.origin*
 .codex
+.gemini
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
