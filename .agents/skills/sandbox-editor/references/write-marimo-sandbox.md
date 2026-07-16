@@ -1,17 +1,17 @@
 ---
-name: create-marimo-sandbox
+name: write-marimo-sandbox
 description: >
-  What: Create Python Marimo sandbox with reactive cells to fix user bottlenecks.
+  What: Write Python Marimo sandbox with reactive cells to fix user bottlenecks.
   When: User requests Python sandbox or interactive code exploration.
   Not: Non-notebook languages, standard .py script requests.
   Keywords: marimo, python, sandbox, interactive, reactive.
 ---
 
-# Create Marimo Sandbox
+# Write Marimo Sandbox
 
 ## Goal
 
-Build reactive Marimo sandbox. Solve user bottleneck via interactive variables & instant feedback.
+Write reactive Marimo sandbox. Solve user bottleneck via interactive variables & instant feedback.
 
 ## Non-Goal
 
