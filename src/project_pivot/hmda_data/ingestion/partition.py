@@ -102,7 +102,6 @@ def _overwrite_hmda_loans_partition(
 ) -> None:
     """source_year/source_file 파티션을 staging 테이블 기준으로 덮어쓴다."""
 
-    transaction_started = False
     try:
         _create_staging_table(
             connection=connection,
@@ -116,23 +115,18 @@ def _overwrite_hmda_loans_partition(
             source_year=source_year,
             source_file=source_file,
         )
-        connection.execute("BEGIN TRANSACTION")
-        transaction_started = True
-        _replace_partition_rows(
+        _replace_partition_in_transaction(
             connection=connection,
             table_name=table_name,
             source_year=source_year,
             source_file=source_file,
         )
-        connection.execute("COMMIT")
-        transaction_started = False
     except duckdb.Error as exc:
-        if transaction_started:
-            connection.execute("ROLLBACK")
         context = _partition_context(table_name, source_year, source_file)
         msg = "HMDA 파티션 적재에 실패했습니다."
         raise HMDADataLoadError(msg, context=context) from exc
     finally:
+        # 임시 테이블 정리 실패가 원래 적재 결과나 예외를 덮지 않게 한다.
         with suppress(duckdb.Error):
             connection.execute(
                 f"DROP TABLE IF EXISTS {quote_identifier(_STAGING_TABLE)}"
@@ -148,14 +142,15 @@ def _partition_row_count(
 ) -> int:
     """적재된 source_year/source_file 파티션 행 수를 반환한다."""
 
+    source_file_filter, source_file_params = _source_file_filter(source_file)
     result = connection.execute(
         f"""
         SELECT count(*)
         FROM {qualify_table_name(table_name)}
         WHERE source_year = ?
-        {_source_file_filter_sql(source_file)}
+        {source_file_filter}
         """,
-        [source_year, *_source_file_params(source_file)],
+        [source_year, *source_file_params],
     ).fetchone()
     if result is None:
         context = _partition_context(table_name, source_year, source_file)
@@ -171,18 +166,19 @@ def _create_staging_table(
     source_year: int,
     source_file: str | None,
 ) -> None:
+    source_file_filter, source_file_params = _source_file_filter(source_file)
     connection.execute(
         f"""
         CREATE OR REPLACE TEMP TABLE {quote_identifier(_STAGING_TABLE)} AS
         SELECT *
         FROM ({source_union_sql(source_paths)})
         WHERE source_year = ?
-        {_source_file_filter_sql(source_file)}
+        {source_file_filter}
         """,
         [
             *map(Path.as_posix, source_paths),
             source_year,
-            *_source_file_params(source_file),
+            *source_file_params,
         ],
     )
 
@@ -202,6 +198,29 @@ def _validate_staging_rows(
         raise HMDADataLoadError(msg, context=context)
 
 
+def _replace_partition_in_transaction(
+    *,
+    connection: duckdb.DuckDBPyConnection,
+    table_name: str,
+    source_year: int,
+    source_file: str | None,
+) -> None:
+    """기존 파티션 삭제와 staging 데이터 삽입을 원자적으로 수행한다."""
+
+    connection.execute("BEGIN TRANSACTION")
+    try:
+        _replace_partition_rows(
+            connection=connection,
+            table_name=table_name,
+            source_year=source_year,
+            source_file=source_file,
+        )
+        connection.execute("COMMIT")
+    except duckdb.Error:
+        connection.execute("ROLLBACK")
+        raise
+
+
 def _replace_partition_rows(
     *,
     connection: duckdb.DuckDBPyConnection,
@@ -209,13 +228,14 @@ def _replace_partition_rows(
     source_year: int,
     source_file: str | None,
 ) -> None:
+    source_file_filter, source_file_params = _source_file_filter(source_file)
     connection.execute(
         f"""
         DELETE FROM {qualify_table_name(table_name)}
         WHERE source_year = ?
-        {_source_file_filter_sql(source_file)}
+        {source_file_filter}
         """,
-        [source_year, *_source_file_params(source_file)],
+        [source_year, *source_file_params],
     )
     connection.execute(
         f"""
@@ -226,14 +246,12 @@ def _replace_partition_rows(
     )
 
 
-def _source_file_filter_sql(source_file: str | None) -> str:
+def _source_file_filter(source_file: str | None) -> tuple[str, list[str]]:
+    """선택적 source_file 조건과 대응하는 바인딩 값을 함께 반환한다."""
+
     if source_file is None:
-        return ""
-    return "AND source_file_name = ?"
-
-
-def _source_file_params(source_file: str | None) -> list[str]:
-    return [] if source_file is None else [source_file]
+        return "", []
+    return "AND source_file_name = ?", [source_file]
 
 
 def _partition_context(

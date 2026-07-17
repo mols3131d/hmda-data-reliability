@@ -28,21 +28,18 @@ def row_count_drop(
     """연도 분포를 보존하며 행 수를 대폭 줄인 파일을 생성한다."""
 
     _validate_fraction(sample_fraction, "sample_fraction")
-    query = _ranked_sample_query(source_paths)
-    query = f"""
-        WITH ranked AS ({query})
+    ranked_query = _ranked_sample_query(source_paths)
+    case_query = f"""
+        WITH ranked AS ({ranked_query})
         SELECT * EXCLUDE (__sample_rank, __partition_count)
         FROM ranked
-        WHERE __sample_rank <= greatest(
-            1,
-            CAST(ceil(__partition_count * ?) AS BIGINT)
-        )
+        WHERE {_sample_limit_sql()}
     """
     return write_case_file(
         connection=connection,
         case_name="row_count_drop",
         output_root=output_root,
-        query=query,
+        query=case_query,
         params=[*source_paths_parameter(source_paths), sample_fraction],
     )
 
@@ -61,17 +58,14 @@ def null_spike(
     _validate_fraction(null_fraction, "null_fraction")
     _validate_fraction(sample_fraction, "sample_fraction")
     require_columns(connection, source_paths, {target_column})
-    target = quote_identifier(target_column)
-    query = _ranked_sample_query(source_paths)
-    query = f"""
-        WITH ranked AS ({query}),
+    quoted_target = quote_identifier(target_column)
+    ranked_query = _ranked_sample_query(source_paths)
+    case_query = f"""
+        WITH ranked AS ({ranked_query}),
         sampled AS (
             SELECT *
             FROM ranked
-            WHERE __sample_rank <= greatest(
-                1,
-                CAST(ceil(__partition_count * ?) AS BIGINT)
-            )
+            WHERE {_sample_limit_sql()}
         ),
         null_ranked AS (
             SELECT
@@ -99,8 +93,8 @@ def null_spike(
                         CAST(ceil(__sample_count * ?) AS BIGINT)
                     )
                     THEN NULL
-                    ELSE {target}
-                END AS {target}
+                    ELSE {quoted_target}
+                END AS {quoted_target}
             )
         FROM null_ranked
     """
@@ -108,7 +102,7 @@ def null_spike(
         connection=connection,
         case_name="null_spike",
         output_root=output_root,
-        query=query,
+        query=case_query,
         params=[*source_paths_parameter(source_paths), sample_fraction, null_fraction],
     )
 
@@ -125,24 +119,21 @@ def schema_drift(
 
     _validate_fraction(sample_fraction, "sample_fraction")
     require_columns(connection, source_paths, {target_column})
-    target = quote_identifier(target_column)
-    query = _ranked_sample_query(source_paths)
-    query = f"""
-        WITH ranked AS ({query})
+    quoted_target = quote_identifier(target_column)
+    ranked_query = _ranked_sample_query(source_paths)
+    case_query = f"""
+        WITH ranked AS ({ranked_query})
         SELECT
             * EXCLUDE (__sample_rank, __partition_count)
-            REPLACE (CAST({target} AS VARCHAR) AS {target})
+            REPLACE (CAST({quoted_target} AS VARCHAR) AS {quoted_target})
         FROM ranked
-        WHERE __sample_rank <= greatest(
-            1,
-            CAST(ceil(__partition_count * ?) AS BIGINT)
-        )
+        WHERE {_sample_limit_sql()}
     """
     return write_case_file(
         connection=connection,
         case_name="schema_drift",
         output_root=output_root,
-        query=query,
+        query=case_query,
         params=[*source_paths_parameter(source_paths), sample_fraction],
     )
 
@@ -159,27 +150,24 @@ def freshness_delay(
     """observed_at을 오래된 시각으로 밀어 지연 파일을 생성한다."""
 
     _validate_fraction(sample_fraction, "sample_fraction")
-    observed_at_value = observed_at or datetime.now(UTC) - timedelta(days=delay_days)
-    query = _ranked_sample_query(source_paths)
-    query = f"""
-        WITH ranked AS ({query})
+    delayed_observed_at = observed_at or datetime.now(UTC) - timedelta(days=delay_days)
+    ranked_query = _ranked_sample_query(source_paths)
+    case_query = f"""
+        WITH ranked AS ({ranked_query})
         SELECT
             * EXCLUDE (__sample_rank, __partition_count),
             ? AS observed_at
         FROM ranked
-        WHERE __sample_rank <= greatest(
-            1,
-            CAST(ceil(__partition_count * ?) AS BIGINT)
-        )
+        WHERE {_sample_limit_sql()}
     """
     return write_case_file(
         connection=connection,
         case_name="freshness_delay",
         output_root=output_root,
-        query=query,
+        query=case_query,
         params=[
             *source_paths_parameter(source_paths),
-            observed_at_value,
+            delayed_observed_at,
             sample_fraction,
         ],
     )
@@ -191,6 +179,17 @@ def _validate_fraction(value: float, name: str) -> None:
     if not 0 < value <= 1:
         msg = f"{name}은 0보다 크고 1 이하이어야 합니다: {value}"
         raise SyntheticCaseError(msg)
+
+
+def _sample_limit_sql() -> str:
+    """연도별 행 수에 sample_fraction을 적용하는 제한식을 반환한다."""
+
+    return """
+        __sample_rank <= greatest(
+            1,
+            CAST(ceil(__partition_count * ?) AS BIGINT)
+        )
+    """
 
 
 def _ranked_sample_query(source_paths: Sequence[str | Path]) -> str:

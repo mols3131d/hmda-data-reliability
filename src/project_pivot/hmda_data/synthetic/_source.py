@@ -71,17 +71,30 @@ def source_union_sql(source_paths: Sequence[str | Path]) -> str:
 def _reader_sql(path: Path) -> str:
     """파일 확장자에 맞는 DuckDB reader SQL을 반환한다."""
 
-    if path.suffix.lower() == ".csv":
-        return """
-            SELECT *
-            FROM read_csv_auto(
-                ?,
-                header = true,
-                nullstr = ['NA', ''],
-                sample_size = 200000
-            )
-        """
-    if path.suffix.lower() == ".parquet":
-        return "SELECT * FROM read_parquet(?)"
+    suffix = path.suffix.lower()
+    if suffix == ".csv":
+        return _csv_reader_sql()
+    if suffix == ".parquet":
+        return _parquet_reader_sql()
     msg = f"지원하지 않는 HMDA 합성 원천 파일 형식입니다: {path}"
     raise SyntheticCaseError(msg, context={"source_path": path.as_posix()})
+
+
+def _csv_reader_sql() -> str:
+    """CSV reader SQL을 반환한다."""
+
+    return """
+        SELECT *
+        FROM read_csv_auto(
+            ?,
+            header = true,
+            nullstr = ['NA', ''],
+            sample_size = 200000
+        )
+    """
+
+
+def _parquet_reader_sql() -> str:
+    """Parquet reader SQL을 반환한다."""
+
+    return "SELECT * FROM read_parquet(?)"

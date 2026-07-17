@@ -13,11 +13,13 @@ _SUPPORTED_HMDA_EXTENSIONS = frozenset({".csv", ".parquet"})
 def discover_hmda_files(raw_dir: str | Path) -> list[Path]:
     """지원하는 HMDA CSV/Parquet 원천 파일을 정렬해 찾는다."""
 
+    # 탐색 전에 디렉터리 오류를 명확한 적재 오류로 변환한다.
     directory = Path(raw_dir)
     if not directory.is_dir():
         msg = f"HMDA 원천 디렉터리를 찾을 수 없습니다: {raw_dir}"
         raise HMDADataLoadError(msg, context={"raw_dir": str(raw_dir)})
 
+    # 재현 가능한 처리 순서를 유지하며 지원 파일과 제외 파일을 함께 분류한다.
     supported_paths: list[Path] = []
     ignored_paths: list[str] = []
 
@@ -29,6 +31,7 @@ def discover_hmda_files(raw_dir: str | Path) -> list[Path]:
         else:
             ignored_paths.append(path.name)
 
+    # 제외 파일은 진단용으로 남기되, 지원 파일이 있으면 적재를 계속한다.
     if ignored_paths:
         _LOGGER.info(
             "지원하지 않는 HMDA 원천 파일 제외",
