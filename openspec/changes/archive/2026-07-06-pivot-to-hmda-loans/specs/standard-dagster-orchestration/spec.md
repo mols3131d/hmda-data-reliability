@@ -51,5 +51,5 @@
 #### Scenario: Maintaining orchestration boundaries
 
 - **WHEN** Dagster asset이 실행될 때
-- **THEN** asset은 `project_pivot.pipeline` 또는 `project_pivot.reliability`의 기존 실행 함수를 호출해야 합니다.
+- **THEN** asset은 `project_pivot.data_operations` 또는 `project_pivot.reliability`의 기존 실행 함수를 호출해야 합니다.
 - **AND** asset은 Dagster 의존성, config, logging, metadata 기록만 담당해야 합니다.

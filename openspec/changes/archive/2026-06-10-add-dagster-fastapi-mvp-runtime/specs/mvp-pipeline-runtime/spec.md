@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### Requirement: Shared MVP pipeline runner
+### Requirement: Shared MVP data operations
 
 시스템은 ingestion, dbt build, incident lifecycle을 하나의 공용 runner로 실행해야 한다(SHALL).
 
@@ -11,7 +11,7 @@
 
 ### Requirement: Dagster orchestration entrypoint
 
-시스템은 MVP pipeline runner를 호출하는 Dagster asset/job을 제공해야 한다(SHALL).
+시스템은 MVP data operations를 호출하는 Dagster asset/job을 제공해야 한다(SHALL).
 
 #### Scenario: Dagster definitions 로딩
 
@@ -20,7 +20,7 @@
 
 ### Requirement: FastAPI execution endpoint
 
-시스템은 MVP pipeline runner를 호출하는 FastAPI endpoint를 제공해야 한다(SHALL).
+시스템은 MVP data operations를 호출하는 FastAPI endpoint를 제공해야 한다(SHALL).
 
 #### Scenario: pipeline endpoint 호출
 

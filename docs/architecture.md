@@ -88,11 +88,11 @@ flowchart TB
     rawAsset --> dbtAsset --> lifecycleAsset
 ```
 
-`pipeline_job`은 위 세 asset을 의존성 순서로 실행한다. asset은 도메인 로직을 구현하지 않고 `project_pivot.pipeline` 실행 함수를 호출하며 Dagster metadata만 기록한다.
+`pipeline_job`은 위 세 asset을 의존성 순서로 실행한다. asset은 도메인 로직을 구현하지 않고 `project_pivot.data_operations` 실행 함수를 호출하며 Dagster metadata만 기록한다.
 
 Dagster resource는 기본적으로 dbt build를 실행한다. CLI에서는 `--run-dbt-build`를 지정해야 새 dbt artifact를 만들며, incident impact analysis에는 유효한 artifact가 필요하다. `run_backfill`의 기본값은 `false`다.
 
-등록된 정의는 asset 3개, `pipeline_job` 1개, pipeline resource 1개다. 현재 schedule, sensor, asset check는 없다.
+등록된 정의는 asset 3개, `pipeline_job` 1개, `data_operations` resource 1개다. 현재 schedule, sensor, asset check는 없다.
 
 ## Incident lifecycle
 
@@ -104,7 +104,7 @@ Dagster resource는 기본적으로 dbt build를 실행한다. CLI에서는 `--r
 6. `run_backfill=true`이면 로컬 평가용 승인 객체를 생성하고 partition을 재적재한 뒤 profile row count를 검증한다.
 7. synthetic case의 detection/action 성공률을 Markdown report로 기록한다.
 
-승인 validator는 승인되지 않은 요청을 차단한다. 다만 현재 pipeline runner는 로컬 backfill 검증을 위해 승인 객체를 자동 생성하므로 외부 human approval workflow는 아직 없다.
+승인 validator는 승인되지 않은 요청을 차단한다. 다만 현재 data operations runner는 로컬 backfill 검증을 위해 승인 객체를 자동 생성하므로 외부 human approval workflow는 아직 없다.
 
 ## 컴포넌트 책임
 

@@ -13,24 +13,22 @@ project-pivot은 HMDA 공개 대출 신청 데이터를 DuckDB에 적재하고, 
 
 ## 실행 진입점
 
-### CLI
-
-```bash
-uv run python scripts/run_mvp_pipeline.py \
-  --source-root data/raw/hmda \
-  --source-year 2025 \
-  --output scratch/evaluation/pipeline_run_result.json
-```
-
-dbt까지 실행하려면 `--run-dbt-build`를 추가한다.
-
-### Dagster
+### Dagster UI
 
 ```bash
 PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.definitions
 ```
 
 Dagster job 이름은 `pipeline_job`이고 asset 순서는 `raw_hmda_loans -> dbt_loan_analytics -> incident_lifecycle`이다.
+
+직접 실행:
+
+```bash
+PYTHONPATH=src uv run dagster job execute \
+  -m project_pivot.orchestration.definitions \
+  -a defs \
+  -j pipeline_job
+```
 
 정의 확인:
 
@@ -43,5 +41,5 @@ PYTHONPATH=src uv run dg list defs --json
 ```bash
 uv run ruff check src tests
 uv run mypy src tests
-uv run pytest tests/hmda_data tests/dbt tests/pipeline tests/orchestration
+uv run pytest tests/hmda_data tests/dbt tests/data_operations tests/orchestration
 ```
