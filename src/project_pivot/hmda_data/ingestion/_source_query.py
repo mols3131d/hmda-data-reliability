@@ -37,39 +37,55 @@ def source_union_sql(source_paths: Sequence[Path]) -> str:
 
 
 def _source_select_sql(path: Path) -> str:
-    """원천 파일에서 raw.hmda_loans 스키마로 읽는 SELECT SQL을 만든다."""
+    """원천 파일을 읽고 파일 경로·이름·연도·적재 시각을 추가한다."""
 
     return f"""
         SELECT
             * EXCLUDE (filename),
             filename AS source_file,
             parse_filename(filename) AS source_file_name,
-            TRY_CAST(
-                regexp_extract(
-                    parse_filename(filename, true),
-                    '(\\d{{4}})',
-                    1
-                ) AS INTEGER
-            )
-                AS source_year,
+            {_source_year_sql()} AS source_year,
             current_timestamp AS ingested_at
         FROM {_reader_sql(path)}
+    """
+
+
+def _source_year_sql() -> str:
+    """파일명에서 네 자리 연도를 추출하는 SQL을 반환한다."""
+
+    return """
+        TRY_CAST(
+            regexp_extract(parse_filename(filename), '(\\d{4})', 1)
+            AS INTEGER
+        )
     """
 
 
 def _reader_sql(path: Path) -> str:
     suffix = path.suffix.lower()
     if suffix == ".csv":
-        return """
-            read_csv_auto(
-                ?,
-                header = true,
-                nullstr = ['NA', ''],
-                sample_size = 200000,
-                filename = true
-            )
-        """
+        return _csv_reader_sql()
     if suffix == ".parquet":
-        return "read_parquet(?, filename = true)"
+        return _parquet_reader_sql()
     msg = f"지원하지 않는 HMDA 원천 파일 형식입니다: {path}"
     raise HMDADataLoadError(msg, context={"source_path": path.as_posix()})
+
+
+def _csv_reader_sql() -> str:
+    """CSV reader SQL을 반환한다."""
+
+    return """
+        read_csv_auto(
+            ?,
+            header = true,
+            nullstr = ['NA', ''],
+            sample_size = 200000,
+            filename = true
+        )
+    """
+
+
+def _parquet_reader_sql() -> str:
+    """Parquet reader SQL을 반환한다."""
+
+    return "read_parquet(?, filename = true)"
