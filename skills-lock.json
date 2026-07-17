@@ -8,13 +8,6 @@
       "skillPath": "src/skills/agent-asset-studio/SKILL.md",
       "computedHash": "4a812b5c9bd899f58db0ef728fa917d90f2f19f95adfa382d8e3f905fe6c8990"
     },
-    "dagster-expert": {
-      "source": "dagster-io/skills",
-      "ref": "master",
-      "sourceType": "github",
-      "skillPath": "skills/dagster-expert/skills/dagster-expert/SKILL.md",
-      "computedHash": "0de12b5fee0975ce5440efbea2f49016bfe6af3e6b0aba12a293bc03698939b4"
-    },
     "sandbox-editor": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
