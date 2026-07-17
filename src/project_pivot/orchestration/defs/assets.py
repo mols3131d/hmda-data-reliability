@@ -1,19 +1,23 @@
-"""Dagster assets for Pipeline pipeline."""
+"""데이터 작업을 실행하는 Dagster asset."""
 
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 
-from project_pivot.orchestration.defs.resource import PipelineDagsterResource
-from project_pivot.pipeline import load_raw_data, run_dbt_build, run_incident_lifecycle
+from project_pivot.data_operations import (
+    load_raw_data,
+    run_dbt_build,
+    run_incident_lifecycle,
+)
+from project_pivot.orchestration.defs.resource import DataOperationsResource
 
 
 @asset(group_name="bronze", kinds={"duckdb", "python"})
 def raw_hmda_loans(
     context: AssetExecutionContext,
-    pipeline: PipelineDagsterResource,
+    data_operations: DataOperationsResource,
 ) -> MaterializeResult[None]:
     """원천 파일을 raw DuckDB table로 적재한다."""
 
-    result = load_raw_data(pipeline.to_request())
+    result = load_raw_data(data_operations.to_request())
     context.log.info(
         "raw HMDA loans 적재 완료",
         extra={"hmda_loans_row_count": result.hmda_loans_row_count},
@@ -32,11 +36,11 @@ def raw_hmda_loans(
 @asset(deps=[raw_hmda_loans], group_name="silver_gold", kinds={"dbt"})
 def dbt_loan_analytics(
     context: AssetExecutionContext,
-    pipeline: PipelineDagsterResource,
+    data_operations: DataOperationsResource,
 ) -> MaterializeResult[None]:
     """dbt staging/mart 모델과 테스트를 실행한다."""
 
-    request = pipeline.to_request()
+    request = data_operations.to_request()
     if not request.run_dbt_build:
         context.log.info("dbt build 건너뜀")
         return MaterializeResult(
@@ -62,11 +66,11 @@ def dbt_loan_analytics(
 @asset(deps=[dbt_loan_analytics], group_name="control", kinds={"python"})
 def incident_lifecycle(
     context: AssetExecutionContext,
-    pipeline: PipelineDagsterResource,
+    data_operations: DataOperationsResource,
 ) -> MaterializeResult[None]:
     """evidence부터 evaluation까지 incident lifecycle을 실행한다."""
 
-    result = run_incident_lifecycle(pipeline.to_request())
+    result = run_incident_lifecycle(data_operations.to_request())
     context.log.info(
         "incident lifecycle 완료",
         extra={
@@ -93,5 +97,14 @@ def incident_lifecycle(
                 result.detection_success_rate
             ),
             "action_success_rate": MetadataValue.float(result.action_success_rate),
+            **(
+                {
+                    "backfill_validation_passed": MetadataValue.bool(
+                        result.backfill_validation_passed
+                    )
+                }
+                if result.backfill_validation_passed is not None
+                else {}
+            ),
         }
     )

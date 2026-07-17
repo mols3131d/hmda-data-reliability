@@ -1,4 +1,4 @@
-"""HMDA loans 파이프라인 실행 요청 모델."""
+"""HMDA loans 데이터 작업 요청 모델."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-class PipelineRunRequest(BaseModel):
-    """현재 hmda_loans 데이터셋 처리를 위한 로컬 파이프라인 실행 입력."""
+class DataOperationRequest(BaseModel):
+    """현재 hmda_loans 데이터셋 처리를 위한 데이터 작업 입력."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -27,7 +27,7 @@ class PipelineRunRequest(BaseModel):
     dbt_profiles_dir: Path = Path("dbt")
     dbt_manifest_path: Path = Path("dbt/target/manifest.json")
     dbt_run_results_path: Path = Path("dbt/target/run_results.json")
-    report_path: Path = Path("scratch/evaluation/pipeline_run_report.md")
+    report_path: Path = Path("scratch/evaluation/data_operations_report.md")
     run_dbt_build: bool = True
     run_backfill: bool = False
     simulate_row_count_ratio: float = Field(default=0.25, gt=0, le=1)

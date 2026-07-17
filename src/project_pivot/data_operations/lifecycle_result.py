@@ -1,4 +1,4 @@
-"""Pipeline incident lifecycle result model."""
+"""데이터 작업의 incident lifecycle 결과 모델."""
 
 from pathlib import Path
 

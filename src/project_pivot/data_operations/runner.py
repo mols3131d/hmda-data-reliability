@@ -1,4 +1,4 @@
-"""Pipeline pipeline runner."""
+"""데이터 적재, dbt build, incident lifecycle을 실행한다."""
 
 from __future__ import annotations
 
@@ -8,14 +8,13 @@ import time
 from datetime import UTC, datetime
 from typing import cast
 
+from project_pivot.data_operations.dbt_result import DbtBuildResult
+from project_pivot.data_operations.errors import DataOperationError
+from project_pivot.data_operations.lifecycle_result import LifecycleResult
+from project_pivot.data_operations.raw_result import RawLoadResult
+from project_pivot.data_operations.request import DataOperationRequest
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans_partition
-from project_pivot.pipeline._dbt_result import DbtBuildResult
-from project_pivot.pipeline._errors import PipelineRuntimeError
-from project_pivot.pipeline._lifecycle_result import LifecycleResult
-from project_pivot.pipeline._raw_result import RawLoadResult
-from project_pivot.pipeline._request import PipelineRunRequest
-from project_pivot.pipeline._result import PipelineRunResult
 from project_pivot.reliability import (
     Approval,
     ApprovalStatus,
@@ -41,21 +40,7 @@ from project_pivot.reliability.impact import ImpactAnalysisResult
 _DBT_BUILD_TIMEOUT_SECONDS = 300
 
 
-def run_pipeline(request: PipelineRunRequest) -> PipelineRunResult:
-    """raw load부터 evaluation report까지 Pipeline pipeline을 실행한다."""
-
-    raw_load = load_raw_data(request)
-    dbt_build = run_dbt_build(request) if request.run_dbt_build else None
-    lifecycle = run_incident_lifecycle(request)
-    return PipelineRunResult(
-        status="completed",
-        raw_load=raw_load,
-        dbt_build=dbt_build,
-        lifecycle=lifecycle,
-    )
-
-
-def load_raw_data(request: PipelineRunRequest) -> RawLoadResult:
+def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
     """원천 파일을 DuckDB raw table로 멱등 적재한다."""
 
     hmda_paths = discover_hmda_files(request.source_root)
@@ -77,7 +62,7 @@ def load_raw_data(request: PipelineRunRequest) -> RawLoadResult:
     )
 
 
-def run_dbt_build(request: PipelineRunRequest) -> DbtBuildResult:
+def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
     """dbt build를 실행하고 artifact 경로를 반환한다."""
 
     command = [
@@ -104,13 +89,13 @@ def run_dbt_build(request: PipelineRunRequest) -> DbtBuildResult:
         )
     except subprocess.TimeoutExpired as exc:
         msg = f"dbt build 실행 시간이 {_DBT_BUILD_TIMEOUT_SECONDS}초를 초과했습니다."
-        raise PipelineRuntimeError(msg) from exc
+        raise DataOperationError(msg) from exc
     except OSError as exc:
         msg = "dbt build 프로세스를 시작할 수 없습니다."
-        raise PipelineRuntimeError(msg) from exc
+        raise DataOperationError(msg) from exc
     if result.returncode != 0:
         msg = f"dbt build 실행에 실패했습니다: return_code={result.returncode}"
-        raise PipelineRuntimeError(msg)
+        raise DataOperationError(msg)
     _validate_dbt_artifacts(request, started_at=started_at)
     return DbtBuildResult(
         command=command,
@@ -122,7 +107,7 @@ def run_dbt_build(request: PipelineRunRequest) -> DbtBuildResult:
 
 
 def _validate_dbt_artifacts(
-    request: PipelineRunRequest,
+    request: DataOperationRequest,
     *,
     started_at: float,
 ) -> None:
@@ -135,10 +120,10 @@ def _validate_dbt_artifacts(
     if invalid_paths:
         joined_paths = ", ".join(str(path) for path in invalid_paths)
         msg = f"dbt build artifact를 확인할 수 없습니다: {joined_paths}"
-        raise PipelineRuntimeError(msg)
+        raise DataOperationError(msg)
 
 
-def run_incident_lifecycle(request: PipelineRunRequest) -> LifecycleResult:
+def run_incident_lifecycle(request: DataOperationRequest) -> LifecycleResult:
     """evidence, detection, impact, remediation, recovery, evaluation을 실행한다."""
 
     observed_at = request.observed_at or datetime.now(UTC)
@@ -170,7 +155,7 @@ def run_incident_lifecycle(request: PipelineRunRequest) -> LifecycleResult:
         )
         current = baseline.model_copy(
             update={
-                "snapshot_id": "profile_pipeline_current",
+                "snapshot_id": "profile_data_operation_current",
                 "row_count": current_row_count,
                 "metric_values": {"row_count": float(current_row_count)},
             }
@@ -203,12 +188,12 @@ def run_incident_lifecycle(request: PipelineRunRequest) -> LifecycleResult:
                 approval_id=f"approval_{primary_detection.incident.incident_id}",
                 incident_id=primary_detection.incident.incident_id,
                 status=ApprovalStatus.APPROVED,
-                requested_by="pipeline",
+                requested_by="data_operations",
                 requested_at=observed_at,
-                approved_by="pipeline",
+                approved_by="data_operations",
                 approved_at=observed_at,
                 requested_actions=["overwrite_partition", "rerun_profile_snapshot"],
-                reason="Pipeline pipeline 자동 복구 검증",
+                reason="데이터 작업 자동 복구 검증",
             )
             backfill_result = execute_approved_backfill(
                 connection,
@@ -239,7 +224,7 @@ def run_incident_lifecycle(request: PipelineRunRequest) -> LifecycleResult:
     report = build_evaluation_report(
         [
             EvaluationCaseResult(
-                case_name="pipeline_volume_drop",
+                case_name="data_operation_volume_drop",
                 expected_incident_types=["volume_drop"],
                 detected_incident_types=detected_types,
                 required_actions=["prepare_partition_backfill"],

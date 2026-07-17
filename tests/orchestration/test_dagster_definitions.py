@@ -1,11 +1,19 @@
 """Dagster definitions 테스트."""
 
+import importlib
 from pathlib import Path
 
 import pytest
 from dagster import AssetKey, materialize
 from pytest import MonkeyPatch
 
+from project_pivot import data_operations
+from project_pivot.data_operations import (
+    DataOperationRequest,
+    DbtBuildResult,
+    LifecycleResult,
+    RawLoadResult,
+)
 from project_pivot.orchestration.definitions import defs
 from project_pivot.orchestration.defs import assets as dagster_assets
 from project_pivot.orchestration.defs.assets import (
@@ -13,13 +21,7 @@ from project_pivot.orchestration.defs.assets import (
     incident_lifecycle,
     raw_hmda_loans,
 )
-from project_pivot.orchestration.defs.resource import PipelineDagsterResource
-from project_pivot.pipeline import (
-    DbtBuildResult,
-    LifecycleResult,
-    PipelineRunRequest,
-    RawLoadResult,
-)
+from project_pivot.orchestration.defs.resource import DataOperationsResource
 
 pytestmark = pytest.mark.integration
 
@@ -53,13 +55,22 @@ def test_dagster_definitions_expose_medallion_assets_and_job() -> None:
     assert lifecycle_node.parent_keys == {AssetKey("dbt_loan_analytics")}
 
 
+def test_dagster_is_only_full_pipeline_orchestrator() -> None:
+    """독립 runner와 CLI를 공개하지 않는다."""
+
+    assert not hasattr(data_operations, "run_pipeline")
+    assert not hasattr(data_operations, "PipelineRunResult")
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("project_pivot.data_operations.cli")
+
+
 def test_dagster_materialization_records_metadata(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     """Pipeline asset materialization metadata가 Dagster event에 기록되는지 검증한다."""
 
-    def load_raw_data_stub(_request: PipelineRunRequest) -> RawLoadResult:
+    def load_raw_data_stub(_request: DataOperationRequest) -> RawLoadResult:
         return RawLoadResult(
             database_path=tmp_path / "project_pivot.duckdb",
             source_root=tmp_path / "raw",
@@ -68,7 +79,7 @@ def test_dagster_materialization_records_metadata(
             hmda_loans_row_count=4,
         )
 
-    def run_dbt_build_stub(_request: PipelineRunRequest) -> DbtBuildResult:
+    def run_dbt_build_stub(_request: DataOperationRequest) -> DbtBuildResult:
         return DbtBuildResult(
             command=["dbt", "build"],
             return_code=0,
@@ -78,7 +89,7 @@ def test_dagster_materialization_records_metadata(
         )
 
     def run_incident_lifecycle_stub(
-        _request: PipelineRunRequest,
+        _request: DataOperationRequest,
     ) -> LifecycleResult:
         return LifecycleResult(
             metadata_row_count=4,
@@ -106,7 +117,7 @@ def test_dagster_materialization_records_metadata(
 
     result = materialize(
         [raw_hmda_loans, dbt_loan_analytics, incident_lifecycle],
-        resources={"pipeline": PipelineDagsterResource()},
+        resources={"data_operations": DataOperationsResource()},
     )
 
     assert result.success
@@ -130,7 +141,7 @@ def test_skipped_dbt_build_records_boolean_metadata(
 ) -> None:
     """건너뛴 dbt build를 실행 성공으로 표시하지 않는다."""
 
-    resource = PipelineDagsterResource(run_dbt_build=False)
+    resource = DataOperationsResource(run_dbt_build=False)
     monkeypatch.setattr(
         dagster_assets,
         "load_raw_data",
@@ -144,7 +155,7 @@ def test_skipped_dbt_build_records_boolean_metadata(
     )
     result = materialize(
         [raw_hmda_loans, dbt_loan_analytics],
-        resources={"pipeline": resource},
+        resources={"data_operations": resource},
     )
     materialization = result.asset_materializations_for_node("dbt_loan_analytics")[0]
 

@@ -37,11 +37,11 @@ def _():
     import marimo as mo
     import polars as pl
 
-    from project_pivot.pipeline import PipelineRunRequest, load_raw_data
+    from project_pivot.data_operations import DataOperationRequest, load_raw_data
     from sandboxes._notebook_init import notebook_init
 
     notebook_init()
-    return Path, PipelineRunRequest, duckdb, islice, load_raw_data, mo, pl
+    return DataOperationRequest, Path, duckdb, islice, load_raw_data, mo, pl
 
 
 @app.cell
@@ -145,8 +145,8 @@ def _(actual_sample_row_count, duckdb, mo, sample_path):
 
 
 @app.cell
-def _(PipelineRunRequest, direct_database_path, load_raw_data, sample_root):
-    ingest_request = PipelineRunRequest(
+def _(DataOperationRequest, direct_database_path, load_raw_data, sample_root):
+    ingest_request = DataOperationRequest(
         database_path=direct_database_path,
         source_root=sample_root,
         source_year=2025,
@@ -333,7 +333,7 @@ def _(
         "\n".join(
             [
                 "resources:",
-                "  pipeline:",
+                "  data_operations:",
                 "    config:",
                 f"      database_path: {dagster_database_path.as_posix()}",
                 f"      source_root: {sample_root.as_posix()}",
