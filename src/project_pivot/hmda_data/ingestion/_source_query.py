@@ -8,12 +8,11 @@ from pathlib import Path
 from project_pivot.hmda_data.errors import HMDADataLoadError
 
 
-def normalize_source_paths(source_paths: Sequence[str | Path]) -> list[Path]:
-    """지원하는 HMDA 원천 파일 경로를 Path 목록으로 정규화한다."""
+def validate_source_paths(source_paths: Sequence[str | Path]) -> list[Path]:
+    """HMDA 원천 파일 경로를 검증하고 Path 목록으로 반환한다."""
 
     if not source_paths:
-        msg = "적재할 HMDA CSV 또는 Parquet 파일이 없습니다."
-        raise HMDADataLoadError(msg)
+        raise HMDADataLoadError(message="적재할 HMDA CSV 또는 Parquet 파일이 없습니다.")
 
     paths = [Path(path) for path in source_paths]
     unsupported_paths = [
@@ -22,8 +21,10 @@ def normalize_source_paths(source_paths: Sequence[str | Path]) -> list[Path]:
         if path.suffix.lower() not in {".csv", ".parquet"}
     ]
     if unsupported_paths:
-        msg = "지원하지 않는 HMDA 원천 파일 형식입니다."
-        raise HMDADataLoadError(msg, context={"unsupported_paths": unsupported_paths})
+        raise HMDADataLoadError(
+            message="지원하지 않는 HMDA 원천 파일 형식입니다.",
+            context={"unsupported_paths": unsupported_paths},
+        )
     return paths
 
 
@@ -42,10 +43,10 @@ def _source_select_sql(path: Path) -> str:
         SELECT
             * EXCLUDE (filename),
             filename AS source_file,
-            regexp_extract(filename, '[^/]+$', 0) AS source_file_name,
+            parse_filename(filename) AS source_file_name,
             TRY_CAST(
                 regexp_extract(
-                    regexp_extract(filename, '[^/]+$', 0),
+                    parse_filename(filename, true),
                     '(\\d{{4}})',
                     1
                 ) AS INTEGER

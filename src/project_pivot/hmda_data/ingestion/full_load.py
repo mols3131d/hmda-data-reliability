@@ -16,8 +16,8 @@ from project_pivot.hmda_data.ingestion._common import (
     validate_required_columns,
 )
 from project_pivot.hmda_data.ingestion._source_query import (
-    normalize_source_paths,
     source_union_sql,
+    validate_source_paths,
 )
 
 
@@ -29,7 +29,7 @@ def load_hmda_loans(
 ) -> int:
     """HMDA CSV/Parquet 파일을 raw.hmda_loans에 멱등 적재한다."""
 
-    paths = normalize_source_paths(source_paths)
+    paths = validate_source_paths(source_paths)
     try:
         _create_hmda_loans_table(connection, paths, table_name=table_name)
         validate_required_columns(connection, table_name)

@@ -17,8 +17,8 @@ from project_pivot.hmda_data.ingestion._common import (
     validate_required_columns,
 )
 from project_pivot.hmda_data.ingestion._source_query import (
-    normalize_source_paths,
     source_union_sql,
+    validate_source_paths,
 )
 
 _STAGING_TABLE = "__hmda_loans_partition_stage"
@@ -34,7 +34,7 @@ def load_hmda_loans_partition(
 ) -> int:
     """HMDA source_year/source_file 파티션을 멱등 적재한다."""
 
-    paths = normalize_source_paths(source_paths)
+    paths = validate_source_paths(source_paths)
     try:
         _ensure_hmda_loans_table(connection, paths, table_name)
     except duckdb.Error as exc:
