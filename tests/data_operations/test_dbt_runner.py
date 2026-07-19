@@ -44,6 +44,49 @@ def test_run_dbt_build_wraps_timeout(
         runner.run_dbt_build(_request(tmp_path))
 
 
+def test_run_dbt_build_includes_last_stderr_line(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """dbt 실패 원인의 마지막 줄을 데이터 작업 오류에 포함한다."""
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: CompletedProcess(
+            args[0],
+            1,
+            "",
+            "상세 stack trace\nprofiles.yml을 찾을 수 없습니다.",
+        ),
+    )
+
+    with pytest.raises(DataOperationError, match="profiles.yml을 찾을 수 없습니다"):
+        runner.run_dbt_build(_request(tmp_path))
+
+
+def test_run_dbt_build_rejects_preexisting_artifacts(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """이전 실행의 artifact를 이번 실행 결과로 인정하지 않는다."""
+
+    request = _request(tmp_path)
+    request.dbt_manifest_path.write_text("stale", encoding="utf-8")
+    request.dbt_run_results_path.write_text("stale", encoding="utf-8")
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: CompletedProcess(args[0], 0, "", ""),
+    )
+
+    with pytest.raises(DataOperationError, match="artifact"):
+        runner.run_dbt_build(request)
+
+    assert not request.dbt_manifest_path.exists()
+    assert not request.dbt_run_results_path.exists()
+
+
 def test_run_dbt_build_returns_verified_artifacts(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

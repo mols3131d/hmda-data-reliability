@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import subprocess
-import time
 from datetime import UTC, datetime
 from typing import cast
 
@@ -75,9 +74,8 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
     ]
     env = os.environ.copy()
     env["PROJECT_PIVOT_DUCKDB_PATH"] = str(request.database_path)
-    env["DBT_PROFILES_DIR"] = str(request.dbt_profiles_dir)
     env["DBT_SEND_ANONYMOUS_USAGE_STATS"] = "false"
-    started_at = time.time()
+    _remove_dbt_artifacts(request)
     try:
         result = subprocess.run(
             command,
@@ -94,9 +92,14 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
         msg = "dbt build 프로세스를 시작할 수 없습니다."
         raise DataOperationError(msg) from exc
     if result.returncode != 0:
-        msg = f"dbt build 실행에 실패했습니다: return_code={result.returncode}"
+        stderr_lines = result.stderr.strip().splitlines()
+        stderr = stderr_lines[-1][:500] if stderr_lines else "출력 없음"
+        msg = (
+            "dbt build 실행에 실패했습니다: "
+            f"return_code={result.returncode}, stderr={stderr}"
+        )
         raise DataOperationError(msg)
-    _validate_dbt_artifacts(request, started_at=started_at)
+    _validate_dbt_artifacts(request)
     return DbtBuildResult(
         command=command,
         return_code=result.returncode,
@@ -106,16 +109,20 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
     )
 
 
-def _validate_dbt_artifacts(
-    request: DataOperationRequest,
-    *,
-    started_at: float,
-) -> None:
-    stale_before = started_at - 1.0
+def _remove_dbt_artifacts(request: DataOperationRequest) -> None:
+    for path in (request.dbt_manifest_path, request.dbt_run_results_path):
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            msg = f"기존 dbt artifact를 제거할 수 없습니다: {path}"
+            raise DataOperationError(msg) from exc
+
+
+def _validate_dbt_artifacts(request: DataOperationRequest) -> None:
     invalid_paths = [
         path
         for path in (request.dbt_manifest_path, request.dbt_run_results_path)
-        if not path.is_file() or path.stat().st_mtime < stale_before
+        if not path.is_file()
     ]
     if invalid_paths:
         joined_paths = ", ".join(str(path) for path in invalid_paths)
