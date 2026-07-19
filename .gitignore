@@ -7,6 +7,7 @@ pytest_report.html
 *.origin*
 .codex
 .gemini
+.caveman-compress
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
