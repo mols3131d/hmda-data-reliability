@@ -32,6 +32,12 @@ def load_config() -> dict[str, Any]:
     return defaults
 
 
+def get_reviews_dir(workspace_dir: Path | None = None) -> Path:
+    """Returns the resolved reviews directory path."""
+    rel_dir = load_config().get("reviews_dir", "docs/reviews").lstrip("/")
+    return (workspace_dir / rel_dir) if workspace_dir else Path(rel_dir)
+
+
 class ReviewFileCreationError(Exception):
     """Passes context related to review document creation failures."""
 

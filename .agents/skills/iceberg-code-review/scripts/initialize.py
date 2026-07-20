@@ -10,7 +10,7 @@ from shared import CONFIG_FILE, is_initialized
 LOGGER = logging.getLogger(__name__)
 
 DEFAULT_CONFIG: dict[str, Any] = {
-    "reviews_dir": "docs/reviews",
+    "reviews_dir": "/docs/reviews",
     "allow_extra_frontmatter": True,
     "allow_extra_sections": True,
 }

@@ -6,12 +6,21 @@ description: >
   EXCLUDES: 코드 수정·리팩터링 구현, 일반 코드 설명, 비코드 문서 리뷰.
 ---
 
+## Arguments
+
+미지정 시 `lite` 사용.
+
+| argument | workflow | output |
+| :--- | :--- | :--- |
+| `lite` | `./workflows/summary.md` | `__summary__.md` |
+| `full` | `./workflows/summary.md`, `./workflows/finding-details.md` | `__summary__.md`, finding별 상세 문서 |
+
 ## Rules
 
-1. 코드 리뷰만 수행. 수정 금지.
-2. `__summary__.md`에 가장 치명적인 finding과 전체 결론부터 작성.
-3. `full`은 배경, 근거, 영향, 권장 조치, 검증을 finding별 상세 문서에 작성.
-4. 군더더기와 주관적 수식어 제거.
+1. **코드 리뷰만 수행**: 코드 수정 절대 금지.
+2. **군더더기 배제**: 주관적 수식어 없이 객관적으로 서술.
+3. **워크플로우 명세 준수**: Arguments에 맞는 `workflows/*.md` 읽고 실행.
+4. **불필요한 스크립트 분석 금지**: 에러 발생 시에만 스크립트를 열어 컨텍스트 토큰 절약.
 
 ## Severity
 
@@ -29,15 +38,6 @@ description: >
 | `open` | 확인 또는 수정 필요 |
 | `resolved` | 수정 후 검증 완료 |
 | `dismissed` | 수정하지 않기로 결정 |
-
-## Arguments
-
-미지정 시 `lite` 사용.
-
-| argument | workflow | output |
-| :--- | :--- | :--- |
-| `lite` | `./workflows/summary.md` | `__summary__.md` |
-| `full` | `./workflows/summary.md`, `./workflows/finding-details.md` | `__summary__.md`, finding별 상세 문서 |
 
 ## References
 

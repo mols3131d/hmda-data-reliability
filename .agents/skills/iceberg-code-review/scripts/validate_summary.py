@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 
 from checks import validate_no_comments, validate_review_file
+from schema import SUMMARY_SCHEMA
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +25,10 @@ def main() -> int:
 
     errors = []
     errors.extend(validate_no_comments(args.review_file_path))
-    errors.extend(validate_review_file(args.review_file_path, expected_type="summary"))
+    expected_type = SUMMARY_SCHEMA["frontmatter"]["type"]["default"]
+    errors.extend(
+        validate_review_file(args.review_file_path, expected_type=expected_type)
+    )
 
     if errors:
         for error in errors:
