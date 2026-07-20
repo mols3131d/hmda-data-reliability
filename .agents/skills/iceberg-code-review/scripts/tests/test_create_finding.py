@@ -22,9 +22,7 @@ class CreateFindingTest(unittest.TestCase):
 
 def _template() -> Path:
     return (
-        Path(__file__).resolve().parents[2]
-        / "templates"
-        / "{{domain}}-{{finding}}.md"
+        Path(__file__).resolve().parents[2] / "templates" / "{{domain}}-{{finding}}.md"
     )
 
 

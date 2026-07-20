@@ -10,8 +10,8 @@
 각 finding에 대해 순서대로 실행:
 
 1. `domain`과 `finding` slug 결정.
-2. `python3 ./scripts/create_finding.py --summary-file "{summary_file_path}" --domain "{domain}" --finding "{finding}"` 실행.
-3. LLM은 생성된 `{domain}-{finding}.md`를 템플릿 주석에 따라 작성:
+2. `<PYTHON_EXEC> ./scripts/create_finding.py --summary-file "<summary_file_path>" --domain "<domain>" --finding "<finding>"` 실행.
+3. LLM은 생성된 `<domain>-<finding>.md`를 템플릿 주석에 따라 작성:
    - 검증된 문제와 위치
    - 영향
    - 실행 가능한 수정안
@@ -20,4 +20,10 @@
 
 ## Validation
 
-`@./validation-file.md`
+1. 작성된 각 `<domain>-<finding>.md` 파일의 무결성을 검증합니다.
+
+   ```bash
+   <PYTHON_EXEC> ./scripts/validate_finding.py "<summary_file_dir>/<domain>-<finding>.md"
+   ```
+
+2. 검증 에러(`FAIL: ...`) 발생 시, 출력되는 키워드를 확인하여 문서 수정 후 다시 검증합니다.

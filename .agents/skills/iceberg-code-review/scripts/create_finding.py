@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""코드 리뷰 finding 파일을 템플릿에서 생성한다."""
+"""Generates a code review finding file from a template."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="코드 리뷰 finding 파일 생성")
+    parser = argparse.ArgumentParser(description="Create code review finding file")
     parser.add_argument("--summary-file", required=True, type=Path)
     parser.add_argument("--domain", required=True)
     parser.add_argument("--finding", required=True)
@@ -25,7 +25,7 @@ def create_finding(summary_file: Path, domain: str, finding: str) -> Path:
         validate_slug(name, value)
 
     if not summary_file.is_file():
-        raise ReviewFileCreationError(f"summary 파일이 없습니다: {summary_file}")
+        raise ReviewFileCreationError(f"SUMMARY_FILE_NOT_FOUND: {summary_file}")
 
     destination = summary_file.parent / f"{domain}-{finding}.md"
     return copy_template("{{domain}}-{{finding}}.md", destination)
@@ -38,10 +38,10 @@ def main() -> int:
     try:
         destination = create_finding(args.summary_file, args.domain, args.finding)
     except ReviewFileCreationError as error:
-        LOGGER.error("finding 생성 실패: %s", error, extra={"reason": str(error)})
+        LOGGER.error("Fail: %s", error, extra={"reason": str(error)})
         return 1
 
-    LOGGER.info("finding 생성 완료: %s", destination)
+    LOGGER.info("OK: %s", destination.name)
     return 0
 
 

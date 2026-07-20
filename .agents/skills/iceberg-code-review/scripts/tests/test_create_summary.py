@@ -1,6 +1,6 @@
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 from create_summary import create_summary
 from shared import ReviewFileCreationError

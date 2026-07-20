@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""코드 리뷰 summary 파일을 템플릿에서 생성한다."""
+"""Generates a code review summary file from a template."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="코드 리뷰 summary 파일 생성")
+    parser = argparse.ArgumentParser(description="Create code review summary file")
     parser.add_argument("--reviews-dir", required=True, type=Path)
     parser.add_argument("--title-slug", required=True)
     return parser.parse_args()
@@ -33,10 +33,10 @@ def main() -> int:
     try:
         destination = create_summary(args.reviews_dir, args.title_slug)
     except ReviewFileCreationError as error:
-        LOGGER.error("summary 생성 실패: %s", error, extra={"reason": str(error)})
+        LOGGER.error("Fail: %s", error, extra={"reason": str(error)})
         return 1
 
-    LOGGER.info("summary 생성 완료: %s", destination)
+    LOGGER.info("OK: %s", destination.name)
     return 0
 
 
