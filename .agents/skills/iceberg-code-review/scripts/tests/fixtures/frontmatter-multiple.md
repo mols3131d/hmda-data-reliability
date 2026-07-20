@@ -5,7 +5,7 @@ type: 'code-review-finding'
 
 ## Summary
 
-내용
+Content
 
 ---
 
@@ -15,4 +15,4 @@ type: 'code-review-finding'
 
 ## Observation
 
-중복된 프론트매터.
+Duplicated frontmatter.

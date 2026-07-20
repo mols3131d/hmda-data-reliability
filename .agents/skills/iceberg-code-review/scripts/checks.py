@@ -4,8 +4,9 @@ from typing import Any
 
 import yaml
 from schema import TEMPLATE_SCHEMAS
+from shared import load_config
 
-PLACEHOLDER_PATTERN = re.compile(r"{{[A-Za-z가-힣_]+}}")
+PLACEHOLDER_PATTERN = re.compile(r"{{[A-Za-z_]+}}")
 FRONTMATTER_PATTERN = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
 HEADING_PATTERN = re.compile(r"^## (?P<name>.+)$", re.MULTILINE)
 HTML_COMMENT_PATTERN = re.compile(r"<!--[\s\S]*?-->")
@@ -54,7 +55,16 @@ def validate_review_file(
     required_metadata = TEMPLATE_SCHEMAS[document_type]["frontmatter"]
     required_sections = TEMPLATE_SCHEMAS[document_type]["sections"]
 
+    config = load_config()
+    allow_extra_frontmatter = config.get("allow_extra_frontmatter", True)
+    allow_extra_sections = config.get("allow_extra_sections", True)
+
     errors = []
+    if not allow_extra_frontmatter:
+        extra = set(metadata.keys()) - set(required_metadata.keys())
+        if extra:
+            errors.append(f"EXTRA_FRONTMATTER_FOUND: {', '.join(extra)}")
+
     for field, schema in required_metadata.items():
         if schema.get("required", False) and not metadata.get(field):
             errors.append(f"MISSING_REQUIRED_METADATA: {field}")
@@ -84,9 +94,22 @@ def validate_review_file(
         for i, m in enumerate(matches)
     }
 
-    if tuple(sections) != required_sections:
-        expected_sections = ", ".join(required_sections)
-        errors.append(f"INVALID_SECTION_ORDER (expected: {expected_sections})")
+    actual_sections = list(sections.keys())
+
+    if allow_extra_sections:
+        missing = [s for s in required_sections if s not in actual_sections]
+        if missing:
+            errors.append(f"MISSING_REQUIRED_SECTION: {', '.join(missing)}")
+        else:
+            req_indices = [actual_sections.index(s) for s in required_sections]
+            if req_indices != sorted(req_indices):
+                errors.append(
+                    "INVALID_SECTION_ORDER (required sections are out of order)"
+                )
+    else:
+        if tuple(actual_sections) != required_sections:
+            expected_sections = ", ".join(required_sections)
+            errors.append(f"INVALID_SECTION_ORDER (expected: {expected_sections})")
 
     if empty := [name for name, section in sections.items() if not section.strip()]:
         errors.append(f"EMPTY_SECTIONS_FOUND: {', '.join(empty)}")

@@ -1,21 +1,21 @@
 ---
 title: 'section-missing'
 type: 'code-review-finding'
-description: '필수 섹션 누락 테스트'
+description: 'Missing required section test'
 severity: 'nit'
 status: 'open'
 ---
 
 ## Summary
 
-내용
+Content
 
 ## Observation
 
-내용
+Content
 
 ## Impact
 
-내용
+Content
 
-<!-- Recommendation, Verification 섹션이 통째로 누락됨 -->
+<!-- Recommendation, Verification sections are missing entirely -->

@@ -13,7 +13,7 @@ class PlaceholderTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             markdown_file = Path(directory) / "review.md"
             markdown_file.write_text(
-                "# {{title}} {{리뷰_결과}}\n"
+                "# {{title}} {{result}}\n"
                 "{{}} {{ title }} {{title-slug}} {{123}} `{{` ... `}}`\n"
             )
 

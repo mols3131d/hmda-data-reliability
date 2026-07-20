@@ -9,4 +9,4 @@ title: 'frontmatter-leading-spaces'
 
 ## Summary
 
-최상단이 아닌 곳에서 프론트매터 시작.
+Frontmatter starts not at the top.

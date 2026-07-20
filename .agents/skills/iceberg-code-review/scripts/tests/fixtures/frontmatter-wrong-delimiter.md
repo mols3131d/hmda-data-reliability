@@ -7,4 +7,4 @@ title: 'frontmatter-wrong-delimiter'
 
 ## Summary
 
-잘못된 구분자 사용.
+Invalid delimiter used.

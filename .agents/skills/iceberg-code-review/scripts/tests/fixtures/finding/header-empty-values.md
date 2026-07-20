@@ -8,20 +8,20 @@ status: ''
 
 ## Summary
 
-내용
+Content
 
 ## Observation
 
-내용
+Content
 
 ## Impact
 
-내용
+Content
 
 ## Recommendation
 
-내용
+Content
 
 ## Verification
 
-내용
+Content

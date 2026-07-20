@@ -5,4 +5,4 @@ type: 'code-review-finding'
 
 ## Summary
 
-프론트매터가 닫히지 않음. (`---` 누락)
+Frontmatter is not closed. (`---` missing)

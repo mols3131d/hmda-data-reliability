@@ -5,8 +5,8 @@ type: 'unknown-review-type'
 
 ## Summary
 
-내용
+Content
 
 ## Findings
 
-내용
+Content

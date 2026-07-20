@@ -8,4 +8,4 @@ type: 'code-review-summary'
 
 ## Findings
 
-이곳에는 내용이 있음
+이곳에는 Content이 있음

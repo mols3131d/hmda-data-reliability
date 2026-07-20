@@ -34,20 +34,28 @@ class ChecksFixtureTest(unittest.TestCase):
         self.assertTrue(any("EMPTY_SECTIONS_FOUND" in e for e in errors), errors)
 
     def test_finding_fixtures(self) -> None:
-        errors = validate_review_file(FIXTURES_DIR / "finding" / "header-empty-values.md")
+        errors = validate_review_file(
+            FIXTURES_DIR / "finding" / "header-empty-values.md"
+        )
         self.assertTrue(any("MISSING_REQUIRED_METADATA" in e for e in errors), errors)
 
-        errors = validate_review_file(FIXTURES_DIR / "finding" / "header-missing-fields.md")
+        errors = validate_review_file(
+            FIXTURES_DIR / "finding" / "header-missing-fields.md"
+        )
         self.assertEqual(errors, [])
 
-        errors = validate_review_file(FIXTURES_DIR / "finding" / "section-invalid-order.md")
+        errors = validate_review_file(
+            FIXTURES_DIR / "finding" / "section-invalid-order.md"
+        )
         self.assertTrue(any("INVALID_SECTION_ORDER" in e for e in errors), errors)
 
         errors = validate_review_file(FIXTURES_DIR / "finding" / "section-missing.md")
-        self.assertTrue(any("INVALID_SECTION_ORDER" in e for e in errors), errors)
+        self.assertTrue(any("MISSING_REQUIRED_SECTION" in e for e in errors), errors)
 
-        errors = validate_review_file(FIXTURES_DIR / "finding" / "section-wrong-heading.md")
-        self.assertTrue(any("INVALID_SECTION_ORDER" in e for e in errors), errors)
+        errors = validate_review_file(
+            FIXTURES_DIR / "finding" / "section-wrong-heading.md"
+        )
+        self.assertTrue(any("MISSING_REQUIRED_SECTION" in e for e in errors), errors)
 
 
 if __name__ == "__main__":

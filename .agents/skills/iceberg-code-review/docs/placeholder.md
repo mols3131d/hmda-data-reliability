@@ -1,35 +1,33 @@
-# Placeholder 규칙
+# Placeholder Rules
 
-Template에서 LLM이 작성할 값을 `{{이름}}`으로 표시한다.
+LLM writes values replacing `{{name}}` in templates.
 
-## 문법
+## Syntax
 
 ```text
-{{이름}}
+{{name}}
 ```
 
-- 허용 문자: 영문, 한글, underscore(`_`)
-- 이름은 한 글자 이상
-- 공백, 숫자, 하이픈, 줄바꿈은 허용하지 않음
+- Allowed chars: English, underscore (`_`)
+- Length: ≥ 1
+- Not allowed: Spaces, numbers, hyphens, newlines
 
-정규식:
+Regex:
 
 ```regex
-{{[A-Za-z가-힣_]+}}
+{{[A-Za-z_]+}}
 ```
 
-## 예시
+## Examples
 
-인식:
+Match:
 
 ```text
 {{title}}
 {{file_path}}
-{{제목}}
-{{리뷰_결과}}
 ```
 
-제외:
+Exclude:
 
 ```text
 {{}}
@@ -39,9 +37,9 @@ Template에서 LLM이 작성할 값을 `{{이름}}`으로 표시한다.
 `{{` ... `}}`
 ```
 
-Parser는 Markdown 문맥을 해석하지 않는다. Inline code나 code block 안의 유효한 placeholder도 계산한다.
+Parser ignores Markdown context. Placeholders inside code blocks are counted.
 
-## 검사 함수
+## Validation Functions
 
-- `count_placeholders(path)`: 남은 placeholder 개수
-- `has_no_placeholders(path)`: 개수가 0이면 `True`
+- `count_placeholders(path)`: Returns count of remaining placeholders
+- `has_no_placeholders(path)`: Returns `True` if 0

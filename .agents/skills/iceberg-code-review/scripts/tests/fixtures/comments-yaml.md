@@ -1,9 +1,9 @@
 ---
 title: 'comments-yaml'
 type: 'code-review-finding'
-# 이 주석을 지우지 않음
+# Do not delete this comment
 ---
 
 ## Summary
 
-내용
+Content

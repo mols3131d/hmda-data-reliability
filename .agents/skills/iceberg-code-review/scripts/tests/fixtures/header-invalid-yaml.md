@@ -6,4 +6,4 @@ date '2026-07-20'
 
 ## Summary
 
-YAML 파싱 에러 발생해야 함
+YAML parsing error should occur

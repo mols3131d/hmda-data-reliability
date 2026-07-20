@@ -1,27 +1,27 @@
 ---
 title: 'section-wrong-heading'
 type: 'code-review-finding'
-description: '잘못된 해딩 레벨 사용'
+description: 'Invalid heading level usage'
 severity: 'nit'
 status: 'open'
 ---
 
 # Summary
 
-이것은 h1 태그라서 인식되지 않습니다.
+This is an h1 tag and will not be recognized.
 
 ## Observation
 
-이것은 h3 태그라서 인식되지 않습니다.
+This is an h3 tag and will not be recognized.
 
 ## Impact
 
-이것만 인식됩니다.
+Only this is recognized.
 
 ## Recommendation
 
-내용
+Content
 
 ## Verification
 
-내용
+Content

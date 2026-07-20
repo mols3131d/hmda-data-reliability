@@ -8,12 +8,20 @@ status: 'open'
 
 ## Impact
 
-순서가 뒤바뀌고 누락됨
+Order is swapped
+
+## Observation
+
+Content
 
 ## Summary
 
-내용
+Content
+
+## Verification
+
+Content
 
 ## Recommendation
 
-내용
+Content
