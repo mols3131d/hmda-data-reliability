@@ -7,7 +7,9 @@
 ## Procedure
 
 1. 사용자가 요구한 설정값을 인자로 전달하여 설정 변경 스크립트를 실행합니다:
+
    ```bash
    <PYTHON_EXEC> ./scripts/configurator.py --reviews-dir "<reviews_dir>" --allow-extra-frontmatter "<true/false>" --allow-extra-sections "<true/false>"
    ```
+
 2. 전달할 필요가 없는 인자는 생략합니다.
