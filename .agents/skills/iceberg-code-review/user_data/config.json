@@ -1,5 +1,5 @@
 {
-    "reviews_dir": "/docs/reviews",
+    "reviews_dir": "docs/reviews",
     "allow_extra_frontmatter": true,
     "allow_extra_sections": true
 }
