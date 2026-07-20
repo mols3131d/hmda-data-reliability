@@ -7,10 +7,11 @@
 
 1. 코드 리뷰 스킬이 있으면 함께 적용.
 2. 지정된 code, PR 또는 diff 리뷰.
-3. `<PYTHON_EXEC> ./scripts/create_summary.py --title-slug "<title_slug>" --workspace-dir "<workspace_absolute_path>"` 실행. (LLM이 워크스페이스 절대경로 주입)
-4. 실행 결과 로그(`INFO OK: <절대경로>`)에서 템플릿 파일의 절대 경로를 획득.
-5. 주석 지침에 따라 획득한 절대 경로의 파일에 플레이스홀더 작성.
-6. 남은 주석 제거.
+3. `<PYTHON_EXEC> ./scripts/create_summary.py --title-slug "<title_slug>" --workspace-dir "<workspace_absolute_path>"` 실행 및 생성된 파일 절대 경로 획득.
+4. 리뷰 대상 경로 및 프로젝트 환경에 맞춰 테스트 범위를 결정하여 실행.
+5. 테스트 실행 결과(Pass, Fail, Error, Skip) 수치 수집.
+6. 수집한 결과 및 주석 지침에 따라 요약 파일의 플레이스홀더 작성.
+7. 남은 주석 제거.
 
 ## Validation
 
