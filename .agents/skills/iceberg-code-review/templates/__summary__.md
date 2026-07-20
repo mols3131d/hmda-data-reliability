@@ -5,11 +5,11 @@ type: 'code-review-summary'
 ---
 
 <!--
-이 파일은 대한 리뷰 결과 보고서 요약 템플릿이다.
+Code review summary report template.
 -->
 ## Summary
 
-<!-- 아래 테이블에는 테스트 결과를 요약한다. -->
+<!-- Summarize test results below -->
 
 | 🟩 `PASS` | 🟥 `FAIL` | 🟧 `ERROR` | ⬜ `SKIP` |
 | :---: | :---: | :---: | :---: |
@@ -23,10 +23,14 @@ type: 'code-review-summary'
 | :---: | :---: | :---: | :---: |
 | {{bug_count}} | {{risk_count}} | {{nit_count}} | {{question_count}} |
 
-### `{{file}}:{{start_line}}[-{{end_line}}]`: {{severity}}: [`{{domain}}-{{finding}}`](/{{link}})
+### {{severity_emoji}} `{{file}}:{{start_line}}[-{{end_line}}]` | [`{{domain}}-{{finding}}`](/{{link}}) <!-- Link only if finding doc exists -->
 
-<!-- Write Findings Summary -->
+- **{{focus}} {{core}}**: {{observation}}
 
-### {{additional_finding_heading}}    <!-- Write Another Findings -->
+  ---> **{{action}} {{what}}**: {{recommendation}}
 
-{{additional_finding_summary}}
+### {{additional_finding_heading}}    <!-- Write Another Finding -->
+
+- **{{focus}} {{core}}**: {{observation}}
+
+  ---> **{{action}} {{what}}**: {{recommendation}}

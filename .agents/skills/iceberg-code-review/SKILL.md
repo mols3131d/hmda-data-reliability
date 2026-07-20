@@ -15,16 +15,16 @@ description: >
 
 ## Severity
 
-| severity | 표시 | 기준 |
-| :--- | :---: | :--- |
-| `bug` | 🔴 | 동작 오류, incident 유발 |
-| `risk` | 🟡 | 취약한 동작: race, null guard 누락, error 무시 |
-| `nit` | 🔵 | style, naming, 미세 최적화. 무시 가능 |
-| `q` | ❓ | 제안이 아닌 판단에 필요한 질문 |
+| severity | emoji | callout | description |
+| :--- | :---: | :--- | :--- |
+| `bug` | 🔴 | `CAUTION` | 동작 오류, incident 유발 |
+| `risk` | 🟡 | `WARNING` | 취약한 동작: race, null guard 누락, error 무시 |
+| `nit` | 🔵 | `NOTE` | style, naming, 미세 최적화. 무시 가능 |
+| `q` | ❓ | `TIP` | 제안이 아닌 판단에 필요한 질문 |
 
 ## Status
 
-| status | 기준 |
+| status | description |
 | :--- | :--- |
 | `open` | 확인 또는 수정 필요 |
 | `resolved` | 수정 후 검증 완료 |
@@ -34,7 +34,7 @@ description: >
 
 미지정 시 `lite` 사용.
 
-| argument | 실행 workflow | 산출물 |
+| argument | workflow | output |
 | :--- | :--- | :--- |
 | `lite` | `./workflows/summary.md` | `__summary__.md` |
 | `full` | `./workflows/summary.md`, `./workflows/finding-details.md` | `__summary__.md`, finding별 상세 문서 |
