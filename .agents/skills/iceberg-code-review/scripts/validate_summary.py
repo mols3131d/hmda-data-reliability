@@ -35,6 +35,15 @@ def main() -> int:
             LOGGER.error("FAIL: %s", error)
         return 1
 
+    try:
+        from try_rumdl import try_format_with_rumdl
+
+        try_format_with_rumdl(args.review_file_path)
+    except ImportError:
+        pass
+    except Exception as exc:
+        LOGGER.warning("Failed to invoke try_rumdl: %s", exc)
+
     LOGGER.info("OK: %s", args.review_file_path.name)
     return 0
 
