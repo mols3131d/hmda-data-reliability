@@ -23,14 +23,24 @@ Code review summary report template.
 | :---: | :---: | :---: | :---: |
 | {{bug_count}} | {{risk_count}} | {{nit_count}} | {{question_count}} |
 
-### {{severity_emoji}} `{{file}}:{{start_line}}[-{{end_line}}]` | [`{{domain}}-{{finding}}`](/{{link}}) <!-- Link only if finding doc exists -->
+---
+
+### {{severity_emoji}} [`{{domain}}-{{finding}}`]({{link}}) <!-- Link only if finding doc exists -->
+
+[`{{file}}:{{start_line}}[-{{end_line}}]`]({{link}})
 
 - **{{focus}} {{core}}**: {{observation}}
 
   ---> **{{action}} {{what}}**: {{recommendation}}
+
+---
 
 ### {{additional_finding_heading}}    <!-- Write Another Finding -->
 
+[`{{file}}:{{start_line}}[-{{end_line}}]`]({{link}})
+
 - **{{focus}} {{core}}**: {{observation}}
 
   ---> **{{action}} {{what}}**: {{recommendation}}
+
+---

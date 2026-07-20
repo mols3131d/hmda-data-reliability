@@ -2,7 +2,7 @@
 title: 'auth-legacy-support'
 description: 'Legacy MD5 hashing fallback remains active.'
 type: 'code-review-finding'
-severity: 'question'
+severity: 'q'
 status: 'open'
 ---
 
@@ -14,24 +14,28 @@ MD5 fallback is active but may be deprecated.
 
 ## Observation
 
+**[Architecture] Active fallback**: MD5 fallback is still enabled despite modern standards.
+
 - `ALLOW_LEGACY_MD5` is set to `True`
-- V1 API sunset occurred last month
 - MD5 is insecure for password hashing
 
 ## Impact
 
+**[Security] Legacy vulnerability**: Insecure MD5 hashing pathway remains open to attackers.
+
 - Maintains insecure code path
-- Increases maintenance surface
 - Risk of downgrade attacks
 
 ## Recommendation
 
-1. Confirm if V1 clients still require this fallback.
-2. If not, delete `ALLOW_LEGACY_MD5` and related logic.
-3. If yes, add `TODO` with removal date.
+**[Confirm] Requirement status**: Verify if any active clients still require this MD5 fallback.
+
+- If not, delete `ALLOW_LEGACY_MD5` and related logic.
+- If yes, add `TODO` with removal date.
 
 ## Verification
 
-- [ ] Product team confirms client requirements
-- [ ] Unused code deleted if no longer needed
-- [ ] Removal tracked in issue tracker if deferred
+**[Verify] Requirement decision**: Document decision and confirm removal path or client alignment.
+
+- Product team confirms client requirements
+- Unused code deleted if no longer needed
