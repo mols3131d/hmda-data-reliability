@@ -2,8 +2,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from schema import TEMPLATE_SCHEMAS
-from shared import load_config
+from _schema import TEMPLATE_SCHEMAS
+from _shared import load_config
 
 try:
     import yaml
@@ -18,6 +18,14 @@ HEADING_PATTERN = re.compile(r"^## (?P<name>.+)$", re.MULTILINE)
 HTML_COMMENT_PATTERN = re.compile(r"<!--[\s\S]*?-->")
 
 
+class FrontmatterParseError(Exception):
+    """잘못된 YAML frontmatter 파싱 실패를 나타낸다."""
+
+
+class FrontmatterTypeError(Exception):
+    """YAML frontmatter root가 mapping이 아님을 나타낸다."""
+
+
 def parse_frontmatter(content: str) -> tuple[dict[str, Any], str]:
     """Parses YAML front matter. Uses pyyaml if available, else simple parser."""
     match = FRONTMATTER_PATTERN.match(content)
@@ -25,7 +33,12 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str]:
         return {}, content
 
     if HAS_YAML:
-        metadata = yaml.safe_load(match.group(1)) or {}
+        try:
+            metadata = yaml.safe_load(match.group(1)) or {}
+        except yaml.YAMLError as error:
+            raise FrontmatterParseError from error
+        if not isinstance(metadata, dict):
+            raise FrontmatterTypeError
     else:
         metadata = {}
         for line in match.group(1).splitlines():
@@ -125,22 +138,40 @@ def validate_review_file(
     except Exception as e:
         return [f"FILE_READ_ERROR: {e}"]
 
-    metadata, body = parse_frontmatter(content)
+    errors = []
+    placeholder_count = len(PLACEHOLDER_PATTERN.findall(content))
+    if placeholder_count:
+        errors.append(f"REMAINING_PLACEHOLDERS: {placeholder_count}")
+
+    try:
+        metadata, body = parse_frontmatter(content)
+    except FrontmatterParseError:
+        errors.append("INVALID_FRONTMATTER_YAML")
+        return errors
+    except FrontmatterTypeError:
+        errors.append("INVALID_FRONTMATTER_TYPE")
+        return errors
+
     if not metadata:
-        return ["MISSING_FRONTMATTER"]
+        errors.append("MISSING_FRONTMATTER")
+        return errors
 
     document_type = metadata.get("type")
     if expected_type and document_type != expected_type:
-        return [f"TYPE_MISMATCH: expected {expected_type}, got {document_type}"]
+        errors.append(f"TYPE_MISMATCH: expected {expected_type}, got {document_type}")
+        return errors
 
     if document_type not in TEMPLATE_SCHEMAS:
-        return [f"UNSUPPORTED_DOCUMENT_TYPE: {document_type}"]
+        errors.append(f"UNSUPPORTED_DOCUMENT_TYPE: {document_type}")
+        return errors
 
     schema = TEMPLATE_SCHEMAS[document_type]
     config = load_config()
 
-    errors = _check_frontmatter(
-        metadata, schema["frontmatter"], config.get("allow_extra_frontmatter", True)
+    errors.extend(
+        _check_frontmatter(
+            metadata, schema["frontmatter"], config.get("allow_extra_frontmatter", True)
+        )
     )
     errors.extend(
         _check_sections(
@@ -157,12 +188,5 @@ def validate_no_comments(review_file_path: Path) -> list[str]:
     except Exception as e:
         return [f"FILE_READ_ERROR: {e}"]
 
-    # Find YAML and HTML comments using simple regex (KISS principle)
-    # Match common comment patterns instead of full AST parsing
-    match = FRONTMATTER_PATTERN.match(content)
-    frontmatter_text = match.group(1) if match else ""
-    yaml_comments = len(re.findall(r"(?m)^[^#\n]*#", frontmatter_text))
     html_comments = len(HTML_COMMENT_PATTERN.findall(content))
-    count = yaml_comments + html_comments
-
-    return [f"REMAINING_COMMENTS: {count}"] if count > 0 else []
+    return [f"REMAINING_COMMENTS: {html_comments}"] if html_comments else []

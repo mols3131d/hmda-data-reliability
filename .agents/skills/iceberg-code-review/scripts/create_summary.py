@@ -8,7 +8,7 @@ import logging
 from datetime import date
 from pathlib import Path
 
-from shared import (
+from _shared import (
     ReviewFileCreationError,
     copy_template,
     get_reviews_dir,

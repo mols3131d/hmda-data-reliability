@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from shared import load_config
+from _shared import load_config
 
 
 def _get_rumdl_exec() -> str | None:

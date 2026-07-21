@@ -7,8 +7,8 @@ import argparse
 import logging
 from pathlib import Path
 
-from checks import validate_no_comments, validate_review_file
-from schema import FINDING_SCHEMA
+from _checks import validate_no_comments, validate_review_file
+from _schema import FINDING_SCHEMA
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def main() -> int:
         return 1
 
     try:
-        from try_rumdl import try_format_with_rumdl
+        from _try_rumdl import try_format_with_rumdl
 
         try_format_with_rumdl(args.review_file_path)
     except ImportError:

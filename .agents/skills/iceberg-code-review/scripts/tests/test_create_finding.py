@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from _shared import ReviewFileCreationError
 from create_finding import create_finding
-from shared import ReviewFileCreationError
 
 
 class CreateFindingTest(unittest.TestCase):

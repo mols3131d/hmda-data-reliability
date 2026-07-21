@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from checks import PLACEHOLDER_PATTERN, count_placeholders, has_no_placeholders
+from _checks import PLACEHOLDER_PATTERN, count_placeholders, has_no_placeholders
 
 BRACED_TOKEN_PATTERN = re.compile(r"{{[^{}\n]*}}")
 

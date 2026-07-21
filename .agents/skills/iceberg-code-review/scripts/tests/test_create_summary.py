@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from _shared import ReviewFileCreationError
 from create_summary import create_summary
-from shared import ReviewFileCreationError
 
 
 class CreateSummaryTest(unittest.TestCase):

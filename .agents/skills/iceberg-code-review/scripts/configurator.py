@@ -6,7 +6,7 @@ import json
 import logging
 from typing import Any
 
-from shared import CONFIG_FILE, is_initialized
+from _shared import CONFIG_FILE, is_initialized
 
 LOGGER = logging.getLogger(__name__)
 

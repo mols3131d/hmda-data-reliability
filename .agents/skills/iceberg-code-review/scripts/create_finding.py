@@ -7,7 +7,7 @@ import argparse
 import logging
 from pathlib import Path
 
-from shared import ReviewFileCreationError, copy_template, validate_slug
+from _shared import ReviewFileCreationError, copy_template, validate_slug
 
 LOGGER = logging.getLogger(__name__)
 
