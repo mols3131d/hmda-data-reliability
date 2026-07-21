@@ -1,13 +1,17 @@
-.tmp_*
-tmp/**
-data/**
+**/.tmp_*
+**/tmp/**
+**/data/**
+**/logs/
+**/*.tmp*
+**/*.origin*
+
+.codex/
+.gemini/
+.caveman-compress/
+
 dbt/.user.yml
 pytest_report.html
-*.tmp*
-*.origin*
-.codex
-.gemini
-.caveman-compress
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
