@@ -1,40 +1,19 @@
-"""데이터 적재, dbt build, incident lifecycle을 실행한다."""
+"""데이터 적재와 dbt build를 실행한다."""
 
 from __future__ import annotations
 
 import os
 import subprocess
-from datetime import UTC, datetime
-from typing import cast
 
 from project_pivot.data_operations.dbt_result import DbtBuildResult
 from project_pivot.data_operations.errors import DataOperationError
-from project_pivot.data_operations.lifecycle_result import LifecycleResult
+from project_pivot.data_operations.incident_lifecycle import (
+    run_incident_lifecycle as run_incident_lifecycle,
+)
 from project_pivot.data_operations.raw_result import RawLoadResult
 from project_pivot.data_operations.request import DataOperationRequest
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans_partition
-from project_pivot.reliability import (
-    Approval,
-    ApprovalStatus,
-    ApprovedBackfillRequest,
-    DetectionRequest,
-    EvaluationCaseResult,
-    ImpactAnalysisRequest,
-    ProfileSnapshotRequest,
-    RemediationDraftRequest,
-    TableMetadataEvidenceRequest,
-    analyze_dbt_impact,
-    build_evaluation_report,
-    create_profile_snapshot,
-    create_remediation_draft,
-    create_table_metadata_evidence,
-    detect_basic_incidents,
-    execute_approved_backfill,
-    write_evaluation_report,
-)
-from project_pivot.reliability.detection import DetectionResult
-from project_pivot.reliability.impact import ImpactAnalysisResult
 
 _DBT_BUILD_TIMEOUT_SECONDS = 300
 
@@ -128,146 +107,3 @@ def _validate_dbt_artifacts(request: DataOperationRequest) -> None:
         joined_paths = ", ".join(str(path) for path in invalid_paths)
         msg = f"dbt build artifact를 확인할 수 없습니다: {joined_paths}"
         raise DataOperationError(msg)
-
-
-def run_incident_lifecycle(request: DataOperationRequest) -> LifecycleResult:
-    """evidence, detection, impact, remediation, recovery, evaluation을 실행한다."""
-
-    observed_at = request.observed_at or datetime.now(UTC)
-    profile_request = ProfileSnapshotRequest(
-        asset_name=request.asset_name,
-        table_name=request.raw_table_name,
-        partition_column=request.partition_column,
-        partition=request.source_year,
-        profile_columns=request.profile_columns,
-        freshness_column=request.freshness_column,
-        observed_at=observed_at,
-    )
-    with DuckDBConnectionManager(
-        request.database_path,
-        read_only=not request.run_backfill,
-    ) as connection:
-        metadata_evidence = create_table_metadata_evidence(
-            connection,
-            TableMetadataEvidenceRequest(
-                asset_name=request.asset_name,
-                table_name=request.raw_table_name,
-                observed_at=observed_at,
-            ),
-        )
-        baseline = create_profile_snapshot(connection, profile_request)
-        current_row_count = max(
-            1,
-            int(baseline.row_count * request.simulate_row_count_ratio),
-        )
-        current = baseline.model_copy(
-            update={
-                "snapshot_id": "profile_data_operation_current",
-                "row_count": current_row_count,
-                "metric_values": {"row_count": float(current_row_count)},
-            }
-        )
-        detections = detect_basic_incidents(
-            DetectionRequest(baseline=baseline, current=current)
-        )
-        primary_detection = detections[0] if detections else None
-
-        impact_result = None
-        remediation_draft = None
-        backfill_result = None
-        if primary_detection is not None:
-            impact_result = analyze_dbt_impact(
-                ImpactAnalysisRequest(
-                    incident=primary_detection.incident,
-                    dbt_manifest_path=request.dbt_manifest_path,
-                    dbt_run_results_path=request.dbt_run_results_path,
-                )
-            )
-            remediation_draft = create_remediation_draft(
-                RemediationDraftRequest(
-                    incident=impact_result.incident,
-                    evidence=primary_detection.evidence,
-                    lineage_evidence=impact_result.lineage_evidence,
-                )
-            )
-        if request.run_backfill and primary_detection is not None:
-            approval = Approval(
-                approval_id=f"approval_{primary_detection.incident.incident_id}",
-                incident_id=primary_detection.incident.incident_id,
-                status=ApprovalStatus.APPROVED,
-                requested_by="data_operations",
-                requested_at=observed_at,
-                approved_by="data_operations",
-                approved_at=observed_at,
-                requested_actions=["overwrite_partition", "rerun_profile_snapshot"],
-                reason="데이터 작업 자동 복구 검증",
-            )
-            backfill_result = execute_approved_backfill(
-                connection,
-                ApprovedBackfillRequest(
-                    approval=approval,
-                    source_paths=tuple(discover_hmda_files(request.source_root)),
-                    source_year=request.source_year,
-                    source_file=request.source_file,
-                    profile_request=profile_request,
-                    table_name=request.raw_table_name,
-                ),
-            )
-
-    detected_types = [result.incident.incident_type for result in detections]
-    evidence_refs = _evidence_refs(primary_detection, impact_result)
-    affected_assets = (
-        impact_result.incident.affected_assets if impact_result is not None else []
-    )
-    recommended_actions = (
-        remediation_draft.recommended_actions if remediation_draft is not None else []
-    )
-    backfill_actions = (
-        remediation_draft.backfill_actions if remediation_draft is not None else []
-    )
-    validation_actions = (
-        remediation_draft.validation_actions if remediation_draft is not None else []
-    )
-    report = build_evaluation_report(
-        [
-            EvaluationCaseResult(
-                case_name="data_operation_volume_drop",
-                expected_incident_types=["volume_drop"],
-                detected_incident_types=detected_types,
-                required_actions=["prepare_partition_backfill"],
-                remediation_actions=recommended_actions,
-                evidence_refs=evidence_refs,
-            )
-        ],
-        generated_at=observed_at,
-    )
-    report_path = write_evaluation_report(report, request.report_path)
-    return LifecycleResult(
-        metadata_row_count=int(cast(int, metadata_evidence.payload["row_count"])),
-        baseline_row_count=baseline.row_count,
-        current_row_count=current_row_count,
-        detected_incident_types=detected_types,
-        evidence_refs=evidence_refs,
-        affected_assets=affected_assets,
-        recommended_actions=recommended_actions,
-        backfill_actions=backfill_actions,
-        validation_actions=validation_actions,
-        backfill_validation_passed=(
-            backfill_result.validation_passed if backfill_result is not None else None
-        ),
-        evaluation_report_path=report_path,
-        detection_success_rate=report.detection_success_rate,
-        action_success_rate=report.action_success_rate,
-    )
-
-
-def _evidence_refs(
-    primary_detection: DetectionResult | None,
-    impact_result: ImpactAnalysisResult | None,
-) -> list[str]:
-    refs: list[str] = []
-    if primary_detection is not None:
-        refs.append(primary_detection.evidence.evidence_id)
-    if impact_result is not None:
-        refs.append(impact_result.lineage_evidence.lineage_id)
-    return refs

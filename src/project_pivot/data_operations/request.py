@@ -27,10 +27,7 @@ class DataOperationRequest(BaseModel):
     dbt_profiles_dir: Path = Path("dbt")
     dbt_manifest_path: Path = Path("dbt/target/manifest.json")
     dbt_run_results_path: Path = Path("dbt/target/run_results.json")
-    report_path: Path = Path("scratch/evaluation/data_operations_report.md")
     run_dbt_build: bool = True
-    run_backfill: bool = False
-    simulate_row_count_ratio: float = Field(default=0.25, gt=0, le=1)
 
     @field_validator(
         "asset_name",

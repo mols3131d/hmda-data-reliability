@@ -1,12 +1,10 @@
 """데이터 작업의 incident lifecycle 결과 모델."""
 
-from pathlib import Path
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class LifecycleResult(BaseModel):
-    """evidence부터 evaluation까지의 incident lifecycle 요약."""
+    """실제 관측값과 탐지, 영향, 조치 요약."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -19,7 +17,3 @@ class LifecycleResult(BaseModel):
     recommended_actions: list[str] = Field(default_factory=list)
     backfill_actions: list[str] = Field(default_factory=list)
     validation_actions: list[str] = Field(default_factory=list)
-    backfill_validation_passed: bool | None = None
-    evaluation_report_path: Path
-    detection_success_rate: float = Field(ge=0, le=1)
-    action_success_rate: float = Field(ge=0, le=1)

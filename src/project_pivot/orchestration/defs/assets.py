@@ -2,11 +2,7 @@
 
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 
-from project_pivot.data_operations import (
-    load_raw_data,
-    run_dbt_build,
-    run_incident_lifecycle,
-)
+from project_pivot.data_operations import load_raw_data, run_dbt_build
 from project_pivot.orchestration.defs.resource import DataOperationsResource
 
 
@@ -59,52 +55,5 @@ def dbt_loan_analytics(
             "return_code": MetadataValue.int(result.return_code),
             "manifest_path": MetadataValue.path(str(result.manifest_path)),
             "run_results_path": MetadataValue.path(str(result.run_results_path)),
-        }
-    )
-
-
-@asset(deps=[dbt_loan_analytics], group_name="control", kinds={"python"})
-def incident_lifecycle(
-    context: AssetExecutionContext,
-    data_operations: DataOperationsResource,
-) -> MaterializeResult[None]:
-    """evidence부터 evaluation까지 incident lifecycle을 실행한다."""
-
-    result = run_incident_lifecycle(data_operations.to_request())
-    context.log.info(
-        "incident lifecycle 완료",
-        extra={
-            "detected_incident_types": result.detected_incident_types,
-        },
-    )
-    return MaterializeResult(
-        metadata={
-            "metadata_row_count": MetadataValue.int(result.metadata_row_count),
-            "baseline_row_count": MetadataValue.int(result.baseline_row_count),
-            "current_row_count": MetadataValue.int(result.current_row_count),
-            "detected_incident_types": MetadataValue.json(
-                result.detected_incident_types
-            ),
-            "evidence_refs": MetadataValue.json(result.evidence_refs),
-            "affected_assets": MetadataValue.json(result.affected_assets),
-            "recommended_actions": MetadataValue.json(result.recommended_actions),
-            "backfill_actions": MetadataValue.json(result.backfill_actions),
-            "validation_actions": MetadataValue.json(result.validation_actions),
-            "evaluation_report_path": MetadataValue.path(
-                str(result.evaluation_report_path)
-            ),
-            "detection_success_rate": MetadataValue.float(
-                result.detection_success_rate
-            ),
-            "action_success_rate": MetadataValue.float(result.action_success_rate),
-            **(
-                {
-                    "backfill_validation_passed": MetadataValue.bool(
-                        result.backfill_validation_passed
-                    )
-                }
-                if result.backfill_validation_passed is not None
-                else {}
-            ),
         }
     )

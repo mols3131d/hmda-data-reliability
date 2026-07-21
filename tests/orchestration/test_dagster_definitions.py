@@ -11,14 +11,12 @@ from project_pivot import data_operations
 from project_pivot.data_operations import (
     DataOperationRequest,
     DbtBuildResult,
-    LifecycleResult,
     RawLoadResult,
 )
 from project_pivot.orchestration.definitions import defs
 from project_pivot.orchestration.defs import assets as dagster_assets
 from project_pivot.orchestration.defs.assets import (
     dbt_loan_analytics,
-    incident_lifecycle,
     raw_hmda_loans,
 )
 from project_pivot.orchestration.defs.resource import DataOperationsResource
@@ -30,29 +28,21 @@ def test_dagster_definitions_expose_medallion_assets_and_job() -> None:
     """Pipeline asset, group, dependency가 Dagster definitions에 등록되는지 검증한다."""
 
     asset_graph = defs.resolve_asset_graph()
-    asset_keys = {
-        key.to_user_string()
-        for key in asset_graph.get_all_asset_keys()
-    }
+    asset_keys = {key.to_user_string() for key in asset_graph.get_all_asset_keys()}
     job = defs.resolve_job_def("pipeline_job")
 
     assert asset_keys == {
         "raw_hmda_loans",
         "dbt_loan_analytics",
-        "incident_lifecycle",
     }
     assert job.name == "pipeline_job"
 
     raw_node = asset_graph.get(AssetKey("raw_hmda_loans"))
     dbt_node = asset_graph.get(AssetKey("dbt_loan_analytics"))
-    lifecycle_node = asset_graph.get(AssetKey("incident_lifecycle"))
-
     assert raw_node.group_name == "bronze"
     assert dbt_node.group_name == "silver_gold"
-    assert lifecycle_node.group_name == "control"
     assert raw_node.parent_keys == set()
     assert dbt_node.parent_keys == {AssetKey("raw_hmda_loans")}
-    assert lifecycle_node.parent_keys == {AssetKey("dbt_loan_analytics")}
 
 
 def test_dagster_is_only_full_pipeline_orchestrator() -> None:
@@ -88,52 +78,24 @@ def test_dagster_materialization_records_metadata(
             succeeded=True,
         )
 
-    def run_incident_lifecycle_stub(
-        _request: DataOperationRequest,
-    ) -> LifecycleResult:
-        return LifecycleResult(
-            metadata_row_count=4,
-            baseline_row_count=4,
-            current_row_count=1,
-            detected_incident_types=["volume_drop"],
-            evidence_refs=["ev_volume_drop"],
-            affected_assets=["stg_hmda_loans"],
-            recommended_actions=["validate_source_partition"],
-            backfill_actions=["prepare_partition_backfill"],
-            validation_actions=["rerun_profile_snapshot"],
-            backfill_validation_passed=None,
-            evaluation_report_path=tmp_path / "report.md",
-            detection_success_rate=1.0,
-            action_success_rate=1.0,
-        )
-
     monkeypatch.setattr(dagster_assets, "load_raw_data", load_raw_data_stub)
     monkeypatch.setattr(dagster_assets, "run_dbt_build", run_dbt_build_stub)
-    monkeypatch.setattr(
-        dagster_assets,
-        "run_incident_lifecycle",
-        run_incident_lifecycle_stub,
-    )
 
     result = materialize(
-        [raw_hmda_loans, dbt_loan_analytics, incident_lifecycle],
+        [raw_hmda_loans, dbt_loan_analytics],
         resources={"data_operations": DataOperationsResource()},
     )
 
     assert result.success
     raw_materialization = result.asset_materializations_for_node("raw_hmda_loans")[0]
-    dbt_materialization = result.asset_materializations_for_node(
-        "dbt_loan_analytics"
-    )[0]
-    lifecycle_materialization = result.asset_materializations_for_node(
-        "incident_lifecycle"
-    )[0]
-
+    dbt_materialization = result.asset_materializations_for_node("dbt_loan_analytics")[
+        0
+    ]
     assert "hmda_loans_row_count" in raw_materialization.metadata
+    assert "source_file_count" in raw_materialization.metadata
     assert "source_year" in raw_materialization.metadata
+    assert "succeeded" in dbt_materialization.metadata
     assert "manifest_path" in dbt_materialization.metadata
-    assert "detected_incident_types" in lifecycle_materialization.metadata
-    assert "evaluation_report_path" in lifecycle_materialization.metadata
 
 
 def test_skipped_dbt_build_records_boolean_metadata(
