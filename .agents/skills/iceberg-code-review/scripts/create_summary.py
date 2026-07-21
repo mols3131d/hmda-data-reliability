@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 
 from _shared import (
@@ -28,7 +28,8 @@ def parse_args() -> argparse.Namespace:
 
 def create_summary(reviews_dir: Path, title_slug: str) -> Path:
     validate_slug("title-slug", title_slug)
-    destination = reviews_dir / f"{date.today():%Y%m%d}-{title_slug}" / "__summary__.md"
+    timestamp = datetime.now().strftime("%Y-%m%d-%H%M")
+    destination = reviews_dir / f"{timestamp}-{title_slug}" / "__summary__.md"
     return copy_template("__summary__.md", destination)
 
 

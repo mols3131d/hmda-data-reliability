@@ -55,7 +55,7 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str]:
 
 def count_placeholders(markdown_file: Path) -> int:
     """Returns the number of {{...}} placeholders left in the markdown file."""
-    return len(PLACEHOLDER_PATTERN.findall(markdown_file.read_text()))
+    return len(PLACEHOLDER_PATTERN.findall(markdown_file.read_text(encoding="utf-8")))
 
 
 def has_no_placeholders(markdown_file: Path) -> bool:
