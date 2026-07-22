@@ -1,6 +1,20 @@
 [global]
+flavor = "gfm"
 disable = ["MD013", "MD025", "MD033", "MD041"]
-exclude = ["tmp/", "*.tmp.md", "node_modules", "dist", "build"]
+exclude = [
+  "**/.git/",
+  "**/.tmp/",
+  "**/tmp/",
+  "**/archive/",
+  "**/*.tmp.md",
+
+  # --- --- --- ---  --- --- --- ---  --- --- --- ---  --- --- --- ---
+  ".github/",
+  "node_modules/",
+  "vendor/",
+  "dist/",
+  "build/",
+]
 
 [MD004]
 style = "dash"
@@ -10,3 +24,6 @@ style = "ordered"
 
 [MD048]
 style = "backtick"
+
+[MD057]
+compact-paths = true
