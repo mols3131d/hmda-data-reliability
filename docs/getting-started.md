@@ -14,7 +14,7 @@
 Dagster UI:
 
 ```bash
-PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.definitions
+uv run dagster dev -m project_pivot.orchestration.definitions
 ```
 
 `pipeline_job`은 `raw_hmda_loans`, `dbt_loan_analytics` 순서로 실행한다. Lifecycle은 caller baseline을 받는 독립 Python API이며 Dagster graph에 포함되지 않는다.
@@ -22,7 +22,7 @@ PYTHONPATH=src uv run dagster dev -m project_pivot.orchestration.definitions
 Job 직접 실행:
 
 ```bash
-PYTHONPATH=src uv run dagster job execute \
+uv run dagster job execute \
   -m project_pivot.orchestration.definitions \
   -a defs \
   -j pipeline_job
@@ -31,7 +31,7 @@ PYTHONPATH=src uv run dagster job execute \
 Definitions 확인:
 
 ```bash
-PYTHONPATH=src uv run dg list defs --json
+uv run dg list defs --json
 ```
 
 ## 검증
