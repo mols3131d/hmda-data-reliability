@@ -6,7 +6,7 @@
       "ref": "main",
       "sourceType": "github",
       "skillPath": "src/skills/agent-asset-studio/SKILL.md",
-      "computedHash": "4a812b5c9bd899f58db0ef728fa917d90f2f19f95adfa382d8e3f905fe6c8990"
+      "computedHash": "37f92b86d1d6abf0b23109d5ee4ca1dee31ca9d649b2a9137e167bdb52d59f98"
     },
     "git-commit-vcs": {
       "source": "mols3131d/mols-agent-assets",
