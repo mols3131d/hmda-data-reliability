@@ -1,0 +1,11 @@
+{
+    "hooks": {
+        "SessionStart": [
+            {
+                "type": "command",
+                "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Activate agent skill /caveman full and /ponytail full for this session.\"}}'",
+                "timeout": 30
+            }
+        ]
+    }
+}
