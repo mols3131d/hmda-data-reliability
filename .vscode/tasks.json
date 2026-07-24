@@ -1,0 +1,49 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Format with ruff",
+            "type": "shell",
+            "command": "uv run ruff format . && uv run ruff check --fix .",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Runs ruff formatting and lint auto-fixes."
+        },
+        {
+            "label": "Format with rumdl",
+            "type": "shell",
+            "command": "uv run rumdl format .",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Runs rumdl markdown formatting."
+        },
+        {
+            "label": "Format ruff & rumdl",
+            "type": "shell",
+            "command": "uv run ruff format . && uv run ruff check --fix . && uv run rumdl format .",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Runs both ruff and rumdl to format the workspace."
+        },
+        {
+            "label": "Update Agent Skills",
+            "type": "shell",
+            "command": "npx skills update -p -g -y",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Runs npx skills update with flags."
+        }
+    ]
+}
