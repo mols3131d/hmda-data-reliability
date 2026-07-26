@@ -1,19 +1,37 @@
 {
   "version": 1,
   "skills": {
-    "agent-asset-studio": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
+    "cavecrew": {
+      "source": "JuliusBrussee/caveman",
       "sourceType": "github",
-      "skillPath": "src/skills/agent-asset-studio/SKILL.md",
-      "computedHash": "37f92b86d1d6abf0b23109d5ee4ca1dee31ca9d649b2a9137e167bdb52d59f98"
+      "skillPath": "skills/cavecrew/SKILL.md",
+      "computedHash": "c5527c994fbd4c22b36714e3b124a0f167a533d114ab164fb1d35e2123533917"
     },
-    "git-commit-vcs": {
+    "caveman": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "d18cdf73a5f5c496d681a43a6846336b110223bdffa6817b8992529c57f1a815"
+    },
+    "caveman-help": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-help/SKILL.md",
+      "computedHash": "dd85267e76baad76995157e7b9f762dfa557cd58951ee92af0c283f48aa26537"
+    },
+    "iceberg": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "src/skills/git-commit-vcs/SKILL.md",
-      "computedHash": "a03d55ba3ea2cd9cf12175f174a3177915bda4c141eb9051a5170c834d075869"
+      "skillPath": "src/skills/iceberg/SKILL.md",
+      "computedHash": "b889b76d464045398ac9147cf0c1f84b5149689b000b70bc211f5c9af6e4b2b5"
+    },
+    "iceberg-code-report": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/iceberg-code-report/SKILL.md",
+      "computedHash": "73d8de38db7f300f1cb79fd537d0e87bfc557de222f2e016f588bf8b41de7ae9"
     },
     "iceberg-code-review": {
       "source": "mols3131d/mols-agent-assets",
@@ -22,12 +40,89 @@
       "skillPath": "src/skills/iceberg-code-review/SKILL.md",
       "computedHash": "e7816ed0632e64eb16f62edf6c6909a040ff81b19fa4eea3cdba71884b355721"
     },
+    "mols-agent-asset-studio": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/mols-agent-asset-studio/SKILL.md",
+      "computedHash": "baacffd2288c2f86ce36ec68f1ea3f35e0104b2445dbdc43cf2b10f395f05a57"
+    },
+    "mols-documents-studio": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/mols-documents-studio/SKILL.md",
+      "computedHash": "c6127f2da4c1707715dafedb1169c876888c74f31fc5840d571b00cebc9d28a7"
+    },
+    "mols-kanban-markdown": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/mols-kanban-markdown/SKILL.md",
+      "computedHash": "6d5ffda1e433509567174ff46471d5dd55559a290d923f95104f18a2c4b7d11c"
+    },
+    "mols-markdown-scripts": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/mols-markdown-scripts/SKILL.md",
+      "computedHash": "90e57ad63cc78481560ad2ce4fcb47836d120a0a75449c69c6b256c8f18b8ee7"
+    },
+    "ponytail": {
+      "source": "DietrichGebert/ponytail",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail/SKILL.md",
+      "computedHash": "210fa0831f649ce9f8a305f7b7c8cf2a0dd09ac4dd53067109941b96e7811d4e"
+    },
+    "ponytail-audit": {
+      "source": "DietrichGebert/ponytail",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail-audit/SKILL.md",
+      "computedHash": "8b8d72e6ff70b65b6c9518d470fcf29dc696eea93d28f3efa10fdcc60cbd696d"
+    },
+    "ponytail-debt": {
+      "source": "DietrichGebert/ponytail",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail-debt/SKILL.md",
+      "computedHash": "0099b82174e3a4261828b4ec04d2c068b1b294fdab14f76701c2acd1f7c99539"
+    },
+    "ponytail-gain": {
+      "source": "DietrichGebert/ponytail",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail-gain/SKILL.md",
+      "computedHash": "c45ecba7906960eea904218b623abf097ebff84ecbacca6d68da1d0687435f75"
+    },
+    "ponytail-help": {
+      "source": "DietrichGebert/ponytail",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail-help/SKILL.md",
+      "computedHash": "10e8382b1033c9a0fec0073de6d3de3846b4f5dca7d78b6df2d476a1f4cd43c6"
+    },
+    "ponytail-review": {
+      "source": "DietrichGebert/ponytail",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail-review/SKILL.md",
+      "computedHash": "4646594fcd75455533f7ff1425f4f1c5ba0fa65f88241bf262b1c4fc275f049a"
+    },
     "sandbox-editor": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "workbench/skills/sandbox-editor/SKILL.md",
+      "skillPath": "src/skills/sandbox-editor/SKILL.md",
       "computedHash": "915f87a0068b155ad0fa3a04fb1af4945b338f6667ea039850520353d1018724"
+    },
+    "vcs-git-commit": {
+      "source": "mols3131d/mols-agent-assets",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "src/skills/vcs-git-commit/SKILL.md",
+      "computedHash": "8bff48b1daaf7ed4bcce1ef78bc97fb9b14d7d8d9a116d53820c0db72907f14c"
     }
   }
 }
