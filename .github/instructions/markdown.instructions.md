@@ -4,7 +4,7 @@ description: "Use when writing or editing Markdown docs, README, notes, or AGENT
 applyTo: "**/*.md"
 ---
 
-- Language ko.
-- Prefer GFM callouts (`> [\!NOTE]` / `TIP` / `IMPORTANT`), tables, mermaid when structure helps.
-- formating: [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md).
+- Language: `ko`. Use `en` for headers, field names, and standard technical terms.
+- Use GFM callouts, tables, or Mermaid when useful.
+- Format: all `uv run rumdl fmt .`; file `uv run rumdl fmt path/to/file.md`; glob `uv run rumdl fmt 'docs/**/*.md'`.
 - link-not-embed
