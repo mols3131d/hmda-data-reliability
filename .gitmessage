@@ -19,5 +19,5 @@
 #   - Body: Explain why, not what; omit if obvious; wrap at 72 chars; '-' bullets
 #   - Footer: Breaking changes or issue refs only (e.g. Closes #12)
 #   - Never: AI attribution, I/we, or "This commit does"
-#   - Language: default is `ko`. Use `en` when English is the clearer or standard expression.` 
+#   - Language: default is `ko`. Use `en` when English is the clearer or standard expression. 
 # ---------------------------------------------------------
