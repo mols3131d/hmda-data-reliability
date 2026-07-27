@@ -1,9 +1,5 @@
 # DEVELOPMENT
 
-> [!TIP]
-> 의존성 설치: `uv sync`
-> 테스트: `uv run pytest`
-
 ## Index
 
 | Section | Description |
@@ -50,9 +46,48 @@
 
 ## Testing
 
-```bash
-uv run pytest
-```
+### Pytest Plugins
+
+| Package | Description |
+| --- | --- |
+| `pytest` | 테스트 실행 프레임워크 |
+| `pytest-asyncio` | 비동기 테스트·fixture 지원 |
+| `pytest-cov` | 테스트 커버리지 측정 |
+| `pytest-html` | HTML 테스트 결과 리포트 생성 |
+| `pytest-sugar` | 진행 상황 표시 개선 |
+| `pytest-testmon` | 변경된 코드와 관련된 테스트 선택 실행 |
+| `pytest-timeout` | 테스트 실행 시간 제한 |
+| `pytest-xdist` | 테스트 병렬 실행 |
+
+### Pytest Options
+
+| Option | Description |
+| --- | --- |
+| `-n auto` | CPU 수에 맞춰 테스트 병렬 실행 |
+| `--timeout=60` | 테스트별 최대 실행 시간 60초 |
+| `--html=pytest_report.html --self-contained-html` | HTML 리포트 생성 |
+| `--strict-markers` | 등록되지 않은 marker 사용 금지 |
+
+### Test Markers
+
+| Marker | Description |
+| --- | --- |
+| `unit` | 순수 함수·격리된 도메인 테스트 |
+| `component` | 로컬 파일을 사용하는 패키지 단위 테스트 |
+| `integration` | 여러 시스템을 연결하는 워크플로 테스트 |
+
+### Testing Commands
+
+| Usage | Example | Description |
+| --- | --- | --- |
+| `uv run pytest [path]` | `uv run pytest tests/` | 전체 또는 특정 경로 테스트 실행 |
+| `uv run pytest [path]::[test]` | `uv run pytest tests/data_platform/test_loader.py::test_load` | 특정 테스트 실행 |
+| `uv run pytest -k [keyword]` | `uv run pytest -k "loader"` | 키워드로 테스트 선택 실행 |
+| `uv run pytest -m [marker]` | `uv run pytest -m unit` | marker로 테스트 선택 실행 |
+| `uv run pytest -m "not [marker]"` | `uv run pytest -m "not integration"` | 특정 marker 테스트 제외 |
+| `uv run pytest -n 0 -vv -s` | `uv run pytest -n 0 -vv -s` | 병렬 실행을 끄고 상세 로그 출력 |
+| `uv run pytest --lf` | `uv run pytest --lf` | 마지막 실패 테스트 재실행 |
+| `uv run pytest --cov=[package]` | `uv run pytest --cov=src/project_pivot --cov-report=term-missing` | 커버리지와 누락된 줄 표시 |
 
 ## Formatting
 
@@ -69,6 +104,8 @@ uv run pytest
 
 ## VCS
 
-|  |  |
-| --- | --- |
-| Git | conventional commits; 한글; 상세 내용은 [`.gitmessage`](../.gitmessage)을 참고 |
+- Git
+- commit message:
+  - conventional commits
+  - 한글
+  - 상세: [`.gitmessage`](../.gitmessage)
