@@ -15,7 +15,7 @@
         {
             "label": "Format with rumdl",
             "type": "shell",
-            "command": "uv run rumdl format .",
+            "command": "uv run rumdl fmt .",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
