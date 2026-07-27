@@ -8,7 +8,6 @@
 
 .codex/
 .gemini/
-.configs/
 .caveman-compress/
 
 dbt/.user.yml
