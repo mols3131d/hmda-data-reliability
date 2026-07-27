@@ -38,21 +38,21 @@
       "ref": "main",
       "sourceType": "github",
       "skillPath": "src/skills/iceberg-code-review/SKILL.md",
-      "computedHash": "e7816ed0632e64eb16f62edf6c6909a040ff81b19fa4eea3cdba71884b355721"
+      "computedHash": "82d76352057a473228b98443b8e6ffd50bbe20ce5794467501591cafe523cc39"
     },
     "mols-agent-asset-studio": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "src/skills/mols-agent-asset-studio/SKILL.md",
-      "computedHash": "baacffd2288c2f86ce36ec68f1ea3f35e0104b2445dbdc43cf2b10f395f05a57"
+      "computedHash": "726c863466324859da1f691f72cd3d31a364239a943bc5825e5ffa3f4c712878"
     },
     "mols-documents-studio": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "src/skills/mols-documents-studio/SKILL.md",
-      "computedHash": "c6127f2da4c1707715dafedb1169c876888c74f31fc5840d571b00cebc9d28a7"
+      "computedHash": "43ae9d1ff797b15de96faa7849c2a01b84d4d1dddd1ca61aefc1eb7d0e9698b7"
     },
     "mols-kanban-markdown": {
       "source": "mols3131d/mols-agent-assets",
