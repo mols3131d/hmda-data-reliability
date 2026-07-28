@@ -6,6 +6,10 @@
 **/*.origin*
 **/*.code-workspace
 
+.agents/skills/*
+!.agents/skills/clarify-code/
+!.agents/skills/testing/
+!.agents/skills/sandbox-editor/
 .codex/
 .gemini/
 .caveman-compress/
