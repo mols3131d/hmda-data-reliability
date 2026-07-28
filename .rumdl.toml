@@ -16,14 +16,25 @@ exclude = [
   "build/",
 ]
 
+[MD003]
+style = "atx"
+
 [MD004]
 style = "dash"
 
 [MD029]
-style = "ordered"
+style = "one"
+
+[MD033]
+disallowed-elements = ["gfm"]
+fix = false
 
 [MD048]
 style = "backtick"
 
 [MD057]
 compact-paths = true
+
+[MD060]
+style = "compact"
+loose-last-column = true
