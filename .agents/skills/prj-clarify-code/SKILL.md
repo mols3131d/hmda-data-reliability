@@ -1,5 +1,5 @@
 ---
-name: clarify-code
+name: prj-clarify-code
 description: "Use when improving the readability of complex project code without changing behavior. Apply for naming, intent comments, responsibility boundaries, or minimal refactoring. Do not use for feature work, performance work, documentation, or general code review."
 ---
 

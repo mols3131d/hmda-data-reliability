@@ -1,5 +1,5 @@
 ---
-name: sandbox-editor
+name: prj-sandbox-editor
 description: >
   USE WHEN: Creating, editing, modifying, or updating interactive sandbox scripts to resolve understanding bottlenecks.
   EXCLUDES: General refactoring, test automation, or fixing production code.

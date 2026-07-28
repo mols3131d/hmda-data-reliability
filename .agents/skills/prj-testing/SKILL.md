@@ -1,5 +1,5 @@
 ---
-name: testing
+name: prj-testing
 description: "Use when running, selecting, debugging, or checking coverage for this project's pytest tests. Follow the commands, markers, and options in docs/DEVELOPMENT.md."
 ---
 
