@@ -1,86 +1,52 @@
 ---
 name: clarify-code
-description: "USE WHEN: 사용자가 읽기 어렵거나 복잡한 코드의 이해병목을 줄이고 싶어 하거나, 책임 분리·함수 추출·이름 개선·의도 중심 주석을 필요에 따라 활용해 가독성을 높이길 요청한다. EXCLUDES: 기능 추가, 동작 변경, 성능 최적화, 일반 코드 리뷰만을 목적으로 하는 작업."
+description: "Use when improving the readability of complex project code without changing behavior. Apply for naming, intent comments, responsibility boundaries, or minimal refactoring. Do not use for feature work, performance work, documentation, or general code review."
 ---
 
 # Clarify Code
 
-## Goal
+Preserve behavior. Remove the main reading bottleneck. Make the smallest change.
 
-동작을 보존하며 이름, 주석, 리팩터링의 최소 조합으로 이해병목을 줄인다.
+## Use When
 
-## When to Use
+- Complex function or module
+- Mixed responsibilities or unclear call-site intent
+- Vague names or comments that explain `what`, not `why`
 
-- 복잡한 코드의 가독성 개선
-- 책임 분리, 함수 추출, 이름 개선 판단
-- 동작 설명 대신 의도 주석이 필요한 작업
+## Do Not Use When
 
-## When NOT to Use
+- Feature, API, performance, or architecture changes
+- Correctness-focused code review
+- User-facing documentation
 
-- 기능·동작 변경, 성능 최적화
-- 정확성 중심 일반 코드 리뷰
-- 사용자 문서 개선
+## Workflow
 
-## Instructions
+1. Read the target, direct callers, and related tests. Expand only for shared contracts.
+2. Name the bottleneck: scattered flow, mixed responsibility, hidden policy, or complex expression.
+3. Choose the smallest fix:
+   - vague name: rename;
+   - hidden policy or constraint: add one intent comment;
+   - independent responsibility with a clearer call site: extract a function;
+   - nested or mixed abstraction levels: simplify control flow.
+4. Preserve public APIs, return values, exceptions, state, side-effect order, logs, and validation.
+5. Run relevant tests before and after. Without tests, use static, type, or I/O checks and report the gap.
+6. Remove unrelated formatting and future-only abstractions.
 
-### Comments
+## Guardrails
 
-- 무엇이 아닌 왜를 설명한다. 정책, 예외 이유, 순서, 비직관적 제약만 기록한다.
-- 쉽게 낡는 주석은 피하고 블록당 한 문장으로 쓴다.
-- 저장소 언어·용어 규칙을 따른다.
+- Comment only on policies, exceptions, ordering, or constraints the code cannot clarify.
+- Do not extract helpers only to reduce line count.
+- Do not add one-use abstractions, future extension points, or navigation overhead.
+- Use one name or comment for each intent; do not duplicate explanations.
+- Preserve error handling, validation, and observability.
 
-좋은 예:
+## Report
 
-```python
-# 제외 파일은 진단용으로 남기되, 지원 파일이 있으면 적재를 계속한다.
-```
+Report briefly:
 
-나쁜 예:
+- Bottleneck and change
+- Preserved behavior
+- Validation
+- Gaps and risks
 
-```python
-# 제외 파일이 있으면 로그를 남긴다.
-```
-
-### Refactoring
-
-- 함수 추출은 독립된 책임에 이름을 붙여 호출부가 더 명확해질 때만 사용한다.
-- 줄 수용 helper, 단일 구현 추상화, 미래용 확장점, 탐색 이동을 늘리는 추출은 금지한다.
-- 같은 의도의 이름과 주석은 하나만 남긴다.
-- 오류 처리, 검증, 관측 가능성을 제거하지 않는다.
-
-### Communication
-
-변경 전 병목과 해법을 알린다. 변경 후 병목·해법, 수정 파일, 보존 근거, 검증, 미검증 항목·위험을 짧게 보고한다. 변경이 불필요하면 이유와 복잡해질 조건만 설명한다.
-
-## Workflow: Resolve Understanding Bottleneck
-
-### Arguments from Context
-
-- 대상 코드·호출 경로, 분석/수정 범위, 저장소 언어·스타일·테스트 규칙
-
-### Procedure
-
-1. 변경 대상, 직접 호출부, 관련 테스트를 읽는다. 다른 경로의 동작 계약이나 공용 코드 영향이 있을 때만 넓힌다.
-2. 이해 비용 순으로 병목을 찾는다: 분산된 실행 흐름, 책임 혼합, 숨은 정책·불변조건, 긴 조건·중첩·중복.
-3. 고정 순서 없이 최소 해법을 고른다.
-   - 모호한 이름: 이름 개선
-   - 코드로 표현하기 어려운 이유·정책: 의도 주석
-   - 이름 붙일 독립 책임이 있어 호출부가 선명해짐: 함수 추출
-   - 중첩·추상화 수준 혼합이 남음: 제어 흐름 재구성
-   - 명확한 코드는 유지하고 같은 의도를 중복 표현하지 않는다.
-4. 공개 API, 반환값, 예외 유형, 상태 변경, 부작용 순서, 로그 의미를 보존하는 최소 변경을 적용한다.
-5. 관련 테스트를 변경 전후 실행한다. 주변 동작을 보호하지 못하면 최소 회귀 테스트를 추가한다.
-6. 테스트 추가가 불가능하면 정적·타입 검사나 기존 입출력 비교를 실행하고 한계를 보고한다.
-7. 불필요한 diff를 제거한다.
-
-### Validation
-
-- 검증 범위에서 관찰 가능한 동작이 같고 미검증 범위·위험을 보고한다.
-- 주석은 코드를 반복하지 않고, 추출 함수는 독립 개념을 드러낸다.
-- 관련 테스트 또는 보고한 대체 검증과 diff 검사가 통과한다.
-
-## Constraints
-
-- 분석 요청에는 코드를 수정하지 않는다.
-- 기능 추가, 성능 최적화, 대규모 설계 변경으로 넓히지 않는다.
-- 무관한 사용자 diff를 되돌리거나 덮어쓰지 않는다.
+If no change is needed, report why and what would justify one.
