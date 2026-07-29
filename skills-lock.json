@@ -40,6 +40,12 @@
       "skillPath": "src/skills/iceberg-code-review/SKILL.md",
       "computedHash": "82d76352057a473228b98443b8e6ffd50bbe20ce5794467501591cafe523cc39"
     },
+    "marimo-notebook": {
+      "source": "marimo-team/skills",
+      "sourceType": "github",
+      "skillPath": "skills/marimo-notebook/SKILL.md",
+      "computedHash": "d843af038a49245369d9a91b8dda531a0d58882bc06623604b673cb144588edd"
+    },
     "mols-agent-asset-studio": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
