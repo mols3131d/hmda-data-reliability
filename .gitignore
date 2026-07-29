@@ -6,12 +6,15 @@
 **/*.origin*
 **/*.code-workspace
 
+.agents/brain/
+.agents/reports/
 .agents/skills/*
 !.agents/skills/prj-*
 !.agents/skills/clarify-code/
 !.agents/skills/sandbox-editor/
-.codex/
-.gemini/
+.codex/skills/
+.gemini/skills/
+.gemini/commands/
 .caveman-compress/
 
 dbt/.user.yml
