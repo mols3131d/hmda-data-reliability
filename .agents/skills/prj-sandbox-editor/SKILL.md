@@ -49,15 +49,15 @@ Generate interactive sandbox scripts ("Micro World"). Expose inputs, hidden stat
 ### Procedure
 
 1. Parse intent to identify the target logic and understanding bottleneck. If the bottleneck or suitable sandbox experience is unclear, read [references/understanding-bottleneck.md](references/understanding-bottleneck.md).
-2. Determine sandbox location (User path -> Existing `sandboxes/` -> Default `sandboxes/`).
-3. Select and read required assets from the route selection:
+1. Determine sandbox location (User path -> Existing `sandboxes/` -> Default `sandboxes/`).
+1. Select and read required assets from the route selection:
    - [references/write-marimo-sandbox.md](references/write-marimo-sandbox.md) when building a Python sandbox.
    - [references/add-observability.md](references/add-observability.md) when state transitions need visibility.
    - [references/use-mock-patch.md](references/use-mock-patch.md) when internal calls need interception.
    - [references/understanding-bottleneck.md](references/understanding-bottleneck.md) when the goal or bottleneck is unclear.
-4. Scaffold sandbox script, importing target logic directly.
-5. Apply the selected observability approach without changing production code.
-6. Output script path. Wait for user to tweak and execute.
+1. Scaffold sandbox script, importing target logic directly.
+1. Apply the selected observability approach without changing production code.
+1. Output script path. Wait for user to tweak and execute.
 
 ### Validation
 

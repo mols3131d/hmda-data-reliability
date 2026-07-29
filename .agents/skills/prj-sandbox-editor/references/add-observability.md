@@ -28,9 +28,9 @@ Transform code into "Timeline Debugger". Expose internal behavior, data transfor
 ## Workflows
 
 1. Identify opaque state changes.
-2. Inject observability logs (e.g., `print`, structured logs).
-3. Format traces as state transitions.
-4. Output runnable code.
+1. Inject observability logs (e.g., `print`, structured logs).
+1. Format traces as state transitions.
+1. Output runnable code.
 
 ## Instructions
 

@@ -29,9 +29,9 @@ Expose hidden internal states, intermediate variables, and adjacent module inter
 ## Workflows
 
 1. Identify target function and internal calls to expose.
-2. Scaffold standalone sandbox script importing function.
-3. Apply patches/spies to internal dependencies.
-4. Execute and print captured states.
+1. Scaffold standalone sandbox script importing function.
+1. Apply patches/spies to internal dependencies.
+1. Execute and print captured states.
 
 ## Instructions
 

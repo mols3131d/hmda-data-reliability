@@ -11,9 +11,9 @@ Code verification automated. Human understand system for **participation**. Know
 **Cognitive Debt**: system work, human understand fail keep up.
 
 1. AI generate code fast
-2. Human understand fail, changes accumulate
-3. Concept structure opaque
-4. Human pushed out decision loop
+1. Human understand fail, changes accumulate
+1. Concept structure opaque
+1. Human pushed out decision loop
 
 Understanding bottleneck push human out loop.
 

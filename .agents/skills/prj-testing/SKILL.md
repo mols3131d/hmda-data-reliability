@@ -10,10 +10,10 @@ Use `pytest` through `uv`. Start with the narrowest relevant test.
 ## Workflow
 
 1. Select a path, test name, keyword, or marker.
-2. Project defaults already enable parallel execution, a 60-second timeout, an HTML report, and strict markers through `pyproject.toml`.
-3. Use `-n 0 -vv -s` only when debugging order, output, or concurrency issues.
-4. Use `--lf` to rerun the last failure.
-5. Use coverage when the change needs it.
+1. Project defaults already enable parallel execution, a 60-second timeout, an HTML report, and strict markers through `pyproject.toml`.
+1. Use `-n 0 -vv -s` only when debugging order, output, or concurrency issues.
+1. Use `--lf` to rerun the last failure.
+1. Use coverage when the change needs it.
 
 ## Commands
 

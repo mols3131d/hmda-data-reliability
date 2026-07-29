@@ -22,15 +22,15 @@ Preserve behavior. Remove the main reading bottleneck. Make the smallest change.
 ## Workflow
 
 1. Read the target, direct callers, and related tests. Expand only for shared contracts.
-2. Name the bottleneck: scattered flow, mixed responsibility, hidden policy, or complex expression.
-3. Choose the smallest fix:
+1. Name the bottleneck: scattered flow, mixed responsibility, hidden policy, or complex expression.
+1. Choose the smallest fix:
    - vague name: rename;
    - hidden policy or constraint: add one intent comment;
    - independent responsibility with a clearer call site: extract a function;
    - nested or mixed abstraction levels: simplify control flow.
-4. Preserve public APIs, return values, exceptions, state, side-effect order, logs, and validation.
-5. Run relevant tests before and after. Without tests, use static, type, or I/O checks and report the gap.
-6. Remove unrelated formatting and future-only abstractions.
+1. Preserve public APIs, return values, exceptions, state, side-effect order, logs, and validation.
+1. Run relevant tests before and after. Without tests, use static, type, or I/O checks and report the gap.
+1. Remove unrelated formatting and future-only abstractions.
 
 ## Guardrails
 
