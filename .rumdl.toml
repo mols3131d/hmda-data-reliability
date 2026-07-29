@@ -6,21 +6,23 @@ exclude = [
   "**/.tmp/",
   "**/tmp/",
   "**/archive/",
-  "**/*.tmp.md",
-
-  # --- --- --- ---  --- --- --- ---  --- --- --- ---  --- --- --- ---
-  ".github/",
+  "**/*.tmp.*",
+  # --- --- --- ---  --- ---
+  ".rumdl_cache/**",
   "node_modules/",
   "vendor/",
   "dist/",
   "build/",
+  "target/**",
+  "coverage/**",
+  "site/**",
+  "**/generated/**",
 ]
+
+extend-enable = ["MD060", "MD070", "MD073", "MD080"]
 
 [MD003]
 style = "atx"
-
-[MD004]
-style = "dash"
 
 [MD029]
 style = "one"
@@ -29,8 +31,20 @@ style = "one"
 disallowed-elements = ["gfm"]
 fix = false
 
+[MD046]
+style = "fenced"
+
 [MD048]
 style = "backtick"
+
+[MD049]
+style = "asterisk"
+
+[MD050]
+style = "asterisk"
+
+[MD054]
+style = "inline"
 
 [MD057]
 compact-paths = true
