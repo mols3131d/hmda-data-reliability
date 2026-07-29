@@ -82,8 +82,8 @@ Lifecycle 밖의 side effect는 명시적 API로만 실행한다.
 ## Reading Order
 
 1. [`reliability/__init__.py`](../../src/project_pivot/reliability/__init__.py)
-2. [`incident_lifecycle.py`](../../src/project_pivot/data_operations/incident_lifecycle.py)
-3. [`tests/reliability/test_basic_incident_detection.py`](../../tests/reliability/test_basic_incident_detection.py)
-4. [`tests/reliability/test_impact_analysis.py`](../../tests/reliability/test_impact_analysis.py)
-5. [`tests/reliability/test_approval_backfill_validation.py`](../../tests/reliability/test_approval_backfill_validation.py)
-6. [`tests/reliability/test_evaluation_report.py`](../../tests/reliability/test_evaluation_report.py)
+1. [`incident_lifecycle.py`](../../src/project_pivot/data_operations/incident_lifecycle.py)
+1. [`tests/reliability/test_basic_incident_detection.py`](../../tests/reliability/test_basic_incident_detection.py)
+1. [`tests/reliability/test_impact_analysis.py`](../../tests/reliability/test_impact_analysis.py)
+1. [`tests/reliability/test_approval_backfill_validation.py`](../../tests/reliability/test_approval_backfill_validation.py)
+1. [`tests/reliability/test_evaluation_report.py`](../../tests/reliability/test_evaluation_report.py)

@@ -70,6 +70,6 @@
 ## Reading Order
 
 1. [`__init__.py`](../../src/project_pivot/hmda_data/__init__.py)
-2. [`ingestion/__init__.py`](../../src/project_pivot/hmda_data/ingestion/__init__.py)
-3. [`synthetic/__init__.py`](../../src/project_pivot/hmda_data/synthetic/__init__.py)
-4. [`tests/hmda_data`](../../tests/hmda_data)
+1. [`ingestion/__init__.py`](../../src/project_pivot/hmda_data/ingestion/__init__.py)
+1. [`synthetic/__init__.py`](../../src/project_pivot/hmda_data/synthetic/__init__.py)
+1. [`tests/hmda_data`](../../tests/hmda_data)

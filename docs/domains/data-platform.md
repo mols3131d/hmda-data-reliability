@@ -107,8 +107,8 @@ flowchart LR
 ## Reading Order
 
 1. [`duckdb.py`](../../src/project_pivot/data_platform/duckdb.py)
-2. [`sql.py`](../../src/project_pivot/data_platform/sql.py)
-3. [`sources.yml`](../../dbt/models/sources.yml)
-4. [`stg_hmda_loans.sql`](../../dbt/models/staging/stg_hmda_loans.sql)
-5. [`mart_hmda_loan_outcomes.sql`](../../dbt/models/marts/mart_hmda_loan_outcomes.sql)
-6. [`tests/dbt/test_analytics_foundation.py`](../../tests/dbt/test_analytics_foundation.py)
+1. [`sql.py`](../../src/project_pivot/data_platform/sql.py)
+1. [`sources.yml`](../../dbt/models/sources.yml)
+1. [`stg_hmda_loans.sql`](../../dbt/models/staging/stg_hmda_loans.sql)
+1. [`mart_hmda_loan_outcomes.sql`](../../dbt/models/marts/mart_hmda_loan_outcomes.sql)
+1. [`tests/dbt/test_analytics_foundation.py`](../../tests/dbt/test_analytics_foundation.py)

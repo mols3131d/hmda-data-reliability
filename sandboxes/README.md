@@ -17,6 +17,6 @@ rg --files sandbox | rg '/sandbox_'
 ## 작성 원칙
 
 1. production 로직을 복사하지 않고 `src/project_pivot`에서 직접 import한다.
-2. 작은 fixture와 단계별 출력으로 입력, 변환, 결과, 예외를 눈으로 확인할 수 있게 한다.
-3. 실험 결과는 `tmp/`에만 기록하고 production 데이터와 설정을 변경하지 않는다.
-4. 샌드박스에서 확인한 사실과 production 코드의 동작을 구분해 기록한다.
+1. 작은 fixture와 단계별 출력으로 입력, 변환, 결과, 예외를 눈으로 확인할 수 있게 한다.
+1. 실험 결과는 `tmp/`에만 기록하고 production 데이터와 설정을 변경하지 않는다.
+1. 샌드박스에서 확인한 사실과 production 코드의 동작을 구분해 기록한다.

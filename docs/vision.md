@@ -15,7 +15,7 @@
 ## 현재
 
 | 영역 | 상태 |
-|---|---|
+| --- | --- |
 | Data plane | HMDA CSV/Parquet 멱등 적재, dbt staging/mart/test/artifact 생성 |
 | Lifecycle | Caller baseline과 실제 current로 4개 규칙 탐지; impact와 remediation draft 반환 |
 | Recovery | Lifecycle과 분리된 approval gate와 backfill validation API |
@@ -42,8 +42,8 @@
 ## 다음
 
 1. 외부 approval과 감사 이력을 Dagster에 연결.
-2. Remediation을 격리된 dbt compile/build로 검증.
-3. Null spike, schema drift, freshness delay end-to-end evaluation 추가.
+1. Remediation을 격리된 dbt compile/build로 검증.
+1. Null spike, schema drift, freshness delay end-to-end evaluation 추가.
 
 ## 비목표
 

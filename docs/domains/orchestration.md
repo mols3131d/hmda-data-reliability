@@ -61,7 +61,7 @@ resource는 config conversion만 담당한다. 파일 발견, 적재, dbt subpro
 ## Reading Order
 
 1. [`definitions.py`](../../src/project_pivot/orchestration/definitions.py)
-2. [`assets.py`](../../src/project_pivot/orchestration/defs/assets.py)
-3. [`resource.py`](../../src/project_pivot/orchestration/defs/resource.py)
-4. [`tests/orchestration/test_dagster_definitions.py`](../../tests/orchestration/test_dagster_definitions.py)
-5. [`tests/orchestration/test_pipeline_materialization.py`](../../tests/orchestration/test_pipeline_materialization.py)
+1. [`assets.py`](../../src/project_pivot/orchestration/defs/assets.py)
+1. [`resource.py`](../../src/project_pivot/orchestration/defs/resource.py)
+1. [`tests/orchestration/test_dagster_definitions.py`](../../tests/orchestration/test_dagster_definitions.py)
+1. [`tests/orchestration/test_pipeline_materialization.py`](../../tests/orchestration/test_pipeline_materialization.py)

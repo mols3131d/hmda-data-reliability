@@ -45,9 +45,9 @@ flowchart LR
 `run_dbt_build()`는 다음 경계를 책임진다.
 
 1. 이전 artifact 삭제
-2. `dbt build` subprocess 실행
-3. 종료 코드와 제한 시간 확인
-4. 새 `manifest.json`, `run_results.json` 존재 확인
+1. `dbt build` subprocess 실행
+1. 종료 코드와 제한 시간 확인
+1. 새 `manifest.json`, `run_results.json` 존재 확인
 
 artifact가 없으면 종료 코드가 0이어도 성공으로 처리하지 않는다.
 
@@ -89,7 +89,7 @@ Dagster resource가 설정을 `DataOperationRequest`로 변환하고, asset이 �
 ## 읽는 순서
 
 1. [`__init__.py`](../../src/project_pivot/data_operations/__init__.py)
-2. [`request.py`](../../src/project_pivot/data_operations/request.py)
-3. [`runner.py`](../../src/project_pivot/data_operations/runner.py)
-4. [`incident_lifecycle.py`](../../src/project_pivot/data_operations/incident_lifecycle.py)
-5. [`tests/data_operations`](../../tests/data_operations)
+1. [`request.py`](../../src/project_pivot/data_operations/request.py)
+1. [`runner.py`](../../src/project_pivot/data_operations/runner.py)
+1. [`incident_lifecycle.py`](../../src/project_pivot/data_operations/incident_lifecycle.py)
+1. [`tests/data_operations`](../../tests/data_operations)
