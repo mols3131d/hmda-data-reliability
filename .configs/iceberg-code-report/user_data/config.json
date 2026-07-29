@@ -1,0 +1,5 @@
+{
+  "timezone": "Asia/Seoul",
+  "default_output_dir": ".agents/reports",
+  "default_output_format": "%Y-%m%d/%H%M-{title_slug}"
+}
