@@ -4,7 +4,7 @@
     "PreInvocation": [
       {
         "type": "command",
-        "command": "echo '{\"injectSteps\": [{\"ephemeralMessage\": \"Activate agent skills `/caveman lite` and `/ponytail full`\"}]}'",
+        "command": "echo '{\"injectSteps\": [{\"ephemeralMessage\": \"Activate agent skills `/caveman lite`\"}]}'",
         "timeout": 5
       },
       {
