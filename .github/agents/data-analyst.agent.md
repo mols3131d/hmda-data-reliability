@@ -1,9 +1,9 @@
 ---
 name: "Data Analyst"
 description: "Use for data exploration and understanding: shape, schema, volume, nulls, freshness, lineage, and EDA notebooks. Surface quality risk signals only as side findings. Avoid business insight, predictive ML, formal verification, and open-ended product analysis."
-human-notes: "사람이 적는 노트. Draft. 섹션 정렬·간결화."
-tools: [read, search, execute]
+tools: [vscode, execute, read, agent, marimo-team.vscode-marimo, ms-python.python, ms-toolsai.datawrangler, ms-toolsai.jupyter, edit, search, web, browser, 'pylance-mcp-server/*', todo]
 user-invocable: true
+disable-model-invocation: true
 ---
 
 ## Mission
