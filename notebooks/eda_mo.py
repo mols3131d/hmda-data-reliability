@@ -36,7 +36,7 @@ def _():
 
 @app.cell
 def _(os):
-    data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/year_2025_sample.csv")
+    data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/raw/hmda/year_2025.csv")
     csv_options = {
         "header": True,
         "nullstr": ["NA", ""],
@@ -81,6 +81,40 @@ def _(data_path, duckdb):
 
 @app.cell
 def _(hashlib, json, source_relation):
+    required_columns = (
+        "activity_year",
+        "state_code",
+        "county_code",
+        "loan_purpose",
+        "action_taken",
+        "loan_amount",
+        "income",
+    )
+    expected_type_families = {
+        "activity_year": ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"),
+        "state_code": ("VARCHAR",),
+        "county_code": ("VARCHAR",),
+        "loan_purpose": ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"),
+        "action_taken": ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"),
+        "loan_amount": (
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "DECIMAL",
+            "DOUBLE",
+        ),
+        "income": (
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "DECIMAL",
+            "DOUBLE",
+        ),
+    }
     schema_rows = [
         {"name": name, "type": str(column_type)}
         for name, column_type in zip(
@@ -88,6 +122,20 @@ def _(hashlib, json, source_relation):
         )
     ]
     inferred_types = {row["name"]: row["type"] for row in schema_rows}
+    required_schema = [
+        {
+            "column": column,
+            "inferred_type": inferred_types.get(column),
+            "status": (
+                "valid"
+                if inferred_types.get(column) in expected_type_families[column]
+                else "missing"
+                if column not in inferred_types
+                else "type mismatch"
+            ),
+        }
+        for column in required_columns
+    ]
     schema_payload = json.dumps(
         sorted(schema_rows, key=lambda row: row["name"]),
         ensure_ascii=True,
@@ -95,15 +143,23 @@ def _(hashlib, json, source_relation):
         sort_keys=True,
     )
     schema_hash = f"sha256:{hashlib.sha256(schema_payload.encode()).hexdigest()}"
-    return inferred_types, schema_hash, schema_rows
+    return (
+        inferred_types,
+        required_columns,
+        required_schema,
+        schema_hash,
+        schema_rows,
+    )
 
 
 @app.cell
-def _(connection, inferred_types):
+def _(connection, inferred_types, required_columns):
     def quote_identifier(identifier):
         return f'"{identifier.replace(chr(34), chr(34) * 2)}"'
 
-    profile_columns = list(inferred_types)
+    profile_columns = [
+        column for column in required_columns if column in inferred_types
+    ]
     metric_select = ["count(*) AS row_count"] + [
         f"count(*) FILTER (WHERE {quote_identifier(column)} IS NULL) "
         f"AS {quote_identifier(column)}"
@@ -168,6 +224,7 @@ def _(
     json,
     null_baseline,
     null_rates,
+    required_schema,
     row_count,
     schema_hash,
     schema_rows,
@@ -178,7 +235,11 @@ def _(
         "activity_year_counts": activity_year_counts,
         "null_counts": {row["column"]: row["null_count"] for row in null_baseline},
         "null_rates": null_rates,
-        "schema": {"columns": schema_rows, "schema_hash": schema_hash},
+        "schema": {
+            "columns": schema_rows,
+            "required_columns": required_schema,
+            "schema_hash": schema_hash,
+        },
         "freshness": freshness,
     }
     json.dumps(eda_evidence, ensure_ascii=True)
@@ -186,11 +247,22 @@ def _(
 
 
 @app.cell
-def _(mo, schema_rows):
+def _(mo, required_schema):
+    schema_issues = [row for row in required_schema if row["status"] != "valid"]
+    schema_status = (
+        mo.callout("Required schema: valid", kind="success")
+        if not schema_issues
+        else mo.callout(
+            "Required schema mismatch: "
+            + ", ".join(f"{row['column']} ({row['status']})" for row in schema_issues),
+            kind="warn",
+        )
+    )
     mo.vstack(
         [
-            mo.md("## Source schema"),
-            mo.ui.table(schema_rows),
+            mo.md("## Required source schema"),
+            schema_status,
+            mo.ui.table(required_schema),
         ]
     )
     return
@@ -222,7 +294,8 @@ def _(activity_year_counts, mo, row_count):
 def _(mo, null_baseline):
     mo.vstack(
         [
-            mo.md("## Null baseline\n\n입력에서 `NA`와 빈 문자열을 null로 해석합니다."),
+            mo.md("## Required column null baseline"),
+            mo.md("입력에서 `NA`와 빈 문자열을 null로 해석합니다."),
             mo.ui.table(null_baseline),
         ]
     )
