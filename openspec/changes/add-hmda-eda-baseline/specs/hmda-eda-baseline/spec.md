@@ -1,5 +1,21 @@
 ## ADDED Requirements
 
+### Requirement: Parse-integrity baseline input
+
+노트북은 `HMDA_EDA_DATA_PATH` 또는 기본 원천 CSV의 존재를 확인하고, DuckDB가 파싱 오류를 반환하면 baseline metric과 `eda_evidence`를 생성하지 않아야 한다(MUST).
+
+#### Scenario: 입력 파일이 없는 경우
+
+- **WHEN** 지정된 EDA CSV 경로에 파일이 없을 때
+- **THEN** 노트북은 DuckDB reader 실행 전에 입력 경로 오류를 표시해야 한다.
+- **AND** `row_count`, `null_rates`, `eda_evidence`를 생성해서는 안 된다.
+
+#### Scenario: CSV 파싱 오류가 있는 경우
+
+- **WHEN** CSV에 DuckDB가 읽을 수 없는 행이 있을 때
+- **THEN** 노트북은 CSV parse error로 실행을 실패시켜야 한다.
+- **AND** 손상 행을 제외한 volume 또는 null baseline을 표시해서는 안 된다.
+
 ### Requirement: HMDA required schema baseline
 
 노트북은 원천 HMDA CSV를 읽어 `activity_year`, `state_code`, `county_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income`의 존재와 타입 기준 충족 상태를 표시해야 한다(SHALL).
