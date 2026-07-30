@@ -19,10 +19,18 @@ exclude = [
   "**/generated/**",
 ]
 
-extend-enable = ["MD060", "MD070", "MD073", "MD080"]
+extend-enable = [
+  "MD060",
+  "MD070",
+  "MD073",
+  "MD080",
+]
 
 [MD003]
 style = "atx"
+
+[MD004]
+style = "dash"
 
 [MD029]
 style = "one"
