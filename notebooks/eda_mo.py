@@ -25,55 +25,82 @@ def _():
     import hashlib
     import json
     import os
+    import time
     from pathlib import Path
 
     import duckdb
     import marimo as mo
 
     os.chdir(Path(__file__).resolve().parent.parent)
-    return duckdb, hashlib, json, mo, os
+    return Path, duckdb, hashlib, json, mo, os, time
 
 
 @app.cell
-def _(os):
+def _(Path, os):
     data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/raw/hmda/year_2025.csv")
+    input_path = Path(data_path).expanduser().resolve()
+    if not input_path.is_file():
+        raise FileNotFoundError(f"HMDA EDA input file does not exist: {input_path}")
+
     csv_options = {
         "header": True,
         "nullstr": ["NA", ""],
         "sample_size": 200_000,
-        "ignore_errors": True,
     }
-    return csv_options, data_path
+    duckdb_config = {
+        "memory_limit": "2GB",
+        "threads": 2,
+        "temp_directory": str(Path(os.environ.get("TMPDIR", "/tmp")).resolve()),
+    }
+    return csv_options, data_path, duckdb_config, input_path
 
 
 @app.cell
-def _(csv_options, data_path, mo):
-    mo.md(f"""
-        ## 입력 범위
+def _(csv_options, data_path, duckdb_config, input_path, mo):
+    run_eda = mo.ui.run_button(label="전체 파일 baseline 실행", kind="warn")
+    mo.vstack(
+        [
+            mo.md(
+                f"""
+                ## 입력 범위
 
-        - 경로: `{data_path}`
-        - 분석 범위: 파일 전체
-        - CSV type inference sample: `{csv_options["sample_size"]:,}` rows
-        - null 처리: `NA`, 빈 문자열
-        - soft-fail parse: `ignore_errors={str(csv_options["ignore_errors"]).lower()}`
+                - 요청 경로: `{data_path}`
+                - resolved 경로: `{input_path}`
+                - 분석 범위: 파일 전체
+                - CSV type inference sample: `{csv_options["sample_size"]:,}` rows
+                - null 처리: `NA`, 빈 문자열
+                - parse 오류: fail-fast
+                - DuckDB 제한:
+                  - memory: `{duckdb_config["memory_limit"]}`
+                  - threads: `{duckdb_config["threads"]}`
+                  - spill: `{duckdb_config["temp_directory"]}`
 
-        `ignore_errors=true`이므로 파싱 불가 행이 있어도 분석은 계속됩니다.
-        이 출력은 원천 탐색 evidence이며 저장된 `ProfileSnapshot`이 아닙니다.
-        """)
-    return
+                버튼을 눌러야 전체 파일 scan을 시작합니다.
+                파일 부재 또는 DuckDB CSV parse 오류 시 baseline metric과
+                `eda_evidence`를 생성하지 않습니다.
+                """
+            ),
+            run_eda,
+        ]
+    )
+    return (run_eda,)
 
 
 @app.cell
-def _(data_path, duckdb):
-    connection = duckdb.connect()
+def _(duckdb, duckdb_config, input_path, mo, run_eda):
+    mo.stop(
+        not run_eda.value,
+        mo.callout("전체 파일 baseline은 아직 실행하지 않았습니다.", kind="neutral"),
+    )
+
+    connection = duckdb.connect(config=duckdb_config)
     source_relation = connection.sql(
         """
         SELECT * FROM read_csv_auto(
-            $data_path, header=true, nullstr=['NA', ''],
-            sample_size=200000, ignore_errors=true
+            $input_path, header=true, nullstr=['NA', ''], sample_size=200000
         )
         """,
-        params={"data_path": data_path},
+        params={"input_path": str(input_path)},
     )
     source_relation.create_view("hmda_eda_source", replace=True)
     return connection, source_relation
@@ -153,7 +180,7 @@ def _(hashlib, json, source_relation):
 
 
 @app.cell
-def _(connection, inferred_types, required_columns):
+def _(connection, inferred_types, required_columns, time):
     def quote_identifier(identifier):
         return f'"{identifier.replace(chr(34), chr(34) * 2)}"'
 
@@ -165,42 +192,65 @@ def _(connection, inferred_types, required_columns):
         f"AS {quote_identifier(column)}"
         for column in profile_columns
     ]
-    metric_values = connection.execute(
-        f"SELECT {', '.join(metric_select)} FROM hmda_eda_source"
-    ).fetchall()[0]
-    row_count = metric_values[0]
+    if "observed_at" in inferred_types:
+        metric_select.append(
+            'max(try_cast("observed_at" AS TIMESTAMP)) AS freshness_value'
+        )
+
+    has_activity_year = "activity_year" in inferred_types
+    grouping_select = (
+        "activity_year, grouping(activity_year) AS is_total, "
+        if has_activity_year
+        else ""
+    )
+    grouping_clause = (
+        "GROUP BY GROUPING SETS ((), (activity_year))" if has_activity_year else ""
+    )
+    started_at = time.monotonic()
+    metric_rows = connection.execute(
+        f"SELECT {grouping_select}{', '.join(metric_select)} "
+        f"FROM hmda_eda_source {grouping_clause}"
+    ).fetchall()
+    duration_seconds = time.monotonic() - started_at
+
+    total_row = next(row for row in metric_rows if not has_activity_year or row[1] == 1)
+    metric_offset = 2 if has_activity_year else 0
+    row_count = total_row[metric_offset]
     null_baseline = [
         {
             "column": column,
             "null_count": null_count,
             "null_rate": null_count / row_count if row_count else 0.0,
         }
-        for column, null_count in zip(profile_columns, metric_values[1:], strict=True)
+        for column, null_count in zip(
+            profile_columns,
+            total_row[metric_offset + 1 : metric_offset + 1 + len(profile_columns)],
+            strict=True,
+        )
     ]
     null_rates = {row["column"]: row["null_rate"] for row in null_baseline}
     activity_year_counts = (
         [
-            {"activity_year": year, "row_count": count}
-            for year, count in connection.execute(
-                "SELECT activity_year, count(*) FROM hmda_eda_source "
-                "GROUP BY activity_year ORDER BY activity_year"
-            ).fetchall()
+            {"activity_year": row[0], "row_count": row[metric_offset]}
+            for row in metric_rows
+            if row[1] == 0
         ]
-        if "activity_year" in inferred_types
+        if has_activity_year
         else []
     )
-    return activity_year_counts, null_baseline, null_rates, row_count
+    freshness_value = total_row[-1] if "observed_at" in inferred_types else None
+    return (
+        activity_year_counts,
+        duration_seconds,
+        freshness_value,
+        null_baseline,
+        null_rates,
+        row_count,
+    )
 
 
 @app.cell
-def _(connection, inferred_types):
-    freshness_value = (
-        connection.execute(
-            'SELECT max(try_cast("observed_at" AS TIMESTAMP)) FROM hmda_eda_source'
-        ).fetchall()[0][0]
-        if "observed_at" in inferred_types
-        else None
-    )
+def _(freshness_value, inferred_types):
     freshness = {
         "status": "measured" if freshness_value is not None else "unmeasured",
         "source_column": "observed_at" if "observed_at" in inferred_types else None,
@@ -219,8 +269,10 @@ def _(connection, inferred_types):
 def _(
     activity_year_counts,
     csv_options,
-    data_path,
+    duckdb_config,
+    duration_seconds,
     freshness,
+    input_path,
     json,
     null_baseline,
     null_rates,
@@ -230,7 +282,13 @@ def _(
     schema_rows,
 ):
     eda_evidence = {
-        "source": {"path": data_path, "scope": "full_file", "csv_options": csv_options},
+        "source": {
+            "path": str(input_path),
+            "scope": "full_file",
+            "csv_options": csv_options,
+            "duckdb_config": duckdb_config,
+        },
+        "duration_seconds": duration_seconds,
         "row_count": row_count,
         "activity_year_counts": activity_year_counts,
         "null_counts": {row["column"]: row["null_count"] for row in null_baseline},

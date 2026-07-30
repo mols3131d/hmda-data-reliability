@@ -60,4 +60,5 @@ HMDA 원천 데이터는 `data/raw/hmda/year_2025.csv`에서 시작한다. EDA�
 - [Risk] source observation timestamp 이름이 달라질 수 있다. -> MVP는 `observed_at`만 인식하고 다른 이름의 매핑은 후속 변경에서 추가한다.
 - [Risk] full source 파일은 약 4.8 GB로 실행 시간이 길다. -> valid fixture를 먼저 검증하고 full-file 실행은 한 번만 수행해 duration과 결과를 기록한다.
 - [Risk] fail-fast 전환 뒤 실제 source parse error가 발견될 수 있다. -> baseline 생성 실패로 기록한다. 원천 정정 또는 quarantine 경로는 별도 변경으로 결정한다.
+- [Limitation] DuckDB `read_csv_auto`는 일부 field-count mismatch를 자동 dialect 또는 schema 추론으로 수용할 수 있다. -> `ignore_errors`를 제거해 DuckDB가 반환하는 parse error는 fail-fast로 처리하지만, field-count 계약을 별도로 강제하는 reader 설정은 후속 변경에서 결정한다.
 - [Risk] 이전 UI output이 남아 있을 수 있다. -> 모든 runtime gate는 새 Marimo kernel에서 실행한다.
