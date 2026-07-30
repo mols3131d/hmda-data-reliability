@@ -1,9 +1,7 @@
 **/.tmp_*
 **/tmp/**
-**/data/**
 **/logs/
 **/*.tmp*
-**/*.origin*
 **/*.code-workspace
 
 .agents/brain/
@@ -16,6 +14,12 @@
 .gemini/skills/
 .gemini/commands/
 .caveman-compress/
+
+# Local and generated project data
+/data/**/*.duckdb*
+/data/raw/
+/data/lakehouse/
+/data/metadata/dbt_lineage.json
 
 dbt/.user.yml
 pytest_report.html
