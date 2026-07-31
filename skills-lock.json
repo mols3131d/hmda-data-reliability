@@ -1,24 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "cavecrew": {
-      "source": "JuliusBrussee/caveman",
-      "sourceType": "github",
-      "skillPath": "skills/cavecrew/SKILL.md",
-      "computedHash": "c5527c994fbd4c22b36714e3b124a0f167a533d114ab164fb1d35e2123533917"
-    },
-    "caveman": {
-      "source": "JuliusBrussee/caveman",
-      "sourceType": "github",
-      "skillPath": "skills/caveman/SKILL.md",
-      "computedHash": "d18cdf73a5f5c496d681a43a6846336b110223bdffa6817b8992529c57f1a815"
-    },
-    "caveman-help": {
-      "source": "JuliusBrussee/caveman",
-      "sourceType": "github",
-      "skillPath": "skills/caveman-help/SKILL.md",
-      "computedHash": "dd85267e76baad76995157e7b9f762dfa557cd58951ee92af0c283f48aa26537"
-    },
     "iceberg": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
@@ -73,6 +55,13 @@
       "sourceType": "github",
       "skillPath": "src/skills/mols-markdown-scripts/SKILL.md",
       "computedHash": "90e57ad63cc78481560ad2ce4fcb47836d120a0a75449c69c6b256c8f18b8ee7"
+    },
+    "polars": {
+      "source": "polars-inc/skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "polars/SKILL.md",
+      "computedHash": "f45eae6f940edfa031d14dddad88698b69977d0c209f5c1f724eed1c9a372831"
     },
     "ponytail": {
       "source": "DietrichGebert/ponytail",
