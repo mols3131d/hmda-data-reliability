@@ -1,60 +1,11 @@
 {
   "version": 1,
   "skills": {
-    "iceberg": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/iceberg/SKILL.md",
-      "computedHash": "b889b76d464045398ac9147cf0c1f84b5149689b000b70bc211f5c9af6e4b2b5"
-    },
-    "iceberg-code-report": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/iceberg-code-report/SKILL.md",
-      "computedHash": "73d8de38db7f300f1cb79fd537d0e87bfc557de222f2e016f588bf8b41de7ae9"
-    },
-    "iceberg-code-review": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/iceberg-code-review/SKILL.md",
-      "computedHash": "82d76352057a473228b98443b8e6ffd50bbe20ce5794467501591cafe523cc39"
-    },
     "marimo-notebook": {
       "source": "marimo-team/skills",
       "sourceType": "github",
       "skillPath": "skills/marimo-notebook/SKILL.md",
       "computedHash": "d843af038a49245369d9a91b8dda531a0d58882bc06623604b673cb144588edd"
-    },
-    "mols-agent-asset-studio": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/mols-agent-asset-studio/SKILL.md",
-      "computedHash": "726c863466324859da1f691f72cd3d31a364239a943bc5825e5ffa3f4c712878"
-    },
-    "mols-documents-studio": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/mols-documents-studio/SKILL.md",
-      "computedHash": "43ae9d1ff797b15de96faa7849c2a01b84d4d1dddd1ca61aefc1eb7d0e9698b7"
-    },
-    "mols-kanban-markdown": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/mols-kanban-markdown/SKILL.md",
-      "computedHash": "6d5ffda1e433509567174ff46471d5dd55559a290d923f95104f18a2c4b7d11c"
-    },
-    "mols-markdown-scripts": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/mols-markdown-scripts/SKILL.md",
-      "computedHash": "90e57ad63cc78481560ad2ce4fcb47836d120a0a75449c69c6b256c8f18b8ee7"
     },
     "polars": {
       "source": "polars-inc/skills",
@@ -104,20 +55,6 @@
       "sourceType": "github",
       "skillPath": "skills/ponytail-review/SKILL.md",
       "computedHash": "4646594fcd75455533f7ff1425f4f1c5ba0fa65f88241bf262b1c4fc275f049a"
-    },
-    "sandbox-editor": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/sandbox-editor/SKILL.md",
-      "computedHash": "915f87a0068b155ad0fa3a04fb1af4945b338f6667ea039850520353d1018724"
-    },
-    "vcs-git-commit": {
-      "source": "mols3131d/mols-agent-assets",
-      "ref": "main",
-      "sourceType": "github",
-      "skillPath": "src/skills/vcs-git-commit/SKILL.md",
-      "computedHash": "8bff48b1daaf7ed4bcce1ef78bc97fb9b14d7d8d9a116d53820c0db72907f14c"
     }
   }
 }
