@@ -64,11 +64,13 @@ strict = true
 files = ["src", "tests"]
 
 [tool.pytest.ini_options]
-addopts = "-n auto --timeout=60 --html=pytest_report.html --self-contained-html --strict-markers"
+addopts = "-n auto --timeout=60 --html=pytest_report.html --self-contained-html --strict-markers -m 'not memory and not stress'"
 markers = [
   "unit: pure function and isolated domain tests",
   "component: package-level tests using local files",
   "integration: cross-system workflow tests",
+  "memory: representative process-level memory-budget test",
+  "stress: worst-case resource stress test",
 ]
 pythonpath = ["src"]
 testpaths = ["tests"]

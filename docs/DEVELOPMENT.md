@@ -72,6 +72,7 @@
 | `--timeout=60` | 테스트별 최대 실행 시간 60초 |
 | `--html=pytest_report.html --self-contained-html` | HTML 리포트 생성 |
 | `--strict-markers` | 등록되지 않은 marker 사용 금지 |
+| `-m 'not memory and not stress'` | 대형 resource workload 기본 제외 |
 
 기본 옵션을 일시적으로 덮어쓰거나 디버깅할 때만 명령에 직접 지정한다.
 
@@ -82,6 +83,8 @@
 | `unit` | 순수 함수·격리된 도메인 테스트 |
 | `component` | 로컬 파일을 사용하는 패키지 단위 테스트 |
 | `integration` | 여러 시스템을 연결하는 워크플로 테스트 |
+| `memory` | 대표 fixture의 process-level memory-budget test |
+| `stress` | worst-case resource stress test |
 
 ### Testing Commands
 
@@ -106,6 +109,22 @@ uv run pytest -k "loader"
 uv run pytest -m unit
 uv run pytest -m "not integration"
 ```
+
+HMDA EDA correctness와 resource test는 분리한다.
+
+```bash
+uv run pytest tests/hmda_data/test_eda.py \
+	tests/hmda_data/test_eda_fixture.py \
+	tests/hmda_data/test_eda_memory_helpers.py
+
+uv run python scripts/prepare_hmda_eda_fixture.py
+uv run python scripts/run_hmda_eda_memory.py
+```
+
+Memory runner는 user systemd와 cgroup `MemoryMax`, `MemorySwapMax`를 실제로
+적용할 수 있는 WSL/Linux 환경에서만 유효하다. 사전 hard-limit probe 실패를
+통과로 기록하지 않는다. `stress` marker는 별도 worst-case workload가 추가된
+뒤 명시적으로 선택한다.
 
 실패·디버깅:
 

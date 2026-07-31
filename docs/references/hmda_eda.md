@@ -1,20 +1,26 @@
 # HMDA Raw EDA
 
-[`notebooks/eda_mo.py`](../../notebooks/eda_mo.py)는 HMDA CSV 원천 파일의 구조와 기본 품질 지표를 읽는 Marimo EDA 노트북이다. 입력 파일과 데이터베이스를 수정하지 않고, 화면과 메모리 내 `eda_evidence`만 생성한다.
+[`notebooks/eda_mo.py`](../../notebooks/eda_mo.py)는 HMDA 원천 CSV의 schema,
+volume, required-column null과 freshness boundary를 표시한다. 계산은
+`project_pivot.hmda_data.analyze_hmda_csv`가 담당하며 notebook과 automated
+test가 같은 read-only 경로를 사용한다.
 
 ## Scope
 
 | Included | Excluded |
 | --- | --- |
-| CSV schema, 전체 행 수, 컬럼별 null, `activity_year`별 행 수 | 원천 다운로드, Bronze 적재, dbt 실행 |
-| 원천 `observed_at` 기준 freshness | incident 판정, remediation, recovery, 장기 모니터링 |
+| CSV schema, 전체·`activity_year`별 row count | 원천 다운로드, Bronze 적재, dbt 실행 |
+| Required-column null count와 rate | incident 판정, remediation, recovery |
+| `observed_at` 기반 source freshness | 파일 mtime 또는 Bronze ingestion time을 source freshness로 해석 |
 | JSON-serializable EDA evidence | `ProfileSnapshot` 저장 또는 lifecycle 실행 |
 
-Bronze 적재 계약은 [`HMDA Data`](../domains/hmda-data.md), profile과 incident lifecycle은 [`Reliability`](../domains/reliability.md)를 따른다.
+Bronze 적재 계약은 [`HMDA Data`](../domains/hmda-data.md), profile과 incident
+lifecycle은 [`Reliability`](../domains/reliability.md)를 따른다.
 
-## Input
+## Input And Reader
 
-노트북은 `HMDA_EDA_DATA_PATH` 환경 변수의 CSV를 읽는다. 환경 변수가 없으면 코드 fallback은 `data/year_2025_sample.csv`다. 해당 경로는 배포된 샘플 파일을 보장하지 않으므로, 실행 환경에서는 분석할 CSV 경로를 명시한다.
+기본 입력은 `data/raw/hmda/year_2025.csv`다. `HMDA_EDA_DATA_PATH`로 다른
+CSV를 지정할 수 있다.
 
 ```bash
 HMDA_EDA_DATA_PATH=data/raw/hmda/year_2025.csv uv run marimo edit notebooks/eda_mo.py
@@ -26,61 +32,111 @@ HMDA_EDA_DATA_PATH=data/raw/hmda/year_2025.csv uv run marimo edit notebooks/eda_
 | CSV header | 사용 |
 | Type inference sample | 200,000 rows |
 | Null strings | `NA`, 빈 문자열 |
-| Parse error handling | `ignore_errors=true` |
+| Parse error handling | fail-fast, `ignore_errors` 미사용 |
+| DuckDB default | memory `2GB`, threads `2`, 호출자 지정 temp directory |
+| Grouped result | `activity_year` cardinality 기본 32개로 제한 |
 
-`ignore_errors=true`는 파싱 불가 행이 있어도 읽기를 계속한다. 따라서 측정된 행 수와 null 비율은 성공적으로 파싱된 행 기준이며, 원천 파일의 물리적 행 수와 다를 수 있다.
+입력 파일은 DuckDB connection 생성 전에 확인한다. CSV parse 또는 aggregate
+query가 실패하면 exception을 호출자에게 전달하고 partial `eda_evidence`를
+반환하지 않는다. 성공과 실패 모두 entrypoint가 자신이 연 connection을 닫고
+원천 파일을 수정하지 않는다.
 
-## Measurements
+## Evidence
 
-| Area | Output | Meaning |
-| --- | --- | --- |
-| Schema | 컬럼명, DuckDB inferred type, `schema_hash` | 정렬된 schema payload의 SHA-256 hash |
-| Volume | `row_count` | 읽힌 전체 행 수 |
-| Partition volume | `activity_year_counts` | `activity_year`가 있을 때 연도별 행 수 |
-| Null | `null_counts`, `null_rates` | 각 컬럼의 null 수와 $0$~$1$ 비율 |
-| Freshness | `freshness.freshness_at` | `observed_at`가 있을 때 timestamp로 변환 가능한 최대값 |
+`analyze_hmda_csv`는 다음 key를 갖는 JSON-serializable `dict`를 반환한다.
 
-`activity_year`가 없으면 partition volume은 미측정으로 표시한다. `observed_at`가 없거나 유효한 timestamp가 없으면 freshness는 `unmeasured`이며 값은 `null`이다.
-
-## Freshness Boundary
-
-| Time | Interpretation |
+| Key | Meaning |
 | --- | --- |
-| `observed_at` 최대값 | 원천 데이터 관측 시각. 노트북의 source freshness 측정값 |
-| 파일 수정 시각 | filesystem metadata. source freshness 아님 |
-| Bronze `ingested_at` | 적재 시각. raw-table EDA 경로에서 별도 측정 |
+| `source` | resolved path, reader options, DuckDB resource 설정 |
+| `duration_seconds` | aggregate query 측정 시간 |
+| `row_count` | 읽은 전체 row 수 |
+| `activity_year_counts` | bounded grouping 결과 |
+| `null_counts`, `null_rates` | 존재하는 required column별 null baseline |
+| `schema` | 전체 inferred schema, required-column 상태, `schema_hash` |
+| `freshness` | 최대 `observed_at` 또는 `unmeasured` 경계 |
 
-## Evidence Shape
-
-노트북은 다음 구조의 JSON-serializable `eda_evidence`를 accordion으로 표시한다.
-
-```json
-{
-	"source": {
-		"path": "...",
-		"scope": "full_file",
-		"csv_options": { "header": true, "nullstr": ["NA", ""], "sample_size": 200000, "ignore_errors": true }
-	},
-	"row_count": 0,
-	"activity_year_counts": [],
-	"null_counts": {},
-	"null_rates": {},
-	"schema": { "columns": [], "schema_hash": "sha256:..." },
-	"freshness": { "status": "measured|unmeasured", "source_column": "observed_at|null", "freshness_at": "timestamp|null" }
-}
-```
-
-`source.path`는 실행 환경의 입력 경로다. evidence는 저장된 profile이나 production 결과가 아니라, 해당 실행의 원천 탐색 기록이다.
+`freshness.status=unmeasured`이면 파일 수정 시각은 filesystem metadata이고
+Bronze `ingested_at`은 별도 raw-table ingestion time이다.
 
 ## Profile Mapping
 
-`eda_evidence`는 `ProfileSnapshot`과 일부 측정값 이름을 공유하지만, 그 자체로 contract를 만족하지 않는다.
-
 | EDA evidence | `ProfileSnapshot` field | Note |
 | --- | --- | --- |
-| `row_count` | `row_count` | 직접 사용 가능 |
-| `null_rates` | `null_rates` | 직접 사용 가능 |
-| `schema.schema_hash` | `schema_hash` | 직접 사용 가능 |
-| `freshness.freshness_at` | `freshness_at` | `unmeasured`이면 contract용 값 없음 |
+| `row_count` | `row_count` | baseline/current 입력 역할 값 |
+| `null_rates` | `null_rates` | baseline/current 입력 역할 값 |
+| `schema.schema_hash` | `schema_hash` | display-only mapping |
+| `freshness.freshness_at` | `freshness_at` | `unmeasured`이면 `None` |
 
-`ProfileSnapshot`에는 위 측정값 외에 `snapshot_id`, `asset_name`, `partition`, `observed_at`, `freshness_at`가 필요하다. lifecycle 비교는 raw DuckDB table에서 `ProfileSnapshotRequest`를 통해 별도로 생성한다.
+EDA evidence 자체는 저장된 profile이 아니며 production detector를 실행하지
+않는다.
+
+## Correctness
+
+```bash
+uv run pytest tests/hmda_data/test_eda.py \
+  tests/hmda_data/test_eda_fixture.py \
+  tests/hmda_data/test_eda_memory_helpers.py
+uv run marimo check notebooks/eda_mo.py
+```
+
+작은 valid fixture는 schema, row count, null, activity-year count와 freshness를
+고정한다. Invalid UTF-8 fixture는 DuckDB parse exception과 partial evidence
+미생성을 검증한다. Notebook smoke는 새 kernel에서 valid fixture의 UI 변수와
+malformed fixture의 `exception` 상태를 확인한다.
+
+## Representative Memory Workload
+
+Fixture 생성 비용은 측정 process에 포함하지 않는다.
+
+```bash
+uv run python scripts/prepare_hmda_eda_fixture.py \
+  --output-directory data/samples/hmda/eda-memory-v1 \
+  --row-count 5000000
+
+uv run python scripts/run_hmda_eda_memory.py \
+  --fixture-directory data/samples/hmda/eda-memory-v1 \
+  --report-path notes/artifacts/hmda_eda_memory_report.json
+```
+
+Manifest `hmda-eda-memory-v1`은 seed `20250731`, 5,000,000 rows, 평균 row width
+145.7 bytes, null rate `loan_amount=2%`, `income=5%`, 연도 skew
+`2023=10%`, `2024=20%`, `2025=70%`, 단일 CSV와 SHA-256을 기록한다.
+
+| Resource | Value |
+| --- | ---: |
+| Process hard limit | 3 GiB |
+| Swap | 0 |
+| DuckDB memory | 1600 MB |
+| DuckDB threads | 2 |
+| Timeout | 15분 |
+| Temp disk budget | 10 GiB |
+| Repetitions | 3 |
+
+`systemd-run --user` memory control을 사전 확인하고, 128 MiB probe가 실제
+OOM kill되지 않으면 실행을 유효한 memory-budget 결과로 인정하지 않는다.
+기본 `pytest`는 `memory`와 `stress` marker를 제외한다.
+
+2026-07-31 WSL2 baseline에서 세 실행은 모두 invariant를 통과했다. 최대 peak
+RSS는 1,261,285,376 bytes로 3 GiB limit의 39.2%였고 elapsed는 4.80~5.42초였다.
+이 결과는 위 fixture와 환경의 관측값이며 모든 HMDA 입력의 OOM 안전성을
+의미하지 않는다.
+
+## Full Source Observation
+
+2026-07-31 `data/raw/hmda/year_2025.csv` 4.8 GiB를 공유 entrypoint로 한 번
+전체 scan했다.
+
+| Measurement | Observation |
+| --- | ---: |
+| Rows | 13,543,606 |
+| `activity_year=2025` | 13,543,606 |
+| `state_code` null | 170,769, 1.261% |
+| `county_code` null | 301,923, 2.229% |
+| `income` null | 2,189,834, 16.169% |
+| Source freshness | `observed_at` 부재로 `unmeasured` |
+| Aggregate query | 0.83초 |
+| Process wall time | 66.40초 |
+| Peak RSS | 13,041,572 KiB |
+
+Full-source 실행은 process hard limit 없이 DuckDB `2GB`, 2 threads로 수행한
+관측이다. 높은 process RSS는 대표 memory-budget 결과와 분리해 해석해야 한다.

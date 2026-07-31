@@ -22,17 +22,16 @@ def _(mo):
 
 @app.cell
 def _():
-    import hashlib
     import json
     import os
-    import time
     from pathlib import Path
 
-    import duckdb
     import marimo as mo
 
+    from project_pivot.hmda_data import analyze_hmda_csv
+
     os.chdir(Path(__file__).resolve().parent.parent)
-    return Path, duckdb, hashlib, json, mo, os, time
+    return Path, analyze_hmda_csv, json, mo, os
 
 
 @app.cell
@@ -87,221 +86,52 @@ def _(csv_options, data_path, duckdb_config, input_path, mo):
 
 
 @app.cell
-def _(duckdb, duckdb_config, input_path, mo, run_eda):
+def _(analyze_hmda_csv, duckdb_config, input_path, mo, run_eda):
     mo.stop(
         not run_eda.value,
         mo.callout("전체 파일 baseline은 아직 실행하지 않았습니다.", kind="neutral"),
     )
 
-    connection = duckdb.connect(config=duckdb_config)
-    source_relation = connection.sql(
-        """
-        SELECT * FROM read_csv_auto(
-            $input_path, header=true, nullstr=['NA', ''], sample_size=200000
-        )
-        """,
-        params={"input_path": str(input_path)},
+    eda_evidence = analyze_hmda_csv(
+        input_path,
+        memory_limit=duckdb_config["memory_limit"],
+        threads=duckdb_config["threads"],
+        temp_directory=duckdb_config["temp_directory"],
     )
-    source_relation.create_view("hmda_eda_source", replace=True)
-    return connection, source_relation
+    return (eda_evidence,)
 
 
 @app.cell
-def _(hashlib, json, source_relation):
-    required_columns = (
-        "activity_year",
-        "state_code",
-        "county_code",
-        "loan_purpose",
-        "action_taken",
-        "loan_amount",
-        "income",
-    )
-    expected_type_families = {
-        "activity_year": ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"),
-        "state_code": ("VARCHAR",),
-        "county_code": ("VARCHAR",),
-        "loan_purpose": ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"),
-        "action_taken": ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"),
-        "loan_amount": (
-            "TINYINT",
-            "SMALLINT",
-            "INTEGER",
-            "BIGINT",
-            "HUGEINT",
-            "DECIMAL",
-            "DOUBLE",
-        ),
-        "income": (
-            "TINYINT",
-            "SMALLINT",
-            "INTEGER",
-            "BIGINT",
-            "HUGEINT",
-            "DECIMAL",
-            "DOUBLE",
-        ),
-    }
-    schema_rows = [
-        {"name": name, "type": str(column_type)}
-        for name, column_type in zip(
-            source_relation.columns, source_relation.types, strict=True
-        )
-    ]
-    inferred_types = {row["name"]: row["type"] for row in schema_rows}
-    required_schema = [
-        {
-            "column": column,
-            "inferred_type": inferred_types.get(column),
-            "status": (
-                "valid"
-                if inferred_types.get(column) in expected_type_families[column]
-                else "missing"
-                if column not in inferred_types
-                else "type mismatch"
-            ),
-        }
-        for column in required_columns
-    ]
-    schema_payload = json.dumps(
-        sorted(schema_rows, key=lambda row: row["name"]),
-        ensure_ascii=True,
-        separators=(",", ":"),
-        sort_keys=True,
-    )
-    schema_hash = f"sha256:{hashlib.sha256(schema_payload.encode()).hexdigest()}"
-    return (
-        inferred_types,
-        required_columns,
-        required_schema,
-        schema_hash,
-        schema_rows,
-    )
+def _(eda_evidence):
+    required_schema = eda_evidence["schema"]["required_columns"]
+    return (required_schema,)
 
 
 @app.cell
-def _(connection, inferred_types, required_columns, time):
-    def quote_identifier(identifier):
-        return f'"{identifier.replace(chr(34), chr(34) * 2)}"'
-
-    profile_columns = [
-        column for column in required_columns if column in inferred_types
-    ]
-    metric_select = ["count(*) AS row_count"] + [
-        f"count(*) FILTER (WHERE {quote_identifier(column)} IS NULL) "
-        f"AS {quote_identifier(column)}"
-        for column in profile_columns
-    ]
-    if "observed_at" in inferred_types:
-        metric_select.append(
-            'max(try_cast("observed_at" AS TIMESTAMP)) AS freshness_value'
-        )
-
-    has_activity_year = "activity_year" in inferred_types
-    grouping_select = (
-        "activity_year, grouping(activity_year) AS is_total, "
-        if has_activity_year
-        else ""
-    )
-    grouping_clause = (
-        "GROUP BY GROUPING SETS ((), (activity_year))" if has_activity_year else ""
-    )
-    started_at = time.monotonic()
-    metric_rows = connection.execute(
-        f"SELECT {grouping_select}{', '.join(metric_select)} "
-        f"FROM hmda_eda_source {grouping_clause}"
-    ).fetchall()
-    duration_seconds = time.monotonic() - started_at
-
-    total_row = next(row for row in metric_rows if not has_activity_year or row[1] == 1)
-    metric_offset = 2 if has_activity_year else 0
-    row_count = total_row[metric_offset]
+def _(eda_evidence):
+    row_count = eda_evidence["row_count"]
+    activity_year_counts = eda_evidence["activity_year_counts"]
     null_baseline = [
         {
             "column": column,
             "null_count": null_count,
-            "null_rate": null_count / row_count if row_count else 0.0,
+            "null_rate": eda_evidence["null_rates"][column],
         }
-        for column, null_count in zip(
-            profile_columns,
-            total_row[metric_offset + 1 : metric_offset + 1 + len(profile_columns)],
-            strict=True,
-        )
+        for column, null_count in eda_evidence["null_counts"].items()
     ]
-    null_rates = {row["column"]: row["null_rate"] for row in null_baseline}
-    activity_year_counts = (
-        [
-            {"activity_year": row[0], "row_count": row[metric_offset]}
-            for row in metric_rows
-            if row[1] == 0
-        ]
-        if has_activity_year
-        else []
-    )
-    freshness_value = total_row[-1] if "observed_at" in inferred_types else None
-    return (
-        activity_year_counts,
-        duration_seconds,
-        freshness_value,
-        null_baseline,
-        null_rates,
-        row_count,
-    )
+    return activity_year_counts, null_baseline, row_count
 
 
 @app.cell
-def _(freshness_value, inferred_types):
-    freshness = {
-        "status": "measured" if freshness_value is not None else "unmeasured",
-        "source_column": "observed_at" if "observed_at" in inferred_types else None,
-        "freshness_at": freshness_value.isoformat()
-        if freshness_value is not None
-        else None,
-        "boundary": {
-            "file_mtime": "filesystem metadata; not source freshness",
-            "bronze_ingested_at": "ingestion time from separate raw-table EDA path",
-        },
-    }
+def _(eda_evidence):
+    freshness = eda_evidence["freshness"]
     return (freshness,)
 
 
 @app.cell
-def _(
-    activity_year_counts,
-    csv_options,
-    duckdb_config,
-    duration_seconds,
-    freshness,
-    input_path,
-    json,
-    null_baseline,
-    null_rates,
-    required_schema,
-    row_count,
-    schema_hash,
-    schema_rows,
-):
-    eda_evidence = {
-        "source": {
-            "path": str(input_path),
-            "scope": "full_file",
-            "csv_options": csv_options,
-            "duckdb_config": duckdb_config,
-        },
-        "duration_seconds": duration_seconds,
-        "row_count": row_count,
-        "activity_year_counts": activity_year_counts,
-        "null_counts": {row["column"]: row["null_count"] for row in null_baseline},
-        "null_rates": null_rates,
-        "schema": {
-            "columns": schema_rows,
-            "required_columns": required_schema,
-            "schema_hash": schema_hash,
-        },
-        "freshness": freshness,
-    }
+def _(eda_evidence, json):
     json.dumps(eda_evidence, ensure_ascii=True)
-    return (eda_evidence,)
+    return
 
 
 @app.cell
