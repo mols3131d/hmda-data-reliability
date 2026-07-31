@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 
+from project_pivot.hmda_data.eda import analyze_hmda_csv
 from project_pivot.hmda_data.eda_fixture import (
     FIXTURE_VERSION,
+    MANIFEST_FILE_NAME,
     prepare_hmda_eda_fixture,
+    validate_hmda_eda_evidence,
     validate_hmda_eda_fixture,
 )
 from project_pivot.hmda_data.errors import HMDADataValidationError
@@ -30,15 +36,136 @@ def test_prepare_hmda_eda_fixture_is_deterministic(tmp_path: Path) -> None:
     assert first.row_count == 100
     assert first.activity_year_cardinality == 3
     assert first.activity_year_skew == {"2023": 0.1, "2024": 0.2, "2025": 0.7}
-    assert first.null_rates == {"loan_amount": 0.02, "income": 0.05}
-    assert first.expected["activity_year_counts"] == [
+    assert first.null_rates == {
+        "activity_year": 0.0,
+        "state_code": 0.0,
+        "county_code": 0.0,
+        "loan_purpose": 0.0,
+        "action_taken": 0.0,
+        "loan_amount": 0.02,
+        "income": 0.05,
+    }
+    assert [item.model_dump() for item in first.expected.activity_year_counts] == [
         {"activity_year": 2023, "row_count": 10},
         {"activity_year": 2024, "row_count": 20},
         {"activity_year": 2025, "row_count": 70},
     ]
-    assert first.files[0]["sha256"] == second.files[0]["sha256"]
+    assert first.files[0].sha256 == second.files[0].sha256
     assert validated == first
     assert first_path.is_file()
+
+
+def _rewrite_manifest(
+    tmp_path: Path,
+    update: Callable[[dict[str, Any]], object],
+) -> None:
+    manifest_path = tmp_path / MANIFEST_FILE_NAME
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    update(payload)
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_validate_hmda_eda_fixture_rejects_missing_required_field(
+    tmp_path: Path,
+) -> None:
+    prepare_hmda_eda_fixture(tmp_path, row_count=10)
+    _rewrite_manifest(tmp_path, lambda payload: payload.pop("seed"))
+
+    with pytest.raises(HMDADataValidationError, match="Invalid fixture manifest"):
+        validate_hmda_eda_fixture(tmp_path)
+
+
+def test_validate_hmda_eda_fixture_rejects_unknown_field(tmp_path: Path) -> None:
+    prepare_hmda_eda_fixture(tmp_path, row_count=10)
+    _rewrite_manifest(tmp_path, lambda payload: payload.update(unknown=True))
+
+    with pytest.raises(HMDADataValidationError, match="extra_forbidden"):
+        validate_hmda_eda_fixture(tmp_path)
+
+
+def test_validate_hmda_eda_fixture_rejects_file_count_mismatch(
+    tmp_path: Path,
+) -> None:
+    prepare_hmda_eda_fixture(tmp_path, row_count=10)
+    _rewrite_manifest(tmp_path, lambda payload: payload.update(file_count=2))
+
+    with pytest.raises(HMDADataValidationError, match="file_count"):
+        validate_hmda_eda_fixture(tmp_path)
+
+
+def test_validate_hmda_eda_fixture_rejects_incomplete_null_counts(
+    tmp_path: Path,
+) -> None:
+    prepare_hmda_eda_fixture(tmp_path, row_count=10)
+    _rewrite_manifest(
+        tmp_path,
+        lambda payload: payload["expected"]["required_column_null_counts"].pop(
+            "activity_year"
+        ),
+    )
+
+    with pytest.raises(HMDADataValidationError, match="required_column_null_counts"):
+        validate_hmda_eda_fixture(tmp_path)
+
+
+def test_validate_hmda_eda_fixture_rejects_negative_null_rate(
+    tmp_path: Path,
+) -> None:
+    prepare_hmda_eda_fixture(tmp_path, row_count=10)
+    _rewrite_manifest(
+        tmp_path,
+        lambda payload: payload["null_rates"].update(income=-0.1),
+    )
+
+    with pytest.raises(HMDADataValidationError, match="null rates"):
+        validate_hmda_eda_fixture(tmp_path)
+
+
+def test_validate_hmda_eda_fixture_rejects_inconsistent_row_count(
+    tmp_path: Path,
+) -> None:
+    prepare_hmda_eda_fixture(tmp_path, row_count=10)
+    _rewrite_manifest(
+        tmp_path,
+        lambda payload: payload["expected"].update(row_count=11),
+    )
+
+    with pytest.raises(HMDADataValidationError, match="expected row count"):
+        validate_hmda_eda_fixture(tmp_path)
+
+
+def test_validate_hmda_eda_fixture_rejects_inconsistent_activity_year_contract(
+    tmp_path: Path,
+) -> None:
+    prepare_hmda_eda_fixture(tmp_path, row_count=10)
+    _rewrite_manifest(
+        tmp_path,
+        lambda payload: payload.update(activity_year_cardinality=2),
+    )
+
+    with pytest.raises(HMDADataValidationError, match="activity-year cardinality"):
+        validate_hmda_eda_fixture(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "skew",
+    [
+        {"2023": -0.1, "2024": 0.2, "2025": 0.9},
+        {"2023": 0.1, "2024": 0.2, "2025": 0.6},
+    ],
+)
+def test_validate_hmda_eda_fixture_rejects_invalid_skew(
+    tmp_path: Path,
+    skew: dict[str, float],
+) -> None:
+    prepare_hmda_eda_fixture(tmp_path, row_count=10)
+    _rewrite_manifest(
+        tmp_path,
+        lambda payload: payload.update(activity_year_skew=skew),
+    )
+
+    with pytest.raises(HMDADataValidationError, match="activity-year skew"):
+        validate_hmda_eda_fixture(tmp_path)
 
 
 def test_validate_hmda_eda_fixture_rejects_changed_file(tmp_path: Path) -> None:
@@ -57,3 +184,41 @@ def test_validate_hmda_eda_fixture_rejects_missing_manifest(tmp_path: Path) -> N
 
     with pytest.raises(HMDADataValidationError, match="manifest does not exist"):
         validate_hmda_eda_fixture(tmp_path)
+
+
+def test_validate_hmda_eda_evidence_checks_all_required_columns(
+    tmp_path: Path,
+) -> None:
+    manifest = prepare_hmda_eda_fixture(tmp_path, row_count=100, seed=7)
+    fixture_path, _ = validate_hmda_eda_fixture(tmp_path)
+    evidence = analyze_hmda_csv(
+        fixture_path,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+
+    validate_hmda_eda_evidence(evidence, manifest)
+    evidence["null_counts"].pop("activity_year")
+
+    with pytest.raises(HMDADataValidationError, match="all required columns"):
+        validate_hmda_eda_evidence(evidence, manifest)
+
+
+def test_validate_hmda_eda_evidence_checks_null_rate_and_freshness(
+    tmp_path: Path,
+) -> None:
+    manifest = prepare_hmda_eda_fixture(tmp_path, row_count=100, seed=7)
+    fixture_path, _ = validate_hmda_eda_fixture(tmp_path)
+    evidence = analyze_hmda_csv(
+        fixture_path,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+    evidence["null_rates"]["income"] = 0.0
+
+    with pytest.raises(HMDADataValidationError, match="null rate"):
+        validate_hmda_eda_evidence(evidence, manifest)
+
+    evidence["null_rates"]["income"] = manifest.null_rates["income"]
+    evidence["freshness"]["status"] = "unmeasured"
+
+    with pytest.raises(HMDADataValidationError, match="freshness"):
+        validate_hmda_eda_evidence(evidence, manifest)

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import platform
 import sys
 from pathlib import Path
 from typing import Any
@@ -12,6 +11,7 @@ import duckdb
 
 from project_pivot.hmda_data.eda import analyze_hmda_csv
 from project_pivot.hmda_data.eda_fixture import (
+    hmda_eda_fixture_provenance,
     validate_hmda_eda_evidence,
     validate_hmda_eda_fixture,
 )
@@ -38,12 +38,12 @@ def run_hmda_eda_memory_workload(
     result = {
         "status": "passed",
         "fixture_version": manifest.version,
+        "fixture": hmda_eda_fixture_provenance(fixture_directory, manifest),
         "duckdb_limit": memory_limit,
         "threads": threads,
         "output_validation": "passed",
         "evidence": evidence,
         "environment": {
-            "platform": platform.platform(),
             "python": sys.version.split()[0],
             "duckdb": duckdb.__version__,
         },
