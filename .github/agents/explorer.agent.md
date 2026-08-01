@@ -1,8 +1,8 @@
 ---
 name: explorer
 description: Read-only codebase explorer. Use to locate relevant files, dependencies, call paths, and existing patterns before implementation. 파일 탐색에서 컨텍스트 낭비와 오염이 심하다고 판단되는 경우에 위임시킨다.
-tools: [read, vscodeGeneral/usages, search]
-user-invocable: false
+tools: [read, search]
+user-invocable: true
 disable-model-invocation: false
 model:
   - "Grok 4.5 (universal-chat-provider)"
@@ -26,10 +26,3 @@ agents: []
 - 관련 파일과 심볼
 - 의존성과 영향 범위
 - 위험과 불확실성
-
-## Constraints
-
-- 파일을 수정하지 않는다.
-- 구현하거나 재설계하지 않는다.
-- 다른 에이전트에 위임하지 않는다.
-- 부모 에이전트에 필요한 정보만 반환한다.
