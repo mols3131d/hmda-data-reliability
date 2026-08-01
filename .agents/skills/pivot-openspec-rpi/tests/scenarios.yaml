@@ -52,6 +52,34 @@ scenarios:
       - test가 green이라는 이유로 approved로 판정한다.
       - Review 중 requirement를 조용히 수정한다.
 
+  - id: start-from-openspec
+    prompt: completed Research와 사람의 결정이 있는 change의 proposal, design, tasks를 작성한다.
+    expected:
+      - 기존 Research artifact를 입력으로 사용해 OpenSpec에서 시작한다.
+      - Research를 다시 실행하거나 새 research-id를 만들지 않는다.
+      - proposal, requirements, design, tasks는 OpenSpec이 소유한다.
+    forbidden:
+      - 완료된 Research를 형식적으로 다시 작성한다.
+
+  - id: start-from-implement
+    prompt: 승인된 OpenSpec task를 구현한다.
+    expected:
+      - 기존 OpenSpec task를 입력으로 사용해 Implement에서 시작한다.
+      - Research나 OpenSpec을 다시 실행하지 않는다.
+      - 구현과 focused check 결과를 task 상태에 반영한다.
+    forbidden:
+      - 승인된 task 없이 구현을 시작한다.
+
+  - id: start-from-review
+    prompt: active OpenSpec change, 구현 diff, 실제 검증 결과, 관련 Research가 있는 변경을 검토한다.
+    expected:
+      - 기존 artifact를 입력으로 사용해 Review에서 시작한다.
+      - 기존 Review attempt보다 큰 sequence로 새 artifact를 작성한다.
+      - 입력 artifact가 부족하면 해당 owner phase로 route한다.
+    forbidden:
+      - 기존 verdict를 수정한다.
+      - 입력이 유효한데 Research를 다시 실행한다.
+
   - id: missing-environment
     prompt: 접근할 수 없는 service의 integration result가 Review에 필요하다.
     expected:

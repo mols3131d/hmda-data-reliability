@@ -6,7 +6,7 @@ description: |
 
 # Pivot OpenSpec RPI
 
-OpenSpec을 변경의 Source of Truth로 사용한다. 명세 전에는 근거 중심 Research를, 구현 후에는 독립적인 Review를 결합한다.
+OpenSpec을 변경의 Source of Truth로 사용한다. 각 phase는 독립적으로 시작할 수 있지만, 실행과 종료에는 해당 phase의 artifact 계약이 필요하다. 명세 전에는 근거 중심 Research를, 구현 후에는 독립적인 Review를 결합한다.
 
 `pivot`은 project 가제 namespace다. project 이름이 바뀌면 directory와 front matter의 `name`을 함께 변경한다.
 
@@ -21,31 +21,31 @@ OpenSpec을 변경의 Source of Truth로 사용한다. 명세 전에는 근거 �
 
 OpenSpec 밖에 별도의 plan을 만들지 않는다.
 
-## Run
+## Entry Routing
 
 1. [Principles](references/principles.md)와 [Workflow](references/workflow.md)를 읽는다.
-1. repository에서 재사용하지 않는 안정적인 `{research-id}`를 정한다.
+1. 요청에서 시작 phase를 정한다. 명시되지 않으면 현재 artifact와 요청의 직접 목표로 Research, OpenSpec, Implement, Review 중 하나를 선택한다.
+1. 선택한 phase의 [입력 계약](references/workflow.md#stage-contract)을 기존 artifact로 확인한다.
+   - 계약을 충족하면 선택한 phase를 바로 실행한다.
+   - 계약에 필요한 artifact가 없거나 신뢰할 수 없으면, 해당 artifact owner phase로 route한다.
+   - 이미 존재하는 artifact를 다시 만들거나 앞 phase를 형식적으로 재실행하지 않는다.
+1. Research에서 시작할 때만 repository에서 재사용하지 않는 안정적인 `{research-id}`를 정한다.
    - 날짜를 넣지 않은 kebab-case ID를 사용한다.
    - Research가 여러 날 이어져도 ID와 경로를 바꾸지 않는다.
-1. [Research](references/research.md)를 실행한다.
-   - 추가 조사 전에 기존 근거의 충분성을 판단한다.
-   - [Research template](templates/research.md)로 `openspec/research/{research-id}/research.md`를 작성한다.
-   - Research status가 `completed`일 때만 다음 단계로 진행한다.
-1. 기존 OpenSpec lifecycle을 실행한다.
-   - 활성 OpenSpec change가 있으면 연결하고, 없으면 설치된 workflow로 새 change를 만든다.
-   - Research front matter의 `relatedArtifacts`에 연결된 change ID를 기록한다.
+   - 추가 조사 전에 기존 근거의 충분성을 판단하고, [Research template](templates/research.md)으로 artifact를 작성한다.
+1. OpenSpec에서 시작할 때는 `completed` Research와 사람의 결정을 확인한 뒤 기존 change를 연결하거나 설치된 workflow로 새 change를 만든다.
    - proposal, specs, design, tasks는 OpenSpec이 소유한다.
    - 구현 중 발견으로 합의된 동작이 달라지면 코드보다 OpenSpec을 먼저 수정한다.
-1. 승인된 task를 구현한다.
+1. Implement에서 시작할 때는 승인된 OpenSpec task를 확인한 뒤 구현한다.
    - 변경을 작고 task 단위로 추적 가능하게 유지한다.
    - focused check를 일찍 실행하고 Review 전 필수 검증을 완료한다.
-1. [Review](references/review.md)를 실행한다.
+1. Review에서 시작할 때는 active OpenSpec change, 구현 diff, 실제 검증 결과, 관련 Research를 확인한다.
    - 지원되는 환경에서는 fresh 또는 forked context를 사용한다.
-   - [Review template](templates/review.md)로 `openspec/reviews/{change-id}/{sequence}-{review-title}.md`를 작성한다.
-   - `sequence`는 `001`부터 증가하는 세 자리 Review attempt 번호다. 같은 attempt의 보조 artifact만 `-{extension}` suffix를 붙인다.
+   - 기존 Review attempt를 찾아 가장 높은 `sequence`보다 하나 큰 세 자리 번호를 사용한다.
+   - [Review template](templates/review.md)으로 `openspec/reviews/{change-id}/{sequence}-{review-title}.md`를 작성한다.
    - 구현자의 설명은 코드·테스트·실행 결과가 뒷받침할 때만 근거로 인정한다.
-1. Review status에 따라 자동으로 route한다.
-   - `approved` → OpenSpec으로 archive한다.
+1. Review status에 따라 route한다.
+   - `approved` → OpenSpec archive 절차의 artifact, task, delta spec 사전 점검을 거쳐 archive한다.
    - `changes_requested` → Review가 지정한 Research, OpenSpec, Implement로 돌아간다.
    - `blocked` → blocker와 재개에 필요한 최소 행동을 보고한다.
 

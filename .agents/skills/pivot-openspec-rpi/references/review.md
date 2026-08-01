@@ -16,7 +16,7 @@ Review는 구현 summary를 기본적으로 신뢰하지 않으며 finding을 �
 | Research | 원래 evidence, assumptions, risks, open questions |
 | Amendments | 구현 중 발생한 scope 또는 design 변경 |
 
-필수 input을 사용할 수 없고 재구성할 수도 없으면 status는 `blocked`다.
+필수 input을 사용할 수 없으면 먼저 owner phase로 route한다. 접근 불가, 사람의 결정 부재처럼 owner phase가 보완할 수 없는 경우에만 status는 `blocked`다.
 
 ## Flow
 
@@ -92,7 +92,7 @@ flowchart LR
 
 수정된 change는 fresh Review status를 받아야 한다. 기존 `approved` artifact를 새 구현에 맞게 수정하지 않는다.
 Review는 `openspec/reviews/{change-id}/{sequence}-{review-title}.md`에 저장한다.
-`sequence`는 `001`부터 증가하는 세 자리 attempt 번호이며, 같은 attempt의 보조
+기존 Review attempt를 먼저 확인해 가장 높은 `sequence`보다 하나 큰 번호를 사용한다. `sequence`는 `001`부터 증가하는 세 자리 attempt 번호이며, 같은 attempt의 보조
 artifact만 `-{extension}` suffix를 붙여 같은 directory에 저장한다.
 
 ## Output

@@ -5,13 +5,19 @@
 ```mermaid
 flowchart LR
     H[Human intent]
+    E{Entry phase}
     R[Research]
     O[OpenSpec specify]
     I[Implement]
     V[Review]
     D{Verdict}
 
-    H --> R --> O --> I --> V --> D
+    H --> E
+    E --> R
+    E --> O
+    E --> I
+    E --> V
+    R --> O --> I --> V --> D
     D -- approved --> A[OpenSpec archive]
     D -- changes_requested: evidence --> R
     D -- changes_requested: requirements --> O
@@ -19,7 +25,9 @@ flowchart LR
     D -- blocked --> B[Resolve blocker]
 ```
 
-Research는 추가 조사 필요 여부 판정을 내부에 포함한다. Research phase는 항상 거치지만, 기존 근거가 충분하면 추가 조사 없이 끝날 수 있다.
+각 phase는 독립적으로 시작할 수 있다. 시작 전에 선택한 phase의 입력 artifact가 존재하고 신뢰할 수 있는지만 확인한다. 부족하거나 충돌하는 artifact는 해당 owner phase에서 보완한 뒤 선택한 phase로 돌아온다.
+
+Research는 추가 조사 필요 여부 판정을 내부에 포함한다. Research에서 시작하거나 Research로 route된 경우, 기존 근거가 충분하면 추가 조사 없이 끝날 수 있다.
 
 ## Stage Contract
 
@@ -61,6 +69,17 @@ OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를
 `{change-id}` directory를 identity로 유지하고, 각 Review attempt는 세 자리
 `{sequence}`로 구분한다. 같은 attempt의 보조 artifact는 filename suffix를 사용한다.
 
+## Entry Contract
+
+| 시작 phase | 시작 전 확인 | 부족할 때 route |
+| --- | --- | --- |
+| Research | 목표, 제약, 알려진 성공 기준 | Human 또는 Environment |
+| OpenSpec | `completed` Research, 사람의 결정 | Research 또는 Human |
+| Implement | 승인된 OpenSpec task | OpenSpec |
+| Review | active OpenSpec change, diff, 실제 검증 결과, 관련 Research | Research, OpenSpec, Implement |
+
+시작 phase가 이전 phase의 artifact를 소비하는 것은 phase 독립성을 해치지 않는다. 해당 artifact가 이미 유효하면 이전 phase를 다시 실행하지 않는다.
+
 ## Handoffs
 
 | From → To | 필수 handoff |
@@ -87,7 +106,7 @@ handoff가 agent 또는 context 경계를 넘으면 [Subagents](subagents.md)와
 
 change는 다음을 모두 만족해야 완료다.
 
-- Research status가 `completed`다.
+- OpenSpec을 정의하거나 구현·검토에 필요한 Research status가 `completed`다.
 - OpenSpec이 의도한 변경을 정확히 표현한다.
 - 필수 task와 validation이 완료되었다.
 - Review status가 `approved`다.

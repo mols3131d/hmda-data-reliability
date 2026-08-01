@@ -1,15 +1,15 @@
 version: 1
 workflow: pivot-openspec-rpi
-research_id: "<research-id>"
-change_id: "<change-id>"
+research_id: "<research-id or null when not needed>"
+change_id: "<change-id or null when not known>"
 phase: "research | openspec | implement | review"
 rigor: "lite | standard | strict"
 
 target:
   repository: "<repository path or owner/name>"
   branch: "<branch>"
-  research_artifact: "openspec/research/<research-id>/research.md"
-  openspec_change: "<change-id>"
+  research_artifact: "<path or null when not needed>"
+  openspec_change: "<change-id or null when not needed>"
 
 inputs:
   authoritative:

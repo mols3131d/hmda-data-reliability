@@ -29,9 +29,9 @@ ROR는 subagent를 활용할 수 있지만 subagent가 없는 환경에서도 �
 
 agent 사이에는 transcript나 private reasoning이 아니라 다음만 전달한다.
 
-- 대상 repository와 `{change-id}`
-- 현재 phase와 rigor
-- 읽어야 할 authoritative artifact
+- 대상 repository와 알려진 `{change-id}` 또는 `{research-id}`
+- 시작 phase와 rigor
+- 선택한 phase에 필요한 authoritative artifact
 - observed evidence와 실제 validation result
 - unresolved conflict·assumption·risk
 - 요청된 output path와 허용 status 또는 verdict
@@ -51,7 +51,8 @@ agent 사이에는 transcript나 private reasoning이 아니라 다음만 전달
 
 | Result | Owner | Route |
 | --- | --- | --- |
-| Research `completed` | Orchestrator | OpenSpec |
+| 선택 phase의 필수 artifact가 없음 또는 충돌 | Orchestrator | 해당 artifact owner phase |
+| Research `completed` | Orchestrator | OpenSpec 또는 요청된 다음 phase |
 | Research `in_progress` | Research 또는 Human | 지정 gap만 보완 |
 | Research `blocked` | Human 또는 Environment | resume condition 해결 |
 | Review `approved` | OpenSpec | archive |

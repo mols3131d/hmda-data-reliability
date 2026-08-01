@@ -30,6 +30,8 @@
 | B13 | Research는 change와 독립적인 repository-unique `research-id`를 사용한다 |
 | B14 | Research artifact는 `openspec/research/{research-id}/research.md`에 위치한다 |
 | B15 | ROR artifact는 `openspec-rpi` front matter로 title, description, category, status, related artifact, tags를 관리한다 |
+| B16 | Research, OpenSpec, Implement, Review는 각자의 입력 artifact가 유효하면 독립적으로 시작할 수 있다 |
+| B17 | 시작 phase의 필수 artifact가 없거나 충돌하면 해당 artifact owner phase로 route하며, 유효한 artifact를 다시 만들지 않는다 |
 
 ## Portability
 
