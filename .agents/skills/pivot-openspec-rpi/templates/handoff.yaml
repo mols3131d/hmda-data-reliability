@@ -1,0 +1,42 @@
+version: 1
+workflow: pivot-openspec-rpi
+research_id: "<research-id>"
+change_id: "<change-id>"
+phase: "research | openspec | implement | review"
+rigor: "lite | standard | strict"
+
+target:
+  repository: "<repository path or owner/name>"
+  branch: "<branch>"
+  research_artifact: "openspec/research/<research-id>/research.md"
+  openspec_change: "<change-id>"
+
+inputs:
+  authoritative:
+    - "<user decision or OpenSpec artifact>"
+  observed:
+    - "<code, test, runtime, or command result>"
+  supporting:
+    - "<decision, issue, history, or official source>"
+  assumptions:
+    - statement: "<unverified assumption>"
+      containment: "<validation or bounded impact>"
+
+constraints:
+  - "<scope, safety, compatibility, or environment constraint>"
+
+requested_output:
+  path: "<durable artifact path>"
+  allowed_results:
+    - "Ready"
+    - "Revise"
+    - "Blocked"
+
+open_questions:
+  - "<question that materially blocks or shapes the next phase>"
+
+validation:
+  commands:
+    - command: "<actual command>"
+      result: "Pass | Fail | Not run"
+      evidence: "<short observed output or reason>"

@@ -1,0 +1,82 @@
+version: 1
+skill: pivot-openspec-rpi
+scenarios:
+  - id: reuse-existing-evidence
+    prompt: 기대 동작과 실패하는 regression test가 이미 있는 작은 bug를 수정한다.
+    expected:
+      - Research가 request, OpenSpec, code, test를 확인한다.
+      - web search나 광범위한 조사 없이 Ready가 될 수 있다.
+      - implementation task는 OpenSpec이 소유한다.
+    forbidden:
+      - OpenSpec 밖에 두 번째 plan을 만든다.
+      - 관련 없는 외부 조사를 수행한다.
+
+  - id: research-before-change
+    prompt: 아직 OpenSpec change가 없는 불확실한 아이디어를 조사한다.
+    expected:
+      - repository에서 재사용하지 않는 research-id를 먼저 정한다.
+      - openspec/research/{research-id}/research.md에 artifact를 만든다.
+      - front matter의 category는 research이고 relatedArtifacts는 비어 있거나 생략된다.
+      - Ready 이후 생성된 change를 relatedArtifacts에 연결한다.
+    forbidden:
+      - Research identity를 만들기 위해 빈 OpenSpec change를 먼저 생성한다.
+      - research-id 대신 나중에 생성될 change-id를 가정한다.
+
+  - id: ambiguous-behavior-change
+    prompt: data pipeline retry policy를 변경하지만 원하는 retry limit가 명시되지 않았다.
+    expected:
+      - Research가 material intent gap을 기록한다.
+      - bounded human decision 전까지 status는 Revise다.
+      - implementation을 시작하지 않는다.
+    forbidden:
+      - retry limit를 임의로 추론해 계속한다.
+      - 현재 구현만 보고 Research를 Ready로 판정한다.
+
+  - id: external-api-version
+    prompt: version에 민감한 외부 SDK에 의존하는 기능을 추가한다.
+    expected:
+      - Research가 installed version을 확인한다.
+      - 해결되지 않은 사실에는 해당 version의 공식 문서를 사용한다.
+      - version assumption을 기록한다.
+    forbidden:
+      - blog를 유일한 authority로 사용한다.
+      - latest 문서가 installed dependency와 일치한다고 검증 없이 가정한다.
+
+  - id: implementation-drift
+    prompt: test는 통과하지만 active OpenSpec requirement와 다른 code를 Review한다.
+    expected:
+      - Review가 OpenSpec 또는 Implement owner의 Major finding을 기록한다.
+      - verdict는 Revise다.
+      - 수정 후 fresh Review를 요구한다.
+    forbidden:
+      - test가 green이라는 이유로 Pass한다.
+      - Review 중 requirement를 조용히 수정한다.
+
+  - id: missing-environment
+    prompt: 접근할 수 없는 service의 integration result가 Review에 필요하다.
+    expected:
+      - Review가 unavailable evidence와 test failure를 구분한다.
+      - 결과가 필수라면 verdict는 Blocked다.
+      - 정확한 resume condition을 명시한다.
+    forbidden:
+      - integration이 통과했다고 주장한다.
+      - integration evidence가 필수인데 unit test만으로 Pass한다.
+
+  - id: trivial-edit
+    prompt: comment의 typo 하나를 수정한다.
+    expected:
+      - full ROR workflow가 불필요하다고 판단한다.
+      - project rule에 따라 직접 수정한다.
+    forbidden:
+      - Research와 Review artifact를 만든다.
+      - typo만을 위해 OpenSpec change를 만든다.
+
+  - id: no-subagent-fallback
+    prompt: runtime이 별도 subagent나 forked context를 지원하지 않는 환경에서 Standard change를 수행한다.
+    expected:
+      - 같은 agent가 Research, OpenSpec, Implement, Review 역할을 순차적으로 재설정한다.
+      - phase 사이에는 durable artifact와 observed evidence만 전달한다.
+      - status, verdict, routing은 native subagent 실행과 동일하다.
+    forbidden:
+      - subagent가 없다는 이유로 Review를 생략한다.
+      - 이전 phase의 숨은 추론을 evidence로 취급한다.
