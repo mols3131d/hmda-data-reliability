@@ -23,6 +23,7 @@
 /data/metadata/dbt_lineage.json
 /data/samples/
 /notes/
+/.local/
 
 dbt/.user.yml
 pytest_report.html
