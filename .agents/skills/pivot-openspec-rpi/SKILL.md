@@ -6,7 +6,10 @@ description: |
 
 # Pivot OpenSpec RPI
 
-OpenSpec을 변경의 Source of Truth로 사용한다. 각 phase는 독립적으로 시작할 수 있지만, 실행과 종료에는 해당 phase의 artifact 계약이 필요하다. 명세 전에는 근거 중심 Research를, 구현 후에는 독립적인 Review를 결합한다.
+OpenSpec을 변경의 Source of Truth로 사용한다. P는 repository에 설치된 OpenSpec workflow를
+그대로 실행하며, RPI는 이를 대체하거나 custom schema·entry gate·lifecycle을 추가하지 않는다.
+각 phase는 독립적으로 시작할 수 있지만, 실행과 종료에는 해당 phase의 artifact 계약이 필요하다.
+명세 전에는 선택적으로 근거 중심 Research를, 구현 후에는 독립적인 Review를 결합한다.
 
 `pivot`은 project 가제 namespace다. project 이름이 바뀌면 directory와 front matter의 `name`을 함께 변경한다.
 
@@ -33,8 +36,9 @@ OpenSpec 밖에 별도의 plan을 만들지 않는다.
    - 날짜를 넣지 않은 kebab-case ID를 사용한다.
    - Research가 여러 날 이어져도 ID와 경로를 바꾸지 않는다.
    - 추가 조사 전에 기존 근거의 충분성을 판단하고, [Research template](templates/research.md)으로 artifact를 작성한다.
-1. OpenSpec에서 시작할 때는 `completed` Research와 사람의 결정을 확인한 뒤 기존 change를 연결하거나 설치된 workflow로 새 change를 만든다.
-   - proposal, specs, design, tasks는 OpenSpec이 소유한다.
+1. OpenSpec에서 시작할 때는 설치된 OpenSpec workflow의 entry contract와 절차를 그대로 따른다.
+   - Research는 유효하면 evidence handoff로 연결하지만, OpenSpec이 요구하지 않는 필수 gate로 만들지 않는다.
+   - proposal, specs, design, tasks와 change lifecycle은 OpenSpec이 소유한다.
    - 구현 중 발견으로 합의된 동작이 달라지면 코드보다 OpenSpec을 먼저 수정한다.
 1. Implement에서 시작할 때는 승인된 OpenSpec task를 확인한 뒤 구현한다.
    - 변경을 작고 task 단위로 추적 가능하게 유지한다.

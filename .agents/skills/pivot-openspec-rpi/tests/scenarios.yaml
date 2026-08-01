@@ -53,13 +53,14 @@ scenarios:
       - Review 중 requirement를 조용히 수정한다.
 
   - id: start-from-openspec
-    prompt: completed Research와 사람의 결정이 있는 change의 proposal, design, tasks를 작성한다.
+    prompt: 설치된 OpenSpec workflow가 허용하는 직접 change 시작으로 proposal, design, tasks를 작성한다.
     expected:
-      - 기존 Research artifact를 입력으로 사용해 OpenSpec에서 시작한다.
-      - Research를 다시 실행하거나 새 research-id를 만들지 않는다.
-      - proposal, requirements, design, tasks는 OpenSpec이 소유한다.
+      - OpenSpec workflow의 entry contract와 절차를 그대로 따른다.
+      - Research가 있으면 선택적 evidence handoff로 사용하고, 없으면 만들도록 요구하지 않는다.
+      - proposal, requirements, design, tasks와 change lifecycle은 OpenSpec이 소유한다.
     forbidden:
-      - 완료된 Research를 형식적으로 다시 작성한다.
+      - Research 완료를 OpenSpec 시작의 필수 gate로 만든다.
+      - OpenSpec artifact schema, lifecycle, command를 RPI 방식으로 바꾼다.
 
   - id: start-from-implement
     prompt: 승인된 OpenSpec task를 구현한다.

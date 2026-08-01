@@ -7,7 +7,7 @@ flowchart LR
     H[Human intent]
     E{Entry phase}
     R[Research]
-    O[OpenSpec specify]
+    O[OpenSpec workflow]
     I[Implement]
     V[Review]
     D{Verdict}
@@ -29,12 +29,16 @@ flowchart LR
 
 Research는 추가 조사 필요 여부 판정을 내부에 포함한다. Research에서 시작하거나 Research로 route된 경우, 기존 근거가 충분하면 추가 조사 없이 끝날 수 있다.
 
+P는 repository에 설치된 OpenSpec workflow 자체다. RPI는 OpenSpec의 entry condition,
+artifact schema, lifecycle, command, 완료·archive 조건을 정의하거나 변경하지 않는다.
+Research와 Review는 OpenSpec이 허용하는 범위에서 선택적으로 연결하는 외부 artifact다.
+
 ## Stage Contract
 
 | Stage | Input | Exit condition | Output |
 | --- | --- | --- | --- |
 | Research | Human intent와 기존 project evidence | OpenSpec이 목표·범위·영향·검증을 정의 가능 | `draft`, `in_progress`, `completed`, `blocked`, `superseded` artifact |
-| OpenSpec | `completed` Research와 human decision | proposal·requirements·design·tasks가 coherent | Active OpenSpec change |
+| OpenSpec | 설치된 OpenSpec workflow가 요구하는 input과 human decision | 설치된 OpenSpec workflow의 exit condition 충족 | Active OpenSpec change |
 | Implement | 승인된 OpenSpec tasks | task 구현과 필수 check 완료 | 코드, 테스트, task state, amendment |
 | Review | OpenSpec change, diff, checks, Research | 구현을 독립적으로 대조 완료 | `pending`, `in_progress`, `approved`, `changes_requested`, `blocked` artifact |
 | Archive | Review `approved` | OpenSpec archive 성공 | Durable project specification |
@@ -64,6 +68,7 @@ openspec/
 ```
 
 ROR artifact를 OpenSpec change directory 안에 넣거나 OpenSpec schema의 필수 artifact로 만들지 않는다.
+RPI Research와 Review도 OpenSpec change의 entry·completion·archive gate가 아니다.
 Research와 Review는 `openspec-rpi` front matter의 `relatedArtifacts`로 Research,
 OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를 검증하므로
 `{change-id}` directory를 identity로 유지하고, 각 Review attempt는 세 자리
@@ -74,7 +79,7 @@ OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를
 | 시작 phase | 시작 전 확인 | 부족할 때 route |
 | --- | --- | --- |
 | Research | 목표, 제약, 알려진 성공 기준 | Human 또는 Environment |
-| OpenSpec | `completed` Research, 사람의 결정 | Research 또는 Human |
+| OpenSpec | 설치된 OpenSpec workflow의 entry contract | OpenSpec workflow 또는 Human |
 | Implement | 승인된 OpenSpec task | OpenSpec |
 | Review | active OpenSpec change, diff, 실제 검증 결과, 관련 Research | Research, OpenSpec, Implement |
 
@@ -85,7 +90,7 @@ OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를
 | From → To | 필수 handoff |
 | --- | --- |
 | Human → Research | 목표, 제약, 알려진 성공 기준 |
-| Research → OpenSpec | findings, evidence, impact, risks, open questions |
+| Research → OpenSpec | 선택적 findings, evidence, impact, risks, open questions |
 | OpenSpec → Implement | 승인된 requirements, design decisions, tasks |
 | Implement → Review | diff, task state, 실행한 checks, amendments |
 | Review → Human/OpenSpec | verdict, findings, evidence, 정확한 next route |
@@ -106,7 +111,6 @@ handoff가 agent 또는 context 경계를 넘으면 [Subagents](subagents.md)와
 
 change는 다음을 모두 만족해야 완료다.
 
-- OpenSpec을 정의하거나 구현·검토에 필요한 Research status가 `completed`다.
 - OpenSpec이 의도한 변경을 정확히 표현한다.
 - 필수 task와 validation이 완료되었다.
 - Review status가 `approved`다.
