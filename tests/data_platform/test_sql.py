@@ -1,6 +1,8 @@
 """DuckDB SQL quoting 헬퍼 테스트."""
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from project_pivot.data_platform.sql import (
     qualify_table_name,
@@ -43,3 +45,21 @@ def test_quote_string_literal_escapes_single_quotes() -> None:
     """문자열 리터럴 내부 single quote를 DuckDB 규칙으로 escape한다."""
 
     assert quote_string_literal("borrower's file") == "'borrower''s file'"
+
+
+@given(st.text(min_size=1).filter(lambda value: "\x00" not in value))
+def test_quote_identifier_preserves_generated_content(identifier: str) -> None:
+    """생성된 식별자의 quote escaping 불변성을 검증한다."""
+
+    quoted = quote_identifier(identifier)
+
+    assert quoted == f'"{identifier.replace(chr(34), chr(34) * 2)}"'
+
+
+@given(st.text())
+def test_quote_string_literal_preserves_generated_content(value: str) -> None:
+    """생성된 문자열의 single quote escaping 불변성을 검증한다."""
+
+    quoted = quote_string_literal(value)
+
+    assert quoted == f"'{value.replace(chr(39), chr(39) * 2)}'"
