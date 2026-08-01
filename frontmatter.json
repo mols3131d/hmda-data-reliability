@@ -58,6 +58,99 @@
           "description": "문서가 속한 상위 주제, 기술 영역 또는 업무 도메인입니다. 문서 전체를 대표하는 비교적 넓고 안정적인 분류를 입력하세요. 적절한 분류가 없거나 추측이 필요한 경우에는 생략하고, 세부 개념은 Tags에 작성하세요."
         }
       ]
+    },
+    {
+      "name": "openspec-rpi",
+      "fields": [
+        {
+          "title": "Content Type",
+          "name": "type",
+          "type": "string",
+          "default": "openspec-rpi",
+          "hidden": true,
+          "required": true
+        },
+        {
+          "title": "Title",
+          "name": "title",
+          "type": "string",
+          "description": "OpenSpec 또는 RPI artifact의 제목입니다.",
+          "required": true
+        },
+        {
+          "title": "Description",
+          "name": "description",
+          "type": "string",
+          "description": "artifact의 목적, 범위, 주요 결과를 1~3문장으로 요약합니다.",
+          "required": true
+        },
+        {
+          "title": "Category",
+          "name": "category",
+          "type": "choice",
+          "description": "OpenSpec 또는 RPI workflow에서 이 문서가 담당하는 artifact 종류입니다.",
+          "choices": [
+            "research",
+            "change",
+            "spec",
+            "design",
+            "proposal",
+            "tasks",
+            "review"
+          ],
+          "default": "research",
+          "required": true
+        },
+        {
+          "title": "Research Status",
+          "name": "status",
+          "type": "choice",
+          "description": "OpenSpec handoff를 위한 Research 판정입니다.",
+          "choices": [
+            "ready",
+            "revise",
+            "blocked"
+          ],
+          "default": "revise",
+          "required": true,
+          "when": {
+            "fieldRef": "category",
+            "operator": "eq",
+            "value": "research"
+          }
+        },
+        {
+          "title": "Review Verdict",
+          "name": "status",
+          "type": "choice",
+          "description": "독립 Review의 최종 verdict입니다.",
+          "choices": [
+            "pass",
+            "revise",
+            "blocked"
+          ],
+          "default": "revise",
+          "required": true,
+          "when": {
+            "fieldRef": "category",
+            "operator": "eq",
+            "value": "review"
+          }
+        },
+        {
+          "title": "Related Artifacts",
+          "name": "relatedArtifacts",
+          "type": "list",
+          "description": "이 artifact와 직접 연결된 Research, OpenSpec change 또는 Review ID 목록입니다.",
+          "default": []
+        },
+        {
+          "title": "Tags",
+          "name": "tags",
+          "type": "tags",
+          "description": "artifact 검색과 관련 문서 탐색에 사용할 세부 키워드입니다."
+        }
+      ]
     }
   ],
   "frontMatter.framework.id": "other",
@@ -67,8 +160,43 @@
       "title": "docs",
       "path": "[[workspace]]/docs",
       "filePrefix": "",
+      "contentTypes": [
+        "default"
+      ],
       "excludePaths": [
         "**/+([A-Z0-9_-]).md"
+      ]
+    },
+    {
+      "title": "OpenSpec RPI",
+      "path": "[[workspace]]/openspec/research",
+      "filePrefix": "",
+      "contentTypes": [
+        "openspec-rpi"
+      ]
+    },
+    {
+      "title": "OpenSpec Changes",
+      "path": "[[workspace]]/openspec/changes",
+      "filePrefix": "",
+      "contentTypes": [
+        "openspec-rpi"
+      ]
+    },
+    {
+      "title": "OpenSpec Specs",
+      "path": "[[workspace]]/openspec/specs",
+      "filePrefix": "",
+      "contentTypes": [
+        "openspec-rpi"
+      ]
+    },
+    {
+      "title": "OpenSpec Reviews",
+      "path": "[[workspace]]/openspec/reviews",
+      "filePrefix": "",
+      "contentTypes": [
+        "openspec-rpi"
       ]
     }
   ]

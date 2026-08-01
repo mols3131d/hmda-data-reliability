@@ -1,20 +1,28 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Markdown artifact는 Front Matter CMS의 openspec-rpi content type을 사용한다.
+  Research는 openspec/research/{research-id}/research.md에 두고 relatedArtifacts로
+  0개 이상의 OpenSpec change와 연결한다.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - >-
+      문서 맨 앞에 YAML front matter를 추가한다. type=openspec-rpi,
+      category=proposal, relatedArtifacts=[{change-id}]를 사용하고 title,
+      description을 채운다. 관련 tag가 있으면 tags를 추가하고 status는 추가하지 않는다.
+  design:
+    - >-
+      문서 맨 앞에 YAML front matter를 추가한다. type=openspec-rpi,
+      category=design, relatedArtifacts=[{change-id}]를 사용하고 title,
+      description을 채운다. 관련 tag가 있으면 tags를 추가하고 status는 추가하지 않는다.
+  specs:
+    - >-
+      각 spec.md 맨 앞에 YAML front matter를 추가한다. type=openspec-rpi,
+      category=spec, relatedArtifacts=[{change-id}]를 사용하고 title,
+      description을 채운다. 관련 tag가 있으면 tags를 추가하고 status는 추가하지 않는다.
+  tasks:
+    - >-
+      문서 맨 앞에 YAML front matter를 추가한다. type=openspec-rpi,
+      category=tasks, relatedArtifacts=[{change-id}]를 사용하고 title,
+      description을 채운다. 관련 tag가 있으면 tags를 추가하고 status는 추가하지 않는다.
