@@ -26,13 +26,17 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+  "hypothesis>=6.164.0",
   "lefthook>=2.1.9",
   "marimo>=0.23.9",
   "mypy>=1.15.0",
+  "opentelemetry-api>=1.44.0",
+  "opentelemetry-sdk>=1.44.0",
   "pytest>=8.3.0",
   "pytest-asyncio>=1.4.0",
   "pytest-cov>=7.1.0",
   "pytest-html>=4.2.0",
+  "pytest-opentelemetry==1.1.0",
   "pytest-sugar>=1.1.1",
   "pytest-testmon>=2.2.0",
   "pytest-timeout>=2.4.0",
