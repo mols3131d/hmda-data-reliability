@@ -50,9 +50,10 @@
 | `pytest-xdist` | 테스트 병렬 실행 |
 | `hypothesis` | 순수 helper의 property-based testing |
 | `opentelemetry-api` | test trace API |
-| `opentelemetry-sdk` | opt-in pytest span 생성·export |
+| `opentelemetry-sdk` | test span SDK |
+| `pytest-opentelemetry` | test·fixture span과 xdist tracing |
 
-`pytest-opentelemetry`는 공식 OpenTelemetry 또는 pytest project가 관리하는 plugin으로 확인되지 않아 사용하지 않는다. Python 3.13과 `pytest-xdist` 지원 계약이 검증되기 전까지 공식 SDK와 local pytest hook을 유지한다.
+`pytest-opentelemetry`는 pytest entry point로 자동 로드된다. 기본 실행도 resource detection과 span hook 비용을 부담하지만, exporter option이나 environment variable이 없으면 network exporter를 구성하지 않는다.
 
 ### Default Pytest Options
 
@@ -133,13 +134,18 @@ uv run pytest -n 0 -vv -s
 uv run pytest --cov=src/project_pivot
 ```
 
-Test span을 console JSON으로 확인할 때만 tracing을 활성화한다.
+각 test를 독립 trace로 기록할 수 있다.
 
 ```bash
-OTEL_TEST_TRACING=1 uv run pytest -n 0 tests/data_platform/test_sql.py
+uv run pytest --trace-per-test tests/data_platform/test_sql.py
 ```
 
-기본 pytest 실행은 OpenTelemetry provider나 exporter를 초기화하지 않는다.
+OTLP/gRPC collector로 export할 때 endpoint와 export option을 명시한다. 기본 endpoint는 `http://localhost:4317`이다.
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+	uv run pytest --export-traces
+```
 
 ## Formatting Commands
 
