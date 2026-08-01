@@ -1,6 +1,9 @@
-# Reliability
+# Reliability: Read-Only Analysis And Approved Recovery
 
-`reliability`는 raw table과 dbt artifact로 incident, downstream 영향, remediation draft를 계산한다. lifecycle은 read-only다. 승인된 backfill과 evaluation report 작성은 별도 API다.
+**`reliability`는 read-only 분석과 승인된 side effect를 분리한다.** Raw table과 dbt artifact로 incident, downstream 영향, remediation draft를 계산하며, 승인된 backfill과 evaluation report 작성은 별도 API로만 제공한다.
+
+> [!IMPORTANT]
+> **Lifecycle은 데이터를 변경하지 않는다.** approval 생성, source 접근, partition overwrite, validation, report file write를 수행하지 않는다.
 
 ## Scope
 
@@ -36,7 +39,7 @@ flowchart LR
 | Impact | incident, `manifest.json`, `run_results.json` | `ImpactAnalysisResult` |
 | Remediation | incident, evidence, lineage evidence | `RemediationDraft` |
 
-baseline과 current는 같은 asset·partition이어야 한다. lifecycle은 메타데이터, profile, artifact만 읽고 `LifecycleResult`를 반환한다. 각 요약 목록은 처음 탐지한 순서를 유지하며 중복을 제거한다. approval 생성, source 접근, partition overwrite, validation, report 파일 작성은 수행하지 않는다.
+baseline과 current는 같은 asset·partition이어야 한다. lifecycle은 metadata, profile, artifact만 읽고 `LifecycleResult`를 반환한다. 각 요약 목록은 처음 탐지한 순서를 유지하며 중복을 제거한다.
 
 ## Detection And Impact
 
@@ -53,7 +56,7 @@ threshold는 `DetectionThresholds`로 교체할 수 있다. `analyze_dbt_impact(
 
 `create_remediation_draft(RemediationDraftRequest)`는 evidence와 lineage를 바탕으로 권장 조치, backfill 조치, validation 조치, dbt test 제안을 결정론적으로 만든다. draft는 실행 지시가 아니라 approval 검토 대상이다.
 
-## Recovery And Evaluation
+## Approved Recovery And Evaluation
 
 Lifecycle 밖의 side effect는 명시적 API로만 실행한다.
 

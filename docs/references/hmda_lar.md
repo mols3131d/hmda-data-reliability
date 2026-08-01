@@ -1,9 +1,16 @@
-# HMDA LAR 컬럼 정리
+# HMDA LAR: Public Data Field Reference
 
-- 원본: `data/raw/hmda/data_fields.html`
-- 컬럼 수: 99개
-- 범위: Public HMDA LAR Data Fields 기준
-- 설명과 값/코드는 원본 데이터 사전의 의미와 구조를 유지하여 한글로 번역했습니다.
+**Public HMDA LAR의 99개 field를 한국어로 탐색하기 위한 reference다.** 설명과 값·코드는 원본 data dictionary의 의미와 구조를 유지한다.
+
+| Item | Value |
+| --- | --- |
+| Source | `data/raw/hmda/data_fields.html` |
+| Coverage | Public HMDA LAR Data Fields |
+| Field count | 99 |
+| Translation | 설명과 값·코드를 한국어로 번역 |
+
+> [!NOTE]
+> 이 문서는 project schema contract가 아니라 원본 data dictionary의 번역본이다. 실제 ingestion 필수 field와 null 정책은 [`HMDA Data`](../domains/hmda-data.md)를 따른다.
 
 | 컬럼 | 설명 | 값/코드 |
 | --- | --- | --- |

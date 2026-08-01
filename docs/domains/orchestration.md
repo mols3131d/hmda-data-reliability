@@ -1,6 +1,9 @@
-# Orchestration
+# Orchestration: Dagster Data Plane
 
-`orchestration`은 Dagster로 Bronze 적재와 dbt 분석을 순서대로 연결한다. domain business logic은 호출만 하며, reliability lifecycle과 recovery/evaluation은 graph에 넣지 않는다.
+**`orchestration`은 Bronze 적재와 dbt 분석만 연결한다.** Domain business logic은 공개 API로 위임하며, reliability lifecycle과 recovery/evaluation은 Dagster graph에 넣지 않는다.
+
+> [!IMPORTANT]
+> **`pipeline_job`은 data plane 전용이다.** approval이나 승인된 side effect를 암묵적으로 실행하지 않는다.
 
 ## Scope
 
@@ -13,7 +16,7 @@
 
 데이터 실행의 application boundary는 [`data-operations.md`](data-operations.md)다. data 계약은 [`hmda-data.md`](hmda-data.md), [`data-platform.md`](data-platform.md)에 있다.
 
-## Entry Point And Graph
+## Entry Point And Asset Graph
 
 [`definitions.py`](../../src/project_pivot/orchestration/definitions.py)가 package entry point다. `defs`에는 두 asset, `pipeline_job`, `data_operations` resource가 등록된다.
 
@@ -47,7 +50,7 @@ flowchart LR
 
 resource는 config conversion만 담당한다. 파일 발견, 적재, dbt subprocess, 오류 변환은 `data_operations`와 하위 도메인의 책임이다.
 
-## Boundaries
+## Graph Boundaries
 
 `pipeline_job`은 data plane만 실행한다. 다음 항목은 graph 밖에 둔다.
 

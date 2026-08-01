@@ -1,8 +1,8 @@
-# 비전
+# Vision: Evidence-First Data Reliability
 
-> HMDA 데이터 품질 이상을 근거와 함께 재현·검증하는 로컬 Data Reliability Incident 기반.
+> **목표:** HMDA 데이터 품질 이상을 근거와 함께 재현·검증하는 로컬 Data Reliability Incident 기반을 만든다.
 
-파이프라인 성공만으로 품질 이상과 downstream 영향을 판단할 수 없다. HMDA LAR와 연도·주·대출 목적별 mart를 대상으로 탐지부터 복구 검증까지 재현한다.
+**파이프라인 성공만으로 품질 이상과 downstream 영향을 판단할 수 없다.** HMDA LAR와 연도·주·대출 목적별 mart를 대상으로 탐지부터 복구 검증까지 재현한다.
 
 ## 목표
 
@@ -12,7 +12,7 @@
 - 외부 human approval 확인 후 위험 작업 실행.
 - Synthetic suite와 report로 workflow 품질 측정.
 
-## 현재
+## Current Capability
 
 | 영역 | 상태 |
 | --- | --- |
@@ -21,7 +21,10 @@
 | Recovery | Lifecycle과 분리된 approval gate와 backfill validation API |
 | Evaluation | Lifecycle과 분리된 synthetic case 평가와 Markdown report |
 
-탐지 규칙: volume drop, Null spike, schema drift, freshness delay. 실제 human approval 연동은 없다. Remediation은 코드·dbt test를 수정하지 않는다.
+> [!IMPORTANT]
+> **현재 recovery는 외부 human approval 연동을 포함하지 않는다.** Remediation은 코드나 dbt test를 수정하지 않는다.
+
+탐지 규칙은 volume drop, Null spike, schema drift, freshness delay다.
 
 ## 원칙
 
@@ -39,12 +42,12 @@
 - 승인 backfill 후 적재 row count와 profile row count 일치.
 - 미승인 backfill 실행 전 차단.
 
-## 다음
+## Next Priorities
 
 1. 외부 approval과 감사 이력을 Dagster에 연결.
 1. Remediation을 격리된 dbt compile/build로 검증.
 1. Null spike, schema drift, freshness delay end-to-end evaluation 추가.
 
-## 비목표
+## Non-Goals
 
 Lakehouse, 대규모 분산처리, cloud 배포, 승인 없는 자동 복구, full catalog/observability, 범용 자동 RCA, 대출 정책·신용 위험 ML.

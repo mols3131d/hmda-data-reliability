@@ -4,15 +4,20 @@ description: "DuckDB, Polars, marimo 기반 파이프라인이 정해진 메모�
 date: 2026-07-30
 ---
 
-# Python 데이터 파이프라인 OOM 테스트 가이드
+# OOM Testing: Python Data Pipeline Guide
 
-> **목표**: 파이프라인이 대표 workload를 정해진 메모리 예산 안에서 완료하는지 검증한다.  
-> **대상**: DuckDB·Polars·marimo 기반 로컬 데이터 파이프라인
-> **핵심**: 별도 process에 실제 메모리 상한을 적용하고 결과 정확성까지 함께 검사한다.
+**대표 workload가 정해진 process memory budget 안에서 정확한 결과를 만드는지 검증한다.** DuckDB, Polars, marimo 기반 로컬 data pipeline을 대상으로 별도 process에 실제 hard limit을 적용한다.
+
+| Item | Scope |
+| --- | --- |
+| Target | DuckDB·Polars·marimo 기반 로컬 data pipeline |
+| Resource boundary | 별도 process 또는 container의 hard limit |
+| Pass condition | 정상 종료와 결과 정확성을 모두 충족 |
+
+> [!WARNING]
+> **통과 결과는 지정한 fixture, pipeline, resource 설정과 환경에만 적용된다.** 모든 입력에서 OOM이 발생하지 않는다는 보장이 아니다.
 
 ## 1. 무엇을 증명하는 테스트인가
-
-OOM 테스트 통과가 모든 데이터에서 절대 OOM이 발생하지 않음을 의미하지는 않는다.
 
 다음 조건에서 안정적으로 동작했음을 증명한다.
 
@@ -62,13 +67,13 @@ Stress test 실패가 항상 결함을 뜻하지는 않는다. 발견된 한계�
 
 ## 3. 핵심 원칙
 
-### Process 전체를 제한한다
+### Process 전체에 Hard Limit을 적용한다
 
 DuckDB `memory_limit`만으로는 충분하지 않다.
 
 Python 객체, Arrow buffer, Polars, native library와 일부 DuckDB operation은 별도 메모리를 사용할 수 있다. 외부에서 process 전체 메모리를 제한해야 한다.
 
-### fixture 생성은 측정 밖에서 한다
+### Fixture 생성은 측정 밖에서 수행한다
 
 fixture 생성까지 같은 제한 안에서 실행하면 pipeline이 아닌 데이터 생성기의 메모리가 결과에 섞인다.
 
@@ -80,7 +85,7 @@ fixture 생성까지 같은 제한 안에서 실행하면 pipeline이 아닌 데
 
 fixture 생성 자체가 실제 pipeline에 포함되는 경우에만 측정 대상에 넣는다.
 
-### 성공 여부와 결과 정확성을 함께 본다
+### 종료 상태와 결과 정확성을 함께 검증한다
 
 process가 종료 코드 0으로 끝났어도 결과가 잘못되면 실패다.
 
@@ -223,7 +228,8 @@ systemd-run --user --wait --pipe --collect \
 | `POLARS_VERBOSE=1` | streaming fallback 진단 |
 | `pytest -m memory` | memory test만 선택 |
 
-단순히 `/usr/bin/time -v`만 실행하면 메모리를 측정할 뿐 제한하지 않는다.
+> [!IMPORTANT]
+> **`/usr/bin/time -v`는 memory를 측정할 뿐 제한하지 않는다.** Memory-budget test에는 systemd, container runtime 등 실제 hard limit이 필요하다.
 
 ### systemd를 사용할 수 없는 환경
 
@@ -239,7 +245,7 @@ container swap limit = memory limit
 
 `ulimit -v`나 Python 내부 RSS 감시만을 기본 hard limit으로 사용하지 않는다. native allocation과 memory mapping에서 동작이 환경별로 달라질 수 있다.
 
-## 8. 통과 기준
+## 8. Pass Criteria
 
 다음 조건을 모두 충족해야 한다.
 
@@ -289,7 +295,7 @@ container swap limit = memory limit
 
 이 비율은 프로젝트 정책이며 보편적인 성능 기준은 아니다.
 
-## 10. 실패 진단
+## 10. Failure Diagnosis
 
 ### 종료 코드만으로 OOM을 단정하지 않는다
 
@@ -368,7 +374,7 @@ Output: schema, row count, invariants passed
 Environment: WSL2 Ubuntu, Python/DuckDB/Polars versions recorded
 ```
 
-## 13. 최소 체크리스트
+## 13. Minimum Checklist
 
 - [ ] correctness test와 memory test를 분리했다.
 - [ ] fixture를 측정 구간 밖에서 준비했다.

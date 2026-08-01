@@ -1,8 +1,11 @@
-# Data Operations
+# Data Operations: Application Execution Boundary
 
-`data_operations`는 데이터 작업의 **입력, 실행 순서, 결과**를 묶는 application boundary다. 파일 파싱, DuckDB 세부 구현, incident 규칙 자체는 각 도메인에 위임한다.
+**`data_operations`는 입력, 실행 순서, 결과를 묶는 application boundary다.** 파일 파싱, DuckDB 세부 구현, incident 규칙은 각 domain에 위임한다.
 
-## 역할
+> [!IMPORTANT]
+> **Incident lifecycle은 read-only다.** backfill, approval, recovery, evaluation을 실행하지 않는다.
+
+## Responsibilities
 
 - `DataOperationRequest`로 실행 설정을 검증한다.
 - HMDA raw 적재와 dbt build를 호출한다.
@@ -10,7 +13,7 @@
 - 실행 결과를 Pydantic 모델로 반환한다.
 - 외부 실행자가 다룰 수 있는 오류를 `DataOperationError`로 통일한다.
 
-## 공개 진입점
+## Public Entry Points
 
 | API | 책임 | 결과 |
 | --- | --- | --- |
@@ -20,7 +23,7 @@
 
 공개 API와 모델은 [`__init__.py`](../../src/project_pivot/data_operations/__init__.py)에서 확인한다.
 
-## 실행 흐름
+## Execution Paths
 
 ```mermaid
 flowchart LR
@@ -36,11 +39,11 @@ flowchart LR
     lifecycle --> lifecycle_result[LifecycleResult]
 ```
 
-### Raw 적재
+### Raw Load
 
 [`runner.py`](../../src/project_pivot/data_operations/runner.py)의 `load_raw_data()`가 파일 발견과 파티션 적재를 `hmda_data`에 위임한다. 반환값에는 처리 파일 수와 적재 행 수가 포함된다.
 
-### dbt build
+### dbt Build
 
 `run_dbt_build()`는 다음 경계를 책임진다.
 
@@ -51,7 +54,7 @@ flowchart LR
 
 artifact가 없으면 종료 코드가 0이어도 성공으로 처리하지 않는다.
 
-### Incident lifecycle
+### Incident Lifecycle
 
 [`incident_lifecycle.py`](../../src/project_pivot/data_operations/incident_lifecycle.py)의 실행 순서:
 
@@ -64,9 +67,7 @@ current profile 측정
 → 중복 제거 후 요약 반환
 ```
 
-lifecycle은 read-only다. backfill, approval, recovery, evaluation을 실행하지 않는다.
-
-## 핵심 계약
+## Core Contracts
 
 [`request.py`](../../src/project_pivot/data_operations/request.py)의 `DataOperationRequest`가 공통 입력이다.
 기본값은 로컬 HMDA·DuckDB·dbt 경로를 가리키며, 알 수 없는 필드는 거부된다.
@@ -77,7 +78,7 @@ lifecycle은 read-only다. backfill, approval, recovery, evaluation을 실행하
 - [`DbtBuildResult`](../../src/project_pivot/data_operations/dbt_result.py)
 - [`LifecycleResult`](../../src/project_pivot/data_operations/lifecycle_result.py)
 
-## 사용 위치
+## Callers And Tests
 
 Dagster resource가 설정을 `DataOperationRequest`로 변환하고, asset이 공개 진입점을 호출한다.
 
@@ -86,7 +87,7 @@ Dagster resource가 설정을 `DataOperationRequest`로 변환하고, asset이 �
 
 동작 계약은 [`tests/data_operations`](../../tests/data_operations)에서 확인한다.
 
-## 읽는 순서
+## Reading Order
 
 1. [`__init__.py`](../../src/project_pivot/data_operations/__init__.py)
 1. [`request.py`](../../src/project_pivot/data_operations/request.py)

@@ -1,9 +1,9 @@
 # HMDA Data: Source to Bronze
 
-**Purpose**: `hmda_data`는 HMDA 원천 파일을 발견·검증해 DuckDB Bronze 테이블에 적재하고, reliability 검증용 합성 결함 Parquet 파일을 만든다.
+**`hmda_data`는 HMDA 원천을 DuckDB Bronze로 적재하고 합성 결함 입력을 만든다.** 원천 파일 발견·검증과 결정론적 Parquet 생성까지 소유한다.
 
 > [!IMPORTANT]
-> **Boundary**: 실행 설정·순서·결과 조합은 `data_operations`가 소유한다. `hmda_data`는 dbt 변환이나 incident 판단을 수행하지 않는다.
+> **Boundary:** 실행 설정·순서·결과 조합은 `data_operations`가 소유한다. `hmda_data`는 dbt 변환이나 incident 판단을 수행하지 않는다.
 
 | In scope | Out of scope |
 | --- | --- |
@@ -74,7 +74,7 @@
 
 `sample_fraction`과 `null_fraction`은 $0 < value \leq 1$이어야 한다. 대상 컬럼이 없거나 출력 경로가 유효하지 않으면 `SyntheticCaseError`를 반환한다. 샘플은 연도별 최소 한 행을 유지하고 안정적인 컬럼 순서로 선택한다.
 
-## Ownership and Reading Path
+## Ownership And Reading Path
 
 | Owner | Responsibility |
 | --- | --- |

@@ -1,8 +1,8 @@
-# Domain Overview
+# Domain Contracts: Ownership And Reading Paths
 
-이 디렉터리는 로컬 HMDA 데이터 파이프라인의 도메인별 계약을 설명한다. 각 문서는 해당 도메인의 책임, 공개 API, 입력·출력, 비포함 범위를 canonical source로 둔다.
+**각 domain 문서는 책임과 비책임의 canonical source다.** 로컬 HMDA 데이터 파이프라인의 공개 API, 입력·출력, 비포함 범위를 domain별로 설명한다.
 
-## Domains
+## Ownership Map
 
 | Domain | Owns | Main input and output | Does not own |
 | --- | --- | --- | --- |
@@ -12,7 +12,7 @@
 | [Reliability](reliability.md) | profile, incident, 영향 분석, remediation draft | raw table + dbt artifacts → lifecycle result | lifecycle 내 승인·backfill·report 작성 |
 | [Orchestration](orchestration.md) | Dagster asset graph와 config 변환 | `raw_hmda_loans` → `dbt_loan_analytics` | domain business logic, reliability lifecycle |
 
-## Reading Paths
+## Goal-Based Reading Paths
 
 | Goal | Read in order |
 | --- | --- |

@@ -1,6 +1,6 @@
-# Data Platform
+# Data Platform: DuckDB And dbt Contracts
 
-`data_platform`은 DuckDB 연결·SQL 식별자 처리와 dbt 기반 Bronze-to-Gold 데이터 계약을 제공한다. 원천 파일 적재, dbt subprocess 실행, orchestration은 이 도메인 책임이 아니다.
+**`data_platform`은 DuckDB helper와 dbt Bronze-to-Gold 계약을 소유한다.** 원천 파일 적재, dbt subprocess 실행, orchestration은 이 domain의 책임이 아니다.
 
 ## Scope
 
@@ -100,7 +100,10 @@ flowchart LR
     mart --> manifest
 ```
 
-`data_operations.run_dbt_build()`가 `dbt build`를 실행하고 이전 artifact 제거, 종료 코드 확인, 새 `manifest.json`·`run_results.json` 존재 검증을 책임진다. `data_platform`은 모델·source·test와 lineage 계약만 소유한다.
+> [!IMPORTANT]
+> **`data_platform`은 dbt를 실행하지 않는다.** `data_operations.run_dbt_build()`가 이전 artifact 제거, `dbt build` 실행, 종료 코드 확인, 새 `manifest.json`·`run_results.json` 존재 검증을 책임진다.
+
+`data_platform`은 model, source, test와 lineage 계약만 소유한다.
 
 통합 계약은 [`tests/dbt/test_analytics_foundation.py`](../../tests/dbt/test_analytics_foundation.py)에서 raw source, 두 모델의 manifest dependency, mart 멱등성과 metric 결과를 검증한다. Python helper 계약은 [`tests/data_platform`](../../tests/data_platform)에서 확인한다.
 

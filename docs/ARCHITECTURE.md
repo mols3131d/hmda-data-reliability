@@ -1,6 +1,6 @@
-# ARCHITECTURE
+# Architecture: Local HMDA Reliability Pipeline
 
-로컬 HMDA 데이터를 DuckDB Bronze에 적재하고 dbt로 Silver·Gold를 만든다. Reliability는 raw table과 dbt artifact를 읽어 incident와 remediation draft를 계산한다.
+**핵심 경계는 분석과 위험 작업의 분리다.** 로컬 HMDA 데이터를 DuckDB Bronze에 적재하고 dbt로 Silver·Gold를 만든다. Reliability lifecycle은 raw table과 dbt artifact를 읽어 incident와 remediation draft를 계산하지만, approval 이후 recovery와 evaluation은 별도 API가 담당한다.
 
 ## System Flow
 
@@ -15,7 +15,7 @@ flowchart LR
     approval[External approval] --> recovery[Backfill + validation]
 ```
 
-## Boundaries
+## Execution Boundaries
 
 | Area | Rule |
 | --- | --- |
@@ -24,7 +24,7 @@ flowchart LR
 | Recovery | 외부 approval 뒤 별도 API로 실행한다. |
 | Evaluation | Synthetic case 결과를 별도 API로 집계하고 report를 별도로 작성한다. |
 
-## Domain Contracts
+## Canonical Domain Contracts
 
 세부 계약의 canonical source는 [`docs/domains/OVERVIEW`](domains/OVERVIEW.md)와 연결된 도메인 문서다.
 
@@ -36,7 +36,7 @@ flowchart LR
 | Incident, impact, remediation, recovery, evaluation | [`Reliability`](domains/reliability.md) |
 | Dagster asset graph와 config | [`Orchestration`](domains/orchestration.md) |
 
-## Scope
+## Project Scope
 
 | In scope | Out of scope |
 | --- | --- |

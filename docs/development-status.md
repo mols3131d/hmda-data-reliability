@@ -1,12 +1,15 @@
-# Development Status Report
+# Development Status: Core Path Validated
 
-> 기준일: 2026-08-02 | 상태: **안정적 진행** | 품질 게이트: **통과**
+> **기준일:** 2026-08-02 | **상태:** 🟢 안정적 진행 | **품질 게이트:** 🟢 통과
+
+**기록 시점에 핵심 data와 reliability 경로는 구현·검증됐지만 delivery traceability는 보완이 필요했다.** 전체 automated test는 통과했으며, 활성 OpenSpec change의 task artifact 부재와 원격 미공개 상태를 후속 과제로 기록했다.
+
+> [!NOTE]
+> 이 문서는 2026-08-02 repository snapshot이다. Test 수, Git 상태와 commit 차이는 이후 변경을 자동 반영하지 않는다.
 
 ## Executive Summary
 
-Project Pivot은 로컬 HMDA 데이터 플랫폼의 핵심 경로를 구현하고 자동화 테스트로
-검증한 상태다. 현재 코드는 원천 적재, dbt 변환, Dagster orchestration,
-reliability lifecycle와 승인 후 recovery/evaluation을 분리된 경계로 제공한다.
+Project Pivot은 원천 적재, dbt 변환, Dagster orchestration, reliability lifecycle와 승인 후 recovery/evaluation을 분리된 경계로 제공한다.
 
 | Signal | Current state | Evidence |
 | --- | --- | --- |
@@ -54,6 +57,8 @@ xychart-beta
     bar [45, 37, 11, 6, 5, 1]
 ```
 
+Chart는 표에 나열한 6개 implementation domain의 test function 수를 비교한다. 전체 실행 수와의 차이는 이 domain 분류 밖의 test에서 발생한다.
+
 | Metric | Result |
 | --- | ---: |
 | Executed tests | **108 passed** |
@@ -84,7 +89,7 @@ RPI workflow를 지원하는 agent, research, observability 정비에 집중됐�
 | Process | OpenSpec workflow와 RPI 문서 보강 |
 | Repository state | 미커밋 tracked 변경 없음 |
 
-## Risks And Next Actions
+## Priority Risks And Actions
 
 | Priority | Item | Why it matters | Recommended action |
 | --- | --- | --- | --- |

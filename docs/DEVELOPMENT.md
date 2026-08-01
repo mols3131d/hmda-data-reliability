@@ -1,44 +1,17 @@
-# DEVELOPMENT
+# Development Guide
 
-## Index
+이 문서는 로컬 개발, test, formatting에 필요한 표준 command와 package 배치 규칙을 설명한다. 시스템 경계와 데이터 계약은 [`ARCHITECTURE`](ARCHITECTURE.md)를 기준으로 한다.
 
-| Section | Description |
+## Quick Start
+
+| Goal | Command |
 | --- | --- |
-| [Development Environment](#development-environment) | 개발 환경 |
-| [Package Layout](#package-layout) | 패키지·도메인 |
-| [Directory Structure](#directory-structure) | 주요 디렉토리 |
-| [Testing](#testing) | 테스트 실행 |
-| [Formatting](#formatting) | 코드·문서 포맷 |
-| [VCS Git](#vcs-git) | 버전 관리 시스템 |
-
-### Related Documentation
-
-| Topic | Doc |
-| --- | --- |
-| 데이터 계약·시스템 경계·scope | [`ARCHITECTURE`](ARCHITECTURE.md) |
-
-## Directory Structure
-
-| Directory | Purpose |
-| --- | --- |
-| `src/` | 애플리케이션 패키지 |
-| `tests/` | 도메인별 테스트 |
-| `dbt/` | 모델·매크로·설정 |
-| `data/` | DuckDB·원천 데이터·메타데이터 |
-| `notebooks/` | Marimo 분석 노트북 |
-| `docs/` | 프로젝트 문서 |
-| `scripts/` | 설정·유틸리티 스크립트 |
-
-## Package Layout
-
-| Item | Rule |
-| --- | --- |
-| Root | `src/project_pivot/` |
-| Domains | 새 패키지를 만들기 전에 `data_operations`, `data_platform`, `hmda_data`, `orchestration`, `reliability`, `shared`, `configs` 중 기존 도메인을 우선 사용 |
+| 전체 test | `uv run pytest` |
+| Python format | `uv run ruff format .` |
+| Python lint | `uv run ruff check src tests` |
+| Markdown format | `uv run rumdl fmt .` |
 
 ## Development Environment
-
-### Tech stack
 
 | Field | Tools |
 | --- | --- |
@@ -47,6 +20,20 @@
 | Data platform | `DuckDB`, `dbt` |
 | Orchestration | `Dagster` |
 | Analysis | `Marimo`, `Polars` |
+
+## Package And Directory Layout
+
+애플리케이션 package root는 `src/project_pivot/`다. 새 package를 만들기 전에 `data_operations`, `data_platform`, `hmda_data`, `orchestration`, `reliability`, `shared`, `configs` 중 기존 domain을 우선 사용한다.
+
+| Directory | Purpose |
+| --- | --- |
+| `src/` | 애플리케이션 package |
+| `tests/` | domain별 test |
+| `dbt/` | model·macro·설정 |
+| `data/` | DuckDB·원천 데이터·metadata |
+| `notebooks/` | Marimo 분석 notebook |
+| `docs/` | 프로젝트 문서 |
+| `scripts/` | 설정·utility script |
 
 ## Testing
 
@@ -61,6 +48,11 @@
 | `pytest-sugar` | 진행 상황 표시 개선 |
 | `pytest-timeout` | 테스트 실행 시간 제한 |
 | `pytest-xdist` | 테스트 병렬 실행 |
+| `hypothesis` | 순수 helper의 property-based testing |
+| `opentelemetry-api` | test trace API |
+| `opentelemetry-sdk` | opt-in pytest span 생성·export |
+
+`pytest-opentelemetry`는 공식 OpenTelemetry 또는 pytest project가 관리하는 plugin으로 확인되지 않아 사용하지 않는다. Python 3.13과 `pytest-xdist` 지원 계약이 검증되기 전까지 공식 SDK와 local pytest hook을 유지한다.
 
 ### Default Pytest Options
 
@@ -86,7 +78,7 @@
 | `memory` | 대표 fixture의 process-level memory-budget test |
 | `stress` | worst-case resource stress test |
 
-### Testing Commands
+### Core Commands
 
 기본 실행:
 
@@ -110,7 +102,9 @@ uv run pytest -m unit
 uv run pytest -m "not integration"
 ```
 
-HMDA EDA correctness와 resource test는 분리한다.
+### HMDA EDA Resource Validation
+
+HMDA EDA correctness test와 resource test는 분리한다.
 
 ```bash
 uv run pytest tests/hmda_data/test_eda.py \
@@ -121,10 +115,10 @@ uv run python scripts/prepare_hmda_eda_fixture.py
 uv run python scripts/run_hmda_eda_memory.py
 ```
 
-Memory runner는 user systemd와 cgroup `MemoryMax`, `MemorySwapMax`를 실제로
-적용할 수 있는 WSL/Linux 환경에서만 유효하다. 사전 hard-limit probe 실패를
-통과로 기록하지 않는다. `stress` marker는 별도 worst-case workload가 추가된
-뒤 명시적으로 선택한다.
+> [!IMPORTANT]
+> **Memory runner는 cgroup hard limit를 실제 적용할 수 있을 때만 유효하다.** user systemd와 `MemoryMax`, `MemorySwapMax`를 사용할 수 있는 WSL/Linux 환경에서 실행한다. 사전 hard-limit probe 실패는 통과로 기록하지 않는다.
+
+`stress` marker는 별도 worst-case workload가 추가된 뒤 명시적으로 선택한다.
 
 실패·디버깅:
 
@@ -139,7 +133,15 @@ uv run pytest -n 0 -vv -s
 uv run pytest --cov=src/project_pivot
 ```
 
-## Formatting
+Test span을 console JSON으로 확인할 때만 tracing을 활성화한다.
+
+```bash
+OTEL_TEST_TRACING=1 uv run pytest -n 0 tests/data_platform/test_sql.py
+```
+
+기본 pytest 실행은 OpenTelemetry provider나 exporter를 초기화하지 않는다.
+
+## Formatting Commands
 
 Python:
 
@@ -154,6 +156,6 @@ Markdown:
 uv run rumdl fmt .
 ```
 
-## VCS Git
+## Git Convention
 
 커밋 메시지는 한글 `Conventional Commits` 형식을 따른다. 형식과 타입을 포함한 상세 규칙은 [`.gitmessage`](../.gitmessage)를 참고한다.

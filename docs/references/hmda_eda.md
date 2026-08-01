@@ -1,9 +1,9 @@
-# HMDA Raw EDA
+# HMDA Raw EDA: Evidence And Resource Baseline
 
-[`notebooks/eda_mo.py`](../../notebooks/eda_mo.py)는 HMDA 원천 CSV의 schema,
-volume, required-column null과 freshness boundary를 표시한다. 계산은
-`project_pivot.hmda_data.analyze_hmda_csv`가 담당하며 notebook과 automated
-test가 같은 read-only 경로를 사용한다.
+**이 EDA는 HMDA 원천 CSV의 schema, volume, required-column null과 freshness boundary를 read-only evidence로 만든다.** 계산은 `project_pivot.hmda_data.analyze_hmda_csv`가 담당하며 [`notebooks/eda_mo.py`](../../notebooks/eda_mo.py)와 automated test가 같은 경로를 사용한다.
+
+> [!IMPORTANT]
+> **EDA evidence는 incident 판정이나 저장된 `ProfileSnapshot`이 아니다.** Production detector와 lifecycle을 실행하지 않는다.
 
 ## Scope
 
@@ -67,9 +67,6 @@ Bronze `ingested_at`은 별도 raw-table ingestion time이다.
 | `schema.schema_hash` | `schema_hash` | display-only mapping |
 | `freshness.freshness_at` | `freshness_at` | `unmeasured`이면 `None` |
 
-EDA evidence 자체는 저장된 profile이 아니며 production detector를 실행하지
-않는다.
-
 ## Correctness
 
 ```bash
@@ -112,14 +109,15 @@ Manifest `hmda-eda-memory-v1`은 seed `20250731`, 5,000,000 rows, 평균 row wid
 | Temp disk budget | 10 GiB |
 | Repetitions | 3 |
 
-`systemd-run --user` memory control을 사전 확인하고, 128 MiB probe가 실제
-OOM kill되지 않으면 실행을 유효한 memory-budget 결과로 인정하지 않는다.
+> [!IMPORTANT]
+> **Hard limit probe가 실패하면 memory-budget 결과로 인정하지 않는다.** `systemd-run --user` memory control을 사전 확인하고 128 MiB probe가 실제 OOM kill되는지 검증한다.
+
 기본 `pytest`는 `memory`와 `stress` marker를 제외한다.
 
-2026-07-31 WSL2 baseline에서 세 실행은 모두 invariant를 통과했다. 최대 peak
-RSS는 1,261,285,376 bytes로 3 GiB limit의 39.2%였고 elapsed는 4.80~5.42초였다.
-이 결과는 위 fixture와 환경의 관측값이며 모든 HMDA 입력의 OOM 안전성을
-의미하지 않는다.
+2026-07-31 WSL2 baseline에서 세 실행은 모두 invariant를 통과했다. 최대 peak RSS는 1,261,285,376 bytes로 3 GiB limit의 39.2%였고 elapsed는 4.80~5.42초였다.
+
+> [!WARNING]
+> **이 결과는 해당 fixture와 WSL2 환경에만 적용된다.** 모든 HMDA 입력의 OOM 안전성을 의미하지 않는다.
 
 ## Full Source Observation
 
@@ -138,5 +136,5 @@ RSS는 1,261,285,376 bytes로 3 GiB limit의 39.2%였고 elapsed는 4.80~5.42초
 | Process wall time | 66.40초 |
 | Peak RSS | 13,041,572 KiB |
 
-Full-source 실행은 process hard limit 없이 DuckDB `2GB`, 2 threads로 수행한
-관측이다. 높은 process RSS는 대표 memory-budget 결과와 분리해 해석해야 한다.
+> [!WARNING]
+> **Full-source 관측은 memory-budget test가 아니다.** Process hard limit 없이 DuckDB `2GB`, 2 threads로 실행했으므로 높은 process RSS를 대표 fixture의 제한 실행 결과와 분리해 해석해야 한다.
