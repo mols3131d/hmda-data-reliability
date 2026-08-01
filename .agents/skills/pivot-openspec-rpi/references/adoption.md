@@ -35,7 +35,7 @@ ROR는 custom OpenSpec schema를 요구하지 않는다. project에 설치된 Op
 
 ```text
 openspec/research/{research-id}/research.md
-openspec/reviews/
+openspec/reviews/{change-id}/{sequence}-{review-title}[-{extension}].md
 ```
 
 첫 artifact를 작성할 때만 directory를 만든다.

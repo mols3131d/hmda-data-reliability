@@ -17,7 +17,7 @@ OpenSpec을 변경의 Source of Truth로 사용한다. 명세 전에는 근거 �
 | Research | 근거 충분성, 현재 상태, 위험, 미해결 질문 | `openspec/research/{research-id}/research.md` |
 | OpenSpec | 문제, 요구사항, 설계, task, change 상태 | 기존 OpenSpec artifact |
 | Implement | OpenSpec task가 요구한 코드와 검증 | 코드, 테스트, 갱신된 `tasks.md` |
-| Review | spec·구현·근거의 독립적 대조 | `openspec/reviews/{change-id}.md` |
+| Review | spec·구현·근거의 독립적 대조 | `openspec/reviews/{change-id}/{sequence}-{review-title}[-{extension}].md` |
 
 OpenSpec 밖에 별도의 plan을 만들지 않는다.
 
@@ -41,7 +41,8 @@ OpenSpec 밖에 별도의 plan을 만들지 않는다.
    - focused check를 일찍 실행하고 Review 전 필수 검증을 완료한다.
 1. [Review](references/review.md)를 실행한다.
    - 지원되는 환경에서는 fresh 또는 forked context를 사용한다.
-   - [Review template](templates/review.md)로 `openspec/reviews/{change-id}.md`를 작성한다.
+   - [Review template](templates/review.md)로 `openspec/reviews/{change-id}/{sequence}-{review-title}.md`를 작성한다.
+   - `sequence`는 `001`부터 증가하는 세 자리 Review attempt 번호다. 같은 attempt의 보조 artifact만 `-{extension}` suffix를 붙인다.
    - 구현자의 설명은 코드·테스트·실행 결과가 뒷받침할 때만 근거로 인정한다.
 1. verdict에 따라 자동으로 route한다.
    - `Pass` → OpenSpec으로 archive한다.

@@ -51,13 +51,15 @@ openspec/
 │   └── {research-id}/
 │       └── research.md      # ROR decorator artifact
 └── reviews/
-    └── {change-id}.md       # ROR decorator artifact
+    └── {change-id}/
+        └── {sequence}-{review-title}[-{extension}].md # ROR decorator artifact
 ```
 
 ROR artifact를 OpenSpec change directory 안에 넣거나 OpenSpec schema의 필수 artifact로 만들지 않는다.
 Research와 Review는 `openspec-rpi` front matter의 `relatedArtifacts`로 Research,
 OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를 검증하므로
-`{change-id}`를 identity로 유지한다.
+`{change-id}` directory를 identity로 유지하고, 각 Review attempt는 세 자리
+`{sequence}`로 구분한다. 같은 attempt의 보조 artifact는 filename suffix를 사용한다.
 
 ## Handoffs
 

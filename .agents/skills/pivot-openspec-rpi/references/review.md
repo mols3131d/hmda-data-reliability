@@ -91,6 +91,9 @@ flowchart LR
 ```
 
 수정된 change는 fresh Review verdict를 받아야 한다. 기존 `Pass` artifact를 새 구현에 맞게 수정하지 않는다.
+Review는 `openspec/reviews/{change-id}/{sequence}-{review-title}.md`에 저장한다.
+`sequence`는 `001`부터 증가하는 세 자리 attempt 번호이며, 같은 attempt의 보조
+artifact만 `-{extension}` suffix를 붙여 같은 directory에 저장한다.
 
 ## Output
 
