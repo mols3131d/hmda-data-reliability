@@ -12,11 +12,11 @@ flowchart LR
     D{Verdict}
 
     H --> R --> O --> I --> V --> D
-    D -- Pass --> A[OpenSpec archive]
-    D -- Revise: evidence --> R
-    D -- Revise: requirements --> O
-    D -- Revise: code --> I
-    D -- Blocked --> B[Resolve blocker]
+    D -- approved --> A[OpenSpec archive]
+    D -- changes_requested: evidence --> R
+    D -- changes_requested: requirements --> O
+    D -- changes_requested: code --> I
+    D -- blocked --> B[Resolve blocker]
 ```
 
 Research는 추가 조사 필요 여부 판정을 내부에 포함한다. Research phase는 항상 거치지만, 기존 근거가 충분하면 추가 조사 없이 끝날 수 있다.
@@ -25,11 +25,11 @@ Research는 추가 조사 필요 여부 판정을 내부에 포함한다. Resear
 
 | Stage | Input | Exit condition | Output |
 | --- | --- | --- | --- |
-| Research | Human intent와 기존 project evidence | OpenSpec이 목표·범위·영향·검증을 정의 가능 | `Ready`, `Revise`, `Blocked` artifact |
-| OpenSpec | Ready Research와 human decision | proposal·requirements·design·tasks가 coherent | Active OpenSpec change |
+| Research | Human intent와 기존 project evidence | OpenSpec이 목표·범위·영향·검증을 정의 가능 | `draft`, `in_progress`, `completed`, `blocked`, `superseded` artifact |
+| OpenSpec | `completed` Research와 human decision | proposal·requirements·design·tasks가 coherent | Active OpenSpec change |
 | Implement | 승인된 OpenSpec tasks | task 구현과 필수 check 완료 | 코드, 테스트, task state, amendment |
-| Review | OpenSpec change, diff, checks, Research | 구현을 독립적으로 대조 완료 | `Pass`, `Revise`, `Blocked` artifact |
-| Archive | Review `Pass` | OpenSpec archive 성공 | Durable project specification |
+| Review | OpenSpec change, diff, checks, Research | 구현을 독립적으로 대조 완료 | `pending`, `in_progress`, `approved`, `changes_requested`, `blocked` artifact |
+| Archive | Review `approved` | OpenSpec archive 성공 | Durable project specification |
 
 ## Rigor
 
@@ -80,16 +80,16 @@ handoff가 agent 또는 context 경계를 넘으면 [Subagents](subagents.md)와
 | 근거 부족 또는 충돌 | Research |
 | 의도한 동작이 틀리거나 불완전 | OpenSpec |
 | 구현 defect 또는 테스트 누락 | Implement |
-| 외부 접근 또는 결정 불가 | Blocked |
+| 외부 접근 또는 결정 불가 | `blocked` |
 | 모든 필수 근거가 일치 | Archive |
 
 ## Completion
 
 change는 다음을 모두 만족해야 완료다.
 
-- Research가 `Ready`다.
+- Research status가 `completed`다.
 - OpenSpec이 의도한 변경을 정확히 표현한다.
 - 필수 task와 validation이 완료되었다.
-- Review가 `Pass`다.
+- Review status가 `approved`다.
 - 알려진 residual risk와 follow-up이 보인다.
 - archive가 성공했거나 보류 이유가 명시되었다.

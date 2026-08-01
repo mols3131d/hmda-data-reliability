@@ -3,7 +3,7 @@ type: openspec-rpi
 title: "Synthetic Lifecycle Evaluation"
 description: "Synthetic HMDA case를 실제 incident lifecycle과 evaluation report에 연결하기 위한 근거와 제약을 조사한다."
 category: research
-status: ready
+status: completed
 relatedArtifacts:
   - add-synthetic-lifecycle-evaluation
 tags:

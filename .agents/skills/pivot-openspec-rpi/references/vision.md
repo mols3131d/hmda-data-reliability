@@ -27,9 +27,9 @@ flowchart LR
     D{Human decision}
 
     H --> R --> O --> I --> V --> D
-    D -- Revise --> R
-    D -- Pass --> A[Archive]
-    D -- Blocked --> B[Resolve blocker]
+    D -- changes_requested --> R
+    D -- approved --> A[Archive]
+    D -- blocked --> B[Resolve blocker]
 ```
 
 ## Responsibilities
@@ -61,4 +61,4 @@ ROR가 성공하면 사람은 다음 질문에 빠르게 답할 수 있다.
 1. 어떤 근거가 변경을 정당화하는가?
 1. 구현이 OpenSpec과 일치하는가?
 1. 실제로 무엇을 검증했는가?
-1. 결과가 `Pass`, `Revise`, `Blocked` 중 무엇인가?
+1. Review status가 `approved`, `changes_requested`, `blocked` 중 무엇인가?

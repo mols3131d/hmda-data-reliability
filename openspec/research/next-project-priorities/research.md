@@ -3,7 +3,7 @@ type: openspec-rpi
 title: "Next Project Priorities"
 description: "현재 Project Pivot의 capability gap을 비교하고 다음 OpenSpec change의 우선순위를 결정한다."
 category: research
-status: ready
+status: completed
 relatedArtifacts:
     - add-synthetic-lifecycle-evaluation
 tags:

@@ -20,16 +20,16 @@ flowchart TD
     E[Investigate only gaps]
     F[Classify facts, conflicts, assumptions]
     G{OpenSpec can proceed?}
-    H[Ready]
-    I[Revise]
-    J[Blocked]
+    H[status: completed]
+    I[status: in_progress]
+    J[status: blocked]
 
     A --> B --> C
     C -- Yes --> D --> F
     C -- No --> E --> F
     F --> G
     G -- Yes --> H
-    G -- Needs bounded work or decision --> I
+    G -- Needs more work --> I
     G -- Cannot proceed --> J
 ```
 
@@ -95,7 +95,7 @@ flowchart TD
 
 | Conflict | 처리 |
 | --- | --- |
-| Human intent vs active OpenSpec | `Revise`; 명시적 change decision 필요 |
+| Human intent vs active OpenSpec | `in_progress`; 명시적 change decision 필요 |
 | OpenSpec vs implementation | implementation drift로 기록 |
 | Documentation vs code | 코드를 current state로 사용하고 문서 stale 가능성 표시 |
 | Tests vs intended behavior | contract conflict로 기록하고 조용히 수정하지 않음 |
@@ -105,9 +105,9 @@ flowchart TD
 
 | Status | 조건 | Next action |
 | --- | --- | --- |
-| **Ready** | OpenSpec이 goal·scope·impact·validation을 정의 가능 | OpenSpec handoff |
-| **Revise** | bounded investigation 또는 human decision이 남음 | 지정된 gap만 해결 |
-| **Blocked** | 필수 access·environment·evidence·decision이 없어 안전하게 진행 불가 | blocker와 resume condition 보고 |
+| **completed** | OpenSpec이 goal·scope·impact·validation을 정의 가능 | OpenSpec handoff |
+| **in_progress** | bounded investigation 또는 human decision이 남음 | 지정된 gap만 해결 |
+| **blocked** | 필수 access·environment·evidence·decision이 없어 안전하게 진행 불가 | blocker와 resume condition 보고 |
 
 ## Handoff
 

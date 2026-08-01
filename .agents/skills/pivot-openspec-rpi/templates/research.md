@@ -3,7 +3,7 @@ type: openspec-rpi
 title: "<research title>"
 description: "<Research 목적과 범위 요약>"
 category: research
-status: revise
+status: draft
 relatedArtifacts: []
 ---
 

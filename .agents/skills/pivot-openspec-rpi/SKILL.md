@@ -30,7 +30,7 @@ OpenSpec 밖에 별도의 plan을 만들지 않는다.
 1. [Research](references/research.md)를 실행한다.
    - 추가 조사 전에 기존 근거의 충분성을 판단한다.
    - [Research template](templates/research.md)로 `openspec/research/{research-id}/research.md`를 작성한다.
-   - Research status가 `Ready`일 때만 다음 단계로 진행한다.
+   - Research status가 `completed`일 때만 다음 단계로 진행한다.
 1. 기존 OpenSpec lifecycle을 실행한다.
    - 활성 OpenSpec change가 있으면 연결하고, 없으면 설치된 workflow로 새 change를 만든다.
    - Research front matter의 `relatedArtifacts`에 연결된 change ID를 기록한다.
@@ -44,10 +44,10 @@ OpenSpec 밖에 별도의 plan을 만들지 않는다.
    - [Review template](templates/review.md)로 `openspec/reviews/{change-id}/{sequence}-{review-title}.md`를 작성한다.
    - `sequence`는 `001`부터 증가하는 세 자리 Review attempt 번호다. 같은 attempt의 보조 artifact만 `-{extension}` suffix를 붙인다.
    - 구현자의 설명은 코드·테스트·실행 결과가 뒷받침할 때만 근거로 인정한다.
-1. verdict에 따라 자동으로 route한다.
-   - `Pass` → OpenSpec으로 archive한다.
-   - `Revise` → Review가 지정한 Research, OpenSpec, Implement로 돌아간다.
-   - `Blocked` → blocker와 재개에 필요한 최소 행동을 보고한다.
+1. Review status에 따라 자동으로 route한다.
+   - `approved` → OpenSpec으로 archive한다.
+   - `changes_requested` → Review가 지정한 Research, OpenSpec, Implement로 돌아간다.
+   - `blocked` → blocker와 재개에 필요한 최소 행동을 보고한다.
 
 ## Autonomy
 
@@ -62,7 +62,7 @@ OpenSpec 밖에 별도의 plan을 만들지 않는다.
 | Unsafe side effect | 파괴적·비가역적·권한 필요·외부 공개 작업 |
 | Missing access | 필수 저장소, 환경, secret, service에 접근 불가 |
 
-Review가 `Pass`가 아니면 archive하지 않는다.
+Review status가 `approved`가 아니면 archive하지 않는다.
 
 ## Context Discipline
 
@@ -95,5 +95,5 @@ Review가 `Pass`가 아니면 archive하지 않는다.
 | Change | OpenSpec change identifier |
 | Implementation | 완료 task와 주요 amendment |
 | Validation | 실제 실행한 check와 결과 |
-| Review | `Pass`, `Revise`, `Blocked` |
+| Review | `pending`, `in_progress`, `approved`, `changes_requested`, `blocked` |
 | Remaining | 알려진 위험, blocker, follow-up change |

@@ -17,12 +17,12 @@
 | --- | --- |
 | B1 | Research는 추가 조사 전에 항상 기존 evidence를 평가한다 |
 | B2 | evidence가 충분하면 새 조사 없이 Research를 완료할 수 있다 |
-| B3 | Research status는 `Ready`, `Revise`, `Blocked` 중 하나다 |
+| B3 | Research status는 `draft`, `in_progress`, `completed`, `blocked`, `superseded` 중 하나다 |
 | B4 | proposal·requirements·design·tasks·archive state는 OpenSpec만 소유한다 |
 | B5 | ROR artifact는 OpenSpec change directory 밖에 위치한다 |
-| B6 | Review는 독립 evidence를 사용하고 `Pass`, `Revise`, `Blocked`를 반환한다 |
-| B7 | `Revise`는 owner phase를 지정하고 fresh Review를 요구한다 |
-| B8 | Review가 `Pass`가 아니면 archive하지 않는다 |
+| B6 | Review는 독립 evidence를 사용하고 `pending`, `in_progress`, `approved`, `changes_requested`, `blocked` status를 기록한다 |
+| B7 | `changes_requested`는 owner phase를 지정하고 fresh Review를 요구한다 |
+| B8 | Review status가 `approved`가 아니면 archive하지 않는다 |
 | B9 | human interruption은 intent conflict, material choice, unsafe side effect, missing access로 제한한다 |
 | B10 | final output에 실제 validation 결과와 remaining risk가 보인다 |
 | B11 | subagent 지원 여부와 무관하게 동일한 artifact·status·routing contract를 사용한다 |

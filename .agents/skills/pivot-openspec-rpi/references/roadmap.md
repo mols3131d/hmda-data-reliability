@@ -8,7 +8,7 @@
 | Progressive disclosure | core instruction은 `SKILL.md`, phase detail은 direct reference |
 | Research | 충분성 판단, evidence order, status, handoff 정의 |
 | OpenSpec integration | proposal·requirements·design·tasks·archive는 OpenSpec 소유 |
-| Review | 독립적 evidence reconciliation과 `Pass / Revise / Blocked` routing |
+| Review | 독립적 evidence reconciliation과 status-based routing |
 | Human readability | table, Mermaid, verdict-first template |
 | Portability | relative reference와 Windows·WSL installation |
 | Validation | deterministic package validator와 acceptance scenarios |
@@ -51,6 +51,6 @@ flowchart LR
 
 - 전체 agent action logging
 - token·cost dashboard
-- Review `Pass` 없는 automatic archive
+- Review `approved` 없는 automatic archive
 - OpenSpec 밖의 두 번째 planning artifact
 - single workflow가 검증되기 전 multi-agent infrastructure

@@ -51,19 +51,19 @@ agent 사이에는 transcript나 private reasoning이 아니라 다음만 전달
 
 | Result | Owner | Route |
 | --- | --- | --- |
-| Research `Ready` | Orchestrator | OpenSpec |
-| Research `Revise` | Research 또는 Human | 지정 gap만 보완 |
-| Research `Blocked` | Human 또는 Environment | resume condition 해결 |
-| Review `Pass` | OpenSpec | archive |
-| Review `Revise` | Research / OpenSpec / Implement | finding owner로 복귀 후 fresh Review |
-| Review `Blocked` | Human 또는 Environment | blocker 해결 후 fresh Review |
+| Research `completed` | Orchestrator | OpenSpec |
+| Research `in_progress` | Research 또는 Human | 지정 gap만 보완 |
+| Research `blocked` | Human 또는 Environment | resume condition 해결 |
+| Review `approved` | OpenSpec | archive |
+| Review `changes_requested` | Research / OpenSpec / Implement | finding owner로 복귀 후 fresh Review |
+| Review `blocked` | Human 또는 Environment | blocker 해결 후 fresh Review |
 
 ## Failure Handling
 
 subagent가 timeout·tool failure·missing access로 끝나면 성공으로 간주하지 않는다.
 
 - partial evidence를 durable artifact에 남긴다.
-- status 또는 verdict를 `Blocked`나 `Revise`로 판정한다.
+- status를 `blocked` 또는 `changes_requested`로 판정한다.
 - 재개에 필요한 최소 input·permission·command를 명시한다.
 - 동일 실패를 근거 없이 반복하지 않는다.
 

@@ -27,10 +27,19 @@ constraints:
 
 requested_output:
   path: "<durable artifact path>"
-  allowed_results:
-    - "Ready"
-    - "Revise"
-    - "Blocked"
+  allowed_statuses:
+    research:
+      - "draft"
+      - "in_progress"
+      - "completed"
+      - "blocked"
+      - "superseded"
+    review:
+      - "pending"
+      - "in_progress"
+      - "approved"
+      - "changes_requested"
+      - "blocked"
 
 open_questions:
   - "<question that materially blocks or shapes the next phase>"

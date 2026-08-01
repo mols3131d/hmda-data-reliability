@@ -1,9 +1,9 @@
 ---
 type: openspec-rpi
 title: "Review: <change-id>"
-description: "<검증한 change와 verdict 요약>"
+description: "<검증한 change와 status 요약>"
 category: review
-status: revise
+status: pending
 relatedArtifacts:
     - <research-id>
     - <change-id>
@@ -46,8 +46,8 @@ relatedArtifacts:
 
 ## Route
 
-| Verdict | Next action |
+| Status | Next action |
 | --- | --- |
-| Pass | OpenSpec으로 archive |
-| Revise | <Research / OpenSpec / Implement>로 돌아간 후 fresh Review |
-| Blocked | <blocker> 해결 후 fresh Review |
+| approved | OpenSpec으로 archive |
+| changes_requested | <Research / OpenSpec / Implement>로 돌아간 후 fresh Review |
+| blocked | <blocker> 해결 후 fresh Review |

@@ -9,7 +9,8 @@
           "name": "title",
           "type": "string",
           "description": "문서의 주제와 대상을 한눈에 알 수 있는 제목입니다. 핵심 대상과 다루는 내용을 구체적이고 간결하게 작성하세요.",
-          "required": true
+          "required": true,
+          "single": true
         },
         {
           "title": "Description",
@@ -75,7 +76,8 @@
           "name": "title",
           "type": "string",
           "description": "OpenSpec 또는 RPI artifact의 제목입니다.",
-          "required": true
+          "required": true,
+          "single": true
         },
         {
           "title": "Description",
@@ -91,27 +93,27 @@
           "description": "OpenSpec 또는 RPI workflow에서 이 문서가 담당하는 artifact 종류입니다.",
           "choices": [
             "research",
-            "change",
-            "spec",
-            "design",
             "proposal",
+            "design",
             "tasks",
+            "spec",
             "review"
           ],
-          "default": "research",
           "required": true
         },
         {
-          "title": "Research Status",
+          "title": "Status",
           "name": "status",
           "type": "choice",
-          "description": "OpenSpec handoff를 위한 Research 판정입니다.",
+          "description": "Research의 현재 진행 상태입니다.",
           "choices": [
-            "ready",
-            "revise",
-            "blocked"
+            "draft",
+            "in_progress",
+            "completed",
+            "blocked",
+            "superseded"
           ],
-          "default": "revise",
+          "default": "draft",
           "required": true,
           "when": {
             "fieldRef": "category",
@@ -120,16 +122,18 @@
           }
         },
         {
-          "title": "Review Verdict",
+          "title": "Status",
           "name": "status",
           "type": "choice",
-          "description": "독립 Review의 최종 verdict입니다.",
+          "description": "Review의 현재 진행 상태 또는 최종 판정입니다.",
           "choices": [
-            "pass",
-            "revise",
+            "pending",
+            "in_progress",
+            "approved",
+            "changes_requested",
             "blocked"
           ],
-          "default": "revise",
+          "default": "pending",
           "required": true,
           "when": {
             "fieldRef": "category",
@@ -168,11 +172,16 @@
       ]
     },
     {
-      "title": "OpenSpec RPI",
+      "title": "OpenSpec Research",
       "path": "[[workspace]]/openspec/research",
       "filePrefix": "",
       "contentTypes": [
         "openspec-rpi"
+      ],
+      "excludePaths": [
+        "+([A-Z0-9_-]).md",
+        "README.md",
+        "AGENTS.md"
       ]
     },
     {
@@ -181,6 +190,11 @@
       "filePrefix": "",
       "contentTypes": [
         "openspec-rpi"
+      ],
+      "excludePaths": [
+        "+([A-Z0-9_-]).md",
+        "README.md",
+        "AGENTS.md"
       ]
     },
     {
@@ -189,6 +203,11 @@
       "filePrefix": "",
       "contentTypes": [
         "openspec-rpi"
+      ],
+      "excludePaths": [
+        "+([A-Z0-9_-]).md",
+        "README.md",
+        "AGENTS.md"
       ]
     },
     {
@@ -197,6 +216,11 @@
       "filePrefix": "",
       "contentTypes": [
         "openspec-rpi"
+      ],
+      "excludePaths": [
+        "+([A-Z0-9_-]).md",
+        "README.md",
+        "AGENTS.md"
       ]
     }
   ]
