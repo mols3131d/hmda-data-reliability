@@ -45,6 +45,16 @@ OpenSpec 밖에 별도의 plan을 만들지 않는다.
 1. Review status에 따라 route한다.
    - verdict에 따른 다음 owner와 lifecycle은 [Workflow](references/workflow.md)를 따른다.
 
+## Durable Phase Reports
+
+각 phase의 상세 보고, 근거, 결정, 남은 risk와 다음 action은 채팅이 아니라 해당
+phase의 canonical artifact에 기록한다. 채팅에는 현재 status와 artifact 링크,
+다음 routing만 간결하게 남긴다. phase artifact가 이미 존재하면 별도 chat report나
+중복 summary 파일을 만들지 않는다.
+
+phase별 보고 위치와 형식은 [Workflow](references/workflow.md)의 report ownership
+규칙을 따른다.
+
 ## Autonomy
 
 일상적인 확인을 요청하지 않고 loop를 계속한다.
@@ -77,15 +87,16 @@ Review status가 `approved`가 아니면 archive하지 않는다.
 | Review 절차 | [Review](references/review.md) |
 | Windows·WSL·Copilot·Codex 적용 | [Adoption](references/adoption.md) |
 
-## Final Report
+## Final Chat Handoff
 
-최종 결과는 짧은 표로 보고한다.
+최종 채팅은 문서에 기록된 결과를 반복하지 않고, canonical artifact와 현재 routing만
+짧게 전달한다.
 
 | Field | Content |
 | --- | --- |
-| Research | RPI Research identifier와 status |
-| Change | OpenSpec change identifier |
-| Implementation | 완료 task와 주요 amendment |
-| Validation | 실제 실행한 check와 결과 |
-| Review | `pending`, `in_progress`, `approved`, `changes_requested`, `blocked` |
-| Remaining | 알려진 위험, blocker, follow-up change |
+| Research | Research artifact path와 status |
+| Change | OpenSpec change identifier와 status |
+| Implementation | task 또는 amendment artifact path |
+| Validation | validation evidence path 또는 command |
+| Review | Review artifact path와 status |
+| Next | 다음 owner phase 또는 blocker |

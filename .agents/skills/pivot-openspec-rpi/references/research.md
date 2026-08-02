@@ -134,6 +134,8 @@ flowchart TD
 ## Handoff
 
 Research는 evidence를 전달하며 spec을 중복 작성하지 않는다.
+상세 Research 보고는 `research.md`와 연결된 하위 artifact에 기록하고, 채팅에는
+status와 OpenSpec handoff 경로만 남긴다.
 
 | Field | OpenSpec use |
 | --- | --- |

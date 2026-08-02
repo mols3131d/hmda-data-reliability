@@ -72,7 +72,23 @@ RPI Research와 Review도 OpenSpec change의 entry·completion·archive gate가 
 Research와 Review는 `openspec-rpi` front matter의 `relatedArtifacts`로 Research,
 OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를 검증하므로
 `{change-id}` directory를 identity로 유지하고, 각 Review attempt는 세 자리
-`{sequence}`로 구분한다. 같은 attempt의 보조 artifact는 filename suffix를 사용한다.
+sequence로 구분한다. 같은 attempt의 보조 artifact는 filename suffix를 사용한다.
+
+## Report Ownership
+
+phase의 상세 보고는 채팅이 아니라 아래 canonical artifact에 기록한다. 채팅은
+status, artifact link, next route를 전달하는 handoff로만 사용한다.
+
+| Phase | Canonical report source | Report content |
+| --- | --- | --- |
+| Research | `openspec/research/{research-id}/research.md`와 연결된 하위 artifact | 질문, scope, findings, evidence, assumptions, risks, open questions, handoff |
+| OpenSpec | active change의 `proposal.md`, `design.md`, `specs/`, `tasks.md` | 의도, 요구사항, 설계, task, 결정과 변경 범위 |
+| Implement | 변경된 코드·테스트, `tasks.md`, amendment와 validation evidence | 구현 결과, 실행한 check, 남은 구현 risk |
+| Review | `openspec/reviews/{change-id}/{sequence}-{review-title}.md`와 연결된 보조 artifact | verdict, findings, evidence, validation, route |
+
+phase에 전용 report artifact가 없는 경우 기존 canonical artifact를 사용한다. 별도
+chat transcript를 durable evidence로 취급하지 않으며, 같은 내용을 반복하는 report
+파일도 만들지 않는다.
 
 ## Entry Contract
 
@@ -96,7 +112,8 @@ OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를
 | Review → Human/OpenSpec | verdict, findings, evidence, 정확한 next route |
 
 handoff는 phase artifact와 observed evidence를 사용한다. transcript나 private reasoning은
-handoff 근거로 취급하지 않는다.
+handoff 근거로 취급하지 않는다. 채팅 handoff는 artifact path와 status를 가리키는
+짧은 전달만 제공한다.
 
 ## Feedback Routing
 

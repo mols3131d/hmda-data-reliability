@@ -98,3 +98,5 @@ artifact만 `-{extension}` suffix를 붙여 같은 directory에 저장한다.
 ## Output
 
 [Review template](../templates/review.md)을 사용한다. status를 먼저 두고, finding은 evidence-linked로 작성하며, next route를 명확히 한다.
+Review 결과와 validation evidence는 Review artifact에 기록한다. 채팅에는 verdict,
+Review artifact 경로와 next route만 전달하며 상세 finding을 반복하지 않는다.
