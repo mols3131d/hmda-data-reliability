@@ -2,8 +2,10 @@
 name: vcs-git-commit
 description: "Use for simple Git commits: stage coherent changes and commit."
 model:
+  - "Grok 4.5 (universal-chat-provider)"
+  - "gemini-3.5-flash-extra-low (universal-chat-provider)"
+  - "GPT 5.6 Luna (universal-chat-provider)"
   - "Auto (copilot)"
-  - "GPT-4o mini (copilot)"
 tools: [execute, read, search]
 agents: []
 ---
