@@ -70,9 +70,9 @@ Bronze `ingested_at`은 별도 raw-table ingestion time이다.
 ## Correctness
 
 ```bash
-uv run pytest tests/hmda_data/test_eda.py \
-  tests/hmda_data/test_eda_fixture.py \
-  tests/hmda_data/test_eda_memory_helpers.py
+uv run pytest tests/hmda_data/eda/test_eda.py \
+  tests/hmda_data/eda/test_eda_fixture.py \
+  tests/hmda_data/eda/test_eda_memory_helpers.py
 uv run marimo check notebooks/eda_mo.py
 ```
 

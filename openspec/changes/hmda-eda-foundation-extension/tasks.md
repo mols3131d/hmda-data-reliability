@@ -9,6 +9,7 @@ description: "descriptive EDA evidence 확장과 MVP readiness 검증을 구현�
 
 ## 1. EDA Evidence Contract
 
+- [x] 1.0 EDA analysis, fixture, memory helper를 `project_pivot.hmda_data.eda` subpackage로 이동하고 public import compatibility를 유지한다.
 - [ ] 1.1 `analyze_hmda_csv`에 핵심 code field의 count/share distribution evidence를 추가한다.
 - [ ] 1.2 `loan_amount`와 `income`의 non-null count, five-number summary와 configured suspicious condition evidence를 추가한다.
 - [ ] 1.3 `activity_year + state_code + loan_purpose` grain aggregate와 coverage evidence를 추가한다.

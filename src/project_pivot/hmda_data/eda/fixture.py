@@ -11,7 +11,7 @@ from typing import Any, Literal
 import duckdb
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from project_pivot.hmda_data.eda import REQUIRED_EDA_COLUMNS
+from project_pivot.hmda_data.eda.analysis import REQUIRED_EDA_COLUMNS
 from project_pivot.hmda_data.errors import HMDADataValidationError
 
 FIXTURE_VERSION = "hmda-eda-memory-v1"

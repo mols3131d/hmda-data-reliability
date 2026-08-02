@@ -1,4 +1,23 @@
-"""HMDA EDA representative fixture 테스트."""
+"""HMDA EDA deterministic fixture와 expected-value contract.
+
+Contract:
+    - 같은 seed와 row count는 같은 fixture와 manifest evidence를 만든다.
+    - Manifest는 distribution, numeric summary, anomaly, grain oracle을 소유한다.
+    - Evidence validation은 manifest의 모든 deterministic invariant를 확인한다.
+
+Risks:
+    - Fixture generator와 expected manifest가 함께 잘못되어 self-confirming test가
+      될 수 있다.
+    - 실제 source observation이 fixture의 immutable assertion으로 굳을 수 있다.
+
+Scope:
+    Small deterministic fixture correctness only. Actual-source values와
+    process memory budget은 포함하지 않는다.
+
+Planning:
+    ``_plan_*`` 함수는 pytest 수집 전 test design이며 구현 시 executable
+    ``test_*`` 함수와 독립적인 expected values로 교체한다.
+"""
 
 from __future__ import annotations
 
@@ -9,10 +28,10 @@ from typing import Any
 
 import pytest
 
-from project_pivot.hmda_data.eda import analyze_hmda_csv
-from project_pivot.hmda_data.eda_fixture import (
+from project_pivot.hmda_data.eda import (
     FIXTURE_VERSION,
     MANIFEST_FILE_NAME,
+    analyze_hmda_csv,
     prepare_hmda_eda_fixture,
     validate_hmda_eda_evidence,
     validate_hmda_eda_fixture,
@@ -20,6 +39,50 @@ from project_pivot.hmda_data.eda_fixture import (
 from project_pivot.hmda_data.errors import HMDADataValidationError
 
 pytestmark = pytest.mark.component
+
+
+def _plan_fixture_declares_descriptive_expected_values() -> None:
+    """Manifest가 새 descriptive evidence의 독립 oracle을 제공하도록 설계한다.
+
+    Observable result:
+        고정 fixture manifest에 code distribution, numeric summary, suspicious
+        condition count/share, grain aggregate와 coverage expected value가 있다.
+    Oracle:
+        소수의 의도적으로 배치한 row에서 손으로 판정 가능한 exact value를 쓴다.
+    """
+    raise NotImplementedError
+
+
+def _plan_fixture_contains_unknown_and_suspicious_values() -> None:
+    """Fixture가 preservation/anomaly scenario를 실제 row로 포함하는지 검증한다.
+
+    Observable result:
+        Unknown code, negative income, nonpositive loan amount가 manifest에 선언된
+        횟수만큼 존재하며 원천 값 자체도 확인 가능하다.
+    """
+    raise NotImplementedError
+
+
+def _plan_evidence_validation_checks_descriptive_contract() -> None:
+    """Evidence validator가 새 manifest invariant 전체를 검사하도록 설계한다.
+
+    Scenario:
+        Valid evidence는 통과하고 distribution, numeric summary, anomaly, grain
+        값을 하나씩 변조하면 해당 contract를 식별하는 validation error가 난다.
+    Boundary:
+        Production 계산을 재실행해 expected value를 만들지 않는다.
+    """
+    raise NotImplementedError
+
+
+def _plan_fixture_contract_excludes_actual_source_observations() -> None:
+    """실제 source의 변동 가능한 관찰값이 manifest에 고정되지 않음을 검증한다.
+
+    Observable result:
+        Manifest schema와 fixture assertions는 source path, 실행 시점, 실제 전체
+        분포나 extreme value를 required expected field로 취급하지 않는다.
+    """
+    raise NotImplementedError
 
 
 def test_prepare_hmda_eda_fixture_is_deterministic(tmp_path: Path) -> None:

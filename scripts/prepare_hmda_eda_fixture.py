@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from project_pivot.hmda_data.eda_fixture import prepare_hmda_eda_fixture
+from project_pivot.hmda_data.eda import prepare_hmda_eda_fixture
 
 
 def parse_args() -> argparse.Namespace:

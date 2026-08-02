@@ -13,11 +13,19 @@ description: "MVP reliability 개발에 필요한 HMDA descriptive EDA evidence 
 
 시스템은 HMDA 원천 파일에 대해 schema, 전체 row count, `activity_year`별 volume, required-column null baseline과 freshness boundary를 포함하는 JSON-serializable descriptive EDA evidence를 생성해야 한다(SHALL). 기존 evidence key와 read-only 동작은 유지해야 한다(MUST).
 
+EDA analysis, deterministic fixture와 resource helper는 `project_pivot.hmda_data.eda` subpackage가 소유해야 하며(SHALL), 기존 `project_pivot.hmda_data.analyze_hmda_csv` public import는 유지되어야 한다(MUST).
+
 #### Scenario: Core evidence generation
 
 - **WHEN** 유효한 HMDA CSV를 EDA entrypoint에 전달할 때
 - **THEN** evidence는 schema, row count, activity-year counts, required-column null counts/rates와 freshness 상태를 포함해야 한다.
 - **AND** 원천 파일과 lifecycle 상태는 변경되지 않아야 한다.
+
+#### Scenario: EDA package compatibility
+
+- **WHEN** 기존 caller가 `project_pivot.hmda_data` public package에서 `analyze_hmda_csv`를 import할 때
+- **THEN** subpackage 전환 뒤에도 동일한 public callable을 사용할 수 있어야 한다.
+- **AND** fixture와 resource helper는 `project_pivot.hmda_data.eda` namespace에서 import할 수 있어야 한다.
 
 ### Requirement: Core code distributions
 

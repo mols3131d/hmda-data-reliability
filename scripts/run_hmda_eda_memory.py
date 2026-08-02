@@ -13,14 +13,12 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from project_pivot.hmda_data.eda_fixture import (
+from project_pivot.hmda_data.eda import (
     HMDAEDAFixtureManifest,
-    hmda_eda_fixture_provenance,
-    validate_hmda_eda_fixture,
-)
-from project_pivot.hmda_data.eda_memory import (
     assess_memory_runs,
+    hmda_eda_fixture_provenance,
     parse_gnu_time_report,
+    validate_hmda_eda_fixture,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -177,7 +175,7 @@ def _run_once(fixture_directory: Path, run_number: int) -> dict[str, Any]:
             "0",
             "-m",
             "memory",
-            "tests/hmda_data/test_eda_memory.py",
+            "tests/hmda_data/eda/test_eda_memory.py",
             "-q",
         ]
         completed = _run_systemd(command, unit_name)

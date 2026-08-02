@@ -9,8 +9,8 @@ from typing import Any
 
 import duckdb
 
-from project_pivot.hmda_data.eda import analyze_hmda_csv
-from project_pivot.hmda_data.eda_fixture import (
+from project_pivot.hmda_data.eda.analysis import analyze_hmda_csv
+from project_pivot.hmda_data.eda.fixture import (
     hmda_eda_fixture_provenance,
     validate_hmda_eda_evidence,
     validate_hmda_eda_fixture,

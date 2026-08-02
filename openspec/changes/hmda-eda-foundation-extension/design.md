@@ -18,6 +18,7 @@ description: "기존 read-only HMDA EDA entrypoint를 MVP 데이터 정보 basel
 **Goals:**
 
 - 기존 EDA evidence schema를 깨지 않고 descriptive metric을 확장한다.
+- EDA analysis, fixture, memory helper를 `project_pivot.hmda_data.eda` subpackage에 둔다.
 - 핵심 field의 code/count/share, numeric summary, missingness와 anomaly observation을 제공한다.
 - `activity_year + state_code + loan_purpose` grain과 현재 mart aggregation rule을 확인한다.
 - deterministic fixture, representative resource check, actual-source observation, notebook runtime smoke를 분리한다.
@@ -32,6 +33,12 @@ description: "기존 read-only HMDA EDA entrypoint를 MVP 데이터 정보 basel
 - production monitoring과 dashboard UI
 
 ## Decisions
+
+### Own EDA in the HMDA data subpackage
+
+EDA analysis, deterministic fixture와 resource helper는 `project_pivot.hmda_data.eda` subpackage가 소유한다. 내부 module은 각각 `analysis`, `fixture`, `memory`로 분리하고, 기존 caller가 사용하는 `from project_pivot.hmda_data import analyze_hmda_csv` public import는 유지한다.
+
+**Alternative:** `hmda_data` root의 `eda.py`, `eda_fixture.py`, `eda_memory.py`를 유지. 하나의 capability가 root module 세 개로 퍼지고 test layout과도 어긋나므로 subpackage로 묶는다.
 
 ### Reuse the shared DuckDB EDA entrypoint
 
@@ -71,6 +78,7 @@ description: "기존 read-only HMDA EDA entrypoint를 MVP 데이터 정보 basel
 
 ## Migration Plan
 
+1. EDA module을 `project_pivot.hmda_data.eda` subpackage로 이동하고 public import compatibility를 유지한다.
 1. EDA structured evidence와 fixture contract를 확장한다.
 1. correctness test와 notebook runtime smoke를 추가한다.
 1. `docs/references/hmda_eda.md`와 foundation readiness evidence를 갱신한다.

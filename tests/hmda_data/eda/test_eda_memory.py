@@ -12,8 +12,10 @@ from typing import Any
 
 import pytest
 
-from project_pivot.hmda_data.eda_fixture import prepare_hmda_eda_fixture
-from project_pivot.hmda_data.eda_memory import run_hmda_eda_memory_workload
+from project_pivot.hmda_data.eda import (
+    prepare_hmda_eda_fixture,
+    run_hmda_eda_memory_workload,
+)
 from scripts import run_hmda_eda_memory as runner
 
 VALID_TIME_REPORT = """

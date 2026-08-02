@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from project_pivot.hmda_data.eda_memory import (
+from project_pivot.hmda_data.eda import (
     assess_memory_runs,
     parse_gnu_time_report,
 )

@@ -18,6 +18,7 @@ description: "MVP reliability 개발에 필요한 HMDA 데이터 정보와 descr
 - `activity_year + state_code + loan_purpose` grain과 raw → staging → mart 관계를 확인한다.
 - null coverage, suspicious value와 unknown code를 관찰하되 raw 값을 자동 정제하거나 삭제하지 않는다.
 - deterministic fixture, representative resource check, actual-source observation, notebook runtime smoke를 구분한다.
+- EDA analysis, fixture, resource helper를 `project_pivot.hmda_data.eda` subpackage가 소유하도록 정리한다.
 - foundation readiness가 MVP 개발에 필요한 EDA evidence를 포함하도록 기준을 보강한다.
 
 ## Capabilities
@@ -32,7 +33,7 @@ description: "MVP reliability 개발에 필요한 HMDA 데이터 정보와 descr
 
 ## Impact
 
-- `src/project_pivot/hmda_data/eda.py`와 관련 EDA helper의 출력·검증 범위
+- `src/project_pivot/hmda_data/eda/` subpackage의 analysis, fixture, resource helper
 - `notebooks/eda_mo.py`와 EDA reference 문서
 - `tests/hmda_data/`의 fixture, correctness, notebook smoke test
 - foundation readiness와 domain contract 문서
