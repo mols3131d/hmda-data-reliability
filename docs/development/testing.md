@@ -29,10 +29,6 @@
 
 사람이 local terminal에서 결과를 읽을 때는 기본 command를 사용한다.
 
-```bash
-mkdir -p artifacts && uv run pytest
-```
-
 가장 좁은 범위부터 실행한다.
 
 ```bash
@@ -178,5 +174,5 @@ mkdir -p artifacts && OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
 
 ## Related Guides
 
-- [`docs/DEVELOPMENT.md`](DEVELOPMENT.md): local development, package layout, formatting
-- [`pyproject.toml`](../pyproject.toml): pytest default options and marker registration
+- [`DEVELOPMENT.md`](../../DEVELOPMENT.md): local development, package layout, formatting
+- [`pyproject.toml`](../../pyproject.toml): pytest default options and marker registration
