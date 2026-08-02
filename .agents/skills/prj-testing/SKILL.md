@@ -19,15 +19,15 @@ Use `pytest` through `uv`. Start with the narrowest relevant test. The canonical
 ## Commands
 
 ```bash
-uv run pytest
-uv run pytest tests/data_platform
-uv run pytest tests/data_platform/test_sql.py
-uv run pytest tests/data_platform/test_sql.py::test_name
-uv run pytest -k "keyword"
-uv run pytest -m unit
-uv run pytest -m "not integration"
-uv run pytest --lf
-uv run pytest --cov=src/project_pivot
+mkdir -p artifacts && uv run pytest
+mkdir -p artifacts && uv run pytest tests/data_platform
+mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py
+mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py::test_name
+mkdir -p artifacts && uv run pytest -k "keyword"
+mkdir -p artifacts && uv run pytest -m unit
+mkdir -p artifacts && uv run pytest -m "not integration"
+mkdir -p artifacts && uv run pytest --lf
+mkdir -p artifacts && uv run pytest --cov=src/project_pivot
 ```
 
 For detailed testing guidance and the complete command reference, see [`docs/TESTING.md`](../../../docs/TESTING.md).

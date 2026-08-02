@@ -6,9 +6,9 @@
 
 | User | Recommended command | Purpose |
 | --- | --- | --- |
-| Human | `uv run pytest` | `pytest-sugar`와 기본 HTML report를 사용하는 local test |
+| Human | `mkdir -p artifacts && uv run pytest` | `pytest-sugar`와 기본 HTML report를 사용하는 local test |
 | Agent | `mkdir -p artifacts && uv run pytest -p no:sugar --color=no --tb=short -ra --junitxml=artifacts/pytest.xml` | 압축된 console output과 JUnit XML report |
-| Agent, changed files | `mkdir -p artifacts && uv run pytest -o 'addopts=-n auto --timeout=60 --html=pytest_report.html --self-contained-html --strict-markers' --testmon -p no:sugar --color=no --tb=short -ra --junitxml=artifacts/pytest.xml` | 이전 coverage data를 사용한 영향 범위 test |
+| Agent, changed files | `mkdir -p artifacts && uv run pytest -o 'addopts=-n auto --timeout=60 --html=artifacts/pytest.html --self-contained-html --strict-markers' --testmon -p no:sugar --color=no --tb=short -ra --junitxml=artifacts/pytest.xml` | 이전 coverage data를 사용한 영향 범위 test |
 
 > [!IMPORTANT]
 > 두 command 모두 `pyproject.toml`의 기본 옵션을 사용한다. `-n auto`, `--timeout=60`, HTML report, `--strict-markers`, 기본 marker filter를 command에 다시 적지 않는다.
@@ -21,7 +21,7 @@
 | --- | --- |
 | `-n auto` | CPU 수에 맞춰 test 병렬 실행 |
 | `--timeout=60` | test당 최대 실행 시간 60초 |
-| `--html=pytest_report.html --self-contained-html` | HTML report 생성 |
+| `--html=artifacts/pytest.html --self-contained-html` | HTML report 생성 |
 | `--strict-markers` | 등록되지 않은 marker 사용 금지 |
 | `-m 'not memory and not stress'` | 대형 resource workload 기본 제외 |
 
@@ -30,25 +30,25 @@
 사람이 local terminal에서 결과를 읽을 때는 기본 command를 사용한다.
 
 ```bash
-uv run pytest
+mkdir -p artifacts && uv run pytest
 ```
 
 가장 좁은 범위부터 실행한다.
 
 ```bash
-uv run pytest tests/data_platform
-uv run pytest tests/data_platform/test_sql.py
-uv run pytest tests/data_platform/test_sql.py::test_name
-uv run pytest -k "keyword"
-uv run pytest -m unit
-uv run pytest -m "not integration"
+mkdir -p artifacts && uv run pytest tests/data_platform
+mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py
+mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py::test_name
+mkdir -p artifacts && uv run pytest -k "keyword"
+mkdir -p artifacts && uv run pytest -m unit
+mkdir -p artifacts && uv run pytest -m "not integration"
 ```
 
 실패 원인을 직접 조사할 때만 console output을 확장하고 병렬 실행을 끈다.
 
 ```bash
-uv run pytest --lf
-uv run pytest -n 0 -vv -s
+mkdir -p artifacts && uv run pytest --lf
+mkdir -p artifacts && uv run pytest -n 0 -vv -s
 ```
 
 ## Agent Commands
@@ -105,7 +105,7 @@ uv run pytest -m "not integration"
 | --- | --- | --- |
 | `pytest-xdist` | `-n auto`가 기본 적용 | test 병렬 실행 |
 | `pytest-timeout` | `--timeout=60`이 기본 적용 | test hang 방지 |
-| `pytest-html` | `pytest_report.html`이 기본 생성 | 사람용 HTML 결과 확인 |
+| `pytest-html` | `artifacts/pytest.html`이 기본 생성 | 사람용 HTML 결과 확인 |
 | `pytest-sugar` | Human command에서 기본 활성화, Agent command에서 `-p no:sugar`로 비활성화 | local console output 개선 |
 | `pytest-testmon` | Agent incremental command에서 `-o 'addopts=...'`로 기본 `-m` filter를 덮어쓴 뒤 `--testmon` 사용 | 변경 영향 test만 빠르게 실행 |
 | `pytest-cov` | `--cov=src/project_pivot` | coverage 수집 |
@@ -116,7 +116,7 @@ uv run pytest -m "not integration"
 
 ```bash
 mkdir -p artifacts && uv run pytest \
-	-o 'addopts=-n auto --timeout=60 --html=pytest_report.html --self-contained-html --strict-markers' \
+	-o 'addopts=-n auto --timeout=60 --html=artifacts/pytest.html --self-contained-html --strict-markers' \
 	--testmon \
 	-p no:sugar \
 	--color=no \
