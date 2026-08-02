@@ -9,7 +9,7 @@
 ## Language
 
 - Use Korean by default.
-- Use English for terms such as `directory`, `file`, `header`, `field`, and `metadata`.
+- Use English for terms such as `directory`, `file`, `heading`, `field`, and `metadata`.
 - Render standard technical terms in one of three forms based on how natural and familiar the Korean translation is:
   - **Korean** when the Korean term is natural and widely understood.
   - **Korean (English)** when the Korean term is usable but may be unfamiliar or ambiguous.
