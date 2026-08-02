@@ -8,7 +8,7 @@
 
 import marimo
 
-__generated_with = "0.23.14"
+__generated_with = "0.23.15"
 app = marimo.App(width="medium")
 
 
@@ -56,7 +56,7 @@ def _(Path, os):
 
 @app.cell
 def _(csv_options, data_path, duckdb_config, input_path, mo):
-    run_eda = mo.ui.run_button(label="전체 파일 baseline 실행", kind="warn")
+    run_eda = mo.ui.checkbox(value=True, label="전체 파일 baseline 실행")
     mo.vstack(
         [
             mo.md(
@@ -74,7 +74,7 @@ def _(csv_options, data_path, duckdb_config, input_path, mo):
                   - threads: `{duckdb_config["threads"]}`
                   - spill: `{duckdb_config["temp_directory"]}`
 
-                버튼을 눌러야 전체 파일 scan을 시작합니다.
+                체크박스를 해제하면 전체 파일 scan을 건너끕니다.
                 파일 부재 또는 DuckDB CSV parse 오류 시 baseline metric과
                 `eda_evidence`를 생성하지 않습니다.
                 """
@@ -89,7 +89,7 @@ def _(csv_options, data_path, duckdb_config, input_path, mo):
 def _(analyze_hmda_csv, duckdb_config, input_path, mo, run_eda):
     mo.stop(
         not run_eda.value,
-        mo.callout("전체 파일 baseline은 아직 실행하지 않았습니다.", kind="neutral"),
+        mo.callout("전체 파일 baseline 실행이 해제되어 있습니다.", kind="neutral"),
     )
 
     eda_evidence = analyze_hmda_csv(
