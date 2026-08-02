@@ -1,130 +1,149 @@
 # Test Design and Implementation
 
-## Purpose
+이 문서는 OpenSpec requirement를 사람이 읽고 유지할 수 있는 pytest test로 바꾸는 방법을 설명한다. 목표는 implementation detail을 고정하는 것이 아니라, 사용자가 관찰할 수 있는 behavior를 빠르고 신뢰성 있게 보호하는 것이다.
 
-이 문서는 OpenSpec requirement를 사람이 읽을 수 있는 pytest test로 설계하고 구현하는 기준을 정의한다.
+Test command와 marker 선택은 [Testing Guide](testing.md)를 따른다. `tests/` file의 agent write boundary는 [`tests/AGENTS.md`](../../tests/AGENTS.md)가 소유한다.
 
-`tests/`는 검증 코드이면서 변경 의도를 설명하는 **executable specification**이다. Test design은 기본적으로 `test_*.py`의 module docstring과 필요한 test function docstring에 둔다. 별도 문서는 docstring만으로 의도를 유지하기 어려운 복잡한 test module에만 같은 위치의 `test_*.design.md`로 둔다.
+## What A Good Test Proves
 
-## Operating Model
-
-```mermaid
-flowchart LR
-    O[OpenSpec] --> D[Test Design]
-    D --> T[Documented Tests]
-    T --> I[Production Implementation]
-    I --> V[Test Validation]
-    V --> R[Review]
-
-    D -->|specification gap| O
-    V -->|test defect| T
-    V -->|production defect| I
-```
-
-| Layer | Responsibility | Durable evidence |
-| --- | --- | --- |
-| OpenSpec | 의도한 behavior, design constraint, task scope | proposal, spec, design, tasks |
-| Test design | 무엇을 어떤 boundary와 oracle로 검증할지 결정 | module docstring, 필요한 function docstring, 선택적 `test_*.design.md` |
-| Test implementation | scenario를 실행 가능한 pytest code로 표현 | test, fixture, assertion |
-| Production implementation | requirement와 test를 만족하는 code 작성 | source change와 validation |
-| Review | artifact, code, evidence를 독립 대조 | review artifact |
-
-## Responsibilities
-
-Test design과 test implementation은 같은 agent가 수행할 수 있지만 서로 다른 판단이다.
-
-| Activity | Question | Output |
-| --- | --- | --- |
-| Test design | 무엇을 검증해야 신뢰할 수 있는가? | contract, scenario, boundary, oracle, exclusions |
-| Test implementation | 그 설계를 어떻게 반복 가능하게 실행할 것인가? | pytest test, fixture, data, assertion |
-
-Production implementer는 requirement test를 통과시키는 code를 작성한다. Test가 잘못되었다고 판단하면 조용히 약화하지 않고 OpenSpec과 observed evidence를 근거로 문제를 반환한다.
-
-## Source of Truth
-
-Test는 다음 우선순위로 artifact를 사용한다.
-
-| Priority | Artifact | Test에서 사용하는 내용 |
-| ---: | --- | --- |
-| 1 | Spec | requirement, scenario, observable behavior |
-| 2 | Design | public boundary와 기술 제약 |
-| 3 | Tasks | 이번 implementation scope |
-| 4 | Proposal | 목적과 범위 해석 |
-
-Spec은 **what**, Design은 필요한 **how와 boundary**, Tasks는 이번 실행 범위를 소유한다. Tasks나 기존 code가 requirement의 의미를 조용히 변경하지 않는다. OpenSpec은 behavior를 code가 아니라 관찰 가능한 결과로 표현해야 한다.
-
-## Readiness Check
-
-다음 질문에 답할 수 있을 때 test implementation을 시작한다.
-
-- 어떤 requirement와 scenario를 검증하는가?
-- 입력, 동작, 결과 중 외부에서 관찰 가능한 것은 무엇인가?
-- 기존 stable boundary 또는 Design이 지정한 public boundary가 있는가?
-- expected result가 production algorithm을 복제하지 않고 결정되는가?
-- 이번 task scope에서 반드시 보호할 risk는 무엇인가?
-
-다음 상황에서는 test로 결정을 대신하지 않는다.
-
-- requirement 또는 scenario가 서로 충돌한다.
-- expected behavior가 모호하다.
-- test를 쓰려면 새 API나 architecture를 먼저 결정해야 한다.
-- 필요한 dependency나 environment가 project contract에 없다.
-
-이때는 누락된 decision과 영향을 `blocked`로 반환한다.
-
-## Design Method
-
-각 requirement를 다음 흐름으로 변환한다.
+좋은 test는 “이 내부 함수가 호출되었다”보다 “이 입력에서 이 결과가 관찰된다”를 증명한다. 따라서 test를 쓰기 전에 다음 연결을 먼저 만든다.
 
 ```text
 requirement → observable contract → risk → scenario → oracle → test level
 ```
 
-### Observable Contract
+| Element | Answer | Example |
+| --- | --- | --- |
+| Requirement | 무엇이 필요하나 | row count 감소를 incident로 식별한다. |
+| Observable contract | 외부에서 무엇을 확인하나 | 반환된 evidence에 incident와 measured count가 있다. |
+| Risk | 무엇이 깨지기 쉬운가 | threshold 경계에서 false positive가 난다. |
+| Scenario | 어떤 조건으로 확인하나 | 변화율이 threshold와 정확히 같은 입력이다. |
+| Oracle | 성공·실패를 무엇으로 판정하나 | incident가 없고 measured value가 보존된다. |
+| Test level | 가장 싼 신뢰성 있는 경계는 무엇인가 | `unit` |
 
-입력, 반환값, persisted state, emitted event, error, side effect처럼 caller나 운영자가 확인할 수 있는 결과를 우선한다. Private call 순서나 내부 자료구조는 그것 자체가 contract인 경우가 아니면 검증하지 않는다.
+## Start From The Change Contract
 
-### Risk
+OpenSpec change가 있으면 artifact를 다음 순서로 읽는다.
 
-모든 경우를 나열하지 않는다. 다음 중 실패 영향이나 가능성이 큰 것을 고른다.
+| Priority | Artifact | Test에서 확인할 내용 |
+| ---: | --- | --- |
+| 1 | Spec | requirement, scenario, observable behavior |
+| 2 | Design | public boundary, constraint, intentional exclusion |
+| 3 | Tasks | 이번 구현에서 다룰 범위 |
+| 4 | Proposal | 목적과 용어의 맥락 |
 
-| Scenario | Design question |
+Spec은 **무엇을** 해야 하는지, Design은 필요한 **경계와 제약**을, Tasks는 **이번 작업 범위**를 정한다. 기존 code나 test가 requirement를 조용히 바꾸는 근거가 되지는 않는다.
+
+다음 질문에 답할 수 없으면 test가 아니라 decision이 먼저 필요하다.
+
+- requirement와 scenario가 서로 충돌하는가?
+- expected behavior가 아직 모호한가?
+- 새 public API나 architecture를 먼저 결정해야 하는가?
+- 필요한 dependency나 environment가 project contract에 없는가?
+
+이 경우 추측으로 test를 만들지 말고, 빠진 결정과 영향을 `blocked`로 보고한다.
+
+## Design A Scenario
+
+각 in-scope requirement에 최소 하나의 scenario 또는 명시적인 exclusion을 연결한다. Happy path를 기계적으로 복제하지 말고 실패 영향과 회귀 위험이 있는 case를 선택한다.
+
+| Scenario kind | 확인할 질문 |
 | --- | --- |
-| Normal | 대표 사용에서 requirement가 성립하는가? |
-| Boundary | 빈 값, 임계값, 전환점에서 contract가 유지되는가? |
-| Failure | invalid input과 dependency failure가 관찰 가능하게 처리되는가? |
+| Normal | 대표 입력에서 contract가 성립하는가? |
+| Boundary | 빈 값, 임계값, 전환점에서 규칙이 유지되는가? |
+| Failure | invalid input 또는 dependency failure가 관찰 가능하게 처리되는가? |
 | Regression | 이번 변경이 깨뜨리기 쉬운 기존 behavior는 무엇인가? |
-| Invariant | 입력이 달라도 항상 유지되어야 하는 성질은 무엇인가? |
-| Integration | 둘 이상의 실제 boundary가 연결되어야만 입증되는가? |
+| Invariant | 다양한 입력에도 항상 성립해야 하는 성질은 무엇인가? |
+| Integration | 실제 boundary를 연결해야만 입증할 수 있는가? |
 
-Happy path, boundary, failure를 모두 기계적으로 추가하지 않는다. Acceptance value와 risk가 있는 scenario만 선택한다.
+Scenario는 다음 문장으로 적을 수 있어야 한다.
 
-### Oracle
+> Given 이 setup, when 이 action을 수행하면, then 이 observable result가 나타난다.
 
-Oracle은 expected result를 판정하는 기준이다.
+## Choose An Independent Oracle
 
-- OpenSpec에 명시된 결과를 직접 비교한다.
-- 단순하고 독립적인 invariant를 사용한다.
-- production algorithm을 test 안에 복사하지 않는다.
-- mock call보다 public result와 state를 먼저 검증한다.
+Oracle은 test가 기대 결과를 판정하는 기준이다. Production algorithm을 test 안에 다시 구현하면 두 구현이 같은 실수를 공유할 수 있다.
 
-## Test Documentation Boundary
+다음 oracle을 우선한다.
 
-테스트 파일 구성, docstring, fixture, marker, mock, assertion, validation 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)가 소유한다. 이 문서는 OpenSpec requirement를 observable contract와 scenario로 변환하는 설계만 다룬다.
+- Spec에 명시된 반환값, error, event, persisted state를 직접 비교한다.
+- 작은 고정 입력에는 사람이 계산할 수 있는 exact expected value를 둔다.
+- count 합계, 정렬, 보존, 단조성처럼 단순하고 독립적인 invariant를 확인한다.
+- Mock call 횟수보다 public result와 externally visible state를 먼저 확인한다.
 
-## Design Completion
+Mock은 network, clock, file system, external service처럼 test가 통제해야 하는 boundary에만 사용한다. Mock이 domain behavior를 대신 구현하면 그 test는 실제 contract를 검증하지 못한다.
 
-test를 작성하기 전에 다음을 결정하면 설계가 완료된다.
+## Choose The Lowest Useful Level
 
-- requirement와 observable contract의 연결
-- 핵심 risk와 scenario
-- production algorithm과 독립적인 oracle
-- test boundary와 필요한 exclusion
+가장 낮은 비용으로 requirement를 신뢰성 있게 입증할 수 있는 marker를 선택한다.
 
-구현, 실행, failure 분류와 completion 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 따른다.
+| Level | Best for | Avoid when |
+| --- | --- | --- |
+| `unit` | pure rule, calculation, validation | 실제 file·database boundary가 contract일 때 |
+| `component` | package public API와 local resource | 여러 real subsystem을 반드시 연결해야 할 때 |
+| `integration` | cross-system workflow | isolated rule 하나만 확인하면 될 때 |
+| `memory` / `stress` | 명시적 resource contract | 일반 correctness만 확인할 때 |
+
+실행 방법과 marker의 전체 설명은 [Testing Guide](testing.md)에 있다.
+
+## Turn Design Into Test Code
+
+Test file은 executable specification이기도 하다. 기본적으로 module docstring에 contract, scope, 중요한 risk와 exclusion을 짧게 남긴다. Test 이름이 충분히 설명하지 못하는 threshold, policy, regression 이유에만 function docstring을 추가한다.
+
+```python
+"""Tests for incident profile comparison.
+
+Contract:
+    - Detect material row-count decreases.
+    - Preserve measured values in incident evidence.
+
+Scope:
+    Unit-level comparison rules only.
+"""
+
+
+def test_ignores_change_at_exact_threshold() -> None:
+    """The configured threshold is exclusive."""
+```
+
+여러 contract, 복잡한 상태 전이, scenario matrix, 긴 exclusion 또는 data flow가 있는 module에만 대응하는 `test_<subject>.design.md`를 같은 directory에 둔다. 이 문서는 scenario와 실제 test function을 연결하고, `.py`의 behavior가 바뀌면 함께 갱신한다. 일시적인 pass count와 실행 log는 design document에 넣지 않는다.
+
+```markdown
+| Scenario | Test |
+| --- | --- |
+| 여러 incident를 독립적으로 보존 | `test_preserves_multiple_incidents` |
+| threshold와 동일한 값은 무시 | `test_ignores_change_at_exact_threshold` |
+```
+
+Test 하나는 하나의 논리적 behavior가 실패하도록 작성한다. 의미 있는 반복만 parameterize하고, shared mutable state, test order dependency, 실제 network service 의존은 피한다. 넓은 입력 공간에서 invariant가 핵심일 때만 Hypothesis를 사용한다.
+
+## Use Red Tests Carefully
+
+Production implementation 전에 intentional red test를 만들 수 있다. 좋은 red test는 collection에 성공하고 observable behavior assertion에서 실패한다.
+
+다음은 requirement 불일치를 입증하는 red test가 아니다.
+
+- syntax, import path, fixture, marker 오류
+- 합의되지 않은 API를 test가 가정한 경우
+- environment 또는 unrelated dependency failure
+- cleanup과 isolation failure
+
+Red test가 requirement가 아니라 test 설계의 빈틈을 드러내면, production code를 고치기 전에 scenario와 oracle을 다시 확인한다.
+
+## Finish With Evidence
+
+구현 뒤에는 가장 좁은 focused test부터 실행하고, 필요할 때만 관련 package 또는 전체 suite로 넓힌다. 실행 절차는 [Testing Guide](testing.md)를 따른다.
+
+완료 전에 다음을 확인한다.
+
+- in-scope requirement가 scenario 또는 exclusion에 연결되어 있다.
+- scenario마다 observable result와 independent oracle이 있다.
+- test가 production algorithm을 복제하거나 false green을 만들지 않는다.
+- 필요한 module docstring과 optional design document가 현재 code와 일치한다.
+- 실제 실행한 validation, 발견한 failure, 남은 risk를 구분해 기록한다.
 
 ## Related Guides
 
-- [`docs/development/testing.md`](testing.md): pytest command, marker, report, observability
-- [`DEVELOPMENT.md`](../../DEVELOPMENT.md): local development와 package convention
-- [`pyproject.toml`](../../pyproject.toml): pytest defaults와 marker registration
+- [Testing Guide](testing.md): command, marker, report, debugging
+- [`tests/AGENTS.md`](../../tests/AGENTS.md): test file 작업을 위한 agent context
+- [`pyproject.toml`](../../pyproject.toml): pytest defaults와 marker 등록

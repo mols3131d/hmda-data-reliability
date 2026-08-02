@@ -1,178 +1,117 @@
 # Testing Guide
 
-이 문서는 Project Pivot의 pytest 실행 정책과 command를 정의한다. 사람용 local command는 읽기 쉬운 출력을 우선하고, Agent용 command는 재현 가능한 종료 상태와 machine-readable report를 우선한다.
+이 문서는 사람이 local terminal에서 pytest를 선택하고 실행하는 방법을 설명한다. 어떤 behavior를 test로 설계할지는 [Test Design and Implementation](test-design-and-implementation.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
 
-## Quick Choice
+## Start Here
 
-| User | Recommended command | Purpose |
-| --- | --- | --- |
-| Human | `mkdir -p artifacts && uv run pytest` | `pytest-sugar`와 기본 HTML report를 사용하는 local test |
-| Agent | `mkdir -p artifacts && uv run pytest -p no:sugar --color=no --tb=short -ra --junitxml=artifacts/pytest.xml` | 압축된 console output과 JUnit XML report |
-| Agent, changed files | `mkdir -p artifacts && uv run pytest -o 'addopts=-n auto --timeout=60 --html=artifacts/pytest.html --self-contained-html --strict-markers' --testmon -p no:sugar --color=no --tb=short -ra --junitxml=artifacts/pytest.xml` | 이전 coverage data를 사용한 영향 범위 test |
+가장 좁은 범위의 command부터 실행한다. 실패 원인이 현재 변경과 관련 있는지 빠르게 알 수 있고, 실행 시간도 짧다.
 
-> [!IMPORTANT]
-> 두 command 모두 `pyproject.toml`의 기본 옵션을 사용한다. `-n auto`, `--timeout=60`, HTML report, `--strict-markers`, 기본 marker filter를 command에 다시 적지 않는다.
-
-## Default Policy
-
-`pyproject.toml`의 `addopts`가 모든 test 실행에 다음 옵션을 적용한다.
-
-| Option | Description |
+| 상황 | Command |
 | --- | --- |
-| `-n auto` | CPU 수에 맞춰 test 병렬 실행 |
-| `--timeout=60` | test당 최대 실행 시간 60초 |
-| `--html=artifacts/pytest.html --self-contained-html` | HTML report 생성 |
-| `--strict-markers` | 등록되지 않은 marker 사용 금지 |
-| `-m 'not memory and not stress'` | 대형 resource workload 기본 제외 |
+| 현재 suite 전체 | `mkdir -p artifacts && uv run pytest` |
+| domain directory | `mkdir -p artifacts && uv run pytest tests/data_platform` |
+| test module | `mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py` |
+| 한 test | `mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py::test_name` |
+| 이름으로 선택 | `mkdir -p artifacts && uv run pytest -k "keyword"` |
+| marker로 선택 | `mkdir -p artifacts && uv run pytest -m unit` |
 
-## Human Commands
+변경한 test가 통과하면 관련 package suite를 실행한다. 전체 suite는 shared fixture, import 또는 configuration을 바꿨거나 영향 범위를 확신할 수 없을 때 실행한다.
 
-사람이 local terminal에서 결과를 읽을 때는 기본 command를 사용한다.
+## Default Behavior
 
-가장 좁은 범위부터 실행한다.
+`pyproject.toml`의 pytest `addopts`가 모든 일반 실행에 적용된다. command에 같은 option을 반복해 쓸 필요가 없다.
 
-```bash
-mkdir -p artifacts && uv run pytest tests/data_platform
-mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py
-mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py::test_name
-mkdir -p artifacts && uv run pytest -k "keyword"
-mkdir -p artifacts && uv run pytest -m unit
-mkdir -p artifacts && uv run pytest -m "not integration"
-```
-
-실패 원인을 직접 조사할 때만 console output을 확장하고 병렬 실행을 끈다.
-
-```bash
-mkdir -p artifacts && uv run pytest --lf
-mkdir -p artifacts && uv run pytest -n 0 -vv -s
-```
-
-## Agent Commands
-
-Agent는 결과를 후속 처리하기 쉽도록 `pytest-sugar`와 ANSI color를 끄고, 짧은 traceback과 JUnit XML을 사용한다.
-
-전체 test:
-
-```bash
-mkdir -p artifacts && uv run pytest \
-	-p no:sugar \
-	--color=no \
-	--tb=short \
-	-ra \
-	--junitxml=artifacts/pytest.xml
-```
-
-좁은 범위 test:
-
-```bash
-mkdir -p artifacts && uv run pytest tests/data_platform/test_sql.py \
-	-p no:sugar \
-	--color=no \
-	--tb=short \
-	-ra \
-	--junitxml=artifacts/pytest.xml
-```
-
-`artifacts/pytest.xml`은 실행 결과를 읽는 Agent 또는 CI adapter가 사용할 수 있다. 작업이 끝난 뒤 local-only report라면 생성물을 제거한다.
-
-## Markers
-
-| Marker | Description |
+| Default | Meaning |
 | --- | --- |
-| `unit` | 순수 함수·격리된 domain test |
-| `component` | local file을 사용하는 package-level test |
-| `integration` | 여러 system을 연결하는 workflow test |
-| `memory` | 대표 fixture의 process-level memory budget test |
-| `stress` | worst-case resource stress test |
+| `-n auto` | CPU 수에 맞춰 병렬 실행한다. |
+| `--timeout=60` | test 하나가 60초를 넘기면 실패시킨다. |
+| `--html=artifacts/pytest.html --self-contained-html` | 사람이 열어 볼 HTML report를 만든다. |
+| `--strict-markers` | 등록되지 않은 marker를 오류로 처리한다. |
+| `-m 'not memory and not stress'` | 비용이 큰 resource test를 기본 실행에서 제외한다. |
 
-기본 실행에서는 `memory`와 `stress`가 제외된다.
+`artifacts/pytest.html`은 local 실행 결과물이다. 검증 근거가 아닌 임시 결과이므로 commit하지 않는다.
+
+## Select Tests
+
+### Markers
+
+| Marker | 언제 사용하나 |
+| --- | --- |
+| `unit` | pure function 또는 격리된 domain rule을 검증할 때 |
+| `component` | package와 local file boundary를 함께 검증할 때 |
+| `integration` | 둘 이상의 subsystem이 연결된 workflow를 검증할 때 |
+| `memory` | 대표 input의 process memory budget을 검증할 때 |
+| `stress` | worst-case resource behavior를 검증할 때 |
 
 ```bash
+uv run pytest -m unit
+uv run pytest -m integration
 uv run pytest -m memory
 uv run pytest -m stress
 uv run pytest -m "not integration"
 ```
 
-## Test Tooling
+`memory`와 `stress`는 기본 filter에서 제외되므로 의도적으로 marker를 지정해야 한다.
 
-프로젝트에 도입된 test tooling은 기본 실행, 선택 실행, 또는 별도 validation command로 사용한다.
+### Rerun And Debug
 
-| Tool | Command or behavior | Use |
-| --- | --- | --- |
-| `pytest-xdist` | `-n auto`가 기본 적용 | test 병렬 실행 |
-| `pytest-timeout` | `--timeout=60`이 기본 적용 | test hang 방지 |
-| `pytest-html` | `artifacts/pytest.html`이 기본 생성 | 사람용 HTML 결과 확인 |
-| `pytest-sugar` | Human command에서 기본 활성화, Agent command에서 `-p no:sugar`로 비활성화 | local console output 개선 |
-| `pytest-testmon` | Agent incremental command에서 `-o 'addopts=...'`로 기본 `-m` filter를 덮어쓴 뒤 `--testmon` 사용 | 변경 영향 test만 빠르게 실행 |
-| `pytest-cov` | `--cov=src/project_pivot` | coverage 수집 |
-| `pytest-opentelemetry` | `--trace-per-test`, `--export-traces` | test trace와 OTLP export |
-| `Hypothesis` | test code의 `@given` 및 strategy | pure helper property test |
-
-`--testmon`은 이전 실행에서 수집한 coverage data가 있어야 효과가 있다. 현재 기본 `addopts`의 `-m 'not memory and not stress'`는 testmon selection과 충돌하므로 incremental command에서 `addopts`를 덮어쓴다. 변경된 test가 없으면 `0 tests`가 정상 결과일 수 있다. 초기 실행, release 전 검증, 변경 영향이 불명확한 경우에는 Agent 전체 test command를 사용한다.
+직전 실패만 다시 실행하려면 다음 command를 사용한다.
 
 ```bash
-mkdir -p artifacts && uv run pytest \
-	-o 'addopts=-n auto --timeout=60 --html=artifacts/pytest.html --self-contained-html --strict-markers' \
-	--testmon \
-	-p no:sugar \
-	--color=no \
-	--tb=short \
-	-ra \
-	--junitxml=artifacts/pytest.xml
+mkdir -p artifacts && uv run pytest --lf
 ```
 
-## HMDA EDA Resource Validation
-
-HMDA EDA correctness test와 resource test는 분리한다.
+병렬 실행, capture, output 때문에 원인을 읽기 어려울 때만 병렬 실행을 끄고 상세 output을 확인한다.
 
 ```bash
-uv run pytest tests/hmda_data/test_eda.py \
-	tests/hmda_data/test_eda_fixture.py \
-	tests/hmda_data/test_eda_memory_helpers.py
+mkdir -p artifacts && uv run pytest -n 0 -vv -s tests/data_platform/test_sql.py
+```
 
+이 command는 빠른 기본 실행이 아니라 조사용이다. 문제를 확인한 뒤에는 원래의 focused command로 다시 검증한다.
+
+## Additional Evidence
+
+Coverage는 변경 범위가 넓거나 coverage 근거가 필요한 경우에만 수집한다.
+
+```bash
+mkdir -p artifacts && uv run pytest --cov=src/project_pivot
+```
+
+Test별 trace가 필요하면 `--trace-per-test`를 사용한다. OTLP collector로 export할 때는 endpoint와 export option을 함께 지정한다.
+
+```bash
+uv run pytest --trace-per-test tests/data_platform/test_sql.py
+
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+	uv run pytest --export-traces
+```
+
+## Resource Validation: HMDA EDA
+
+HMDA EDA는 correctness test와 process-level memory validation을 분리한다. 먼저 작은 deterministic correctness suite를 실행한다.
+
+```bash
+uv run pytest tests/hmda_data/eda/test_eda.py \
+	tests/hmda_data/eda/test_eda_fixture.py \
+	tests/hmda_data/eda/test_eda_memory_helpers.py
+```
+
+Memory workload는 fixture를 준비한 뒤 별도 runner로 실행한다.
+
+```bash
 uv run python scripts/prepare_hmda_eda_fixture.py
 uv run python scripts/run_hmda_eda_memory.py
 ```
 
 > [!WARNING]
-> **Memory runner는 cgroup hard limit를 실제 적용할 수 있을 때만 유효하다.** user systemd와 `MemoryMax`, `MemorySwapMax`를 사용할 수 있는 WSL/Linux 환경에서 실행한다. 사전 hard-limit probe 실패는 통과로 기록하지 않는다.
+> Memory runner 결과는 cgroup hard limit가 실제로 적용될 때만 유효하다. user systemd와 `MemoryMax`, `MemorySwapMax`를 사용할 수 없는 환경에서 사전 probe가 실패하면 통과로 해석하지 않는다.
 
-## Coverage And Tracing
+## Interpret Results
 
-변경 범위가 넓거나 coverage 근거가 필요할 때만 coverage를 수집한다.
-
-```bash
-uv run pytest --cov=src/project_pivot
-```
-
-각 test를 독립 trace로 기록할 수 있다.
-
-```bash
-uv run pytest --trace-per-test tests/data_platform/test_sql.py
-```
-
-OTLP/gRPC collector로 export할 때 endpoint와 export option을 명시한다.
-
-```bash
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
-	uv run pytest --export-traces
-```
-
-Agent가 JUnit XML과 OpenTelemetry trace를 함께 수집해야 하면 다음처럼 실행한다.
-
-```bash
-mkdir -p artifacts && OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
-	uv run pytest \
-		-p no:sugar \
-		--color=no \
-		--tb=short \
-		-ra \
-		--junitxml=artifacts/pytest.xml \
-		--trace-per-test \
-		--export-traces
-```
+실행하지 않은 test는 통과했다고 기록하지 않는다. 실패가 나면 test 자체의 오류, production behavior 불일치, requirement의 빈틈, environment 문제, 현재 작업과 무관한 baseline failure를 구분한다. Test를 약화하거나 무조건 skip해 실패를 숨기지 않는다.
 
 ## Related Guides
 
-- [`DEVELOPMENT.md`](../../DEVELOPMENT.md): local development, package layout, formatting
-- [`pyproject.toml`](../../pyproject.toml): pytest default options and marker registration
+- [Test Design and Implementation](test-design-and-implementation.md): requirement를 scenario와 oracle로 바꾸는 방법
+- [`tests/AGENTS.md`](../../tests/AGENTS.md): `tests/` 파일을 수정할 때의 agent context
+- [`pyproject.toml`](../../pyproject.toml): 실제 pytest defaults와 marker 등록
