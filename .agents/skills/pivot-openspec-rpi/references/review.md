@@ -22,7 +22,7 @@ Review는 구현 summary를 기본적으로 신뢰하지 않으며 finding을 �
 
 ```mermaid
 flowchart TD
-    A[Bootstrap fresh context]
+    A[Gather review inputs]
     B[Reconstruct intended change]
     C[Inspect implementation and checks]
     D[Reconcile findings]
@@ -37,7 +37,7 @@ flowchart TD
     E --> X
 ```
 
-지원되는 환경에서는 fresh 또는 forked context를 사용한다. 구현자의 결론이 아니라 artifact와 file을 제공한다.
+구현자의 결론이 아니라 artifact와 file을 검토 근거로 사용한다.
 
 ## Review Axes
 

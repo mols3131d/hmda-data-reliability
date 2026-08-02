@@ -10,17 +10,13 @@ from pathlib import Path
 
 REQUIRED_FILES = {
     "SKILL.md",
-    "references/vision.md",
     "references/principles.md",
     "references/workflow.md",
     "references/research.md",
     "references/review.md",
     "references/adoption.md",
-    "references/roadmap.md",
-    "references/subagents.md",
     "templates/research.md",
     "templates/review.md",
-    "templates/handoff.yaml",
     "tests/acceptance-criteria.md",
     "tests/scenarios.yaml",
 }

@@ -95,7 +95,8 @@ OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를
 | Implement → Review | diff, task state, 실행한 checks, amendments |
 | Review → Human/OpenSpec | verdict, findings, evidence, 정확한 next route |
 
-handoff가 agent 또는 context 경계를 넘으면 [Subagents](subagents.md)와 [Handoff template](../templates/handoff.yaml)을 사용한다.
+handoff는 phase artifact와 observed evidence를 사용한다. transcript나 private reasoning은
+handoff 근거로 취급하지 않는다.
 
 ## Feedback Routing
 

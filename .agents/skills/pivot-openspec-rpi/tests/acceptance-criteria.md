@@ -25,8 +25,8 @@
 | B8 | Review status가 `approved`가 아니면 archive하지 않는다 |
 | B9 | human interruption은 intent conflict, material choice, unsafe side effect, missing access로 제한한다 |
 | B10 | final output에 실제 validation 결과와 remaining risk가 보인다 |
-| B11 | subagent 지원 여부와 무관하게 동일한 artifact·status·routing contract를 사용한다 |
-| B12 | agent 간 handoff는 transcript나 private reasoning 대신 durable evidence를 사용한다 |
+| B11 | 실행 방식과 무관하게 동일한 artifact·status·routing contract를 사용한다 |
+| B12 | phase 간 handoff는 transcript나 private reasoning 대신 durable evidence를 사용한다 |
 | B13 | Research는 change와 독립적인 repository-unique `research-id`를 사용한다 |
 | B14 | Research artifact는 `openspec/research/{research-id}/research.md`에 위치한다 |
 | B15 | ROR artifact는 `openspec-rpi` front matter로 title, description, category, status, related artifact, tags를 관리한다 |

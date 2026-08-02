@@ -1,4 +1,7 @@
-# Subagents and Context Isolation
+# Archived: Subagents and Context Isolation
+
+이 문서는 서브에이전트 중심 실행 설계의 기록이다. Runtime workflow의 reference가 아니며,
+현재 handoff와 routing 규칙은 `references/workflow.md`를 따른다.
 
 ## Goal
 
@@ -21,7 +24,7 @@ ROR는 subagent를 활용할 수 있지만 subagent가 없는 환경에서도 �
 | --- | --- | --- |
 | Orchestrator | phase routing, human gate, artifact 위치 관리 | 숨은 추론을 handoff로 사용 |
 | Researcher | 근거 충분성 평가, gap 조사, uncertainty 정리 | solution·OpenSpec requirement 최종 확정 |
-| Specifier | OpenSpec proposal·requirements·design·tasks 관리 | 별도 competing plan 생성 |
+| Specifier (Planner) | OpenSpec proposal·requirements·design·tasks 관리 | 별도 competing plan 생성 |
 | Implementer | 승인된 task 구현과 검증 | requirement를 코드에서 조용히 변경 |
 | Reviewer | active OpenSpec·diff·checks 독립 대조 | finding을 직접 수정하거나 구현 summary를 무검증 수용 |
 
@@ -36,14 +39,12 @@ agent 사이에는 transcript나 private reasoning이 아니라 다음만 전달
 - unresolved conflict·assumption·risk
 - 요청된 output path와 허용 status 또는 verdict
 
-[Handoff template](../templates/handoff.yaml)을 사용한다.
-
 ## Isolation Rules
 
 1. Research와 Review는 가능하면 fresh context에서 시작한다.
 1. Reviewer에게 구현자의 결론이나 설득용 설명을 필수 input으로 주지 않는다.
 1. 동일 agent fallback에서는 phase가 바뀔 때 역할·목표·입력 목록을 다시 선언한다.
-1. 이전 phase의 artifact에 없는 주장은 새로운 evidence로 취급하지 않는다.
+1. 이전 phase의 artifact에 없는 주장은 새로운 evidence로 취급한다.
 1. independent read-only investigation은 병렬화할 수 있다.
 1. 같은 file·branch·OpenSpec artifact를 수정하는 작업은 하나의 owner가 직렬로 수행한다.
 

@@ -55,15 +55,3 @@ WSL에서도 동일하다.
 ```bash
 python3 .agents/skills/pivot-openspec-rpi/scripts/validate.py .agents/skills/pivot-openspec-rpi
 ```
-
-## Context Isolation
-
-runtime의 agent 기능 이름에 ROR contract를 종속시키지 않는다.
-
-| Runtime capability | ROR mapping |
-| --- | --- |
-| 독립 agent delegation | Researcher·Reviewer를 별도 agent로 실행 |
-| fresh 또는 forked context | artifact만 전달해 phase를 격리 |
-| 단일 chat context | 역할을 재설정하고 durable artifact를 다시 로드 |
-
-구체적인 input·output·fallback 규칙은 [Subagents](subagents.md)를 따른다.

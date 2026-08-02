@@ -44,7 +44,6 @@ OpenSpec 밖에 별도의 plan을 만들지 않는다.
    - 변경을 작고 task 단위로 추적 가능하게 유지한다.
    - focused check를 일찍 실행하고 Review 전 필수 검증을 완료한다.
 1. Review에서 시작할 때는 active OpenSpec change, 구현 diff, 실제 검증 결과, 관련 Research를 확인한다.
-   - 지원되는 환경에서는 fresh 또는 forked context를 사용한다.
    - 기존 Review attempt를 찾아 가장 높은 `sequence`보다 하나 큰 세 자리 번호를 사용한다.
    - [Review template](templates/review.md)으로 `openspec/reviews/{change-id}/{sequence}-{review-title}.md`를 작성한다.
    - 구현자의 설명은 코드·테스트·실행 결과가 뒷받침할 때만 근거로 인정한다.
@@ -71,7 +70,6 @@ Review status가 `approved`가 아니면 archive하지 않는다.
 ## Context Discipline
 
 - phase 사이에는 chat history보다 durable artifact를 우선한다.
-- 지원되는 환경에서는 [Subagents](references/subagents.md) 계약에 따라 Research와 Review를 isolated 또는 forked context에서 실행한다.
 - 이전 agent의 숨은 추론이 아니라 artifact와 대상 change를 전달한다.
 - main context는 조율과 사람의 결정에 집중한다.
 - 현재 phase에 필요한 reference만 읽는다.
@@ -80,14 +78,11 @@ Review status가 `approved`가 아니면 archive하지 않는다.
 
 | 필요 | 읽을 파일 |
 | --- | --- |
-| 방향과 범위 | [Vision](references/vision.md) |
 | 판단 원칙 | [Principles](references/principles.md) |
 | 전체 lifecycle과 routing | [Workflow](references/workflow.md) |
 | Research 절차 | [Research](references/research.md) |
 | Review 절차 | [Review](references/review.md) |
-| Subagent·fresh context·fallback | [Subagents](references/subagents.md) |
 | Windows·WSL·Copilot·Codex 적용 | [Adoption](references/adoption.md) |
-| 개발 순서 | [Roadmap](references/roadmap.md) |
 
 ## Final Report
 

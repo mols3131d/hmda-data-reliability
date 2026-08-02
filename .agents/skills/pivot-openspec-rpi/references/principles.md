@@ -11,7 +11,7 @@
 | **Evidence over Confidence** | agent의 확신은 증거가 아니다 | 코드·테스트·실행 결과·공식 자료를 우선한다 |
 | **Progressive Rigor** | 불확실성과 위험에 비례해 절차를 강화한다 | 명확한 저위험 변경은 가볍게 처리한다 |
 | **Durable over Exhaustive** | 다음 phase가 필요한 정보만 보존한다 | 숨은 추론과 장황한 activity log를 저장하지 않는다 |
-| **Fresh Context, Durable Handoff** | 역할 간 context 오염을 줄인다 | transcript가 아니라 artifact를 전달한다 |
+| **Durable Evidence Handoff** | phase 간 추론 오염을 줄인다 | transcript가 아니라 artifact와 observed evidence를 전달한다 |
 
 ## Decision Order
 

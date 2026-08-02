@@ -100,12 +100,10 @@ scenarios:
       - Research와 Review artifact를 만든다.
       - typo만을 위해 OpenSpec change를 만든다.
 
-  - id: no-subagent-fallback
-    prompt: runtime이 별도 subagent나 forked context를 지원하지 않는 환경에서 Standard change를 수행한다.
+  - id: single-context-execution
+    prompt: 단일 chat context에서 Standard change를 수행한다.
     expected:
-      - 같은 agent가 Research, OpenSpec, Implement, Review 역할을 순차적으로 재설정한다.
       - phase 사이에는 durable artifact와 observed evidence만 전달한다.
-      - status, verdict, routing은 native subagent 실행과 동일하다.
+      - status, verdict, routing은 실행 방식에 따라 달라지지 않는다.
     forbidden:
-      - subagent가 없다는 이유로 Review를 생략한다.
       - 이전 phase의 숨은 추론을 evidence로 취급한다.
