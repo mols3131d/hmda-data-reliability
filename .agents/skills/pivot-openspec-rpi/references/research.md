@@ -5,9 +5,31 @@
 OpenSpec이 change를 정의할 수 있을 만큼의 verified context를 확보한다. Research는 단순 web search가 아니며 최종 solution을 소유하지 않는다.
 
 Research는 OpenSpec change와 독립적인 `{research-id}`를 가진다. ID는 repository
-전체에서 재사용하지 않는 kebab-case 값이며 artifact는
-`openspec/research/{research-id}/research.md`에 둔다. dashboard title과 description,
-status, tags, 연결 artifact는 `openspec-rpi` front matter가 소유한다.
+전체에서 재사용하지 않는 kebab-case 값이며 Research bundle은
+`openspec/research/{research-id}/research.md`를 canonical entry point로 둔다.
+
+### Research bundle files
+
+한 번의 조사 또는 짧은 조사라면 `research.md` 하나로 충분하다. 조사가 깊거나
+여러 차례 이어져 하나의 파일로 관리하기 어려우면 같은 directory에 보조 Markdown
+파일을 추가한다.
+
+- `research.md`는 항상 entry point이며 front matter를 가진다.
+- 추가 파일의 이름은 해당 조사 주제를 나타내는 research title을 kebab-case로
+  변환한 값에 `.md`를 붙인다. 예: `source-semantics.md`.
+- 추가 파일은 하위 artifact이므로 front matter를 넣지 않는다.
+- `research.md`에서 추가 파일의 목적과 링크를 설명한다.
+- 추가 파일에는 재현 가능한 조사 결과, source evidence, query output 요약처럼
+  entry point의 근거를 보조하는 내용만 둔다.
+- temporary output, cache, secret, 대용량 raw data는 bundle에 저장하지 않는다.
+
+dashboard title과 description, status, tags, 연결 artifact는 `research.md`의
+`openspec-rpi` front matter가 소유한다.
+
+Research를 시작하거나 계속할 때는 먼저 `research.md`를 읽고, 추가 조사 내용을
+하나의 주제로 묶을 수 있는지 판단한다. 하나의 주제로 묶기 어렵거나 조사 결과가
+독립적으로 재현·참조되어야 하면 해당 제목을 kebab-case로 변환한 하위 파일을
+추가한다. 하위 파일을 추가한 뒤에는 `research.md`에 링크와 역할을 기록한다.
 
 ## Flow
 

@@ -35,22 +35,15 @@ OpenSpec 밖에 별도의 plan을 만들지 않는다.
 1. Research에서 시작할 때만 repository에서 재사용하지 않는 안정적인 `{research-id}`를 정한다.
    - 날짜를 넣지 않은 kebab-case ID를 사용한다.
    - Research가 여러 날 이어져도 ID와 경로를 바꾸지 않는다.
-   - 추가 조사 전에 기존 근거의 충분성을 판단하고, [Research template](templates/research.md)으로 artifact를 작성한다.
+   - 세부 절차와 artifact bundle 규칙은 [Research](references/research.md)를 따른다.
 1. OpenSpec에서 시작할 때는 설치된 OpenSpec workflow의 entry contract와 절차를 그대로 따른다.
-   - Research는 유효하면 evidence handoff로 연결하지만, OpenSpec이 요구하지 않는 필수 gate로 만들지 않는다.
-   - proposal, specs, design, tasks와 change lifecycle은 OpenSpec이 소유한다.
-   - 구현 중 발견으로 합의된 동작이 달라지면 코드보다 OpenSpec을 먼저 수정한다.
+   - stage contract와 handoff는 [Workflow](references/workflow.md)를 따른다.
 1. Implement에서 시작할 때는 승인된 OpenSpec task를 확인한 뒤 구현한다.
-   - 변경을 작고 task 단위로 추적 가능하게 유지한다.
-   - focused check를 일찍 실행하고 Review 전 필수 검증을 완료한다.
+   - 입력·완료 조건과 handoff는 [Workflow](references/workflow.md)를 따른다.
 1. Review에서 시작할 때는 active OpenSpec change, 구현 diff, 실제 검증 결과, 관련 Research를 확인한다.
-   - 기존 Review attempt를 찾아 가장 높은 `sequence`보다 하나 큰 세 자리 번호를 사용한다.
-   - [Review template](templates/review.md)으로 `openspec/reviews/{change-id}/{sequence}-{review-title}.md`를 작성한다.
-   - 구현자의 설명은 코드·테스트·실행 결과가 뒷받침할 때만 근거로 인정한다.
+   - 입력, attempt 규칙, finding과 verdict는 [Review](references/review.md)를 따른다.
 1. Review status에 따라 route한다.
-   - `approved` → OpenSpec archive 절차의 artifact, task, delta spec 사전 점검을 거쳐 archive한다.
-   - `changes_requested` → Review가 지정한 Research, OpenSpec, Implement로 돌아간다.
-   - `blocked` → blocker와 재개에 필요한 최소 행동을 보고한다.
+   - verdict에 따른 다음 owner와 lifecycle은 [Workflow](references/workflow.md)를 따른다.
 
 ## Autonomy
 
