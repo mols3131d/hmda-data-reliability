@@ -84,7 +84,7 @@ RPI workflow를 지원하는 agent, research, observability 정비에 집중됐�
 
 | Recent area | Delivery signal |
 | --- | --- |
-| Agent capability | `dev-coach`, `web-researcher`, `ops-rpi-controller` 추가·개선 |
+| Agent capability | `Project Pivot` 단일 실행 agent와 `review-lead` → quality·adversarial review chain 구성 |
 | Observability | dogfooding event logging hook 추가 |
 | Process | OpenSpec workflow와 RPI 문서 보강 |
 | Repository state | 미커밋 tracked 변경 없음 |
