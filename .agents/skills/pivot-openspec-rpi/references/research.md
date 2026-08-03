@@ -31,6 +31,15 @@ Research를 시작하거나 계속할 때는 먼저 `research.md`를 읽고, 추
 독립적으로 재현·참조되어야 하면 해당 제목을 kebab-case로 변환한 하위 파일을
 추가한다. 하위 파일을 추가한 뒤에는 `research.md`에 링크와 역할을 기록한다.
 
+### Retention & Archiving Policy
+
+Research 아티팩트는 `research.md` 및 보조 문서를 포함하는 **번들 디렉토리** 단위로 작성되며, 기본적으로 **임시 문서(Temporary Document)**로 관리된다.
+
+- **임시 문서 특성**: `openspec/research/{research-id}/` 번들 경로에 생성되며, 기본적으로 Git으로 추적하지 않는다(`.gitignore` 적용). 다른 문서(OpenSpec change, Review 등)에서 직접 링크되지 않으며, 인간 사용자에 의해 언제든 삭제될 수 있다.
+- **영구 보관 (`archive/`)**: 조사의 결과가 향후 아키텍처나 중요 결정에 지속적인 가치가 있다고 판단되는 경우 연구 번들 전체를 `openspec/research/archive/{research-id}/` 경로로 이동하여 Git으로 추적·보관한다.
+- **보관 주체 & 제안**: 보관 여부 결정은 인간이 담당한다. Agent(인간 대면 에이전트)는 Research 완료 시 보관 필요성을 사용자에게 제안할 수 있다.
+- **참조 링크 허용**: `archive/`에 보관된 번들 아티팩트에 한해 OpenSpec change나 Review 문서의 `relatedArtifacts` 및 참조 링크로 연결할 수 있다.
+
 ## Flow
 
 ```mermaid

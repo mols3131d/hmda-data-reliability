@@ -6,69 +6,60 @@ description: |
 
 # Pivot OpenSpec RPI
 
-OpenSpec을 변경의 Source of Truth로 사용한다. P는 repository에 설치된 OpenSpec workflow를
-그대로 실행하며, RPI는 이를 대체하거나 custom schema·entry gate·lifecycle을 추가하지 않는다.
-각 phase는 독립적으로 시작할 수 있지만, 실행과 종료에는 해당 phase의 artifact 계약이 필요하다.
-명세 전에는 선택적으로 근거 중심 Research를, 구현 후에는 독립적인 Review를 결합한다.
+OpenSpec을 Single Source of Truth로 관리하는 Research → OpenSpec → Implement → Review 워크플로우 지침입니다.
 
-`pivot`은 project 가제 namespace다. project 이름이 바뀌면 directory와 front matter의 `name`을 함께 변경한다.
+- **원칙**: OpenSpec 커스텀 스키마를 생성하지 않으며, Research와 Review는 독립적인 Decorator 아티팩트로 연결합니다.
+- **독립성**: 각 Phase는 독립 시작 가능하나, 시작 및 마감을 위한 입력/출력 아티팩트 계약(Contract)을 준수해야 합니다.
 
 ## Operating Model
 
-| Phase | 책임 | Durable artifact |
+| Phase | 주요 책임 | Canonical Artifact 경로 |
 | --- | --- | --- |
-| Research | 근거 충분성, 현재 상태, 위험, 미해결 질문 | `openspec/research/{research-id}/research.md` |
-| OpenSpec | 문제, 요구사항, 설계, task, change 상태 | 기존 OpenSpec artifact |
-| Implement | OpenSpec task가 요구한 코드와 검증 | 코드, 테스트, 갱신된 `tasks.md` |
-| Review | spec·구현·근거의 독립적 대조 | `openspec/reviews/{change-id}/{sequence}-{review-title}[-{extension}].md` |
+| **Research** | 문제 정의, 현황 조사, 위험 분석, 근거 수집 | `openspec/research/{research-id}/*` 번들 (임시)<br/>`openspec/research/archive/{research-id}/*` 번들 (보관 시) |
+| **OpenSpec** | 문제, 요구사항, 설계, task, change 상태 관리 | 기존 OpenSpec 커스텀 변경 아티팩트 (`proposal.md`, `design.md`, `specs/`, `tasks.md`) |
+| **Implement** | 승인된 OpenSpec task 기반 코드 구현 및 테스트 검증 | 소스 코드, 유닛/통합 테스트, 갱신된 `tasks.md` |
+| **Review** | spec·구현·근거의 독립적 대조 및 판정 | `openspec/reviews/{change-id}/{sequence}-{review-title}[-{extension}].md` |
 
 OpenSpec 밖에 별도의 plan을 만들지 않는다.
 
-## Entry Routing
+## Entry Routing Algorithm
 
-1. [Principles](references/principles.md)와 [Workflow](references/workflow.md)를 읽는다.
-1. 요청에서 시작 phase를 정한다. 명시되지 않으면 현재 artifact와 요청의 직접 목표로 Research, OpenSpec, Implement, Review 중 하나를 선택한다.
-1. 선택한 phase의 [입력 계약](references/workflow.md#stage-contract)을 기존 artifact로 확인한다.
-   - 계약을 충족하면 선택한 phase를 바로 실행한다.
-   - 계약에 필요한 artifact가 없거나 신뢰할 수 없으면, 해당 artifact owner phase로 route한다.
-   - 이미 존재하는 artifact를 다시 만들거나 앞 phase를 형식적으로 재실행하지 않는다.
-1. Research에서 시작할 때만 repository에서 재사용하지 않는 안정적인 `{research-id}`를 정한다.
-   - 날짜를 넣지 않은 kebab-case ID를 사용한다.
-   - Research가 여러 날 이어져도 ID와 경로를 바꾸지 않는다.
-   - 세부 절차와 artifact bundle 규칙은 [Research](references/research.md)를 따른다.
-1. OpenSpec에서 시작할 때는 설치된 OpenSpec workflow의 entry contract와 절차를 그대로 따른다.
-   - stage contract와 handoff는 [Workflow](references/workflow.md)를 따른다.
-1. Implement에서 시작할 때는 승인된 OpenSpec task를 확인한 뒤 구현한다.
-   - 입력·완료 조건과 handoff는 [Workflow](references/workflow.md)를 따른다.
-1. Review에서 시작할 때는 active OpenSpec change, 구현 diff, 실제 검증 결과, 관련 Research를 확인한다.
-   - 입력, attempt 규칙, finding과 verdict는 [Review](references/review.md)를 따른다.
-1. Review status에 따라 route한다.
-   - verdict에 따른 다음 owner와 lifecycle은 [Workflow](references/workflow.md)를 따른다.
+1. **상태 파악**: [Principles](references/principles.md) 및 [Workflow](references/workflow.md)를 참조하여 현재 요청의 목표 Phase를 선정한다.
+1. **입력 계약(Input Contract) 검증**:
+   - 목표 Phase 실행에 필요한 아티팩트가 존재하고 유효한지 확인한다.
+   - 아티팩트 미비 또는 신뢰 불가 시, 해당 아티팩트 소유(Owner) Phase로 우회(Route)한다.
+   - 이미 검증된 아티팩트가 존재할 경우 이전 Phase를 재실행하지 않는다.
+1. **Phase별 진입 규칙**:
+   - **Research**: 안정적인 `{research-id}` (kebab-case, 날짜 미포함) 생성 후 [Research](references/research.md) 지침에 따라 임시 번들 작성.
+   - **OpenSpec**: 설치된 OpenSpec 커맨드 및 절차 준수 ([Workflow](references/workflow.md)).
+   - **Implement**: 승인된 태스크(`tasks.md`) 확인 후 구현 진행.
+   - **Review**: Active OpenSpec, 구현 diff, 실제 검증 결과를 확보하고 [Review](references/review.md) 지침에 따라 독립 검토 수행.
 
-## Durable Phase Reports
+## Durable Phase Reports & Chat Handoff
 
-각 phase의 상세 보고, 근거, 결정, 남은 risk와 다음 action은 채팅이 아니라 해당
-phase의 canonical artifact에 기록한다. 채팅에는 현재 status와 artifact 링크,
-다음 routing만 간결하게 남긴다. phase artifact가 이미 존재하면 별도 chat report나
-중복 summary 파일을 만들지 않는다.
+- **보고서 원칙**: 모든 세부 분석, 근거, 결과는 채팅이 아닌 해당 Phase의 **Canonical Artifact**에 기록한다.
+- **채팅 출력 제한**: 최종 채팅 답변은 아래 Handoff 테이블 규격(경로, 상태, 다음 Routing)으로 1~3줄 이내 요약 전송한다.
 
-phase별 보고 위치와 형식은 [Workflow](references/workflow.md)의 report ownership
-규칙을 따른다.
-
-## Autonomy
-
-일상적인 확인을 요청하지 않고 loop를 계속한다.
-
-다음 Human gate에서만 멈춘다.
-
-| Gate | 예시 |
+| Field | Content |
 | --- | --- |
-| Intent conflict | 사용자 요청과 활성 OpenSpec이 충돌 |
-| Material choice | 선택에 따라 제품 동작, 호환성, 비용, 위험이 달라짐 |
-| Unsafe side effect | 파괴적·비가역적·권한 필요·외부 공개 작업 |
-| Missing access | 필수 저장소, 환경, secret, service에 접근 불가 |
+| **Research** | Research 아티팩트 경로 및 상태 (`draft`, `in_progress`, `completed`, `blocked`) |
+| **Change** | OpenSpec Change ID 및 상태 |
+| **Implementation** | 구현/수정된 태스크 아티팩트 경로 및 실행한 검증 명령 |
+| **Validation** | 테스트 실행 결과 요약 및 리포트 경로 |
+| **Review** | Review 아티팩트 경로 및 판정 (`approved`, `changes_requested`, `blocked`) |
+| **Next Phase** | 다음 진행할 소유(Owner) Phase 또는 차단(Blocker) 사유 |
 
-Review status가 `approved`가 아니면 archive하지 않는다.
+## Autonomy & Human Gates
+
+Agent는 다음 **Human Gate** 조건 발동 시에만 진행을 멈추고 사용자에게 승인을 요청한다.
+
+| Gate | 조건 및 발동 기준 |
+| --- | --- |
+| **Intent Conflict** | 사용자 요청과 기존 OpenSpec 명세가 충돌할 때 |
+| **Material Choice** | 제품 동작, 아키텍처, 호환성, 비용에 영향을 주는 대안 선택 시 |
+| **Research Archive** | 임시 Research 번들을 영구 보관(`openspec/research/archive/` 이동 및 Git 커밋)하고자 할 때 |
+| **Unsafe Side Effect** | 비가역적 데이터 삭제, 외부 권한 필요, 파괴적 명령 실행 시 |
+| **Missing Access** | 필수 환경, 파일, 시크릿, 외부 서비스 접근 불가 시 |
 
 ## Context Discipline
 
@@ -79,24 +70,10 @@ Review status가 `approved`가 아니면 archive하지 않는다.
 
 ## Resource Map
 
-| 필요 | 읽을 파일 |
+| 주제 | 참조 문서 |
 | --- | --- |
-| 판단 원칙 | [Principles](references/principles.md) |
-| 전체 lifecycle과 routing | [Workflow](references/workflow.md) |
-| Research 절차 | [Research](references/research.md) |
-| Review 절차 | [Review](references/review.md) |
-| Windows·WSL·Copilot·Codex 적용 | [Adoption](references/adoption.md) |
-
-## Final Chat Handoff
-
-최종 채팅은 문서에 기록된 결과를 반복하지 않고, canonical artifact와 현재 routing만
-짧게 전달한다.
-
-| Field | Content |
-| --- | --- |
-| Research | Research artifact path와 status |
-| Change | OpenSpec change identifier와 status |
-| Implementation | task 또는 amendment artifact path |
-| Validation | validation evidence path 또는 command |
-| Review | Review artifact path와 status |
-| Next | 다음 owner phase 또는 blocker |
+| 핵심 판단 원칙 | [Principles](references/principles.md) |
+| 전체 Lifecycle 및 Handoff 규칙 | [Workflow](references/workflow.md) |
+| Research 상세 수행 절차 | [Research](references/research.md) |
+| Review 상세 수행 절차 | [Review](references/review.md) |
+| 개발 환경 적용 (Windows/WSL/VSCode) | [Adoption](references/adoption.md) |

@@ -60,8 +60,13 @@ openspec/
 ├── changes/                 # OpenSpec 소유
 ├── specs/                   # OpenSpec 소유
 ├── research/
-│   └── {research-id}/
-│       └── research.md      # ROR decorator artifact
+│   ├── {research-id}/       # 임시 Research 번들 (Git 미추적, 타 문서 미연결)
+│   │   ├── research.md      # Entry point
+│   │   └── {sub-topic}.md   # 보조 아티팩트 (선택)
+│   └── archive/             # 보관된 Research 번들 (Git 추적, 참조 연결 허용)
+│       └── {research-id}/
+│           ├── research.md
+│           └── {sub-topic}.md
 └── reviews/
     └── {change-id}/
         └── {sequence}-{review-title}[-{extension}].md # ROR decorator artifact
@@ -69,10 +74,8 @@ openspec/
 
 ROR artifact를 OpenSpec change directory 안에 넣거나 OpenSpec schema의 필수 artifact로 만들지 않는다.
 RPI Research와 Review도 OpenSpec change의 entry·completion·archive gate가 아니다.
-Research와 Review는 `openspec-rpi` front matter의 `relatedArtifacts`로 Research,
-OpenSpec change, Review ID를 연결한다. Review는 구현된 change 하나를 검증하므로
-`{change-id}` directory를 identity로 유지하고, 각 Review attempt는 세 자리
-sequence로 구분한다. 같은 attempt의 보조 artifact는 filename suffix를 사용한다.
+Research는 기본적으로 임시 문서로 취급되며, 인간의 승인을 받아 `archive/`에 보관된 경우에만 OpenSpec change 및 Review와 `relatedArtifacts` 또는 참조 링크로 연결한다.
+Review는 구현된 change 하나를 검증하므로 `{change-id}` directory를 identity로 유지하고, 각 Review attempt는 세 자리 sequence로 구분한다. 같은 attempt의 보조 artifact는 filename suffix를 사용한다.
 
 ## Report Ownership
 
