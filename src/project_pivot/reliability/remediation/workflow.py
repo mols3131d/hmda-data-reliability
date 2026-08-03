@@ -123,8 +123,7 @@ def _rca_summary(*, incident_type: str, payload: dict[str, Any]) -> str:
         )
     if incident_type == "schema_drift":
         return (
-            "현재 schema hash가 baseline과 달라 "
-            "downstream 모델 호환성 확인이 필요하다."
+            "현재 schema hash가 baseline과 달라 downstream 모델 호환성 확인이 필요하다."
         )
     if incident_type == "freshness_delay":
         return (

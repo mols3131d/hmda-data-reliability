@@ -48,7 +48,6 @@ def analyze_dbt_impact(request: ImpactAnalysisRequest) -> ImpactAnalysisResult:
 
 def _lineage_id(asset_name: str, partition: str) -> str:
     normalized_asset = "".join(
-        character if character.isalnum() else "_"
-        for character in asset_name.lower()
+        character if character.isalnum() else "_" for character in asset_name.lower()
     ).strip("_")
     return f"lineage_{normalized_asset}_{partition.replace('-', '_')}"

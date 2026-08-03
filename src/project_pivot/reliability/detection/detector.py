@@ -239,8 +239,7 @@ def _contract_id(
 
 def _normalize_token(value: str) -> str:
     return "".join(
-        character if character.isalnum() else "_"
-        for character in value.lower()
+        character if character.isalnum() else "_" for character in value.lower()
     ).strip("_")
 
 

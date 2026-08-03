@@ -146,18 +146,14 @@ def _write_manifest(tmp_path: Path) -> Path:
                 "alias": "stg_hmda_loans",
                 "schema": "staging",
                 "resource_type": "model",
-                "depends_on": {
-                    "nodes": ["source.project_pivot.raw.hmda_loans"]
-                },
+                "depends_on": {"nodes": ["source.project_pivot.raw.hmda_loans"]},
             },
             "model.project_pivot.mart_hmda_loan_outcomes": {
                 "name": "mart_hmda_loan_outcomes",
                 "alias": "mart_hmda_loan_outcomes",
                 "schema": "marts",
                 "resource_type": "model",
-                "depends_on": {
-                    "nodes": ["model.project_pivot.stg_hmda_loans"]
-                },
+                "depends_on": {"nodes": ["model.project_pivot.stg_hmda_loans"]},
             },
         },
     }

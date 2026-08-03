@@ -128,10 +128,7 @@ def _calculate_partition_metrics(
     profile_columns: tuple[str, ...],
 ) -> _PartitionMetrics:
     select_parts = ["count(*) AS row_count"]
-    select_parts.extend(
-        _null_count_expression(column)
-        for column in profile_columns
-    )
+    select_parts.extend(_null_count_expression(column) for column in profile_columns)
     if request.freshness_column is not None:
         select_parts.append(
             f"max({quote_identifier(request.freshness_column)}) AS freshness_value"
@@ -161,9 +158,7 @@ def _calculate_partition_metrics(
         for column, null_count in null_counts.items()
     }
     freshness_value = (
-        result[1 + len(profile_columns)]
-        if request.freshness_column
-        else None
+        result[1 + len(profile_columns)] if request.freshness_column else None
     )
     freshness_at = _normalize_freshness(freshness_value, request.observed_at)
     metric_values = _metric_values(
@@ -190,8 +185,7 @@ def _extract_null_counts(
     profile_columns: tuple[str, ...],
 ) -> dict[str, int]:
     return {
-        column: int(row[index + 1] or 0)
-        for index, column in enumerate(profile_columns)
+        column: int(row[index + 1] or 0) for index, column in enumerate(profile_columns)
     }
 
 
@@ -249,8 +243,7 @@ def _partition_filter(request: ProfileSnapshotRequest) -> tuple[str, list[object
 
 def _snapshot_id(asset_name: str, partition: date | int | str) -> str:
     normalized_asset = "".join(
-        character if character.isalnum() else "_"
-        for character in asset_name.lower()
+        character if character.isalnum() else "_" for character in asset_name.lower()
     ).strip("_")
     normalized_partition = _partition_label(partition).replace("-", "_")
     return f"profile_{normalized_asset}_{normalized_partition}"
