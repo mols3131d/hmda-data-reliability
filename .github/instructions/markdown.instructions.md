@@ -8,7 +8,3 @@ applyTo: "**/*.md"
 - Use GFM callouts, tables, or Mermaid when useful.
 - Do not insert line breaks within a paragraph.
 - Write with readability for both humans and agents in mind.
-- Skills for improving human readability:
-  - `/human-facing-markdown`
-  - `/mermaid-chart`
-  - `/mermaid-diagram`
