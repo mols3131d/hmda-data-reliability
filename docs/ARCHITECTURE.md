@@ -24,6 +24,13 @@ flowchart LR
 | Recovery | 외부 approval 뒤 별도 API로 실행한다. |
 | Evaluation | Synthetic case 결과를 별도 API로 집계하고 report를 별도로 작성한다. |
 
+## Design Constraints
+
+- lifecycle은 caller가 제공한 baseline을 받아 profile, detection, impact, remediation draft만 계산한다.
+- Dagster는 data plane 실행만 담당하며 reliability lifecycle을 자동으로 묶지 않는다.
+- approval은 lifecycle 외부에서 결정하고, recovery API는 승인 정보를 입력으로 요구한다.
+- ingestion과 dbt는 재실행 가능해야 하며, 같은 partition의 중복 row를 만들지 않는다.
+
 ## Canonical Domain Contracts
 
 세부 계약의 canonical source는 [`docs/domains/OVERVIEW`](domains/OVERVIEW.md)와 연결된 도메인 문서다.
