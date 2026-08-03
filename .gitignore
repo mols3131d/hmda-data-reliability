@@ -18,6 +18,7 @@
 
 # Local and generated project data
 /data/**/*.duckdb*
+/data/databases/
 /data/raw/
 /data/lakehouse/
 /data/metadata/dbt_lineage.json
