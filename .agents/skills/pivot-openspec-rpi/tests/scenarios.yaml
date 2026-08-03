@@ -18,6 +18,7 @@ scenarios:
       - openspec/research/{research-id}/research.md에 artifact를 만든다.
       - front matter의 category는 research이고 relatedArtifacts는 비어 있거나 생략된다.
       - completed 이후 생성된 change를 relatedArtifacts에 연결한다.
+      - 임시 번들은 Git으로 추적하거나 다른 문서에서 링크하지 않는다.
     forbidden:
       - Research identity를 만들기 위해 빈 OpenSpec change를 먼저 생성한다.
       - research-id 대신 나중에 생성될 change-id를 가정한다.

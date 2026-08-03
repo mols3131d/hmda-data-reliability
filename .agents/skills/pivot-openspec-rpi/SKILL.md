@@ -74,6 +74,7 @@ Agent는 다음 **Human Gate** 조건 발동 시에만 진행을 멈추고 사�
 | --- | --- |
 | 핵심 판단 원칙 | [Principles](references/principles.md) |
 | 전체 Lifecycle 및 Handoff 규칙 | [Workflow](references/workflow.md) |
+| 아티팩트 관리 및 수명주기 | [Artifacts](references/artifacts.md) |
 | Research 상세 수행 절차 | [Research](references/research.md) |
 | Review 상세 수행 절차 | [Review](references/review.md) |
 | 개발 환경 적용 (Windows/WSL/VSCode) | [Adoption](references/adoption.md) |

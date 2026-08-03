@@ -34,6 +34,7 @@
 | B17 | 시작 phase의 필수 artifact가 없거나 충돌하면 해당 artifact owner phase로 route하며, 유효한 artifact를 다시 만들지 않는다 |
 | B18 | P는 설치된 OpenSpec workflow를 그대로 따르며, RPI는 OpenSpec의 entry condition, schema, lifecycle, command, 완료·archive 조건을 변경하거나 추가 gate로 제한하지 않는다 |
 | B19 | Research와 Review는 선택적 decorator artifact이며, OpenSpec change의 entry·completion·archive gate가 아니다 |
+| B20 | Research 보관, Git 추적, 링크와 `relatedArtifacts` 규칙은 Artifacts reference가 단독으로 소유한다 |
 
 ## Portability
 

@@ -1,11 +1,11 @@
 # Pivot OpenSpec RPI Development
 
-이 문서는 skill의 product requirements, 유지보수 결정을, roadmap을 관리한다. Runtime
+이 문서는 skill의 product requirements, 유지보수 결정, roadmap을 관리한다. Runtime
 행동의 Source of Truth는 `SKILL.md`와 `references/`다.
 
 ## Document Guide
 
-- product requirement, 장기 유지보수 결정, roadmap 변화가 있을 때만 갱신한다.
+- skill의 요구사항·결정·roadmap이 변하면 이 문서를 함께 갱신한다.
 - runtime 행동 규칙은 이 문서가 아니라 `SKILL.md` 또는 `references/`에 기록한다.
 
 ## Vision
@@ -50,7 +50,7 @@ OpenSpec change에 따라 구현하며, 사람이 확인할 수 있는 증거로
 | --- | --- |
 | Skill discovery | 명확한 positive trigger와 anti-trigger가 있는 valid `SKILL.md`를 제공한다. |
 | Progressive disclosure | core instruction은 `SKILL.md`에, phase detail은 필요한 reference에 둔다. |
-| Research | 기존 evidence의 충분성, risk, open question, status를 기록할 수 있다. |
+| Research | 기존 evidence의 충분성, risk, open question, status를 기록하고 임시 번들을 안전하게 관리할 수 있다. |
 | OpenSpec integration | proposal, requirements, design, tasks, archive는 설치된 OpenSpec workflow가 소유한다. |
 | Implement | 승인된 OpenSpec task와 실행한 validation을 연결한다. |
 | Review | spec, implementation, evidence를 대조하고 status와 다음 route를 기록한다. |
@@ -62,6 +62,7 @@ OpenSpec change에 따라 구현하며, 사람이 확인할 수 있는 증거로
 
 - Research와 Review는 선택적 decorator artifact이며 OpenSpec change의 필수 gate가 아니다.
 - RPI는 OpenSpec schema, lifecycle, command, archive 조건을 변경하지 않는다.
+- 임시 Research는 Git으로 추적하거나 다른 문서에서 링크하지 않으며, 보관은 human 승인에만 따른다.
 - runtime 규칙을 이 문서에 중복 정의하지 않는다.
 - asset usage analytics, token·cost dashboard, 전체 agent action logging, custom OpenSpec schema,
   IDE 전용 plugin은 현재 범위가 아니다.
@@ -77,6 +78,13 @@ skill이 의도대로 동작하면 사람은 다음 질문에 빠르게 답할 �
 1. Review status가 `approved`, `changes_requested`, `blocked` 중 무엇인가?
 
 ## Decisions
+
+### 2026-08-03: Artifact Lifecycle Is Centralized
+
+- **Status:** Accepted
+- **Decision:** 저장 경로, Git 추적, 보관, 링크 및 `relatedArtifacts` 정책은 `references/artifacts.md`가 단독으로 소유한다.
+- **Context:** Research 임시 번들의 수명주기와 `relatedArtifacts` 허용 범위가 여러 runtime 문서와 template에 흩어지면 정책이 충돌하거나 오래된 예시가 남을 수 있다.
+- **Consequence:** Research·Workflow·Adoption은 phase 절차만 유지하고 정책이 필요할 때 Artifacts reference를 링크한다. Skill 변경으로 요구사항 또는 유지보수 결정이 달라지면 이 문서도 같은 변경에서 갱신한다.
 
 ### 2026-08-02: Delegation Is Optional
 

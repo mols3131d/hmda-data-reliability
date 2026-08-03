@@ -15,6 +15,7 @@ REQUIRED_FILES = {
     "references/research.md",
     "references/review.md",
     "references/adoption.md",
+    "references/artifacts.md",
     "templates/research.md",
     "templates/review.md",
     "tests/acceptance-criteria.md",

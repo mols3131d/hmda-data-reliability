@@ -145,7 +145,7 @@
           "title": "Related Artifacts",
           "name": "relatedArtifacts",
           "type": "list",
-          "description": "이 artifact와 직접 연결된 Research, OpenSpec change 또는 Review ID 목록입니다.",
+          "description": "이 artifact와 직접 연결된 OpenSpec change 또는 OpenSpec spec 목록입니다.",
           "default": []
         },
         {

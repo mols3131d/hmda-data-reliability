@@ -3,7 +3,7 @@ schema: spec-driven
 context: |
   Markdown artifact는 Front Matter CMS의 openspec-rpi content type을 사용한다.
   Research는 openspec/research/{research-id}/research.md에 두고 relatedArtifacts로
-  0개 이상의 OpenSpec change와 연결한다.
+  0개 이상의 OpenSpec change 또는 OpenSpec spec과 연결한다. (리서치와 리뷰 아티팩트는 relatedArtifacts에 포함하지 않는다.)
 
 rules:
   proposal:

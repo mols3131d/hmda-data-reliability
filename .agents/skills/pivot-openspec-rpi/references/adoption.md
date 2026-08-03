@@ -31,14 +31,9 @@ ln -sfn "$(pwd)/.agents/skills/pivot-openspec-rpi" ~/.codex/skills/pivot-openspe
 
 ## OpenSpec
 
-ROR는 custom OpenSpec schema를 요구하지 않는다. project에 설치된 OpenSpec workflow를 사용하고 decorator artifact를 다음에 둔다.
+ROR는 custom OpenSpec schema를 요구하지 않는다. project에 설치된 OpenSpec workflow를 사용한다. decorator artifact의 경로, 생성 시점, Git 추적과 보관 규칙은 [Artifacts](artifacts.md)를 따른다.
 
-```text
-openspec/research/{research-id}/research.md
-openspec/reviews/{change-id}/{sequence}-{review-title}[-{extension}].md
-```
-
-첫 artifact를 작성할 때만 directory를 만든다.
+첫 artifact를 작성할 때만 필요한 directory를 만든다.
 Front Matter CMS를 사용하는 project에서는 ROR artifact를 `openspec-rpi` content
 type으로 등록하고 Research와 Review의 status, related artifact, tags를 front matter에 저장할 수 있다.
 

@@ -5,7 +5,6 @@ description: "<검증한 change와 status 요약>"
 category: review
 status: pending
 relatedArtifacts:
-    - <research-id>
     - <change-id>
 ---
 
