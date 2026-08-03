@@ -10,16 +10,16 @@ description: "descriptive EDA evidence 확장과 MVP readiness 검증을 구현�
 ## 1. EDA Evidence Contract
 
 - [x] 1.0 EDA analysis, fixture, memory helper를 `project_pivot.hmda_data.eda` subpackage로 이동하고 public import compatibility를 유지한다.
-- [ ] 1.1 `analyze_hmda_csv`에 핵심 code field의 count/share distribution evidence를 추가한다.
-- [ ] 1.2 `loan_amount`와 `income`의 non-null count, five-number summary와 configured suspicious condition evidence를 추가한다.
-- [ ] 1.3 `activity_year + state_code + loan_purpose` grain aggregate와 coverage evidence를 추가한다.
-- [ ] 1.4 unknown code와 numeric anomaly를 raw 보존형 observation으로 직렬화하고 기존 evidence key와 backward compatibility를 유지한다.
+- [x] 1.1 `analyze_hmda_csv`에 핵심 code field의 count/share distribution evidence를 추가한다.
+- [x] 1.2 `loan_amount`와 `income`의 non-null count, five-number summary와 configured suspicious condition evidence를 추가한다.
+- [x] 1.3 `activity_year + state_code + loan_purpose` grain aggregate와 coverage evidence를 추가한다.
+- [x] 1.4 unknown code와 numeric anomaly를 raw 보존형 observation으로 직렬화하고 기존 evidence key와 backward compatibility를 유지한다.
 
 ## 2. Deterministic Tests And Fixtures
 
 - [ ] 2.1 작은 HMDA fixture에 code distribution, numeric summary, anomaly count, grain expected values를 추가한다.
-- [ ] 2.2 valid, unknown-code, suspicious-numeric, missing-column 입력에 대한 EDA contract test를 추가한다.
-- [ ] 2.3 원천 byte 보존, connection close, partial evidence 미생성 regression test를 유지·보강한다.
+- [x] 2.2 valid, unknown-code, suspicious-numeric, missing-column 입력에 대한 EDA contract test를 추가한다.
+- [x] 2.3 원천 byte 보존, connection close, partial evidence 미생성 regression test를 유지·보강한다.
 
 ## 3. Notebook And Runtime Validation
 

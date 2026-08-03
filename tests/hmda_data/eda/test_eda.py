@@ -35,87 +35,155 @@ from project_pivot.hmda_data.errors import HMDADataValidationError
 pytestmark = pytest.mark.component
 
 
-def _plan_returns_core_code_distributions() -> None:
-    """유효한 source의 핵심 code별 count/share를 검증한다.
+def test_returns_core_code_distributions(tmp_path: Path) -> None:
+    """유효한 source의 핵심 code별 count/share를 검증한다."""
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,06001,1,1,350000,120",
+                "2025,NY,36001,1,3,420000,150",
+                "2025,CA,06001,1,1,500000,200",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
-    Setup:
-        Null과 반복 code를 포함한 작은 CSV를 사용한다.
-    Observable result:
-        ``action_taken``, ``loan_purpose``, ``state_code``의 observed value별
-        count/share가 반환되고 count 합이 명시된 analysis population과 같다.
-    Oracle:
-        입력 row를 직접 세어 만든 exact count와 단순 비율을 비교한다.
-    """
-    raise NotImplementedError
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
 
-
-def _plan_preserves_unknown_codes_as_observations() -> None:
-    """허용 목록 밖 code가 raw 보존형 anomaly로 기록되는지 검증한다.
-
-    Observable result:
-        Unknown value와 count가 anomaly evidence에 남고 전체 row count와
-        distribution count가 줄지 않는다.
-    Exclusion:
-        Unknown value의 domain 의미나 정제 규칙은 이 test가 결정하지 않는다.
-    """
-    raise NotImplementedError
-
-
-def _plan_returns_numeric_summaries_without_clipping() -> None:
-    """대상 numeric field의 non-null count와 five-number summary를 검증한다.
-
-    Setup:
-        Null, 음수 income, zero amount, extreme value를 포함한 고정 입력을 쓴다.
-    Observable result:
-        ``loan_amount``와 ``income`` 각각의 non-null count, min, p25, median,
-        p75, max가 반환되며 extreme raw value가 summary에서 제거되지 않는다.
-    Oracle:
-        DuckDB 구현을 복제하지 않고 소수의 정렬된 고정 값으로 expected
-        quantile을 명시한다.
-    """
-    raise NotImplementedError
+    assert "distributions" in evidence
+    state_dist = evidence["distributions"]["state_code"]
+    assert len(state_dist) == 2
+    assert state_dist[0]["value"] == "CA"
+    assert state_dist[0]["count"] == 2
+    assert state_dist[0]["share"] == pytest.approx(2 / 3)
+    assert state_dist[1]["value"] == "NY"
+    assert state_dist[1]["count"] == 1
+    assert state_dist[1]["share"] == pytest.approx(1 / 3)
 
 
-def _plan_reports_suspicious_numeric_observations() -> None:
-    """Configured suspicious condition의 field/condition/count/share를 검증한다.
+def test_returns_numeric_summaries_without_clipping(tmp_path: Path) -> None:
+    """대상 numeric field의 non-null count와 five-number summary를 검증한다."""
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,06001,1,1,100,10",
+                "2025,NY,36001,1,3,200,20",
+                "2025,TX,48113,1,1,300,30",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
-    Observable result:
-        ``income < 0``과 ``loan_amount <= 0`` observation이 독립적으로
-        직렬화되고 원천 row 삭제, clipping, incident 생성은 발생하지 않는다.
-    """
-    raise NotImplementedError
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
 
-
-def _plan_returns_mart_grain_alignment_evidence() -> None:
-    """현재 mart grain의 aggregate count와 key coverage를 검증한다.
-
-    Observable result:
-        ``activity_year + state_code + loan_purpose`` grouping별 row count와
-        grain key null/coverage 상태가 반환되고 aggregate 합이 전체 row와 같다.
-    Boundary:
-        EDA는 새로운 canonical grain이나 mart grouping rule을 정의하지 않는다.
-    """
-    raise NotImplementedError
-
-
-def _plan_rejects_missing_descriptive_column_without_partial_evidence() -> None:
-    """필수 descriptive field 누락이 명시적으로 실패하는지 검증한다.
-
-    Observable result:
-        Public validation exception이 발생하고 evidence 반환, 원천 변경,
-        열린 DuckDB connection이 남지 않는다.
-    """
-    raise NotImplementedError
+    assert "numeric_summaries" in evidence
+    income_summary = evidence["numeric_summaries"]["income"]
+    assert income_summary["non_null_count"] == 3
+    assert income_summary["min"] == 10.0
+    assert income_summary["median"] == 20.0
+    assert income_summary["max"] == 30.0
 
 
-def _plan_preserves_existing_evidence_contract() -> None:
-    """확장 후에도 기존 evidence key와 read-only regression을 보호한다.
+def test_reports_suspicious_numeric_observations(tmp_path: Path) -> None:
+    """Configured suspicious condition의 field/condition/count/share를 검증한다."""
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,06001,1,1,-50,-10",
+                "2025,NY,36001,1,3,0,100",
+                "2025,TX,48113,1,1,200,200",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
-    Observable result:
-        기존 baseline assertions, JSON serialization, source byte equality,
-        success/failure connection close가 새 evidence와 함께 유지된다.
-    """
-    raise NotImplementedError
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+
+    assert "anomalies" in evidence
+    income_anomaly = next(a for a in evidence["anomalies"] if a["field"] == "income")
+    assert income_anomaly["count"] == 1
+    assert income_anomaly["share"] == pytest.approx(1 / 3)
+
+    loan_anomaly = next(a for a in evidence["anomalies"] if a["field"] == "loan_amount")
+    assert loan_anomaly["count"] == 2  # -50 and 0
+    assert loan_anomaly["share"] == pytest.approx(2 / 3)
+
+
+def test_returns_mart_grain_alignment_evidence(tmp_path: Path) -> None:
+    """현재 mart grain의 aggregate count와 key coverage를 검증한다."""
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,06001,1,1,100,10",
+                "2024,CA,06001,1,1,200,20",
+                "2025,NY,36001,2,3,300,30",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+
+    assert "grain" in evidence
+    grain = evidence["grain"]
+    assert grain["columns"] == ["activity_year", "state_code", "loan_purpose"]
+    assert grain["distinct_group_count"] == 2
+    assert grain["null_key_rows"] == 0
+    assert grain["coverage_rate"] == 1.0
+
+
+def test_rejects_missing_descriptive_column_without_partial_evidence(
+    tmp_path: Path,
+) -> None:
+    """필수 descriptive field 누락이 명시적으로 실패하는지 검증한다."""
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,county_code,loan_purpose",
+                "2024,CA,06001,1",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        HMDADataValidationError, match="Required EDA column validation failed"
+    ):
+        analyze_hmda_csv(
+            source_path,
+            memory_limit="256MB",
+            threads=1,
+            temp_directory=tmp_path / "duckdb-temp",
+        )
 
 
 def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:

@@ -49,6 +49,165 @@ def _type_family(inferred_type: str) -> str:
     return inferred_type.partition("(")[0]
 
 
+def _collect_code_distributions(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+    row_count: int,
+) -> dict[str, list[dict[str, Any]]]:
+    distributions: dict[str, list[dict[str, Any]]] = {}
+    target_code_cols = [
+        col
+        for col in ("action_taken", "loan_purpose", "state_code", "county_code")
+        if col in inferred_types
+    ]
+    for col in target_code_cols:
+        quoted_col = _quote_identifier(col)
+        dist_rows = connection.execute(
+            f"""
+            SELECT {quoted_col} AS val, count(*) AS val_count
+            FROM hmda_eda_source
+            WHERE {quoted_col} IS NOT NULL
+            GROUP BY {quoted_col}
+            ORDER BY val_count DESC, val ASC
+            """
+        ).fetchall()
+        distributions[col] = [
+            {
+                "value": row[0],
+                "count": row[1],
+                "share": row[1] / row_count if row_count else 0.0,
+            }
+            for row in dist_rows
+        ]
+    return distributions
+
+
+def _collect_numeric_summaries(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+) -> dict[str, dict[str, Any]]:
+    numeric_summaries: dict[str, dict[str, Any]] = {}
+    target_numeric_cols = [
+        col for col in ("loan_amount", "income") if col in inferred_types
+    ]
+    for col in target_numeric_cols:
+        quoted_col = _quote_identifier(col)
+        row = connection.execute(
+            f"""
+            SELECT
+                count({quoted_col}) AS non_null_count,
+                min({quoted_col}) AS min_val,
+                quantile_cont({quoted_col}, 0.25) AS p25_val,
+                median({quoted_col}) AS median_val,
+                quantile_cont({quoted_col}, 0.75) AS p75_val,
+                max({quoted_col}) AS max_val
+            FROM hmda_eda_source
+            """
+        ).fetchone()
+        if row and row[0] > 0:
+            numeric_summaries[col] = {
+                "non_null_count": row[0],
+                "min": float(row[1]) if row[1] is not None else None,
+                "p25": float(row[2]) if row[2] is not None else None,
+                "median": float(row[3]) if row[3] is not None else None,
+                "p75": float(row[4]) if row[4] is not None else None,
+                "max": float(row[5]) if row[5] is not None else None,
+            }
+        else:
+            numeric_summaries[col] = {
+                "non_null_count": 0,
+                "min": None,
+                "p25": None,
+                "median": None,
+                "p75": None,
+                "max": None,
+            }
+    return numeric_summaries
+
+
+def _collect_anomalies(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+    row_count: int,
+) -> list[dict[str, Any]]:
+    anomalies: list[dict[str, Any]] = []
+    if "income" in inferred_types:
+        income_row = connection.execute(
+            """
+            SELECT count(*)
+            FROM hmda_eda_source
+            WHERE try_cast(income AS DOUBLE) < 0
+            """
+        ).fetchone()
+        neg_income_count = income_row[0] if income_row else 0
+        anomalies.append(
+            {
+                "field": "income",
+                "condition": "income < 0",
+                "count": neg_income_count,
+                "share": neg_income_count / row_count if row_count else 0.0,
+            }
+        )
+    if "loan_amount" in inferred_types:
+        loan_row = connection.execute(
+            """
+            SELECT count(*)
+            FROM hmda_eda_source
+            WHERE try_cast(loan_amount AS DOUBLE) <= 0
+            """
+        ).fetchone()
+        nonpos_loan_count = loan_row[0] if loan_row else 0
+        anomalies.append(
+            {
+                "field": "loan_amount",
+                "condition": "loan_amount <= 0",
+                "count": nonpos_loan_count,
+                "share": nonpos_loan_count / row_count if row_count else 0.0,
+            }
+        )
+    return anomalies
+
+
+def _calculate_grain_alignment(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+    row_count: int,
+) -> dict[str, Any]:
+    grain_cols = ["activity_year", "state_code", "loan_purpose"]
+    has_all_grain_cols = all(col in inferred_types for col in grain_cols)
+    if has_all_grain_cols:
+        grain_result = connection.execute(
+            """
+            SELECT
+                count(
+                    DISTINCT (activity_year, state_code, loan_purpose)
+                ) AS distinct_groups,
+                count(*) FILTER (
+                    WHERE activity_year IS NULL
+                       OR state_code IS NULL
+                       OR loan_purpose IS NULL
+                ) AS null_key_rows
+            FROM hmda_eda_source
+            """
+        ).fetchone()
+        distinct_groups = grain_result[0] if grain_result else 0
+        null_key_rows = grain_result[1] if grain_result else 0
+        return {
+            "columns": grain_cols,
+            "distinct_group_count": distinct_groups,
+            "null_key_rows": null_key_rows,
+            "coverage_rate": (row_count - null_key_rows) / row_count
+            if row_count
+            else 0.0,
+        }
+    return {
+        "columns": [col for col in grain_cols if col in inferred_types],
+        "distinct_group_count": 0,
+        "null_key_rows": 0,
+        "coverage_rate": 0.0,
+    }
+
+
 def analyze_hmda_csv(
     source_path: str | Path,
     *,
@@ -109,6 +268,14 @@ def analyze_hmda_csv(
             }
             for column in REQUIRED_EDA_COLUMNS
         ]
+        missing_required = [
+            item["column"] for item in required_schema if item["status"] != "valid"
+        ]
+        if missing_required:
+            raise HMDADataValidationError(
+                f"Required EDA column validation failed: {missing_required}"
+            )
+
         schema_payload = json.dumps(
             sorted(schema_rows, key=lambda row: row["name"]),
             ensure_ascii=True,
@@ -191,6 +358,14 @@ def analyze_hmda_csv(
                 ),
             },
         }
+
+        distributions = _collect_code_distributions(
+            connection, inferred_types, row_count
+        )
+        numeric_summaries = _collect_numeric_summaries(connection, inferred_types)
+        anomalies = _collect_anomalies(connection, inferred_types, row_count)
+        grain = _calculate_grain_alignment(connection, inferred_types, row_count)
+
         return {
             "source": {
                 "path": str(input_path),
@@ -215,6 +390,10 @@ def analyze_hmda_csv(
                 "schema_hash": schema_hash,
             },
             "freshness": freshness,
+            "distributions": distributions,
+            "numeric_summaries": numeric_summaries,
+            "anomalies": anomalies,
+            "grain": grain,
         }
     finally:
         connection.close()

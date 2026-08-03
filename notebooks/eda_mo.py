@@ -1,23 +1,14 @@
-# /// script
-# requires-python = ">=3.13"
-# dependencies = [
-#     "duckdb>=1.3.0",
-#     "marimo>=0.23.9",
-# ]
-# ///
-
 import marimo
 
 __generated_with = "0.23.15"
-app = marimo.App(width="medium")
+app = marimo.App(width="medium", sql_output="polars")
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""
-    # HMDA 원천 EDA baseline
-    """)
-    return
+def _():
+    import marimo as mo  # isort: skip
+
+    return (mo,)
 
 
 @app.cell
@@ -26,63 +17,55 @@ def _():
     import os
     from pathlib import Path
 
-    import marimo as mo
+    import altair as alt
+    import polars as pl
 
     from project_pivot.hmda_data import analyze_hmda_csv
 
     os.chdir(Path(__file__).resolve().parent.parent)
-    return Path, analyze_hmda_csv, json, mo, os
+    return Path, alt, analyze_hmda_csv, json, os, pl
 
 
 @app.cell
-def _(Path, os):
-    data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/raw/hmda/year_2025.csv")
-    input_path = Path(data_path).expanduser().resolve()
-    if not input_path.is_file():
-        raise FileNotFoundError(f"HMDA EDA input file does not exist: {input_path}")
+def _(Path, mo, os):
+    data_is_sample = True
+    if data_is_sample:
+        data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/sample/hmda/year_2025.csv")
+    else:
+        data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/raw/hmda/year_2025.csv")
 
     csv_options = {
         "header": True,
         "nullstr": ["NA", ""],
         "sample_size": 200_000,
     }
+
     duckdb_config = {
         "memory_limit": "2GB",
         "threads": 2,
-        "temp_directory": str(Path(os.environ.get("TMPDIR", "/tmp")).resolve()),
+        "temp_directory": str(Path(os.environ.get("TMPDIR", "/.tmp")).resolve()),
     }
-    return csv_options, data_path, duckdb_config, input_path
+
+    mo.md(
+        f"""
+        ## 입력 범위
+
+        - data_path: `{data_path}`
+        - CSV type inference sample: `{csv_options["sample_size"]:,}` rows
+        - null 처리: `NA`, 빈 문자열
+        - parse 오류: fail-fast
+        - DuckDB 제한:
+          - memory: `{duckdb_config["memory_limit"]}`
+          - threads: `{duckdb_config["threads"]}`
+          - spill: `{duckdb_config["temp_directory"]}`
+        """
+    )
+    return (duckdb_config,)
 
 
 @app.cell
-def _(csv_options, data_path, duckdb_config, input_path, mo):
-    run_eda = mo.ui.checkbox(value=True, label="전체 파일 baseline 실행")
-    mo.vstack(
-        [
-            mo.md(
-                f"""
-                ## 입력 범위
-
-                - 요청 경로: `{data_path}`
-                - resolved 경로: `{input_path}`
-                - 분석 범위: 파일 전체
-                - CSV type inference sample: `{csv_options["sample_size"]:,}` rows
-                - null 처리: `NA`, 빈 문자열
-                - parse 오류: fail-fast
-                - DuckDB 제한:
-                  - memory: `{duckdb_config["memory_limit"]}`
-                  - threads: `{duckdb_config["threads"]}`
-                  - spill: `{duckdb_config["temp_directory"]}`
-
-                체크박스를 해제하면 전체 파일 scan을 건너끕니다.
-                파일 부재 또는 DuckDB CSV parse 오류 시 baseline metric과
-                `eda_evidence`를 생성하지 않습니다.
-                """
-            ),
-            run_eda,
-        ]
-    )
-    return (run_eda,)
+def _():
+    return
 
 
 @app.cell
@@ -157,14 +140,25 @@ def _(mo, required_schema):
 
 
 @app.cell
-def _(activity_year_counts, mo, row_count):
-    partition_volume = (
-        mo.ui.table(activity_year_counts)
-        if activity_year_counts
-        else mo.callout(
+def _(activity_year_counts, alt, mo, pl, row_count):
+    if activity_year_counts:
+        year_df = pl.DataFrame(activity_year_counts)
+        volume_chart = (
+            alt.Chart(year_df)
+            .mark_bar(color="#3182bd")
+            .encode(
+                x=alt.X("activity_year:O", title="Activity Year"),
+                y=alt.Y("row_count:Q", title="Row Count"),
+                tooltip=["activity_year", "row_count"],
+            )
+            .properties(title="Activity Year별 파티션 행 수 분포", width=500, height=250)
+        )
+        partition_volume = mo.vstack([mo.ui.table(activity_year_counts), volume_chart])
+    else:
+        partition_volume = mo.callout(
             "activity_year가 없어 partition volume은 미측정입니다.", kind="warn"
         )
-    )
+
     mo.vstack(
         [
             mo.md(
@@ -179,12 +173,25 @@ def _(activity_year_counts, mo, row_count):
 
 
 @app.cell
-def _(mo, null_baseline):
+def _(alt, mo, null_baseline, pl):
+    null_df = pl.DataFrame(null_baseline)
+    null_chart = (
+        alt.Chart(null_df)
+        .mark_bar(color="#e6550d")
+        .encode(
+            x=alt.X("null_rate:Q", title="Null Rate", axis=alt.Axis(format="%")),
+            y=alt.Y("column:N", title="Column", sort="-x"),
+            tooltip=["column", "null_count", alt.Tooltip("null_rate:Q", format=".2%")],
+        )
+        .properties(title="필수 컬럼별 Null 비율 Baseline", width=500, height=200)
+    )
+
     mo.vstack(
         [
             mo.md("## Required column null baseline"),
             mo.md("입력에서 `NA`와 빈 문자열을 null로 해석합니다."),
             mo.ui.table(null_baseline),
+            null_chart,
         ]
     )
     return
@@ -238,9 +245,7 @@ def _(eda_evidence, json, mo):
                 "화면 렌더링은 JSON-serializable `eda_evidence`와 분리됩니다."
             ),
             mo.ui.table(profile_mapping),
-            mo.accordion(
-                {"EDA evidence JSON": mo.md(f"```json\n{evidence_json}\n```")}
-            ),
+            mo.accordion({"EDA evidence JSON": mo.md(f"```json\n{evidence_json}\n```")}),
         ]
     )
     return

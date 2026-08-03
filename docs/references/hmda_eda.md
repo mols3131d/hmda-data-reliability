@@ -22,9 +22,10 @@ lifecycle은 [`Reliability`](../domains/reliability.md)를 따른다.
 기본 입력은 `data/raw/hmda/year_2025.csv`다. `HMDA_EDA_DATA_PATH`로 다른
 CSV를 지정할 수 있다.
 
-```bash
-HMDA_EDA_DATA_PATH=data/raw/hmda/year_2025.csv uv run marimo edit notebooks/eda_mo.py
-```
+`notebooks/eda_mo.py`는 VS Code notebook editor가 관리하는 셀 기반 파일이다.
+VS Code에서 해당 file을 열고 `HMDA_EDA_DATA_PATH`를 설정한 terminal에서 실행한다.
+일반 Marimo Python script 형식이 아니므로 `marimo edit` 또는 `marimo check` CLI를
+이 notebook의 검증 command로 사용하지 않는다.
 
 | Item | Value |
 | --- | --- |
@@ -58,6 +59,13 @@ query가 실패하면 exception을 호출자에게 전달하고 partial `eda_evi
 `freshness.status=unmeasured`이면 파일 수정 시각은 filesystem metadata이고
 Bronze `ingested_at`은 별도 raw-table ingestion time이다.
 
+## Visualizations
+
+노트북([`notebooks/eda_mo.py`](../../notebooks/eda_mo.py))은 `eda_evidence` 데이터를 바탕으로 Altair 대화형 시각화 차트를 제공한다.
+
+- **Activity Year별 Volume 분포**: `activity_year_counts` 데이터를 사용한 수직 막대 차트
+- **Required Column Null 비율 Baseline**: `null_baseline` 데이터를 사용한 가로 막대 차트 (Null Rate 비율 표기)
+
 ## Profile Mapping
 
 | EDA evidence | `ProfileSnapshot` field | Note |
@@ -73,13 +81,14 @@ Bronze `ingested_at`은 별도 raw-table ingestion time이다.
 uv run pytest tests/hmda_data/eda/test_eda.py \
   tests/hmda_data/eda/test_eda_fixture.py \
   tests/hmda_data/eda/test_eda_memory_helpers.py
-uv run marimo check notebooks/eda_mo.py
 ```
 
 작은 valid fixture는 schema, row count, null, activity-year count와 freshness를
 고정한다. Invalid UTF-8 fixture는 DuckDB parse exception과 partial evidence
-미생성을 검증한다. Notebook smoke는 새 kernel에서 valid fixture의 UI 변수와
-malformed fixture의 `exception` 상태를 확인한다.
+미생성을 검증한다. [`test_eda_notebook.py`](../../tests/hmda_data/eda/test_eda_notebook.py)는
+향후 runtime smoke의 contract와 수동 확인 대상을 기록한 계획 file이며, 현재 pytest에
+수집되는 notebook runtime 검증은 없다. 변경 시 VS Code notebook editor에서 valid fixture와
+malformed fixture를 각각 실행해 UI 결과와 명시적 exception 상태를 확인한다.
 
 ## Representative Memory Workload
 
