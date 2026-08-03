@@ -1,0 +1,2 @@
+- Store temporary, unclassified, draft, or under-review documents only.
+- **Never reference or link to files here.**
