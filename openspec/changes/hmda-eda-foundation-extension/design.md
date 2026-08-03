@@ -61,6 +61,14 @@ EDA analysis, deterministic fixture와 resource helper는 `project_pivot.hmda_da
 
 허용 code와 mart grouping rule은 reference/data contract에 연결하지만, suspicious numeric value를 삭제하거나 null로 치환하지 않는다. 허용 범위가 확정되지 않은 값은 count와 sample context가 있는 observation flag로 기록한다.
 
+### Keep the EDA field inventory bounded
+
+초기 EDA는 결과·기관·상품·금액·가격·부담·담보 비율·결과 사유·지역·지역 경제·인구 구성·인종·민족·성별·연령을 대표하는 field를 우선 관찰한다. 대표 field는 `action_taken`, `lei`, `loan_type`, `loan_purpose`, `lien_status`, `loan_amount`, `property_value`, `interest_rate`, `rate_spread`, `income`, `debt_to_income_ratio`, `combined_loan_to_value_ratio`, `denial_reason-1`, `state_code`, `county_code`, `census_tract`, `tract_to_msa_income_percentage`, `tract_minority_population_percent`, `derived_race`, `derived_ethnicity`, `derived_sex`, `ageapplicant`다.
+
+물리 타입별로는 범위·quantile·분포와 파싱 실패·허용 범위·null·형식 오류를 확인하고, 의미 타입별로는 식별자 cardinality, 코드형 범주 허용값, 연속 수치 extreme value, 금액·비율 범위, 지리 코드 형식을 확인한다. 이 목록은 전체 field 전수 분석을 의미하지 않는다.
+
+분석용 projection에서 불필요한 field를 제외할지 여부는 아직 결정하지 않는다. Bronze에서는 원천 row를 보존하며, drop 정책은 raw 보존 원칙과 충돌하지 않는 별도 결정으로 남긴다.
+
 ### Use fixture invariants for correctness
 
 작은 deterministic fixture에는 exact distribution, numeric summary, anomaly count, grain aggregate expected value를 고정한다. 실제 source의 전체 결과는 immutable unit assertion으로 고정하지 않고 observation command 또는 report로 확인한다.
