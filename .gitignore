@@ -24,6 +24,13 @@
 /notes/
 /.local/
 
+# OpenSpec Research (temporary by default, tracked under archive/)
+/openspec/research/*
+!/openspec/research/archive/
+!/openspec/research/archive/**
+!/openspec/research/AGENTS.md
+!/openspec/research/README.md
+
 dbt/.user.yml
 artifacts/
 
