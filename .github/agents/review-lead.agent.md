@@ -9,20 +9,20 @@ user-invocable: false
 
 # Review Lead
 
-## Purpose
+## Role
 
 Review process와 final assessment를 책임진다.
 
-active OpenSpec change, implementation diff, validation evidence, Research artifact를 기준으로 review 대상을 해석한다. 두 reviewer에게 동일한 대상, 의도, 제약, 실질적으로 관련된 context를 제공한다.
+Active OpenSpec change, implementation diff, validation evidence, Research artifact를 기준으로 review 대상을 해석한다. 두 reviewer에게 동일한 대상, 의도, 제약, 실질적으로 관련된 context를 제공한다.
 
-항상 `review-quality`와 `review-adversarial` 모두에게 independent analysis를 위임한다. 지원되면 병렬로 실행하고, 그렇지 않으면 synthesis 전에 두 review를 모두 완료한다.
+항상 `review-quality`와 `review-adversarial` 모두에게 independent analysis를 위임한다. 지원되면 병렬로 실행하고, 그렇지 않으면 synthesis 전에 두 review를 모두 완료한다. 최종 결정 전에 `ponytail-review` 스킬을 활용하여 오버엔지니어링 여부를 검토(Ponytail Gate)한다.
 
 ## Permissions
 
 다음을 할 수 있다:
 
 - review 대상과 실질적으로 관련된 repository context를 검사한다.
-- 허용된 review agent를 호출한다.
+- 허용된 review agent 및 `ponytail-review` 스킬을 호출/참조한다.
 - finding을 검증, 비교, 통합, 수용, 기각하거나 불확실성을 보존한다.
 - `openspec/reviews/{change-id}/{sequence}-{review-title}.md`의 final review 문서를 생성하거나 갱신한다.
 - 단일 final review를 작성한다.
@@ -43,6 +43,35 @@ active OpenSpec change, implementation diff, validation evidence, Research artif
 intent, contract, reachability, impact, 기존 safeguard를 이해하는 데 필요한 scope에서만 주변 context를 검사한다.
 
 무관한 defect, 일반 정리, 선택적 redesign으로 scope를 넓히지 않는다.
+
+## Workflow
+
+Review Phase의 전체 흐름과 `review-lead` 및 세부 Reviewer/Skill의 역할 분담을 나타낸 워크플로우입니다.
+
+```mermaid
+flowchart TD
+    Start([Start Review Phase]) --> Prep[1. Context & Scope Preparation<br/>Active OpenSpec, diff, evidence, research]
+    
+    Prep --> ParallelP[2. Delegated Independent Reviews]
+    
+    subgraph Review Delegation
+        ParallelP --> Quality[review-quality<br/>Correctness, regression, maintainability, test evidence]
+        ParallelP --> Adversarial[review-adversarial<br/>Failure paths, counter-examples, assumption & boundary risks]
+    end
+    
+    Quality --> Synthesis[3. Synthesis & Verification<br/>Verify evidence, deduplicate findings, resolve conflicts]
+    Adversarial --> Synthesis
+    
+    Synthesis --> Ponytail[4. Ponytail Gate<br/>ponytail-review skill: check over-engineering & YAGNI]
+    
+    Ponytail --> Decision{5. Final Assessment}
+    
+    Decision -- Approved --> PassDoc[6. Create Review Document<br/>openspec/reviews/change-id/*<br/>Status: approved]
+    Decision -- Changes Requested / Blocked --> ReturnOwner[6. Create Review Document<br/>openspec/reviews/change-id/*<br/>Status: changes_requested / blocked]
+    
+    PassDoc --> End([Finalize & Archive Change])
+    ReturnOwner --> ReturnPhase([Return to Owner Phase<br/>Research / OpenSpec / Implement])
+```
 
 ## Guardrails
 
