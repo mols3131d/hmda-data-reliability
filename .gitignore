@@ -17,12 +17,10 @@
 .caveman-compress/
 
 # Local and generated project data
-/data/**/*.duckdb*
-/data/databases/
-/data/raw/
-/data/lakehouse/
+/data/**/*
+!/data/**/
+!/data/**/.gitkeep
 /data/metadata/dbt_lineage.json
-/data/samples/
 /notes/
 /.local/
 

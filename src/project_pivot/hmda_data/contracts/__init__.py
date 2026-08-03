@@ -1,0 +1,1 @@
+"""HMDA data contract definitions."""
