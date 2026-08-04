@@ -4,21 +4,38 @@
 
 ## Current State
 
-`pivot-research`는 명세, 구현 또는 기술 판단 전에 근거를 수집하고 정리하는 Research 실행 스킬이다.
+`pivot-research`는 명세, 구현 또는 기술 판단 전에 근거를 수집하고 정리하는 Research 스킬이다.
 
 ```text
 pivot-research/
+├── README.md
 ├── SKILL.md
-└── docs/
-    ├── DIRECTIVE.md
-    └── WORKING.md
+├── docs/
+│   ├── DIRECTIVE.md
+│   └── WORKING.md
+└── references/
+    ├── evidence.md
+    ├── output.md
+    └── workflow.md
 ```
 
-Research 산출물(Artifact)의 저장 위치, 수명주기와 템플릿은 프로젝트의 기존 규칙을 따른다. 별도 reference, template, script는 없다.
+프로젝트별 Research 템플릿, 저장 위치, 수명주기와 상태 규칙은 복제하지 않는다.
+
+## Content Ownership
+
+| Location | Current content |
+| --- | --- |
+| `README.md` | 사용자용 개요, Arguments, 예시와 출력 설명 |
+| `SKILL.md` | Arguments, 5단계 핵심 흐름, 참조 선택, 완료와 경계 |
+| `references/workflow.md` | 상세 조사 흐름, 엄밀도와 종료 기준 |
+| `references/evidence.md` | 근거 분류, 품질, 충돌과 추적성 |
+| `references/output.md` | 완료 상태, Chat·Artifact와 이식성 |
+| `docs/DIRECTIVE.md` | 목적, 요구사항, 불변 조건과 설계 결정 |
+| `docs/WORKING.md` | 현재 구조, 검증 결과와 남은 작업 |
 
 ## Arguments
 
-현재 지원하는 argument는 다음 다섯 개다.
+현재 지원하는 Argument는 다섯 개다.
 
 - `question`
 - `scope`
@@ -26,62 +43,39 @@ Research 산출물(Artifact)의 저장 위치, 수명주기와 템플릿은 프�
 - `rigor`
 - `output`
 
-출력 경로, Research ID와 템플릿은 별도 argument로 제어하지 않는다. 프로젝트의 기존 artifact 계약과 템플릿이 해당 내용을 소유한다.
-
-## Current Interpretation
-
-- 하나의 핵심 목표와 필요한 하위 질문을 기준으로 조사한다.
-- 기존 근거를 먼저 재사용하고 답이나 주요 불확실성을 바꿀 수 있는 부분만 추가 조사한다.
-- 위험을 다루기에 충분한 가장 낮은 엄밀도를 사용한다.
-- 중요한 결론은 다시 확인할 수 있는 근거 위치와 연결한다.
-- 완료 여부는 질문에 대한 답과 남은 불확실성이 사용 목적을 막는지로 판단한다.
-- 기존 Research 템플릿과 artifact 계약을 복제하지 않는다.
-- 특정 workflow, schema 또는 directory를 필수 의존성으로 두지 않는다.
+출력 경로, Research ID와 템플릿은 프로젝트의 기존 Artifact 계약이 소유한다.
 
 ## Validation
 
 ### Structure
 
-- Arguments와 `auto` 해석이 `SKILL.md` 상단에 모여 있다.
-- 핵심 흐름과 경계가 한 파일에서 확인된다.
-- 인간 기준선과 현재 작업 기준선이 `docs/`로 분리되어 있다.
-- 템플릿, 저장 경로와 상태 규칙을 중복 정의하지 않는다.
+- `SKILL.md`에서 사용자 설명과 상세 실행 규칙을 분리했다.
+- 각 Reference는 하나의 판단 영역만 소유한다.
+- `README.md`, `SKILL.md`, `references/`, `docs/`의 책임이 겹치지 않는다.
+- 프로젝트 템플릿, 저장 경로, front matter와 상태 규칙을 중복 정의하지 않는다.
 
 ### Quality
 
-- KISS: 세 파일만 사용한다.
-- DRY: 프로젝트별 템플릿과 artifact 계약은 프로젝트가 소유한다.
-- 이식성(Portability): 특정 workflow, schema 또는 directory가 없어도 Chat Research가 가능하다.
-- 추적성(Traceability): 중요한 결론은 파일, 기호, 명령 결과 또는 URL과 연결한다.
+- KISS: 실행 진입 문서는 짧고 단일 흐름으로 읽힌다.
+- DRY: 상세 규칙은 하나의 Reference에서만 관리한다.
+- 점진적 공개(Progressive Disclosure): 현재 판단에 필요한 Reference만 읽는다.
+- 이식성(Portability): 특정 workflow, schema 또는 directory 없이 Chat Research가 가능하다.
+- 추적성(Traceability): 중요한 결론은 재확인 가능한 근거 위치와 연결한다.
 - 조사 비용: 답이나 불확실성을 바꾸지 않는 추가 조사는 중단한다.
-- 적용 범위: OpenSpec 변경뿐 아니라 비교, 장애 원인과 일반 기술 조사에도 사용할 수 있다.
 
-## Review Loops
+## Review History
 
-### Loop 1
-
-- 일반 리뷰: 출력 관련 argument가 겹치고 `DIRECTIVE.md`의 규칙이 반복됨을 확인했다.
-- 적대적 리뷰: 고정 경로를 제거하면서 오히려 `artifact_path`, `template`, `research_id`라는 새 설정 부담을 만든 점을 지적했다.
-- 종합 검토: 프로젝트의 기존 템플릿과 artifact 계약이 해당 값을 소유하는 편이 더 단순하고 이식 가능하다고 판단했다.
-- 작업: argument를 다섯 개로 줄이고, 핵심 질문에 필요한 하위 질문을 허용하며, 반복 규칙을 축약했다.
-
-### Loop 2
-
-- 일반 리뷰: `output: auto`와 조사 종료 기준이 모호하고 근거 위치 규칙이 약함을 확인했다.
-- 적대적 리뷰: 모호한 Artifact 계약 때문에 Research 전체가 차단되거나, 끝없는 조사와 장식적인 출처 수집으로 흐를 수 있음을 지적했다.
-- 종합 검토: Artifact 작성 실패와 Research 실패를 분리하고, 최소 충분 조사와 근거 추적성을 명시하기로 했다.
-- 작업: Artifact 계약이 불명확하면 Chat으로 결과를 보존하고, 답을 바꿀 수 있는 근거만 조사하며, 중요한 결론에 재확인 가능한 위치를 남기도록 수정했다.
-
-### Loop 3
-
-- 일반 리뷰: 완료 기준이 OpenSpec 변경 준비에 치우쳐 일반 Research 이식성을 낮춤을 확인했다.
-- 적대적 리뷰: 도구 비교, 장애 조사 또는 일반 기술 질문에서는 목표·범위·영향·검증을 모두 정의해야 한다는 기준이 부자연스럽고 불필요한 문서를 만들 수 있음을 지적했다.
-- 종합 검토: 완료 기준을 핵심 질문의 답, 근거, 충돌과 남은 불확실성 중심으로 일반화하기로 했다.
-- 작업: 완료 조건을 사용 목적 중심으로 바꾸고, 절차 문장을 줄이며, Chat 출력 계약을 네 항목으로 단순화했다.
+| Loop | Main improvement |
+| ---: | --- |
+| 1 | 중복 출력 Argument를 제거하고 프로젝트 Artifact 계약에 위임했다. |
+| 2 | 최소 충분 조사와 근거 추적성을 추가했다. |
+| 3 | 완료 기준을 질문과 사용 목적 중심으로 일반화했다. |
+| Refactor | 사용자 문서, 실행 지침, 상세 Reference와 개발 문서를 분리했다. |
 
 ## Remaining Validation
 
-- 실제 Research 작업으로 `output: auto`와 엄밀도 자동 선택을 도그푸딩(Dogfooding)해야 한다.
-- 프로젝트의 기존 템플릿과 artifact 계약을 올바르게 발견하는지 실행 검증이 필요하다.
+- 실제 Research 작업으로 Reference 선택이 과도하거나 부족하지 않은지 확인해야 한다.
+- `output: auto`와 엄밀도 자동 선택을 도그푸딩(Dogfooding)해야 한다.
+- 프로젝트의 기존 템플릿과 Artifact 계약을 올바르게 발견하는지 실행 검증이 필요하다.
 
-정적 구조, 문서 간 책임과 3회 개선 루프는 완료됐다. 현재 차단 요소(Blocker)는 없다.
+정적 구조와 문서 간 책임 검증은 완료됐다. 현재 차단 요소(Blocker)는 없다.
