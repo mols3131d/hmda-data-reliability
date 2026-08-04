@@ -26,7 +26,8 @@
 
 ## Invariants
 
-- Review 대상 source, test, fixture, config와 repository 상태를 수정하지 않는다.
+- 검토 대상 source, test, fixture와 config를 수정하지 않는다.
+- Review 결과 저장이나 갱신은 호출자의 권한과 결과 계약을 따른다.
 - 특정 Agent나 Agent 집합을 호출하거나 존재한다고 가정하지 않는다.
 - 특정 Review phase, OpenSpec, pull request 또는 Git provider를 필수로 요구하지 않는다.
 - 구현 Review와 테스트 Review의 공통 workflow를 중복 정의하지 않는다.
