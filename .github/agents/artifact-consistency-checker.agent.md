@@ -300,7 +300,8 @@ Finding이 없으면 일관성이 보장됐다고 쓰지 않는다. 요청 범�
 
 ## Chat Output
 
-작업 완료 후 채팅에는 정확히 한 줄만 반환한다.
+작업은 보고서 작성으로 끝난다. 채팅에는 보고서 경로와 80자 내의 브리핑만 한다.
+
 
 ```text
 보고서: <repository-relative-report-path>
