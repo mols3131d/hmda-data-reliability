@@ -1,11 +1,11 @@
 ---
 name: pivot-research
-description: Conduct evidence-backed research before specification, implementation, or technical decisions. Use to understand current behavior, bound scope, verify dependencies, compare meaningful options, or investigate failures. The calling main agent owns the question, synthesis, status, and output. Optional specialists and project templates may assist but are not required.
+description: Conduct evidence-backed research before specification, implementation, or technical decisions. Use to understand current behavior, bound scope, verify dependencies, compare meaningful options, or investigate failures. Do not use for implementation, final requirements, or independent Review.
 ---
 
 # Pivot Research
 
-호출한 메인 Agent가 필요한 근거를 직접 조사하고, 다음 판단에 사용할 수 있는 형태로 정리한다.
+필요한 근거를 조사하고 다음 판단에 사용할 수 있는 형태로 정리한다.
 
 Research는 단순 검색이 아니다. 현재 상태와 불확실성을 확인하는 단계이며, 요구사항·설계·구현을 대신 결정하지 않는다.
 
@@ -27,7 +27,7 @@ template: auto
 | `--question <text\|auto>` | 이번 Research가 답할 하나의 질문 | 사용자 요청에서 가장 작은 핵심 질문을 도출한다. |
 | `--scope <path,...\|auto>` | 직접 조사할 경로 또는 영역 | 질문과 직접 관련된 영역과 근거 검증에 필요한 관계까지만 포함한다. |
 | `--exclude <path,...>` | 조사에서 제외할 경로 또는 영역 | 지정한 대상을 읽거나 근거로 사용하지 않는다. |
-| `--rigor <auto\|lite\|standard\|strict>` | 조사 엄밀도(Rigor) | 불확실성, 영향 범위, 복구 가능성, 외부 의존성을 기준으로 선택한다. |
+| `--rigor <auto\|lite\|standard\|strict>` | 조사 엄밀도(Rigor) | 불확실성, 영향 범위, 복구 가능성과 외부 의존성을 기준으로 선택한다. |
 | `--output <auto\|chat\|artifact>` | 결과를 남길 방식 | 다음 작업에 지속적인 전달이 필요하면 artifact, 아니면 chat을 사용한다. |
 | `--research-id <id\|auto>` | Research 식별자 | artifact를 만들 때 질문을 나타내는 케밥 표기(kebab-case) ID를 만든다. |
 | `--artifact-path <path\|auto>` | Research artifact 저장 위치 | 활성 프로젝트의 설정, 관례 또는 기존 Research 위치를 따른다. |
@@ -47,17 +47,15 @@ template: auto
 | `standard` | 여러 파일, 동작 또는 주요 의존 관계를 함께 확인해야 한다. |
 | `strict` | 데이터 손실, 호환성, 보안, 아키텍처 또는 외부 계약 위험이 있다. |
 
-## Compatibility
+## Portability
 
-이 스킬은 특정 Agent 이름, workflow, schema 또는 directory를 필수로 요구하지 않는다.
+이 스킬은 특정 workflow, schema 또는 directory를 필수로 요구하지 않는다.
 
 | Integration | 처리 |
 | --- | --- |
-| 저장소 탐색 전문 Agent | 사용할 수 있으면 제한된 코드 탐색을 위임하고, 없으면 메인 Agent가 직접 조사한다. |
-| 외부 조사 전문 Agent | 사용할 수 있으면 공식 자료 확인을 위임하고, 없으면 메인 Agent가 직접 조사한다. |
-| 프로젝트 Research 템플릿 | 있으면 그대로 사용한다. 이 스킬 안에 복제하지 않는다. |
+| 프로젝트 Research 템플릿 | 있으면 그대로 사용하며 이 스킬 안에 복제하지 않는다. |
 | 프로젝트 artifact 규칙 | 있으면 저장 위치, front matter와 상태 규칙을 따른다. |
-| 위 항목이 없음 | Chat 결과는 계속 작성할 수 있다. Artifact가 명시적으로 필요하면 경로와 형식을 임의로 만들지 않고 `blocked`로 보고한다. |
+| 프로젝트 규칙이 없음 | Chat 결과는 계속 작성할 수 있다. Artifact가 반드시 필요하면 경로와 형식을 임의로 만들지 않고 `blocked`로 보고한다. |
 
 자동 탐색 순서는 다음과 같다.
 
@@ -104,24 +102,13 @@ flowchart LR
 
 ### Investigate Gaps
 
-메인 Agent가 Research를 소유하고 최종 판단과 결과 작성을 직접 수행한다.
+부족한 근거만 조사한다.
 
-전문 보조 Agent(Specialist)는 사용할 수 있을 때만 도구처럼 활용한다.
-
-- 저장소 탐색에는 읽기 전용 코드 탐색 능력을 사용한다.
-- 외부 사실 확인에는 공식 자료 조사 능력을 사용한다.
-- 한 번의 위임에는 하나의 제한된 질문만 전달한다.
-- 반환된 내용은 근거 후보로 취급하고 위치와 적용 범위를 다시 확인한다.
-
-다음 책임은 위임하지 않는다.
-
-- 질문과 범위 결정
-- 충돌하는 근거의 최종 해석
-- 중대한 제품 또는 아키텍처 선택
-- Research 상태 결정
-- 최종 Research 결과 작성
-
-필요하면 안전한 읽기 전용(Read-only) 명령으로 현재 동작을 재현한다. 실행하지 않은 명령의 예상 결과는 근거로 기록하지 않는다.
+- 현재 동작이 불명확하면 코드, 설정, 테스트와 실행 결과를 확인한다.
+- 영향 범위가 불명확하면 참조, 호출 관계, 데이터 흐름과 계약을 추적한다.
+- 외부 사실이 필요하면 현재 버전과 환경에 맞는 공식 자료를 우선한다.
+- 오류 원인이 불명확하면 가장 작은 재현과 실제 실행 결과를 확보한다.
+- 실행하지 않은 명령의 예상 결과는 근거로 기록하지 않는다.
 
 ### Synthesize
 
