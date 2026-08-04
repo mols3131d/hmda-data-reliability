@@ -7,7 +7,7 @@ description: Review implementation and test changes for intended behavior, corre
 
 변경이 의도한 contract를 충족하고 새로운 defect를 도입하지 않는지 근거로 검증한다.
 
-구현 코드와 테스트 코드를 함께 검토할 수 있지만 서로 다른 기준을 적용한다. 리뷰 대상은 수정하지 않으며 severity와 verdict는 호출자의 Review 계약을 따른다.
+구현 코드와 테스트 코드를 함께 검토할 수 있지만 서로 다른 기준을 적용한다. 검토 대상은 수정하지 않으며 severity, verdict와 결과 저장은 호출자의 Review 계약을 따른다.
 
 ## Arguments
 
@@ -61,7 +61,8 @@ Finding 수보다 실제 영향과 신뢰성을 우선한다.
 
 ## Boundaries
 
-- source, test, fixture, config 또는 repository 상태를 수정하지 않는다.
+- 검토 대상 source, test, fixture와 config를 수정하지 않는다.
+- Review 결과의 저장 또는 갱신은 호출자의 권한과 결과 계약을 따른다.
 - 무관한 기존 defect, 일반 정리나 선택적 redesign으로 scope를 넓히지 않는다.
 - style 선호만으로 finding을 만들지 않는다.
 - 실행하지 않은 validation이나 재현을 수행한 것처럼 주장하지 않는다.
