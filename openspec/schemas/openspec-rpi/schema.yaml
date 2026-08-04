@@ -1,0 +1,102 @@
+name: openspec-rpi
+version: 1
+description: Lean spec-driven workflow for proposal → specs → design → tasks
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Change intent, scope, and affected capabilities
+    template: proposal.md
+    instruction: |
+      템플릿을 따라 변경의 WHY와 WHAT을 합의하는 Proposal을 작성한다.
+
+      Guardrails:
+      - 작성 전에 `openspec/specs/`를 확인한다.
+      - 기존 책임으로 설명할 수 있으면 새 Capability를 만들지 않는다.
+      - 관찰 가능한 행동이나 계약이 바뀔 때만 Modified Capability로 기록한다.
+      - 서로 독립적인 변경을 하나의 Proposal에 묶지 않는다.
+      - 구현 구조, 기술 선택과 작업 목록은 Design 또는 Tasks로 보낸다.
+
+      Anti-patterns:
+      - 결과가 불명확한 “개선”, “확장”, “최적화”
+      - 문제보다 특정 기술 도입이 중심인 문서
+      - 내부 리팩터링을 Requirement 변경으로 표현
+      - 반복, 빈 섹션과 placeholder가 남은 문서
+    requires: []
+
+  - id: specs
+    generates: specs/**/*.md
+    description: Verifiable behavior contracts for affected capabilities
+    template: spec.md
+    instruction: |
+      Proposal의 Capability마다 하나의 delta spec을 작성한다.
+
+      Guardrails:
+      - New Capability는 Proposal의 정확한 kebab-case 이름을 사용한다.
+      - Modified Capability는 `openspec/specs/`의 기존 이름을 재사용한다.
+      - Requirement는 SHALL 또는 MUST로 관찰 가능한 행동을 정의한다.
+      - 모든 Requirement에는 하나 이상의 `#### Scenario:`가 있어야 한다.
+      - Scenario에는 WHEN과 THEN을 반드시 작성하고, GIVEN은 필요한 경우만 사용한다.
+      - MODIFIED는 기존 Requirement 전체와 모든 Scenario를 복사한 뒤 수정한다.
+      - REMOVED에는 Reason과 Migration을 작성한다.
+      - RENAMED는 행동 변경 없이 이름만 바뀔 때 사용한다.
+
+      구현 방법, 파일 구조와 테스트 코드는 작성하지 않는다.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical approach, boundaries, and key decisions
+    template: design.md
+    instruction: |
+      Proposal과 Specs를 구현 가능한 기술적 접근으로 변환한다.
+
+      Guardrails:
+      - Requirement와 Scenario를 반복하지 않는다.
+      - 중요한 책임 경계, 결정, 위험과 검증 전략만 기록한다.
+      - 단순한 변경은 짧게 작성하고 불필요한 선택 섹션은 삭제한다.
+      - Mermaid, 표와 본문이 같은 내용을 반복하지 않게 한다.
+      - 파일별 작업 목록과 구현 순서는 Tasks로 보낸다.
+
+      Anti-patterns:
+      - 코드 수준 변경을 나열한 설계
+      - 근거 없는 기술 선택
+      - 자명한 결정을 형식적으로 기록
+      - 결정되지 않은 내용을 확정된 설계처럼 표현
+    requires:
+      - proposal
+      - specs
+
+  - id: tasks
+    generates: tasks.md
+    description: Ordered and verifiable implementation checklist
+    template: tasks.md
+    instruction: |
+      Specs와 Design을 실행 가능한 작업으로 분해한다.
+
+      Guardrails:
+      - 모든 실행 작업은 `- [ ]` 체크박스로 작성한다.
+      - 의존성 순서로 배치하고 작업마다 하나의 명확한 결과를 둔다.
+      - 행동 변경은 가능한 한 RED → GREEN → REFACTOR로 구성한다.
+      - RED는 관련 Requirement 또는 Scenario와 연결한다.
+      - 각 작업은 완료 여부를 객관적으로 확인할 수 있어야 한다.
+      - 문서 설명을 복사하지 말고 구현과 검증 행동만 작성한다.
+      - `tasks_completed`와 `tasks_total`은 본문 체크박스에서 계산한 파생값이다.
+    requires:
+      - specs
+      - design
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    미완료 체크박스를 의존성 순서로 구현한다.
+
+    - 관련 Spec과 Design 경계를 먼저 확인한다.
+    - RED → GREEN → REFACTOR를 유지한다.
+    - 완료 조건을 확인한 뒤에만 체크한다.
+    - 범위나 설계가 틀렸다면 코드를 억지로 맞추지 말고 아티팩트를 수정한다.
+    - 체크박스 변경 후 `tasks_completed`와 `tasks_total`을 동기화한다.
+    - Blocker가 있으면 임의로 우회하지 말고 작업에 명시한다.

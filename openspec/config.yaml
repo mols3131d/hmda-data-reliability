@@ -1,28 +1,65 @@
-schema: spec-driven
+schema: openspec-rpi
 
 context: |
-  Markdown artifact는 Front Matter CMS의 openspec-rpi content type을 사용한다.
-  Research는 openspec/research/{research-id}/research.md에 두고 relatedArtifacts로
-  0개 이상의 OpenSpec change 또는 OpenSpec spec과 연결한다. (리서치와 리뷰 아티팩트는 relatedArtifacts에 포함하지 않는다.)
+  HMDA 데이터를 수집, 변환, 분석하는 데이터 엔지니어링 프로젝트다.
+  주요 기술은 Python, DuckDB, dbt, Dagster, pytest, uv다.
+
+  OpenSpec artifact는 에이전트뿐 아니라 사람이 빠르게 이해할 수 있어야 한다.
+
+  프로젝트 용어 계층:
+  Domain → optional Subdomain → Capability → Change
+
+  Spec ID:
+  <domain>[-<subdomain>]-<capability>
+
+  Change ID:
+  <spec-id>-<verb>-<object>
+
+  예:
+  - eda-notebook-runtime
+  - pipeline-silver-staging
+  - eda-notebook-runtime-add-smoke-verification
+
+  이름은 lowercase kebab-case를 사용한다.
+  Spec은 지속적인 Capability를 나타내는 명사형으로 작성한다.
+  Change는 구체적인 동사와 결과를 나타낸다.
+  update, improvement, enhancement, extension 같은 모호한 이름은 피한다.
+  서로 동급인 여러 Domain을 하나의 이름에 나열하지 않는다.
 
 rules:
   proposal:
-    - >-
-      문서 맨 앞에 YAML front matter를 추가한다. type=openspec-rpi,
-      category=proposal, relatedArtifacts=[{change-id}]를 사용하고 title,
-      description을 채운다. 관련 tag가 있으면 tags를 추가하고 status는 추가하지 않는다.
-  design:
-    - >-
-      문서 맨 앞에 YAML front matter를 추가한다. type=openspec-rpi,
-      category=design, relatedArtifacts=[{change-id}]를 사용하고 title,
-      description을 채운다. 관련 tag가 있으면 tags를 추가하고 status는 추가하지 않는다.
+    - Domain Path, Capability, Outcome과 영향받는 Spec을 명시한다.
+    - 문제, 의도, 범위와 범위 밖 항목을 간결하게 설명한다.
+    - 구현 방법과 파일 변경 목록은 Design으로 보낸다.
+
   specs:
-    - >-
-      각 spec.md 맨 앞에 YAML front matter를 추가한다. type=openspec-rpi,
-      category=spec, relatedArtifacts=[{change-id}]를 사용하고 title,
-      description을 채운다. 관련 tag가 있으면 tags를 추가하고 status는 추가하지 않는다.
+    - Spec ID는 <domain>[-<subdomain>]-<capability> 형식을 사용한다.
+    - 관찰하고 검증할 수 있는 시스템 행동과 데이터 계약만 작성한다.
+    - 각 Requirement에는 필요한 Scenario를 작성한다.
+    - 중요한 정상 경로와 경계·오류 조건을 다룬다.
+    - 파일명, 함수명, 클래스명, 라이브러리 선택은 제외한다.
+    - Requirement와 Scenario를 불필요하게 잘게 나누지 않는다.
+
+  design:
+    - 구현 접근법, 책임 경계, 데이터 흐름과 중요한 trade-off를 설명한다.
+    - 영향이 있는 경우에만 grain, schema, idempotency와 recovery를 검토한다.
+    - 복잡한 흐름에만 Mermaid를 사용한다.
+    - 단순한 변경에는 불필요한 설계를 추가하지 않는다.
+
   tasks:
-    - >-
-      문서 맨 앞에 YAML front matter를 추가한다. type=openspec-rpi,
-      category=tasks, relatedArtifacts=[{change-id}]를 사용하고 title,
-      description을 채운다. 관련 tag가 있으면 tags를 추가하고 status는 추가하지 않는다.
+    - 확인 가능한 하나의 완료 단위로 작성한다.
+    - 각 작업의 결과와 필요한 검증 근거를 명시한다.
+    - 구현과 검증이 실질적으로 다른 작업일 때만 분리한다.
+    - 불필요한 문서 작업이나 전체 저장소 검사를 추가하지 않는다.
+
+operations:
+  apply:
+    guidance:
+      - 요청된 변경 범위만 구현한다.
+      - 먼저 관련된 좁은 검증을 실행하고 필요한 경우에만 범위를 넓힌다.
+      - 구현 중 artifact와 실제 동작이 달라지면 관련 artifact를 갱신한다.
+
+  archive:
+    guidance:
+      - 관련 구현과 검증 근거를 확인한 뒤 보관한다.
+      - 완료 요약은 변경 결과와 남은 문제만 간결하게 작성한다.

@@ -142,13 +142,6 @@
           }
         },
         {
-          "title": "Related Artifacts",
-          "name": "relatedArtifacts",
-          "type": "list",
-          "description": "이 artifact와 직접 연결된 OpenSpec change 또는 OpenSpec spec 목록입니다.",
-          "default": []
-        },
-        {
           "title": "Tags",
           "name": "tags",
           "type": "tags",
