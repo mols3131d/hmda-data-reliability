@@ -1,20 +1,23 @@
 ---
-type: openspec-rpi
+type: openspec-spec-driven-tdd-design
 category: design
 title: <title>
 description: <설계의 접근법과 책임 경계를 짧게 설명한다.>
-# OPTIONAL: 태그가 있을 때만 필드 전체를 유지한다.
+# OPTIONAL PARSABLE TAGS: 생략하면 Proposal tags를 상속한다.
+# 유지한다면 Proposal tags와 정확히 일치시킨다.
 tags:
-  - "<domain>"
-  - "<subdomain>"
-  - "<capability>"
-  - "<field>"
-  - "<tag>"
+  - "domain:domain-name"
+  - "subdomain:subdomain-name"
+  - "capability:capability-name"
+  - "tag-name"
 ---
 
 <!--
 작성 규칙:
+- 본문 헤더는 기본적으로 서술 구조이며 별도 계약에 명시되지 않으면 파싱 API로 간주하지 않는다.
+- tags는 `tag` 또는 허용된 `prefix:tag` 형식만 사용한다.
 - HOW, 책임 경계와 중요한 기술적 결정에 집중한다.
+- tags를 유지한다면 Proposal tags와 정확히 일치시키며, 생략하면 상속으로 해석한다.
 - Specs의 Requirement와 Scenario를 반복하지 않는다.
 - OPTIONAL 블록은 내용이 있을 때만 유지한다.
 - 같은 내용을 Mermaid, 표와 본문으로 반복하지 않는다.

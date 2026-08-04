@@ -1,0 +1,108 @@
+name: spec-driven-tdd
+version: 1
+description: Spec-driven planning with pre-implementation review and TDD-compatible execution
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Change intent, scope, and affected capabilities
+    template: proposal.md
+    instruction: |
+      변경의 목적, 범위와 영향을 받는 Capability를 합의한다.
+
+      - 작성 전에 기존 Specs와 관련 맥락을 확인한다.
+      - 기존 책임으로 설명할 수 있는 변경에는 새 Capability를 만들지 않는다.
+      - 관찰 가능한 행동이나 계약이 바뀔 때만 Modified Capability로 선언한다.
+      - 독립적으로 구현하고 검증할 수 있는 변경은 별도 Proposal로 분리한다.
+      - 구현 방법, 기술 선택과 작업 순서는 Design과 Tasks에 맡긴다.
+      - 템플릿의 parser contract을 유지하고 Capability 선언과 Change-level tags를 일치시킨다.
+
+      목적, 경계와 Capability 범위가 후속 Specs를 작성하기에 충분할 때 완료한다.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Verifiable behavior contracts for affected capabilities
+    template: spec.md
+    instruction: |
+      Proposal에 선언된 Capability의 관찰 가능한 행동 계약을 정의한다.
+
+      - 각 Capability에는 대응하는 delta spec을 작성한다.
+      - 기존 Capability를 변경할 때는 현재 Spec을 기준으로 완전한 변경 결과를 표현한다.
+      - Requirement와 Scenario는 구현 방식과 무관하게 검증 가능해야 한다.
+      - 계약상 중요한 정상 동작, 실패 조건과 경계만 포함한다.
+      - 구현 구조, 기술 선택과 테스트 코드는 작성하지 않는다.
+      - 템플릿의 delta, Requirement, Scenario 및 tag parser contract을 유지한다.
+
+      Proposal의 Capability 범위가 빠짐없이 검증 가능한 계약으로 표현되었을 때 완료한다.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical approach, boundaries, and verification strategy
+    template: design.md
+    instruction: |
+      Proposal과 Specs를 충족하는 기술적 접근과 책임 경계를 정의한다.
+
+      - Specs를 반복하지 않고 구현에 영향을 주는 결정과 근거에 집중한다.
+      - 책임 경계, 주요 흐름, 위험, trade-off와 검증 전략을 필요한 만큼 기록한다.
+      - 단순하거나 되돌리기 쉬운 선택을 형식적으로 문서화하지 않는다.
+      - Specs, 접근 또는 Tasks를 바꾸는 미해결 질문은 완료 전에 해소한다.
+      - 파일별 작업과 세부 구현 순서는 Tasks에 맡긴다.
+      - tags를 작성한다면 Proposal과 일치시키고 템플릿의 parser contract을 유지한다.
+
+      중요한 구현 판단이 명확하고 Tasks를 안정적으로 도출할 수 있을 때 완료한다.
+    requires:
+      - proposal
+      - specs
+
+  - id: tasks
+    generates: tasks.md
+    description: Ordered and verifiable TDD implementation checklist
+    template: tasks.md
+    instruction: |
+      Specs와 Design을 순서가 있는 검증 가능한 구현 작업으로 분해한다.
+
+      - 파일 목록보다 독립적으로 구현하고 검증할 수 있는 행동 단위를 우선한다.
+      - 행동 변경은 가능한 범위에서 실패 검증을 먼저 고정하는 순서로 구성한다.
+      - 각 작업에는 하나의 명확한 결과와 객관적인 완료 조건을 둔다.
+      - 결정되지 않은 설계나 새로운 계약을 Task에 숨기지 않는다.
+      - 구현 중 계획 오류가 발견되면 관련 artifact로 환류할 수 있게 추적성을 유지한다.
+      - 템플릿의 checkbox, progress field 및 tag parser contract을 유지한다.
+
+      모든 계획 범위가 의존성 순서와 검증 근거를 가진 작업으로 연결되었을 때 완료한다.
+    requires:
+      - specs
+      - design
+
+  - id: plan-review
+    generates: plan-review.md
+    description: Pre-implementation consistency and executability review
+    template: plan-review.md
+    instruction: |
+      Proposal, Specs, Design과 Tasks가 일관되고 실행 가능한 계획인지 검토한다.
+
+      - 계획 작성 과정의 결론을 그대로 전제하지 않고 비판적으로 검토한다.
+      - 목적과 범위, 행동 계약, 설계 적합성, TDD 준비도와 추적성을 확인한다.
+      - 구현을 막거나 결과를 불확실하게 만드는 누락, 모순과 미해결 의존성을 찾는다.
+      - Finding은 확인 가능한 근거, 영향받는 artifact와 필요한 변경을 포함한다.
+      - 선호 차이 또는 이론적 가능성만으로 변경을 요구하지 않는다.
+      - 템플릿의 status와 Required Changes parser contract을 유지한다.
+      - 구현을 막는 문제가 없을 때만 approved로 판정한다.
+
+      후속 조치와 구현 진입 가능 여부를 명확한 status로 판정했을 때 완료한다.
+    requires:
+      - proposal
+      - specs
+      - design
+      - tasks
+
+apply:
+  requires:
+    - plan-review
+  tracks: tasks.md
+  instruction: |
+    Plan Review 결과를 확인하고 미완료 Tasks를 수행한다.
+
+    프로젝트 지침과 도구에 맞는 test-first feedback loop를 사용하고 작업 진행 상태를 유지한다. 구현 과정에서 계획의 오류나 누락이 확인되면 관련 artifact를 갱신하고 필요한 검토를 다시 수행한다.

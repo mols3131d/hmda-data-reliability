@@ -2,18 +2,18 @@
 
 ## Purpose
 
-scratch 입력 문서를 현재 repo의 foundation 완료 증거, 제외 범위, 후속 MVP 후보와 연결하는 기준선을 정의한다.
+기초 문서를 현재 repo의 foundation 완료 증거, 제외 범위, 후속 MVP 후보와 연결하는 기준선을 정의한다.
 
 ## Requirements
 
 ### Requirement: Foundation source alignment
 
-시스템은 scratch 문서의 foundation 목적, 원칙, MVP 범위, 작업 순서를 repo의 공식 기준선과 연결해야 한다(SHALL). 공식 기준선은 scratch 문서의 반복 설명을 그대로 복제하지 않고 완료 판단에 필요한 핵심 요구만 제공해야 한다(MUST).
+시스템은 기초 문서의 foundation 목적, 원칙, MVP 범위, 작업 순서를 repo의 공식 기준선과 연결해야 한다(SHALL). 공식 기준선은 기초 문서의 반복 설명을 그대로 복제하지 않고 완료 판단에 필요한 핵심 요구만 제공해야 한다(MUST).
 
-#### Scenario: scratch 기준선 입력 확인
+#### Scenario: foundation 기준선 입력 확인
 
 - **WHEN** 사용자가 foundation 기준선을 확인할 때
-- **THEN** repo 문서는 `scratch/docs/foundation.md`, `scratch/docs/mvp_scope.md`, `scratch/docs/memo.md`를 입력 근거로 참조해야 한다.
+- **THEN** repo 문서는 `docs/development/foundation/` 문서를 입력 근거로 참조해야 한다.
 
 #### Scenario: 문서 역할 중복 방지
 
@@ -72,4 +72,4 @@ scratch 입력 문서를 현재 repo의 foundation 완료 증거, 제외 범위,
 #### Scenario: OpenSpec workflow 적용 확인
 
 - **WHEN** 사용자가 foundation baseline OpenSpec 변경 이력을 확인할 때
-- **THEN** `openspec/changes/archive/` 아래 `complete-foundation-baseline` archive에 proposal, design, specs, tasks artifact가 있어야 한다.
+- **THEN** `openspec/changes/archive/` 아래 `2026-06-10-complete-foundation-baseline` archive에 proposal, design, specs, tasks artifact가 있어야 한다.

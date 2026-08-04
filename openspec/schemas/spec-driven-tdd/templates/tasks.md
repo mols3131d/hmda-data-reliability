@@ -1,22 +1,26 @@
 ---
-type: openspec-rpi
+type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: <title>
 description: <구현 범위와 완료 목표를 짧게 설명한다.>
-# DERIVED: 본문의 모든 체크박스에서 계산한다.
+# DERIVED: tasks.md 본문의 파싱 대상 체크박스에서 계산한다.
 tasks_completed: 0
 tasks_total: 0
-# OPTIONAL: 태그가 있을 때만 필드 전체를 유지한다.
+# OPTIONAL PARSABLE TAGS: 생략하면 Proposal tags를 상속한다.
+# 유지한다면 Proposal tags와 정확히 일치시킨다.
 tags:
-  - "<domain>"
-  - "<subdomain>"
-  - "<capability>"
-  - "<field>"
-  - "<tag>"
+  - "domain:domain-name"
+  - "subdomain:subdomain-name"
+  - "capability:capability-name"
+  - "tag-name"
 ---
 
 <!--
 작성 규칙:
+- `tasks_completed`와 `tasks_total`은 생성된 Change artifact의 체크박스에서 계산하는 파생값이며 체크박스가 원본이다.
+- schema template의 초기값은 0이며 생성 또는 갱신 직후 재계산한다.
+- tags를 유지한다면 Proposal tags와 정확히 일치시키며, 생략하면 상속으로 해석한다.
+- 파싱 대상 작업은 줄 시작이 정확히 `- [ ]` 또는 `- [x]`인 최상위 체크박스다.
 - 모든 실행 작업은 완료 여부를 검증할 수 있는 체크박스로 작성한다.
 - 의존성 순서로 배치하고 하나의 작업에는 하나의 결과만 둔다.
 - 행동 변경은 가능한 한 RED → GREEN → REFACTOR로 구성한다.
@@ -35,6 +39,14 @@ tags:
   - **Done when:** <충족 여부를 확인할 근거>
 
 ## Tasks
+
+<!--
+PARSING CONTRACT:
+- 작업 체크박스는 들여쓰기 없이 줄 시작에서 `- [ ]` 또는 `- [x]`를 사용한다.
+- 체크 상태는 소문자 `x`로 기록한다.
+- `Covers`, `Done when` 같은 메타데이터는 체크박스로 작성하지 않는다.
+- fenced code block과 HTML comment 안의 예시는 집계하지 않는다.
+-->
 
 ### 1. <Workstream>
 

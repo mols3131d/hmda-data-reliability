@@ -1,19 +1,21 @@
 ---
-type: openspec-rpi
+type: openspec-spec-driven-tdd-proposal
 category: proposal
 title: <title>
 description: <description>
-# OPTIONAL: 태그가 있을 때만 필드 전체를 유지한다.
+# OPTIONAL PARSABLE TAGS: Change-level 분류의 source of truth다.
+# 허용 형식: tag | domain:tag | subdomain:tag | capability:tag
 tags:
-  - "<domain>"
-  - "<subdomain>"
-  - "<capability>"
-  - "<field>"
-  - "<tag>"
+  - "domain:domain-name"
+  - "subdomain:subdomain-name"
+  - "capability:capability-name"
+  - "tag-name"
 ---
 
 <!--
 작성 규칙:
+- `## Capabilities`, `### New Capabilities`, `### Modified Capabilities`와 Capability 이름 헤더는 파싱 계약으로 유지한다.
+- tags는 Change-level 분류의 source of truth이며 Capability 선언과 일치시킨다.
 - OPTIONAL 블록은 내용이 있을 때만 유지한다.
 - 빈 섹션, 표, 목록과 placeholder를 남기지 않는다.
 - 고정된 필드와 섹션 이름은 영어를 유지한다.
