@@ -49,7 +49,7 @@ output: auto
 | 근거 품질, 분류, 충돌과 추적성 | [Evidence](references/evidence.md) |
 | 완료 상태, Chat·Artifact와 이식성 | [Output](references/output.md) |
 
-Artifact는 프로젝트의 기존 Research 템플릿과 저장 규칙을 사용한다. 별도 형식이나 경로를 만들지 않는다.
+Artifact는 프로젝트의 기존 Research 템플릿과 저장 규칙을 사용한다. 템플릿의 관련 항목과 필수 항목은 근거로 채우며, 부족한 정보는 현재 목표의 범위 안에서 추가 조사한다. 무관한 선택 항목은 억지로 채우지 않는다.
 
 ## Completion
 
