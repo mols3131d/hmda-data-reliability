@@ -23,15 +23,7 @@ pivot-research/
 
 ## Content Ownership
 
-| Location | Current content |
-| --- | --- |
-| `README.md` | 사용자용 개요, Arguments, 예시와 출력 설명 |
-| `SKILL.md` | Arguments, 5단계 핵심 흐름, 참조 선택, 완료와 경계 |
-| `references/workflow.md` | 상세 조사 흐름, 엄밀도와 종료 기준 |
-| `references/evidence.md` | 근거 분류, 품질, 충돌과 추적성 |
-| `references/output.md` | 완료 상태, Chat·Artifact와 이식성 |
-| `docs/DIRECTIVE.md` | 목적, 요구사항, 불변 조건과 설계 결정 |
-| `docs/WORKING.md` | 현재 구조, 검증 결과와 남은 작업 |
+콘텐츠 책임의 기준선은 `docs/DIRECTIVE.md`의 **Content Ownership**을 따른다.
 
 ## Arguments
 
@@ -71,6 +63,7 @@ pivot-research/
 | 2 | 최소 충분 조사와 근거 추적성을 추가했다. |
 | 3 | 완료 기준을 질문과 사용 목적 중심으로 일반화했다. |
 | Refactor | 사용자 문서, 실행 지침, 상세 Reference와 개발 문서를 분리했다. |
+| Final | KISS·DRY·인간 가독성과 편집 용이성을 검토하고 Content Ownership 중복을 제거했다. |
 
 ## Remaining Validation
 
