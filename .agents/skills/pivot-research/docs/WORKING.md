@@ -37,6 +37,25 @@ pivot-research/
 
 출력 경로, Research ID와 템플릿은 프로젝트의 기존 Artifact 계약이 소유한다.
 
+## Current Interpretation
+
+```text
+Question
+→ Template expectations
+→ Scope and subquestions
+→ Evidence
+→ Gaps
+→ Synthesis
+→ Output
+```
+
+- 템플릿은 단순 서식이 아니라 Artifact가 기대하는 정보 구조다.
+- 질문 다음으로 기존 Research 템플릿과 Artifact 계약을 확인한다.
+- 필수 항목과 조사 목표에 관련된 항목을 하위 질문과 범위에 반영한다.
+- 부족한 정보는 현재 목표와 관련된 범위에서 추가 조사한다.
+- 무관한 선택 항목은 억지로 채우지 않으며 확인하지 못한 내용을 추측하지 않는다.
+- 템플릿은 핵심 질문, 사용자 의도, 근거 기준과 종료 조건을 대체하지 않는다.
+
 ## Validation
 
 ### Structure
@@ -54,6 +73,8 @@ pivot-research/
 - 이식성(Portability): 특정 workflow, schema 또는 directory 없이 Chat Research가 가능하다.
 - 추적성(Traceability): 중요한 결론은 재확인 가능한 근거 위치와 연결한다.
 - 조사 비용: 답이나 불확실성을 바꾸지 않는 추가 조사는 중단한다.
+- 템플릿 충족: 필수·관련 항목은 근거로 채우되 무관한 항목과 추측성 내용은 강제하지 않는다.
+- Markdown: 표 안의 값 구분용 `|`는 `\|`로 이스케이프한다.
 
 ## Review History
 
@@ -63,11 +84,11 @@ pivot-research/
 | 2 | 최소 충분 조사와 근거 추적성을 추가했다. |
 | 3 | 완료 기준을 질문과 사용 목적 중심으로 일반화했다. |
 | Refactor | 사용자 문서, 실행 지침, 상세 Reference와 개발 문서를 분리했다. |
-| Final | KISS·DRY·인간 가독성과 편집 용이성을 검토하고 Content Ownership 중복을 제거했다. |
+| Template | 질문 다음으로 템플릿을 확인하고 기대 내용을 조사 범위에 반영했다. |
 
 ## Remaining Validation
 
-- 실제 Research 작업으로 Reference 선택이 과도하거나 부족하지 않은지 확인해야 한다.
+- 실제 Research 작업으로 Template expectations가 범위를 과도하게 확장하지 않는지 확인해야 한다.
 - `output: auto`와 엄밀도 자동 선택을 도그푸딩(Dogfooding)해야 한다.
 - 프로젝트의 기존 템플릿과 Artifact 계약을 올바르게 발견하는지 실행 검증이 필요하다.
 
