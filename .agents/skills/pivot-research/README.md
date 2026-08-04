@@ -26,13 +26,23 @@ output: auto
 
 | Argument | 설명 |
 | --- | --- |
-| `--question <text|auto>` | 핵심 질문 또는 조사 목표 |
-| `--scope <value,...|auto>` | 조사할 경로, 시스템, 버전 또는 주제 |
+| `--question <text\|auto>` | 핵심 질문 또는 조사 목표 |
+| `--scope <value,...\|auto>` | 조사할 경로, 시스템, 버전 또는 주제 |
 | `--exclude <value,...>` | 조사에서 제외할 대상 |
-| `--rigor <auto|lite|standard|strict>` | 조사 엄밀도(Rigor) |
-| `--output <auto|chat|artifact>` | 결과를 Chat 또는 Artifact로 남길지 지정 |
+| `--rigor <auto\|lite\|standard\|strict>` | 조사 엄밀도(Rigor) |
+| `--output <auto\|chat\|artifact>` | 결과를 Chat 또는 Artifact로 남길지 지정 |
 
 `auto`는 사용자 요청, 프로젝트 규칙과 기존 Research 자산을 바탕으로 가장 작은 합리적 값을 선택합니다.
+
+## Workflow
+
+1. 핵심 질문을 정합니다.
+2. 프로젝트의 기존 Research 템플릿을 확인하여 기대되는 내용을 파악합니다.
+3. 질문과 템플릿을 바탕으로 조사 범위와 필요한 하위 질문을 정합니다.
+4. 기존 근거를 확인하고 부족한 근거만 조사합니다.
+5. 결과를 Chat 또는 Artifact로 정리합니다.
+
+템플릿은 단순한 문서 서식이 아니라 Artifact에 기대되는 정보 구조입니다. 필수 항목과 조사 목표에 관련된 항목은 근거를 확보해 채웁니다.
 
 ## Examples
 
@@ -65,4 +75,5 @@ Artifact가 필요하면 프로젝트에 이미 존재하는 Research 템플릿�
 - 기존 근거를 먼저 확인하고 부족한 부분만 조사합니다.
 - 중요한 결론은 파일, 기호, 명령 결과 또는 URL과 연결합니다.
 - 답이나 주요 불확실성을 바꾸지 않는 추가 조사는 중단합니다.
+- 템플릿은 조사에 필요한 내용을 확장할 수 있지만 핵심 질문을 대체하지 않습니다.
 - 특정 workflow, schema 또는 directory에 종속되지 않습니다.
