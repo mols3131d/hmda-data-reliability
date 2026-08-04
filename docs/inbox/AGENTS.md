@@ -1,2 +1,3 @@
 - Store temporary, unclassified, draft, or under-review documents only.
+- Do not store data, cache, or artifacts here.
 - **Never reference or link to files here.**
