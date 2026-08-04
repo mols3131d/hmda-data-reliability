@@ -1,0 +1,201 @@
+version: 1
+
+dashboard:
+  level: domain
+  title: Foundation Readiness Dashboard
+  snapshot: "2026-08-03"
+  current_focus: EDA runtime evidence 고정 및 Foundation readiness 판단 기준 확정
+  include_total: true
+
+items:
+  - name: HMDA Source Ingestion
+    implementation:
+      status: implemented
+      progress: 7/7
+    verification:
+      status: passing
+      progress: 7/7
+
+  - name: Bronze Raw Table
+    implementation:
+      status: implemented
+      progress: 7/7
+    verification:
+      status: passing
+      progress: 7/7
+
+  - name: Partition Ingestion Idempotency
+    implementation:
+      status: implemented
+      progress: 5/5
+    verification:
+      status: passing
+      progress: 5/5
+
+  - name: Silver Source Contract
+    implementation:
+      status: implemented
+      progress: 18/18
+    verification:
+      status: passing
+      progress: 18/18
+
+  - name: Silver Staging Layer
+    implementation:
+      status: implemented
+      progress: 18/18
+    verification:
+      status: passing
+      progress: 18/18
+
+  - name: Gold Mart Grain Alignment
+    implementation:
+      status: implemented
+      progress: 18/18
+    verification:
+      status: passing
+      progress: 18/18
+
+  - name: Gold Analysis Metrics
+    implementation:
+      status: implemented
+      progress: 18/18
+    verification:
+      status: passing
+      progress: 18/18
+
+  - name: EDA Schema and Volume Observation
+    implementation:
+      status: implemented
+      progress: 11/11
+    verification:
+      status: passing
+      progress: 11/11
+
+  - name: EDA Quality Baseline
+    implementation:
+      status: in_progress
+      progress: 11/12
+      gaps:
+        - 실제 source observation 실행 및 결과 기록 자동화
+    verification:
+      status: partial
+      progress: 11/12
+      gaps:
+        - state: unverified
+          text: 실제 HMDA source 실행 시점 및 결과 evidence 미기록
+
+  - name: EDA Domain Observation
+    implementation:
+      status: in_progress
+      progress: 25/26
+      gaps:
+        - Deterministic fixture exact invariant task 2.1 완료
+    verification:
+      status: partial
+      progress: 25/26
+      gaps:
+        - state: unverified
+          text: Task 2.1 distribution/numeric/anomaly exact expected value 미검증
+
+  - name: EDA Notebook Runtime
+    implementation:
+      status: in_progress
+      progress: 1/3
+      gaps:
+        - Valid input notebook runtime smoke 구현
+        - Malformed input notebook runtime smoke 구현
+    verification:
+      status: unverified
+      progress: 0/2
+      gaps:
+        - state: unverified
+          text: Valid input notebook runtime smoke 미검증
+        - state: unverified
+          text: Malformed input notebook runtime smoke 미검증
+
+  - name: Evidence Retention
+    implementation:
+      status: implemented
+      progress: 13/13
+    verification:
+      status: passing
+      progress: 13/13
+
+  - name: Reliability Contracts
+    implementation:
+      status: implemented
+      progress: 7/7
+    verification:
+      status: passing
+      progress: 7/7
+
+  - name: Read-Only Lifecycle Boundary
+    implementation:
+      status: implemented
+      progress: 15/15
+    verification:
+      status: passing
+      progress: 15/15
+
+  - name: Recovery Boundary
+    implementation:
+      status: implemented
+      progress: 4/4
+    verification:
+      status: passing
+      progress: 4/4
+
+  - name: Evaluation Boundary
+    implementation:
+      status: implemented
+      progress: 2/2
+    verification:
+      status: passing
+      progress: 2/2
+
+  - name: Pipeline Execution Boundaries
+    implementation:
+      status: in_progress
+      progress: 5/6
+      gaps:
+        - Orchestration task와 실제 pipeline evidence 연결
+    verification:
+      status: partial
+      progress: 5/6
+      gaps:
+        - state: unverified
+          text: Bronze->dbt 실행 evidence 및 제외 범위 확인 필요
+
+  - name: Foundation Completion Decision
+    implementation:
+      status: planned
+      progress: 0/2
+      gaps:
+        - Capability별 ready 판정 checklist 확정
+        - Minimum ready criteria 문서화
+    verification:
+      status: unverified
+      progress: 0/1
+      gaps:
+        - state: unverified
+          text: Foundation ready 최종 판정 근거 확인 필요
+
+risks:
+  - area: Foundation Completion Decision
+    text: 최소 ready 완료 기준이 명시적으로 확정되지 않음
+    impact: 테스트 통과 여부와 상관없이 Foundation 종료 판정이 지연될 수 있음
+  - area: EDA Notebook Runtime
+    text: Notebook runtime smoke가 자동화 CI/pytest 수집과 분리되어 있음
+    impact: Notebook 실행 회귀를 자동 pytest 수집 단계에서 즉시 감지하지 못할 수 있음
+
+references:
+  - "[Bronze Data Pipeline](data-pipeline-bronze.md)"
+  - "[Silver Data Pipeline](data-pipeline-silver.md)"
+  - "[Gold Data Pipeline](data-pipeline-gold.md)"
+  - "[EDA Baseline](eda.md)"
+  - "[Observability](observability.md)"
+  - "[Reliability Boundaries](reliability.md)"
+  - "[Orchestration Boundaries](orchestration.md)"
+  - "[ARCHITECTURE](../../ARCHITECTURE.md)"
+  - "OpenSpec change: `hmda-eda-foundation-extension` (7/18 tasks completed)"
