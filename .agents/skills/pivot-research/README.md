@@ -18,6 +18,7 @@
 
 ```yaml
 question: auto
+template: auto
 scope: auto
 exclude: []
 rigor: auto
@@ -27,22 +28,24 @@ output: auto
 | Argument | 설명 |
 | --- | --- |
 | `--question <text\|auto>` | 핵심 질문 또는 조사 목표 |
+| `--template <path\|auto>` | 사용할 Research 템플릿 경로 |
 | `--scope <value,...\|auto>` | 조사할 경로, 시스템, 버전 또는 주제 |
 | `--exclude <value,...>` | 조사에서 제외할 대상 |
 | `--rigor <auto\|lite\|standard\|strict>` | 조사 엄밀도(Rigor) |
 | `--output <auto\|chat\|artifact>` | 결과를 Chat 또는 Artifact로 남길지 지정 |
 
-`auto`는 사용자 요청, 프로젝트 규칙과 기존 Research 자산을 바탕으로 가장 작은 합리적 값을 선택합니다.
+`template: auto`는 프로젝트 설정, 기존 Research Artifact, 예상 보고서 저장 경로와 그 주변의 가까운 템플릿 후보만 짧게 확인합니다. 찾지 못하면 저장소 전체를 뒤지지 않고 템플릿 없이 계속합니다.
 
 ## Workflow
 
 1. 핵심 질문을 정합니다.
-2. 프로젝트의 기존 Research 템플릿을 확인하여 기대되는 내용을 파악합니다.
-3. 질문과 템플릿을 바탕으로 조사 범위와 필요한 하위 질문을 정합니다.
-4. 기존 근거를 확인하고 부족한 근거만 조사합니다.
-5. 결과를 Chat 또는 Artifact로 정리합니다.
+2. 지정된 템플릿을 읽거나 가까운 후보를 짧게 찾습니다.
+3. 템플릿과 주변 폴더의 로컬 지침에서 기대되는 내용을 파악합니다.
+4. 질문과 템플릿을 바탕으로 조사 범위와 필요한 하위 질문을 정합니다.
+5. 기존 근거를 확인하고 부족한 근거만 조사합니다.
+6. 결과를 Chat 또는 Artifact로 정리합니다.
 
-템플릿은 단순한 문서 서식이 아니라 Artifact에 기대되는 정보 구조입니다. 필수 항목과 조사 목표에 관련된 항목은 근거를 확보해 채웁니다.
+템플릿은 단순 서식이 아니라 Artifact에 기대되는 정보 구조입니다. `<...>`, `{...}`, `{{...}}` 플레이스홀더와 주석에도 작성 지침이 포함될 수 있습니다.
 
 ## Examples
 
@@ -52,28 +55,29 @@ output: auto
 --question "이 설정은 어디에서 적용되는가?" --rigor lite
 ```
 
-여러 코드 영역의 관계를 조사합니다.
+템플릿을 직접 지정합니다.
 
 ```text
---question "EDA 실행 경계와 실패 전파 경로는 무엇인가?" --scope src/,tests/ --rigor standard
+--question "복구 절차의 위험은 무엇인가?" --template docs/templates/research.md --rigor strict --output artifact
 ```
 
-지속적으로 참조할 조사 결과를 요청합니다.
+자동으로 가까운 템플릿을 찾습니다.
 
 ```text
---question "복구 절차의 데이터 손실 위험은 무엇인가?" --rigor strict --output artifact
+--question "EDA 실행 경계와 실패 전파 경로는 무엇인가?" --template auto --scope src/,tests/
 ```
 
 ## Output
 
 Chat 결과는 현재 답, 주요 근거, 남은 불확실성과 다음 행동을 간결하게 제공합니다.
 
-Artifact가 필요하면 프로젝트에 이미 존재하는 Research 템플릿과 저장 규칙을 사용합니다. 템플릿의 필수 항목과 조사 목표에 관련된 항목은 근거를 확보해 채웁니다. 정보가 부족하면 해당 항목에 필요한 범위에서 추가 조사하며, 무관한 선택 항목은 프로젝트 규칙에 따라 생략하거나 미확인으로 표시합니다.
+Artifact가 필요하면 발견된 Research 템플릿과 프로젝트 저장 규칙을 사용합니다. 필수 항목과 조사 목표에 관련된 항목은 근거를 확보해 채웁니다. 템플릿을 찾지 못하면 템플릿 없이 작성합니다.
 
 ## Principles
 
 - 기존 근거를 먼저 확인하고 부족한 부분만 조사합니다.
 - 중요한 결론은 파일, 기호, 명령 결과 또는 URL과 연결합니다.
 - 답이나 주요 불확실성을 바꾸지 않는 추가 조사는 중단합니다.
+- 템플릿 탐색은 가까운 후보로 제한합니다.
 - 템플릿은 조사에 필요한 내용을 확장할 수 있지만 핵심 질문을 대체하지 않습니다.
 - 특정 workflow, schema 또는 directory에 종속되지 않습니다.
