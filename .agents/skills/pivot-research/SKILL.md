@@ -26,15 +26,15 @@ output: auto
 | `--scope <path,...\|auto>` | 직접 조사할 경로 또는 영역 | 직접 관련된 조사 영역(Surface)과 근거 검증에 필요한 관계까지만 포함한다. |
 | `--exclude <path,...>` | 조사에서 제외할 경로 또는 영역 | 지정된 대상을 읽거나 근거로 사용하지 않는다. |
 | `--rigor <auto\|lite\|standard\|strict>` | 조사 엄밀도(Rigor) | 불확실성, 영향 범위, 되돌리기 어려움, 외부 의존성을 기준으로 선택한다. |
-| `--research-id <id\|auto>` | Research artifact 식별자 | artifact가 필요할 때 질문을 나타내는 repository-unique kebab-case ID를 만든다. |
+| `--research-id <id\|auto>` | Research artifact 식별자 | artifact가 필요할 때 질문을 나타내는 저장소 고유 케밥 표기(kebab-case) ID를 만든다. |
 | `--output <auto\|chat\|artifact>` | 결과를 남길 위치 | 다음 단계에 지속 가능한 전달(Durable Handoff)이 필요하면 artifact, 단순 조사면 chat을 사용한다. |
 
 명시된 argument가 사용자 요청이나 기존 artifact와 충돌하면 조용히 덮어쓰지 않는다.
 
-사용 예:
+요청에 argument를 함께 적을 수 있다.
 
 ```text
-/pivot-research --question "현재 EDA 실행 경계는 무엇인가?" --scope src/,tests/ --rigor standard --output artifact
+--question "현재 EDA 실행 경계는 무엇인가?" --scope src/,tests/ --rigor standard --output artifact
 ```
 
 ### Rigor
