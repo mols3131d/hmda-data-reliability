@@ -1,13 +1,13 @@
 ---
 name: pivot-research
-description: Research Project Pivot code, behavior, dependencies, failures, and external facts before OpenSpec or implementation. Use when the main Project Pivot agent needs evidence to understand current state, bound scope, compare material options, explain a failure, or prepare an OpenSpec change. The main agent owns synthesis and any Research artifact; specialists answer only bounded evidence questions. Do not use for implementation, final requirements, or independent Review.
+description: Conduct evidence-backed research before specification, implementation, or technical decisions. Use to understand current behavior, bound scope, verify dependencies, compare meaningful options, or investigate failures. The calling main agent owns the question, synthesis, status, and output. Optional specialists and project templates may assist but are not required.
 ---
 
 # Pivot Research
 
-Project Pivot의 메인 agent가 필요한 근거를 직접 조사하고, 다음 판단에 사용할 수 있는 형태로 정리한다.
+호출한 메인 Agent가 필요한 근거를 직접 조사하고, 다음 판단에 사용할 수 있는 형태로 정리한다.
 
-Research는 단순 검색이 아니다. 현재 상태와 불확실성을 확인하는 단계이며, 최종 요구사항이나 구현을 소유하지 않는다.
+Research는 단순 검색이 아니다. 현재 상태와 불확실성을 확인하는 단계이며, 요구사항·설계·구현을 대신 결정하지 않는다.
 
 ## Arguments
 
@@ -16,22 +16,24 @@ question: auto
 scope: auto
 exclude: []
 rigor: auto
-research_id: auto
 output: auto
+research_id: auto
+artifact_path: auto
+template: auto
 ```
 
-| Argument | Meaning | `auto` behavior |
+| Argument | 의미 | `auto` 동작 |
 | --- | --- | --- |
-| `--question <text\|auto>` | 이번 Research가 답할 하나의 질문 | 사용자 요청과 현재 단계(Phase)에서 가장 작은 질문을 도출한다. |
-| `--scope <path,...\|auto>` | 직접 조사할 경로 또는 영역 | 직접 관련된 조사 영역(Surface)과 근거 검증에 필요한 관계까지만 포함한다. |
-| `--exclude <path,...>` | 조사에서 제외할 경로 또는 영역 | 지정된 대상을 읽거나 근거로 사용하지 않는다. |
-| `--rigor <auto\|lite\|standard\|strict>` | 조사 엄밀도(Rigor) | 불확실성, 영향 범위, 되돌리기 어려움, 외부 의존성을 기준으로 선택한다. |
-| `--research-id <id\|auto>` | Research artifact 식별자 | artifact가 필요할 때 질문을 나타내는 저장소 고유 케밥 표기(kebab-case) ID를 만든다. |
-| `--output <auto\|chat\|artifact>` | 결과를 남길 위치 | 다음 단계에 지속 가능한 전달(Durable Handoff)이 필요하면 artifact, 단순 조사면 chat을 사용한다. |
+| `--question <text\|auto>` | 이번 Research가 답할 하나의 질문 | 사용자 요청에서 가장 작은 핵심 질문을 도출한다. |
+| `--scope <path,...\|auto>` | 직접 조사할 경로 또는 영역 | 질문과 직접 관련된 영역과 근거 검증에 필요한 관계까지만 포함한다. |
+| `--exclude <path,...>` | 조사에서 제외할 경로 또는 영역 | 지정한 대상을 읽거나 근거로 사용하지 않는다. |
+| `--rigor <auto\|lite\|standard\|strict>` | 조사 엄밀도(Rigor) | 불확실성, 영향 범위, 복구 가능성, 외부 의존성을 기준으로 선택한다. |
+| `--output <auto\|chat\|artifact>` | 결과를 남길 방식 | 다음 작업에 지속적인 전달이 필요하면 artifact, 아니면 chat을 사용한다. |
+| `--research-id <id\|auto>` | Research 식별자 | artifact를 만들 때 질문을 나타내는 케밥 표기(kebab-case) ID를 만든다. |
+| `--artifact-path <path\|auto>` | Research artifact 저장 위치 | 활성 프로젝트의 설정, 관례 또는 기존 Research 위치를 따른다. |
+| `--template <path\|auto\|none>` | 사용할 Research 템플릿 | 프로젝트에 이미 있는 Research 템플릿을 찾아 재사용한다. |
 
-명시된 argument가 사용자 요청이나 기존 artifact와 충돌하면 조용히 덮어쓰지 않는다.
-
-요청에 argument를 함께 적을 수 있다.
+명시된 argument를 가장 먼저 적용한다. 사용자 의도나 기존 artifact와 충돌하면 조용히 덮어쓰지 않는다.
 
 ```text
 --question "현재 EDA 실행 경계는 무엇인가?" --scope src/,tests/ --rigor standard --output artifact
@@ -39,20 +41,39 @@ output: auto
 
 ### Rigor
 
-| Level | Use when |
+| Level | 사용 기준 |
 | --- | --- |
 | `lite` | 한두 파일의 국소적인 현재 상태만 확인하면 된다. |
-| `standard` | 여러 파일, 동작 변경 또는 주요 의존 관계를 함께 확인해야 한다. |
+| `standard` | 여러 파일, 동작 또는 주요 의존 관계를 함께 확인해야 한다. |
 | `strict` | 데이터 손실, 호환성, 보안, 아키텍처 또는 외부 계약 위험이 있다. |
+
+## Compatibility
+
+이 스킬은 특정 Agent 이름, workflow, schema 또는 directory를 필수로 요구하지 않는다.
+
+| Integration | 처리 |
+| --- | --- |
+| 저장소 탐색 전문 Agent | 사용할 수 있으면 제한된 코드 탐색을 위임하고, 없으면 메인 Agent가 직접 조사한다. |
+| 외부 조사 전문 Agent | 사용할 수 있으면 공식 자료 확인을 위임하고, 없으면 메인 Agent가 직접 조사한다. |
+| 프로젝트 Research 템플릿 | 있으면 그대로 사용한다. 이 스킬 안에 복제하지 않는다. |
+| 프로젝트 artifact 규칙 | 있으면 저장 위치, front matter와 상태 규칙을 따른다. |
+| 위 항목이 없음 | Chat 결과는 계속 작성할 수 있다. Artifact가 명시적으로 필요하면 경로와 형식을 임의로 만들지 않고 `blocked`로 보고한다. |
+
+자동 탐색 순서는 다음과 같다.
+
+1. 명시된 argument
+2. 활성 workflow 또는 프로젝트 설정
+3. 기존 Research artifact와 템플릿
+4. 일반적인 chat 보고
 
 ## Research
 
 ```mermaid
 flowchart LR
-    A[Frame] --> B[Reuse evidence]
-    B --> C[Investigate gaps]
-    C --> D[Verify and synthesize]
-    D --> E[Report or artifact]
+    A[질문과 범위 설정] --> B[기존 근거 재사용]
+    B --> C[부족한 근거 조사]
+    C --> D[검증과 종합]
+    D --> E[Chat 또는 Artifact]
 ```
 
 ### Frame
@@ -68,10 +89,10 @@ flowchart LR
 
 ### Reuse Evidence
 
-새 조사를 시작하기 전에 기존 근거를 확인한다.
+새 조사를 시작하기 전에 다음 근거를 필요한 만큼 확인한다.
 
 1. 사용자 요청과 명시적 제약
-2. 관련 OpenSpec 및 지속되는 결정(Durable Decision)
+2. 활성 명세와 지속되는 결정(Durable Decision)
 3. 프로젝트 문서와 규칙
 4. 코드와 설정
 5. 테스트와 실행 계약(Executable Contract)
@@ -83,46 +104,42 @@ flowchart LR
 
 ### Investigate Gaps
 
-메인 agent가 Research를 소유하고 최종 판단과 artifact 작성을 직접 수행한다.
+메인 Agent가 Research를 소유하고 최종 판단과 결과 작성을 직접 수행한다.
 
-다음 경우에만 전문 보조 Agent(Specialist)를 도구처럼 사용한다.
+전문 보조 Agent(Specialist)는 사용할 수 있을 때만 도구처럼 활용한다.
 
-| Specialist | Use when |
-| --- | --- |
-| `explorer` | 관련 코드 영역, symbol, 호출 관계 탐색이 메인 문맥(Context)을 크게 소모할 때 |
-| `web-researcher` | 외부 API, 버전, 표준 또는 공식 문서의 사실 확인이 필요할 때 |
+- 저장소 탐색에는 읽기 전용 코드 탐색 능력을 사용한다.
+- 외부 사실 확인에는 공식 자료 조사 능력을 사용한다.
+- 한 번의 위임에는 하나의 제한된 질문만 전달한다.
+- 반환된 내용은 근거 후보로 취급하고 위치와 적용 범위를 다시 확인한다.
 
-위임은 한 번에 하나의 제한된 질문만 포함한다. specialist의 답은 근거 후보이며, 메인 agent가 근거 위치(Locator)와 적용 범위를 확인한 뒤 사용한다.
+다음 책임은 위임하지 않는다.
 
-다음은 위임하지 않는다.
-
-- Research 질문과 범위 결정
-- 출처(Source) 충돌의 최종 해석
-- 중대한 제품 또는 아키텍처 선택(Material Choice)
-- Research 상태(Status) 결정
-- 기준 Research artifact(Canonical Research Artifact) 작성
+- 질문과 범위 결정
+- 충돌하는 근거의 최종 해석
+- 중대한 제품 또는 아키텍처 선택
+- Research 상태 결정
+- 최종 Research 결과 작성
 
 필요하면 안전한 읽기 전용(Read-only) 명령으로 현재 동작을 재현한다. 실행하지 않은 명령의 예상 결과는 근거로 기록하지 않는다.
 
 ### Synthesize
 
-확인한 내용을 다음처럼 구분한다.
-
-| Class | Meaning |
+| 근거 종류 | 의미 |
 | --- | --- |
-| **권위 근거(Authoritative)** | 원하는 동작이나 제약을 정의하는 근거 |
-| **관찰 근거(Observed)** | 코드, 설정, 테스트, 실행 결과에서 직접 확인한 사실 |
-| **보조 근거(Supporting)** | 역사와 외부 맥락을 제공하는 자료 |
-| **가정(Assumption)** | 아직 검증되지 않은 해석 |
+| **권위 근거(Authoritative)** | 원하는 동작이나 제약을 정의한다. |
+| **관찰 근거(Observed)** | 코드, 설정, 테스트 또는 실행 결과에서 직접 확인했다. |
+| **보조 근거(Supporting)** | 역사와 외부 맥락을 제공한다. |
+| **가정(Assumption)** | 아직 검증되지 않은 해석이다. |
 
-서로 충돌하는 근거는 임의로 합치지 않는다. 충돌 내용, 영향, 해결 주체를 남긴다.
+충돌하는 근거는 임의로 합치지 않는다. 충돌 내용, 영향과 해결 주체를 기록한다.
 
 ## Completion
 
-| Status | Condition |
+| Status | 조건 |
 | --- | --- |
-| `completed` | 다음 판단이 목표, 현재 상태, 범위, 영향, 검증 기준을 정의할 수 있다. |
-| `in_progress` | 제한된 추가 조사 또는 중대한 사용자 결정(Material Human Decision)이 남아 있다. |
+| `completed` | 다음 판단이 목표, 현재 상태, 범위, 영향과 검증 기준을 정의할 수 있다. |
+| `in_progress` | 제한된 추가 조사 또는 중대한 사용자 결정이 남아 있다. |
 | `blocked` | 필수 접근, 환경, 근거 또는 결정이 없어 안전하게 계속할 수 없다. |
 
 완벽한 확신은 필요하지 않다. 남은 미확인 사항(Unknown)이 다음 판단을 막는지가 기준이다.
@@ -131,28 +148,25 @@ flowchart LR
 
 ### Chat
 
-단순 조사에서는 결론, 주요 근거, 불확실성, 다음 행동만 간결하게 보고한다.
+결론, 주요 근거, 불확실성과 다음 행동만 간결하게 보고한다.
 
 ### Artifact
 
-RPI 전달이 필요하면 다음 기존 계약을 따른다. 관련 파일은 artifact를 만들 때만 읽는다.
+- `--template`으로 선택된 기존 템플릿을 그대로 사용한다.
+- 저장 위치, front matter, 상태와 보관 규칙은 활성 프로젝트의 계약을 따른다.
+- 이 스킬은 별도 템플릿이나 artifact schema를 정의하지 않는다.
+- 상세 활동 로그, 비공개 추론(Private Reasoning), cache, secret과 대용량 raw output은 저장하지 않는다.
 
-- 원칙: `../pivot-openspec-rpi/references/principles.md`
-- 저장 및 수명주기: `../pivot-openspec-rpi/references/artifacts.md`
-- 작성 템플릿: `../pivot-openspec-rpi/templates/research.md`
-
-기준 진입 문서(Canonical Entry)는 `openspec/research/{research-id}/research.md`다. 상세 활동 로그, 비공개 추론(Private Reasoning), cache, secret, 대용량 raw output은 저장하지 않는다.
-
-임시 Research를 보관하거나 Git 추적 대상으로 바꾸는 작업은 사용자 승인이 필요하다.
+`template: auto` 또는 `artifact_path: auto`를 하나로 결정할 수 없고 artifact가 반드시 필요하면 후보를 임의 선택하지 않는다.
 
 ## Boundaries
 
-- OpenSpec proposal, requirement, design, task를 대신 작성하지 않는다.
+- 요구사항, 설계 또는 구현 계획을 Research 결과로 확정하지 않는다.
 - 코드, 테스트 또는 설정을 구현 목적으로 수정하지 않는다.
-- 근거가 없는 확신으로 status를 완료 처리하지 않는다.
-- 질문과 무관한 repository 전체 조사나 링크 수집을 하지 않는다.
-- 기존 OpenSpec 또는 사용자 의도와의 충돌을 조용히 해결하지 않는다.
+- 근거 없는 확신으로 `completed` 처리하지 않는다.
+- 질문과 무관한 저장소 전체 조사나 링크 수집을 하지 않는다.
+- 사용자 의도와 활성 명세의 충돌을 조용히 해결하지 않는다.
 
 ## Maintenance
 
-이 스킬을 수정할 때는 먼저 `docs/DIRECTIVE.md`, `docs/WORKING.md`를 읽는다. 의미 있는 수정 후 `docs/WORKING.md`를 현재 상태 중심으로 갱신한다.
+수정 전 `docs/DIRECTIVE.md`와 `docs/WORKING.md`를 읽는다. 의미 있는 수정 후 `docs/WORKING.md`를 현재 상태 중심으로 갱신한다.
