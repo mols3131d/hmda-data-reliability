@@ -23,7 +23,7 @@ def load_logger_module() -> ModuleType:
     return module
 
 
-def test_hook_config_uses_versioned_vscode_compatible_events() -> None:
+def test_hook_config_uses_supported_vscode_events() -> None:
     config_path = (
         REPOSITORY_ROOT / ".github" / "hooks" / "dogfooding-observability.json"
     )
@@ -31,16 +31,22 @@ def test_hook_config_uses_versioned_vscode_compatible_events() -> None:
     config = json.loads(config_path.read_text(encoding="utf-8"))
 
     assert config["version"] == 1
-    assert set(config["hooks"]) == {"PostToolUse", "SubagentStop"}
+    assert set(config["hooks"]) == {
+        "PostToolUse",
+        "Stop",
+        "SubagentStart",
+        "SubagentStop",
+    }
 
 
-def test_post_tool_use_records_only_sanitized_metadata() -> None:
+def test_post_tool_use_records_status_and_correlation_id() -> None:
     module = load_logger_module()
     payload = {
         "timestamp": "2026-08-05T10:00:00Z",
         "session_id": "session-1",
         "hook_event_name": "PostToolUse",
         "tool_name": "runTerminalCommand",
+        "tool_use_id": "tool-1",
         "tool_input": {"command": "secret"},
         "tool_response": "secret output",
     }
@@ -50,34 +56,71 @@ def test_post_tool_use_records_only_sanitized_metadata() -> None:
     assert event == {
         "timestamp": "2026-08-05T10:00:00Z",
         "event": "PostToolUse",
+        "status": "success",
         "session_id": "session-1",
         "tool_name": "runTerminalCommand",
+        "tool_use_id": "tool-1",
     }
 
 
-def test_subagent_stop_records_agent_identity_without_response() -> None:
+def test_subagent_lifecycle_can_be_correlated_by_agent_id() -> None:
     module = load_logger_module()
-    payload = {
-        "timestamp": "2026-08-05T10:00:00Z",
+    common = {
         "session_id": "session-1",
-        "hook_event_name": "SubagentStop",
         "agent_id": "agent-1",
         "agent_type": "review-quality",
-        "agent_name": "Review Quality",
-        "stop_reason": "end_turn",
-        "last_assistant_message": "sensitive response",
     }
 
-    event = module.event_from(payload)
+    started = module.event_from(
+        {
+            **common,
+            "timestamp": "2026-08-05T10:00:00Z",
+            "hook_event_name": "SubagentStart",
+        }
+    )
+    completed = module.event_from(
+        {
+            **common,
+            "timestamp": "2026-08-05T10:00:03Z",
+            "hook_event_name": "SubagentStop",
+            "stop_hook_active": False,
+            "last_assistant_message": "sensitive response",
+        }
+    )
+
+    assert started == {
+        "timestamp": "2026-08-05T10:00:00Z",
+        "event": "SubagentStart",
+        "status": "started",
+        **common,
+    }
+    assert completed == {
+        "timestamp": "2026-08-05T10:00:03Z",
+        "event": "SubagentStop",
+        "status": "completed",
+        **common,
+        "stop_hook_active": False,
+    }
+
+
+def test_stop_records_execution_boundary() -> None:
+    module = load_logger_module()
+
+    event = module.event_from(
+        {
+            "timestamp": "2026-08-05T10:00:05Z",
+            "session_id": "session-1",
+            "hook_event_name": "Stop",
+            "stop_hook_active": False,
+        }
+    )
 
     assert event == {
-        "timestamp": "2026-08-05T10:00:00Z",
-        "event": "SubagentStop",
+        "timestamp": "2026-08-05T10:00:05Z",
+        "event": "Stop",
+        "status": "stopped",
         "session_id": "session-1",
-        "agent_id": "agent-1",
-        "agent_type": "review-quality",
-        "agent_name": "Review Quality",
-        "stop_reason": "end_turn",
+        "stop_hook_active": False,
     }
 
 
