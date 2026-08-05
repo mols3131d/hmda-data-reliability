@@ -68,7 +68,7 @@ EDA package는 계산 외에도 synthetic fixture, manifest, process memory runn
 
 이는 descriptive EDA보다 큰 독립 capability다. Foundation 범위에서 제거하고 실제 성능 문제가 확인될 때 별도 workstream으로 다시 설계한다.
 
-- **Evidence:** `src/project_pivot/hmda_data/eda/fixture.py`, `memory.py`, `scripts/prepare_hmda_eda_fixture.py`, `scripts/run_hmda_eda_memory.py`
+- **Evidence:** `src/project_pivot/hmda_data/eda/fixture.py`, `src/project_pivot/hmda_data/eda/memory.py`, `scripts/prepare_hmda_eda_fixture.py`, `scripts/run_hmda_eda_memory.py`
 
 ### Anomaly spec과 구현이 일치하지 않는다
 
