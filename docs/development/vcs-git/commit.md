@@ -18,7 +18,7 @@ Commit message의 형식, type, 길이와 언어는 [`.gitmessage`](../../../.gi
 
 Review가 시작된 공개 history는 인간의 명시적 요청 없이 rewrite하지 않는다. History를 단순하게 유지할 필요가 있으면 merge 시 squash를 사용할 수 있다.
 
-## Agent
+## Agent Instructions
 
 - 사용자가 만든 관련 없는 변경을 commit하거나 되돌리지 않는다.
 - 명시적 요청 없이 amend, rebase, reset 또는 force-push로 공개 history를 변경하지 않는다.

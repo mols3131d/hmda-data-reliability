@@ -6,7 +6,7 @@ Research, Plan, Implementation, Review는 branch 구조가 아니라 artifact와
 
 ## Application
 
-인간은 변경의 맥락과 위험에 따라 이 기준을 유연하게 적용할 수 있다. Agent는 `Agent` section의 제약을 따른다.
+인간은 변경의 맥락과 위험에 따라 이 기준을 유연하게 적용할 수 있다. Agent는 `Agent Instructions` section의 제약을 따른다.
 
 Repository protection, security policy와 권한은 항상 우선한다.
 
@@ -45,7 +45,7 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 기존 branch는 동일 작업의 후속 수정일 때만 재사용한다.
 
-## Agent
+## Agent Instructions
 
 - `agent` owner namespace와 자신의 작업 branch를 사용한다.
 - 요청된 변경 목적과 범위만 수정한다.

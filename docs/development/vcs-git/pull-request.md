@@ -37,14 +37,16 @@ Validation과 review 범위는 변경의 위험과 영향에 비례한다. 수�
 
 ## Lifecycle
 
-진행 중이거나 조기 검토가 필요한 변경은 Draft로 공유한다. 채택하지 않는 pull request는 close하며, commit, diff와 discussion은 의사결정 이력으로 유지한다.
+```text
+Draft PR → 변경 갱신 → 인간 검토 → merge 또는 명시적 close
+```
 
-동일한 변경 목적은 기존 pull request를 이어갈 수 있다. 목적이나 접근 방식이 달라지면 새 branch와 pull request를 사용한다.
+수정 요청이 있으면 변경 갱신과 인간 검토를 반복한다. 동일한 변경 목적은 기존 Draft PR을 이어가며, 목적이나 접근 방식이 달라지면 새 branch와 pull request를 사용한다.
 
-## Agent
+## Agent Instructions
 
 - Repository content 변경은 Draft pull request로 전달한다.
-- 인간의 명시적 요청 없이 Ready 전환, 승인, merge 또는 auto-merge를 수행하지 않는다.
+- 인간의 명시적 요청 없이 Ready 전환, 승인, merge, close 또는 auto-merge를 수행하지 않는다.
 - 인간의 판단 없이 review thread를 해결 처리하지 않는다.
 - 실패하거나 수행하지 못한 validation을 숨기지 않으며, 불명확한 응답을 승인으로 해석하지 않는다.
 
