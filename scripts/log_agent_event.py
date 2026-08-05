@@ -4,35 +4,46 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias
 
-LOGGABLE_EVENTS = {"SubagentStop", "PostToolUse"}
+Scalar: TypeAlias = str | int | float | bool
+
+EVENT_STATUS = {
+    "PostToolUse": "success",
+    "Stop": "stopped",
+    "SubagentStart": "started",
+    "SubagentStop": "completed",
+}
 EVENT_FIELDS = (
     "session_id",
     "tool_name",
+    "tool_use_id",
     "agent_id",
     "agent_type",
     "agent_name",
+    "agent_display_name",
     "stop_reason",
+    "stop_hook_active",
 )
 
 
-def scalar_value(payload: dict[str, Any], key: str) -> str | None:
+def scalar_value(payload: dict[str, Any], key: str) -> Scalar | None:
     value = payload.get(key)
     if isinstance(value, (str, int, float, bool)):
-        return str(value)
+        return value
     return None
 
 
-def event_from(payload: dict[str, Any]) -> dict[str, str] | None:
+def event_from(payload: dict[str, Any]) -> dict[str, Scalar] | None:
     event_name = scalar_value(payload, "hook_event_name")
-    if event_name is None or event_name not in LOGGABLE_EVENTS:
+    if not isinstance(event_name, str) or event_name not in EVENT_STATUS:
         return None
 
-    event = {
+    event: dict[str, Scalar] = {
         "timestamp": scalar_value(payload, "timestamp")
         or datetime.now(UTC).isoformat(),
         "event": event_name,
+        "status": EVENT_STATUS[event_name],
     }
     for key in EVENT_FIELDS:
         value = scalar_value(payload, key)
