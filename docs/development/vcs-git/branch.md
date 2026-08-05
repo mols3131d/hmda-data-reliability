@@ -13,16 +13,16 @@ Repository protection, security policy와 권한은 항상 우선한다.
 ## Naming
 
 ```text
-[<owner>/]<type>/<topic>
+[<actor>/]<type>/<topic>
 ```
 
 | Part | Meaning |
 | --- | --- |
-| `owner` | 작업 주체를 나타내는 optional namespace |
+| `actor` | 작업 주체를 구분하는 optional namespace |
 | `type` | 변경 성격 |
 | `topic` | 변경 목적 |
 
-Agent는 `agent` owner를 사용한다. 인간은 특별한 구분이 필요하지 않다면 owner를 생략할 수 있다.
+Agent는 actor namespace로 `agent`를 사용한다. 인간은 특별한 구분이 필요하지 않다면 actor를 생략할 수 있다.
 
 ```text
 feat/reliability-profile
@@ -47,7 +47,7 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 ## Agent Instructions
 
-- `agent` owner namespace와 자신의 작업 branch를 사용한다.
+- `agent` actor namespace와 자신의 작업 branch를 사용한다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
 - 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.
