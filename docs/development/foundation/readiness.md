@@ -67,4 +67,4 @@
 - [Reliability Boundaries](reliability.md)
 - [Orchestration Boundaries](orchestration.md)
 - [ARCHITECTURE](../../ARCHITECTURE.md)
-- OpenSpec change: `hmda-eda-foundation-extension` (7/18 tasks completed)
+- OpenSpec plan: `hmda-eda-baseline-reduce-core-scope`
