@@ -1,6 +1,14 @@
 ---
 name: pivot-spec-driven-tdd-rpi
-description: Coordinate research-backed planning and Apply work with the OpenSpec custom schema `spec-driven-tdd`. Use when Research may inform a change, when creating or revising planning artifacts, or when entering Apply from an existing change. Research is temporary: after decision-relevant findings are transferred to their owning planning artifacts, later entries must not require the Research file. Do not redefine schema contracts or place Research inside OpenSpec.
+description: >-
+  Coordinate research-backed planning and Apply work with the OpenSpec custom
+  schema `spec-driven-tdd`. Use when Research may inform a change, when creating
+  or revising planning artifacts, or when entering Apply from an existing change.
+  Research is temporary: after decision-relevant findings are transferred to
+  their owning planning artifacts, later entries must not require the Research
+  file. Do not redefine schema contracts or place Research inside OpenSpec.
+metadata:
+  version: "0.1.0"
 ---
 
 # Spec-Driven TDD RPI
