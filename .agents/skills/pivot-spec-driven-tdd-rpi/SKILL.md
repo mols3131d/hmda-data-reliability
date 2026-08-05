@@ -7,11 +7,11 @@ metadata:
 
 # Spec-Driven TDD RPI
 
-`spec-driven-tdd`에 OpenSpec 밖의 Research를 연결한다.
+`spec-driven-tdd`에 OpenSpec 밖의 Research를 evidence layer로 연결한다.
 
-RPI에서 Research는 근거를 제공하고, Plan과 Implement는 `spec-driven-tdd`가 소유한다. 이 skill은 고정된 phase 순서를 강제하지 않고 현재 entry에 필요한 artifact를 검증해 다음 작업을 route한다.
+RPI의 entry는 고정하지 않는다. 요청된 entry에 필요한 artifact는 반드시 존재해야 하며, Plan과 Implement의 contract는 `spec-driven-tdd`가 소유한다.
 
-## Model
+## Artifact Model
 
 ```text
 Research artifact ──evidence──> spec-driven-tdd change
@@ -19,27 +19,25 @@ Research artifact ──evidence──> spec-driven-tdd change
 
 Research는 `research/`에 저장되는 독립 artifact다. OpenSpec change나 schema artifact가 아니며, 요구사항·설계·task의 canonical source가 되지 않는다. 채택된 결론은 해당 OpenSpec artifact로 이전한다.
 
-Active change는 관련 Research artifact를 명시적으로 연결한다. 하나의 Research가 여러 change를 지원하거나 하나의 change가 여러 Research를 참조할 수 있다.
+Change는 관련 Research artifact를 명시적으로 연결한다. 하나의 Research가 여러 change를 지원하거나 하나의 change가 여러 Research를 참조할 수 있다.
 
-## Entry
+## Artifact Gates
 
-| Requested entry | Required artifacts |
+| Entry | Gate |
 | --- | --- |
-| Research | 조사할 목표와 범위 |
-| OpenSpec artifact | 관련 Research artifact와 schema가 선언한 `requires` |
-| Apply | 관련 Research artifact와 schema가 선언한 `apply.requires` |
+| Research | 조사할 목표와 범위가 명확하다. |
+| OpenSpec artifact | 관련 Research artifact와 schema가 선언한 `requires`가 준비되어 있다. |
+| Apply | 관련 Research artifact와 schema가 선언한 `apply.requires`가 준비되어 있다. |
 
-이전 phase의 실행 이력은 요구하지 않는다. 필요한 artifact가 존재하고 현재 목적에 충분하며 서로 실질적으로 충돌하지 않으면 해당 entry에서 시작한다.
+이전 phase의 실행 이력은 gate가 아니다. 필요한 artifact가 현재 목적에 충분하고 서로 실질적으로 충돌하지 않으면 해당 entry에서 시작한다.
 
 ## Routing
 
-1. 요청된 entry, active change와 관련 Research artifact를 식별한다.
-1. `openspec/schemas/spec-driven-tdd/`에서 해당 entry의 artifact contract을 읽는다.
+1. 요청된 entry, 관련 Research artifact와 target change를 식별한다.
+1. `openspec/schemas/spec-driven-tdd/`에서 해당 entry의 contract을 읽는다.
 1. 필요한 artifact의 존재, 관련성, 일관성을 확인한다.
-1. 누락되거나 충돌하는 artifact가 있으면 해당 artifact를 작성하거나 갱신하는 작업으로 route한다.
+1. 누락되거나 충돌하는 artifact가 있으면 해당 artifact의 owner로 route한다.
 1. gate가 충족되면 요청된 entry를 수행한다.
-
-이미 유효한 artifact를 phase 순서를 맞추기 위해 다시 만들지 않는다.
 
 상위 artifact가 실질적으로 바뀌면 영향을 받는 하위 artifact만 다시 검증한다. Research 변경도 변경의 목적, 범위, 전제, 위험 또는 검증 전략을 바꿀 때만 OpenSpec artifact 갱신으로 이어진다.
 
@@ -47,18 +45,17 @@ Active change는 관련 Research artifact를 명시적으로 연결한다. 하�
 
 Research artifact는 현재 변경을 계획하거나 재검토하기에 충분한 질문, 근거, 결론, 불확실성과 영향을 남긴다.
 
-Research가 부족하면 추측으로 OpenSpec artifact를 작성하지 않는다. Research가 충분하면 추가 조사를 반복하지 않고 그 근거를 사용한다.
+Research가 부족하면 추측으로 OpenSpec artifact를 작성하지 않는다. 충분한 Research가 있으면 추가 조사를 반복하지 않고 기존 artifact를 사용한다.
 
-저장 경로와 lifecycle은 `research/`의 local rules를 따른다. Research를 사용한 뒤 채택된 결론은 owning artifact로 이전하며, archive는 인간이 명시적으로 승인한 경우에만 수행한다.
+저장 경로와 lifecycle은 `research/`의 local rules를 따른다. 채택된 결론은 owning artifact로 이전하며, archive는 인간이 명시적으로 승인한 경우에만 수행한다.
 
 ## Boundaries
 
-- `spec-driven-tdd`의 artifact dependency, template, parser contract과 Apply contract을 다시 정의하지 않는다.
+- `spec-driven-tdd`의 dependency, template, parser와 Apply contract을 다시 정의하지 않는다.
 - Research를 OpenSpec change directory에 넣거나 schema artifact로 만들지 않는다.
 - 별도의 Plan artifact나 고정된 phase pipeline을 추가하지 않는다.
 - Chat history나 숨은 추론을 durable artifact로 취급하지 않는다.
 - Research 결과만으로 요구사항, 설계 또는 구현 결정을 확정하지 않는다.
-- 유효한 선행 artifact를 단순한 순서 준수를 위해 재작성하지 않는다.
 
 ## Handoff
 
@@ -76,4 +73,4 @@ Artifact path와 확인된 상태만 기록한다. 실행하지 않았거나 검
 
 ## Completion
 
-요청된 entry의 artifact gate를 충족했고, 관련 Research와 active change의 관계가 보이며, 다음 route 또는 blocker가 명확하면 완료한다.
+요청된 entry의 artifact gate를 충족했고, Research와 change의 관계가 보이며, 다음 route 또는 blocker가 명확하면 완료한다.
