@@ -19,7 +19,7 @@ status: "approved"
 
 | Loop | Focus | Findings | Resolution |
 | ---: | --- | --- | --- |
-| 1 | Research alignment·lifecycle | 기존 extension 보존이 삭제 결정과 충돌했고 EDA가 column 존재 계약까지 소유하는 문구가 있었다. | 기존 change 삭제와 direct reference 제거를 task로 고정하고, 존재는 ingestion·type과 metric은 EDA로 분리했다. |
+| 1 | Research alignment·lifecycle | 기존 extension 보존이 삭제 결정과 충돌했고 EDA가 column 존재 계약까지 소유하는 문구가 있었다. | 기존 change 삭제와 direct reference 제거를 plan review에서 완료하고, 존재는 ingestion·type과 metric은 EDA로 분리했다. |
 | 2 | Adversarial testability | Type family, Gold non-null grain denominator, representative fixture와 test source 구분, regression 범위가 불명확했다. 또한 완료된 plan cleanup이 Apply task에 섞일 수 있었다. | Type matrix와 coverage 공식을 명시하고 small deterministic source 용어를 사용했으며 validation을 직접 관련 contract로 제한했다. 기존 change 삭제는 plan review에서 완료하고 implementation task와 분리했다. |
 
 ## Traceability
