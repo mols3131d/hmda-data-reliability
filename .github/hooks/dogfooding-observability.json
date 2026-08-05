@@ -1,7 +1,7 @@
 {
     "version": 1,
     "hooks": {
-        "SubagentStop": [
+        "SubagentStart": [
             {
                 "type": "command",
                 "command": "uv run python scripts/log_agent_event.py",
@@ -9,6 +9,20 @@
             }
         ],
         "PostToolUse": [
+            {
+                "type": "command",
+                "command": "uv run python scripts/log_agent_event.py",
+                "timeout": 5
+            }
+        ],
+        "SubagentStop": [
+            {
+                "type": "command",
+                "command": "uv run python scripts/log_agent_event.py",
+                "timeout": 5
+            }
+        ],
+        "Stop": [
             {
                 "type": "command",
                 "command": "uv run python scripts/log_agent_event.py",
