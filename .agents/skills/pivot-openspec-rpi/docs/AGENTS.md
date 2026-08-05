@@ -1,1 +1,0 @@
-- **Do not read from or write to this directory without explicit human approval.**
