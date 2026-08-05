@@ -63,11 +63,9 @@ Validation과 review 범위는 변경의 위험과 영향에 비례한다. 모�
 
 병합된 branch는 repository의 자동 삭제 설정이나 권한 있는 주체가 정리한다. 기존 변경을 그대로 이어갈 수 있으면 pull request를 reopen하고, 목적이나 접근 방식이 달라졌다면 새 branch와 pull request를 만든다.
 
-## Chatbot And Agent
+## Agent
 
-Chatbot과 agent는 다음을 추가로 준수한다.
-
-- GitHub 쓰기 작업은 Draft pull request로 전달한다.
+- Repository content 변경은 Draft pull request로 전달한다.
 - 수행한 validation과 수행하지 못한 validation을 구분한다.
 - CI 또는 review 실패를 조용히 무시하지 않는다.
 - 인간의 명시적 요청 없이 Ready 전환, 승인, merge 또는 auto-merge 설정을 수행하지 않는다.
