@@ -19,9 +19,9 @@ Commit type은 branch type이 아니라 해당 commit의 성격을 따른다. �
 
 ## Staging
 
-Commit 전에 staged diff를 확인하고 현재 변경 목적에 해당하는 file만 포함한다.
+변경은 논리적 변경 단위로 stage한다.
 
-Formatting이나 generated file 변경은 원인이 된 변경과 직접 관련될 때만 함께 commit한다. 기존 working tree의 관련 없는 변경을 임의로 포함하거나 되돌리지 않는다.
+같은 목적의 변경은 함께 포함하고, 다른 목적의 변경은 별도 commit으로 분리한다. File 단위로 기계적으로 나누지 않으며, 관련 없는 변경은 포함하거나 되돌리지 않는다.
 
 ## History
 
@@ -29,7 +29,6 @@ Review가 시작된 commit history는 합의 없이 rewrite하지 않는다. His
 
 ## Agent
 
-- commit 전에 diff와 staged file을 확인한다.
 - 사용자가 만든 관련 없는 변경을 commit하거나 되돌리지 않는다.
 - 사용자의 명시적 요청 없이 amend, rebase, reset 또는 force-push로 공개 history를 바꾸지 않는다.
 
