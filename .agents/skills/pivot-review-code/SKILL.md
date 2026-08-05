@@ -1,5 +1,5 @@
 ---
-name: mols-review-code
+name: pivot-review-code
 description: Review implementation and test changes for intended behavior, correctness, regressions, reachable failure paths, maintainability risks, and validation evidence. Use for diffs, files, commits, pull requests, or working-tree changes. Works independently of any reviewer, workflow, VCS host, or review artifact.
 ---
 
@@ -36,11 +36,11 @@ validation: auto
 ## Workflow
 
 1. 검토 대상, baseline과 기대 contract를 확인한다.
-2. 변경된 동작과 직접 영향을 받는 관계를 추적해 scope를 정한다.
-3. 구현 코드와 테스트 코드에 해당하는 검토 기준을 적용한다.
-4. 가능한 경우 가장 작은 안전한 기존 validation을 실행한다.
-5. candidate finding을 기존 safeguard, baseline과 실제 reachability로 재검증한다.
-6. 근거 있는 finding과 해소되지 않은 불확실성만 반환한다.
+1. 변경된 동작과 직접 영향을 받는 관계를 추적해 scope를 정한다.
+1. 구현 코드와 테스트 코드에 해당하는 검토 기준을 적용한다.
+1. 가능한 경우 가장 작은 안전한 기존 validation을 실행한다.
+1. candidate finding을 기존 safeguard, baseline과 실제 reachability로 재검증한다.
+1. 근거 있는 finding과 해소되지 않은 불확실성만 반환한다.
 
 Finding 수보다 실제 영향과 신뢰성을 우선한다.
 

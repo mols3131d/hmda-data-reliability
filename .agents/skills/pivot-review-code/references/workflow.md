@@ -33,9 +33,9 @@ Baseline은 변경으로 무엇이 달라졌는지 판단하기 위한 비교 �
 `baseline: auto`는 다음 순서로 합리적인 기준을 사용합니다.
 
 1. 사용자가 지정하거나 Review 대상이 명시한 base revision
-2. diff, commit 또는 pull request의 실제 parent·base
-3. repository에서 명확히 지속되는 이전 behavior
-4. 비교 가능한 기준 없음
+1. diff, commit 또는 pull request의 실제 parent·base
+1. repository에서 명확히 지속되는 이전 behavior
+1. 비교 가능한 기준 없음
 
 Baseline이 없으면 현재 코드의 자체 correctness는 검토할 수 있지만 변경으로 도입되었다고 단정하지 않습니다. 임의의 branch나 과거 revision을 기준으로 만들지 않습니다.
 
@@ -87,8 +87,8 @@ Contract가 충돌하거나 모호하면 하나를 임의로 선택하지 않고
 `validation: auto`는 이미 존재하고 허용된 검증 중 finding을 확인하는 가장 작은 신뢰 가능한 범위를 선택합니다.
 
 1. 변경된 test 또는 가장 가까운 focused check
-2. 관련 module, package 또는 component check
-3. broader suite는 결과가 실제 판단을 바꿀 때만 실행
+1. 관련 module, package 또는 component check
+1. broader suite는 결과가 실제 판단을 바꿀 때만 실행
 
 다음은 자동으로 수행하지 않습니다.
 
