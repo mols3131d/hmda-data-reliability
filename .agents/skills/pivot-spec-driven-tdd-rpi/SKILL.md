@@ -9,7 +9,7 @@ metadata:
 
 `spec-driven-tdd`에 OpenSpec 밖의 Research를 evidence layer로 연결한다.
 
-RPI의 entry는 고정하지 않는다. 요청된 entry에 필요한 artifact는 반드시 존재해야 하며, Plan과 Implement의 contract는 `spec-driven-tdd`가 소유한다.
+RPI의 entry는 고정하지 않는다. 요청된 entry에 필요한 artifact는 반드시 존재해야 하며, planning artifact와 Apply contract는 `spec-driven-tdd`가 소유한다.
 
 ## Artifact Model
 
@@ -36,7 +36,7 @@ Change는 관련 Research artifact를 명시적으로 연결한다. 하나의 Re
 1. 요청된 entry, 관련 Research artifact와 target change를 식별한다.
 1. `openspec/schemas/spec-driven-tdd/`에서 해당 entry의 contract을 읽는다.
 1. 필요한 artifact의 존재, 관련성, 일관성을 확인한다.
-1. 누락되거나 충돌하는 artifact가 있으면 해당 artifact의 owner로 route한다.
+1. 누락되거나 충돌하는 artifact가 있으면 해당 artifact의 작성 또는 갱신으로 route한다.
 1. gate가 충족되면 요청된 entry를 수행한다.
 
 상위 artifact가 실질적으로 바뀌면 영향을 받는 하위 artifact만 다시 검증한다. Research 변경도 변경의 목적, 범위, 전제, 위험 또는 검증 전략을 바꿀 때만 OpenSpec artifact 갱신으로 이어진다.
@@ -47,7 +47,7 @@ Research artifact는 현재 변경을 계획하거나 재검토하기에 충분�
 
 Research가 부족하면 추측으로 OpenSpec artifact를 작성하지 않는다. 충분한 Research가 있으면 추가 조사를 반복하지 않고 기존 artifact를 사용한다.
 
-저장 경로와 lifecycle은 `research/`의 local rules를 따른다. 채택된 결론은 owning artifact로 이전하며, archive는 인간이 명시적으로 승인한 경우에만 수행한다.
+저장 경로와 lifecycle은 `research/`의 local rules를 따른다. 채택된 결론은 해당 OpenSpec artifact로 이전하며, archive는 인간이 명시적으로 승인한 경우에만 수행한다.
 
 ## Boundaries
 
