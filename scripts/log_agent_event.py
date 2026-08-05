@@ -26,7 +26,7 @@ def scalar_value(payload: dict[str, Any], key: str) -> str | None:
 
 def event_from(payload: dict[str, Any]) -> dict[str, str] | None:
     event_name = scalar_value(payload, "hook_event_name")
-    if event_name not in LOGGABLE_EVENTS:
+    if event_name is None or event_name not in LOGGABLE_EVENTS:
         return None
 
     event = {
