@@ -1,21 +1,20 @@
----
-type: openspec-rpi
-title: "HMDA EDA scope reset"
-description: "현재 EDA를 reliability MVP에 필요한 최소 범위로 축소한다."
-category: research
-status: completed
-relatedArtifacts:
-  - hmda-eda-foundation-extension
-  - hmda-eda-baseline
-  - foundation-baseline
----
-
-# Research: hmda-eda-scope-reset
+# HMDA EDA Scope Reset
 
 > [!IMPORTANT]
 > EDA를 **Gold mart를 설명하는 6개 core column의 descriptive profile**로 축소한다.
 >
 > Fixture·memory subsystem은 제거하되, 실제 HMDA source의 1회 read-only 실행 evidence는 유지한다.
+
+## Lifecycle
+
+이 Research는 replacement change와 owning artifact로 결론을 이전하기 위한 임시 입력이다.
+결론 이전이 끝나면 삭제하며, 인간의 명시적 승인 없이는 archive하지 않는다.
+
+## Related Artifacts
+
+- `openspec/changes/hmda-eda-foundation-extension/`
+- `openspec/specs/hmda-eda-baseline/spec.md`
+- `openspec/specs/foundation-baseline/spec.md`
 
 ## Question
 
