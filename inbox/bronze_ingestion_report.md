@@ -51,14 +51,14 @@ flowchart TD
 
 ## Key Components and Logic Breakdown
 
-### 1. 원천 파일 탐색 및 분류 ([src/project_pivot/hmda_data/ingestion/discovery.py](../src/project_pivot/hmda_data/ingestion/discovery.py#L10-L46))
+### 1. 원천 파일 탐색 및 분류 ([src/project_pivot/hmda_data/ingestion/discovery.py](../artifacts/src/project_pivot/hmda_data/ingestion/discovery.py#L10-L46))
 
 - **지원 확장자 검증**: `.csv` 및 `.parquet` 파일만 필터링하여 오름차순 정렬 처리합니다.
 - **예외 처리 및 진단 로그**:
   - 지정한 원천 디렉터리가 없거나 지원 파일이 없는 경우 `HMDADataLoadError` 예외를 발생시킵니다.
   - 지원하지 않는 파일(예: `.txt`, `.json`)이 섞여 있을 경우 거부하지 않고 로그로 기록(`_LOGGER.info`)한 뒤 지원 파일만 진행합니다.
 
-### 2. 동적 SQL 조립 및 메타데이터 추가 ([src/project_pivot/hmda_data/ingestion/_source_query.py](../src/project_pivot/hmda_data/ingestion/_source_query.py#L10-L91))
+### 2. 동적 SQL 조립 및 메타데이터 추가 ([src/project_pivot/hmda_data/ingestion/_source_query.py](../artifacts/src/project_pivot/hmda_data/ingestion/_source_query.py#L10-L91))
 
 - **포맷별 Reader 분기**:
   - CSV 파일: DuckDB `read_csv_auto(?, header=true, nullstr=['NA', ''], sample_size=200000, filename=true)` 사용
@@ -70,7 +70,7 @@ flowchart TD
   - `ingested_at`: 적재 수행 시각 (`current_timestamp`)
 - **이름 기반 스키마 병합**: 여러 원천 파일 간의 컬럼 순서나 구성을 `UNION ALL BY NAME`으로 유연하게 조합합니다.
 
-### 3. 필수 컬럼 및 정합성 검증 ([src/project_pivot/hmda_data/ingestion/_common.py](../src/project_pivot/hmda_data/ingestion/_common.py#L10-L40))
+### 3. 필수 컬럼 및 정합성 검증 ([src/project_pivot/hmda_data/ingestion/_common.py](../artifacts/src/project_pivot/hmda_data/ingestion/_common.py#L10-L40))
 
 - **Required Columns**:
   - `activity_year`, `loan_purpose`, `action_taken`, `loan_amount`, `income`, `state_code`, `county_code`
@@ -80,8 +80,8 @@ flowchart TD
 
 | 구분 | 모듈 / 함수 | 동작 및 보장 방식 |
 | --- | --- | --- |
-| **전체 적재 (Full Load)** | [src/project_pivot/hmda_data/ingestion/full_load.py](../src/project_pivot/hmda_data/ingestion/full_load.py#L22-L40) | • `CREATE OR REPLACE TABLE raw.hmda_loans` 구문을 수행하여 전체 재적재 시에도 중복이 발생하지 않는 원자성을 보장합니다. |
-| **파티션 적재 (Partition Load)** | [src/project_pivot/hmda_data/ingestion/partition.py](../src/project_pivot/hmda_data/ingestion/partition.py#L22-L60) | • 임시 스태이징 테이블(`__hmda_loans_partition_stage`)을 통해 데이터를 먼저 검증합니다.<br/>• 검증 성공 시 기존 대상 연도/파일 파티션을 `DELETE` 후 새 데이터를 `INSERT`하는 단일 트랜잭션 처리를 진행합니다. |
+| **전체 적재 (Full Load)** | [src/project_pivot/hmda_data/ingestion/full_load.py](../artifacts/src/project_pivot/hmda_data/ingestion/full_load.py#L22-L40) | • `CREATE OR REPLACE TABLE raw.hmda_loans` 구문을 수행하여 전체 재적재 시에도 중복이 발생하지 않는 원자성을 보장합니다. |
+| **파티션 적재 (Partition Load)** | [src/project_pivot/hmda_data/ingestion/partition.py](../artifacts/src/project_pivot/hmda_data/ingestion/partition.py#L22-L60) | • 임시 스태이징 테이블(`__hmda_loans_partition_stage`)을 통해 데이터를 먼저 검증합니다.<br/>• 검증 성공 시 기존 대상 연도/파일 파티션을 `DELETE` 후 새 데이터를 `INSERT`하는 단일 트랜잭션 처리를 진행합니다. |
 
 ---
 
@@ -89,7 +89,7 @@ flowchart TD
 
 | 사양 항목 | 규칙 및 계약 내용 | 참조 파일 |
 | --- | --- | --- |
-| **원천 디렉터리** | `data/raw/hmda` | [docs/domains/hmda-data.md](../docs/inbox/docs/domains/hmda-data.md#L19) |
-| **타겟 스키마/테이블** | `raw.hmda_loans` | [src/project_pivot/hmda_data/ingestion/_common.py](../src/project_pivot/hmda_data/ingestion/_common.py#L15) |
-| **데이터 원본 보존** | 원천 필드의 Nullability 및 코드값 정규화를 수행하지 않고 원형 유지 | [docs/domains/hmda-data.md](../docs/domains/hmda-data.md#L27) |
-| **적재 오류 관리** | `HMDADataLoadError` (파일/적재 실패), `HMDADataValidationError` (필수 컬럼 누락) | [src/project_pivot/hmda_data/errors.py](../src/project_pivot/hmda_data/errors.py) |
+| **원천 디렉터리** | `data/raw/hmda` | [docs/domains/hmda-data.md](../artifacts/docs/inbox/docs/domains/hmda-data.md#L19) |
+| **타겟 스키마/테이블** | `raw.hmda_loans` | [src/project_pivot/hmda_data/ingestion/_common.py](../artifacts/src/project_pivot/hmda_data/ingestion/_common.py#L15) |
+| **데이터 원본 보존** | 원천 필드의 Nullability 및 코드값 정규화를 수행하지 않고 원형 유지 | [docs/domains/hmda-data.md](../artifacts/docs/domains/hmda-data.md#L27) |
+| **적재 오류 관리** | `HMDADataLoadError` (파일/적재 실패), `HMDADataValidationError` (필수 컬럼 누락) | [src/project_pivot/hmda_data/errors.py](../artifacts/src/project_pivot/hmda_data/errors.py) |

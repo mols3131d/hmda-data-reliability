@@ -66,7 +66,7 @@ Chart는 표에 나열한 6개 implementation domain의 test function 수를 비
 | Test modules | 28 |
 | Highest-tested domain | HMDA data: 45 test functions |
 | Second-highest domain | Reliability: 37 test functions |
-| Generated artifact | [artifacts/pytest.html](../artifacts/pytest.html) |
+| Generated artifact | [artifacts/pytest.html](../../artifacts/artifacts/pytest.html) |
 
 ### Validation Scope
 
@@ -100,11 +100,11 @@ RPI workflow를 지원하는 agent, research, observability 정비에 집중됐�
 
 ## Evidence
 
-- 아키텍처와 lifecycle 경계: [docs/ARCHITECTURE.md](../artifacts/ARCHITECTURE.md)
-- 개발 환경과 테스트 실행 규칙: [docs/DEVELOPMENT.md](../artifacts/DEVELOPMENT.md)
-- 도메인 계약: [docs/domains/OVERVIEW.md](../artifacts/domains/OVERVIEW.md)
-- 현재 활성 OpenSpec change: [openspec/changes/add-synthetic-lifecycle-evaluation/.openspec.yaml](../openspec/changes/add-synthetic-lifecycle-evaluation/.openspec.yaml)
-- 최신 테스트 결과: [artifacts/pytest.html](../artifacts/pytest.html)
+- 아키텍처와 lifecycle 경계: [docs/ARCHITECTURE.md](../../artifacts/artifacts/ARCHITECTURE.md)
+- 개발 환경과 테스트 실행 규칙: [docs/DEVELOPMENT.md](../../artifacts/artifacts/DEVELOPMENT.md)
+- 도메인 계약: [docs/domains/OVERVIEW.md](../../artifacts/artifacts/domains/OVERVIEW.md)
+- 현재 활성 OpenSpec change: [openspec/changes/add-synthetic-lifecycle-evaluation/.openspec.yaml](../../artifacts/openspec/changes/add-synthetic-lifecycle-evaluation/.openspec.yaml)
+- 최신 테스트 결과: [artifacts/pytest.html](../../artifacts/artifacts/pytest.html)
 
 ## Snapshot
 
