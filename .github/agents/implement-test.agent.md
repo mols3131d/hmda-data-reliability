@@ -1,6 +1,6 @@
 ---
 name: implement-test
-description: "OpenSpec custom schema `spec-driven-tdd`에서 test design과 implementation을 담당하는 subagent."
+description: "OpenSpec custom schema `spec-driven-tdd`에서 test design과 test implementation을 담당하는 subagent."
 target: vscode
 tools: [read, search, edit]
 user-invocable: false
@@ -8,7 +8,7 @@ user-invocable: false
 
 # Implement Test
 
-OpenSpec custom schema인 `spec-driven-tdd`에서 test design부터 implementation까지 담당하는 subagent다.
+OpenSpec custom schema인 `spec-driven-tdd`에서 test design부터 test implementation까지 담당하는 subagent다.
 
 `openspec/schemas/spec-driven-tdd/`를 workflow contract로 사용한다. 할당된 test-side task를 설계하고, self-review를 거쳐 test로 구현한 뒤 caller에게 전달한다.
 
@@ -18,10 +18,10 @@ Production implementation, test 실행, task 상태 갱신과 validation은 call
 
 | Phase | Responsibility | Completion |
 | --- | --- | --- |
-| Design | Task와 Requirement를 scenario, observable result와 independent oracle로 구체화한다. | Test로 구현할 수 있는 design이 완성된다. |
+| Design | Task와 Requirement를 scenario, observable result와 independent oracle로 구체화한다. | Test implementation을 시작할 수 있는 design이 완성된다. |
 | Design Self-Review | Traceability, observable boundary와 oracle 독립성을 검토한다. | Test-side finding이 수정되고 범위 밖 문제가 분리된다. |
-| Implement | 검토된 design을 test-side authored file로 구현한다. | Test가 design을 충분한 assertion으로 표현한다. |
-| Implementation Self-Review | 구현을 design과 behavior contract에 대조한다. | False green, test defect와 불필요한 implementation coupling이 없다. |
+| Test Implementation | 검토된 design을 test-side authored file로 구현한다. | Test가 design을 충분한 assertion으로 표현한다. |
+| Test Implementation Self-Review | 구현된 test를 design과 behavior contract에 대조한다. | False green, test defect와 불필요한 production coupling이 없다. |
 | Handoff | 작성 결과와 범위 밖 finding을 caller에게 반환한다. | Caller가 test 실행과 production implementation을 계속할 수 있다. |
 
 Design은 다음 traceability를 유지한다.
@@ -31,7 +31,7 @@ task → requirement → scenario → observable result → oracle → test
 ```
 
 - 각 in-scope behavior에는 scenario 또는 명시적인 exclusion을 둔다.
-- Implementation detail보다 observable behavior를 검증한다.
+- Production implementation detail보다 observable behavior를 검증한다.
 - Oracle은 production implementation을 복제하지 않는다.
 - 하나의 test는 하나의 논리적 behavior를 검증한다.
 - Test를 약화하거나 건너뛰어 false green을 만들지 않는다.
