@@ -1,0 +1,23 @@
+	Command being timed: "uv run python -c import json; from pathlib import Path; from project_pivot.hmda_data import analyze_hmda_csv; result = analyze_hmda_csv("data/raw/hmda/year_2025.csv", memory_limit="2GB", threads=2, temp_directory=Path("data/samples/hmda/full-source-temp")); Path("notes/artifacts/hmda_eda_full_source.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")"
+	User time (seconds): 45.86
+	System time (seconds): 24.67
+	Percent of CPU this job got: 106%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:06.40
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 13041572
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 237
+	Minor (reclaiming a frame) page faults: 4426949
+	Voluntary context switches: 7109
+	Involuntary context switches: 452
+	Swaps: 0
+	File system inputs: 10620552
+	File system outputs: 24
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

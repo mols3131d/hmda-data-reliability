@@ -1,0 +1,57 @@
+{
+  "version": "hmda-eda-memory-v1",
+  "seed": 20250731,
+  "schema_columns": [
+    "activity_year",
+    "state_code",
+    "county_code",
+    "loan_purpose",
+    "action_taken",
+    "loan_amount",
+    "income",
+    "observed_at",
+    "representative_padding"
+  ],
+  "row_count": 5000000,
+  "row_width_bytes": 145.7337266,
+  "null_rates": {
+    "loan_amount": 0.02,
+    "income": 0.05
+  },
+  "activity_year_cardinality": 3,
+  "activity_year_skew": {
+    "2023": 0.1,
+    "2024": 0.2,
+    "2025": 0.7
+  },
+  "file_count": 1,
+  "files": [
+    {
+      "path": "hmda-eda-memory.csv",
+      "size_bytes": 728668633,
+      "sha256": "sha256:3b49aabe8b8d03004069ab89092c64ae07e077518a3ce6987f1947e6ab2e727c"
+    }
+  ],
+  "expected": {
+    "row_count": 5000000,
+    "null_counts": {
+      "loan_amount": 100000,
+      "income": 250000
+    },
+    "activity_year_counts": [
+      {
+        "activity_year": 2023,
+        "row_count": 500000
+      },
+      {
+        "activity_year": 2024,
+        "row_count": 1000000
+      },
+      {
+        "activity_year": 2025,
+        "row_count": 3500000
+      }
+    ],
+    "freshness_at": "2025-12-31T00:00:00"
+  }
+}

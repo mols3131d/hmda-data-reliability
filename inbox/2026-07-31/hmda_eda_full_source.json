@@ -1,0 +1,492 @@
+{
+  "source": {
+    "path": "/home/mols3131d/workspaces/project-pivot/data/raw/hmda/year_2025.csv",
+    "scope": "full_file",
+    "csv_options": {
+      "header": true,
+      "nullstr": [
+        "NA",
+        ""
+      ],
+      "sample_size": 200000
+    },
+    "duckdb_config": {
+      "memory_limit": "2GB",
+      "threads": 2,
+      "temp_directory": "/home/mols3131d/workspaces/project-pivot/data/samples/hmda/full-source-temp"
+    }
+  },
+  "duration_seconds": 0.8280554330012819,
+  "row_count": 13543606,
+  "activity_year_counts": [
+    {
+      "activity_year": 2025,
+      "row_count": 13543606
+    }
+  ],
+  "null_counts": {
+    "activity_year": 0,
+    "state_code": 170769,
+    "county_code": 301923,
+    "loan_purpose": 0,
+    "action_taken": 0,
+    "loan_amount": 0,
+    "income": 2189834
+  },
+  "null_rates": {
+    "activity_year": 0.0,
+    "state_code": 0.012608828106783378,
+    "county_code": 0.02229265972444857,
+    "loan_purpose": 0.0,
+    "action_taken": 0.0,
+    "loan_amount": 0.0,
+    "income": 0.16168766279822375
+  },
+  "schema": {
+    "columns": [
+      {
+        "name": "activity_year",
+        "type": "BIGINT"
+      },
+      {
+        "name": "lei",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "derived_msa-md",
+        "type": "BIGINT"
+      },
+      {
+        "name": "state_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "county_code",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "census_tract",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "conforming_loan_limit",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "derived_loan_product_type",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "derived_dwelling_category",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "derived_ethnicity",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "derived_race",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "derived_sex",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "action_taken",
+        "type": "BIGINT"
+      },
+      {
+        "name": "purchaser_type",
+        "type": "BIGINT"
+      },
+      {
+        "name": "preapproval",
+        "type": "BIGINT"
+      },
+      {
+        "name": "loan_type",
+        "type": "BIGINT"
+      },
+      {
+        "name": "loan_purpose",
+        "type": "BIGINT"
+      },
+      {
+        "name": "lien_status",
+        "type": "BIGINT"
+      },
+      {
+        "name": "reverse_mortgage",
+        "type": "BIGINT"
+      },
+      {
+        "name": "open-end_line_of_credit",
+        "type": "BIGINT"
+      },
+      {
+        "name": "business_or_commercial_purpose",
+        "type": "BIGINT"
+      },
+      {
+        "name": "loan_amount",
+        "type": "DOUBLE"
+      },
+      {
+        "name": "loan_to_value_ratio",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "interest_rate",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "rate_spread",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "hoepa_status",
+        "type": "BIGINT"
+      },
+      {
+        "name": "total_loan_costs",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "total_points_and_fees",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "origination_charges",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "discount_points",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "lender_credits",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "loan_term",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "prepayment_penalty_term",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "intro_rate_period",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "negative_amortization",
+        "type": "BIGINT"
+      },
+      {
+        "name": "interest_only_payment",
+        "type": "BIGINT"
+      },
+      {
+        "name": "balloon_payment",
+        "type": "BIGINT"
+      },
+      {
+        "name": "other_nonamortizing_features",
+        "type": "BIGINT"
+      },
+      {
+        "name": "property_value",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "construction_method",
+        "type": "BIGINT"
+      },
+      {
+        "name": "occupancy_type",
+        "type": "BIGINT"
+      },
+      {
+        "name": "manufactured_home_secured_property_type",
+        "type": "BIGINT"
+      },
+      {
+        "name": "manufactured_home_land_property_interest",
+        "type": "BIGINT"
+      },
+      {
+        "name": "total_units",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "multifamily_affordable_units",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "income",
+        "type": "BIGINT"
+      },
+      {
+        "name": "debt_to_income_ratio",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "applicant_credit_score_type",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_credit_score_type",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_ethnicity-1",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_ethnicity-2",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_ethnicity-3",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_ethnicity-4",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_ethnicity-5",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "co-applicant_ethnicity-1",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_ethnicity-2",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_ethnicity-3",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_ethnicity-4",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_ethnicity-5",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "applicant_ethnicity_observed",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_ethnicity_observed",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_race-1",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_race-2",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_race-3",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_race-4",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_race-5",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_race-1",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_race-2",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_race-3",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_race-4",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_race-5",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_race_observed",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_race_observed",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_sex",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_sex",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_sex_observed",
+        "type": "BIGINT"
+      },
+      {
+        "name": "co-applicant_sex_observed",
+        "type": "BIGINT"
+      },
+      {
+        "name": "applicant_age",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "co-applicant_age",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "applicant_age_above_62",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "co-applicant_age_above_62",
+        "type": "BOOLEAN"
+      },
+      {
+        "name": "submission_of_application",
+        "type": "BIGINT"
+      },
+      {
+        "name": "initially_payable_to_institution",
+        "type": "BIGINT"
+      },
+      {
+        "name": "aus-1",
+        "type": "BIGINT"
+      },
+      {
+        "name": "aus-2",
+        "type": "BIGINT"
+      },
+      {
+        "name": "aus-3",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "aus-4",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "aus-5",
+        "type": "VARCHAR"
+      },
+      {
+        "name": "denial_reason-1",
+        "type": "BIGINT"
+      },
+      {
+        "name": "denial_reason-2",
+        "type": "BIGINT"
+      },
+      {
+        "name": "denial_reason-3",
+        "type": "BIGINT"
+      },
+      {
+        "name": "denial_reason-4",
+        "type": "BIGINT"
+      },
+      {
+        "name": "tract_population",
+        "type": "BIGINT"
+      },
+      {
+        "name": "tract_minority_population_percent",
+        "type": "DOUBLE"
+      },
+      {
+        "name": "ffiec_msa_md_median_family_income",
+        "type": "BIGINT"
+      },
+      {
+        "name": "tract_to_msa_income_percentage",
+        "type": "BIGINT"
+      },
+      {
+        "name": "tract_owner_occupied_units",
+        "type": "BIGINT"
+      },
+      {
+        "name": "tract_one_to_four_family_homes",
+        "type": "BIGINT"
+      },
+      {
+        "name": "tract_median_age_of_housing_units",
+        "type": "BIGINT"
+      }
+    ],
+    "required_columns": [
+      {
+        "column": "activity_year",
+        "inferred_type": "BIGINT",
+        "status": "valid"
+      },
+      {
+        "column": "state_code",
+        "inferred_type": "VARCHAR",
+        "status": "valid"
+      },
+      {
+        "column": "county_code",
+        "inferred_type": "VARCHAR",
+        "status": "valid"
+      },
+      {
+        "column": "loan_purpose",
+        "inferred_type": "BIGINT",
+        "status": "valid"
+      },
+      {
+        "column": "action_taken",
+        "inferred_type": "BIGINT",
+        "status": "valid"
+      },
+      {
+        "column": "loan_amount",
+        "inferred_type": "DOUBLE",
+        "status": "valid"
+      },
+      {
+        "column": "income",
+        "inferred_type": "BIGINT",
+        "status": "valid"
+      }
+    ],
+    "schema_hash": "sha256:e1227c861e22e92800f59c5f53a5e2f227619fd52e44bc71bc8007dbb1107f50"
+  },
+  "freshness": {
+    "status": "unmeasured",
+    "source_column": null,
+    "freshness_at": null,
+    "boundary": {
+      "file_mtime": "filesystem metadata; not source freshness",
+      "bronze_ingested_at": "ingestion time from separate raw-table EDA path"
+    }
+  }
+}
