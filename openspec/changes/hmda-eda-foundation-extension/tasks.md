@@ -7,6 +7,9 @@ title: "HMDA foundation EDA extension tasks"
 description: "descriptive EDA evidence 확장과 MVP readiness 검증을 구현하는 task 목록"
 ---
 
+> [!CAUTION]
+> **Superseded by `hmda-eda-baseline-reduce-core-scope`.** 남은 task를 수행하거나 완료 상태를 변경하지 않는다.
+
 ## 1. EDA Evidence Contract
 
 - [x] 1.0 EDA analysis, fixture, memory helper를 `project_pivot.hmda_data.eda` subpackage로 이동하고 public import compatibility를 유지한다.

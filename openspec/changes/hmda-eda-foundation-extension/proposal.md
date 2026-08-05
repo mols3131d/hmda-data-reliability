@@ -7,6 +7,9 @@ title: "HMDA foundation EDA extension"
 description: "MVP reliability 개발에 필요한 HMDA 데이터 정보와 descriptive EDA evidence를 확장한다."
 ---
 
+> [!CAUTION]
+> **Superseded by `hmda-eda-baseline-reduce-core-scope`.** 이 change를 추가 Apply하지 않는다. 이미 구현된 내용은 replacement planning의 현재 상태 근거로만 사용한다.
+
 ## Why
 
 현재 HMDA EDA는 schema, volume, required-column null, freshness boundary를 확인하지만 MVP reliability 기능이 의존하는 row semantics, code distribution, numeric anomaly, analysis grain과 downstream alignment를 충분히 고정하지 않는다. Foundation에서 MVP 개발을 안전하게 시작하려면 데이터의 의미와 품질 경계를 먼저 재현 가능한 evidence로 남겨야 한다.
