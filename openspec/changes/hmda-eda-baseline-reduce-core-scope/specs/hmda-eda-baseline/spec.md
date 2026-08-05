@@ -24,18 +24,18 @@ tags:
 
 ### Requirement: Minimal notebook rendering
 
-Notebook은 공유 EDA entrypoint의 결과를 입력, schema, volume, null, categorical distribution, numeric summary와 mart grain section으로 표시해야 한다(SHALL).
+Notebook은 공유 EDA entrypoint의 결과를 입력, schema, volume, null, categorical distribution, numeric summary와 Gold grouping-key coverage section으로 표시해야 한다(SHALL).
 
 #### Scenario: Valid source rendering
 
-- **WHEN** valid fixture로 Notebook smoke를 실행할 때
+- **WHEN** small deterministic test source로 Notebook smoke를 실행할 때
 - **THEN** 모든 core section이 계산 결과를 사용해 렌더링되어야 한다.
 - **AND** Notebook은 별도의 anomaly, freshness 또는 Profile mapping section을 생성해서는 안 된다.
 
 #### Scenario: Invalid source failure
 
-- **WHEN** missing-column 또는 malformed source로 Notebook smoke를 실행할 때
-- **THEN** 원래 validation 또는 parse failure를 식별할 수 있어야 한다.
+- **WHEN** missing-column 또는 malformed small test source로 Notebook smoke를 실행할 때
+- **THEN** 원래 input-contract 또는 parse failure를 식별할 수 있어야 한다.
 - **AND** 완료된 core evidence section을 partial success로 표시해서는 안 된다.
 
 ### Requirement: Actual-source observation
@@ -52,19 +52,25 @@ Foundation 종료 전 실제 HMDA source를 공유 EDA entrypoint로 한 번 rea
 
 ### Requirement: HMDA required schema baseline
 
-EDA는 원천 HMDA CSV에서 `activity_year`, `state_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income`의 존재와 expected type family 충족 상태를 검증해야 한다(SHALL). `county_code`의 source 존재 검증은 ingestion contract가 소유하며 EDA core schema에 포함하지 않아야 한다(MUST NOT).
+EDA는 ingestion required-column contract를 충족한 source에서 `activity_year`, `state_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income`의 inferred type family compatibility를 검증해야 한다(SHALL). Required-column 존재 계약은 ingestion이 소유하며 EDA가 이를 대체하거나 별도 canonical 계약으로 중복해서는 안 된다(MUST NOT).
 
-#### Scenario: Core columns가 모두 유효한 경우
+#### Scenario: Core columns가 모두 호환되는 경우
 
-- **WHEN** 원천 CSV가 6개 core column과 호환 타입을 포함할 때
-- **THEN** EDA는 각 core column의 존재 상태와 추론 타입을 제공해야 한다.
-- **AND** `county_code` 유무를 이유로 EDA 실행을 실패시켜서는 안 된다.
+- **WHEN** ingestion contract를 충족한 source가 6개 core column의 호환 타입을 포함할 때
+- **THEN** EDA는 각 core column의 inferred type과 compatibility status를 제공해야 한다.
+- **AND** `county_code`를 EDA type 또는 metric 대상으로 포함해서는 안 된다.
 
-#### Scenario: Core schema 불일치
+#### Scenario: Core type 불일치
 
-- **WHEN** core column이 누락되거나 타입 기준과 호환되지 않을 때
-- **THEN** 대상 column과 불일치 이유를 포함한 validation failure를 반환해야 한다.
+- **WHEN** core column의 inferred type family가 호환 범위에 포함되지 않을 때
+- **THEN** 대상 column, inferred type과 불일치 이유를 포함한 validation failure를 반환해야 한다.
 - **AND** partial evidence를 성공 결과로 반환해서는 안 된다.
+
+#### Scenario: Ingestion input contract 위반
+
+- **WHEN** EDA를 직접 호출한 source에서 core column이 누락됐을 때
+- **THEN** 누락 column을 포함한 input-contract failure로 종료해야 한다.
+- **AND** 이 방어적 검증을 EDA의 required-column ownership으로 표현해서는 안 된다.
 
 ### Requirement: Volume and null baseline
 
@@ -99,13 +105,14 @@ EDA는 전체 row count, `activity_year`별 row count와 6개 core column별 nul
 
 ### Requirement: MVP grain alignment
 
-시스템은 `activity_year + state_code + loan_purpose` grain의 distinct group count, null key row count와 coverage rate를 제공해야 한다(SHALL). EDA는 canonical business grain이나 dbt mart grouping rule을 변경해서는 안 된다(MUST NOT).
+시스템은 `activity_year + state_code + loan_purpose`가 모두 non-null인 row의 distinct group count, 하나 이상 null인 row count와 complete-key coverage rate를 제공해야 한다(SHALL). Coverage rate는 `complete_key_row_count / total_row_count`로 계산해야 한다(MUST). EDA는 canonical business grain이나 dbt mart grouping rule을 변경해서는 안 된다(MUST NOT).
 
-#### Scenario: Mart grain evidence
+#### Scenario: Gold grouping-key coverage
 
 - **WHEN** 유효한 HMDA source를 분석할 때
-- **THEN** grain columns, distinct group count, null key row count와 coverage rate를 반환해야 한다.
-- **AND** 결과는 현재 Gold mart를 설명하는 관찰값이며 새로운 mart contract로 취급되어서는 안 된다.
+- **THEN** grain columns, complete-key row 기준 distinct group count, null key row count와 coverage rate를 반환해야 한다.
+- **AND** distinct group count는 Gold mart와 동일하게 세 key가 모두 non-null인 row만 대상으로 계산해야 한다.
+- **AND** 결과는 Gold mart 입력의 grouping-key coverage 관찰값이며 mart table 자체의 grain 검증으로 표현되어서는 안 된다.
 
 ### Requirement: Reusable EDA computation boundary
 
@@ -115,7 +122,7 @@ EDA는 전체 row count, `activity_year`별 row count와 6개 core column별 nul
 
 - **WHEN** Notebook 또는 automated test가 EDA를 실행할 때
 - **THEN** `analyze_hmda_csv`를 호출해야 한다.
-- **AND** 결과는 source metadata, duration, schema, volume, null, distribution, numeric summary와 grain을 포함해야 한다.
+- **AND** 결과는 source metadata, duration, observed schema, core type compatibility, volume, null, distribution, numeric summary와 grouping-key coverage를 포함해야 한다.
 - **AND** anomaly, freshness, schema hash 또는 Profile mapping key를 포함해서는 안 된다.
 
 ## REMOVED Requirements
@@ -148,7 +155,7 @@ EDA는 전체 row count, `activity_year`별 row count와 6개 core column별 nul
 ### Requirement: Memory result and correctness validation
 
 - **Reason** - Process resource report는 focused correctness와 actual-source observation의 완료 조건이 아니다.
-- **Migration** - Core correctness는 deterministic small fixture, 실제 데이터 근거는 one-time observation으로 검증한다.
+- **Migration** - Core correctness는 small deterministic test source, 실제 데이터 근거는 one-time observation으로 검증한다.
 
 ### Requirement: Memory test isolation
 

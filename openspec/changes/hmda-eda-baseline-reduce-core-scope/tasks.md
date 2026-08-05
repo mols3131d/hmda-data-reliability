@@ -8,21 +8,21 @@ tasks_total: 21
 ---
 
 > [!NOTE]
-> Core contract를 먼저 실패로 고정한 뒤 계산·public surface를 축소하고, Notebook·문서·actual-source evidence를 같은 범위로 정렬한다.
+> Core contract를 먼저 실패로 고정한 뒤 계산·public surface를 축소하고, Notebook·문서·actual-source evidence를 같은 범위로 정렬한다. 기존 extension 삭제와 direct reference 정리는 plan approval 전에 완료됐다.
 
 ## Tasks
 
 ### 1. Core Evidence Contract
 
-- [ ] 1.1 **RED** — EDA contract test를 6개 core column과 core evidence key 기준으로 변경한다.
+- [ ] 1.1 **RED** — EDA contract test를 6개 core type compatibility와 core evidence key 기준으로 변경한다.
   - **Covers:** `HMDA required schema baseline`, `Volume and null baseline`, `Core code distributions`, `Core numeric summaries`, `MVP grain alignment`
-  - **Done when:** 현재 구현이 `county_code`, anomaly, freshness 또는 schema hash 계약 차이로 의도한 이유에서 실패한다.
+  - **Done when:** 현재 구현이 `county_code`, anomaly, freshness, schema hash 또는 null-key grain 차이로 의도한 이유에서 실패한다.
 
-- [ ] 1.2 **GREEN** — `analyze_hmda_csv`의 validation과 반환 evidence를 core contract에 맞춘다.
-  - **Done when:** source metadata, duration, schema, volume, null, distributions, numeric summaries와 grain만 반환하고 관련 test가 통과한다.
+- [ ] 1.2 **GREEN** — `analyze_hmda_csv`의 type validation과 반환 evidence를 core contract에 맞춘다.
+  - **Done when:** source metadata, duration, observed schema, core type compatibility, volume, null, distributions, numeric summaries와 grouping-key coverage만 반환하고 관련 test가 통과한다.
 
 - [ ] 1.3 **REFACTOR** — anomaly, freshness, schema hash와 Profile mapping 계산 경로를 제거하고 read-only·connection close 구조를 단순화한다.
-  - **Done when:** 성공·parse·query failure test가 유지되고 제거된 helper와 dead code가 없다.
+  - **Done when:** 성공·input·parse·query failure test가 유지되고 제거된 helper와 dead code가 없다.
 
 ### 2. Fixture And Memory Removal
 
@@ -30,20 +30,20 @@ tasks_total: 21
   - **Covers:** `Reusable EDA computation boundary`
   - **Done when:** 현재 EDA namespace의 제거 대상 export 때문에 의도한 failure를 확인한다.
 
-- [ ] 2.2 **GREEN** — fixture·manifest·memory module, runner script와 EDA namespace export를 제거한다.
+- [ ] 2.2 **GREEN** — representative fixture·manifest·memory module, runner script와 EDA namespace export를 제거한다.
   - **Done when:** `analyze_hmda_csv`는 기존 top-level path에서 import되고 제거 API는 repository에서 참조되지 않는다.
 
 - [ ] 2.3 **REFACTOR** — fixture·memory 전용 test, marker usage와 문서 참조를 제거한다.
-  - **Done when:** 기본 test 설정과 남은 EDA test가 삭제된 subsystem을 전제하지 않는다.
+  - **Done when:** 기본 test 설정과 남은 EDA test가 삭제된 subsystem을 전제하지 않고 small deterministic source만 사용한다.
 
 ### 3. Minimal Notebook
 
 - [ ] 3.1 **RED** — `test_eda_notebook.py`의 계획 함수를 valid·invalid subprocess integration test로 전환한다.
   - **Covers:** `Minimal notebook rendering`
-  - **Done when:** 현재 불완전한 Notebook graph가 valid smoke에서 의도한 이유로 실패한다.
+  - **Done when:** 현재 불완전한 Notebook graph가 small deterministic source의 valid smoke에서 의도한 이유로 실패한다.
 
 - [ ] 3.2 **GREEN** — Notebook의 input, 실행 trigger와 evidence dependency graph를 복구하고 core section을 렌더링한다.
-  - **Done when:** valid fixture가 schema, volume, null, distribution, numeric summary와 grain section을 완료하고 invalid fixture가 명시적으로 실패한다.
+  - **Done when:** valid source가 schema, volume, null, distribution, numeric summary와 grouping-key coverage section을 완료하고 invalid source가 명시적으로 실패한다.
 
 - [ ] 3.3 **REFACTOR** — Notebook rendering adapter를 공유 계산과 분리하고 anomaly·freshness·Profile mapping UI를 제거한다.
   - **Done when:** Notebook에 별도 계산 계약이나 제거된 evidence section이 남지 않는다.
@@ -71,8 +71,8 @@ tasks_total: 21
 - [ ] 5.3 변경된 Python, test와 Markdown에 대해 ruff, type diagnostics와 rumdl을 실행한다.
   - **Done when:** 변경 범위의 정적 검사가 통과하거나 환경 제약이 명시된다.
 
-- [ ] 5.4 HMDA ingestion, dbt analytics와 reliability profile 관련 regression test를 실행한다.
-  - **Done when:** EDA 책임 축소가 인접 contract를 깨지 않았음을 확인한다.
+- [ ] 5.4 직접 관련된 HMDA ingestion, Gold mart grain과 reliability profile contract regression test를 실행한다.
+  - **Done when:** EDA 책임 축소가 인접한 존재 계약, grouping rule과 profile boundary를 깨지 않았음을 확인한다.
 
 ## Self-Review
 

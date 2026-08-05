@@ -12,7 +12,7 @@
 
 ## Related Artifacts
 
-- `openspec/changes/hmda-eda-foundation-extension/`
+- `openspec/changes/hmda-eda-baseline-reduce-core-scope/`
 - `openspec/specs/hmda-eda-baseline/spec.md`
 - `openspec/specs/foundation-baseline/spec.md`
 
@@ -36,7 +36,7 @@ EDA는 입력 source file을 수정하지 않으며, 성공과 실패 모두 자
 
 | Role | Columns | Evidence |
 | --- | --- | --- |
-| Structural | `activity_year` | 전체·연도별 volume, mart grain |
+| Structural | `activity_year` | 전체·연도별 volume, Gold grouping-key coverage |
 | Categorical | `state_code`, `loan_purpose`, `action_taken` | null, count, share |
 | Numeric | `loan_amount`, `income` | null, non-null count, five-number summary |
 
@@ -46,7 +46,7 @@ EDA는 입력 source file을 수정하지 않으며, 성공과 실패 모두 자
 
 | Keep | Remove | Defer |
 | --- | --- | --- |
-| `analyze_hmda_csv` | 500만 row fixture | Strict performance threshold |
+| `analyze_hmda_csv` | 500만 row representative fixture | Strict performance threshold |
 | Core metric과 focused tests | Manifest·hash subsystem | County·demographic analysis |
 | 최소 Notebook | 반복 memory gate | Domain-backed anomaly rule |
 | Actual-source 1회 smoke | Hard-limit runner | 전체 HMDA field inventory |
@@ -101,15 +101,15 @@ Foundation 종료 전 실제 HMDA source를 한 번 실행하고 다음을 기�
 
 이 실행은 성능 보장이나 OOM 안전성 증명이 아니다.
 
-- **Evidence:** `docs/references/hmda_eda.md`, `openspec/changes/hmda-eda-foundation-extension/tasks.md`
+- **Evidence:** `docs/references/hmda_eda.md`
 
 ### Notebook과 OpenSpec lifecycle이 불완전하다
 
-Notebook은 core distribution, numeric summary와 grain을 표시하지 못하며 실행 graph도 불완전하다.
+Notebook은 core distribution, numeric summary와 grouping-key coverage를 표시하지 못하며 실행 graph도 불완전하다.
 
-또한 active extension의 일부 requirement가 canonical spec에 이미 반영돼 있다. Replacement change 하나가 EDA 축소 작업을 소유해야 한다.
+또한 대체된 extension의 일부 requirement가 canonical spec에 이미 반영돼 있다. Replacement change 하나가 EDA 축소 작업을 소유하고 기존 extension은 삭제한다.
 
-- **Evidence:** `notebooks/eda_mo.py`, `openspec/changes/hmda-eda-foundation-extension/`, `openspec/specs/hmda-eda-baseline/spec.md`
+- **Evidence:** `notebooks/eda_mo.py`, `openspec/changes/hmda-eda-baseline-reduce-core-scope/`, `openspec/specs/hmda-eda-baseline/spec.md`
 
 ## Change Plan
 
@@ -118,9 +118,9 @@ Notebook은 core distribution, numeric summary와 grain을 표시하지 못하�
 | Code | Core metric만 유지하고 anomaly·freshness·schema hash와 fixture·memory module을 제거한다. |
 | Public API | `analyze_hmda_csv`만 유지하고 fixture·memory export를 제거한다. |
 | Tests | Core correctness와 failure boundary만 유지한다. |
-| Notebook | Input, volume, null, distribution, numeric summary와 grain만 표시한다. |
+| Notebook | Input, volume, null, distribution, numeric summary와 grouping-key coverage만 표시한다. |
 | Canonical spec | Anomaly, freshness, Profile mapping과 memory requirement를 축소·제거한다. |
-| Active change | Replacement 생성 후 기존 extension을 superseded 처리한다. |
+| Active change | Replacement만 유지하고 기존 extension directory와 direct reference를 삭제한다. |
 | Documentation | 실행법, metric 정의, 책임 경계와 최신 evidence만 유지한다. |
 | Runtime evidence | Actual-source 1회 smoke를 Foundation acceptance로 기록한다. |
 
@@ -130,8 +130,8 @@ Notebook은 core distribution, numeric summary와 grain을 표시하지 못하�
 
 ```text
 Research 인간 검토
-→ replacement change 생성
-→ 기존 extension 작업 중지·superseded 처리
+→ replacement change 생성·셀프 리뷰
+→ 기존 extension 삭제
 → canonical EDA/Foundation spec 수정
 → implementation
 → focused tests·Notebook smoke·actual-source observation
@@ -140,8 +140,8 @@ Research 인간 검토
 
 Replacement change가 생성된 뒤 기존 extension과 병행 구현하지 않는다.
 
-## Open Questions
+## Resolved Questions
 
-- 제거되는 public API에 deprecation period가 필요한가?
-- Actual-source evidence는 어디에 저장할 것인가?
-- Notebook smoke는 pytest와 Marimo command 중 어디에 둘 것인가?
+- Fixture·memory helper는 deprecation period 없이 제거한다.
+- Actual-source evidence는 `docs/references/hmda_eda.md`에 유지한다.
+- Notebook smoke는 pytest가 종료 가능한 Marimo command를 호출하는 방식으로 소유한다.
