@@ -1,9 +1,11 @@
 {
+    "version": 1,
     "hooks": {
-        "SubagentStop": [
+        "SubagentStart": [
             {
                 "type": "command",
                 "command": "uv run python scripts/log_agent_event.py",
+                "cwd": ".",
                 "timeout": 5
             }
         ],
@@ -11,6 +13,23 @@
             {
                 "type": "command",
                 "command": "uv run python scripts/log_agent_event.py",
+                "cwd": ".",
+                "timeout": 5
+            }
+        ],
+        "SubagentStop": [
+            {
+                "type": "command",
+                "command": "uv run python scripts/log_agent_event.py",
+                "cwd": ".",
+                "timeout": 5
+            }
+        ],
+        "Stop": [
+            {
+                "type": "command",
+                "command": "uv run python scripts/log_agent_event.py",
+                "cwd": ".",
                 "timeout": 5
             }
         ]
