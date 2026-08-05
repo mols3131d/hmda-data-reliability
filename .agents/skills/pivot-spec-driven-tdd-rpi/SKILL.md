@@ -7,6 +7,9 @@ description: >-
   Research is temporary: after decision-relevant findings are transferred to
   their owning planning artifacts, later entries must not require the Research
   file. Do not redefine schema contracts or place Research inside OpenSpec.
+compatibility: >-
+  Requires an Agent Skills-compatible coding agent with repository file access
+  and an OpenSpec project that provides the custom `spec-driven-tdd` schema.
 metadata:
   version: "0.1.0"
 ---
