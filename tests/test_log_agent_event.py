@@ -39,6 +39,53 @@ def test_hook_config_uses_supported_vscode_events() -> None:
     }
 
 
+def test_env_example_defines_common_artifact_root() -> None:
+    env_example = (REPOSITORY_ROOT / ".env.example").read_text(encoding="utf-8")
+
+    assert "PROJECT_PIVOT_ARTIFACTS_DIR=./.local/artifacts" in env_example
+
+
+def test_artifact_log_path_uses_default_root() -> None:
+    module = load_logger_module()
+
+    assert module.artifact_log_path({}) == (
+        REPOSITORY_ROOT / ".local" / "artifacts" / "agent-events.jsonl"
+    )
+
+
+def test_artifact_log_path_uses_configured_root(tmp_path: Path) -> None:
+    module = load_logger_module()
+
+    relative = module.artifact_log_path(
+        {"PROJECT_PIVOT_ARTIFACTS_DIR": "var/artifacts"}
+    )
+    absolute = module.artifact_log_path(
+        {"PROJECT_PIVOT_ARTIFACTS_DIR": str(tmp_path)}
+    )
+
+    assert relative == REPOSITORY_ROOT / "var" / "artifacts" / "agent-events.jsonl"
+    assert absolute == tmp_path / "agent-events.jsonl"
+
+
+def test_load_local_environment_reads_optional_dotenv(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = load_logger_module()
+    monkeypatch.setattr(module, "REPOSITORY_ROOT", tmp_path)
+    monkeypatch.delenv("PROJECT_PIVOT_ARTIFACTS_DIR", raising=False)
+    (tmp_path / ".env").write_text(
+        "PROJECT_PIVOT_ARTIFACTS_DIR=.custom/artifacts\n",
+        encoding="utf-8",
+    )
+
+    module.load_local_environment()
+
+    assert module.artifact_log_path() == (
+        tmp_path / ".custom" / "artifacts" / "agent-events.jsonl"
+    )
+
+
 def test_post_tool_use_records_status_and_correlation_id() -> None:
     module = load_logger_module()
     payload = {
