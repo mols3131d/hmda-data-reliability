@@ -6,35 +6,38 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-LOGGABLE_TOOL_NAMES = {"runTests", "testFailure", "run_task", "run_in_terminal"}
-EVENT_KEYS = ("hookEventName", "toolName", "agentName", "status")
+LOGGABLE_EVENTS = {"SubagentStop", "PostToolUse"}
+EVENT_FIELDS = (
+    "session_id",
+    "tool_name",
+    "agent_id",
+    "agent_type",
+    "agent_name",
+    "stop_reason",
+)
 
 
-def first_value(payload: dict[str, Any], key: str) -> Any:
-    sources = (payload, payload.get("tool_input", {}), payload.get("tool_response", {}))
-    for source in sources:
-        if isinstance(source, dict) and source.get(key) is not None:
-            return source[key]
+def scalar_value(payload: dict[str, Any], key: str) -> str | None:
+    value = payload.get(key)
+    if isinstance(value, (str, int, float, bool)):
+        return str(value)
     return None
 
 
 def event_from(payload: dict[str, Any]) -> dict[str, str] | None:
-    event_name = str(first_value(payload, "hookEventName") or "")
-    tool_name = str(first_value(payload, "toolName") or "")
-
-    if event_name == "PostToolUse" and tool_name not in LOGGABLE_TOOL_NAMES:
-        return None
-    if event_name not in {"SubagentStop", "PostToolUse"}:
+    event_name = scalar_value(payload, "hook_event_name")
+    if event_name not in LOGGABLE_EVENTS:
         return None
 
     event = {
-        "timestamp": datetime.now(UTC).isoformat(),
+        "timestamp": scalar_value(payload, "timestamp")
+        or datetime.now(UTC).isoformat(),
         "event": event_name,
     }
-    for key in EVENT_KEYS[1:]:
-        value = first_value(payload, key)
-        if isinstance(value, (str, int, float, bool)):
-            event[key] = str(value)
+    for key in EVENT_FIELDS:
+        value = scalar_value(payload, key)
+        if value is not None:
+            event[key] = value
     return event
 
 
