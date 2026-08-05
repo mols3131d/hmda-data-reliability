@@ -37,6 +37,11 @@ def test_hook_config_uses_supported_vscode_events() -> None:
         "SubagentStart",
         "SubagentStop",
     }
+    assert all(
+        hook["cwd"] == "."
+        for hooks in config["hooks"].values()
+        for hook in hooks
+    )
 
 
 def test_env_example_defines_common_artifact_root() -> None:

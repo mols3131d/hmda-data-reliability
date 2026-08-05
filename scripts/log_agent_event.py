@@ -6,11 +6,11 @@ import sys
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 
 from dotenv import load_dotenv
 
-Scalar: TypeAlias = str | int | float | bool
+type Scalar = str | int | float | bool
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_DIR_ENV = "PROJECT_PIVOT_ARTIFACTS_DIR"
