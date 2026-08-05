@@ -7,20 +7,21 @@ description: Coordinate research-backed work with the OpenSpec custom schema `sp
 
 OpenSpec 밖의 임시 Research를 `spec-driven-tdd` planning에 연결한다.
 
-Research는 planning의 입력일 수 있지만 durable dependency는 아니다. 채택된 결론이 소유하는 planning artifact로 이전되면 이후 workflow는 Research 없이 계속되어야 한다.
+Research는 planning의 입력일 수 있지만 durable dependency는 아니다. 채택된 결론이 책임을 소유하는 planning artifact로 이전되면 이후 workflow는 Research 없이 계속되어야 한다.
 
 ## Core Contract
 
 - `spec-driven-tdd`가 `proposal`, `specs`, `design`, `tasks`, `plan-review`와 Apply contract를 소유한다.
 - Research는 `research/`의 local rules를 따르는 독립적이고 임시적인 evidence artifact다.
 - Entry는 phase 실행 이력이 아니라 현재 entry에 필요한 artifact로 결정한다.
-- Planning artifact가 필요한 맥락을 소유한 뒤에는 Research의 삭제, 이동 또는 부재를 blocker로 취급하지 않는다.
+- Research handoff는 이후 판단에 필요한 모든 채택된 결론이 책임에 맞는 planning artifact로 이전되었을 때 완료된다.
+- Handoff가 완료되면 Research의 삭제, 이동 또는 부재를 이후 entry의 blocker로 취급하지 않는다.
 
 ## Artifact Flow
 
 ```text
 Research ──accepted findings──> planning artifacts ──schema gate──> Apply
-   └────────────────────── temporary; transfer 후 삭제 가능
+   └────────────────────── temporary; handoff 후 삭제 가능
 ```
 
 Planning artifact는 Research 전체를 복제하지 않는다. 요구사항, 설계, task, 위험 또는 검증 전략에 영향을 주는 채택된 결론만 해당 책임을 소유하는 artifact로 이전한다.
@@ -42,27 +43,30 @@ Planning artifact는 Research 전체를 복제하지 않는다. 요구사항, �
 1. schema가 요구하는 artifact의 존재, 관련성과 일관성을 확인한다.
 1. 판단 근거가 부족할 때만 Research를 작성하거나 갱신한다.
 1. 채택된 Research 결론을 책임에 맞는 planning artifact로 이전한다.
+1. Research를 정리하기 전에 이후 판단에 필요한 채택된 결론이 Research에만 남아 있지 않은지 확인한다.
 1. gate가 충족되면 요청된 entry를 수행한다.
 
 상위 planning artifact가 실질적으로 바뀌면 영향을 받는 하위 artifact만 다시 검증한다. Research가 이미 삭제되었더라도 planning artifact가 충분하면 재생성하지 않는다.
 
 ## Research Handoff
 
-Research에서 planning으로 이전한 뒤에는 다음이 성립해야 한다.
+Research handoff 완료 시 다음이 성립해야 한다.
 
-- 이후 판단에 필요한 채택된 결론이 planning artifact 안에서 이해 가능하다.
+- 이후 판단에 필요한 채택된 결론을 owning planning artifact에서 확인할 수 있다.
 - Research path나 chat history가 유일한 근거로 남지 않는다.
+- Planning의 정합성과 Apply 진입 가능 여부를 Research 없이 평가할 수 있다.
 - Research를 삭제해도 schema dependency와 Apply gate가 유지된다.
-- Research의 후속 변경이 목적, 범위, 전제, 위험 또는 검증 전략을 바꿀 때만 관련 planning artifact를 갱신한다.
 
 Research의 저장, 삭제와 archive는 `research/`의 local rules를 따른다. Archive는 인간이 명시적으로 승인한 경우에만 수행한다.
+
+Planning이 이후 실질적으로 변경되어 근거가 다시 부족해지면 현재 질문에 필요한 Research로 route한다. 원본 Research의 부재 자체는 재조사 사유가 아니다.
 
 ## Boundaries
 
 - `spec-driven-tdd`의 dependency, template, parser 또는 Apply contract를 다시 정의하지 않는다.
 - Research를 OpenSpec change directory에 넣거나 schema artifact로 만들지 않는다.
 - 별도의 Plan artifact나 고정된 phase pipeline을 추가하지 않는다.
-- Research의 존재를 planning 이후 entry의 추가 gate로 만들지 않는다.
+- Research의 존재를 handoff 이후 entry의 추가 gate로 만들지 않는다.
 - Chat history나 숨은 추론을 durable artifact로 취급하지 않는다.
 - Research 결과만으로 요구사항, 설계 또는 구현 결정을 확정하지 않는다.
 
@@ -83,4 +87,4 @@ Research의 저장, 삭제와 archive는 `research/`의 local rules를 따른다
 
 ## Completion
 
-요청된 entry의 schema gate를 충족하고 다음 route 또는 blocker가 명확하면 완료한다. Planning artifact를 작성했다면 이후 workflow가 원본 Research 없이도 진행 가능한 상태여야 한다.
+요청된 entry의 schema gate를 충족하고 다음 route 또는 blocker가 명확하면 완료한다. Research handoff를 수행했다면 이후 workflow가 원본 Research 없이도 진행 가능한 상태여야 한다.
