@@ -33,6 +33,8 @@ agent/feat/review-engine
 
 Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사용한다. Topic은 소문자 kebab-case로 변경 목적을 표현한다.
 
+`agent/inbox`는 아래 용도로만 사용하는 reserved branch이며 일반 naming pattern의 예외다.
+
 ## Change Unit
 
 하나의 branch는 함께 검토하고 병합하며 되돌릴 수 있는 하나의 변경 목적을 가진다.
@@ -45,13 +47,30 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 기존 branch는 동일 작업의 후속 수정일 때만 재사용한다.
 
+## Agent Inbox
+
+`agent/inbox`는 Agent가 생성한 비공식 artifact를 유실 없이 보존하고 version 관리하기 위한 persistent branch다. 공식 project state나 canonical source가 아니다.
+
+보고서, reference, 조사 결과, note, draft와 runtime output 같은 비공식 artifact를 직접 commit할 수 있다. 변경은 논리적 단위로 commit하며 artifact마다 pull request를 만들지 않는다.
+
+다음 경계를 넘지 않는다.
+
+- 제품 코드, test, configuration, workflow, migration, 공식 spec, 문서 또는 지침을 두지 않는다.
+- 공식 repository content가 `agent/inbox`를 canonical source로 참조하거나 의존하게 만들지 않는다.
+- `agent/inbox`의 artifact나 commit을 구현, validation, review 또는 작업 완료의 근거로 제시하지 않는다.
+- 작업 branch의 base로 사용하거나 branch 전체를 `main`에 pull request 또는 merge하지 않는다.
+- `agent/inbox` history 자체를 공식 변경으로 승격하지 않는다.
+
+Artifact를 공식화할 때는 현재 `main`에서 작업 branch를 만들고 필요한 내용을 선별·정제한 뒤 Draft pull request로 전달한다. 분류가 모호하면 `agent/inbox`를 사용하지 않고 공식 변경 경로를 따른다.
+
 ## Agent Instructions
 
-- `agent` owner namespace와 자신의 작업 branch를 사용한다.
+- 공식 변경에는 `agent` owner namespace의 자신의 작업 branch를 사용한다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
 - 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.
 - 규칙이나 권한이 충돌하면 우회하지 않고 보고한다.
+- `agent/inbox` 직접 commit 예외는 `Agent Inbox` section의 비공식 artifact에만 적용한다.
 
 ## Related
 
