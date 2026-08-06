@@ -38,7 +38,7 @@ def _(Path, data_is_sample_ui, mo, os):
     data_is_sample = data_is_sample_ui.value
     if data_is_sample:
         data_path = os.environ.get(
-            "HMDA_EDA_DATA_PATH", "data/sample/hmda/year_2025.csv"
+            "HMDA_EDA_DATA_PATH", "data/samples/hmda/year_2025.csv"
         )
     else:
         data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/raw/hmda/year_2025.csv")
