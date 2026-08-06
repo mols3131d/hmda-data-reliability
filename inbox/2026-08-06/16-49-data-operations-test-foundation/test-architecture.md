@@ -1,186 +1,109 @@
 ---
 title: Data Operations Test Architecture
-description: data_operations의 contract를 저비용으로 보호하기 위한 test layer, harness, oracle와 suite 운영 방식을 설계한다.
+description: data_operations contract를 저비용으로 보호할 test layer, harness와 oracle을 설계한다.
 tags:
   - data-operations
   - test-architecture
   - pytest
-  - executable-specification
 ---
 
 # Test Architecture
 
 ## Objective
 
-`data_operations` 변경마다 전체 domain을 재검토하지 않아도 되도록, known contract를 빠르고 독립적으로 검증한다. Test architecture는 production architecture를 복제하지 않고 public boundary의 의미를 보호한다.
+Known contract를 가장 싼 신뢰 가능한 boundary에서 검증한다. Production architecture가 아니라 public behavior와 persisted evidence를 보호한다.
 
-## Test Portfolio
+## Layers
 
-```mermaid
-flowchart TB
-    unit[Unit: model and invariant] --> component[Component: public stage + local boundary]
-    component --> integration[Integration: Dagster event semantics]
-    contract[OpenSpec and domain contract] --> unit
-    contract --> component
-    contract --> integration
-```
+| Level | Protects | Real boundary |
+| --- | --- | --- |
+| Unit | request validation, public surface, deep immutability | none |
+| Component | raw/dbt/lifecycle public stage와 error translation | file, DuckDB, process |
+| Integration | Dagster graph, execution order와 event semantics | Dagster event stream |
 
-### Unit
+Integration으로만 검증해야 하는 위험을 unit mock으로 낮추지 않는다. 반대로 pure invariant를 integration test로 올리지 않는다.
 
-대상:
-
-- request validation
-- result deep immutability
-- pure compatibility policy가 별도 함수로 존재할 경우의 rule
-- public export surface의 단순 invariant
-
-특징:
-
-- filesystem, DuckDB, subprocess 없음
-- exact exception 또는 mutation behavior를 직접 확인
-- 매우 빠른 default suite
-
-### Component
-
-대상:
-
-- `load_raw_data()`와 실제 temporary DuckDB/file fixture
-- `run_dbt_build()`와 fake dbt executable, 실제 filesystem
-- `run_incident_lifecycle()`와 real DuckDB, 최소 dbt artifact
-- public error translation
-
-특징:
-
-- domain behavior를 mock으로 대체하지 않는다.
-- external boundary만 통제한다.
-- persisted row, artifact, exception과 result가 oracle이다.
-
-### Integration
-
-대상:
-
-- Dagster asset graph
-- standard pipeline execution order
-- materialization event 존재와 metadata 의미
-- raw-only 실행을 asset selection 또는 별도 job으로 표현하는 방식
-
-특징:
-
-- call count보다 Dagster event stream을 확인한다.
-- 실제 dbt 전체 실행이 필요하지 않으면 stage function을 boundary stub으로 대체할 수 있지만, stub은 event semantics를 대신 결정하지 않는다.
-
-## Reusable Harness
+## Harnesses
 
 ### Fake dbt executable
 
-`subprocess.run` 자체를 monkeypatch하지 않고 temporary `PATH` 앞에 executable script를 둔다.
+Temporary `PATH`에 platform-compatible `dbt` wrapper를 둔다. Wrapper는 argument를 기록하고, 전달받은 target에 최소 artifact를 생성하며, exit code·delay·artifact omission만 제어한다.
 
-Fake executable은 다음만 수행한다.
+이 harness는 다음 adapter contract만 검증한다.
 
-1. command argument를 file로 기록한다.
-1. `--target-path` 또는 합의된 output configuration을 읽는다.
-1. 그 위치에 최소 `manifest.json`, `run_results.json`을 생성한다.
-1. fixture option에 따라 exit code, delay, artifact omission을 제어한다.
+- output location 전달
+- stale artifact 제거
+- timeout과 non-zero exit 처리
+- result path와 이번 invocation artifact의 일치
 
-이 harness 하나로 다음을 증명한다.
+실제 dbt model semantics는 흉내 내지 않는다.
 
-- command가 실제 output location을 전달하는가
-- stale artifact가 제거되는가
-- timeout과 non-zero exit가 변환되는가
-- success result가 이번 invocation의 artifact를 가리키는가
+### HMDA fixture factory
 
-> [!NOTE]
-> 실제 dbt semantics 전체를 흉내 내지 않는다. Adapter contract만 재현한다.
+작은 source fixture가 여러 year, file name, row contribution과 rerun을 표현한다. Oracle은 합의한 provenance와 persisted partition rows다.
 
-### HMDA source fixture factory
+### Exception matrix
 
-작은 CSV 또는 Parquet fixture를 다음 차원으로 생성한다.
-
-- 여러 source year
-- 여러 source file name
-- 선택 partition에 row가 있는 file과 없는 file
-- 동일 partition 재실행
-
-Oracle은 discovered path 수가 아니라 합의한 provenance 의미와 persisted rows다.
-
-### Exception translation matrix
-
-각 public entry point에 대해 예상 가능한 dependency exception을 parameterize한다.
-
-| Stage | Dependency class | Expected public observation |
+| Stage | Dependency failure | Public observation |
 | --- | --- | --- |
-| raw | `HMDADataFoundationError` | `DataOperationError`, chained cause, safe context |
-| raw | DuckDB operational failure | `DataOperationError`, chained cause |
-| dbt | timeout, startup, exit, artifact failure | `DataOperationError` |
-| lifecycle | `ReliabilityError` | `DataOperationError`, chained cause |
-| lifecycle | DuckDB operational failure | `DataOperationError`, chained cause |
+| raw | HMDA / DuckDB operational error | `DataOperationError`, cause, safe context |
+| dbt | timeout / startup / exit / artifact error | `DataOperationError` |
+| lifecycle | Reliability / DuckDB operational error | `DataOperationError`, cause, safe context |
 
-Broad unexpected programming error는 wrapping하지 않는 별도 negative scenario를 둔다.
+Unexpected programming error는 wrapping하지 않는 negative scenario를 둔다.
 
 ### Dagster event oracle
 
-`materialize()` 결과에서 다음을 직접 확인한다.
+`materialize()` 결과에서 asset key, event count와 metadata를 직접 확인한다. Raw-only 경로는 dbt asset을 실행한 뒤 event를 억제하는 방식이 아니라 asset selection 또는 별도 job으로 제외한다. Log text는 oracle이 아니다.
 
-- materialized asset key
-- materialization event count
-- metadata key와 value
-- failure 또는 selection에 따라 event가 없어야 하는 asset
+## Contract Test Acceptance
 
-Log text는 보조 evidence일 뿐 oracle이 아니다.
+새 regression test는 다음 조건을 충족한다.
 
-## Proposed Test Modules
+1. Fix 전 baseline 또는 controlled negative fixture에서 contract assertion으로 실패한다.
+1. Import, fixture 또는 environment 오류를 defect 재현으로 계산하지 않는다.
+1. Fix 후 같은 oracle로 통과한다.
+1. Production behavior를 우회하는 mock이나 test-only branch를 만들지 않는다.
 
-| Module | Marker | Scope |
+## Module Ownership
+
+| Module | Level | Owns |
 | --- | --- | --- |
-| `tests/data_operations/test_request_and_results.py` | `unit` | validation, public model semantics, immutability |
-| `tests/data_operations/test_raw_runner.py` | `component` | raw load result, file-count contract, error translation |
-| `tests/data_operations/test_dbt_runner.py` | `component` | fake executable adapter, artifacts, failure translation |
-| `tests/data_operations/test_incident_lifecycle.py` | `component` | current behavior, error translation, read-only invariant |
-| `tests/data_operations/test_public_contract.py` | `unit` 또는 `component` | public exports와 duplicate coordinator 부재 |
-| `tests/orchestration/test_dagster_definitions.py` | `integration` | graph, event semantics, metadata |
+| `tests/data_operations/test_request_and_results.py` | unit | validation, public model semantics |
+| `tests/data_operations/test_raw_runner.py` | component | raw result, provenance, error translation |
+| `tests/data_operations/test_dbt_runner.py` | component | process adapter, artifacts, failures |
+| `tests/data_operations/test_incident_lifecycle.py` | component | comparison, translation, read-only invariant |
+| `tests/data_operations/test_public_contract.py` | unit | exports, coordinator absence |
+| `tests/orchestration/test_dagster_definitions.py` | integration | graph, events, metadata |
 
-복잡한 scenario matrix가 실제로 도입될 때만 `test_data_operations_contract.design.md`를 추가한다. Bundle 문서를 test directory에 그대로 복제하지 않는다.
+복잡한 scenario matrix가 실제 test로 도입될 때만 대응 `test_*.design.md`를 추가한다.
 
-## Fast Feedback Groups
-
-### Focused change
+## Feedback Commands
 
 ```bash
+# focused
 uv run pytest tests/data_operations/test_dbt_runner.py
-```
 
-### Domain boundary
-
-```bash
+# domain
 uv run pytest tests/data_operations
+
+# orchestration affected
+uv run pytest tests/data_operations \
+  tests/orchestration/test_dagster_definitions.py
 ```
 
-### Orchestration semantics changed
-
-```bash
-uv run pytest tests/data_operations tests/orchestration/test_dagster_definitions.py
-```
-
-전체 suite는 shared fixture, public import 또는 configuration 영향이 있을 때만 확장한다.
+전체 suite는 shared fixture, public import 또는 project configuration이 바뀔 때 확장한다.
 
 ## Anti-Patterns
 
-- production helper call 횟수를 contract로 고정한다.
-- mock이 expected artifact나 result를 직접 만들어 연결 defect를 숨긴다.
-- spec에 없는 architecture 결정을 test 이름으로 확정한다.
-- 모든 failure를 `DataOperationError`로 감싸 programming error까지 숨긴다.
-- dbt 전체 integration을 매 focused run마다 실행한다.
-- 하나의 broad test가 raw, dbt, lifecycle과 Dagster를 모두 검증한다.
-- coverage 수치가 높다는 이유로 failure model 누락을 허용한다.
+- helper call 횟수를 public contract로 고정
+- mock이 artifact나 domain result를 대신 생성
+- 미결정 architecture를 test 이름으로 확정
+- broad wrapping으로 programming error 은폐
+- focused run마다 full dbt integration 실행
+- 하나의 test가 raw, dbt, lifecycle과 Dagster를 모두 검증
+- coverage 수치로 failure-model 누락을 정당화
 
-## Review Reduction Model
+## Review Boundary
 
-| Change type | Required evidence | Human review depth |
-| --- | --- | --- |
-| 내부 refactor, contract 불변 | focused + domain suite | light |
-| 기존 dependency failure 처리 | relevant matrix tests | targeted |
-| result field 추가, 기존 의미 유지 | model + affected component tests | light/targeted |
-| public contract 또는 spec 변경 | new scenario + domain suite | deep |
-| asset graph, lifecycle boundary 변경 | integration + architecture review | deep |
-
-Test는 리뷰를 대체하는 자동 승인 장치가 아니다. 이미 합의된 contract를 반복해서 사람이 재증명하는 비용을 제거하는 장치다.
+Test는 자동 승인 장치가 아니다. 합의된 판단의 반복 비용을 줄이는 장치다. 변경 분류와 review depth는 [`change-gates-and-delivery.md`](change-gates-and-delivery.md)가 소유한다.
