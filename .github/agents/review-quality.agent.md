@@ -1,6 +1,6 @@
 ---
 name: review-quality
-description: "Independently reviews Pivot OpenSpec RPI changes for intended behavior, correctness, regressions, maintainability, and validation evidence."
+description: "Independently reviews repository changes and artifacts for intended behavior, correctness, regressions, maintainability, and validation evidence."
 target: vscode
 tools: [execute/runTests, execute/testFailure, read, vscodeGeneral/usages, vscodeGeneral/runTests, vscodeGeneral/testFailure, search]
 agents: []
