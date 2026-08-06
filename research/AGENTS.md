@@ -16,6 +16,12 @@ research/archive/<same-file-name>.md
 - Update the existing file for continued work.
 - Do not create topic directories.
 
+## Template
+
+- Use `research/templates/research.md` for new Research artifacts.
+- Keep Research templates under `research/templates/`.
+- Templates are workspace guidance and are excluded from Research lifecycle rules.
+
 ## Lifecycle
 
 Deletion is the default.
