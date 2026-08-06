@@ -12,6 +12,8 @@
 | R-008 | Schema의 Apply 지침은 특정 언어, 테스트 도구, 명령 또는 저장소 구조를 요구하지 않아야 한다. |
 | R-009 | 프로젝트별 실행 지침은 `openspec/config.yaml`에서 제공할 수 있어야 한다. |
 | R-010 | Schema 개발 문서는 `docs/`, 장기 보존할 개발 의도는 `docs/baseline/`에 위치해야 한다. |
+| R-011 | Plan Review는 고정 checklist와 미통과 항목의 Required Changes로 Apply 진입 가능 여부를 표현해야 한다. |
+| R-012 | Plan Review의 `review_loop`는 완료한 전체 review loop 수를 `0`부터 `8`까지 표현해야 한다. |
 
 # Decisions
 
@@ -25,6 +27,8 @@
 | D-006 | Capability identifier의 canonical source는 `specs/<capability>/spec.md` 경로다. | Proposal 선언과 tags 사이의 충돌을 판정할 기준이 필요하다. |
 | D-007 | 모든 Markdown 헤더를 parser API로 고정하지 않는다. | 인간 가독성과 문서 편집 유연성을 보존한다. |
 | D-008 | Schema Apply instruction은 TDD-compatible test-first feedback loop까지만 요구한다. | 다양한 언어, 프레임워크와 프로젝트 정책의 호환성을 유지한다. |
+| D-009 | Plan Review는 기존 의도와 범위 안에서 명확히 해결할 수 있는 계획 문제를 보완하고 전체 checklist를 다시 검토한다. | 리뷰 결과가 실제 계획 품질 개선으로 수렴하게 한다. |
+| D-010 | 자동 Plan Review는 최대 8회 수행하고 미통과 항목이 남으면 `blocked`로 종료한다. | 무한한 리뷰·수정 반복을 막고 인간 판단 시점을 명확히 한다. |
 
 # Invariants
 
@@ -36,6 +40,7 @@
 | I-004 | Tags는 workflow gate, artifact dependency 또는 소유권 결정에 사용하지 않는다. |
 | I-005 | Schema template은 runtime artifact indexing과 Tasks 집계 대상이 아니다. |
 | I-006 | Project-specific command와 tool 선택을 schema baseline에 고정하지 않는다. |
+| I-007 | Plan Review의 `status`, `review_loop`, checklist와 Required Changes는 서로 모순되지 않아야 한다. |
 
 # Allowed Changes
 
