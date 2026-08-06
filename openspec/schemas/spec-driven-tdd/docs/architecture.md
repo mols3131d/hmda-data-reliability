@@ -46,7 +46,7 @@ Plan Review는 고정 checklist로 계획 artifact 전체를 검토한다. 기�
 | `pending` | 검토가 시작되지 않았다. | 검토 시작 |
 | `in_progress` | review loop가 진행 중이다. | 검토 계속 |
 | `approved` | 모든 checklist 항목이 통과했다. | Apply 진행 |
-| `changes_requested` | 인간의 판단 또는 계획 artifact 수정이 필요하다. | 수정 후 재검토 |
+| `changes_requested` | 자동 보완 범위를 넘는 계획 변경이나 인간 판단이 필요하다. | 수정 후 재검토 |
 | `blocked` | 근거·외부 조건이 부족하거나 review loop 한도에 도달했다. | Blocker 해결 또는 인간 판단 |
 
 `approved`와 `changes_requested`는 일반적인 review decision 용어를 사용한다. `completed`처럼 결과를 숨기는 상태나 별도 verdict 필드는 사용하지 않는다.

@@ -133,7 +133,8 @@ apply:
     - plan-review
   tracks: tasks.md
   instruction: |
-    Plan Review의 status가 approved이고 미완료 Required Changes가 없는지 확인한다.
+    Plan Review의 status가 approved이고 모든 checklist 항목이 완료되었으며
+    미완료 Required Changes가 없는지 확인한다.
     조건을 충족하지 않으면 Apply를 시작하지 않는다.
 
     프로젝트 지침과 도구에 맞는 test-first feedback loop를 사용하고 작업 진행 상태를 유지한다. 구현 과정에서 계획의 오류나 누락이 확인되면 관련 artifact를 갱신하고 Plan Review를 다시 수행한다.
