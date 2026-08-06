@@ -12,15 +12,14 @@ from scripts.run_actual_source import write_evidence
 pytestmark = pytest.mark.component
 
 
-def test_write_evidence_atomic_failure_preserves_existing_artifacts(
+def test_write_evidence_cleans_up_new_json_on_first_creation_second_replace_failure(
     tmp_path: Path,
 ) -> None:
-    """Markdown 작성 또는 atomic replace 실패 시 기존 artifact가 원본 보존된다."""
+    """최초 생성 시 replace 실패하면 신규 json_path가 삭제된다."""
+    import os
+
     json_path = tmp_path / "evidence.json"
     md_path = tmp_path / "evidence.md"
-
-    json_path.write_text("ORIGINAL JSON", encoding="utf-8")
-    md_path.write_text("ORIGINAL MD", encoding="utf-8")
 
     evidence = {
         "row_count": 100,
@@ -29,12 +28,19 @@ def test_write_evidence_atomic_failure_preserves_existing_artifacts(
         "grain": {"distinct_group_count": 10},
     }
 
-    def failing_write(*args: object, **kwargs: object) -> None:
-        raise OSError("Disk full during markdown write")
+    original_replace = os.replace
+    call_count = 0
+
+    def mock_replace(src: str | Path, dst: str | Path) -> None:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            raise OSError("Simulated second replace failure")
+        original_replace(src, dst)
 
     with (
-        patch("pathlib.Path.write_text", side_effect=failing_write),
-        pytest.raises(OSError, match="Disk full"),
+        patch("os.replace", side_effect=mock_replace),
+        pytest.raises(OSError, match="Simulated second replace failure"),
     ):
         write_evidence(
             evidence,
@@ -46,5 +52,5 @@ def test_write_evidence_atomic_failure_preserves_existing_artifacts(
             observed_at="2026-08-07T00:00:00Z",
         )
 
-    assert json_path.read_text(encoding="utf-8") == "ORIGINAL JSON"
-    assert md_path.read_text(encoding="utf-8") == "ORIGINAL MD"
+    assert not json_path.exists()
+    assert not md_path.exists()

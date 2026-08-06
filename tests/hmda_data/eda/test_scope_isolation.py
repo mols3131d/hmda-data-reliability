@@ -25,9 +25,11 @@ def test_pr_scope_does_not_contain_disallowed_unrelated_files() -> None:
         text=True,
         check=False,
     )
-    changed_files = (
-        set(diff_proc.stdout.splitlines()) if diff_proc.returncode == 0 else set()
-    )
+    if diff_proc.returncode != 0:
+        msg = f"git diff failed (code {diff_proc.returncode}). Skipping test."
+        pytest.skip(msg)
+
+    changed_files = set(diff_proc.stdout.splitlines())
 
     disallowed_found = DISALLOWED_PR_PATHS.intersection(changed_files)
     msg = (

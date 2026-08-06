@@ -24,6 +24,10 @@
 | Readiness SSOT | YAML을 단일 원천으로 자동 생성하며, 개별 항목 합계와 Markdown 총계가 일치하고 수동 편집을 차단함 |
 | Removed behavior | freshness 관련 query fragment 및 output key가 완전히 제거됨 |
 | PR Scope Isolation | HMDA EDA 외 영역(`scripts/` 등 무관한 파일)의 우발적 변경 혼합을 차단함 |
+| Expanded Type Families | FLOAT/REAL 및 무부호 정수형(UTINYINT 등) 추론 시 type mismatch 오탐 방지 |
+| Code Distribution JSON | code distribution value의 Decimal 포함 객체를 JSON 직렬화 가능 타입으로 보장 |
+| Dual Artifact Rollback | 두 번째 아티팩트 atomic swap 실패 시 첫 번째 아티팩트 롤백을 통한 모순 방지 |
+| Deterministic Sampling | activity_year 카디널리티 초과 시 2차 정렬(activity_year ASC)로 결정론적 결과 보장 |
 
 ## 3. 테스트 매트릭스
 
@@ -124,7 +128,32 @@
 
 - HMDA EDA 관련 PR diff 내에 EDA 범위를 벗어나는 무관한 스크립트(예: `scripts/wsl-status.sh` 등)나 설정 변경 파일이 포함되어 있는지 검사한다.
 - 허용된 파일 패스 패턴 외의 변경이 감지되면 PR scope warning 또는 validation failure를 발생시킨다.
+- git diff 실패 시 False Green을 방지하도록 pytest.skip 또는 명시적 warning 처리를 수행한다 (N-02 대응).
 - 레벨: integration/CI
+
+### T-14 Expanded Numeric and Integer Type Families (M-01 대응)
+
+- `loan_amount`, `income` 컬럼이 `FLOAT`, `REAL`로 추론되거나 `activity_year`, `action_taken`, `loan_purpose`가 `UTINYINT`, `USMALLINT`, `UINTEGER`, `UBIGINT`로 추론되는 DuckDB 스키마 입력 생성.
+- 기대: `HMDADataValidationError` 발생 없이 `status="valid"` 판정 및 분석 성공.
+- 레벨: unit/component
+
+### T-15 Code Distribution Value Primitive Casting (M-02 대응)
+
+- `action_taken`, `loan_purpose`, `state_code` 값이 DuckDB에서 `DECIMAL` 또는 비기본 타입으로 반환되는 상황을 시뮬레이션.
+- 기대: `_collect_code_distributions` 반환 결과의 `value` 필드가 `json.dumps()` 실행 시 `TypeError` 없이 정상 직렬화됨.
+- 레벨: unit
+
+### T-16 Dual Artifact Atomic Replacement & Rollback (M-03 대응)
+
+- `write_evidence` 실행 중 첫 번째 아티팩트(`json_path`) swap 성공 후 두 번째 아티팩트(`markdown_path`) swap 실패를 시뮬레이션.
+- 기대: 예외 발생 시 첫 번째 교체된 `json_path`가 롤백되거나 두 파일 모두 이전 상태로 완전 보존되어 일관성이 깨지지 않음.
+- 레벨: unit/integration
+
+### T-17 Deterministic Activity Year Sampling (N-01 대응)
+
+- `max_activity_years` 카디널리티 한계를 초과하는 다양한 `activity_year` 수치들을 가진 데이터셋 입력.
+- DuckDB GROUPING SETS 쿼리 실행 시 `ORDER BY is_total DESC, activity_year ASC` 2차 정렬 조건 적용 검증.
+- 레벨: unit
 
 ## 4. 권장 테스트 파일 구조
 

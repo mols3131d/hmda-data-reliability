@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -116,6 +115,8 @@ def write_evidence(
     json_tmp = json_path.with_suffix(".json.tmp")
     md_tmp = markdown_path.with_suffix(".md.tmp")
 
+    json_backup = json_path.with_suffix(".json.bak")
+
     try:
         json_tmp.write_text(
             json.dumps(observation, indent=2, ensure_ascii=False) + "\n",
@@ -123,8 +124,22 @@ def write_evidence(
         )
         md_tmp.write_text(_markdown_summary(observation), encoding="utf-8")
 
-        os.replace(json_tmp, json_path)
-        os.replace(md_tmp, markdown_path)
+        if json_path.exists():
+            import shutil
+
+            shutil.copy2(json_path, json_backup)
+
+        json_tmp.replace(json_path)
+        try:
+            md_tmp.replace(markdown_path)
+            if json_backup.exists():
+                json_backup.unlink()
+        except Exception:
+            if json_backup.exists():
+                json_backup.replace(json_path)
+            else:
+                json_path.unlink(missing_ok=True)
+            raise
     finally:
         if json_tmp.exists():
             json_tmp.unlink()

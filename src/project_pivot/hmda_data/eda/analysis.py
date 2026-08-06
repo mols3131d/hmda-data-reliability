@@ -19,15 +19,79 @@ REQUIRED_EDA_COLUMNS = (
     "income",
 )
 EXPECTED_TYPE_FAMILIES = {
-    "activity_year": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
+    "activity_year": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
     "state_code": frozenset({"VARCHAR"}),
-    "loan_purpose": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
-    "action_taken": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
+    "loan_purpose": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
+    "action_taken": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
     "loan_amount": frozenset(
-        {"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "DECIMAL", "DOUBLE"}
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+            "DECIMAL",
+            "DOUBLE",
+            "FLOAT",
+            "REAL",
+        }
     ),
     "income": frozenset(
-        {"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "DECIMAL", "DOUBLE"}
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+            "DECIMAL",
+            "DOUBLE",
+            "FLOAT",
+            "REAL",
+        }
     ),
 }
 CSV_OPTIONS = {
@@ -69,7 +133,7 @@ def _collect_code_distributions(
         ).fetchall()
         distributions[col] = [
             {
-                "value": row[0],
+                "value": str(row[0]) if row[0] is not None else None,
                 "count": row[1],
                 "share": row[1] / row_count if row_count else 0.0,
             }
@@ -250,7 +314,7 @@ def analyze_hmda_csv(
         )
         grouping_clause = (
             "GROUP BY GROUPING SETS ((), (activity_year)) "
-            "ORDER BY is_total DESC "
+            "ORDER BY is_total DESC, activity_year ASC "
             f"LIMIT {max_activity_years + 2}"
             if has_activity_year
             else ""
