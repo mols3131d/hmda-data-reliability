@@ -33,15 +33,21 @@ flowchart LR
 | Tasks | 검증 가능한 구현 작업과 진행률 |
 | Plan Review | 계획의 일관성, 추적성과 실행 가능성 판정 |
 
-## Plan Review Status
+## Plan Review
+
+Plan Review는 고정 checklist로 계획 artifact 전체를 검토한다. 기존 의도와 범위 안에서 명확히 해결할 수 있는 문제는 계획 artifact에 반영하고, 다음 loop에서 모든 항목을 다시 판정한다.
+
+`review_loop`는 완료한 전체 review loop 수다. `0`에서 시작하고 최대 `8`까지 증가한다. 모든 항목이 통과하면 즉시 종료하며, 8회차에도 미통과 항목이 남으면 자동 검토를 중단하고 `blocked`로 판정한다.
+
+### Status
 
 | Status | Meaning | Next Action |
 | --- | --- | --- |
 | `pending` | 검토가 시작되지 않았다. | 검토 시작 |
-| `in_progress` | 검토 중이며 최종 판정 전이다. | 검토 계속 |
-| `approved` | 계획이 구현 가능한 상태다. | Apply 진행 |
-| `changes_requested` | 계획 artifact 수정이 필요하다. | 수정 후 재검토 |
-| `blocked` | 외부 조건이나 근거 부족으로 진행할 수 없다. | Blocker 해결 후 재검토 |
+| `in_progress` | review loop가 진행 중이다. | 검토 계속 |
+| `approved` | 모든 checklist 항목이 통과했다. | Apply 진행 |
+| `changes_requested` | 자동 보완 범위를 넘는 계획 변경이나 인간 판단이 필요하다. | 수정 후 재검토 |
+| `blocked` | 근거·외부 조건이 부족하거나 review loop 한도에 도달했다. | Blocker 해결 또는 인간 판단 |
 
 `approved`와 `changes_requested`는 일반적인 review decision 용어를 사용한다. `completed`처럼 결과를 숨기는 상태나 별도 verdict 필드는 사용하지 않는다.
 
@@ -57,7 +63,7 @@ flowchart LR
 | OpenSpec delta specs | operation, Requirement, Scenario 헤더 |
 | Task progress | 최상위 `- [ ]`, `- [x]` 체크박스 |
 | Task counters | `tasks_total`, `tasks_completed` 파생 필드 |
-| Plan Review gate | frontmatter `status`; `### Required Changes` 체크박스 |
+| Plan Review gate | frontmatter `status`, `review_loop`; 고정 checklist ID; `### Required Changes`의 최상위 체크박스 |
 
 ### Tag Contract
 
@@ -86,8 +92,8 @@ tasks_completed = 완료된 [x] 체크박스 수
 | --- | --- |
 | Artifact DAG와 template 연결 | 기술 스택과 저장소 관례 |
 | Parser contract | 테스트·lint·type-check 명령 |
-| Plan Review gate의 의미 | 구체적인 테스트 범위와 순서 |
+| Plan Review gate, checklist와 loop 한도 | 구체적인 테스트 범위와 순서 |
 | TDD-compatible test-first 원칙 | 프레임워크별 RED/GREEN 실행 방식 |
-| 계획 오류의 artifact 환류 | 병렬화, 자동 수정, 배포 절차 |
+| 계획 오류의 artifact 환류 | 병렬화, 배포 절차 |
 
 `schema.yaml`의 Apply instruction은 여러 프로젝트와 도구에서 재사용할 수 있는 최소 계약만 가져야 한다. 프로젝트별 지침은 `openspec/config.yaml`의 `context`, `rules`, `operations.apply.guidance`에 둔다.

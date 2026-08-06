@@ -1,5 +1,5 @@
 ---
-type: openspec-rpi
+type: review
 category: review
 title: <title>
 description: <검토 대상, 범위와 결과를 짧게 설명한다.>
@@ -15,7 +15,7 @@ tags:
 
 <!--
 작성 규칙:
-- 검토 대상, Evidence, Finding과 판정을 연결한다.
+- 검토 대상 revision, Evidence, Finding과 판정을 연결한다.
 - 확인된 문제만 기록하고 같은 문제를 반복하지 않는다.
 - 문제가 없는 영역을 형식적으로 나열하지 않는다.
 - OPTIONAL 블록과 빈 placeholder를 남기지 않는다.
@@ -26,21 +26,15 @@ tags:
 
 ## Overview
 
-| Target | Scope | Verdict |
-| --- | --- | --- |
-| <검토 대상> | <검토 범위> | <Pass / Revise / Blocked> |
+| Target | Revision | Scope | Verdict |
+| --- | --- | --- | --- |
+| <검토 대상> | <commit, branch, path 또는 version> | <검토 범위> | <Pass / Revise / Blocked> |
 
 <!-- OPTIONAL: 검토를 제한하거나 차단한 조건이 있을 때만 추가한다.
 
 > [!CAUTION]
 > <누락된 근거, 외부 의존성 또는 검토 제한>
 -->
-
-## Scope
-
-| Included | Excluded |
-| --- | --- |
-| <검토한 범위> | <검토하지 않은 범위> |
 
 <!-- OPTIONAL SECTION: 실질적인 문제가 있을 때만 유지한다. -->
 
@@ -54,7 +48,7 @@ tags:
 - **Impact** - <수정하지 않을 때의 영향>
 - **Required Change** - <필요한 수정 또는 충족 조건>
 
-## Verification
+## Validation
 
 | Check | Evidence | Result |
 | --- | --- | --- |
@@ -62,18 +56,12 @@ tags:
 
 <!-- OPTIONAL SECTION: 필수 수정은 아니지만 후속 가치가 있을 때만 유지한다. -->
 
-## Recommendations
+## Remaining Risks
 
-- <후속 개선 또는 별도 Change로 분리할 내용>
+- <남은 위험, 제한 또는 후속 확인>
 
 ## Verdict
 
-| Decision | Rationale |
-| --- | --- |
-| <Pass / Revise / Blocked> | <판정을 결정한 핵심 근거> |
-
-<!-- OPTIONAL SECTION: Revise일 때만 유지한다. -->
-
-### Required Changes
-
-- [ ] <재검토 전에 반드시 해결할 변경>
+| Decision | Rationale | Route |
+| --- | --- | --- |
+| <Pass / Revise / Blocked> | <판정을 결정한 핵심 근거> | <owning artifact, PR, Issue 또는 후속 Change> |
