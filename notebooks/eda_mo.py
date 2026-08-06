@@ -30,7 +30,9 @@ def _():
 def _(Path, mo, os):
     data_is_sample = True
     if data_is_sample:
-        data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/sample/hmda/year_2025.csv")
+        data_path = os.environ.get(
+            "HMDA_EDA_DATA_PATH", "data/sample/hmda/year_2025.csv"
+        )
     else:
         data_path = os.environ.get("HMDA_EDA_DATA_PATH", "data/raw/hmda/year_2025.csv")
 
@@ -43,7 +45,7 @@ def _(Path, mo, os):
     duckdb_config = {
         "memory_limit": "2GB",
         "threads": 2,
-        "temp_directory": str(Path(os.environ.get("TMPDIR", "/.tmp")).resolve()),
+        "temp_directory": str(Path(os.environ.get("TMPDIR", "/tmp")).resolve()),
     }
 
     mo.md(
@@ -60,23 +62,24 @@ def _(Path, mo, os):
           - spill: `{duckdb_config["temp_directory"]}`
         """
     )
-    return (duckdb_config,)
+    return csv_options, data_path, duckdb_config
 
 
 @app.cell
-def _():
-    return
+def _(mo):
+    run_eda = mo.ui.checkbox(value=True, label="EDA 계산 실행")
+    return (run_eda,)
 
 
 @app.cell
-def _(analyze_hmda_csv, duckdb_config, input_path, mo, run_eda):
+def _(analyze_hmda_csv, data_path, duckdb_config, mo, run_eda):
     mo.stop(
         not run_eda.value,
         mo.callout("전체 파일 baseline 실행이 해제되어 있습니다.", kind="neutral"),
     )
 
     eda_evidence = analyze_hmda_csv(
-        input_path,
+        data_path,
         memory_limit=duckdb_config["memory_limit"],
         threads=duckdb_config["threads"],
         temp_directory=duckdb_config["temp_directory"],
@@ -103,12 +106,6 @@ def _(eda_evidence):
         for column, null_count in eda_evidence["null_counts"].items()
     ]
     return activity_year_counts, null_baseline, row_count
-
-
-@app.cell
-def _(eda_evidence):
-    freshness = eda_evidence["freshness"]
-    return (freshness,)
 
 
 @app.cell
@@ -151,7 +148,9 @@ def _(activity_year_counts, alt, mo, pl, row_count):
                 y=alt.Y("row_count:Q", title="Row Count"),
                 tooltip=["activity_year", "row_count"],
             )
-            .properties(title="Activity Year별 파티션 행 수 분포", width=500, height=250)
+            .properties(
+                title="Activity Year별 파티션 행 수 분포", width=500, height=250
+            )
         )
         partition_volume = mo.vstack([mo.ui.table(activity_year_counts), volume_chart])
     else:
@@ -198,54 +197,17 @@ def _(alt, mo, null_baseline, pl):
 
 
 @app.cell
-def _(freshness, mo):
-    freshness_status = (
-        mo.callout(f"Source freshness: {freshness['freshness_at']}", kind="success")
-        if freshness["status"] == "measured"
-        else mo.callout(
-            "Source freshness: 미측정. 유효한 observed_at이 없습니다. "
-            "파일 수정 시각은 filesystem metadata이며 data freshness가 아닙니다. "
-            "Bronze ingested_at은 별도 raw-table 경로의 ingestion time입니다.",
-            kind="warn",
-        )
-    )
-    mo.vstack([mo.md("## Freshness boundary"), freshness_status])
-    return
-
-
-@app.cell
 def _(eda_evidence, json, mo):
-    profile_mapping = [
-        {
-            "eda_evidence": "row_count",
-            "ProfileSnapshot": "row_count",
-            "role": "baseline/current value",
-        },
-        {
-            "eda_evidence": "null_rates",
-            "ProfileSnapshot": "null_rates",
-            "role": "baseline/current value",
-        },
-        {
-            "eda_evidence": "schema.schema_hash",
-            "ProfileSnapshot": "schema_hash",
-            "role": "display-only mapping",
-        },
-        {
-            "eda_evidence": "freshness.freshness_at",
-            "ProfileSnapshot": "freshness_at",
-            "role": "None when unmeasured",
-        },
-    ]
     evidence_json = json.dumps(eda_evidence, ensure_ascii=False, indent=2)
     mo.vstack(
         [
             mo.md(
-                "## Profile evidence mapping\n\n"
+                "## Core evidence\n\n"
                 "화면 렌더링은 JSON-serializable `eda_evidence`와 분리됩니다."
             ),
-            mo.ui.table(profile_mapping),
-            mo.accordion({"EDA evidence JSON": mo.md(f"```json\n{evidence_json}\n```")}),
+            mo.accordion(
+                {"EDA evidence JSON": mo.md(f"```json\n{evidence_json}\n```")}
+            ),
         ]
     )
     return

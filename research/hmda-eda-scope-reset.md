@@ -50,7 +50,7 @@ EDA는 입력 source file을 수정하지 않으며, 성공과 실패 모두 자
 | Core metric과 focused tests | Manifest·hash subsystem | County·demographic analysis |
 | 최소 Notebook | 반복 memory gate | Domain-backed anomaly rule |
 | Actual-source 1회 smoke | Hard-limit runner | 전체 HMDA field inventory |
-| Read-only·connection close | Freshness·Profile mapping |  |
+| Read-only·connection close | Freshness·Profile mapping | |
 
 ## Evidence
 
