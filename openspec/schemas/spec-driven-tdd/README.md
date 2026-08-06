@@ -27,6 +27,8 @@ flowchart LR
 | `docs/baseline/` | 개선 과정에서 보존해야 하는 요구사항과 설계 결정 |
 | `openspec/config.yaml` | 프로젝트별 context, rules와 operation guidance |
 
-Plan Review는 `pending`, `in_progress`, `approved`, `changes_requested`, `blocked` 상태를 사용한다. Apply의 구체적인 명령과 프로젝트 정책은 schema가 아니라 프로젝트 `config.yaml`에 둔다.
+Plan Review는 고정 checklist와 `pending`, `in_progress`, `approved`, `changes_requested`, `blocked` 상태를 사용한다. `review_loop`는 완료한 전체 검토 횟수를 `0`부터 `8`까지 기록하며, 8회차에도 미통과 항목이 남으면 자동 검토를 중단한다.
+
+Apply의 구체적인 명령과 프로젝트 정책은 schema가 아니라 프로젝트 `config.yaml`에 둔다.
 
 자세한 설계는 [`docs/architecture.md`](docs/architecture.md), 변경 기준은 [`docs/baseline/DIRECTIVE.md`](docs/baseline/DIRECTIVE.md)를 따른다.
