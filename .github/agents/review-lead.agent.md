@@ -49,7 +49,7 @@ Intent, contract, reachability, impact와 기존 safeguard를 이해하는 데 �
 1. delegated finding의 evidence, reachability와 impact를 검증한다.
 1. 중복과 공통 root cause를 통합하고 불충분한 주장을 제거한다.
 1. verdict, validation, 남은 risk와 필요한 route를 결정한다.
-1. Review artifact가 필요하면 `reviews/AGENTS.md`를 읽고 새 attempt를 작성한다.
+1. Review artifact가 필요하면 `reviews/AGENTS.md`와 `reviews/templates/review.md`를 읽고 새 attempt를 작성한다.
 
 ## Finding Route
 

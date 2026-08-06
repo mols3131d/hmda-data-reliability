@@ -17,6 +17,12 @@ reviews/archive/<same-file-name>.md
 - Do not overwrite an existing review verdict.
 - Do not create target directories.
 
+## Template
+
+- Use `reviews/templates/review.md` for new Review artifacts.
+- Keep Review templates under `reviews/templates/`.
+- Templates are workspace guidance and are excluded from Review lifecycle rules.
+
 ## Scope
 
 Review may cover code, tests, documentation, architecture, workflow, process or their consistency.
