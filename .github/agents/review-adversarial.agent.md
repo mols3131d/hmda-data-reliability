@@ -1,6 +1,6 @@
 ---
 name: review-adversarial
-description: "Independently challenges Pivot OpenSpec RPI changes for reachable failure, abuse, recovery, and assumption risks."
+description: "Independently challenges repository changes and artifacts for reachable failure, abuse, recovery, and assumption risks."
 target: vscode
 tools: [read, search]
 agents: []
