@@ -154,6 +154,62 @@ def test_returns_mart_grain_alignment_evidence(tmp_path: Path) -> None:
     assert grain["coverage_rate"] == 1.0
 
 
+def test_six_core_source_without_county_code_succeeds(tmp_path: Path) -> None:
+    """county_code가 없는 6개 core 컬럼만의 입력도 EDA 분석을 성공해야 한다."""
+    source_path = tmp_path / "hmda_6core.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,1,1,350000,120",
+                "2025,NY,1,3,420000,150",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+
+    assert evidence["row_count"] == 2
+    assert "county_code" not in evidence["null_counts"]
+    columns = [col["column"] for col in evidence["schema"]["required_columns"]]
+    assert "county_code" not in columns
+
+
+def test_grain_alignment_excludes_null_keys_from_distinct_count(tmp_path: Path) -> None:
+    """grain key 중 하나라도 null인 행은 distinct group count에서 제외된다."""
+    source_path = tmp_path / "hmda_null_grain.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,1,1,100,10",
+                "2024,CA,1,1,200,20",
+                "2024,,1,1,300,30",  # state_code null
+                ",CA,1,1,400,40",  # activity_year null
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+
+    grain = evidence["grain"]
+    assert grain["distinct_group_count"] == 1
+    assert grain["null_key_rows"] == 2
+    assert grain["coverage_rate"] == pytest.approx(2 / 4)
+
+
 def test_rejects_missing_descriptive_column_without_partial_evidence(
     tmp_path: Path,
 ) -> None:
@@ -181,13 +237,109 @@ def test_rejects_missing_descriptive_column_without_partial_evidence(
 
 
 def test_eda_public_api_compatibility() -> None:
-    """EDA namespace가 analyze_hmda_csv만 노출하는지 검증한다."""
+    """EDA namespace의 public API 구성을 검증한다."""
     import project_pivot.hmda_data.eda as eda
 
     assert hasattr(eda, "analyze_hmda_csv")
+    assert hasattr(eda, "export_eda_evidence_yaml")
+    assert hasattr(eda, "render_eda_static_charts")
     assert not hasattr(eda, "prepare_hmda_eda_fixture")
     assert not hasattr(eda, "run_hmda_eda_memory_workload")
-    assert not hasattr(eda, "FIXTURE_VERSION")
+
+
+def test_supports_expanded_type_families() -> None:
+    """EXPECTED_TYPE_FAMILIES에 FLOAT/REAL 및 무부호 정수가 지원되는지 검증한다."""
+    from project_pivot.hmda_data.eda.analysis import EXPECTED_TYPE_FAMILIES
+
+    for col in ("activity_year", "action_taken", "loan_purpose"):
+        for uint_type in ("UTINYINT", "USMALLINT", "UINTEGER", "UBIGINT"):
+            assert uint_type in EXPECTED_TYPE_FAMILIES[col]
+
+    for num_col in ("loan_amount", "income"):
+        for float_type in ("FLOAT", "REAL"):
+            assert float_type in EXPECTED_TYPE_FAMILIES[num_col]
+
+
+def test_code_distributions_converts_non_primitive_types_for_json(
+    tmp_path: Path,
+) -> None:
+    """_collect_code_distributions 결과 비기본 타입의 JSON 직렬화를 검증한다."""
+    source_path = tmp_path / "hmda_decimal.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,1,1,100,10",
+                "2025,NY,2,3,200,20",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    from unittest.mock import MagicMock, patch
+
+    original_execute = duckdb.DuckDBPyConnection.execute
+
+    def mock_execute(
+        self: duckdb.DuckDBPyConnection, query: str, *args: object, **kwargs: object
+    ) -> duckdb.DuckDBPyConnection:
+        res = original_execute(self, query, *args, **kwargs)
+        if 'SELECT "action_taken" AS val' in str(query):
+            import decimal
+
+            mock_res = MagicMock()
+            mock_res.fetchall.return_value = [
+                (decimal.Decimal("1.000"), 2),
+            ]
+            return mock_res
+        return res
+
+    with patch.object(duckdb.DuckDBPyConnection, "execute", new=mock_execute):
+        evidence = analyze_hmda_csv(
+            source_path,
+            memory_limit="256MB",
+            threads=1,
+            temp_directory=tmp_path / "duckdb-temp",
+        )
+
+    assert evidence["distributions"]["action_taken"][0]["value"] == "1.000"
+    serialized = json.dumps(evidence)
+    assert serialized is not None
+
+
+def test_activity_year_sampling_order_has_secondary_sort(tmp_path: Path) -> None:
+    """activity_year 쿼리에 2차 정렬 조건(activity_year ASC)을 검증한다."""
+    from unittest.mock import patch
+
+    executed_sqls: list[str] = []
+    original_execute = duckdb.DuckDBPyConnection.execute
+
+    def tracking_execute(
+        self: duckdb.DuckDBPyConnection, query: str, *args: object, **kwargs: object
+    ) -> duckdb.DuckDBPyConnection:
+        executed_sqls.append(str(query))
+        return original_execute(self, query, *args, **kwargs)
+
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,1,1,100,10",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with patch.object(duckdb.DuckDBPyConnection, "execute", new=tracking_execute):
+        analyze_hmda_csv(
+            source_path,
+            temp_directory=tmp_path / "tmp",
+        )
+
+    grouping_sql = [sql for sql in executed_sqls if "GROUPING SETS" in sql]
+    assert len(grouping_sql) > 0
+    assert "ORDER BY is_total DESC, activity_year ASC" in grouping_sql[0]
 
 
 def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
@@ -222,7 +374,6 @@ def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
     assert evidence["null_counts"] == {
         "activity_year": 0,
         "state_code": 0,
-        "county_code": 0,
         "loan_purpose": 0,
         "action_taken": 0,
         "loan_amount": 1,
@@ -237,11 +388,6 @@ def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
             "status": "valid",
         },
         {"column": "state_code", "inferred_type": "VARCHAR", "status": "valid"},
-        {
-            "column": "county_code",
-            "inferred_type": "VARCHAR",
-            "status": "valid",
-        },
         {
             "column": "loan_purpose",
             "inferred_type": "BIGINT",

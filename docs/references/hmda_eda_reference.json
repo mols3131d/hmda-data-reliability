@@ -1,858 +1,852 @@
 {
-  "source": {
-    "path": "/home/mols3131d/workspaces/project-pivot/data/raw/hmda/year_2025.csv",
-    "scope": "full_file",
-    "csv_options": {
-      "header": true,
-      "nullstr": [
-        "NA",
-        ""
+  "source_id": "data/raw/hmda/year_2025.csv",
+  "source_sha256": "f0608858c8fd3661ef9c4f944f672b1afb46a2d2883f176bbc1e7c14c0e35c47",
+  "repository_revision": "137f9dc5b160f0da8e955e43b2240c8366108d01-dirty",
+  "observed_at": "2026-08-06T14:52:18.971716+00:00",
+  "evidence": {
+    "source": {
+      "id": "data/raw/hmda/year_2025.csv",
+      "scope": "full_file",
+      "csv_options": {
+        "header": true,
+        "nullstr": [
+          "NA",
+          ""
+        ],
+        "sample_size": 200000
+      }
+    },
+    "duration_seconds": 3.16282422900008,
+    "row_count": 13543606,
+    "activity_year_counts": [
+      {
+        "activity_year": 2025,
+        "row_count": 13543606
+      }
+    ],
+    "null_counts": {
+      "activity_year": 0,
+      "state_code": 170769,
+      "loan_purpose": 0,
+      "action_taken": 0,
+      "loan_amount": 0,
+      "income": 2189834
+    },
+    "null_rates": {
+      "activity_year": 0.0,
+      "state_code": 0.012608828106783378,
+      "loan_purpose": 0.0,
+      "action_taken": 0.0,
+      "loan_amount": 0.0,
+      "income": 0.16168766279822375
+    },
+    "schema": {
+      "columns": [
+        {
+          "name": "activity_year",
+          "type": "BIGINT"
+        },
+        {
+          "name": "lei",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "derived_msa-md",
+          "type": "BIGINT"
+        },
+        {
+          "name": "state_code",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "county_code",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "census_tract",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "conforming_loan_limit",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "derived_loan_product_type",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "derived_dwelling_category",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "derived_ethnicity",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "derived_race",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "derived_sex",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "action_taken",
+          "type": "BIGINT"
+        },
+        {
+          "name": "purchaser_type",
+          "type": "BIGINT"
+        },
+        {
+          "name": "preapproval",
+          "type": "BIGINT"
+        },
+        {
+          "name": "loan_type",
+          "type": "BIGINT"
+        },
+        {
+          "name": "loan_purpose",
+          "type": "BIGINT"
+        },
+        {
+          "name": "lien_status",
+          "type": "BIGINT"
+        },
+        {
+          "name": "reverse_mortgage",
+          "type": "BIGINT"
+        },
+        {
+          "name": "open-end_line_of_credit",
+          "type": "BIGINT"
+        },
+        {
+          "name": "business_or_commercial_purpose",
+          "type": "BIGINT"
+        },
+        {
+          "name": "loan_amount",
+          "type": "DOUBLE"
+        },
+        {
+          "name": "loan_to_value_ratio",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "interest_rate",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "rate_spread",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "hoepa_status",
+          "type": "BIGINT"
+        },
+        {
+          "name": "total_loan_costs",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "total_points_and_fees",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "origination_charges",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "discount_points",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "lender_credits",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "loan_term",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "prepayment_penalty_term",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "intro_rate_period",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "negative_amortization",
+          "type": "BIGINT"
+        },
+        {
+          "name": "interest_only_payment",
+          "type": "BIGINT"
+        },
+        {
+          "name": "balloon_payment",
+          "type": "BIGINT"
+        },
+        {
+          "name": "other_nonamortizing_features",
+          "type": "BIGINT"
+        },
+        {
+          "name": "property_value",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "construction_method",
+          "type": "BIGINT"
+        },
+        {
+          "name": "occupancy_type",
+          "type": "BIGINT"
+        },
+        {
+          "name": "manufactured_home_secured_property_type",
+          "type": "BIGINT"
+        },
+        {
+          "name": "manufactured_home_land_property_interest",
+          "type": "BIGINT"
+        },
+        {
+          "name": "total_units",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "multifamily_affordable_units",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "income",
+          "type": "BIGINT"
+        },
+        {
+          "name": "debt_to_income_ratio",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "applicant_credit_score_type",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_credit_score_type",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_ethnicity-1",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_ethnicity-2",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_ethnicity-3",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_ethnicity-4",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_ethnicity-5",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "co-applicant_ethnicity-1",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_ethnicity-2",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_ethnicity-3",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_ethnicity-4",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_ethnicity-5",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "applicant_ethnicity_observed",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_ethnicity_observed",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_race-1",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_race-2",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_race-3",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_race-4",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_race-5",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_race-1",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_race-2",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_race-3",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_race-4",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_race-5",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_race_observed",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_race_observed",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_sex",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_sex",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_sex_observed",
+          "type": "BIGINT"
+        },
+        {
+          "name": "co-applicant_sex_observed",
+          "type": "BIGINT"
+        },
+        {
+          "name": "applicant_age",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "co-applicant_age",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "applicant_age_above_62",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "co-applicant_age_above_62",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "submission_of_application",
+          "type": "BIGINT"
+        },
+        {
+          "name": "initially_payable_to_institution",
+          "type": "BIGINT"
+        },
+        {
+          "name": "aus-1",
+          "type": "BIGINT"
+        },
+        {
+          "name": "aus-2",
+          "type": "BIGINT"
+        },
+        {
+          "name": "aus-3",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "aus-4",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "aus-5",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "denial_reason-1",
+          "type": "BIGINT"
+        },
+        {
+          "name": "denial_reason-2",
+          "type": "BIGINT"
+        },
+        {
+          "name": "denial_reason-3",
+          "type": "BIGINT"
+        },
+        {
+          "name": "denial_reason-4",
+          "type": "BIGINT"
+        },
+        {
+          "name": "tract_population",
+          "type": "BIGINT"
+        },
+        {
+          "name": "tract_minority_population_percent",
+          "type": "DOUBLE"
+        },
+        {
+          "name": "ffiec_msa_md_median_family_income",
+          "type": "BIGINT"
+        },
+        {
+          "name": "tract_to_msa_income_percentage",
+          "type": "BIGINT"
+        },
+        {
+          "name": "tract_owner_occupied_units",
+          "type": "BIGINT"
+        },
+        {
+          "name": "tract_one_to_four_family_homes",
+          "type": "BIGINT"
+        },
+        {
+          "name": "tract_median_age_of_housing_units",
+          "type": "BIGINT"
+        }
       ],
-      "sample_size": 200000
+      "required_columns": [
+        {
+          "column": "activity_year",
+          "inferred_type": "BIGINT",
+          "status": "valid"
+        },
+        {
+          "column": "state_code",
+          "inferred_type": "VARCHAR",
+          "status": "valid"
+        },
+        {
+          "column": "loan_purpose",
+          "inferred_type": "BIGINT",
+          "status": "valid"
+        },
+        {
+          "column": "action_taken",
+          "inferred_type": "BIGINT",
+          "status": "valid"
+        },
+        {
+          "column": "loan_amount",
+          "inferred_type": "DOUBLE",
+          "status": "valid"
+        },
+        {
+          "column": "income",
+          "inferred_type": "BIGINT",
+          "status": "valid"
+        }
+      ]
     },
-    "duckdb_config": {
-      "memory_limit": "2GB",
-      "threads": 2,
-      "temp_directory": "/home/mols3131d/workspaces/project-pivot/.tmp"
-    }
-  },
-  "duration_seconds": 0.6568310469997414,
-  "row_count": 13543606,
-  "activity_year_counts": [
-    {
-      "activity_year": 2025,
-      "row_count": 13543606
-    }
-  ],
-  "null_counts": {
-    "activity_year": 0,
-    "state_code": 170769,
-    "county_code": 301923,
-    "loan_purpose": 0,
-    "action_taken": 0,
-    "loan_amount": 0,
-    "income": 2189834
-  },
-  "null_rates": {
-    "activity_year": 0.0,
-    "state_code": 0.012608828106783378,
-    "county_code": 0.02229265972444857,
-    "loan_purpose": 0.0,
-    "action_taken": 0.0,
-    "loan_amount": 0.0,
-    "income": 0.16168766279822375
-  },
-  "schema": {
-    "columns": [
-      {
-        "name": "activity_year",
-        "type": "BIGINT"
-      },
-      {
-        "name": "lei",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "derived_msa-md",
-        "type": "BIGINT"
-      },
-      {
-        "name": "state_code",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "county_code",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "census_tract",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "conforming_loan_limit",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "derived_loan_product_type",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "derived_dwelling_category",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "derived_ethnicity",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "derived_race",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "derived_sex",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "action_taken",
-        "type": "BIGINT"
-      },
-      {
-        "name": "purchaser_type",
-        "type": "BIGINT"
-      },
-      {
-        "name": "preapproval",
-        "type": "BIGINT"
-      },
-      {
-        "name": "loan_type",
-        "type": "BIGINT"
-      },
-      {
-        "name": "loan_purpose",
-        "type": "BIGINT"
-      },
-      {
-        "name": "lien_status",
-        "type": "BIGINT"
-      },
-      {
-        "name": "reverse_mortgage",
-        "type": "BIGINT"
-      },
-      {
-        "name": "open-end_line_of_credit",
-        "type": "BIGINT"
-      },
-      {
-        "name": "business_or_commercial_purpose",
-        "type": "BIGINT"
-      },
-      {
-        "name": "loan_amount",
-        "type": "DOUBLE"
-      },
-      {
-        "name": "loan_to_value_ratio",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "interest_rate",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "rate_spread",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "hoepa_status",
-        "type": "BIGINT"
-      },
-      {
-        "name": "total_loan_costs",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "total_points_and_fees",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "origination_charges",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "discount_points",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "lender_credits",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "loan_term",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "prepayment_penalty_term",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "intro_rate_period",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "negative_amortization",
-        "type": "BIGINT"
-      },
-      {
-        "name": "interest_only_payment",
-        "type": "BIGINT"
-      },
-      {
-        "name": "balloon_payment",
-        "type": "BIGINT"
-      },
-      {
-        "name": "other_nonamortizing_features",
-        "type": "BIGINT"
-      },
-      {
-        "name": "property_value",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "construction_method",
-        "type": "BIGINT"
-      },
-      {
-        "name": "occupancy_type",
-        "type": "BIGINT"
-      },
-      {
-        "name": "manufactured_home_secured_property_type",
-        "type": "BIGINT"
-      },
-      {
-        "name": "manufactured_home_land_property_interest",
-        "type": "BIGINT"
-      },
-      {
-        "name": "total_units",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "multifamily_affordable_units",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "income",
-        "type": "BIGINT"
-      },
-      {
-        "name": "debt_to_income_ratio",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "applicant_credit_score_type",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_credit_score_type",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_ethnicity-1",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_ethnicity-2",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_ethnicity-3",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_ethnicity-4",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_ethnicity-5",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "co-applicant_ethnicity-1",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_ethnicity-2",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_ethnicity-3",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_ethnicity-4",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_ethnicity-5",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "applicant_ethnicity_observed",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_ethnicity_observed",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_race-1",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_race-2",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_race-3",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_race-4",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_race-5",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_race-1",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_race-2",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_race-3",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_race-4",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_race-5",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_race_observed",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_race_observed",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_sex",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_sex",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_sex_observed",
-        "type": "BIGINT"
-      },
-      {
-        "name": "co-applicant_sex_observed",
-        "type": "BIGINT"
-      },
-      {
-        "name": "applicant_age",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "co-applicant_age",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "applicant_age_above_62",
-        "type": "BOOLEAN"
-      },
-      {
-        "name": "co-applicant_age_above_62",
-        "type": "BOOLEAN"
-      },
-      {
-        "name": "submission_of_application",
-        "type": "BIGINT"
-      },
-      {
-        "name": "initially_payable_to_institution",
-        "type": "BIGINT"
-      },
-      {
-        "name": "aus-1",
-        "type": "BIGINT"
-      },
-      {
-        "name": "aus-2",
-        "type": "BIGINT"
-      },
-      {
-        "name": "aus-3",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "aus-4",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "aus-5",
-        "type": "VARCHAR"
-      },
-      {
-        "name": "denial_reason-1",
-        "type": "BIGINT"
-      },
-      {
-        "name": "denial_reason-2",
-        "type": "BIGINT"
-      },
-      {
-        "name": "denial_reason-3",
-        "type": "BIGINT"
-      },
-      {
-        "name": "denial_reason-4",
-        "type": "BIGINT"
-      },
-      {
-        "name": "tract_population",
-        "type": "BIGINT"
-      },
-      {
-        "name": "tract_minority_population_percent",
-        "type": "DOUBLE"
-      },
-      {
-        "name": "ffiec_msa_md_median_family_income",
-        "type": "BIGINT"
-      },
-      {
-        "name": "tract_to_msa_income_percentage",
-        "type": "BIGINT"
-      },
-      {
-        "name": "tract_owner_occupied_units",
-        "type": "BIGINT"
-      },
-      {
-        "name": "tract_one_to_four_family_homes",
-        "type": "BIGINT"
-      },
-      {
-        "name": "tract_median_age_of_housing_units",
-        "type": "BIGINT"
-      }
-    ],
-    "required_columns": [
-      {
-        "column": "activity_year",
-        "inferred_type": "BIGINT",
-        "status": "valid"
-      },
-      {
-        "column": "state_code",
-        "inferred_type": "VARCHAR",
-        "status": "valid"
-      },
-      {
-        "column": "county_code",
-        "inferred_type": "VARCHAR",
-        "status": "valid"
-      },
-      {
-        "column": "loan_purpose",
-        "inferred_type": "BIGINT",
-        "status": "valid"
-      },
-      {
-        "column": "action_taken",
-        "inferred_type": "BIGINT",
-        "status": "valid"
-      },
-      {
-        "column": "loan_amount",
-        "inferred_type": "DOUBLE",
-        "status": "valid"
-      },
-      {
-        "column": "income",
-        "inferred_type": "BIGINT",
-        "status": "valid"
-      }
-    ]
-  },
-  "distributions": {
-    "action_taken": [
-      {
-        "value": 1,
-        "count": 6827891,
-        "share": 0.5041412899932263
-      },
-      {
-        "value": 3,
-        "count": 2115090,
-        "share": 0.1561688962304426
-      },
-      {
-        "value": 4,
-        "count": 1710723,
-        "share": 0.1263122243810105
-      },
-      {
-        "value": 6,
-        "count": 1578064,
-        "share": 0.1165172702159233
-      },
-      {
-        "value": 5,
-        "count": 695006,
-        "share": 0.05131617089274452
-      },
-      {
-        "value": 2,
-        "count": 417961,
-        "share": 0.030860392719634637
-      },
-      {
-        "value": 8,
-        "count": 148372,
-        "share": 0.010955132628636717
-      },
-      {
-        "value": 7,
-        "count": 50499,
-        "share": 0.003728622938381403
-      }
-    ],
-    "loan_purpose": [
-      {
-        "value": 1,
-        "count": 6687105,
-        "share": 0.4937462740720603
-      },
-      {
-        "value": 32,
-        "count": 2218695,
-        "share": 0.16381863146343742
-      },
-      {
-        "value": 31,
-        "count": 1977649,
-        "share": 0.14602086032331418
-      },
-      {
-        "value": 4,
-        "count": 1412869,
-        "share": 0.1043200016302896
-      },
-      {
-        "value": 2,
-        "count": 1217830,
-        "share": 0.08991918400461443
-      },
-      {
-        "value": 5,
-        "count": 29458,
-        "share": 0.0021750485062840726
-      }
-    ],
-    "state_code": [
-      {
-        "value": "CA",
-        "count": 1161292,
-        "share": 0.08574466800053103
-      },
-      {
-        "value": "TX",
-        "count": 1144277,
-        "share": 0.08448835561223503
-      },
-      {
-        "value": "FL",
-        "count": 1076340,
-        "share": 0.07947218783535197
-      },
-      {
-        "value": "NC",
-        "count": 552230,
-        "share": 0.0407742221680105
-      },
-      {
-        "value": "OH",
-        "count": 521822,
-        "share": 0.03852902986102815
-      },
-      {
-        "value": "GA",
-        "count": 515746,
-        "share": 0.0380804048788779
-      },
-      {
-        "value": "PA",
-        "count": 500191,
-        "share": 0.036931892436918204
-      },
-      {
-        "value": "IL",
-        "count": 455868,
-        "share": 0.03365927803865529
-      },
-      {
-        "value": "NY",
-        "count": 430554,
-        "share": 0.03179020417457507
-      },
-      {
-        "value": "MI",
-        "count": 418530,
-        "share": 0.03090240516447392
-      },
-      {
-        "value": "VA",
-        "count": 397846,
-        "share": 0.029375190034323206
-      },
-      {
-        "value": "NJ",
-        "count": 370769,
-        "share": 0.027375944043262924
-      },
-      {
-        "value": "AZ",
-        "count": 358591,
-        "share": 0.026476774353890686
-      },
-      {
-        "value": "TN",
-        "count": 345081,
-        "share": 0.02547925567238149
-      },
-      {
-        "value": "IN",
-        "count": 326484,
-        "share": 0.02410613539702794
-      },
-      {
-        "value": "WA",
-        "count": 322182,
-        "share": 0.023788494733234265
-      },
-      {
-        "value": "CO",
-        "count": 295125,
-        "share": 0.02179072545376763
-      },
-      {
-        "value": "SC",
-        "count": 292922,
-        "share": 0.021628065671727308
-      },
-      {
-        "value": "MO",
-        "count": 274106,
-        "share": 0.02023877540442331
-      },
-      {
-        "value": "MD",
-        "count": 265074,
-        "share": 0.019571892448731896
-      },
-      {
-        "value": "MA",
-        "count": 247149,
-        "share": 0.01824838968292492
-      },
-      {
-        "value": "WI",
-        "count": 245028,
-        "share": 0.01809178441841855
-      },
-      {
-        "value": "AL",
-        "count": 236356,
-        "share": 0.0174514822714128
-      },
-      {
-        "value": "MN",
-        "count": 209660,
-        "share": 0.015480367636211509
-      },
-      {
-        "value": "KY",
-        "count": 191324,
-        "share": 0.014126518447155064
-      },
-      {
-        "value": "UT",
-        "count": 171806,
-        "share": 0.012685395602914025
-      },
-      {
-        "value": "OR",
-        "count": 165540,
-        "share": 0.012222741860624121
-      },
-      {
-        "value": "OK",
-        "count": 165004,
-        "share": 0.012183165989914355
-      },
-      {
-        "value": "LA",
-        "count": 153585,
-        "share": 0.011340037505521056
-      },
-      {
-        "value": "NV",
-        "count": 141831,
-        "share": 0.010472174101934153
-      },
-      {
-        "value": "CT",
-        "count": 138936,
-        "share": 0.010258420098753612
-      },
-      {
-        "value": "AR",
-        "count": 135064,
-        "share": 0.009972528734223367
-      },
-      {
-        "value": "IA",
-        "count": 123791,
-        "share": 0.009140180244463697
-      },
-      {
-        "value": "MS",
-        "count": 114899,
-        "share": 0.008483634269927817
-      },
-      {
-        "value": "KS",
-        "count": 108103,
-        "share": 0.007981847670406241
-      },
-      {
-        "value": "ID",
-        "count": 101441,
-        "share": 0.007489955038562108
-      },
-      {
-        "value": "NM",
-        "count": 81433,
-        "share": 0.006012652760276694
-      },
-      {
-        "value": "NE",
-        "count": 77590,
-        "share": 0.00572890262755724
-      },
-      {
-        "value": "NH",
-        "count": 63625,
-        "share": 0.0046977887572925555
-      },
-      {
-        "value": "ME",
-        "count": 62282,
-        "share": 0.0045986275737790955
-      },
-      {
-        "value": "WV",
-        "count": 60802,
-        "share": 0.004489350915849147
-      },
-      {
-        "value": "DE",
-        "count": 55183,
-        "share": 0.004074468793613754
-      },
-      {
-        "value": "RI",
-        "count": 48310,
-        "share": 0.0035669968544566346
-      },
-      {
-        "value": "MT",
-        "count": 41749,
-        "share": 0.0030825616161604228
-      },
-      {
-        "value": "HI",
-        "count": 38770,
-        "share": 0.00286260542428656
-      },
-      {
-        "value": "SD",
-        "count": 29487,
-        "share": 0.002177189738094862
-      },
-      {
-        "value": "PR",
-        "count": 25201,
-        "share": 0.0018607304435761052
-      },
-      {
-        "value": "WY",
-        "count": 25137,
-        "share": 0.0018560049664764317
-      },
-      {
-        "value": "ND",
-        "count": 23174,
-        "share": 0.001711065723559885
-      },
-      {
-        "value": "AK",
-        "count": 22427,
-        "share": 0.001655910545537134
-      },
-      {
-        "value": "VT",
-        "count": 22256,
-        "share": 0.001643284661411444
-      },
-      {
-        "value": "DC",
-        "count": 20311,
-        "share": 0.0014996744589291804
-      },
-      {
-        "value": "VI",
-        "count": 340,
-        "share": 2.510409709201523e-05
-      },
-      {
-        "value": "GU",
-        "count": 213,
-        "share": 1.5726978472350715e-05
-      }
-    ]
-  },
-  "numeric_summaries": {
-    "loan_amount": {
-      "non_null_count": 13543606,
-      "min": 5000.0,
-      "p25": 105000.0,
-      "median": 235000.0,
-      "p75": 385000.0,
-      "max": 999000005000.0
+    "distributions": {
+      "action_taken": [
+        {
+          "value": 1,
+          "count": 6827891,
+          "share": 0.5041412899932263
+        },
+        {
+          "value": 3,
+          "count": 2115090,
+          "share": 0.1561688962304426
+        },
+        {
+          "value": 4,
+          "count": 1710723,
+          "share": 0.1263122243810105
+        },
+        {
+          "value": 6,
+          "count": 1578064,
+          "share": 0.1165172702159233
+        },
+        {
+          "value": 5,
+          "count": 695006,
+          "share": 0.05131617089274452
+        },
+        {
+          "value": 2,
+          "count": 417961,
+          "share": 0.030860392719634637
+        },
+        {
+          "value": 8,
+          "count": 148372,
+          "share": 0.010955132628636717
+        },
+        {
+          "value": 7,
+          "count": 50499,
+          "share": 0.003728622938381403
+        }
+      ],
+      "loan_purpose": [
+        {
+          "value": 1,
+          "count": 6687105,
+          "share": 0.4937462740720603
+        },
+        {
+          "value": 32,
+          "count": 2218695,
+          "share": 0.16381863146343742
+        },
+        {
+          "value": 31,
+          "count": 1977649,
+          "share": 0.14602086032331418
+        },
+        {
+          "value": 4,
+          "count": 1412869,
+          "share": 0.1043200016302896
+        },
+        {
+          "value": 2,
+          "count": 1217830,
+          "share": 0.08991918400461443
+        },
+        {
+          "value": 5,
+          "count": 29458,
+          "share": 0.0021750485062840726
+        }
+      ],
+      "state_code": [
+        {
+          "value": "CA",
+          "count": 1161292,
+          "share": 0.08574466800053103
+        },
+        {
+          "value": "TX",
+          "count": 1144277,
+          "share": 0.08448835561223503
+        },
+        {
+          "value": "FL",
+          "count": 1076340,
+          "share": 0.07947218783535197
+        },
+        {
+          "value": "NC",
+          "count": 552230,
+          "share": 0.0407742221680105
+        },
+        {
+          "value": "OH",
+          "count": 521822,
+          "share": 0.03852902986102815
+        },
+        {
+          "value": "GA",
+          "count": 515746,
+          "share": 0.0380804048788779
+        },
+        {
+          "value": "PA",
+          "count": 500191,
+          "share": 0.036931892436918204
+        },
+        {
+          "value": "IL",
+          "count": 455868,
+          "share": 0.03365927803865529
+        },
+        {
+          "value": "NY",
+          "count": 430554,
+          "share": 0.03179020417457507
+        },
+        {
+          "value": "MI",
+          "count": 418530,
+          "share": 0.03090240516447392
+        },
+        {
+          "value": "VA",
+          "count": 397846,
+          "share": 0.029375190034323206
+        },
+        {
+          "value": "NJ",
+          "count": 370769,
+          "share": 0.027375944043262924
+        },
+        {
+          "value": "AZ",
+          "count": 358591,
+          "share": 0.026476774353890686
+        },
+        {
+          "value": "TN",
+          "count": 345081,
+          "share": 0.02547925567238149
+        },
+        {
+          "value": "IN",
+          "count": 326484,
+          "share": 0.02410613539702794
+        },
+        {
+          "value": "WA",
+          "count": 322182,
+          "share": 0.023788494733234265
+        },
+        {
+          "value": "CO",
+          "count": 295125,
+          "share": 0.02179072545376763
+        },
+        {
+          "value": "SC",
+          "count": 292922,
+          "share": 0.021628065671727308
+        },
+        {
+          "value": "MO",
+          "count": 274106,
+          "share": 0.02023877540442331
+        },
+        {
+          "value": "MD",
+          "count": 265074,
+          "share": 0.019571892448731896
+        },
+        {
+          "value": "MA",
+          "count": 247149,
+          "share": 0.01824838968292492
+        },
+        {
+          "value": "WI",
+          "count": 245028,
+          "share": 0.01809178441841855
+        },
+        {
+          "value": "AL",
+          "count": 236356,
+          "share": 0.0174514822714128
+        },
+        {
+          "value": "MN",
+          "count": 209660,
+          "share": 0.015480367636211509
+        },
+        {
+          "value": "KY",
+          "count": 191324,
+          "share": 0.014126518447155064
+        },
+        {
+          "value": "UT",
+          "count": 171806,
+          "share": 0.012685395602914025
+        },
+        {
+          "value": "OR",
+          "count": 165540,
+          "share": 0.012222741860624121
+        },
+        {
+          "value": "OK",
+          "count": 165004,
+          "share": 0.012183165989914355
+        },
+        {
+          "value": "LA",
+          "count": 153585,
+          "share": 0.011340037505521056
+        },
+        {
+          "value": "NV",
+          "count": 141831,
+          "share": 0.010472174101934153
+        },
+        {
+          "value": "CT",
+          "count": 138936,
+          "share": 0.010258420098753612
+        },
+        {
+          "value": "AR",
+          "count": 135064,
+          "share": 0.009972528734223367
+        },
+        {
+          "value": "IA",
+          "count": 123791,
+          "share": 0.009140180244463697
+        },
+        {
+          "value": "MS",
+          "count": 114899,
+          "share": 0.008483634269927817
+        },
+        {
+          "value": "KS",
+          "count": 108103,
+          "share": 0.007981847670406241
+        },
+        {
+          "value": "ID",
+          "count": 101441,
+          "share": 0.007489955038562108
+        },
+        {
+          "value": "NM",
+          "count": 81433,
+          "share": 0.006012652760276694
+        },
+        {
+          "value": "NE",
+          "count": 77590,
+          "share": 0.00572890262755724
+        },
+        {
+          "value": "NH",
+          "count": 63625,
+          "share": 0.0046977887572925555
+        },
+        {
+          "value": "ME",
+          "count": 62282,
+          "share": 0.0045986275737790955
+        },
+        {
+          "value": "WV",
+          "count": 60802,
+          "share": 0.004489350915849147
+        },
+        {
+          "value": "DE",
+          "count": 55183,
+          "share": 0.004074468793613754
+        },
+        {
+          "value": "RI",
+          "count": 48310,
+          "share": 0.0035669968544566346
+        },
+        {
+          "value": "MT",
+          "count": 41749,
+          "share": 0.0030825616161604228
+        },
+        {
+          "value": "HI",
+          "count": 38770,
+          "share": 0.00286260542428656
+        },
+        {
+          "value": "SD",
+          "count": 29487,
+          "share": 0.002177189738094862
+        },
+        {
+          "value": "PR",
+          "count": 25201,
+          "share": 0.0018607304435761052
+        },
+        {
+          "value": "WY",
+          "count": 25137,
+          "share": 0.0018560049664764317
+        },
+        {
+          "value": "ND",
+          "count": 23174,
+          "share": 0.001711065723559885
+        },
+        {
+          "value": "AK",
+          "count": 22427,
+          "share": 0.001655910545537134
+        },
+        {
+          "value": "VT",
+          "count": 22256,
+          "share": 0.001643284661411444
+        },
+        {
+          "value": "DC",
+          "count": 20311,
+          "share": 0.0014996744589291804
+        },
+        {
+          "value": "VI",
+          "count": 340,
+          "share": 2.510409709201523e-05
+        },
+        {
+          "value": "GU",
+          "count": 213,
+          "share": 1.5726978472350715e-05
+        }
+      ]
     },
-    "income": {
-      "non_null_count": 11353772,
-      "min": -1811129.0,
-      "p25": 69.0,
-      "median": 108.0,
-      "p75": 172.0,
-      "max": 120000000.0
+    "numeric_summaries": {
+      "loan_amount": {
+        "non_null_count": 13543606,
+        "min": 5000.0,
+        "p25": 105000.0,
+        "median": 235000.0,
+        "p75": 385000.0,
+        "max": 999000005000.0
+      },
+      "income": {
+        "non_null_count": 11353772,
+        "min": -1811129.0,
+        "p25": 69.0,
+        "median": 108.0,
+        "p75": 172.0,
+        "max": 120000000.0
+      }
+    },
+    "grain": {
+      "columns": [
+        "activity_year",
+        "state_code",
+        "loan_purpose"
+      ],
+      "distinct_group_count": 321,
+      "null_key_rows": 170769,
+      "coverage_rate": 0.9873911718932166
     }
-  },
-  "grain": {
-    "columns": [
-      "activity_year",
-      "state_code",
-      "loan_purpose"
-    ],
-    "distinct_group_count": 327,
-    "null_key_rows": 170769,
-    "coverage_rate": 0.9873911718932166
   }
 }

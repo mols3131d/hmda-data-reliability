@@ -13,23 +13,85 @@ from project_pivot.hmda_data.errors import HMDADataValidationError
 REQUIRED_EDA_COLUMNS = (
     "activity_year",
     "state_code",
-    "county_code",
     "loan_purpose",
     "action_taken",
     "loan_amount",
     "income",
 )
 EXPECTED_TYPE_FAMILIES = {
-    "activity_year": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
+    "activity_year": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
     "state_code": frozenset({"VARCHAR"}),
-    "county_code": frozenset({"VARCHAR"}),
-    "loan_purpose": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
-    "action_taken": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
+    "loan_purpose": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
+    "action_taken": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
     "loan_amount": frozenset(
-        {"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "DECIMAL", "DOUBLE"}
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+            "DECIMAL",
+            "DOUBLE",
+            "FLOAT",
+            "REAL",
+        }
     ),
     "income": frozenset(
-        {"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "DECIMAL", "DOUBLE"}
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+            "DECIMAL",
+            "DOUBLE",
+            "FLOAT",
+            "REAL",
+        }
     ),
 }
 CSV_OPTIONS = {
@@ -71,7 +133,7 @@ def _collect_code_distributions(
         ).fetchall()
         distributions[col] = [
             {
-                "value": row[0],
+                "value": str(row[0]) if row[0] is not None else None,
                 "count": row[1],
                 "share": row[1] / row_count if row_count else 0.0,
             }
@@ -136,6 +198,10 @@ def _calculate_grain_alignment(
             SELECT
                 count(
                     DISTINCT (activity_year, state_code, loan_purpose)
+                ) FILTER (
+                    WHERE activity_year IS NOT NULL
+                      AND state_code IS NOT NULL
+                      AND loan_purpose IS NOT NULL
                 ) AS distinct_groups,
                 count(*) FILTER (
                     WHERE activity_year IS NULL
@@ -239,10 +305,6 @@ def analyze_hmda_csv(
             f"AS {_quote_identifier(column)}"
             for column in profile_columns
         ]
-        if "observed_at" in inferred_types:
-            metric_select.append(
-                'max(try_cast("observed_at" AS TIMESTAMP)) AS freshness_value'
-            )
 
         has_activity_year = "activity_year" in inferred_types
         grouping_select = (
@@ -252,7 +314,7 @@ def analyze_hmda_csv(
         )
         grouping_clause = (
             "GROUP BY GROUPING SETS ((), (activity_year)) "
-            "ORDER BY is_total DESC "
+            "ORDER BY is_total DESC, activity_year ASC "
             f"LIMIT {max_activity_years + 2}"
             if has_activity_year
             else ""
@@ -262,7 +324,6 @@ def analyze_hmda_csv(
             f"SELECT {grouping_select}{', '.join(metric_select)} "
             f"FROM hmda_eda_source {grouping_clause}"
         ).fetchall()
-        duration_seconds = time.monotonic() - started_at
 
         total_row = next(
             row for row in metric_rows if not has_activity_year or row[1] == 1
@@ -296,6 +357,7 @@ def analyze_hmda_csv(
         )
         numeric_summaries = _collect_numeric_summaries(connection, inferred_types)
         grain = _calculate_grain_alignment(connection, inferred_types, row_count)
+        duration_seconds = time.monotonic() - started_at
 
         return {
             "source": {

@@ -86,25 +86,23 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
 	uv run pytest --export-traces
 ```
 
-## Resource Validation: HMDA EDA
+## HMDA EDA
 
-HMDA EDA는 correctness test와 process-level memory validation을 분리한다. 먼저 작은 deterministic correctness suite를 실행한다.
+HMDA EDA는 six-core descriptive evidence, YAML export, static chart와 controlled
+actual-source evidence를 검증한다. 작은 deterministic correctness suite부터 실행한다.
 
 ```bash
-uv run pytest tests/hmda_data/eda/test_eda.py \
-	tests/hmda_data/eda/test_eda_fixture.py \
-	tests/hmda_data/eda/test_eda_memory_helpers.py
+uv run pytest tests/hmda_data/eda/
 ```
 
-Memory workload는 fixture를 준비한 뒤 별도 runner로 실행한다.
+실제 source의 portable JSON 및 Markdown evidence는 다음 command로 함께 생성한다.
 
 ```bash
-uv run python scripts/prepare_hmda_eda_fixture.py
-uv run python scripts/run_hmda_eda_memory.py
+uv run python scripts/run_actual_source.py
 ```
 
 > [!WARNING]
-> Memory runner 결과는 cgroup hard limit가 실제로 적용될 때만 유효하다. user systemd와 `MemoryMax`, `MemorySwapMax`를 사용할 수 없는 환경에서 사전 probe가 실패하면 통과로 해석하지 않는다.
+> 이 observation은 성능 또는 OOM 안전성 보장이 아니다. source fingerprint, revision과 실행 시각이 일치하는지 확인한다.
 
 ## Interpret Results
 
