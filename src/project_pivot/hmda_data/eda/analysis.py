@@ -241,10 +241,6 @@ def analyze_hmda_csv(
             f"AS {_quote_identifier(column)}"
             for column in profile_columns
         ]
-        if "observed_at" in inferred_types:
-            metric_select.append(
-                'max(try_cast("observed_at" AS TIMESTAMP)) AS freshness_value'
-            )
 
         has_activity_year = "activity_year" in inferred_types
         grouping_select = (

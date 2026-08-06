@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -17,6 +18,10 @@ JSON_PATH = PROJECT_ROOT / "docs/references/hmda_eda_reference.json"
 MARKDOWN_PATH = PROJECT_ROOT / "docs/references/hmda_eda.md"
 
 
+class EvidenceProvenanceError(RuntimeError):
+    """Raised when repository state is dirty during evidence generation."""
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source_file:
@@ -26,6 +31,20 @@ def _sha256(path: Path) -> str:
 
 
 def _repository_revision(project_root: Path) -> str:
+    status_proc = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    if status_proc.stdout.strip():
+        msg = (
+            "Repository dirty (staged/unstaged/untracked files exist in "
+            f"{project_root})"
+        )
+        raise EvidenceProvenanceError(msg)
+
     revision = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=project_root,
@@ -33,15 +52,8 @@ def _repository_revision(project_root: Path) -> str:
         capture_output=True,
         text=True,
     ).stdout.strip()
-    is_dirty = (
-        subprocess.run(
-            ["git", "diff", "--quiet"],
-            cwd=project_root,
-            check=False,
-        ).returncode
-        != 0
-    )
-    return f"{revision}-dirty" if is_dirty else revision
+
+    return revision
 
 
 def _markdown_summary(observation: dict[str, Any]) -> str:
@@ -83,7 +95,7 @@ def write_evidence(
     repository_revision: str,
     observed_at: str,
 ) -> None:
-    """Write canonical JSON and its derived Markdown summary."""
+    """Write canonical JSON and its derived Markdown summary atomically."""
     source = evidence.get("source", {})
     portable_evidence = {
         **evidence,
@@ -100,11 +112,24 @@ def write_evidence(
         "observed_at": observed_at,
         "evidence": portable_evidence,
     }
-    json_path.write_text(
-        json.dumps(observation, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-    markdown_path.write_text(_markdown_summary(observation), encoding="utf-8")
+
+    json_tmp = json_path.with_suffix(".json.tmp")
+    md_tmp = markdown_path.with_suffix(".md.tmp")
+
+    try:
+        json_tmp.write_text(
+            json.dumps(observation, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        md_tmp.write_text(_markdown_summary(observation), encoding="utf-8")
+
+        os.replace(json_tmp, json_path)
+        os.replace(md_tmp, markdown_path)
+    finally:
+        if json_tmp.exists():
+            json_tmp.unlink()
+        if md_tmp.exists():
+            md_tmp.unlink()
 
 
 def main() -> None:
