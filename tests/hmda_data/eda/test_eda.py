@@ -58,6 +58,7 @@ def test_returns_core_code_distributions(tmp_path: Path) -> None:
     )
 
     assert "distributions" in evidence
+    assert "county_code" not in evidence["distributions"]
     state_dist = evidence["distributions"]["state_code"]
     assert len(state_dist) == 2
     assert state_dist[0]["value"] == "CA"
@@ -120,14 +121,7 @@ def test_reports_suspicious_numeric_observations(tmp_path: Path) -> None:
         temp_directory=tmp_path / "duckdb-temp",
     )
 
-    assert "anomalies" in evidence
-    income_anomaly = next(a for a in evidence["anomalies"] if a["field"] == "income")
-    assert income_anomaly["count"] == 1
-    assert income_anomaly["share"] == pytest.approx(1 / 3)
-
-    loan_anomaly = next(a for a in evidence["anomalies"] if a["field"] == "loan_amount")
-    assert loan_anomaly["count"] == 2  # -50 and 0
-    assert loan_anomaly["share"] == pytest.approx(2 / 3)
+    assert "anomalies" not in evidence
 
 
 def test_returns_mart_grain_alignment_evidence(tmp_path: Path) -> None:
@@ -184,6 +178,16 @@ def test_rejects_missing_descriptive_column_without_partial_evidence(
             threads=1,
             temp_directory=tmp_path / "duckdb-temp",
         )
+
+
+def test_eda_public_api_compatibility() -> None:
+    """EDA namespace가 analyze_hmda_csv만 노출하는지 검증한다."""
+    import project_pivot.hmda_data.eda as eda
+
+    assert hasattr(eda, "analyze_hmda_csv")
+    assert not hasattr(eda, "prepare_hmda_eda_fixture")
+    assert not hasattr(eda, "run_hmda_eda_memory_workload")
+    assert not hasattr(eda, "FIXTURE_VERSION")
 
 
 def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
@@ -255,15 +259,8 @@ def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
         },
         {"column": "income", "inferred_type": "BIGINT", "status": "valid"},
     ]
-    assert evidence["freshness"] == {
-        "status": "measured",
-        "source_column": "observed_at",
-        "freshness_at": "2025-02-03T04:05:06",
-        "boundary": {
-            "file_mtime": "filesystem metadata; not source freshness",
-            "bronze_ingested_at": "ingestion time from separate raw-table EDA path",
-        },
-    }
+    assert "schema_hash" not in evidence["schema"]
+    assert "freshness" not in evidence
     assert evidence["source"]["path"] == str(source_path.resolve())
     assert evidence["source"]["scope"] == "full_file"
     assert evidence["source"]["csv_options"] == {

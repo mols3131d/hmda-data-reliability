@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import time
 from pathlib import Path
 from typing import Any
@@ -57,7 +55,7 @@ def _collect_code_distributions(
     distributions: dict[str, list[dict[str, Any]]] = {}
     target_code_cols = [
         col
-        for col in ("action_taken", "loan_purpose", "state_code", "county_code")
+        for col in ("action_taken", "loan_purpose", "state_code")
         if col in inferred_types
     ]
     for col in target_code_cols:
@@ -123,49 +121,6 @@ def _collect_numeric_summaries(
                 "max": None,
             }
     return numeric_summaries
-
-
-def _collect_anomalies(
-    connection: duckdb.DuckDBPyConnection,
-    inferred_types: dict[str, str],
-    row_count: int,
-) -> list[dict[str, Any]]:
-    anomalies: list[dict[str, Any]] = []
-    if "income" in inferred_types:
-        income_row = connection.execute(
-            """
-            SELECT count(*)
-            FROM hmda_eda_source
-            WHERE try_cast(income AS DOUBLE) < 0
-            """
-        ).fetchone()
-        neg_income_count = income_row[0] if income_row else 0
-        anomalies.append(
-            {
-                "field": "income",
-                "condition": "income < 0",
-                "count": neg_income_count,
-                "share": neg_income_count / row_count if row_count else 0.0,
-            }
-        )
-    if "loan_amount" in inferred_types:
-        loan_row = connection.execute(
-            """
-            SELECT count(*)
-            FROM hmda_eda_source
-            WHERE try_cast(loan_amount AS DOUBLE) <= 0
-            """
-        ).fetchone()
-        nonpos_loan_count = loan_row[0] if loan_row else 0
-        anomalies.append(
-            {
-                "field": "loan_amount",
-                "condition": "loan_amount <= 0",
-                "count": nonpos_loan_count,
-                "share": nonpos_loan_count / row_count if row_count else 0.0,
-            }
-        )
-    return anomalies
 
 
 def _calculate_grain_alignment(
@@ -276,14 +231,6 @@ def analyze_hmda_csv(
                 f"Required EDA column validation failed: {missing_required}"
             )
 
-        schema_payload = json.dumps(
-            sorted(schema_rows, key=lambda row: row["name"]),
-            ensure_ascii=True,
-            separators=(",", ":"),
-            sort_keys=True,
-        )
-        schema_hash = f"sha256:{hashlib.sha256(schema_payload.encode()).hexdigest()}"
-
         profile_columns = [
             column for column in REQUIRED_EDA_COLUMNS if column in inferred_types
         ]
@@ -344,26 +291,10 @@ def analyze_hmda_csv(
             )
             raise HMDADataValidationError(msg)
 
-        freshness_value = total_row[-1] if "observed_at" in inferred_types else None
-        freshness = {
-            "status": "measured" if freshness_value is not None else "unmeasured",
-            "source_column": "observed_at" if "observed_at" in inferred_types else None,
-            "freshness_at": (
-                freshness_value.isoformat() if freshness_value is not None else None
-            ),
-            "boundary": {
-                "file_mtime": "filesystem metadata; not source freshness",
-                "bronze_ingested_at": (
-                    "ingestion time from separate raw-table EDA path"
-                ),
-            },
-        }
-
         distributions = _collect_code_distributions(
             connection, inferred_types, row_count
         )
         numeric_summaries = _collect_numeric_summaries(connection, inferred_types)
-        anomalies = _collect_anomalies(connection, inferred_types, row_count)
         grain = _calculate_grain_alignment(connection, inferred_types, row_count)
 
         return {
@@ -387,12 +318,9 @@ def analyze_hmda_csv(
             "schema": {
                 "columns": schema_rows,
                 "required_columns": required_schema,
-                "schema_hash": schema_hash,
             },
-            "freshness": freshness,
             "distributions": distributions,
             "numeric_summaries": numeric_summaries,
-            "anomalies": anomalies,
             "grain": grain,
         }
     finally:

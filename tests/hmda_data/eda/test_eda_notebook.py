@@ -21,26 +21,116 @@ Planning:
 
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
+from pathlib import Path
 
-def _plan_valid_fixture_completes_notebook_rendering() -> None:
+import pytest
+
+
+@pytest.mark.integration
+def test_valid_fixture_completes_notebook_rendering(tmp_path: Path) -> None:
     """종료 가능한 Marimo export command로 valid runtime path를 검증한다.
 
     Setup:
         Deterministic fixture path를 notebook input으로 주입한다.
     Observable result:
         Subprocess가 성공 종료하고 export artifact에서 baseline, distribution,
-        numeric summary, anomaly, grain section을 식별할 수 있다.
-    Exclusion:
-        HTML pixel layout과 interactive server lifecycle은 검증하지 않는다.
+        numeric summary, grain section을 식별할 수 있다.
     """
-    raise NotImplementedError
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,06001,1,1,350000,120",
+                "2025,NY,36001,1,3,420000,150",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    # Resolve the notebook path relative to this test file to avoid CWD dependency
+    notebook_path = Path(__file__).resolve().parents[3] / "notebooks" / "eda_mo.py"
+    if not notebook_path.exists():
+        pytest.skip("Notebook file does not exist yet")
+
+    output_path = tmp_path / "output.html"
+
+    uv_executable = shutil.which("uv") or "uv"
+
+    # NOTE: tests might run in different environment, make sure to propagate os.environ
+    # and override specific variables.
+    test_env = os.environ.copy()
+    test_env["HMDA_EDA_DATA_PATH"] = str(source_path)
+
+    result = subprocess.run(
+        [
+            uv_executable,
+            "run",
+            "marimo",
+            "export",
+            "html",  # Use html instead of html-wasm to capture errors at export time
+            str(notebook_path),
+            "-o",
+            str(output_path),
+        ],
+        env=test_env,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert output_path.exists()
+    content = output_path.read_text(encoding="utf-8")
+
+    # Verify there are no runtime errors in the exported notebook
+    assert "Traceback (most recent call last)" not in content
+    assert "HMDADataValidationError" not in content
 
 
-def _plan_malformed_fixture_reports_notebook_failure() -> None:
+@pytest.mark.integration
+def test_malformed_fixture_reports_notebook_failure(tmp_path: Path) -> None:
     """Malformed input이 partial rendering 없이 실패 상태를 노출하는지 검증한다.
 
     Observable result:
         Subprocess 또는 exported session에서 원래 exception type/message를
         식별할 수 있고 completed evidence section은 생성되지 않는다.
     """
-    raise NotImplementedError
+    source_path = tmp_path / "malformed.csv"
+    source_path.write_text("activity_year,state_code\n2025,CA", encoding="utf-8")
+
+    # Resolve the notebook path relative to this test file to avoid CWD dependency
+    notebook_path = Path(__file__).resolve().parents[3] / "notebooks" / "eda_mo.py"
+    if not notebook_path.exists():
+        pytest.skip("Notebook file does not exist yet")
+
+    output_path = tmp_path / "output_malformed.html"
+
+    uv_executable = shutil.which("uv") or "uv"
+
+    test_env = os.environ.copy()
+    test_env["HMDA_EDA_DATA_PATH"] = str(source_path)
+
+    subprocess.run(
+        [
+            uv_executable,
+            "run",
+            "marimo",
+            "export",
+            "html",  # Use html instead of html-wasm to capture errors at export time
+            str(notebook_path),
+            "-o",
+            str(output_path),
+        ],
+        env=test_env,
+        capture_output=True,
+        text=True,
+    )
+
+    # Note: marimo export might still return 0 if it generates HTML with error outputs.
+    content = output_path.read_text(encoding="utf-8") if output_path.exists() else ""
+    # Ensure marimo successfully caught and rendered the error
+    assert "HMDADataValidationError" in content
+    assert "Required EDA column validation failed" in content
