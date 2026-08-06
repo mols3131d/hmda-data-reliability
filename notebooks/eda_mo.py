@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.15"
+__generated_with = "0.23.16"
 app = marimo.App(width="medium", sql_output="polars")
 
 
@@ -69,7 +69,7 @@ def _(Path, data_is_sample_ui, mo, os):
           - spill: `{duckdb_config["temp_directory"]}`
         """
     )
-    return csv_options, data_path, duckdb_config
+    return data_path, duckdb_config
 
 
 @app.cell
