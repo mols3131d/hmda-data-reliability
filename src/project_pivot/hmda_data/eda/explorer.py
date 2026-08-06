@@ -75,8 +75,5 @@ def render_eda_static_charts(
         null_html_path = out_dir / "null_baseline.html"
         null_chart.save(str(null_html_path))
         generated.append(null_html_path)
-        null_html_path = out_dir / "null_baseline.html"
-        null_chart.save(str(null_html_path))
-        generated.append(null_html_path)
 
     return generated

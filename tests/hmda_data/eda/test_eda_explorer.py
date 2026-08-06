@@ -69,7 +69,8 @@ def test_render_eda_static_charts_generates_files(tmp_path: Path) -> None:
     output_dir = tmp_path / "charts"
     generated_files = render_eda_static_charts(evidence, output_directory=output_dir)
 
-    assert len(generated_files) > 0
+    assert len(generated_files) == 2
+    assert len(set(generated_files)) == 2
     for file_path in generated_files:
         assert file_path.exists()
         assert file_path.stat().st_size > 0

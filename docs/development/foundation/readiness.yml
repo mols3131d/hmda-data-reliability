@@ -3,8 +3,8 @@ version: 1
 dashboard:
   level: domain
   title: Foundation Readiness Dashboard
-  snapshot: "2026-08-03"
-  current_focus: EDA runtime evidence 고정 및 Foundation readiness 판단 기준 확정
+  snapshot: "2026-08-06"
+  current_focus: EDA controlled evidence와 six-core contract 정렬 완료
   include_total: true
 
 items:
@@ -78,7 +78,7 @@ items:
       progress: 12/12
     verification:
       status: passing
-      progress: 12/12
+      progress: 1/1
 
   - name: EDA Domain Observation
     implementation:
@@ -86,15 +86,15 @@ items:
       progress: 26/26
     verification:
       status: passing
-      progress: 26/26
+      progress: 1/1
 
   - name: EDA Notebook Runtime
     implementation:
-      status: implemented
-      progress: 3/3
+      status: removed
+      progress: 0/0
     verification:
-      status: passing
-      progress: 2/2
+      status: not_applicable
+      progress: 0/0
 
   - name: Evidence Retention
     implementation:

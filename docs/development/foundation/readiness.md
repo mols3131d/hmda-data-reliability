@@ -1,7 +1,7 @@
 # Foundation Readiness Dashboard
 
-> **Snapshot:** 2026-08-03
-> **Current Focus:** EDA runtime evidence 고정 및 Foundation readiness 판단 기준 확정
+> **Snapshot:** 2026-08-06
+> **Current Focus:** EDA controlled evidence와 six-core contract 정렬 완료
 
 ## Development Progress
 
@@ -15,6 +15,9 @@
 | Gold Mart Grain Alignment | 🟢 Implemented | `██████████ 18/18` | 🟢 Passing | `██████████ 18/18` |
 | Gold Analysis Metrics | 🟢 Implemented | `██████████ 18/18` | 🟢 Passing | `██████████ 18/18` |
 | EDA Schema and Volume Observation | 🟢 Implemented | `██████████ 11/11` | 🟢 Passing | `██████████ 11/11` |
+| EDA Quality Baseline | 🟢 Implemented | `██████████ 12/12` | 🟢 Passing | `██████████ 1/1` |
+| EDA Domain Observation | 🟢 Implemented | `██████████ 26/26` | 🟢 Passing | `██████████ 1/1` |
+| EDA Notebook Runtime | ⚪ Removed | `░░░░░░░░░░ 0/0` | ⚪ Not Applicable | `░░░░░░░░░░ 0/0` |
 | Evidence Retention | 🟢 Implemented | `██████████ 13/13` | 🟢 Passing | `██████████ 13/13` |
 | Reliability Contracts | 🟢 Implemented | `██████████ 7/7` | 🟢 Passing | `██████████ 7/7` |
 | Read-Only Lifecycle Boundary | 🟢 Implemented | `██████████ 15/15` | 🟢 Passing | `██████████ 15/15` |
@@ -22,7 +25,7 @@
 | Evaluation Boundary | 🟢 Implemented | `██████████ 2/2` | 🟢 Passing | `██████████ 2/2` |
 | Pipeline Execution Boundaries | 🟡 In Progress | `████████░░ 5/6` | 🟡 Partial | `████████░░ 5/6` |
 | Foundation Completion Decision | 🔵 Planned | `░░░░░░░░░░ 0/2` | ⚪ Unverified | `░░░░░░░░░░ 0/1` |
-| **Total** | **🟡 In Progress** | **`█████████░ 185/192`** | **🟡 Partial** | **`█████████░ 184/190`** |
+| **Total** | **🟡 In Progress** | **`█████████░ 182/189`** | **🟡 Partial** | **`█████████░ 146/152`** |
 
 ## Implementation Gaps
 
