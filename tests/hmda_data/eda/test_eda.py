@@ -154,6 +154,62 @@ def test_returns_mart_grain_alignment_evidence(tmp_path: Path) -> None:
     assert grain["coverage_rate"] == 1.0
 
 
+def test_six_core_source_without_county_code_succeeds(tmp_path: Path) -> None:
+    """county_code가 없는 6개 core 컬럼만의 입력도 EDA 분석을 성공해야 한다."""
+    source_path = tmp_path / "hmda_6core.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,1,1,350000,120",
+                "2025,NY,1,3,420000,150",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+
+    assert evidence["row_count"] == 2
+    assert "county_code" not in evidence["null_counts"]
+    columns = [col["column"] for col in evidence["schema"]["required_columns"]]
+    assert "county_code" not in columns
+
+
+def test_grain_alignment_excludes_null_keys_from_distinct_count(tmp_path: Path) -> None:
+    """grain key 중 하나라도 null인 행은 distinct group count에서 제외된다."""
+    source_path = tmp_path / "hmda_null_grain.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,loan_purpose,action_taken,loan_amount,income",
+                "2024,CA,1,1,100,10",
+                "2024,CA,1,1,200,20",
+                "2024,,1,1,300,30",  # state_code null
+                ",CA,1,1,400,40",  # activity_year null
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+
+    grain = evidence["grain"]
+    assert grain["distinct_group_count"] == 1
+    assert grain["null_key_rows"] == 2
+    assert grain["coverage_rate"] == pytest.approx(2 / 4)
+
+
 def test_rejects_missing_descriptive_column_without_partial_evidence(
     tmp_path: Path,
 ) -> None:
@@ -222,7 +278,6 @@ def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
     assert evidence["null_counts"] == {
         "activity_year": 0,
         "state_code": 0,
-        "county_code": 0,
         "loan_purpose": 0,
         "action_taken": 0,
         "loan_amount": 1,
@@ -237,11 +292,6 @@ def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
             "status": "valid",
         },
         {"column": "state_code", "inferred_type": "VARCHAR", "status": "valid"},
-        {
-            "column": "county_code",
-            "inferred_type": "VARCHAR",
-            "status": "valid",
-        },
         {
             "column": "loan_purpose",
             "inferred_type": "BIGINT",

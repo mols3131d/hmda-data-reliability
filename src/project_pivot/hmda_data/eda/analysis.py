@@ -13,7 +13,6 @@ from project_pivot.hmda_data.errors import HMDADataValidationError
 REQUIRED_EDA_COLUMNS = (
     "activity_year",
     "state_code",
-    "county_code",
     "loan_purpose",
     "action_taken",
     "loan_amount",
@@ -22,7 +21,6 @@ REQUIRED_EDA_COLUMNS = (
 EXPECTED_TYPE_FAMILIES = {
     "activity_year": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
     "state_code": frozenset({"VARCHAR"}),
-    "county_code": frozenset({"VARCHAR"}),
     "loan_purpose": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
     "action_taken": frozenset({"TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"}),
     "loan_amount": frozenset(
@@ -136,6 +134,10 @@ def _calculate_grain_alignment(
             SELECT
                 count(
                     DISTINCT (activity_year, state_code, loan_purpose)
+                ) FILTER (
+                    WHERE activity_year IS NOT NULL
+                      AND state_code IS NOT NULL
+                      AND loan_purpose IS NOT NULL
                 ) AS distinct_groups,
                 count(*) FILTER (
                     WHERE activity_year IS NULL
@@ -262,7 +264,6 @@ def analyze_hmda_csv(
             f"SELECT {grouping_select}{', '.join(metric_select)} "
             f"FROM hmda_eda_source {grouping_clause}"
         ).fetchall()
-        duration_seconds = time.monotonic() - started_at
 
         total_row = next(
             row for row in metric_rows if not has_activity_year or row[1] == 1
@@ -296,6 +297,7 @@ def analyze_hmda_csv(
         )
         numeric_summaries = _collect_numeric_summaries(connection, inferred_types)
         grain = _calculate_grain_alignment(connection, inferred_types, row_count)
+        duration_seconds = time.monotonic() - started_at
 
         return {
             "source": {

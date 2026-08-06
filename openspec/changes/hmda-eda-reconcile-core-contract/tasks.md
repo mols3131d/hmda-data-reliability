@@ -19,14 +19,14 @@ tags:
 
 ### 1. Runtime contract reconciliation
 
-- [ ] 1.1 **RED** — `county_code`가 없는 6-core source의 성공, null grain key exclusion, duration 범위를 검증하는 component tests를 추가한다.
+- [x] 1.1 **RED** — `county_code`가 없는 6-core source의 성공, null grain key exclusion, duration 범위를 검증하는 component tests를 추가한다.
   - **Covers:** `HMDA required schema baseline`, `MVP grain alignment`, `Reusable EDA computation boundary`
   - **Done when:** 현재 runtime이 `county_code` validation 또는 null-key group count 때문에 의도한 이유로 실패한다.
 
-- [ ] 1.2 **GREEN** — EDA validation/null baseline을 6-core로 축소하고, distinct grain count를 complete-key rows로 제한하며, duration을 모든 retained aggregate 뒤에 측정한다.
+- [x] 1.2 **GREEN** — EDA validation/null baseline을 6-core로 축소하고, distinct grain count를 complete-key rows로 제한하며, duration을 모든 retained aggregate 뒤에 측정한다.
   - **Done when:** 새 component tests가 통과하고 freshness query가 남지 않는다.
 
-- [ ] 1.3 **REFACTOR** — core column과 grain population 계산에서 중복을 제거하고 반환 evidence를 JSON-serializable하게 유지한다.
+- [x] 1.3 **REFACTOR** — core column과 grain population 계산에서 중복을 제거하고 반환 evidence를 JSON-serializable하게 유지한다.
   - **Done when:** EDA component suite가 통과하며 query의 population semantics가 한 곳에서 읽힌다.
 
 ### 2. Agent-friendly Python & YAML EDA with Static Visualizations
