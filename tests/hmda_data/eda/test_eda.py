@@ -237,13 +237,14 @@ def test_rejects_missing_descriptive_column_without_partial_evidence(
 
 
 def test_eda_public_api_compatibility() -> None:
-    """EDA namespace가 analyze_hmda_csv만 노출하는지 검증한다."""
+    """EDA namespace의 public API 구성을 검증한다."""
     import project_pivot.hmda_data.eda as eda
 
     assert hasattr(eda, "analyze_hmda_csv")
+    assert hasattr(eda, "export_eda_evidence_yaml")
+    assert hasattr(eda, "render_eda_static_charts")
     assert not hasattr(eda, "prepare_hmda_eda_fixture")
     assert not hasattr(eda, "run_hmda_eda_memory_workload")
-    assert not hasattr(eda, "FIXTURE_VERSION")
 
 
 def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:

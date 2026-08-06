@@ -31,14 +31,14 @@ tags:
 
 ### 2. Agent-friendly Python & YAML EDA with Static Visualizations
 
-- [ ] 2.1 **RED** — Python EDA API에서 결과를 YAML(`yml`) 형식으로 반환하고 정적 이미지(PNG) 또는 HTML 시각화 파일을 내보내는 기능의 component tests를 작성한다.
+- [x] 2.1 **RED** — Python EDA API에서 결과를 YAML(`yml`) 형식으로 반환하고 정적 이미지(PNG) 또는 HTML 시각화 파일을 내보내는 기능의 component tests를 작성한다.
   - **Covers:** `Agent-friendly Python and YAML EDA exploration`
   - **Done when:** 현재 YAML 직렬화 모듈 및 정적 차트 내보내기 함수가 존재하지 않아 테스트가 실패한다.
 
-- [ ] 2.2 **GREEN** — Marimo 노트북(`notebooks/eda_mo.py`) 및 Marimo 관련 테스트(`tests/hmda_data/eda/test_eda_notebook.py`)를 완전 삭제하고, EDA 결과를 YAML로 직렬화하여 반환하는 함수 및 정적 시각화(PNG/HTML) 파일 내보내기 기능을 구현한다.
+- [x] 2.2 **GREEN** — Marimo 노트북(`notebooks/eda_mo.py`) 및 Marimo 관련 테스트(`tests/hmda_data/eda/test_eda_notebook.py`)를 완전 삭제하고, EDA 결과를 YAML로 직렬화하여 반환하는 함수 및 정적 시각화(PNG/HTML) 파일 내보내기 기능을 구현한다.
   - **Done when:** Marimo 파일들이 삭제되고, YAML 에비던스 반환 및 정적 시각화 파일 생성 테스트가 통과한다.
 
-- [ ] 2.3 **REFACTOR** — YAML 에비던스 구조와 시각화 생성 모듈을 깔끔하게 정돈하고 불필요한 Marimo 의존성을 전면 정리한다.
+- [x] 2.3 **REFACTOR** — YAML 에비던스 구조와 시각화 생성 모듈을 깔끔하게 정돈하고 불필요한 Marimo 의존성을 전면 정리한다.
   - **Done when:** EDA component suite가 통과하며 Marimo 관련 코드 및 테스트 잔재가 남지 않는다.
 
 ### 3. Controlled evidence and readiness
