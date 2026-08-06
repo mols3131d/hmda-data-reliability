@@ -51,7 +51,8 @@ def test_valid_fixture_completes_notebook_rendering(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    notebook_path = Path("notebooks/eda_mo.py")
+    # Resolve the notebook path relative to this test file to avoid CWD dependency
+    notebook_path = Path(__file__).resolve().parents[3] / "notebooks" / "eda_mo.py"
     if not notebook_path.exists():
         pytest.skip("Notebook file does not exist yet")
 
@@ -83,7 +84,10 @@ def test_valid_fixture_completes_notebook_rendering(tmp_path: Path) -> None:
     assert result.returncode == 0
     assert output_path.exists()
     content = output_path.read_text(encoding="utf-8")
-    assert "activity_year_counts" in content or "evidence" in content
+
+    # Verify there are no runtime errors in the exported notebook
+    assert "Traceback (most recent call last)" not in content
+    assert "HMDADataValidationError" not in content
 
 
 @pytest.mark.integration
@@ -97,7 +101,8 @@ def test_malformed_fixture_reports_notebook_failure(tmp_path: Path) -> None:
     source_path = tmp_path / "malformed.csv"
     source_path.write_text("activity_year,state_code\n2025,CA", encoding="utf-8")
 
-    notebook_path = Path("notebooks/eda_mo.py")
+    # Resolve the notebook path relative to this test file to avoid CWD dependency
+    notebook_path = Path(__file__).resolve().parents[3] / "notebooks" / "eda_mo.py"
     if not notebook_path.exists():
         pytest.skip("Notebook file does not exist yet")
 
@@ -126,7 +131,6 @@ def test_malformed_fixture_reports_notebook_failure(tmp_path: Path) -> None:
 
     # Note: marimo export might still return 0 if it generates HTML with error outputs.
     content = output_path.read_text(encoding="utf-8") if output_path.exists() else ""
-    assert (
-        "Required EDA column validation failed" in content
-        or "HMDADataValidationError" in content
-    )
+    # Ensure marimo successfully caught and rendered the error
+    assert "HMDADataValidationError" in content
+    assert "Required EDA column validation failed" in content

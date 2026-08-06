@@ -74,6 +74,17 @@ tasks_total: 21
 - [x] 5.4 직접 관련된 HMDA ingestion, Gold mart grain과 reliability profile contract regression test를 실행한다.
   - **Done when:** EDA 책임 축소가 인접한 존재 계약, grouping rule과 profile boundary를 깨지 않았음을 확인한다.
 
+### 6. Post-Review Fixes
+
+- [x] 6.1 **REFACTOR** — `test_eda_notebook.py`의 상대 경로 의존성을 `Path(__file__)` 기반 절대 경로로 변경한다.
+  - **Done when:** `notebook_path`가 테스트 파일 위치를 기준으로 안전하게 해석된다.
+
+- [x] 6.2 **RED/GREEN** — `test_eda_notebook.py`의 False Green 단언문(`"evidence" in content`)을 제거하고 출력된 HTML에서 `<marimo-error>` 또는 관련 오류 메시지가 없음을 확인하는 등 런타임 오류 부재를 증명하는 방식으로 수정한다.
+  - **Done when:** Marimo 소스 코드 임베딩에 속지 않고 렌더링 성공 여부를 확실히 검증한다.
+
+- [x] 6.3 **REFACTOR** — `notebooks/eda_mo.py`의 하드코딩된 `data_is_sample = True` 상수를 `mo.ui.checkbox` 위젯으로 교체한다.
+  - **Done when:** UI를 통해 샘플 데이터와 Raw 데이터 간 동적 스위칭이 가능하며 더 이상 도달 불가능한 분기가 존재하지 않는다.
+
 ## Self-Review
 
 - [x] 모든 관련 Requirement와 Scenario가 구현 및 테스트에 반영되었는지 확인한다.

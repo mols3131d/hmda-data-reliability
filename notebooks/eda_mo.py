@@ -27,8 +27,8 @@ def _():
 
 
 @app.cell
-def _(Path, mo, os):
-    data_is_sample = True
+def _(Path, data_is_sample_ui, mo, os):
+    data_is_sample = data_is_sample_ui.value
     if data_is_sample:
         data_path = os.environ.get(
             "HMDA_EDA_DATA_PATH", "data/sample/hmda/year_2025.csv"
@@ -68,7 +68,8 @@ def _(Path, mo, os):
 @app.cell
 def _(mo):
     run_eda = mo.ui.checkbox(value=True, label="EDA 계산 실행")
-    return (run_eda,)
+    data_is_sample_ui = mo.ui.checkbox(value=True, label="샘플 데이터 사용")
+    return data_is_sample_ui, run_eda
 
 
 @app.cell
