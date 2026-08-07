@@ -11,6 +11,10 @@ Use `research` when the artifact's primary purpose is to answer a question by ga
 - Compare alternatives only when they can change the answer or decision.
 - Stop when additional investigation is unlikely to change the answer or a material uncertainty.
 
+## Template
+
+Use [`inbox/templates/research.md`](../templates/research.md) when a reusable structure helps. Adapt or omit sections that do not serve the question.
+
 ## Output
 
 Lead with the evidence-backed answer. Include only the context, evidence, alternatives, and uncertainty needed for the artifact's purpose.

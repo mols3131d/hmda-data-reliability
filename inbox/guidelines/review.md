@@ -17,6 +17,10 @@ If another workflow defines an owning review artifact, such as an OpenSpec `plan
 - Record performed validation, omitted validation, and remaining risk.
 - Prefer a small number of well-supported findings over speculative volume.
 
+## Template
+
+Use [`inbox/templates/review.md`](../templates/review.md) when a reusable structure helps. Adapt or omit sections that do not serve the review.
+
 ## Output
 
 Lead with the review result or highest-impact findings. Keep evidence close to the finding it supports and distinguish required action from optional improvement.

@@ -6,7 +6,7 @@
 
 1. Identify the artifact's primary purpose.
 1. Choose the most specific useful artifact type when the purpose is clear.
-1. Read only the relevant guideline and skill for the current work.
+1. Read only the relevant guideline, template, and skill for the current work.
 1. Write the artifact under the current date directory.
 1. Transfer accepted conclusions, decisions, or actions to their owning artifacts.
 1. Delete obsolete or low-value inbox content.
@@ -17,7 +17,7 @@ Artifact types are open-ended. `research` and `review` are common types, not a w
 
 - Use a clear purpose-based type such as `research` or `review` when it fits.
 - Use another concise lowercase kebab-case type when the artifact has a different clear purpose.
-- Do not force an artifact into an existing type only because a guideline exists for it.
+- Do not force an artifact into an existing type only because guidance or a template exists for it.
 - When no clearer type applies, use `report` for long-form work and `briefing` for short-form work.
 
 Record the type in frontmatter.
@@ -57,14 +57,14 @@ inbox/{created_at:%Y-%m-%d}/{created_at:%H-%M}-{name}/*
 
 ## Progressive Disclosure
 
-Read only the guidance needed for the current artifact. Do not preload every guideline or related skill.
+Read only the resources needed for the current artifact. Do not preload every guideline, template, or skill.
 
-| Need | Guideline |
-| --- | --- |
-| Answer a question by gathering and validating evidence | [Research](guidelines/research.md) |
-| Evaluate a target and produce evidence-backed findings | [Review](guidelines/review.md) |
+| Type | Guideline | Template |
+| --- | --- | --- |
+| `research` | [Research](guidelines/research.md) | [research.md](templates/research.md) |
+| `review` | [Review](guidelines/review.md) | [review.md](templates/review.md) |
 
-Other artifact types follow this file unless a dedicated guideline exists. Add a new guideline only when a recurring artifact type needs a distinct contract.
+Other artifact types follow this file unless dedicated guidance exists. Templates are starting structures, not a whitelist or mandatory shape. Add guidance or a template only when a recurring artifact type benefits from a distinct contract.
 
 ## Skill Routing
 

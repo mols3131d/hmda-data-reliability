@@ -6,8 +6,6 @@
 research/
 ├── AGENTS.md
 ├── README.md
-├── templates/
-│   └── research.md
 ├── <domain>-<topic>.md
 ├── <domain>-<subdomain>-<topic>.md
 ├── <domain>-<subdomain>-<topic>-02.md
@@ -15,7 +13,7 @@ research/
     └── <same-file-name>.md
 ```
 
-새 Research는 [`templates/research.md`](templates/research.md)를 기준으로 작성한다.
+새 Research는 [`inbox/templates/research.md`](../inbox/templates/research.md)를 기준으로 작성한다.
 
 Research는 사용 후 삭제한다.
 
