@@ -342,6 +342,68 @@ def test_activity_year_sampling_order_has_secondary_sort(tmp_path: Path) -> None
     assert "ORDER BY is_total DESC, activity_year ASC" in grouping_sql[0]
 
 
+def test_inspect_and_validate_schema_helper() -> None:
+    """_inspect_and_validate_schema 헬퍼 함수를 인메모리 릴레이션으로 검증한다."""
+    from project_pivot.hmda_data.eda.analysis import _inspect_and_validate_schema
+
+    conn = duckdb.connect()
+    try:
+        rel = conn.sql(
+            "SELECT 2024 AS activity_year, 'CA' AS state_code, 1 AS loan_purpose, "
+            "1 AS action_taken, 1000 AS loan_amount, 50 AS income"
+        )
+        schema_rows, inferred_types, required_schema, profile_columns = (
+            _inspect_and_validate_schema(rel)
+        )
+        assert len(schema_rows) == 6
+        assert inferred_types["state_code"] == "VARCHAR"
+        assert all(col["status"] == "valid" for col in required_schema)
+        assert len(profile_columns) == 6
+    finally:
+        conn.close()
+
+
+def test_collect_volume_and_null_metrics_helper() -> None:
+    """_collect_volume_and_null_metrics 헬퍼 함수를 인메모리 뷰로 검증한다."""
+    from project_pivot.hmda_data.eda.analysis import _collect_volume_and_null_metrics
+
+    conn = duckdb.connect()
+    try:
+        conn.execute(
+            "CREATE VIEW hmda_eda_source AS "
+            "SELECT 2024 AS activity_year, 'CA' AS state_code, 1 AS loan_purpose, "
+            "1 AS action_taken, 1000 AS loan_amount, CAST(NULL AS INT) AS income"
+        )
+        inferred_types = {
+            "activity_year": "INTEGER",
+            "state_code": "VARCHAR",
+            "loan_purpose": "INTEGER",
+            "action_taken": "INTEGER",
+            "loan_amount": "INTEGER",
+            "income": "INTEGER",
+        }
+        profile_columns = [
+            "activity_year",
+            "state_code",
+            "loan_purpose",
+            "action_taken",
+            "loan_amount",
+            "income",
+        ]
+        row_count, null_counts, activity_year_rows, metric_offset = (
+            _collect_volume_and_null_metrics(
+                conn, inferred_types, profile_columns, max_activity_years=10
+            )
+        )
+        assert row_count == 1
+        assert null_counts["income"] == 1
+        assert null_counts["loan_amount"] == 0
+        assert len(activity_year_rows) == 1
+        assert metric_offset == 2
+    finally:
+        conn.close()
+
+
 def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
     """작은 원천 CSV의 baseline evidence 계약을 고정한다."""
 

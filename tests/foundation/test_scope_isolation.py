@@ -9,7 +9,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DISALLOWED_PR_PATHS = {
     "scripts/wsl-status.sh",
 }
