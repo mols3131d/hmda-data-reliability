@@ -45,6 +45,10 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 기존 branch는 동일 작업의 후속 수정일 때만 재사용한다.
 
+## Specialized Branches
+
+`inbox`는 non-canonical artifact 저장을 위한 장기 유지 branch다. 일반 branch 규칙의 제한된 예외이며 세부 운영은 [Inbox Branch](../../../inbox/_guidelines/branch.md)를 따른다.
+
 ## Agent Instructions
 
 - `agent` actor namespace와 자신의 작업 branch를 사용한다.
@@ -57,3 +61,4 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 - [Commits](commit.md): 변경을 commit으로 구성하는 기준
 - [Pull Requests](pull-request.md): 변경을 검토와 채택 경계로 전달하는 기준
+- [Inbox Branch](../../../inbox/_guidelines/branch.md): non-canonical inbox artifact를 저장하는 전용 branch 규칙
