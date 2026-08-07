@@ -18,9 +18,9 @@ Artifact types are open-ended. `research` and `review` are common types, not a w
 - Use a clear purpose-based type such as `research` or `review` when it fits.
 - Use another concise lowercase kebab-case type when the artifact has a different clear purpose.
 - Do not force an artifact into an existing type only because guidance or a template exists for it.
-- When no clearer type applies, use `report` for long-form work and `briefing` for short-form work.
+- When no clearer type applies, use `report` for long-form work and `brief` for short-form work.
 
-Record the type in frontmatter.
+Record the same type in the filename and frontmatter.
 
 ```yaml
 ---
@@ -39,7 +39,7 @@ tags: [] # Optional. Namespaced tags using `:` are allowed.
 name = "-".join(
     filter(
         None,
-        [domain, subdomain, capability, short_title, *extensions],
+        [artifact_type, domain, subdomain, capability, short_title, *extensions],
     )
 )
 ```
@@ -49,10 +49,26 @@ inbox/{created_at:%Y-%m-%d}/{created_at:%H-%M}-{name}.md
 inbox/{created_at:%Y-%m-%d}/{created_at:%H-%M}-{name}/*
 ```
 
+Equivalent filename shape:
+
+```text
+HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]
+```
+
+Examples:
+
+```text
+15-20-research-hmda-eda-scope-reset.md
+15-40-review-data-platform-test-design.md
+16-00-report-reliability-foundation-status.md
+16-20-brief-eda-next-step.md
+```
+
 - Resolve `created_at` in `Asia/Seoul`.
 - Use lowercase kebab-case.
-- `domain` and `short_title` are required.
+- `artifact_type`, `domain`, and `short_title` are required.
 - `subdomain`, `capability`, and `extensions` are optional.
+- `artifact_type` must match frontmatter `type`.
 - Use `extensions` only when they improve identification or indexing.
 
 ## Progressive Disclosure
