@@ -73,7 +73,9 @@ Examples:
 
 ## Progressive Disclosure
 
-Read only the resources needed for the current artifact. Do not preload every guideline, template, or skill.
+Read only the resources needed for the current work. Do not preload every guideline, template, or skill.
+
+For writes to the dedicated `inbox` branch, read [Inbox Branch](_guidelines/branch.md).
 
 | Type | Guideline | Template |
 | --- | --- | --- |

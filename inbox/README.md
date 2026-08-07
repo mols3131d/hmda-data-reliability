@@ -9,6 +9,7 @@ inbox/
 ├── AGENTS.md
 ├── README.md
 ├── _guidelines/
+│   ├── branch.md
 │   ├── research.md
 │   └── review.md
 ├── _templates/
