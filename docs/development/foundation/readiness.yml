@@ -131,11 +131,13 @@ items:
       status: implemented
       progress: 13/13
     verification:
-      status: partial
-      progress: 12/13
+      status: blocked
+      progress: 11/13
       gaps:
         - state: failing
           text: 저장된 EDA evidence의 repository revision이 provenance guard의 clean-HEAD 계약을 만족하지 않음
+        - state: failing
+          text: run_dbt_build가 새 build 전에 기존 manifest와 run_results를 삭제해 실패 시 last-known-good evidence를 유실할 수 있음
 
   - name: Reliability Contracts
     implementation:
@@ -150,8 +152,11 @@ items:
       status: implemented
       progress: 15/15
     verification:
-      status: passing
+      status: unverified
       progress: 15/15
+      gaps:
+        - state: unverified
+          text: lifecycle read-only 구조와 tests는 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
 
   - name: Recovery Boundary
     implementation:
@@ -171,16 +176,22 @@ items:
 
   - name: Pipeline Execution Boundaries
     implementation:
-      status: in_progress
+      status: blocked
       progress: 5/6
       gaps:
         - Orchestration task와 실제 pipeline evidence 연결
+        - dbt artifact output path와 request path를 하나의 source of truth로 연결
+        - 예상 가능한 하위 domain 오류를 DataOperationError boundary로 정규화
     verification:
-      status: partial
+      status: blocked
       progress: 5/6
       gaps:
+        - state: failing
+          text: dbt runner test가 last-known-good artifact 삭제를 기대 동작으로 고정해 Evidence Integrity와 충돌함
         - state: unverified
-          text: Bronze->dbt 실행 evidence 및 제외 범위 확인 필요
+          text: 상대 DuckDB 기본 경로로 Bronze와 dbt가 동일 DB를 사용하는 end-to-end evidence가 없음
+        - state: unverified
+          text: Bronze->dbt 실제 pipeline 실행 evidence 및 제외 범위 확인 필요
 
   - name: Foundation Completion Decision
     implementation:
@@ -206,6 +217,12 @@ risks:
   - area: Data Platform / Data Operations
     text: 상대 DuckDB 기본 경로가 Python ingestion과 dbt 실행 context에서 같은 파일을 가리킨다는 end-to-end 보장이 없음
     impact: 기본 pipeline에서 Bronze와 dbt가 서로 다른 DuckDB 파일을 사용할 위험이 있음
+  - area: Data Operations
+    text: dbt build 시작 전에 last-known-good artifact를 삭제하고 configured artifact path가 실제 dbt output을 제어하지 않음
+    impact: build 실패 시 lineage evidence를 잃거나 성공한 build의 artifact를 잘못된 경로에서 검사할 수 있음
+  - area: Data Operations
+    text: public stage가 일부 HMDA·Reliability·DuckDB 오류를 DataOperationError로 변환하지 않음
+    impact: caller가 application boundary 아래의 오류 taxonomy에 결합됨
   - area: Gold Analysis Metrics
     text: action_taken code별 모집단과 approval_rate denominator가 canonical contract에 없음
     impact: mart 결과가 계산되더라도 비즈니스 의미의 correctness를 검증할 수 없음
@@ -226,3 +243,4 @@ references:
   - "OpenSpec spec: `partition-ingestion`"
   - "OpenSpec spec: `hmda-eda-baseline`"
   - "OpenSpec spec: `dbt-analytics-foundation`"
+  - "OpenSpec spec: `pipeline-stage-runtime`"
