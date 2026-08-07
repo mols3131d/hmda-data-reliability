@@ -196,19 +196,23 @@ items:
       status: blocked
       progress: 5/6
       gaps:
-        - Orchestration task와 실제 pipeline evidence 연결
+        - standard pipeline에서 Bronze 뒤 실제 dbt build를 항상 실행하도록 skip semantics 분리
         - dbt artifact output path와 request path를 하나의 source of truth로 연결
         - 예상 가능한 하위 domain 오류를 DataOperationError boundary로 정규화
     verification:
       status: blocked
-      progress: 5/6
+      progress: 4/6
       gaps:
+        - state: failing
+          text: pipeline_job이 run_dbt_build=false에서도 dbt_loan_analytics materialization을 기록해 standard orchestration contract의 실제 dbt 실행 요구와 충돌함
+        - state: failing
+          text: 실제 pipeline materialization integration test가 dbt를 skip한 경로만 검증해 Bronze->dbt 표준 실행 oracle이 없음
         - state: failing
           text: dbt runner test가 last-known-good artifact 삭제를 기대 동작으로 고정해 Evidence Integrity와 충돌함
         - state: unverified
           text: 상대 DuckDB 기본 경로로 Bronze와 dbt가 동일 DB를 사용하는 end-to-end evidence가 없음
         - state: unverified
-          text: Bronze->dbt 실제 pipeline 실행 evidence 및 제외 범위 확인 필요
+          text: dagster definitions와 표준 pipeline의 최신 main HEAD 실행 evidence가 없음
 
   - name: Foundation Completion Decision
     implementation:
@@ -246,6 +250,9 @@ risks:
   - area: Reliability Specs
     text: approval-backfill-validation과 evaluation-report canonical spec의 Purpose가 TBD 상태임
     impact: 구현과 test가 있어도 canonical capability 의도와 경계를 완전히 설명하지 못함
+  - area: Orchestration
+    text: standard pipeline과 raw-only 실행이 같은 dbt asset materialization semantics를 공유함
+    impact: dbt를 실행하지 않았는데 Silver/Gold asset이 materialized된 것으로 기록되어 실행 상태를 오해할 수 있음
   - area: Gold Analysis Metrics
     text: action_taken code별 모집단과 approval_rate denominator가 canonical contract에 없음
     impact: mart 결과가 계산되더라도 비즈니스 의미의 correctness를 검증할 수 없음
@@ -275,3 +282,5 @@ references:
   - "OpenSpec spec: `incident-lifecycle-runtime`"
   - "OpenSpec spec: `approval-backfill-validation`"
   - "OpenSpec spec: `evaluation-report`"
+  - "OpenSpec spec: `standard-dagster-orchestration`"
+  - "OpenSpec spec: `dagster-project-layout`"
