@@ -82,10 +82,8 @@ def test_analyze_hmda_csv_returns_numeric_summaries_without_clipping(
     assert income_summary["max"] == 30.0
 
 
-def test_analyze_hmda_csv_reports_suspicious_numeric_observations(
-    tmp_path: Path,
-) -> None:
-    """Configured suspicious condition의 field/condition/count/share를 검증한다."""
+def test_analyze_hmda_csv_omits_anomalies_key(tmp_path: Path) -> None:
+    """EDA 계산 결과에서 anomalies 키가 제외됨을 검증한다."""
     source_path = tmp_path / "hmda.csv"
     source_path.write_text(
         "\n".join(
