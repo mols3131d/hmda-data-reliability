@@ -4,8 +4,40 @@ dashboard:
   level: domain
   title: Foundation Readiness Dashboard
   snapshot: "2026-08-07"
-  current_focus: 도메인별 전면 readiness 재검증 진행 중
+  current_focus: Foundation gate 전면 재검증 완료
   include_total: true
+  decision:
+    status: blocked
+    summary: 구현 coverage는 완료됐지만 contract, evidence, OpenSpec/doc 정합성과 current runtime verification이 닫히지 않았다.
+
+scope:
+  source: "OpenSpec spec: `foundation-baseline`"
+  counted:
+    - HMDA data foundation
+    - partition ingestion
+    - dbt analytics foundation
+    - foundational HMDA EDA
+    - reliability contracts
+  excluded_from_total:
+    - profile snapshot runtime
+    - incident detection
+    - impact analysis
+    - LangGraph remediation draft
+    - read-only incident lifecycle
+    - approval/backfill/validation
+    - evaluation report
+    - Dagster asset graph
+    - test quality observability
+  note: 제외 capability는 구현되어 있어도 Foundation 완료 점수에는 포함하지 않는다.
+
+verification_basis:
+  repository_ref: main
+  repository_revision: b34a78582cbce5193568caa54744db630468fe94
+  current_head_execution:
+    status: unverified
+    note: audit 시점 main HEAD에 연결된 GitHub Actions workflow run을 확인하지 못했다.
+  progress_semantics: verification progress는 test/oracle coverage이며 current 실행 통과율이 아니다.
+  status_semantics: 실행 evidence가 없으면 unverified, 확인된 contract/evidence 충돌은 blocked 또는 partial로 표시한다.
 
 items:
   - name: HMDA Source Ingestion
@@ -15,9 +47,6 @@ items:
     verification:
       status: unverified
       progress: 7/7
-      gaps:
-        - state: unverified
-          text: 최신 main HEAD에서 component test 실행 evidence가 확인되지 않음
 
   - name: Bronze Raw Table
     implementation:
@@ -26,9 +55,6 @@ items:
     verification:
       status: unverified
       progress: 7/7
-      gaps:
-        - state: unverified
-          text: 최신 main HEAD에서 Bronze load contract 실행 evidence가 확인되지 않음
 
   - name: Partition Ingestion Idempotency
     implementation:
@@ -37,9 +63,6 @@ items:
     verification:
       status: unverified
       progress: 5/5
-      gaps:
-        - state: unverified
-          text: 최신 main HEAD에서 partition component test 실행 evidence가 확인되지 않음
 
   - name: Silver Source Contract
     implementation:
@@ -48,9 +71,6 @@ items:
     verification:
       status: unverified
       progress: 18/18
-      gaps:
-        - state: unverified
-          text: dbt source test 정의는 존재하지만 최신 main HEAD dbt build evidence가 확인되지 않음
 
   - name: Silver Staging Layer
     implementation:
@@ -59,9 +79,7 @@ items:
     verification:
       status: partial
       progress: 17/18
-      gaps:
-        - state: failing
-          text: integration test가 staging row count와 Null 보존·try_cast 결과를 직접 검증하지 않아 staging preservation contract가 false-green 가능
+      blockers: [B2]
 
   - name: Gold Mart Grain Alignment
     implementation:
@@ -70,9 +88,6 @@ items:
     verification:
       status: unverified
       progress: 18/18
-      gaps:
-        - state: unverified
-          text: grain·멱등성 integration oracle은 존재하지만 최신 main HEAD dbt build evidence가 확인되지 않음
 
   - name: Gold Analysis Metrics
     implementation:
@@ -81,9 +96,7 @@ items:
     verification:
       status: blocked
       progress: 17/18
-      gaps:
-        - state: failing
-          text: canonical dbt spec에 action_taken code별 모집단과 approval_rate 분모 의미가 정의되지 않아 metric correctness를 판정할 기준이 부족함
+      blockers: [B3]
 
   - name: EDA Schema and Volume Observation
     implementation:
@@ -92,9 +105,6 @@ items:
     verification:
       status: unverified
       progress: 11/11
-      gaps:
-        - state: unverified
-          text: EDA contract test는 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
 
   - name: EDA Quality Baseline
     implementation:
@@ -103,9 +113,7 @@ items:
     verification:
       status: blocked
       progress: 0/1
-      gaps:
-        - state: failing
-          text: controlled actual-source reference가 dirty repository revision을 기록해 현재 provenance contract와 충돌함
+      blockers: [B1]
 
   - name: EDA Domain Observation
     implementation:
@@ -114,153 +122,102 @@ items:
     verification:
       status: blocked
       progress: 0/1
-      gaps:
-        - state: failing
-          text: actual-source observation을 clean HEAD에서 재생성해야 current evidence로 인정할 수 있음
-
-  - name: EDA Notebook Runtime
-    implementation:
-      status: removed
-      progress: 0/0
-    verification:
-      status: not_applicable
-      progress: 0/0
-
-  - name: Evidence Retention
-    implementation:
-      status: implemented
-      progress: 13/13
-    verification:
-      status: blocked
-      progress: 11/13
-      gaps:
-        - state: failing
-          text: 저장된 EDA evidence의 repository revision이 provenance guard의 clean-HEAD 계약을 만족하지 않음
-        - state: failing
-          text: run_dbt_build가 새 build 전에 기존 manifest와 run_results를 삭제해 실패 시 last-known-good evidence를 유실할 수 있음
+      blockers: [B1]
 
   - name: Reliability Contracts
     implementation:
       status: blocked
       progress: 7/7
-      gaps:
-        - freshness 미측정 상태와 실제 freshness timestamp를 구분하는 canonical 표현 확정
+      blockers: [B4]
     verification:
       status: blocked
       progress: 7/7
-      gaps:
-        - state: failing
-          text: profile-snapshots spec과 test가 freshness 미측정 시 observed_at을 freshness_at으로 대체하도록 고정해 freshness_delay detector가 미측정을 실제 freshness로 해석할 수 있음
+      blockers: [B4]
 
-  - name: Read-Only Lifecycle Boundary
-    implementation:
-      status: implemented
-      progress: 15/15
-    verification:
-      status: unverified
-      progress: 15/15
-      gaps:
-        - state: unverified
-          text: detection·impact·LangGraph remediation·read-only lifecycle oracle은 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
-        - state: unverified
-          text: impact analysis는 dbt artifact에 의존하므로 upstream Evidence Retention blocker 해소 후 end-to-end 재검증 필요
+blockers:
+  - id: B1
+    area: HMDA EDA
+    type: evidence
+    finding: controlled actual-source reference가 `137f9dc5b160f0da8e955e43b2240c8366108d01-dirty` revision을 기록한다.
+    impact: clean HEAD를 요구하는 provenance contract와 충돌해 actual-source EDA 완료 evidence로 인정할 수 없다.
+    close_when: clean HEAD에서 controlled actual-source evidence를 재생성하고 provenance test와 artifact invariant를 검증한다.
 
-  - name: Recovery Boundary
-    implementation:
-      status: implemented
-      progress: 4/4
-    verification:
-      status: unverified
-      progress: 4/4
-      gaps:
-        - state: unverified
-          text: approval gate와 partition overwrite integration oracle은 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
-        - state: unverified
-          text: canonical approval-backfill-validation spec의 Purpose가 아직 TBD 상태임
+  - id: B2
+    area: Data Platform / Silver
+    type: test-oracle
+    finding: dbt integration test가 staging row count, Null 보존과 try_cast 결과를 직접 assertion하지 않는다.
+    impact: staging preservation contract가 깨져도 mart 결과가 같으면 false green이 가능하다.
+    close_when: staging 자체의 row, Null, cast semantics를 독립 oracle로 고정한다.
 
-  - name: Evaluation Boundary
-    implementation:
-      status: implemented
-      progress: 2/2
-    verification:
-      status: unverified
-      progress: 2/2
-      gaps:
-        - state: unverified
-          text: synthetic case aggregation과 Markdown output oracle은 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
-        - state: unverified
-          text: canonical evaluation-report spec의 Purpose가 아직 TBD 상태임
+  - id: B3
+    area: Data Platform / Gold
+    type: canonical-contract
+    finding: canonical `dbt-analytics-foundation` spec에 `action_taken` code별 모집단과 `approval_rate` denominator 의미가 없다.
+    impact: mart SQL이 계산되더라도 metric의 비즈니스 correctness를 판정할 기준이 없다.
+    close_when: canonical spec에 metric population과 denominator를 정의하고 대표 action code test로 검증한다.
 
-  - name: Pipeline Execution Boundaries
-    implementation:
-      status: blocked
-      progress: 5/6
-      gaps:
-        - standard pipeline에서 Bronze 뒤 실제 dbt build를 항상 실행하도록 skip semantics 분리
-        - dbt artifact output path와 request path를 하나의 source of truth로 연결
-        - 예상 가능한 하위 domain 오류를 DataOperationError boundary로 정규화
-    verification:
-      status: blocked
-      progress: 4/6
-      gaps:
-        - state: failing
-          text: pipeline_job이 run_dbt_build=false에서도 dbt_loan_analytics materialization을 기록해 standard orchestration contract의 실제 dbt 실행 요구와 충돌함
-        - state: failing
-          text: 실제 pipeline materialization integration test가 dbt를 skip한 경로만 검증해 Bronze->dbt 표준 실행 oracle이 없음
-        - state: failing
-          text: dbt runner test가 last-known-good artifact 삭제를 기대 동작으로 고정해 Evidence Integrity와 충돌함
-        - state: unverified
-          text: 상대 DuckDB 기본 경로로 Bronze와 dbt가 동일 DB를 사용하는 end-to-end evidence가 없음
-        - state: unverified
-          text: dagster definitions와 표준 pipeline의 최신 main HEAD 실행 evidence가 없음
+  - id: B4
+    area: Reliability Contracts
+    type: canonical-contract
+    finding: `profile-snapshots` spec과 test가 freshness 미측정 시 `observed_at`을 `freshness_at`으로 대체하도록 고정한다.
+    impact: 미측정과 실제 source freshness가 구분되지 않아 `freshness_delay` detector가 false negative를 만들 수 있다.
+    close_when: 미측정 상태를 실제 freshness timestamp와 구분하는 canonical 표현을 확정하고 contract, builder, detector oracle을 정렬한다.
 
-  - name: Foundation Completion Decision
-    implementation:
-      status: planned
-      progress: 0/2
-      gaps:
-        - Capability별 ready 판정 checklist 확정
-        - Minimum ready criteria 문서화
-    verification:
-      status: unverified
-      progress: 0/1
-      gaps:
-        - state: unverified
-          text: Foundation ready 최종 판정 근거 확인 필요
+  - id: B5
+    area: Foundation Governance
+    type: artifact-consistency
+    finding: EDA OpenSpec change 두 개가 active이고, baseline change는 `tasks_completed: 0/21`인데 checkbox는 완료 상태이며 plan-review는 single active replacement를 주장한다. archived Foundation task가 요구한 root README의 readiness navigation도 현재 없다.
+    impact: OpenSpec lifecycle과 문서가 실제 완료 상태를 서로 다르게 설명해 Foundation completion evidence가 self-consistent하지 않다.
+    close_when: EDA change lifecycle과 task metadata를 현재 상태로 정리하고 root README에서 Foundation readiness로 연결한다.
+
+unverified:
+  - id: U1
+    area: Current Runtime Evidence
+    finding: audit 시점 main HEAD에서 최신 pytest/dbt/Dagster 실행 evidence를 확인하지 못했다.
+    close_when: Foundation 관련 focused suite와 실제-source command를 current revision에서 실행해 결과를 기록한다.
+
+non_gating:
+  - name: dbt Last-Known-Good Evidence Retention
+    status: blocked
+    finding: `run_dbt_build`가 새 build 전에 기존 manifest와 run_results를 삭제하며 test도 이를 기대 동작으로 고정한다.
+  - name: Data Platform Cleanup Ownership
+    status: risk
+    finding: `cleanup_on_close=True`가 caller-owned DuckDB 파일을 소유권 구분 없이 삭제할 수 있다.
+  - name: Default DuckDB Path Consistency
+    status: risk
+    finding: 상대 기본 경로가 Python ingestion과 dbt subprocess에서 동일 파일을 가리킨다는 end-to-end oracle이 없다.
+  - name: Data Operations Error Boundary
+    status: risk
+    finding: 일부 하위 HMDA, Reliability, DuckDB 오류가 `DataOperationError`로 정규화되지 않는다.
+  - name: Read-Only Incident Lifecycle
+    status: implemented-unverified
+    finding: detection, impact, LangGraph remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다.
+  - name: Approval Backfill Validation
+    status: implemented-unverified
+    finding: integration oracle은 존재하지만 current HEAD 실행 evidence가 없고 canonical spec Purpose가 TBD다.
+  - name: Evaluation Report
+    status: implemented-unverified
+    finding: aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없고 canonical spec Purpose가 TBD다.
+  - name: Dagster Orchestration
+    status: blocked
+    finding: `pipeline_job`이 `run_dbt_build=false`에서도 Silver/Gold asset materialization을 남기며 실제 integration test는 dbt skip 경로만 검증한다.
+  - name: Synthetic Reliability Cases
+    status: implemented-unverified
+    finding: row drop, null spike, schema drift, freshness delay component oracle은 존재하지만 current HEAD 실행 evidence가 없다.
+  - name: Test Quality Observability
+    status: implemented-unverified
+    finding: pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 current HEAD 실행 evidence가 없다.
 
 risks:
-  - area: HMDA EDA
-    text: actual-source evidence가 dirty repository revision에서 생성되어 현재 provenance contract와 불일치함
-    impact: Foundation EDA 완료 증거로 사용할 수 없어 clean HEAD controlled run이 필요함
-  - area: Data Platform
-    text: cleanup_on_close가 caller-owned DuckDB 파일도 소유권 구분 없이 삭제할 수 있음
-    impact: public utility 오사용 시 기존 개발·검증 DB가 삭제될 수 있음
-  - area: Data Platform / Data Operations
-    text: 상대 DuckDB 기본 경로가 Python ingestion과 dbt 실행 context에서 같은 파일을 가리킨다는 end-to-end 보장이 없음
-    impact: 기본 pipeline에서 Bronze와 dbt가 서로 다른 DuckDB 파일을 사용할 위험이 있음
-  - area: Data Operations
-    text: dbt build 시작 전에 last-known-good artifact를 삭제하고 configured artifact path가 실제 dbt output을 제어하지 않음
-    impact: build 실패 시 lineage evidence를 잃거나 성공한 build의 artifact를 잘못된 경로에서 검사할 수 있음
-  - area: Data Operations
-    text: public stage가 일부 HMDA·Reliability·DuckDB 오류를 DataOperationError로 변환하지 않음
-    impact: caller가 application boundary 아래의 오류 taxonomy에 결합됨
-  - area: Reliability
-    text: freshness 미측정을 observed_at으로 대체하는 canonical contract가 실제 freshness와 미측정을 구분하지 못함
-    impact: freshness_delay 탐지에서 false negative를 만들 수 있어 reliability evidence 의미가 왜곡될 수 있음
-  - area: Reliability Specs
-    text: approval-backfill-validation과 evaluation-report canonical spec의 Purpose가 TBD 상태임
-    impact: 구현과 test가 있어도 canonical capability 의도와 경계를 완전히 설명하지 못함
-  - area: Orchestration
-    text: standard pipeline과 raw-only 실행이 같은 dbt asset materialization semantics를 공유함
-    impact: dbt를 실행하지 않았는데 Silver/Gold asset이 materialized된 것으로 기록되어 실행 상태를 오해할 수 있음
-  - area: Gold Analysis Metrics
-    text: action_taken code별 모집단과 approval_rate denominator가 canonical contract에 없음
-    impact: mart 결과가 계산되더라도 비즈니스 의미의 correctness를 검증할 수 없음
-  - area: Foundation Completion Decision
-    text: 최소 ready 완료 기준이 명시적으로 확정되지 않음
-    impact: 테스트 통과 여부와 상관없이 Foundation 종료 판정이 지연될 수 있음
+  - area: Documentation Drift
+    text: `DEVELOPMENT.md`와 `pyproject.toml`에 Marimo가 active tool/dev dependency로 남아 있지만 EDA runtime과 notebook은 제거됐다.
+    impact: 현재 EDA 실행 방식과 개발 환경 설명이 다르게 읽힌다.
+  - area: Foundation Draft Drift
+    text: Foundation README의 미결정 목록에 Gold grain과 notebook smoke가 남아 있어 현재 canonical contract와 맞지 않는다.
+    impact: non-canonical 초안을 읽는 사람이 이미 결정·제거된 항목을 미해결로 오해할 수 있다.
 
 references:
+  - "[Foundation](README.md)"
   - "[Bronze Data Pipeline](data-pipeline-bronze.md)"
   - "[Silver Data Pipeline](data-pipeline-silver.md)"
   - "[Gold Data Pipeline](data-pipeline-gold.md)"
@@ -269,18 +226,9 @@ references:
   - "[Reliability Boundaries](reliability.md)"
   - "[Orchestration Boundaries](orchestration.md)"
   - "[ARCHITECTURE](../../ARCHITECTURE.md)"
+  - "OpenSpec spec: `foundation-baseline`"
   - "OpenSpec spec: `hmda-data-foundation`"
   - "OpenSpec spec: `partition-ingestion`"
   - "OpenSpec spec: `hmda-eda-baseline`"
   - "OpenSpec spec: `dbt-analytics-foundation`"
-  - "OpenSpec spec: `pipeline-stage-runtime`"
   - "OpenSpec spec: `reliability-contracts`"
-  - "OpenSpec spec: `profile-snapshots`"
-  - "OpenSpec spec: `basic-incident-detection`"
-  - "OpenSpec spec: `impact-analysis`"
-  - "OpenSpec spec: `remediation-draft`"
-  - "OpenSpec spec: `incident-lifecycle-runtime`"
-  - "OpenSpec spec: `approval-backfill-validation`"
-  - "OpenSpec spec: `evaluation-report`"
-  - "OpenSpec spec: `standard-dagster-orchestration`"
-  - "OpenSpec spec: `dagster-project-layout`"
