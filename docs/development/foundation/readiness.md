@@ -4,11 +4,11 @@
 > **Decision:** 🔴 Blocked  
 > **Audited revision:** `b34a78582cbce5193568caa54744db630468fe94`
 
-`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. 아래 수치는 구현·test oracle **coverage**이며, 최신 HEAD의 실행 통과율이 아니다. Audit 시점에는 현재 revision의 GitHub Actions 실행 evidence를 확인하지 못했다.
+`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. 아래 수치는 구현·readiness checklist **coverage**이며, canonical requirement/test case/oracle 개수나 최신 HEAD의 실행 통과율이 아니다. Audit 시점에는 현재 revision의 GitHub Actions 실행 evidence를 확인하지 못했다.
 
 ## Foundation Gate
 
-| Capability | Implementation Status | Implementation Coverage | Verification Status | Verification Oracle Coverage |
+| Capability | Implementation Status | Implementation Coverage | Verification Status | Verification Checklist Coverage |
 | --- | :---: | --- | :---: | --- |
 | HMDA Source Ingestion | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
 | Bronze Raw Table | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
@@ -20,18 +20,17 @@
 | EDA Schema and Volume Observation | 🟢 Implemented | `11/11` | ⚪ Unverified | `11/11` |
 | EDA Quality Baseline | 🟢 Implemented | `12/12` | 🔴 Blocked | `0/1` |
 | EDA Domain Observation | 🟢 Implemented | `26/26` | 🔴 Blocked | `0/1` |
-| Reliability Contracts | 🔴 Blocked | `7/7` | 🔴 Blocked | `7/7` |
+| Reliability Contracts | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
 | **Total** | **🔴 Blocked** | **`147/147`** | **🔴 Blocked** | **`108/111`** |
 
-Implementation coverage는 `147/147`이다. Foundation 종료 여부는 coverage가 아니라 아래 blocker와 current runtime verification으로 결정한다.
+Implementation coverage는 `147/147`이다. Verification checklist coverage `108/111`은 이 dashboard가 관리하는 내부 점검 단위를 합산한 값이며 test case/oracle 수로 해석하지 않는다. Foundation 종료 여부는 coverage가 아니라 아래 blocker와 current runtime verification으로 결정한다.
 
 ## Blockers
 
 | ID | Area | Finding | Close When |
 | --- | --- | --- | --- |
-| B1 | HMDA EDA | actual-source evidence가 dirty revision에서 생성되어 clean-HEAD provenance contract와 충돌한다. | clean HEAD에서 evidence를 재생성하고 provenance·artifact invariant를 검증한다. |
+| B1 | HMDA EDA | actual-source evidence가 dirty revision을 기록한다. 현재 evidence generator는 dirty tree에서 생성을 거부하므로 retained artifact가 현재 provenance generation invariant와 맞지 않는다. | clean HEAD에서 evidence를 재생성하고 provenance·artifact invariant를 검증한다. |
 | B2 | Silver | canonical domain contract는 staging의 raw row, Null과 `try_cast` semantics 보존을 요구하지만 integration test가 staging 결과를 직접 검증하지 않는다. | staging 자체의 preservation semantics를 test로 고정한다. |
-| B3 | Reliability Contracts | Foundation `ProfileSnapshot` contract가 `freshness_at`을 required datetime으로만 표현해 freshness 미측정 상태를 구분하지 못한다. 후속 profile runtime은 이를 `observed_at` fallback으로 메운다. | 미측정 상태의 canonical 표현을 정하고 contract·builder·detector를 정렬한다. |
 | B4 | Foundation Governance | EDA change lifecycle/task metadata가 현재 tree와 어긋나고 root README의 Foundation readiness navigation도 사라졌다. | active change와 metadata를 정리하고 README navigation을 복구한다. |
 
 ## Current Verification
@@ -53,6 +52,7 @@ uv run python scripts/run_actual_source.py
 
 | Capability | Audit Status |
 | --- | --- |
+| Reliability freshness semantics | Risk — Foundation contract는 `freshness_at` 존재만 요구하고 후속 profile spec은 미측정 시 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
 | Profile / incident / impact / remediation lifecycle | Implemented, current execution unverified |
 | Approval backfill validation | Implemented, current execution unverified |
 | Evaluation report | Implemented, current execution unverified |

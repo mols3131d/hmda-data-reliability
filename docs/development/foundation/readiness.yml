@@ -8,7 +8,7 @@ dashboard:
   include_total: true
   decision:
     status: blocked
-    summary: 구현 coverage는 완료됐지만 contract, evidence, OpenSpec/doc 정합성과 current runtime verification이 닫히지 않았다.
+    summary: '구현 coverage는 완료됐지만 evidence, Silver verification oracle, OpenSpec/doc 정합성과 current runtime verification이 닫히지 않았다.'
 
 scope:
   source: "OpenSpec spec: `foundation-baseline`"
@@ -28,16 +28,16 @@ scope:
     - evaluation report
     - Dagster asset graph
     - test quality observability
-  note: 제외 capability는 구현되어 있어도 Foundation 완료 점수에는 포함하지 않는다.
+  note: '제외 capability는 구현되어 있어도 Foundation 완료 점수에는 포함하지 않는다.'
 
 verification_basis:
   repository_ref: main
   repository_revision: b34a78582cbce5193568caa54744db630468fe94
   current_head_execution:
     status: unverified
-    note: audit 시점 main HEAD에 연결된 GitHub Actions workflow run을 확인하지 못했다.
-  progress_semantics: verification progress는 test/oracle coverage이며 current 실행 통과율이 아니다.
-  status_semantics: 실행 evidence가 없으면 unverified, 확인된 contract/evidence 충돌은 blocked 또는 partial로 표시한다.
+    note: 'audit 시점 main HEAD에 연결된 GitHub Actions workflow run을 확인하지 못했다.'
+  progress_semantics: 'verification progress는 readiness 내부 checklist coverage이며 canonical requirement/test case/oracle 개수나 current 실행 통과율이 아니다.'
+  status_semantics: '실행 evidence가 없으면 unverified, 확인된 contract/evidence 충돌은 blocked 또는 partial로 표시한다.'
 
 items:
   - name: HMDA Source Ingestion
@@ -125,91 +125,85 @@ items:
 
   - name: Reliability Contracts
     implementation:
-      status: blocked
+      status: implemented
       progress: 7/7
-      blockers: [B3]
     verification:
-      status: blocked
+      status: unverified
       progress: 7/7
-      blockers: [B3]
 
 blockers:
   - id: B1
     area: HMDA EDA
     type: evidence
-    finding: controlled actual-source reference가 `137f9dc5b160f0da8e955e43b2240c8366108d01-dirty` revision을 기록한다.
-    impact: clean HEAD를 요구하는 provenance contract와 충돌해 actual-source EDA 완료 evidence로 인정할 수 없다.
-    close_when: clean HEAD에서 controlled actual-source evidence를 재생성하고 provenance test와 artifact invariant를 검증한다.
+    finding: 'controlled actual-source reference가 `137f9dc5b160f0da8e955e43b2240c8366108d01-dirty` revision을 기록한다. 현재 evidence generator는 dirty tree에서 생성을 거부한다.'
+    impact: 'retained artifact가 현재 provenance generation invariant와 맞지 않아 actual-source EDA 완료 evidence를 재검증해야 한다.'
+    close_when: 'clean HEAD에서 controlled actual-source evidence를 재생성하고 provenance test와 artifact invariant를 검증한다.'
 
   - id: B2
     area: Data Platform / Silver
     type: test-oracle
-    finding: canonical domain contract는 staging의 raw row, Null과 try_cast semantics 보존을 요구하지만 dbt integration test가 staging 결과를 직접 assertion하지 않는다.
-    impact: staging preservation contract가 깨져도 mart 결과가 같으면 false green이 가능하다.
-    close_when: staging 자체의 row, Null, cast semantics를 독립 oracle로 고정한다.
-
-  - id: B3
-    area: Reliability Contracts
-    type: canonical-contract
-    finding: Foundation의 `ProfileSnapshot` contract와 model은 `freshness_at`을 required datetime으로만 표현해 freshness 미측정 상태를 구조적으로 구분할 수 없다. 후속 `profile-snapshots` spec은 이 빈틈을 `observed_at` fallback으로 메운다.
-    impact: 미측정과 실제 source freshness가 같은 필드로 표현되어 `freshness_delay` 판단에서 false negative를 만들 수 있다.
-    close_when: 미측정 상태를 실제 freshness timestamp와 구분하는 canonical 표현을 확정하고 contract, builder, detector oracle을 정렬한다.
+    finding: 'canonical domain contract는 staging의 raw row, Null과 try_cast semantics 보존을 요구하지만 dbt integration test가 staging 결과를 직접 assertion하지 않는다.'
+    impact: 'staging preservation contract가 깨져도 mart 결과가 같으면 false green이 가능하다.'
+    close_when: 'staging 자체의 row, Null, cast semantics를 독립 oracle로 고정한다.'
 
   - id: B4
     area: Foundation Governance
     type: artifact-consistency
-    finding: EDA OpenSpec change 두 개가 active이고, baseline change는 `tasks_completed: 0/21`인데 checkbox는 완료 상태이며 plan-review는 single active replacement를 주장한다. archived Foundation task가 요구한 root README의 readiness navigation도 현재 없다.
-    impact: OpenSpec lifecycle과 문서가 실제 완료 상태를 서로 다르게 설명해 Foundation completion evidence가 self-consistent하지 않다.
-    close_when: EDA change lifecycle과 task metadata를 현재 상태로 정리하고 root README에서 Foundation readiness로 연결한다.
+    finding: 'EDA OpenSpec change 두 개가 active이고, baseline change는 `tasks_completed: 0/21`인데 checkbox는 완료 상태이며 plan-review는 single active replacement를 주장한다. archived Foundation task가 요구한 root README의 readiness navigation도 현재 없다.'
+    impact: 'OpenSpec lifecycle과 문서가 실제 완료 상태를 서로 다르게 설명해 Foundation completion evidence가 self-consistent하지 않다.'
+    close_when: 'EDA change lifecycle과 task metadata를 현재 상태로 정리하고 root README에서 Foundation readiness로 연결한다.'
 
 unverified:
   - id: U1
     area: Current Runtime Evidence
-    finding: audit 시점 main HEAD에서 최신 pytest/dbt/Dagster 실행 evidence를 확인하지 못했다.
-    close_when: Foundation 관련 focused suite와 실제-source command를 current revision에서 실행해 결과를 기록한다.
+    finding: 'audit 시점 main HEAD에서 최신 pytest/dbt/Dagster 실행 evidence를 확인하지 못했다.'
+    close_when: 'Foundation 관련 focused suite와 actual-source command를 current revision에서 실행해 결과를 기록한다.'
 
 non_gating:
+  - name: Reliability Freshness Semantics
+    status: risk
+    finding: 'Foundation reliability contract는 `freshness_at` 존재만 요구하고 후속 `profile-snapshots` spec은 freshness를 측정할 수 없을 때 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다.'
   - name: dbt Last-Known-Good Evidence Retention
     status: blocked
-    finding: `run_dbt_build`가 새 build 전에 기존 manifest와 run_results를 삭제하며 test도 이를 기대 동작으로 고정한다.
+    finding: '`run_dbt_build`가 새 build 전에 기존 manifest와 run_results를 삭제하며 test도 이를 기대 동작으로 고정한다.'
   - name: Data Platform Cleanup Ownership
     status: risk
-    finding: `cleanup_on_close=True`가 caller-owned DuckDB 파일을 소유권 구분 없이 삭제할 수 있다.
+    finding: '`cleanup_on_close=True`가 caller-owned DuckDB 파일을 소유권 구분 없이 삭제할 수 있다.'
   - name: Default DuckDB Path Consistency
     status: risk
-    finding: 상대 기본 경로가 Python ingestion과 dbt subprocess에서 동일 파일을 가리킨다는 end-to-end oracle이 없다.
+    finding: '상대 기본 경로가 Python ingestion과 dbt subprocess에서 동일 파일을 가리킨다는 end-to-end oracle이 없다.'
   - name: Data Operations Error Boundary
     status: risk
-    finding: 일부 하위 HMDA, Reliability, DuckDB 오류가 `DataOperationError`로 정규화되지 않는다.
+    finding: '일부 하위 HMDA, Reliability, DuckDB 오류가 `DataOperationError`로 정규화되지 않는다.'
   - name: Read-Only Incident Lifecycle
     status: implemented-unverified
-    finding: detection, impact, LangGraph remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다.
+    finding: 'detection, impact, LangGraph remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
   - name: Approval Backfill Validation
     status: implemented-unverified
-    finding: integration oracle은 존재하지만 current HEAD 실행 evidence가 없고 canonical spec Purpose가 TBD다.
+    finding: 'integration oracle은 존재하지만 current HEAD 실행 evidence가 없고 canonical spec Purpose가 TBD다.'
   - name: Evaluation Report
     status: implemented-unverified
-    finding: aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없고 canonical spec Purpose가 TBD다.
+    finding: 'aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없고 canonical spec Purpose가 TBD다.'
   - name: Dagster Orchestration
     status: blocked
-    finding: `pipeline_job`이 `run_dbt_build=false`에서도 Silver/Gold asset materialization을 남기며 실제 integration test는 dbt skip 경로만 검증한다.
+    finding: '`pipeline_job`이 `run_dbt_build=false`에서도 Silver/Gold asset materialization을 남기며 실제 integration test는 dbt skip 경로만 검증한다.'
   - name: Synthetic Reliability Cases
     status: implemented-unverified
-    finding: row drop, null spike, schema drift, freshness delay component oracle은 존재하지만 current HEAD 실행 evidence가 없다.
+    finding: 'row drop, null spike, schema drift, freshness delay component oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
   - name: Test Quality Observability
     status: implemented-unverified
-    finding: pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 current HEAD 실행 evidence가 없다.
+    finding: 'pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 current HEAD 실행 evidence가 없다.'
 
 risks:
   - area: OpenSpec Traceability
-    text: `dbt-analytics-foundation` spec은 Gold metric 이름만 정의하고 세부 모집단·분모는 canonical Data Platform domain 문서에만 정의한다.
-    impact: 현재 구현과 test는 domain contract와 일치하지만 OpenSpec만 읽으면 metric semantics를 완전히 복원할 수 없다.
+    text: '`dbt-analytics-foundation` spec은 Gold metric 이름만 정의하고 세부 모집단·분모는 canonical Data Platform domain 문서에만 정의한다.'
+    impact: '현재 구현과 test는 domain contract와 일치하지만 OpenSpec만 읽으면 metric semantics를 완전히 복원할 수 없다.'
   - area: Documentation Drift
-    text: `DEVELOPMENT.md`와 `pyproject.toml`에 Marimo가 active tool/dev dependency로 남아 있지만 EDA runtime과 notebook은 제거됐다.
-    impact: 현재 EDA 실행 방식과 개발 환경 설명이 다르게 읽힌다.
+    text: '`DEVELOPMENT.md`와 `pyproject.toml`에 Marimo가 active tool/dev dependency로 남아 있지만 EDA runtime과 notebook은 제거됐다.'
+    impact: '현재 EDA 실행 방식과 개발 환경 설명이 다르게 읽힌다.'
   - area: Foundation Draft Drift
-    text: Foundation README의 미결정 목록에 Gold grain과 notebook smoke가 남아 있어 현재 canonical contract와 맞지 않는다.
-    impact: non-canonical 초안을 읽는 사람이 이미 결정·제거된 항목을 미해결로 오해할 수 있다.
+    text: 'Foundation README의 미결정 목록에 Gold grain과 notebook smoke가 남아 있어 현재 canonical contract와 맞지 않는다.'
+    impact: 'non-canonical 초안을 읽는 사람이 이미 결정·제거된 항목을 미해결로 오해할 수 있다.'
 
 references:
   - "[Foundation](README.md)"
