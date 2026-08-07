@@ -8,7 +8,7 @@
 
 ## Foundation Gate
 
-| Capability | Implementation Status | Implementation Progress | Verification Status | Verification Progress |
+| Capability | Implementation Status | Implementation Coverage | Verification Status | Verification Oracle Coverage |
 | --- | :---: | --- | :---: | --- |
 | HMDA Source Ingestion | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
 | Bronze Raw Table | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
@@ -16,12 +16,12 @@
 | Silver Source Contract | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
 | Silver Staging Layer | 🟢 Implemented | `18/18` | 🟡 Partial | `17/18` |
 | Gold Mart Grain Alignment | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
-| Gold Analysis Metrics | 🟢 Implemented | `18/18` | 🔴 Blocked | `17/18` |
+| Gold Analysis Metrics | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
 | EDA Schema and Volume Observation | 🟢 Implemented | `11/11` | ⚪ Unverified | `11/11` |
 | EDA Quality Baseline | 🟢 Implemented | `12/12` | 🔴 Blocked | `0/1` |
 | EDA Domain Observation | 🟢 Implemented | `26/26` | 🔴 Blocked | `0/1` |
 | Reliability Contracts | 🔴 Blocked | `7/7` | 🔴 Blocked | `7/7` |
-| **Total** | **🔴 Blocked** | **`147/147`** | **🔴 Blocked** | **`107/111`** |
+| **Total** | **🔴 Blocked** | **`147/147`** | **🔴 Blocked** | **`108/111`** |
 
 Implementation coverage는 `147/147`이다. Foundation 종료 여부는 coverage가 아니라 아래 blocker와 current runtime verification으로 결정한다.
 
@@ -30,10 +30,9 @@ Implementation coverage는 `147/147`이다. Foundation 종료 여부는 coverage
 | ID | Area | Finding | Close When |
 | --- | --- | --- | --- |
 | B1 | HMDA EDA | actual-source evidence가 dirty revision에서 생성되어 clean-HEAD provenance contract와 충돌한다. | clean HEAD에서 evidence를 재생성하고 provenance·artifact invariant를 검증한다. |
-| B2 | Silver | staging row count, Null 보존, `try_cast` 결과를 직접 검증하는 oracle이 없다. | staging 자체의 preservation semantics를 test로 고정한다. |
-| B3 | Gold | canonical spec에 `action_taken`별 모집단과 `approval_rate` 분모가 정의되지 않았다. | metric population·denominator를 spec에 정의하고 대표 code test로 검증한다. |
-| B4 | Reliability Contracts | freshness 미측정을 `observed_at`으로 대체해 실제 source freshness와 구분하지 못한다. | 미측정 상태의 canonical 표현을 정하고 contract·builder·detector를 정렬한다. |
-| B5 | Foundation Governance | EDA change lifecycle/task metadata가 현재 tree와 어긋나고 root README의 Foundation readiness navigation도 사라졌다. | active change와 metadata를 정리하고 README navigation을 복구한다. |
+| B2 | Silver | canonical domain contract는 staging의 raw row, Null과 `try_cast` semantics 보존을 요구하지만 integration test가 staging 결과를 직접 검증하지 않는다. | staging 자체의 preservation semantics를 test로 고정한다. |
+| B3 | Reliability Contracts | Foundation `ProfileSnapshot` contract가 `freshness_at`을 required datetime으로만 표현해 freshness 미측정 상태를 구분하지 못한다. 후속 profile runtime은 이를 `observed_at` fallback으로 메운다. | 미측정 상태의 canonical 표현을 정하고 contract·builder·detector를 정렬한다. |
+| B4 | Foundation Governance | EDA change lifecycle/task metadata가 현재 tree와 어긋나고 root README의 Foundation readiness navigation도 사라졌다. | active change와 metadata를 정리하고 README navigation을 복구한다. |
 
 ## Current Verification
 
@@ -64,6 +63,7 @@ uv run python scripts/run_actual_source.py
 
 ## Additional Drift
 
+- Gold metric의 `action_taken` 모집단과 `approval_rate` 분모는 canonical Data Platform domain 문서에 정의되어 있고 현재 SQL/test와 일치한다. 다만 `dbt-analytics-foundation` OpenSpec에는 세부 semantics가 없어 traceability가 약하다.
 - `DEVELOPMENT.md`와 `pyproject.toml`에는 제거된 Marimo EDA runtime 관련 설명·설정이 남아 있다.
 - Foundation draft README에는 이미 결정된 Gold grain과 제거된 notebook smoke가 미결정 항목으로 남아 있다.
 - `approval-backfill-validation`, `evaluation-report` canonical spec의 `Purpose`가 아직 `TBD`다.
@@ -78,5 +78,7 @@ uv run python scripts/run_actual_source.py
 - [Observability](observability.md)
 - [Reliability](reliability.md)
 - [Orchestration](orchestration.md)
+- [Data Platform Domain](../../domains/data-platform.md)
+- [Reliability Domain](../../domains/reliability.md)
 - [ARCHITECTURE](../../ARCHITECTURE.md)
 - OpenSpec: `foundation-baseline`, `hmda-data-foundation`, `partition-ingestion`, `hmda-eda-baseline`, `dbt-analytics-foundation`, `reliability-contracts`
