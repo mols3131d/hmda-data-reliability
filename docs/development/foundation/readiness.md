@@ -1,61 +1,84 @@
 # Foundation Readiness Dashboard
 
-> **Snapshot:** 2026-08-06
-> **Current Focus:** EDA controlled evidence와 six-core contract 정렬 완료
+> **Snapshot:** 2026-08-07  
+> **Decision:** 🔴 Blocked  
+> **Audited revision:** `b34a78582cbce5193568caa54744db630468fe94`
 
-## Development Progress
+`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. 아래 수치는 구현·readiness checklist **coverage**이며, canonical requirement/test case/oracle 개수나 최신 HEAD의 실행 통과율이 아니다. Audit 시점에는 현재 revision의 GitHub Actions 실행 evidence를 확인하지 못했다.
 
-| Capability | Implementation Status | Implementation Progress | Verification Status | Verification Progress |
+## Foundation Gate
+
+| Capability | Implementation Status | Implementation Coverage | Verification Status | Verification Checklist Coverage |
 | --- | :---: | --- | :---: | --- |
-| HMDA Source Ingestion | 🟢 Implemented | `██████████ 7/7` | 🟢 Passing | `██████████ 7/7` |
-| Bronze Raw Table | 🟢 Implemented | `██████████ 7/7` | 🟢 Passing | `██████████ 7/7` |
-| Partition Ingestion Idempotency | 🟢 Implemented | `██████████ 5/5` | 🟢 Passing | `██████████ 5/5` |
-| Silver Source Contract | 🟢 Implemented | `██████████ 18/18` | 🟢 Passing | `██████████ 18/18` |
-| Silver Staging Layer | 🟢 Implemented | `██████████ 18/18` | 🟢 Passing | `██████████ 18/18` |
-| Gold Mart Grain Alignment | 🟢 Implemented | `██████████ 18/18` | 🟢 Passing | `██████████ 18/18` |
-| Gold Analysis Metrics | 🟢 Implemented | `██████████ 18/18` | 🟢 Passing | `██████████ 18/18` |
-| EDA Schema and Volume Observation | 🟢 Implemented | `██████████ 11/11` | 🟢 Passing | `██████████ 11/11` |
-| EDA Quality Baseline | 🟢 Implemented | `██████████ 12/12` | 🟢 Passing | `██████████ 1/1` |
-| EDA Domain Observation | 🟢 Implemented | `██████████ 26/26` | 🟢 Passing | `██████████ 1/1` |
-| EDA Notebook Runtime | ⚪ Removed | `░░░░░░░░░░ 0/0` | ⚪ Not Applicable | `░░░░░░░░░░ 0/0` |
-| Evidence Retention | 🟢 Implemented | `██████████ 13/13` | 🟢 Passing | `██████████ 13/13` |
-| Reliability Contracts | 🟢 Implemented | `██████████ 7/7` | 🟢 Passing | `██████████ 7/7` |
-| Read-Only Lifecycle Boundary | 🟢 Implemented | `██████████ 15/15` | 🟢 Passing | `██████████ 15/15` |
-| Recovery Boundary | 🟢 Implemented | `██████████ 4/4` | 🟢 Passing | `██████████ 4/4` |
-| Evaluation Boundary | 🟢 Implemented | `██████████ 2/2` | 🟢 Passing | `██████████ 2/2` |
-| Pipeline Execution Boundaries | 🟡 In Progress | `████████░░ 5/6` | 🟡 Partial | `████████░░ 5/6` |
-| Foundation Completion Decision | 🔵 Planned | `░░░░░░░░░░ 0/2` | ⚪ Unverified | `░░░░░░░░░░ 0/1` |
-| **Total** | **🟡 In Progress** | **`█████████░ 186/189`** | **🟡 Partial** | **`█████████░ 150/152`** |
+| HMDA Source Ingestion | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
+| Bronze Raw Table | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
+| Partition Ingestion Idempotency | 🟢 Implemented | `5/5` | ⚪ Unverified | `5/5` |
+| Silver Source Contract | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
+| Silver Staging Layer | 🟢 Implemented | `18/18` | 🟡 Partial | `17/18` |
+| Gold Mart Grain Alignment | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
+| Gold Analysis Metrics | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
+| EDA Schema and Volume Observation | 🟢 Implemented | `11/11` | ⚪ Unverified | `11/11` |
+| EDA Quality Baseline | 🟢 Implemented | `12/12` | 🔴 Blocked | `0/1` |
+| EDA Domain Observation | 🟢 Implemented | `26/26` | 🔴 Blocked | `0/1` |
+| Reliability Contracts | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
+| **Total** | **🔴 Blocked** | **`147/147`** | **🔴 Blocked** | **`108/111`** |
 
-## Implementation Gaps
+Implementation coverage는 `147/147`이다. Verification checklist coverage `108/111`은 이 dashboard가 관리하는 내부 점검 단위를 합산한 값이며 test case/oracle 수로 해석하지 않는다. Foundation 종료 여부는 coverage가 아니라 아래 blocker와 current runtime verification으로 결정한다.
 
-| Capability | # | Remaining Requirement |
-| --- | :---: | --- |
-| Pipeline Execution Boundaries | 1 | Orchestration task와 실제 pipeline evidence 연결 |
-| Foundation Completion Decision | 1 | Capability별 ready 판정 checklist 확정 |
-| Foundation Completion Decision | 2 | Minimum ready criteria 문서화 |
+## Blockers
 
-## Verification Gaps
+| ID | Area | Finding | Close When |
+| --- | --- | --- | --- |
+| B1 | HMDA EDA | actual-source evidence가 dirty revision을 기록한다. 현재 evidence generator는 dirty tree에서 생성을 거부하므로 retained artifact가 현재 provenance generation invariant와 맞지 않는다. | clean HEAD에서 evidence를 재생성하고 provenance·artifact invariant를 검증한다. |
+| B2 | Silver | canonical domain contract는 staging의 raw row, Null과 `try_cast` semantics 보존을 요구하지만 integration test가 staging 결과를 직접 검증하지 않는다. | staging 자체의 preservation semantics를 test로 고정한다. |
+| B4 | Foundation Governance | EDA change lifecycle/task metadata가 현재 tree와 어긋나고 root README의 Foundation readiness navigation도 사라졌다. | active change와 metadata를 정리하고 README navigation을 복구한다. |
 
-| Capability | # | Remaining Verification |
-| --- | :---: | --- |
-| Pipeline Execution Boundaries | 1 | ⚪ Bronze->dbt 실행 evidence 및 제외 범위 확인 필요 |
-| Foundation Completion Decision | 1 | ⚪ Foundation ready 최종 판정 근거 확인 필요 |
+## Current Verification
 
-## Risks / Blockers
+현재 HEAD에서 Foundation 관련 pytest/dbt/actual-source 실행 evidence는 **Unverified**다. Test가 존재하거나 과거 실행이 성공했다는 사실만으로 현재 verification을 `Passing`으로 올리지 않는다.
 
-| Area | Risk / Blocker | Impact |
-| --- | --- | --- |
-| Foundation Completion Decision | 최소 ready 완료 기준이 명시적으로 확정되지 않음 | 테스트 통과 여부와 상관없이 Foundation 종료 판정이 지연될 수 있음 |
+주요 재검증 command:
+
+```bash
+mkdir -p artifacts && uv run pytest tests/hmda_data
+mkdir -p artifacts && uv run pytest tests/data_platform tests/dbt
+mkdir -p artifacts && uv run pytest tests/reliability/contracts
+uv run python scripts/run_actual_source.py
+```
+
+## Non-Gating Inventory
+
+다음 capability는 현재 구현되어 있거나 위험이 확인됐지만 `foundation-baseline`에 따라 Foundation 총계에는 포함하지 않는다.
+
+| Capability | Audit Status |
+| --- | --- |
+| Reliability freshness semantics | Risk — Foundation contract는 `freshness_at` 존재만 요구하고 후속 profile spec은 미측정 시 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
+| Profile / incident / impact / remediation lifecycle | Implemented, current execution unverified |
+| Approval backfill validation | Implemented, current execution unverified |
+| Evaluation report | Implemented, current execution unverified |
+| Dagster orchestration | Blocked — standard pipeline에서 dbt skip materialization semantics 충돌 |
+| dbt last-known-good evidence retention | Blocked — build 전 기존 artifact 삭제 |
+| Synthetic reliability cases | Implemented, current execution unverified |
+| Test quality observability | Implemented, current execution unverified |
+
+## Additional Drift
+
+- Gold metric의 `action_taken` 모집단과 `approval_rate` 분모는 canonical Data Platform domain 문서에 정의되어 있고 현재 SQL/test와 일치한다. 다만 `dbt-analytics-foundation` OpenSpec에는 세부 semantics가 없어 traceability가 약하다.
+- `DEVELOPMENT.md`와 `pyproject.toml`에는 제거된 Marimo EDA runtime 관련 설명·설정이 남아 있다.
+- Foundation draft README에는 이미 결정된 Gold grain과 제거된 notebook smoke가 미결정 항목으로 남아 있다.
+- `approval-backfill-validation`, `evaluation-report` canonical spec의 `Purpose`가 아직 `TBD`다.
 
 ## References
 
-- [Bronze Data Pipeline](data-pipeline-bronze.md)
-- [Silver Data Pipeline](data-pipeline-silver.md)
-- [Gold Data Pipeline](data-pipeline-gold.md)
-- [EDA Baseline](eda.md)
+- [Foundation](README.md)
+- [Bronze](data-pipeline-bronze.md)
+- [Silver](data-pipeline-silver.md)
+- [Gold](data-pipeline-gold.md)
+- [EDA](eda.md)
 - [Observability](observability.md)
-- [Reliability Boundaries](reliability.md)
-- [Orchestration Boundaries](orchestration.md)
+- [Reliability](reliability.md)
+- [Orchestration](orchestration.md)
+- [Data Platform Domain](../../domains/data-platform.md)
+- [Reliability Domain](../../domains/reliability.md)
 - [ARCHITECTURE](../../ARCHITECTURE.md)
-- OpenSpec plan: `hmda-eda-baseline-reduce-core-scope`
+- OpenSpec: `foundation-baseline`, `hmda-data-foundation`, `partition-ingestion`, `hmda-eda-baseline`, `dbt-analytics-foundation`, `reliability-contracts`
