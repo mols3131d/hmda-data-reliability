@@ -3,8 +3,8 @@ version: 1
 dashboard:
   level: domain
   title: Foundation Readiness Dashboard
-  snapshot: "2026-08-06"
-  current_focus: EDA controlled evidence와 six-core contract 정렬 완료
+  snapshot: "2026-08-07"
+  current_focus: 도메인별 전면 readiness 재검증 진행 중
   include_total: true
 
 items:
@@ -13,24 +13,33 @@ items:
       status: implemented
       progress: 7/7
     verification:
-      status: passing
+      status: unverified
       progress: 7/7
+      gaps:
+        - state: unverified
+          text: 최신 main HEAD에서 component test 실행 evidence가 확인되지 않음
 
   - name: Bronze Raw Table
     implementation:
       status: implemented
       progress: 7/7
     verification:
-      status: passing
+      status: unverified
       progress: 7/7
+      gaps:
+        - state: unverified
+          text: 최신 main HEAD에서 Bronze load contract 실행 evidence가 확인되지 않음
 
   - name: Partition Ingestion Idempotency
     implementation:
       status: implemented
       progress: 5/5
     verification:
-      status: passing
+      status: unverified
       progress: 5/5
+      gaps:
+        - state: unverified
+          text: 최신 main HEAD에서 partition component test 실행 evidence가 확인되지 않음
 
   - name: Silver Source Contract
     implementation:
@@ -69,24 +78,33 @@ items:
       status: implemented
       progress: 11/11
     verification:
-      status: passing
+      status: unverified
       progress: 11/11
+      gaps:
+        - state: unverified
+          text: EDA contract test는 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
 
   - name: EDA Quality Baseline
     implementation:
       status: implemented
       progress: 12/12
     verification:
-      status: passing
-      progress: 1/1
+      status: blocked
+      progress: 0/1
+      gaps:
+        - state: failing
+          text: controlled actual-source reference가 dirty repository revision을 기록해 현재 provenance contract와 충돌함
 
   - name: EDA Domain Observation
     implementation:
       status: implemented
       progress: 26/26
     verification:
-      status: passing
-      progress: 1/1
+      status: blocked
+      progress: 0/1
+      gaps:
+        - state: failing
+          text: actual-source observation을 clean HEAD에서 재생성해야 current evidence로 인정할 수 있음
 
   - name: EDA Notebook Runtime
     implementation:
@@ -101,8 +119,11 @@ items:
       status: implemented
       progress: 13/13
     verification:
-      status: passing
-      progress: 13/13
+      status: partial
+      progress: 12/13
+      gaps:
+        - state: failing
+          text: 저장된 EDA evidence의 repository revision이 provenance guard의 clean-HEAD 계약을 만족하지 않음
 
   - name: Reliability Contracts
     implementation:
@@ -164,6 +185,9 @@ items:
           text: Foundation ready 최종 판정 근거 확인 필요
 
 risks:
+  - area: HMDA EDA
+    text: actual-source evidence가 dirty repository revision에서 생성되어 현재 provenance contract와 불일치함
+    impact: Foundation EDA 완료 증거로 사용할 수 없어 clean HEAD controlled run이 필요함
   - area: Foundation Completion Decision
     text: 최소 ready 완료 기준이 명시적으로 확정되지 않음
     impact: 테스트 통과 여부와 상관없이 Foundation 종료 판정이 지연될 수 있음
@@ -177,4 +201,6 @@ references:
   - "[Reliability Boundaries](reliability.md)"
   - "[Orchestration Boundaries](orchestration.md)"
   - "[ARCHITECTURE](../../ARCHITECTURE.md)"
-  - "OpenSpec plan: `hmda-eda-baseline-reduce-core-scope`"
+  - "OpenSpec spec: `hmda-data-foundation`"
+  - "OpenSpec spec: `partition-ingestion`"
+  - "OpenSpec spec: `hmda-eda-baseline`"
