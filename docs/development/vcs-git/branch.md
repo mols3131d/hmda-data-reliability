@@ -51,7 +51,7 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 ## Agent Instructions
 
-- `agent` actor namespace와 자신의 작업 branch를 사용한다.
+- `agent` actor namespace와 자신의 작업 branch를 사용한다. 명시된 specialized branch 작업은 해당 guideline을 따른다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
 - 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.
