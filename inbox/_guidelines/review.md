@@ -19,7 +19,7 @@ If another workflow defines an owning review artifact, such as an OpenSpec `plan
 
 ## Template
 
-Use [`inbox/templates/review.md`](../templates/review.md) when a reusable structure helps. Adapt or omit sections that do not serve the review.
+Use [`inbox/_templates/review.md`](../_templates/review.md) when a reusable structure helps. Adapt or omit sections that do not serve the review.
 
 ## Output
 

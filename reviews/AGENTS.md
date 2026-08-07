@@ -19,8 +19,8 @@ reviews/archive/<same-file-name>.md
 
 ## Template
 
-- Use [`inbox/templates/review.md`](../inbox/templates/review.md) for new Review artifacts.
-- `inbox/templates/` owns shared artifact templates. Do not create a local `reviews/templates/` copy.
+- Use [`inbox/_templates/review.md`](../inbox/_templates/review.md) for new Review artifacts.
+- `inbox/_templates/` owns shared artifact templates. Do not create a local `reviews/templates/` copy.
 
 ## Scope
 

@@ -61,8 +61,8 @@ Read only the resources needed for the current artifact. Do not preload every gu
 
 | Type | Guideline | Template |
 | --- | --- | --- |
-| `research` | [Research](guidelines/research.md) | [research.md](templates/research.md) |
-| `review` | [Review](guidelines/review.md) | [review.md](templates/review.md) |
+| `research` | [Research](_guidelines/research.md) | [research.md](_templates/research.md) |
+| `review` | [Review](_guidelines/review.md) | [review.md](_templates/review.md) |
 
 Other artifact types follow this file unless dedicated guidance exists. Templates are starting structures, not a whitelist or mandatory shape. Add guidance or a template only when a recurring artifact type benefits from a distinct contract.
 

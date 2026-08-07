@@ -8,10 +8,10 @@
 inbox/
 ├── AGENTS.md
 ├── README.md
-├── guidelines/
+├── _guidelines/
 │   ├── research.md
 │   └── review.md
-├── templates/
+├── _templates/
 │   ├── research.md
 │   └── review.md
 └── YYYY-MM-DD/
@@ -19,5 +19,7 @@ inbox/
 ```
 
 `AGENTS.md`를 진입점으로 사용하고, 현재 작업에 필요한 guideline, template, skill만 선택적으로 읽는다.
+
+`_guidelines/`와 `_templates/`는 `inbox/` 운영을 위한 내부 자산이다.
 
 `research`와 `review`는 자주 쓰이는 artifact type일 뿐 제한된 목록이 아니다.

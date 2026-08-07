@@ -14,7 +14,7 @@ reviews/
     └── <same-file-name>.md
 ```
 
-새 Review는 [`inbox/templates/review.md`](../inbox/templates/review.md)를 기준으로 작성한다.
+새 Review는 [`inbox/_templates/review.md`](../inbox/_templates/review.md)를 기준으로 작성한다.
 
 OpenSpec의 구현 전 계획 검토는 각 Change의 `plan-review.md`에 둔다.
 

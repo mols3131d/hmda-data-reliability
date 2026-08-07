@@ -13,7 +13,7 @@ Use `research` when the artifact's primary purpose is to answer a question by ga
 
 ## Template
 
-Use [`inbox/templates/research.md`](../templates/research.md) when a reusable structure helps. Adapt or omit sections that do not serve the question.
+Use [`inbox/_templates/research.md`](../_templates/research.md) when a reusable structure helps. Adapt or omit sections that do not serve the question.
 
 ## Output
 

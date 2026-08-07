@@ -21,8 +21,8 @@ research/archive/<same-file-name>.md
 
 ## Template
 
-- Use [`inbox/templates/research.md`](../inbox/templates/research.md) for new Research artifacts.
-- `inbox/templates/` owns shared artifact templates. Do not create a local `research/templates/` copy.
+- Use [`inbox/_templates/research.md`](../inbox/_templates/research.md) for new Research artifacts.
+- `inbox/_templates/` owns shared artifact templates. Do not create a local `research/templates/` copy.
 
 ## Lifecycle
 
