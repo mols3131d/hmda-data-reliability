@@ -21,9 +21,8 @@ research/archive/<same-file-name>.md
 
 ## Template
 
-- Use `research/templates/research.md` for new Research artifacts.
-- Keep Research templates under `research/templates/`.
-- Templates are workspace guidance and are excluded from Research lifecycle rules.
+- Use [`inbox/_templates/research.md`](../inbox/_templates/research.md) for new Research artifacts.
+- `inbox/_templates/` owns shared artifact templates. Do not create a local `research/templates/` copy.
 
 ## Lifecycle
 
@@ -55,6 +54,6 @@ Unclear approval is not approval.
 ## Related Agent Assets
 
 | Agent Asset | Description |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| --- | --- |
 | `.agents/skills/openspec-explore/SKILL.md` | Guides exploratory investigation used to understand a problem, constraints, alternatives, and evidence before committing to a change. |
 | `.agents/skills/pivot-research-workspace/SKILL.md` | Evidence-backed research before specification, implementation, or technical decisions; covers current behavior, scope, dependencies, options, and failure investigation. |

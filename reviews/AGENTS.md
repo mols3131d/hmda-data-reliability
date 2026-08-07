@@ -19,9 +19,8 @@ reviews/archive/<same-file-name>.md
 
 ## Template
 
-- Use `reviews/templates/review.md` for new Review artifacts.
-- Keep Review templates under `reviews/templates/`.
-- Templates are workspace guidance and are excluded from Review lifecycle rules.
+- Use [`inbox/_templates/review.md`](../inbox/_templates/review.md) for new Review artifacts.
+- `inbox/_templates/` owns shared artifact templates. Do not create a local `reviews/templates/` copy.
 
 ## Scope
 
