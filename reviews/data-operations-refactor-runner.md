@@ -21,13 +21,12 @@ tags:
 
 ## Findings
 
-### F1. `_build_dbt_command` 프라이빗 헬퍼에 대한 직접 단위 테스트 미작성
+### F1. `_build_dbt_command` 프라이빗 헬퍼에 대한 직접 단위 테스트 작성 완료 (Resolved)
 
-- **Severity** - Minor
+- **Severity** - Minor (Resolved)
 - **Location** - `tests/data_operations/test_dbt_runner.py`
-- **Evidence** - `runner.py`에서 `_build_dbt_command`를 분리하였으나, `test_dbt_runner.py`에는 `_build_dbt_command`의 CLI 인자 구성(`--project-dir`, `--profiles-dir`)을 직접 검증하는 테스트 케이스가 포함되어 있지 않음.
-- **Impact** - CLI 인자 구성 로직 변경 시 단위 수준에서 즉시 실패를 원인 특정하기보다 전체 오케스트레이션 검증을 통해 간접 감지됨.
-- **Required Change** - 필수 수정사항은 아니나, 향후 테스터빌리티 이점을 극대화하기 위해 `_build_dbt_command` 인자 조립에 대한 경량 단위 테스트 추가를 권장함.
+- **Evidence** - `test_build_dbt_command_structures_arguments` 테스트 케이스가 추가되어 `_build_dbt_command`의 CLI 인자 구성(`--project-dir`, `--profiles-dir`)을 직접 단위 수준에서 검증함.
+- **Status** - 완료 (Pass)
 
 ## Validation
 
@@ -35,6 +34,7 @@ tags:
 | --- | --- | --- |
 | OpenSpec Requirement 준수 | `openspec/changes/data-operations-refactor-runner/specs/data-operations-dbt-runner/spec.md` 요구사항 100% 충족 | Pass |
 | SRP 및 헬퍼 추출 구조 | `_build_dbt_command`, `_run_dbt_command`, `_remove_dbt_artifacts`, `_validate_dbt_artifacts`로 책임 명확히 분리 | Pass |
+| CLI 인자 조립 테스트 | `test_build_dbt_command_structures_arguments`를 통해 헬퍼 함수 조립 독립 검증 | Pass |
 | 타입 안정성 | `from subprocess import CompletedProcess` 및 `CompletedProcess[str]`, `list[str]` 정적 타입 명시 완료 | Pass |
 | 예외 처리 및 에러 래핑 | `subprocess.TimeoutExpired`, `OSError`, `returncode != 0`, 아티팩트 누락을 `DataOperationError`로 안전하게 래핑 | Pass |
 | 부작용 관리 | `os.environ.copy()`를 통한 환경 변수 격리 및 `path.unlink(missing_ok=True)` 안전 삭제 적용 | Pass |

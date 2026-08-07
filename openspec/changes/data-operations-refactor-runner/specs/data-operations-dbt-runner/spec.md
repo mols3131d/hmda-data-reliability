@@ -9,7 +9,7 @@ tags:
   - "refactor"
 ---
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Structured dbt Build Command Execution
 

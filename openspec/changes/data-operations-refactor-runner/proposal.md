@@ -37,7 +37,7 @@ tags:
 
 ## Capabilities
 
-### Modified Capabilities
+### New Capabilities
 
 #### `data-operations-dbt-runner`
 

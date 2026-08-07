@@ -25,7 +25,7 @@ tags:
 ### 2. Verify Behavior and Quality
 
 - [x] 2.1 Run unit/component tests in `tests/data_operations/test_dbt_runner.py`.
-  - **Done when:** `uv run pytest tests/data_operations/test_dbt_runner.py`가 오류 없이 5개 통과한다.
+  - **Done when:** `uv run pytest tests/data_operations/test_dbt_runner.py`가 오류 없이 6개 통과한다.
 
 - [x] 2.2 Run static code analysis and formatting checks.
   - **Done when:** `uv run ruff check src/project_pivot/data_operations/runner.py` 및 `uv run ruff format src/project_pivot/data_operations/runner.py`가 오류 없이 통과한다.
