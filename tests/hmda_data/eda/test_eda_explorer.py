@@ -16,24 +16,12 @@ from project_pivot.hmda_data.eda import (
 pytestmark = pytest.mark.component
 
 
-def test_export_eda_evidence_yaml_returns_valid_yaml(tmp_path: Path) -> None:
-    """analyze_hmda_csv 연산 결과가 구조화된 YAML 형태로 직렬화되는지
-    검증한다.
-    """
-    source_path = tmp_path / "hmda.csv"
-    source_path.write_text(
-        "\n".join(
-            [
-                "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
-                "2024,CA,06001,1,1,350000,120",
-                "2025,NY,36001,1,3,420000,150",
-            ]
-        ),
-        encoding="utf-8",
-    )
-
+def test_export_eda_evidence_yaml_returns_valid_yaml(
+    hmda_csv_path: Path, tmp_path: Path
+) -> None:
+    """analyze_hmda_csv 연산 결과가 구조화된 YAML 형태로 직렬화되는지 검증한다."""
     evidence = analyze_hmda_csv(
-        source_path,
+        hmda_csv_path,
         temp_directory=tmp_path / "duckdb-temp",
     )
 
@@ -47,22 +35,12 @@ def test_export_eda_evidence_yaml_returns_valid_yaml(tmp_path: Path) -> None:
     assert "grain" in parsed
 
 
-def test_render_eda_static_charts_generates_files(tmp_path: Path) -> None:
-    """EDA 에비던스로부터 정적 HTML 또는 PNG 차트 파일이 정상 생성되는지 검증한다."""
-    source_path = tmp_path / "hmda.csv"
-    source_path.write_text(
-        "\n".join(
-            [
-                "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
-                "2024,CA,06001,1,1,350000,120",
-                "2025,NY,36001,1,3,420000,150",
-            ]
-        ),
-        encoding="utf-8",
-    )
-
+def test_render_eda_static_charts_generates_files(
+    hmda_csv_path: Path, tmp_path: Path
+) -> None:
+    """EDA 에비던스로부터 정적 HTML 차트 파일이 정상 생성되는지 검증한다."""
     evidence = analyze_hmda_csv(
-        source_path,
+        hmda_csv_path,
         temp_directory=tmp_path / "duckdb-temp",
     )
 
