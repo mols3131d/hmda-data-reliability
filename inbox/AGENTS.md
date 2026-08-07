@@ -1,6 +1,8 @@
 # Inbox
 
-`inbox/` is a temporary, non-canonical workspace for artifacts produced during investigation, review, discussion, and decision support.
+`inbox/` is a workspace for temporary, non-canonical artifacts produced during investigation, review, discussion, and decision support.
+
+`AGENTS.md`, `_guidelines/`, and `_templates/` are operating assets for this workspace, not inbox artifacts.
 
 ## Workflow
 
@@ -117,7 +119,7 @@ When `inbox/` reaches 8 date directories, move the oldest 4 to `inbox/archive/`.
 
 ## Boundaries
 
-- Do not treat `inbox/` as canonical project context.
-- Canonical artifacts must not depend on or link to inbox content.
+- Do not treat dated or archived inbox artifacts as canonical project context.
+- Canonical artifacts must not depend on or link to dated or archived inbox artifacts.
 - If another workflow defines an owning canonical artifact, use that artifact instead of duplicating authority in `inbox/`.
-- Rewrite valuable content into its canonical destination rather than promoting an inbox file by implication.
+- Rewrite valuable content into its canonical destination rather than promoting an inbox artifact by implication.
