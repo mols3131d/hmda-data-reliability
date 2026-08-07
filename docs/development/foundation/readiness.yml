@@ -94,9 +94,8 @@ items:
       status: implemented
       progress: 18/18
     verification:
-      status: blocked
-      progress: 17/18
-      blockers: [B3]
+      status: unverified
+      progress: 18/18
 
   - name: EDA Schema and Volume Observation
     implementation:
@@ -128,11 +127,11 @@ items:
     implementation:
       status: blocked
       progress: 7/7
-      blockers: [B4]
+      blockers: [B3]
     verification:
       status: blocked
       progress: 7/7
-      blockers: [B4]
+      blockers: [B3]
 
 blockers:
   - id: B1
@@ -145,25 +144,18 @@ blockers:
   - id: B2
     area: Data Platform / Silver
     type: test-oracle
-    finding: dbt integration test가 staging row count, Null 보존과 try_cast 결과를 직접 assertion하지 않는다.
+    finding: canonical domain contract는 staging의 raw row, Null과 try_cast semantics 보존을 요구하지만 dbt integration test가 staging 결과를 직접 assertion하지 않는다.
     impact: staging preservation contract가 깨져도 mart 결과가 같으면 false green이 가능하다.
     close_when: staging 자체의 row, Null, cast semantics를 독립 oracle로 고정한다.
 
   - id: B3
-    area: Data Platform / Gold
-    type: canonical-contract
-    finding: canonical `dbt-analytics-foundation` spec에 `action_taken` code별 모집단과 `approval_rate` denominator 의미가 없다.
-    impact: mart SQL이 계산되더라도 metric의 비즈니스 correctness를 판정할 기준이 없다.
-    close_when: canonical spec에 metric population과 denominator를 정의하고 대표 action code test로 검증한다.
-
-  - id: B4
     area: Reliability Contracts
     type: canonical-contract
-    finding: `profile-snapshots` spec과 test가 freshness 미측정 시 `observed_at`을 `freshness_at`으로 대체하도록 고정한다.
-    impact: 미측정과 실제 source freshness가 구분되지 않아 `freshness_delay` detector가 false negative를 만들 수 있다.
+    finding: Foundation의 `ProfileSnapshot` contract와 model은 `freshness_at`을 required datetime으로만 표현해 freshness 미측정 상태를 구조적으로 구분할 수 없다. 후속 `profile-snapshots` spec은 이 빈틈을 `observed_at` fallback으로 메운다.
+    impact: 미측정과 실제 source freshness가 같은 필드로 표현되어 `freshness_delay` 판단에서 false negative를 만들 수 있다.
     close_when: 미측정 상태를 실제 freshness timestamp와 구분하는 canonical 표현을 확정하고 contract, builder, detector oracle을 정렬한다.
 
-  - id: B5
+  - id: B4
     area: Foundation Governance
     type: artifact-consistency
     finding: EDA OpenSpec change 두 개가 active이고, baseline change는 `tasks_completed: 0/21`인데 checkbox는 완료 상태이며 plan-review는 single active replacement를 주장한다. archived Foundation task가 요구한 root README의 readiness navigation도 현재 없다.
@@ -209,6 +201,9 @@ non_gating:
     finding: pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 current HEAD 실행 evidence가 없다.
 
 risks:
+  - area: OpenSpec Traceability
+    text: `dbt-analytics-foundation` spec은 Gold metric 이름만 정의하고 세부 모집단·분모는 canonical Data Platform domain 문서에만 정의한다.
+    impact: 현재 구현과 test는 domain contract와 일치하지만 OpenSpec만 읽으면 metric semantics를 완전히 복원할 수 없다.
   - area: Documentation Drift
     text: `DEVELOPMENT.md`와 `pyproject.toml`에 Marimo가 active tool/dev dependency로 남아 있지만 EDA runtime과 notebook은 제거됐다.
     impact: 현재 EDA 실행 방식과 개발 환경 설명이 다르게 읽힌다.
@@ -225,6 +220,8 @@ references:
   - "[Observability](observability.md)"
   - "[Reliability Boundaries](reliability.md)"
   - "[Orchestration Boundaries](orchestration.md)"
+  - "[Data Platform Domain](../../domains/data-platform.md)"
+  - "[Reliability Domain](../../domains/reliability.md)"
   - "[ARCHITECTURE](../../ARCHITECTURE.md)"
   - "OpenSpec spec: `foundation-baseline`"
   - "OpenSpec spec: `hmda-data-foundation`"
