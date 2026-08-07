@@ -4,7 +4,7 @@
 > **Decision:** 🔴 Blocked  
 > **Audited revision:** `b34a78582cbce5193568caa54744db630468fe94`
 
-`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. 아래 progress는 구현·test oracle **coverage**이며, 최신 HEAD의 실행 통과율이 아니다. Audit 시점에는 현재 revision의 GitHub Actions 실행 evidence를 확인하지 못했다.
+`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. 아래 수치는 구현·test oracle **coverage**이며, 최신 HEAD의 실행 통과율이 아니다. Audit 시점에는 현재 revision의 GitHub Actions 실행 evidence를 확인하지 못했다.
 
 ## Foundation Gate
 
