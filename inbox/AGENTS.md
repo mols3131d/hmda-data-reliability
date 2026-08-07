@@ -68,7 +68,7 @@ Other artifact types follow this file unless dedicated guidance exists. Template
 
 ## Skill Routing
 
-Use these tables for skill discovery only. Read a skill's `SKILL.md` only when its description matches the current task. Load additional skills only when the work crosses into their responsibility.
+Use these tables for skill discovery only. Read a skill's `SKILL.md` only when its description matches the current task.
 
 ### Research
 
@@ -81,21 +81,6 @@ Use these tables for skill discovery only. Read a skill's `SKILL.md` only when i
 | Name | Description |
 | --- | --- |
 | `pivot-review-code` | Review implementation and test changes for intended behavior, correctness, regressions, reachable failure paths, maintainability risks, and validation evidence. Use for diffs, files, commits, pull requests, or working-tree changes. |
-
-### OpenSpec
-
-OpenSpec work is not an inbox artifact type. Use these skills only when the task directly operates on an OpenSpec change, artifact, spec, or lifecycle action.
-
-| Name | Description |
-| --- | --- |
-| `openspec-explore` | Explore ideas, investigate problems, and clarify requirements before committing to an OpenSpec change. Do not create change artifacts or implementation. |
-| `openspec-propose` | Create a new OpenSpec change and generate its planning artifacts when the work is sufficiently defined. |
-| `openspec-update-change` | Revise an existing change's planning artifacts while keeping them coherent. Use for same-intent refinements; do not edit implementation code or create missing artifacts. |
-| `openspec-apply-change` | Implement incomplete tasks from an existing OpenSpec change and keep task state current. |
-| `openspec-sync-specs` | Merge a change's delta specs into main specs without archiving the change. |
-| `openspec-archive-change` | Complete a finished OpenSpec change by checking readiness, syncing specs when needed, and archiving it. |
-
-Do not preload OpenSpec skills merely because an inbox artifact may later inform OpenSpec work. If a listed skill is not installed, do not invent its instructions.
 
 ## Writing
 
