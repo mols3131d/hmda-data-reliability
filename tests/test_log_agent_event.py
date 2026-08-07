@@ -38,9 +38,7 @@ def test_hook_config_uses_supported_vscode_events() -> None:
         "SubagentStop",
     }
     assert all(
-        hook["cwd"] == "."
-        for hooks in config["hooks"].values()
-        for hook in hooks
+        hook["cwd"] == "." for hooks in config["hooks"].values() for hook in hooks
     )
 
 
@@ -64,9 +62,7 @@ def test_artifact_log_path_uses_configured_root(tmp_path: Path) -> None:
     relative = module.artifact_log_path(
         {"PROJECT_PIVOT_ARTIFACTS_DIR": "var/artifacts"}
     )
-    absolute = module.artifact_log_path(
-        {"PROJECT_PIVOT_ARTIFACTS_DIR": str(tmp_path)}
-    )
+    absolute = module.artifact_log_path({"PROJECT_PIVOT_ARTIFACTS_DIR": str(tmp_path)})
 
     assert relative == REPOSITORY_ROOT / "var" / "artifacts" / "agent-events.jsonl"
     assert absolute == tmp_path / "agent-events.jsonl"

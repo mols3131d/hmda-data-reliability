@@ -1,30 +1,11 @@
-"""HMDA 원천 EDA 계산 contract와 확장 계획.
-
-Contract:
-    - 기존 schema, volume, null, freshness evidence key를 유지한다.
-    - 핵심 code distribution, numeric summary, anomaly, grain evidence를
-      JSON-serializable한 read-only 결과로 제공한다.
-    - unknown/suspicious raw value를 보존하고 observation으로만 노출한다.
-
-Risks:
-    - 새 evidence 계산이 기존 결과를 깨거나 원천을 변경할 수 있다.
-    - distribution population, quantile, anomaly share의 분모가 어긋날 수 있다.
-    - missing column과 query failure에서 partial evidence가 노출될 수 있다.
-
-Scope:
-    Component-level public entrypoint behavior. Notebook rendering, actual-source
-    observation, resource budget은 각각 독립 validation surface에서 검증한다.
-
-Planning:
-    ``_plan_*`` 함수는 pytest가 수집하지 않는 test design이다. Production
-    implementation과 함께 실행 가능한 ``test_*`` 함수로 전환한다.
-"""
+"""HMDA 원천 EDA 계산 계약 및 도메인 분석 단위 테스트."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import duckdb
 import pytest
@@ -35,7 +16,7 @@ from project_pivot.hmda_data.errors import HMDADataValidationError
 pytestmark = pytest.mark.component
 
 
-def test_returns_core_code_distributions(tmp_path: Path) -> None:
+def test_analyze_hmda_csv_returns_core_code_distributions(tmp_path: Path) -> None:
     """유효한 source의 핵심 code별 count/share를 검증한다."""
     source_path = tmp_path / "hmda.csv"
     source_path.write_text(
@@ -69,7 +50,9 @@ def test_returns_core_code_distributions(tmp_path: Path) -> None:
     assert state_dist[1]["share"] == pytest.approx(1 / 3)
 
 
-def test_returns_numeric_summaries_without_clipping(tmp_path: Path) -> None:
+def test_analyze_hmda_csv_returns_numeric_summaries_without_clipping(
+    tmp_path: Path,
+) -> None:
     """대상 numeric field의 non-null count와 five-number summary를 검증한다."""
     source_path = tmp_path / "hmda.csv"
     source_path.write_text(
@@ -99,8 +82,8 @@ def test_returns_numeric_summaries_without_clipping(tmp_path: Path) -> None:
     assert income_summary["max"] == 30.0
 
 
-def test_reports_suspicious_numeric_observations(tmp_path: Path) -> None:
-    """Configured suspicious condition의 field/condition/count/share를 검증한다."""
+def test_analyze_hmda_csv_omits_anomalies_key(tmp_path: Path) -> None:
+    """EDA 계산 결과에서 anomalies 키가 제외됨을 검증한다."""
     source_path = tmp_path / "hmda.csv"
     source_path.write_text(
         "\n".join(
@@ -124,7 +107,9 @@ def test_reports_suspicious_numeric_observations(tmp_path: Path) -> None:
     assert "anomalies" not in evidence
 
 
-def test_returns_mart_grain_alignment_evidence(tmp_path: Path) -> None:
+def test_analyze_hmda_csv_returns_mart_grain_alignment_evidence(
+    tmp_path: Path,
+) -> None:
     """현재 mart grain의 aggregate count와 key coverage를 검증한다."""
     source_path = tmp_path / "hmda.csv"
     source_path.write_text(
@@ -154,7 +139,9 @@ def test_returns_mart_grain_alignment_evidence(tmp_path: Path) -> None:
     assert grain["coverage_rate"] == 1.0
 
 
-def test_six_core_source_without_county_code_succeeds(tmp_path: Path) -> None:
+def test_analyze_hmda_csv_six_core_source_without_county_code_succeeds(
+    tmp_path: Path,
+) -> None:
     """county_code가 없는 6개 core 컬럼만의 입력도 EDA 분석을 성공해야 한다."""
     source_path = tmp_path / "hmda_6core.csv"
     source_path.write_text(
@@ -181,7 +168,9 @@ def test_six_core_source_without_county_code_succeeds(tmp_path: Path) -> None:
     assert "county_code" not in columns
 
 
-def test_grain_alignment_excludes_null_keys_from_distinct_count(tmp_path: Path) -> None:
+def test_analyze_hmda_csv_grain_alignment_excludes_null_keys_from_distinct_count(
+    tmp_path: Path,
+) -> None:
     """grain key 중 하나라도 null인 행은 distinct group count에서 제외된다."""
     source_path = tmp_path / "hmda_null_grain.csv"
     source_path.write_text(
@@ -210,7 +199,7 @@ def test_grain_alignment_excludes_null_keys_from_distinct_count(tmp_path: Path) 
     assert grain["coverage_rate"] == pytest.approx(2 / 4)
 
 
-def test_rejects_missing_descriptive_column_without_partial_evidence(
+def test_analyze_hmda_csv_rejects_missing_descriptive_column_without_partial_evidence(
     tmp_path: Path,
 ) -> None:
     """필수 descriptive field 누락이 명시적으로 실패하는지 검증한다."""
@@ -340,6 +329,41 @@ def test_activity_year_sampling_order_has_secondary_sort(tmp_path: Path) -> None
     grouping_sql = [sql for sql in executed_sqls if "GROUPING SETS" in sql]
     assert len(grouping_sql) > 0
     assert "ORDER BY is_total DESC, activity_year ASC" in grouping_sql[0]
+
+
+def test_analyze_hmda_csv_observed_at_does_not_trigger_freshness(
+    tmp_path: Path,
+) -> None:
+    """observed_at이 있어도 MAX(observed_at) 쿼리와 freshness 반환 키가 없다."""
+    csv_file = tmp_path / "hmda_with_observed_at.csv"
+    csv_file.write_text(
+        "activity_year,state_code,loan_purpose,action_taken,loan_amount,income,observed_at\n"
+        "2025,CA,1,1,100000,50000,2025-01-01T00:00:00Z\n"
+        "2025,NY,1,2,200000,80000,2025-01-02T00:00:00Z\n",
+        encoding="utf-8",
+    )
+
+    executed_sqls: list[str] = []
+    original_execute = duckdb.DuckDBPyConnection.execute
+
+    def tracking_execute(
+        self: duckdb.DuckDBPyConnection, query: str, *args: object, **kwargs: object
+    ) -> duckdb.DuckDBPyConnection:
+        executed_sqls.append(str(query))
+        return original_execute(self, query, *args, **kwargs)
+
+    with patch.object(duckdb.DuckDBPyConnection, "execute", new=tracking_execute):
+        evidence = analyze_hmda_csv(
+            source_path=csv_file,
+            temp_directory=tmp_path / "tmp",
+        )
+
+    assert "freshness" not in evidence
+    assert "observed_at" not in evidence
+
+    all_sqls = " ".join(executed_sqls).lower()
+    assert "max(observed_at)" not in all_sqls
+    assert "freshness" not in all_sqls
 
 
 def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:

@@ -10,7 +10,7 @@ import yaml
 
 pytestmark = pytest.mark.unit
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 READINESS_YAML_PATH = PROJECT_ROOT / "docs/development/foundation/readiness.yml"
 READINESS_MD_PATH = PROJECT_ROOT / "docs/development/foundation/readiness.md"
 

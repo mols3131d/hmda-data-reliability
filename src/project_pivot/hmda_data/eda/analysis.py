@@ -229,6 +229,108 @@ def _calculate_grain_alignment(
     }
 
 
+def _inspect_and_validate_schema(
+    source_relation: duckdb.DuckDBPyRelation,
+) -> tuple[list[dict[str, str]], dict[str, str], list[dict[str, Any]], list[str]]:
+    """DuckDB relation의 스키마를 추출하고 필수 6개 컬럼의 유효성을 검증한다."""
+
+    schema_rows = [
+        {"name": name, "type": str(column_type)}
+        for name, column_type in zip(
+            source_relation.columns, source_relation.types, strict=True
+        )
+    ]
+    inferred_types = {row["name"]: row["type"] for row in schema_rows}
+    required_schema = [
+        {
+            "column": column,
+            "inferred_type": inferred_types.get(column),
+            "status": (
+                "valid"
+                if column in inferred_types
+                and _type_family(inferred_types[column])
+                in EXPECTED_TYPE_FAMILIES[column]
+                else "missing"
+                if column not in inferred_types
+                else "type mismatch"
+            ),
+        }
+        for column in REQUIRED_EDA_COLUMNS
+    ]
+    missing_required = [
+        item["column"] for item in required_schema if item["status"] != "valid"
+    ]
+    if missing_required:
+        raise HMDADataValidationError(
+            f"Required EDA column validation failed: {missing_required}"
+        )
+
+    profile_columns = [
+        column for column in REQUIRED_EDA_COLUMNS if column in inferred_types
+    ]
+    return schema_rows, inferred_types, required_schema, profile_columns
+
+
+def _collect_volume_and_null_metrics(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+    profile_columns: list[str],
+    max_activity_years: int,
+) -> tuple[int, dict[str, int], list[tuple[Any, ...]], int]:
+    """전체 row count, 컬럼별 null count, activity_year별 파티션 행 수를 수집한다."""
+
+    metric_select = ["count(*) AS row_count"] + [
+        f"count(*) FILTER (WHERE {_quote_identifier(column)} IS NULL) "
+        f"AS {_quote_identifier(column)}"
+        for column in profile_columns
+    ]
+
+    has_activity_year = "activity_year" in inferred_types
+    grouping_select = (
+        "activity_year, grouping(activity_year) AS is_total, "
+        if has_activity_year
+        else ""
+    )
+    grouping_clause = (
+        "GROUP BY GROUPING SETS ((), (activity_year)) "
+        "ORDER BY is_total DESC, activity_year ASC "
+        f"LIMIT {max_activity_years + 2}"
+        if has_activity_year
+        else ""
+    )
+    metric_rows = connection.execute(
+        f"SELECT {grouping_select}{', '.join(metric_select)} "
+        f"FROM hmda_eda_source {grouping_clause}"
+    ).fetchall()
+
+    total_row = next(row for row in metric_rows if not has_activity_year or row[1] == 1)
+    metric_offset = 2 if has_activity_year else 0
+    row_count = total_row[metric_offset]
+    null_counts = dict(
+        zip(
+            profile_columns,
+            total_row[metric_offset + 1 : metric_offset + 1 + len(profile_columns)],
+            strict=True,
+        )
+    )
+    activity_year_rows = (
+        sorted(
+            (row for row in metric_rows if row[1] == 0),
+            key=lambda row: (row[0] is None, row[0]),
+        )
+        if has_activity_year
+        else []
+    )
+    if len(activity_year_rows) > max_activity_years:
+        msg = (
+            "activity_year cardinality exceeds "
+            f"the configured bound of {max_activity_years}"
+        )
+        raise HMDADataValidationError(msg)
+
+    return row_count, null_counts, activity_year_rows, metric_offset
+
+
 def analyze_hmda_csv(
     source_path: str | Path,
     *,
@@ -266,92 +368,17 @@ def analyze_hmda_csv(
             params={"input_path": str(input_path)},
         )
         source_relation.create_view("hmda_eda_source", replace=True)
-        schema_rows = [
-            {"name": name, "type": str(column_type)}
-            for name, column_type in zip(
-                source_relation.columns, source_relation.types, strict=True
-            )
-        ]
-        inferred_types = {row["name"]: row["type"] for row in schema_rows}
-        required_schema = [
-            {
-                "column": column,
-                "inferred_type": inferred_types.get(column),
-                "status": (
-                    "valid"
-                    if column in inferred_types
-                    and _type_family(inferred_types[column])
-                    in EXPECTED_TYPE_FAMILIES[column]
-                    else "missing"
-                    if column not in inferred_types
-                    else "type mismatch"
-                ),
-            }
-            for column in REQUIRED_EDA_COLUMNS
-        ]
-        missing_required = [
-            item["column"] for item in required_schema if item["status"] != "valid"
-        ]
-        if missing_required:
-            raise HMDADataValidationError(
-                f"Required EDA column validation failed: {missing_required}"
-            )
 
-        profile_columns = [
-            column for column in REQUIRED_EDA_COLUMNS if column in inferred_types
-        ]
-        metric_select = ["count(*) AS row_count"] + [
-            f"count(*) FILTER (WHERE {_quote_identifier(column)} IS NULL) "
-            f"AS {_quote_identifier(column)}"
-            for column in profile_columns
-        ]
+        schema_rows, inferred_types, required_schema, profile_columns = (
+            _inspect_and_validate_schema(source_relation)
+        )
 
-        has_activity_year = "activity_year" in inferred_types
-        grouping_select = (
-            "activity_year, grouping(activity_year) AS is_total, "
-            if has_activity_year
-            else ""
-        )
-        grouping_clause = (
-            "GROUP BY GROUPING SETS ((), (activity_year)) "
-            "ORDER BY is_total DESC, activity_year ASC "
-            f"LIMIT {max_activity_years + 2}"
-            if has_activity_year
-            else ""
-        )
         started_at = time.monotonic()
-        metric_rows = connection.execute(
-            f"SELECT {grouping_select}{', '.join(metric_select)} "
-            f"FROM hmda_eda_source {grouping_clause}"
-        ).fetchall()
-
-        total_row = next(
-            row for row in metric_rows if not has_activity_year or row[1] == 1
-        )
-        metric_offset = 2 if has_activity_year else 0
-        row_count = total_row[metric_offset]
-        null_counts = dict(
-            zip(
-                profile_columns,
-                total_row[metric_offset + 1 : metric_offset + 1 + len(profile_columns)],
-                strict=True,
+        row_count, null_counts, activity_year_rows, metric_offset = (
+            _collect_volume_and_null_metrics(
+                connection, inferred_types, profile_columns, max_activity_years
             )
         )
-        activity_year_rows = (
-            sorted(
-                (row for row in metric_rows if row[1] == 0),
-                key=lambda row: (row[0] is None, row[0]),
-            )
-            if has_activity_year
-            else []
-        )
-        if len(activity_year_rows) > max_activity_years:
-            msg = (
-                "activity_year cardinality exceeds "
-                f"the configured bound of {max_activity_years}"
-            )
-            raise HMDADataValidationError(msg)
-
         distributions = _collect_code_distributions(
             connection, inferred_types, row_count
         )
