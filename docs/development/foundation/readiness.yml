@@ -141,11 +141,16 @@ items:
 
   - name: Reliability Contracts
     implementation:
-      status: implemented
+      status: blocked
       progress: 7/7
+      gaps:
+        - freshness 미측정 상태와 실제 freshness timestamp를 구분하는 canonical 표현 확정
     verification:
-      status: passing
+      status: blocked
       progress: 7/7
+      gaps:
+        - state: failing
+          text: profile-snapshots spec과 test가 freshness 미측정 시 observed_at을 freshness_at으로 대체하도록 고정해 freshness_delay detector가 미측정을 실제 freshness로 해석할 수 있음
 
   - name: Read-Only Lifecycle Boundary
     implementation:
@@ -156,23 +161,35 @@ items:
       progress: 15/15
       gaps:
         - state: unverified
-          text: lifecycle read-only 구조와 tests는 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
+          text: detection·impact·LangGraph remediation·read-only lifecycle oracle은 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
+        - state: unverified
+          text: impact analysis는 dbt artifact에 의존하므로 upstream Evidence Retention blocker 해소 후 end-to-end 재검증 필요
 
   - name: Recovery Boundary
     implementation:
       status: implemented
       progress: 4/4
     verification:
-      status: passing
+      status: unverified
       progress: 4/4
+      gaps:
+        - state: unverified
+          text: approval gate와 partition overwrite integration oracle은 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
+        - state: unverified
+          text: canonical approval-backfill-validation spec의 Purpose가 아직 TBD 상태임
 
   - name: Evaluation Boundary
     implementation:
       status: implemented
       progress: 2/2
     verification:
-      status: passing
+      status: unverified
       progress: 2/2
+      gaps:
+        - state: unverified
+          text: synthetic case aggregation과 Markdown output oracle은 존재하지만 최신 main HEAD 실행 evidence가 확인되지 않음
+        - state: unverified
+          text: canonical evaluation-report spec의 Purpose가 아직 TBD 상태임
 
   - name: Pipeline Execution Boundaries
     implementation:
@@ -223,6 +240,12 @@ risks:
   - area: Data Operations
     text: public stage가 일부 HMDA·Reliability·DuckDB 오류를 DataOperationError로 변환하지 않음
     impact: caller가 application boundary 아래의 오류 taxonomy에 결합됨
+  - area: Reliability
+    text: freshness 미측정을 observed_at으로 대체하는 canonical contract가 실제 freshness와 미측정을 구분하지 못함
+    impact: freshness_delay 탐지에서 false negative를 만들 수 있어 reliability evidence 의미가 왜곡될 수 있음
+  - area: Reliability Specs
+    text: approval-backfill-validation과 evaluation-report canonical spec의 Purpose가 TBD 상태임
+    impact: 구현과 test가 있어도 canonical capability 의도와 경계를 완전히 설명하지 못함
   - area: Gold Analysis Metrics
     text: action_taken code별 모집단과 approval_rate denominator가 canonical contract에 없음
     impact: mart 결과가 계산되더라도 비즈니스 의미의 correctness를 검증할 수 없음
@@ -244,3 +267,11 @@ references:
   - "OpenSpec spec: `hmda-eda-baseline`"
   - "OpenSpec spec: `dbt-analytics-foundation`"
   - "OpenSpec spec: `pipeline-stage-runtime`"
+  - "OpenSpec spec: `reliability-contracts`"
+  - "OpenSpec spec: `profile-snapshots`"
+  - "OpenSpec spec: `basic-incident-detection`"
+  - "OpenSpec spec: `impact-analysis`"
+  - "OpenSpec spec: `remediation-draft`"
+  - "OpenSpec spec: `incident-lifecycle-runtime`"
+  - "OpenSpec spec: `approval-backfill-validation`"
+  - "OpenSpec spec: `evaluation-report`"
