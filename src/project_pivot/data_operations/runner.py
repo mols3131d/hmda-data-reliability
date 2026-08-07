@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from subprocess import CompletedProcess
 
 from project_pivot.data_operations.dbt_result import DbtBuildResult
 from project_pivot.data_operations.errors import DataOperationError
@@ -43,33 +44,9 @@ def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
 def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
     """dbt build를 실행하고 artifact 경로를 반환한다."""
 
-    command = [
-        "dbt",
-        "build",
-        "--project-dir",
-        str(request.dbt_project_dir),
-        "--profiles-dir",
-        str(request.dbt_profiles_dir),
-    ]
-    env = os.environ.copy()
-    env["PROJECT_PIVOT_DUCKDB_PATH"] = str(request.database_path)
-    env["DBT_SEND_ANONYMOUS_USAGE_STATS"] = "false"
+    command = _build_dbt_command(request)
     _remove_dbt_artifacts(request)
-    try:
-        result = subprocess.run(
-            command,
-            check=False,
-            capture_output=True,
-            env=env,
-            text=True,
-            timeout=_DBT_BUILD_TIMEOUT_SECONDS,
-        )
-    except subprocess.TimeoutExpired as exc:
-        msg = f"dbt build 실행 시간이 {_DBT_BUILD_TIMEOUT_SECONDS}초를 초과했습니다."
-        raise DataOperationError(msg) from exc
-    except OSError as exc:
-        msg = "dbt build 프로세스를 시작할 수 없습니다."
-        raise DataOperationError(msg) from exc
+    result = _run_dbt_command(command, request)
     if result.returncode != 0:
         stderr_lines = result.stderr.strip().splitlines()
         stderr = stderr_lines[-1][:500] if stderr_lines else "출력 없음"
@@ -86,6 +63,42 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
         run_results_path=request.dbt_run_results_path,
         succeeded=True,
     )
+
+
+def _build_dbt_command(request: DataOperationRequest) -> list[str]:
+    """dbt build 커맨드 리스트를 생성합니다."""
+    return [
+        "dbt",
+        "build",
+        "--project-dir",
+        str(request.dbt_project_dir),
+        "--profiles-dir",
+        str(request.dbt_profiles_dir),
+    ]
+
+
+def _run_dbt_command(
+    command: list[str], request: DataOperationRequest
+) -> CompletedProcess[str]:
+    """dbt build를 실행하고 결과 CompletedProcess를 반환합니다."""
+    env = os.environ.copy()
+    env["PROJECT_PIVOT_DUCKDB_PATH"] = str(request.database_path)
+    env["DBT_SEND_ANONYMOUS_USAGE_STATS"] = "false"
+    try:
+        return subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            env=env,
+            text=True,
+            timeout=_DBT_BUILD_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        msg = f"dbt build 실행 시간이 {_DBT_BUILD_TIMEOUT_SECONDS}초를 초과했습니다."
+        raise DataOperationError(msg) from exc
+    except OSError as exc:
+        msg = "dbt build 프로세스를 시작할 수 없습니다."
+        raise DataOperationError(msg) from exc
 
 
 def _remove_dbt_artifacts(request: DataOperationRequest) -> None:
