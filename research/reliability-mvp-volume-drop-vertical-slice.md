@@ -110,10 +110,10 @@ writer gate
 → approved downstream verification/rebuild
 ```
 
-Gate는 consistent snapshot/digest를 얻거나 target mutation을 수행하는 동안만 유지한다. Candidate의 full dbt validation 동안 canonical target writer를 막지 않는다.
+Gate는 consistent snapshot/digest를 얻거나 target mutation을 수행하는 동안만 유지한다. Candidate의 full dbt validation 동안 target writer를 막지 않는다.
 
 - **Evidence** - `src/project_pivot/hmda_data/ingestion/partition.py`
-- **Implication** - target-state mismatch나 gate 획득 실패가 있으면 canonical mutation 전에 중단하고 candidate validation부터 다시 수행한다.
+- **Implication** - target-state mismatch나 gate 획득 실패가 있으면 target mutation 전에 중단하고 candidate validation부터 다시 수행한다.
 
 ### F5. Candidate validation은 적용 결과와 full partition identity를 검증해야 한다
 
@@ -135,19 +135,19 @@ Partition fingerprint는 duplicate를 보존하는 row multiset semantics를 사
 - **Evidence** - `src/project_pivot/hmda_data/ingestion/partition.py`
 - **Implication** - recovery oracle은 일부 profile column이 아니라 실제 replacement 대상 partition의 identity를 검증한다.
 
-### F6. Candidate와 recovery dbt 실행은 canonical artifact를 파괴하면 안 된다
+### F6. Candidate와 recovery dbt 실행은 current shared artifact를 파괴하면 안 된다
 
 현재 `run_dbt_build()`는 실행 전에 configured `manifest.json`과 `run_results.json`을 삭제하며, `DataOperationRequest`의 기본 경로는 공유 `dbt/target`이다. 따라서 isolated candidate validation이 같은 경로를 사용하면 기존 impact evidence를 지우거나 candidate artifact로 교체할 수 있다. Recovery build 실패도 동일하게 last-known-good evidence를 잃을 수 있다.
 
 MVP contract는 다음을 보장해야 한다.
 
-- candidate validation은 run-scoped artifact workspace를 사용하고 canonical artifacts를 변경하지 않는다.
-- recovery build가 실패해도 이전 last-known-good canonical artifact는 유지한다.
+- candidate validation은 run-scoped artifact workspace를 사용하고 current shared dbt artifacts를 변경하지 않는다.
+- recovery build가 실패해도 이전 last-known-good shared artifacts를 유지한다.
 - failed build의 artifact/evidence는 해당 run에 귀속해 보존한다.
-- 성공한 build만 검증 후 새로운 canonical projection으로 승격한다.
-- approval과 run evidence는 어떤 artifact projection으로 validation/recovery가 결정됐는지 식별한다.
+- 성공한 build만 검증 후 새로운 current artifact projection으로 승격한다.
+- approval과 run evidence는 validation/recovery 판단에 사용한 artifact projection을 식별한다.
 
-Exact path, atomic promotion mechanism과 retention 기간은 Design이 결정한다.
+Exact path, promotion mechanism과 retention 기간은 Design이 결정한다.
 
 - **Evidence** - `src/project_pivot/data_operations/runner.py`, `src/project_pivot/data_operations/request.py`, `docs/development/foundation/readiness.md`
 - **Implication** - dbt artifact safety는 운영 편의가 아니라 replay, reconciliation과 approval evidence의 정확성을 위한 MVP correctness contract다.
@@ -167,14 +167,14 @@ analyzed
 → verified
 
 validated → rejected
-before canonical mutation → failed
+before target mutation → failed
 partition_replaced → verification_failed
 verification_failed → reconciled | verified
 ```
 
 Exact enum은 Planning/Design에서 정한다. Behavioral contract는 다음만 고정한다.
 
-- canonical mutation이 시작됐는지 evidence로 구분한다.
+- target mutation이 시작됐는지 evidence로 구분한다.
 - partition commit 이후 failure를 성공으로 보고하지 않는다.
 - 같은 run, approval, candidate에 대해 idempotent reconciliation을 허용한다.
 - reconciliation은 current partition fingerprint를 확인해 불필요한 overwrite를 피하고 profile/dbt verification을 재실행한다.
@@ -189,7 +189,7 @@ Research가 확정하는 사항:
 
 - `volume_drop` 단일 vertical slice
 - candidate validation 후 approval
-- 모든 canonical mutation의 approval binding
+- 모든 target mutation의 approval binding
 - short-lived writer gate + stale-state revalidation
 - full-source partition identity
 - dbt artifact isolation/last-known-good preservation
@@ -229,12 +229,12 @@ Planning/Design이 결정할 사항:
 | Clean baseline | incident 없음, impact/remediation analysis 없음 |
 | Controlled volume drop | 정확한 detection, downstream impact와 remediation draft |
 | Candidate validation failure | approval과 recovery 진입 차단 |
-| Mismatched candidate | candidate digest mismatch, canonical mutation 전 차단 |
-| Stale target state | writer gate 안에서 digest mismatch, canonical mutation 전 차단 |
+| Mismatched candidate | candidate digest mismatch, target mutation 전 차단 |
+| Stale target state | writer gate 안에서 digest mismatch, target mutation 전 차단 |
 | Unauthorized dbt mutation | required dbt action 또는 project/config binding이 없으면 recovery 차단 |
-| Candidate dbt failure | canonical database/artifact 변경 없음, failed-run evidence 보존 |
+| Candidate dbt failure | target database와 current shared dbt artifacts 변경 없음, failed-run evidence 보존 |
 | Approved recovery | partition identity, incident resolution, profile과 full dbt build 검증 통과 |
-| Recovery dbt failure | `verification_failed`, prior last-known-good artifact 유지 |
+| Recovery dbt failure | `verification_failed`, prior last-known-good shared artifact 유지 |
 | Recovery reconciliation | 같은 run/approval/candidate로 idempotent하게 verification 완료 |
 | Repeated recovery | duplicate 증가와 semantic drift 없음 |
 | Omitted-column corruption | full-source fingerprint mismatch로 실패 |
@@ -260,7 +260,7 @@ Foundation readiness는 이미 `GO`이므로 후속 OpenSpec Planning을 시작�
 | `approval-backfill-validation` | target/candidate/validation/dbt action/stale-state binding 확장 |
 | New `recovery-candidate-validation` | isolated target snapshot, candidate apply, isolated full dbt build |
 | New `reliability-recovery-run` | phase evidence, approved mutations, artifact promotion, reconciliation/replay |
-| `data-operations-dbt-runner` | run-scoped artifact output와 last-known-good promotion behavior를 필요 시 확장 |
+| `pipeline-stage-runtime` | dbt stage가 run-scoped artifact output과 last-known-good 보존을 지원하도록 필요 시 확장 |
 | `evaluation-report` | 기존 detector/action evaluation 책임 유지 |
 
 Out of scope:
@@ -286,6 +286,7 @@ Out of scope:
 | dbt table materialization | F3, F7 | `dbt/dbt_project.yml` |
 | dbt pre-build artifact deletion | F6, F7 | `src/project_pivot/data_operations/runner.py` |
 | Shared default dbt artifact paths | F6 | `src/project_pivot/data_operations/request.py` |
+| Canonical dbt stage contract | F6 | `openspec/specs/pipeline-stage-runtime/spec.md` |
 | Research lifecycle/template | F8 | `research/AGENTS.md`, `inbox/_templates/research.md` |
 | Active runner refactor scope/status | F8 | `openspec/changes/data-operations-refactor-runner/` |
 
@@ -295,6 +296,6 @@ Out of scope:
 | --- | --- | --- |
 | Local writer gate의 owner와 mechanism은 무엇인가? | snapshot과 overwrite 사이 경쟁 조건을 닫아야 함 | Design에서 process lock + DuckDB boundary 결정 |
 | Full-source fingerprint normalization은 무엇인가? | type/null/duplicate/order에 독립적인 oracle 필요 | Spec scenario + property test로 확정 |
-| dbt run workspace와 canonical artifact promotion은 어떻게 분리하는가? | failed build가 prior evidence를 파괴하면 안 됨 | Design에서 path/promotion/retention 결정 |
+| dbt run workspace와 current artifact promotion은 어떻게 분리하는가? | failed build가 prior evidence를 파괴하면 안 됨 | Design에서 path/promotion/retention 결정 |
 | Reconciliation이 partition overwrite를 언제 생략하는가? | partial failure 재실행이 안전하고 idempotent해야 함 | fingerprint와 phase evidence 조건 설계 |
-| Active runner refactor는 언제 archive하는가? | 동일 capability의 overlapping Change를 피해야 함 | MVP Change 생성 전 lifecycle 정리 |
+| Active runner refactor는 언제 archive하는가? | 동일 runner의 overlapping Change를 피해야 함 | MVP Change 생성 전 lifecycle 정리 |
