@@ -8,7 +8,7 @@ dashboard:
   include_total: true
   decision:
     status: go
-    summary: 'B1, B2, B4 blocker가 해결되었으며 Foundation focused suite 57개 테스트 및 actual-source evidence가 audited revision 기준 전건 Passing 상태다.'
+    summary: 'Foundation focused suite는 audited test revision에서 57 passed이며, actual-source evidence는 별도 execution revision에서 생성된 뒤 EDA runtime·source·generator 변경 없이 evidence commit에 반영됐다.'
 
 scope:
   source: "OpenSpec spec: `foundation-baseline`"
@@ -33,11 +33,17 @@ scope:
 verification_basis:
   repository_ref: main
   repository_revision: feea63fe5945c353f2f9b70b57a29cbe7294dafa
+  actual_source_execution_revision: 17522ddc42748fe22e779f50b8e328ebaf2d4abb
+  actual_source_evidence_commit: feea63fe5945c353f2f9b70b57a29cbe7294dafa
+  evidence_applicability: 'execution revision과 evidence commit 사이에는 generated EDA evidence artifact만 변경되었고 EDA calculation, source, evidence generator semantics는 변경되지 않았다.'
   audited_execution:
     status: passing
-    note: 'Audited revision에서 Foundation focused suite (57 passed) 및 actual-source evidence가 검증됨.'
+    note: 'Audited test revision에서 Foundation focused suite 57 passed.'
+  current_pr_validation:
+    status: not_run
+    note: 'OpenSpec provenance contract와 Gold approval-rate oracle을 강화했지만 current PR head에서 CLI/runtime validation은 재실행하지 않았다.'
   progress_semantics: 'verification progress는 readiness 내부 checklist coverage이며 canonical requirement/test case/oracle 개수나 current 실행 통과율이 아니다.'
-  status_semantics: '표시된 verification status는 audited revision의 실행 근거다. 이후 문서/OpenSpec 정합화만 수행한 경우 current HEAD 실행으로 해석하지 않는다.'
+  status_semantics: '표시된 verification status는 audited evidence 상태다. current PR head 실행 결과로 해석하지 않는다.'
 
 items:
   - name: HMDA Source Ingestion
@@ -153,7 +159,7 @@ non_gating:
     finding: 'detection, impact, LangGraph remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
   - name: Approval Backfill Validation
     status: implemented-unverified
-    finding: 'integration oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
+    finding: 'year-level profile validation contract는 현재 구현과 정렬했지만 `source_file` scoped profile validation은 guaranteed contract 밖이며 current HEAD 실행 evidence가 없다.'
   - name: Evaluation Report
     status: implemented-unverified
     finding: 'aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
