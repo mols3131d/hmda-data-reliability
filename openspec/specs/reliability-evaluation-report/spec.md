@@ -16,6 +16,11 @@ Synthetic reliability case의 expected/actual detection과 action 결과를 집�
 - **THEN** 각 case의 expected incident가 모두 detected되고 required action이 모두 remediation action에 포함된 경우 해당 결과를 성공으로 판정해야 한다.
 - **AND** 전체 detection/action 성공률은 각 성공 case 수를 전체 case 수로 나눈 값이어야 한다.
 
+#### Scenario: Empty case list
+
+- **WHEN** 평가할 synthetic case가 없을 때
+- **THEN** detection success rate와 action success rate는 0.0이어야 한다.
+
 ### Requirement: Normal case handling
 
 시스템은 expected incident가 없는 normal case에서 실제 detection도 없으면 detection 성공으로 판정해야 한다(SHALL).
