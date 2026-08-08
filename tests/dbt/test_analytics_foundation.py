@@ -64,7 +64,7 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
         first_metric_rows
         == second_metric_rows
         == [
-            (2025, "CA", 1, 2, 2, 0, 1.0, 400000.0, 125.0),
+            (2025, "CA", 1, 2, 1, 0, 0.5, 400000.0, 125.0),
             (2025, "NY", 31, 2, 0, 2, 0.0, 400000.0, 95.0),
         ]
     )
@@ -92,7 +92,7 @@ def _write_hmda_csv(tmp_path: Path) -> Path:
             [
                 "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,county_code",
                 "2025,1,1,350000,120,CA,06001",
-                "2025,1,2,450000,130,CA,06001",
+                "2025,1,4,450000,130,CA,06001",
                 "2025,31,3,420000,95,NY,36061",
                 "2025,31,7,380000,95,NY,36061",
                 "2025,1,1,invalid,Exempt,,",

@@ -12,11 +12,14 @@ tags:
 > [!NOTE]
 > `data_operations/runner.py`의 `run_dbt_build` 함수에서 dbt CLI 인자 구성 및 프로세스 실행 로직을 전용 헬퍼 함수로 분리하여 단일 책임 원칙(SRP)을 준수하고 단위 테스트 용이성을 개선합니다.
 
+> [!IMPORTANT]
+> Archive reconciliation에서 이 변경은 observable behavior나 public contract를 바꾸지 않은 내부 refactor로 재분류했다. 아래 `data-operations-dbt-runner` delta는 당시 planning 기록으로만 보존하며 `openspec/specs/`에는 sync하지 않는다. Reusable dbt stage behavior의 canonical owner는 기존 `pipeline-stage-runtime`이다.
+
 ## Overview
 
 | Why | What | Capabilities |
 | --- | --- | --- |
-| `run_dbt_build` 내에 CLI 커맨드 구성, subprocess 실행, 아티팩트 관리가 결합되어 있어 가독성과 모킹/테스트 용이성이 떨어짐 | `_build_dbt_command` 및 `_run_dbt_command` 헬퍼 함수 추출 | `data-operations-dbt-runner` |
+| `run_dbt_build` 내에 CLI 커맨드 구성, subprocess 실행, 아티팩트 관리가 결합되어 있어 가독성과 모킹/테스트 용이성이 떨어짐 | `_build_dbt_command` 및 `_run_dbt_command` 헬퍼 함수 추출 | historical `data-operations-dbt-runner` planning only |
 
 ## Why
 
@@ -41,7 +44,7 @@ tags:
 
 #### `data-operations-dbt-runner`
 
-- `run_dbt_build`는 커맨드 빌더(`_build_dbt_command`)와 커맨드 러너(`_run_dbt_command`)를 순차적으로 호출하여 기존 public 인터페이스 및 아티팩트 검증 계약을 유지합니다.
+- 당시 planning에서는 `run_dbt_build`의 내부 helper 구조를 별도 Capability로 분류했으나, archive 시점에는 canonical capability로 승격하지 않는다.
 
 ## Impact
 

@@ -2,74 +2,75 @@
 
 ## Purpose
 
-기초 문서를 현재 repo의 foundation 완료 증거, 제외 범위, 후속 MVP 후보와 연결하는 기준선을 정의한다.
+Foundation의 완료 범위와 검증 근거를 현재 repository 상태에 연결하고, 이후 MVP capability의 구현·검증 상태와 독립적인 phase completion boundary를 정의한다.
 
 ## Requirements
 
 ### Requirement: Foundation source alignment
 
-시스템은 기초 문서의 foundation 목적, 원칙, MVP 범위, 작업 순서를 repo의 공식 기준선과 연결해야 한다(SHALL). 공식 기준선은 기초 문서의 반복 설명을 그대로 복제하지 않고 완료 판단에 필요한 핵심 요구만 제공해야 한다(MUST).
+시스템은 Foundation 목적, 원칙과 완료 범위를 repository의 공식 기준선과 연결해야 한다(SHALL). 공식 기준선은 Foundation 문서의 설명을 반복하지 않고 완료 판단에 필요한 핵심 요구와 근거를 제공해야 한다(MUST).
 
-#### Scenario: foundation 기준선 입력 확인
+#### Scenario: Foundation 기준선 입력 확인
 
-- **WHEN** 사용자가 foundation 기준선을 확인할 때
-- **THEN** repo 문서는 `docs/development/foundation/` 문서를 입력 근거로 참조해야 한다.
+- **WHEN** 사용자가 Foundation 기준선을 확인할 때
+- **THEN** repository 문서는 `docs/development/foundation/`의 Foundation 문서를 입력 근거로 참조해야 한다.
 
 #### Scenario: 문서 역할 중복 방지
 
-- **WHEN** 사용자가 proposal, architecture, tech stack, MVP scope 역할을 비교할 때
-- **THEN** foundation 기준선은 비전, 아키텍처, 구현 후보, 완료 증거를 서로 다른 역할로 구분해야 한다.
+- **WHEN** 사용자가 Foundation 문서, architecture와 OpenSpec의 역할을 비교할 때
+- **THEN** Foundation baseline은 phase 완료 계약과 검증 근거만 소유하고 비전, architecture와 상세 domain contract를 중복 정의해서는 안 된다.
 
 ### Requirement: Foundation evidence inventory
 
-시스템은 foundation 완료 증거를 OpenSpec archive, 현재 spec, 테스트 명령으로 추적 가능하게 제공해야 한다(SHALL). foundation 증거에는 HMDA raw data의 기초 EDA, reliability contract, HMDA data foundation, partition ingestion, dbt analytics foundation이 포함되어야 한다(MUST).
+시스템은 Foundation 완료 근거를 OpenSpec archive, current specs와 검증 command로 추적 가능하게 제공해야 한다(SHALL). Foundation evidence에는 HMDA source ingestion, partition ingestion, dbt analytics, HMDA EDA와 reliability contracts가 포함되어야 한다(MUST).
 
-#### Scenario: 완료된 foundation capability 확인
+#### Scenario: 완료된 Foundation capability 확인
 
-- **WHEN** 사용자가 foundation 완료 증거를 확인할 때
-- **THEN** 문서는 완료된 OpenSpec archive와 현재 spec 위치를 함께 제공해야 한다.
-- **AND** 각 foundation capability는 검증 가능한 테스트 또는 명령을 가져야 한다.
+- **WHEN** 사용자가 Foundation 완료 근거를 확인할 때
+- **THEN** 각 Foundation capability의 current spec과 관련 archive 이력을 추적할 수 있어야 한다.
+- **AND** 각 Foundation capability는 검증 가능한 test 또는 command 근거를 가져야 한다.
 
 ### Requirement: Foundational EDA readiness
 
-다루는 데이터의 기초 EDA는 foundation 완료 전에 수행되어야 한다(SHALL). EDA는 원천 데이터의 six-core schema, 전체 및 주요 partition별 volume, core-column null baseline, categorical distribution, numeric summary와 complete-key grain coverage를 read-only evidence로 확인해야 한다(MUST). EDA 결과와 재현 경로는 domain 문서, Python script, automated test command로 추적 가능해야 한다(MUST).
+Foundation 완료 전 HMDA EDA는 six-core schema/type compatibility, volume, null baseline, categorical distribution, numeric summary와 complete-key grain coverage를 read-only evidence로 제공해야 한다(SHALL). EDA의 상세 행동 계약은 `hmda-eda-baseline`이 소유하며 Foundation baseline은 이를 중복 정의해서는 안 된다(MUST NOT).
 
 #### Scenario: HMDA 기초 EDA 완료 확인
 
-- **WHEN** 사용자가 foundation readiness를 검토할 때
-- **THEN** HMDA 원천 CSV에 대한 six-core schema, row count, `activity_year`별 row count, core-column null rate, distribution, numeric summary와 complete-key grain coverage evidence를 확인할 수 있어야 한다.
-- **AND** EDA는 원천 파일, Bronze table, incident lifecycle을 변경하지 않는 read-only 실행이어야 한다.
-- **AND** EDA correctness와 controlled actual-source observation을 검증하는 test 또는 command가 문서에 제공되어야 한다.
+- **WHEN** 사용자가 Foundation readiness를 검토할 때
+- **THEN** current `hmda-eda-baseline` contract를 만족하는 controlled actual-source evidence를 확인할 수 있어야 한다.
+- **AND** 이전 execution revision의 evidence를 사용하는 경우 `hmda-eda-baseline`의 evidence applicability 조건을 충족해야 한다.
+- **AND** audited revision과 evidence execution revision이 다르면 readiness에서 둘을 구분해 기록해야 한다.
 
-#### Scenario: contract 기준 확인
+#### Scenario: Contract 기준 확인
 
-- **WHEN** 사용자가 foundation contract 범위를 확인할 때
-- **THEN** `Incident`, `Evidence`, `ProfileSnapshot`, `LineageEvidence`, `Approval` contract가 foundation evidence inventory에 포함되어야 한다.
+- **WHEN** 사용자가 Foundation reliability contract 범위를 확인할 때
+- **THEN** `Incident`, `Evidence`, `ProfileSnapshot`, `LineageEvidence`, `Approval`의 current contract가 Foundation evidence inventory에 포함되어야 한다.
 
-### Requirement: MVP boundary separation
+### Requirement: Post-Foundation capability separation
 
-시스템은 foundation 완료 범위와 MVP 구현 후보를 분리해야 한다(SHALL). detector, LangGraph RCA workflow, Dagster asset graph, production deployment, dashboard UI는 foundation 완료 범위에 포함하지 않아야 한다(MUST NOT).
+시스템은 Foundation completion과 이후 capability의 구현 또는 검증 상태를 분리해야 한다(SHALL). Profile lifecycle, incident detection, impact analysis, remediation, approved recovery, evaluation, Dagster control-plane과 이후 MVP 기능은 Foundation baseline에 명시적으로 포함되지 않는 한 Foundation 완료의 선행조건이 되어서는 안 된다(MUST NOT).
 
-#### Scenario: 다음 작업 선택
+#### Scenario: Non-gating capability 상태 확인
 
-- **WHEN** 사용자가 foundation 이후 다음 OpenSpec 변경을 선택할 때
-- **THEN** 문서는 profile snapshot, incident detection, impact analysis, remediation draft, approval/backfill/validation, evaluation report를 후속 MVP 후보로 보여야 한다.
+- **WHEN** Foundation 범위 밖 capability가 미구현, 미검증 또는 blocked 상태일 때
+- **THEN** 해당 상태는 후속 작업 또는 risk로 기록할 수 있어야 한다.
+- **AND** 그 상태만으로 Foundation completion을 미완료로 판정해서는 안 된다.
 
-#### Scenario: foundation 제외 범위 확인
+#### Scenario: 다음 phase 진입
 
-- **WHEN** 사용자가 foundation 완료 여부를 검토할 때
-- **THEN** detector, LangGraph, Dagster asset graph가 구현되지 않았다는 이유만으로 foundation baseline이 미완료로 판단되지 않아야 한다.
+- **WHEN** Foundation readiness가 current evidence에서 `GO`이고 blocker가 없을 때
+- **THEN** 이후 OpenSpec Change는 자체 planning과 validation gate에 따라 진행할 수 있어야 한다.
 
 ### Requirement: Foundation readiness verification
 
-시스템은 foundation baseline이 현재 repo 상태에서 검증 가능하도록 readiness checklist를 제공해야 한다(SHALL). checklist는 문서 경로, OpenSpec 상태, 테스트 명령을 포함해야 한다(MUST).
+시스템은 Foundation baseline을 현재 repository revision에서 검증할 수 있는 readiness view를 제공해야 한다(SHALL). readiness는 decision, audited revision, capability coverage, blocker와 재현 가능한 검증 command를 포함해야 하며(MUST), evidence execution revision이 audited revision과 다르면 별도로 기록해야 한다(MUST).
 
-#### Scenario: readiness checklist 검증
+#### Scenario: Readiness 확인
 
-- **WHEN** 사용자가 foundation readiness 문서를 열 때
-- **THEN** 완료 증거, 제외 범위, 다음 작업, 검증 명령이 한 화면에서 확인 가능해야 한다.
+- **WHEN** 사용자가 Foundation readiness를 확인할 때
+- **THEN** 완료 decision, 근거 revision, capability별 검증 상태, blocker와 validation command를 확인할 수 있어야 한다.
 
-#### Scenario: OpenSpec workflow 적용 확인
+#### Scenario: OpenSpec history 추적
 
-- **WHEN** 사용자가 foundation baseline OpenSpec 변경 이력을 확인할 때
-- **THEN** `openspec/changes/archive/` 아래 `2026-06-10-complete-foundation-baseline` archive에 proposal, design, specs, tasks artifact가 있어야 한다.
+- **WHEN** 사용자가 Foundation contract가 현재 형태가 된 이력을 확인할 때
+- **THEN** original Foundation completion archive와 이후 Foundation 또는 EDA scope를 변경한 archive에서 current specs까지 추적할 수 있어야 한다.

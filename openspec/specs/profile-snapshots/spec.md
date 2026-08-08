@@ -8,13 +8,18 @@ DuckDB asset partition의 품질 지표를 계산해 detector 입력용 `Profile
 
 ### Requirement: Partition profile snapshot calculation
 
-시스템은 DuckDB asset의 특정 daily partition을 대상으로 row count, null rate, schema hash, freshness 값을 계산해 `ProfileSnapshot` contract로 반환해야 한다(SHALL).
+시스템은 DuckDB asset의 지정된 partition을 대상으로 row count, null rate, schema hash, freshness 값을 계산해 `ProfileSnapshot` contract로 반환해야 한다(SHALL). Partition identity는 대상 dataset의 partition contract에 맞는 date, integer 또는 string 값을 사용할 수 있어야 한다(MUST).
 
 #### Scenario: 유효한 partition profile 생성
 
-- **WHEN** 사용자가 asset table, partition column, partition date를 지정해 profile 계산을 실행할 때
+- **WHEN** 사용자가 asset table, partition column과 partition identity를 지정해 profile 계산을 실행할 때
 - **THEN** 결과는 `snapshot_id`, `asset_name`, `partition`, `observed_at`, `row_count`, `null_rates`, `schema_hash`, `freshness_at`, `metric_values`를 포함하는 `ProfileSnapshot`이어야 한다.
-- **AND** `row_count`는 partition 조건에 맞는 행 수와 일치해야 한다.
+- **AND** `row_count`는 지정된 partition 조건에 맞는 행 수와 일치해야 한다.
+
+#### Scenario: HMDA year partition profile 생성
+
+- **WHEN** HMDA profile이 `source_year` 또는 연도 기반 partition identity를 사용해 계산될 때
+- **THEN** integer year partition을 유효한 profile partition으로 처리해야 한다.
 
 ### Requirement: Null rate metric calculation
 
