@@ -18,7 +18,7 @@ EDA는 입력 CSV의 존재를 확인하고 DuckDB parse 오류가 발생하면 
 
 ### Requirement: Six-core schema, volume and null baseline
 
-EDA는 `activity_year`, `state_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income`의 type family compatibility, 전체 row count, `activity_year`별 row count, null count와 null rate를 제공해야 한다(SHALL). `county_code`는 EDA type compatibility 또는 metric 대상에 포함해서는 안 된다(MUST NOT).
+EDA는 `activity_year`, `state_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income`의 type family compatibility, 전체 row count, `activity_year`별 row count, null count와 null rate를 제공해야 한다(SHALL). HMDA ingestion은 `county_code`를 포함한 source required-column contract를 소유하며, `county_code`는 EDA type compatibility 또는 metric 대상에 포함해서는 안 된다(MUST NOT).
 
 #### Scenario: Six-core source is compatible
 
@@ -31,6 +31,12 @@ EDA는 `activity_year`, `state_code`, `loan_purpose`, `action_taken`, `loan_amou
 - **WHEN** 여섯 core column 중 하나가 없거나 type family가 호환되지 않을 때
 - **THEN** EDA는 대상 column을 식별하는 validation failure로 종료해야 한다.
 - **AND** partial evidence를 반환해서는 안 된다.
+
+#### Scenario: Ingestion and EDA ownership remain separate
+
+- **WHEN** 사용자가 ingestion source contract와 EDA descriptive contract를 비교할 때
+- **THEN** ingestion은 `county_code`를 포함한 source required-column 존재 계약을 소유해야 한다.
+- **AND** EDA의 direct-call validation은 six-core 계산 입력을 방어하는 동작이며 ingestion ownership을 대체해서는 안 된다.
 
 ### Requirement: Descriptive distributions and numeric summaries
 
