@@ -1,12 +1,13 @@
 # OpenSpec Agent Rules
 
-`openspec/` 아래의 artifact를 생성, 수정, 리팩토링할 때 적용한다.
+`openspec/` 아래 artifact를 생성, 수정, 리팩토링할 때 적용한다.
 
 ## 먼저 확인
 
-- [`config.yaml`](config.yaml): OpenSpec artifact 계약
-- 작업 대상의 `README.md`와 `AGENTS.md`
-- 작업 대상과 관련된 current Spec과 active Change
+- [`README.md`](README.md): 지침 소유권과 구조
+- [`config.yaml`](config.yaml): Project Pivot 전용 OpenSpec 규칙
+- 사용 중인 schema와 작업 대상의 `README.md`, `AGENTS.md`
+- 관련 current Spec과 active Change
 
 ## 작업 규칙
 
