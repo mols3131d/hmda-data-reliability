@@ -99,7 +99,7 @@ actual-source observation은 한 controlled run에서 portable JSON과 그 JSON�
 #### Scenario: Evidence applicability across revisions
 
 - **WHEN** readiness revision이 evidence execution revision보다 뒤에 있을 때
-- **THEN** source fingerprint가 같고 두 revision 사이에 EDA calculation, evidence generator 또는 observation semantics에 영향을 주는 변경이 없음을 확인한 경우에만 기존 evidence를 사용할 수 있어야 한다.
+- **THEN** source fingerprint가 같고 두 revision 사이에 EDA calculation, evidence generator 또는 portable evidence schema에 영향을 주는 변경이 없음을 확인한 경우에만 기존 evidence를 사용할 수 있어야 한다.
 - **AND** readiness는 audited revision과 evidence execution revision을 구분해 기록해야 한다.
 
 #### Scenario: Applicable evidence is absent
