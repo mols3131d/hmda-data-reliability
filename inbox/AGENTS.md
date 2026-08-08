@@ -1,56 +1,66 @@
 # Inbox
 
-## Purpose
+`inbox/` stores temporary, non-canonical artifacts produced during investigation, review, discussion, and decision support.
 
-`inbox/` is a temporary, non-canonical workspace.
+`AGENTS.md`, `_guidelines/`, and `_templates/` are operating assets, not inbox artifacts.
+
+## Workflow
+
+1. Identify the artifact's primary purpose and type.
+1. Read only the relevant type guideline when one exists.
+1. Write the artifact under the current date directory.
+
+## Artifact Contract
+
+Artifact types are open-ended. Use the clearest purpose-based lowercase kebab-case type. When no clearer type applies, use `report` for long-form work and `brief` for short-form work.
+
+Use the same type in the filename and frontmatter.
+
+```yaml
+---
+type: <artifact-type>
+title: <title>
+description: <description>
+tags: [] # Optional
+---
+```
+
+`type` is required. Other fields are optional when they improve identification or retrieval.
 
 ## Paths
 
-```python
-name = "-".join(
-    filter(
-        None,
-        [domain, subdomain, capability, short_title, *extensions],
-    )
-)
-```
-
 ```text
-inbox/{created_at:%Y-%m-%d}/{created_at:%H-%M}-{name}.md
-inbox/{created_at:%Y-%m-%d}/{created_at:%H-%M}-{name}/*
+inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>].md
+inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]/*
 ```
 
-- Resolve `created_at` in `Asia/Seoul`.
+- Resolve date and time in `Asia/Seoul`.
 - Use lowercase kebab-case.
-- `domain` and `short_title` are required.
-- `subdomain`, `capability`, and `extensions` are optional.
-- Use `extensions` to distinguish or index artifacts.
+- `type`, `domain`, and `short-title` are required.
+- Add optional components only when they improve identification or indexing.
 
-## Frontmatter Recommendations
+## Routing
 
-```yaml
-title: <title>
-description: <description>
-tags: [] # Optional. Namespaced tags using `:` are allowed.
-```
+| Type | Guideline |
+| --- | --- |
+| `research` | [Research](_guidelines/research.md) |
+| `review` | [Review](_guidelines/review.md) |
+
+Other artifact types use this common contract unless dedicated guidance exists. Add a guideline only when a recurring type needs a distinct contract.
+
+For writes to the dedicated `inbox` branch, follow [Inbox Branch](../docs/development/vcs-git/branch.md#inbox-branch).
 
 ## Writing
 
-- Write for human readability.
-- Use `Summary` or `Overview` when useful.
-- Use structured Markdown and visuals only when they improve comprehension.
+- Write for human readability and low interpretation cost.
+- Separate verified facts, inference, assumptions, and unresolved uncertainty when material.
+- Use structure or visuals only when they improve comprehension.
+- Do not store secrets, full generated output, or large logs.
 
-## Archive
+## Lifecycle
 
-When `inbox/` reaches 8 date directories, move the oldest 4 to `inbox/archive/`.
-
-- Count only date directories directly under `inbox/`.
-- Do not update links when archiving.
+- Dated and archived inbox artifacts are non-canonical; canonical artifacts must not depend on or link to them.
+- Rewrite accepted content into its canonical owner. Delete obsolete or low-value content.
+- Use an owning workflow's artifact instead of creating competing authority in `inbox/`.
+- At 8 date directories, move the oldest 4 to `inbox/archive/` without updating links.
 - Humans may delete inbox or archived content at their discretion.
-
-## Boundaries
-
-- Do not treat `inbox/` as canonical context.
-- Canonical artifacts must not depend on or link to it.
-- Rewrite valuable content into its canonical destination.
-- Delete obsolete or low-value content.

@@ -32,14 +32,14 @@
 
 ### Requirement: Foundational EDA readiness
 
-다루는 데이터의 기초 EDA는 foundation 완료 전에 수행되어야 한다(SHALL). EDA는 원천 데이터의 schema, 전체 및 주요 partition별 volume, required column null baseline, freshness boundary를 read-only evidence로 확인해야 한다(MUST). EDA 결과와 재현 경로는 domain 문서, 실행 가능한 notebook 또는 script, automated test command로 추적 가능해야 한다(MUST).
+다루는 데이터의 기초 EDA는 foundation 완료 전에 수행되어야 한다(SHALL). EDA는 원천 데이터의 six-core schema, 전체 및 주요 partition별 volume, core-column null baseline, categorical distribution, numeric summary와 complete-key grain coverage를 read-only evidence로 확인해야 한다(MUST). EDA 결과와 재현 경로는 domain 문서, Python script, automated test command로 추적 가능해야 한다(MUST).
 
 #### Scenario: HMDA 기초 EDA 완료 확인
 
 - **WHEN** 사용자가 foundation readiness를 검토할 때
-- **THEN** HMDA 원천 CSV에 대한 schema, row count, `activity_year`별 row count, required-column null rate, freshness boundary evidence를 확인할 수 있어야 한다.
+- **THEN** HMDA 원천 CSV에 대한 six-core schema, row count, `activity_year`별 row count, core-column null rate, distribution, numeric summary와 complete-key grain coverage evidence를 확인할 수 있어야 한다.
 - **AND** EDA는 원천 파일, Bronze table, incident lifecycle을 변경하지 않는 read-only 실행이어야 한다.
-- **AND** EDA correctness와 notebook smoke를 검증하는 test 또는 command가 문서에 제공되어야 한다.
+- **AND** EDA correctness와 controlled actual-source observation을 검증하는 test 또는 command가 문서에 제공되어야 한다.
 
 #### Scenario: contract 기준 확인
 

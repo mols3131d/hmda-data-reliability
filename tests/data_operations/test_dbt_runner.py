@@ -109,6 +109,22 @@ def test_run_dbt_build_returns_verified_artifacts(
     assert result.run_results_path == request.dbt_run_results_path
 
 
+def test_build_dbt_command_structures_arguments(tmp_path: Path) -> None:
+    """dbt build 인자 리스트가 올바른 옵션으로 구성되는지 검증한다."""
+
+    request = _request(tmp_path)
+    command = runner._build_dbt_command(request)
+
+    assert command == [
+        "dbt",
+        "build",
+        "--project-dir",
+        str(request.dbt_project_dir),
+        "--profiles-dir",
+        str(request.dbt_profiles_dir),
+    ]
+
+
 def _request(tmp_path: Path) -> DataOperationRequest:
     return DataOperationRequest(
         dbt_manifest_path=tmp_path / "manifest.json",

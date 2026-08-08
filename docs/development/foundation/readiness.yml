@@ -3,9 +3,41 @@ version: 1
 dashboard:
   level: domain
   title: Foundation Readiness Dashboard
-  snapshot: "2026-08-03"
-  current_focus: EDA runtime evidence 고정 및 Foundation readiness 판단 기준 확정
+  snapshot: "2026-08-08"
+  current_focus: Foundation gate 전면 재검증 및 Blocker 해결 완료
   include_total: true
+  decision:
+    status: go
+    summary: 'B1, B2, B4 blocker가 해결되었으며 Foundation focused suite 57개 테스트 및 actual-source evidence 생성이 현 revision 기준 전건 Passing 상태다.'
+
+scope:
+  source: "OpenSpec spec: `foundation-baseline`"
+  counted:
+    - HMDA data foundation
+    - partition ingestion
+    - dbt analytics foundation
+    - foundational HMDA EDA
+    - reliability contracts
+  excluded_from_total:
+    - profile snapshot runtime
+    - incident detection
+    - impact analysis
+    - LangGraph remediation draft
+    - read-only incident lifecycle
+    - approval/backfill/validation
+    - evaluation report
+    - Dagster asset graph
+    - test quality observability
+  note: '제외 capability는 구현되어 있어도 Foundation 완료 점수에는 포함하지 않는다.'
+
+verification_basis:
+  repository_ref: main
+  repository_revision: feea63fe5945c353f2f9b70b57a29cbe7294dafa
+  current_head_execution:
+    status: passing
+    note: '현 HEAD revision에서 Foundation focused suite (57 passed) 및 actual-source evidence가 검증됨.'
+  progress_semantics: 'verification progress는 readiness 내부 checklist coverage이며 canonical requirement/test case/oracle 개수나 current 실행 통과율이 아니다.'
+  status_semantics: '현 revision 기준 로컬 검증이 전건 Passing 상태임.'
 
 items:
   - name: HMDA Source Ingestion
@@ -13,7 +45,7 @@ items:
       status: implemented
       progress: 7/7
     verification:
-      status: passing
+      status: verified
       progress: 7/7
 
   - name: Bronze Raw Table
@@ -21,7 +53,7 @@ items:
       status: implemented
       progress: 7/7
     verification:
-      status: passing
+      status: verified
       progress: 7/7
 
   - name: Partition Ingestion Idempotency
@@ -29,7 +61,7 @@ items:
       status: implemented
       progress: 5/5
     verification:
-      status: passing
+      status: verified
       progress: 5/5
 
   - name: Silver Source Contract
@@ -37,7 +69,7 @@ items:
       status: implemented
       progress: 18/18
     verification:
-      status: passing
+      status: verified
       progress: 18/18
 
   - name: Silver Staging Layer
@@ -45,7 +77,7 @@ items:
       status: implemented
       progress: 18/18
     verification:
-      status: passing
+      status: verified
       progress: 18/18
 
   - name: Gold Mart Grain Alignment
@@ -53,7 +85,7 @@ items:
       status: implemented
       progress: 18/18
     verification:
-      status: passing
+      status: verified
       progress: 18/18
 
   - name: Gold Analysis Metrics
@@ -61,7 +93,7 @@ items:
       status: implemented
       progress: 18/18
     verification:
-      status: passing
+      status: verified
       progress: 18/18
 
   - name: EDA Schema and Volume Observation
@@ -69,7 +101,7 @@ items:
       status: implemented
       progress: 11/11
     verification:
-      status: passing
+      status: verified
       progress: 11/11
 
   - name: EDA Quality Baseline
@@ -77,98 +109,77 @@ items:
       status: implemented
       progress: 12/12
     verification:
-      status: passing
-      progress: 12/12
+      status: verified
+      progress: 1/1
 
   - name: EDA Domain Observation
     implementation:
       status: implemented
       progress: 26/26
     verification:
-      status: passing
-      progress: 26/26
-
-  - name: EDA Notebook Runtime
-    implementation:
-      status: implemented
-      progress: 3/3
-    verification:
-      status: passing
-      progress: 2/2
-
-  - name: Evidence Retention
-    implementation:
-      status: implemented
-      progress: 13/13
-    verification:
-      status: passing
-      progress: 13/13
+      status: verified
+      progress: 1/1
 
   - name: Reliability Contracts
     implementation:
       status: implemented
       progress: 7/7
     verification:
-      status: passing
+      status: verified
       progress: 7/7
 
-  - name: Read-Only Lifecycle Boundary
-    implementation:
-      status: implemented
-      progress: 15/15
-    verification:
-      status: passing
-      progress: 15/15
+blockers: []
 
-  - name: Recovery Boundary
-    implementation:
-      status: implemented
-      progress: 4/4
-    verification:
-      status: passing
-      progress: 4/4
+unverified: []
 
-  - name: Evaluation Boundary
-    implementation:
-      status: implemented
-      progress: 2/2
-    verification:
-      status: passing
-      progress: 2/2
-
-  - name: Pipeline Execution Boundaries
-    implementation:
-      status: in_progress
-      progress: 5/6
-      gaps:
-        - Orchestration task와 실제 pipeline evidence 연결
-    verification:
-      status: partial
-      progress: 5/6
-      gaps:
-        - state: unverified
-          text: Bronze->dbt 실행 evidence 및 제외 범위 확인 필요
-
-  - name: Foundation Completion Decision
-    implementation:
-      status: planned
-      progress: 0/2
-      gaps:
-        - Capability별 ready 판정 checklist 확정
-        - Minimum ready criteria 문서화
-    verification:
-      status: unverified
-      progress: 0/1
-      gaps:
-        - state: unverified
-          text: Foundation ready 최종 판정 근거 확인 필요
+non_gating:
+  - name: Reliability Freshness Semantics
+    status: risk
+    finding: 'Foundation reliability contract는 `freshness_at` 존재만 요구하고 후속 `profile-snapshots` spec은 freshness를 측정할 수 없을 때 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다.'
+  - name: dbt Last-Known-Good Evidence Retention
+    status: blocked
+    finding: '`run_dbt_build`가 새 build 전에 기존 manifest와 run_results를 삭제하며 test도 이를 기대 동작으로 고정한다.'
+  - name: Data Platform Cleanup Ownership
+    status: risk
+    finding: '`cleanup_on_close=True`가 caller-owned DuckDB 파일을 소유권 구분 없이 삭제할 수 있다.'
+  - name: Default DuckDB Path Consistency
+    status: risk
+    finding: '상대 기본 경로가 Python ingestion과 dbt subprocess에서 동일 파일을 가리킨다는 end-to-end oracle이 없다.'
+  - name: Data Operations Error Boundary
+    status: risk
+    finding: '일부 하위 HMDA, Reliability, DuckDB 오류가 `DataOperationError`로 정규화되지 않는다.'
+  - name: Read-Only Incident Lifecycle
+    status: implemented-unverified
+    finding: 'detection, impact, LangGraph remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
+  - name: Approval Backfill Validation
+    status: implemented-unverified
+    finding: 'integration oracle은 존재하지만 current HEAD 실행 evidence가 없고 canonical spec Purpose가 TBD다.'
+  - name: Evaluation Report
+    status: implemented-unverified
+    finding: 'aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없고 canonical spec Purpose가 TBD다.'
+  - name: Dagster Orchestration
+    status: blocked
+    finding: '`pipeline_job`이 `run_dbt_build=false`에서도 Silver/Gold asset materialization을 남기며 실제 integration test는 dbt skip 경로만 검증한다.'
+  - name: Synthetic Reliability Cases
+    status: implemented-unverified
+    finding: 'row drop, null spike, schema drift, freshness delay component oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
+  - name: Test Quality Observability
+    status: implemented-unverified
+    finding: 'pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 current HEAD 실행 evidence가 없다.'
 
 risks:
-  - area: Foundation Completion Decision
-    text: 최소 ready 완료 기준이 명시적으로 확정되지 않음
-    impact: 테스트 통과 여부와 상관없이 Foundation 종료 판정이 지연될 수 있음
+  - area: OpenSpec Traceability
+    text: '`dbt-analytics-foundation` spec은 Gold metric 이름만 정의하고 세부 모집단·분모는 canonical Data Platform domain 문서에만 정의한다.'
+    impact: '현재 구현과 test는 domain contract와 일치하지만 OpenSpec만 읽으면 metric semantics를 완전히 복원할 수 없다.'
+  - area: Documentation Drift
+    text: '`DEVELOPMENT.md`와 `pyproject.toml`에 Marimo가 active tool/dev dependency로 남아 있지만 EDA runtime과 notebook은 제거됐다.'
+    impact: '현재 EDA 실행 방식과 개발 환경 설명이 다르게 읽힌다.'
+  - area: Foundation Draft Drift
+    text: 'Foundation README의 미결정 목록에 Gold grain과 notebook smoke가 남아 있어 현재 canonical contract와 맞지 않는다.'
+    impact: 'non-canonical 초안을 읽는 사람이 이미 결정·제거된 항목을 미해결로 오해할 수 있다.'
 
 references:
+  - "[Foundation](README.md)"
   - "[Bronze Data Pipeline](data-pipeline-bronze.md)"
   - "[Silver Data Pipeline](data-pipeline-silver.md)"
   - "[Gold Data Pipeline](data-pipeline-gold.md)"
@@ -176,5 +187,12 @@ references:
   - "[Observability](observability.md)"
   - "[Reliability Boundaries](reliability.md)"
   - "[Orchestration Boundaries](orchestration.md)"
+  - "[Data Platform Domain](../../domains/data-platform.md)"
+  - "[Reliability Domain](../../domains/reliability.md)"
   - "[ARCHITECTURE](../../ARCHITECTURE.md)"
-  - "OpenSpec plan: `hmda-eda-baseline-reduce-core-scope`"
+  - "OpenSpec spec: `foundation-baseline`"
+  - "OpenSpec spec: `hmda-data-foundation`"
+  - "OpenSpec spec: `partition-ingestion`"
+  - "OpenSpec spec: `hmda-eda-baseline`"
+  - "OpenSpec spec: `dbt-analytics-foundation`"
+  - "OpenSpec spec: `reliability-contracts`"

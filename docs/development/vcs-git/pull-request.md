@@ -45,7 +45,7 @@ Draft PR → 변경 갱신 → 인간 검토 → merge 또는 명시적 close
 
 ## Agent Instructions
 
-- Repository content 변경은 Draft pull request로 전달한다.
+- Repository content 변경은 Draft pull request로 전달한다. 단, [Inbox Branch](branch.md#inbox-branch)의 routine artifact direct push 예외를 따른다.
 - 인간의 명시적 요청 없이 Ready 전환, 승인, merge, close 또는 auto-merge를 수행하지 않는다.
 - 인간의 판단 없이 review thread를 해결 처리하지 않는다.
 - 실패하거나 수행하지 못한 validation을 숨기지 않으며, 불명확한 응답을 승인으로 해석하지 않는다.

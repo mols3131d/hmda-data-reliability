@@ -1,16 +1,15 @@
 ---
 type: review
-category: review
 title: <title>
 description: <검토 대상, 범위와 결과를 짧게 설명한다.>
 status: "<pending | in_progress | completed | blocked>"
 # OPTIONAL: 태그가 있을 때만 필드 전체를 유지한다.
 tags:
   - "<domain>"
-  - "<subdomain>"
-  - "<capability>"
-  - "<field>"
-  - "<tag>"
+  - "[<subdomain>]"
+  - "[<capability>]"
+  - "[<field>]"
+  - "[<tag>]"
 ---
 
 <!--
@@ -30,15 +29,7 @@ tags:
 | --- | --- | --- | --- |
 | <검토 대상> | <commit, branch, path 또는 version> | <검토 범위> | <Pass / Revise / Blocked> |
 
-<!-- OPTIONAL: 검토를 제한하거나 차단한 조건이 있을 때만 추가한다.
-
-> [!CAUTION]
-> <누락된 근거, 외부 의존성 또는 검토 제한>
--->
-
-<!-- OPTIONAL SECTION: 실질적인 문제가 있을 때만 유지한다. -->
-
-## Findings
+## Findings <!-- OPTIONAL: 실질적인 문제가 있을 때만 유지한다. -->
 
 ### F1. <Finding title>
 
@@ -54,9 +45,7 @@ tags:
 | --- | --- | --- |
 | <검증 항목> | <테스트, 문서 또는 관찰 근거> | <Pass / Fail / Not Verified> |
 
-<!-- OPTIONAL SECTION: 필수 수정은 아니지만 후속 가치가 있을 때만 유지한다. -->
-
-## Remaining Risks
+## Remaining Risks <!-- OPTIONAL -->
 
 - <남은 위험, 제한 또는 후속 확인>
 
