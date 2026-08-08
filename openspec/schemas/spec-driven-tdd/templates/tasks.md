@@ -20,6 +20,7 @@ tags:
 - `tasks_completed`와 `tasks_total`은 생성된 Change artifact의 체크박스에서 계산하는 파생값이며 체크박스가 원본이다.
 - schema template의 초기값은 0이며 생성 또는 갱신 직후 재계산한다.
 - tags를 유지한다면 Proposal tags와 정확히 일치시키며, 생략하면 상속으로 해석한다.
+- 모든 실행 작업은 파싱 대상 최상위 체크박스로 작성한다.
 - 파싱 대상 작업은 줄 시작이 정확히 `- [ ]` 또는 `- [x]`인 최상위 체크박스다.
 - 빈 섹션, 목록과 placeholder를 남기지 않는다.
 -->
