@@ -25,6 +25,12 @@ EDA는 `activity_year`, `state_code`, `loan_purpose`, `action_taken`, `loan_amou
 - **THEN** 각 column의 type status와 volume/null evidence가 반환되어야 한다.
 - **AND** `NA`와 빈 문자열은 null로 해석되어야 한다.
 
+#### Scenario: Missing or incompatible core column
+
+- **WHEN** six-core column 중 하나가 없거나 허용되는 type과 호환되지 않을 때
+- **THEN** EDA는 대상 column을 식별할 수 있는 validation failure로 종료해야 한다.
+- **AND** partial descriptive evidence를 성공 결과로 반환해서는 안 된다.
+
 ### Requirement: Descriptive distributions and numeric summaries
 
 EDA는 `state_code`, `loan_purpose`, `action_taken`의 observed non-null value별 count와 전체 row 대비 share를 제공해야 한다(SHALL). `loan_amount`와 `income`에는 non-null count, min, p25, median, p75와 max를 제공해야 한다(SHALL).
@@ -34,6 +40,7 @@ EDA는 `state_code`, `loan_purpose`, `action_taken`의 observed non-null value�
 - **WHEN** 유효한 source를 분석할 때
 - **THEN** categorical value는 변환 없이 집계되어야 한다.
 - **AND** numeric summary는 null을 제외한 원천 값으로 계산되어야 한다.
+- **AND** observed value를 anomaly 또는 incident로 판정해서는 안 된다.
 
 ### Requirement: Complete-key grain coverage
 
