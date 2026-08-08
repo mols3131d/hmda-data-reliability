@@ -7,7 +7,7 @@
 ## Workflow
 
 1. Identify the artifact's primary purpose and type.
-1. Read only the relevant guideline and template.
+1. Read only the relevant type guideline when one exists.
 1. Write the artifact under the current date directory.
 
 ## Artifact Contract
@@ -41,14 +41,12 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 
 ## Routing
 
-Read only what the current artifact needs.
+| Type | Guideline |
+| --- | --- |
+| `research` | [Research](_guidelines/research.md) |
+| `review` | [Review](_guidelines/review.md) |
 
-| Type | Guideline | Template |
-| --- | --- | --- |
-| `research` | [Research](_guidelines/research.md) | [research.md](_templates/research.md) |
-| `review` | [Review](_guidelines/review.md) | [review.md](_templates/review.md) |
-
-Other artifact types use this common contract unless dedicated guidance exists. Add a guideline or template only when a recurring type needs a distinct contract.
+Other artifact types use this common contract unless dedicated guidance exists. Add a guideline only when a recurring type needs a distinct contract.
 
 For writes to the dedicated `inbox` branch, follow [Inbox Branch](../docs/development/vcs-git/branch.md#inbox-branch).
 
@@ -61,9 +59,8 @@ For writes to the dedicated `inbox` branch, follow [Inbox Branch](../docs/develo
 
 ## Lifecycle
 
-- Dated and archived inbox artifacts are not canonical project context.
-- Canonical artifacts must not depend on or link to them.
-- Rewrite accepted content into its canonical owner; delete obsolete or low-value content.
+- Dated and archived inbox artifacts are non-canonical; canonical artifacts must not depend on or link to them.
+- Rewrite accepted content into its canonical owner and delete obsolete or low-value content.
 - If another workflow defines the owning artifact, use it instead of creating competing authority in `inbox/`.
 - When `inbox/` reaches 8 date directories, move the oldest 4 to `inbox/archive/`; do not update links.
 - Humans may delete inbox or archived content at their discretion.
