@@ -14,8 +14,8 @@
 
 | 파일 | 소유하는 지침 |
 | --- | --- |
-| [`schemas/spec-driven-tdd/schema.yaml`](schemas/spec-driven-tdd/schema.yaml) | 프로젝트와 무관한 workflow, artifact 의존성, gate와 실행 조건 |
-| [`config.yaml`](config.yaml) | schema에 추가하는 Project Pivot 전용 context, naming과 작성 규칙 |
+| [`schemas/spec-driven-tdd/schema.yaml`](schemas/spec-driven-tdd/schema.yaml) | 범용 workflow, artifact 목적·의존성·완료 조건과 gate |
+| [`config.yaml`](config.yaml) | Project Pivot 전용 context, naming과 project-specific 추가 규칙 |
 | [`AGENTS.md`](AGENTS.md) | OpenSpec workflow 사용 여부와 무관하게 `openspec/`에서 지켜야 할 agent 행동 규칙 |
 | `README.md` | 구조, 개념과 지침 위치를 설명하는 인간용 안내 |
 | `schemas/spec-driven-tdd/templates/*` | artifact의 문서 구조, 필드와 parser contract |
