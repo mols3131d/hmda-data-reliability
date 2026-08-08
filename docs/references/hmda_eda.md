@@ -7,9 +7,9 @@
 
 - Source ID: `data/raw/hmda/year_2025.csv`
 - Source SHA-256: `f0608858c8fd3661ef9c4f944f672b1afb46a2d2883f176bbc1e7c14c0e35c47`
-- Repository Revision: `137f9dc5b160f0da8e955e43b2240c8366108d01-dirty`
-- Observed At: `2026-08-06T14:52:18.971716+00:00`
-- Total Duration Seconds: 3.163
+- Repository Revision: `17522ddc42748fe22e779f50b8e328ebaf2d4abb`
+- Observed At: `2026-08-08T07:06:08.533796+00:00`
+- Total Duration Seconds: 4.812
 
 ## Key Metrics
 

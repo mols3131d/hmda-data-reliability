@@ -1,8 +1,8 @@
 {
   "source_id": "data/raw/hmda/year_2025.csv",
   "source_sha256": "f0608858c8fd3661ef9c4f944f672b1afb46a2d2883f176bbc1e7c14c0e35c47",
-  "repository_revision": "137f9dc5b160f0da8e955e43b2240c8366108d01-dirty",
-  "observed_at": "2026-08-06T14:52:18.971716+00:00",
+  "repository_revision": "17522ddc42748fe22e779f50b8e328ebaf2d4abb",
+  "observed_at": "2026-08-08T07:06:08.533796+00:00",
   "evidence": {
     "source": {
       "id": "data/raw/hmda/year_2025.csv",
@@ -16,7 +16,7 @@
         "sample_size": 200000
       }
     },
-    "duration_seconds": 3.16282422900008,
+    "duration_seconds": 4.81243088899987,
     "row_count": 13543606,
     "activity_year_counts": [
       {
@@ -475,74 +475,74 @@
     "distributions": {
       "action_taken": [
         {
-          "value": 1,
+          "value": "1",
           "count": 6827891,
           "share": 0.5041412899932263
         },
         {
-          "value": 3,
+          "value": "3",
           "count": 2115090,
           "share": 0.1561688962304426
         },
         {
-          "value": 4,
+          "value": "4",
           "count": 1710723,
           "share": 0.1263122243810105
         },
         {
-          "value": 6,
+          "value": "6",
           "count": 1578064,
           "share": 0.1165172702159233
         },
         {
-          "value": 5,
+          "value": "5",
           "count": 695006,
           "share": 0.05131617089274452
         },
         {
-          "value": 2,
+          "value": "2",
           "count": 417961,
           "share": 0.030860392719634637
         },
         {
-          "value": 8,
+          "value": "8",
           "count": 148372,
           "share": 0.010955132628636717
         },
         {
-          "value": 7,
+          "value": "7",
           "count": 50499,
           "share": 0.003728622938381403
         }
       ],
       "loan_purpose": [
         {
-          "value": 1,
+          "value": "1",
           "count": 6687105,
           "share": 0.4937462740720603
         },
         {
-          "value": 32,
+          "value": "32",
           "count": 2218695,
           "share": 0.16381863146343742
         },
         {
-          "value": 31,
+          "value": "31",
           "count": 1977649,
           "share": 0.14602086032331418
         },
         {
-          "value": 4,
+          "value": "4",
           "count": 1412869,
           "share": 0.1043200016302896
         },
         {
-          "value": 2,
+          "value": "2",
           "count": 1217830,
           "share": 0.08991918400461443
         },
         {
-          "value": 5,
+          "value": "5",
           "count": 29458,
           "share": 0.0021750485062840726
         }
