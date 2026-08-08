@@ -13,7 +13,7 @@
 #### Scenario: 유효한 incident 생성
 
 - **GIVEN** 품질 이상이 특정 `asset_name`과 `partition`에서 발견됨
-- **WHEN** Detector 또는 fixture가 `Incident`를 생성함
+- **WHEN** 해당 이상을 `Incident` contract로 표현할 때
 - **THEN** incident는 `incident_id`, `asset_name`, `partition`, `incident_type`, `severity`, `status`, `owner`, `evidence_refs`, `human_review_status`를 포함해야 함
 - **AND** `evidence_refs`는 최소 1개 이상이어야 함
 
@@ -30,7 +30,7 @@
 
 ### Requirement: ProfileSnapshot contract
 
-시스템은 Detector 입력 지표를 `ProfileSnapshot`으로 표현해야 한다(SHALL).
+시스템은 incident detection 입력 지표를 `ProfileSnapshot`으로 표현해야 한다(SHALL).
 
 #### Scenario: profile 기반 탐지 입력
 

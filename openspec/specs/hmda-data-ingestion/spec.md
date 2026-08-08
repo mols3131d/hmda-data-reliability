@@ -46,7 +46,7 @@ HMDA 원천 파일을 발견·검증하고 Bronze dataset으로 전체 또는 pa
 
 ### Requirement: Partition replacement
 
-시스템은 `source_year`와 optional `source_file`로 대상 partition을 선택해 해당 범위만 교체할 수 있어야 한다(SHALL). Partition 교체는 기존 범위를 제거하고 새 범위를 반영하는 하나의 transaction으로 수행해야 한다(MUST).
+시스템은 `source_year`와 optional `source_file`로 대상 partition을 선택해 해당 범위만 교체할 수 있어야 한다(SHALL). Partition 교체가 완료되지 못하면 기존 partition을 부분 삭제 또는 새 입력과 혼합된 상태로 남겨서는 안 된다(MUST NOT).
 
 #### Scenario: Year partition reload
 
@@ -60,7 +60,7 @@ HMDA 원천 파일을 발견·검증하고 Bronze dataset으로 전체 또는 pa
 
 #### Scenario: Failed partition replacement
 
-- **WHEN** 기존 partition을 새 입력으로 교체하는 transaction이 완료되기 전에 실패할 때
+- **WHEN** 기존 partition을 새 입력으로 교체하는 작업이 완료되기 전에 실패할 때
 - **THEN** 기존 partition은 부분적으로 삭제되거나 새 입력과 혼합된 상태로 남아서는 안 된다.
 
 ### Requirement: Source value preservation
