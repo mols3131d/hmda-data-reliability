@@ -15,14 +15,24 @@ HMDA 원천 파일을 발견·검증하고 Bronze dataset으로 전체 또는 pa
 - **WHEN** source root에 CSV, Parquet와 기타 파일이 함께 있을 때
 - **THEN** CSV와 Parquet만 정렬된 적재 후보로 반환되어야 한다.
 
+#### Scenario: Missing source root
+
+- **WHEN** configured source root가 존재하지 않을 때
+- **THEN** 시스템은 빈 source set을 성공으로 반환하지 않고 HMDA data load failure로 종료해야 한다.
+
 ### Requirement: Source contract validation
 
-시스템은 ingestion 과정에서 `activity_year`, `state_code`, `county_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income` 컬럼의 존재를 검증해야 한다(SHALL). 필수 컬럼이 누락된 입력을 성공한 적재로 보고해서는 안 된다(MUST NOT).
+시스템은 ingestion 과정에서 `activity_year`, `state_code`, `county_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income` 컬럼의 존재를 검증해야 한다(SHALL). 필수 컬럼이 누락되거나 source row를 정상적으로 parse할 수 없는 입력을 성공한 적재로 보고해서는 안 된다(MUST NOT).
 
 #### Scenario: Missing required column
 
 - **WHEN** 적재 대상 파일에 필수 컬럼이 없을 때
 - **THEN** 시스템은 누락 컬럼을 식별할 수 있는 HMDA data validation failure로 종료해야 한다.
+
+#### Scenario: Malformed source row
+
+- **WHEN** 적재 대상 파일에 source 구조와 맞지 않아 정상적으로 parse할 수 없는 row가 있을 때
+- **THEN** 시스템은 해당 row를 조용히 버리지 않고 HMDA data load 또는 validation failure로 종료해야 한다.
 
 ### Requirement: Bronze load with provenance
 

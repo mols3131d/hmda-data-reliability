@@ -16,6 +16,11 @@ HMDA reliability 동작을 검증할 수 있도록 원천을 수정하지 않고
 - **THEN** 결과는 output root 아래의 별도 Parquet 파일이어야 한다.
 - **AND** source 파일은 변경되지 않아야 한다.
 
+#### Scenario: Output path traversal
+
+- **WHEN** case name이 output root 밖의 경로를 가리키도록 요청될 때
+- **THEN** 시스템은 synthetic case 생성을 거부하고 output root 밖의 파일을 변경해서는 안 된다.
+
 ### Requirement: Row count drop case
 
 시스템은 `0 < sample_fraction <= 1` 범위에서 `activity_year` 분포를 유지하는 row-count drop case를 생성할 수 있어야 한다(SHALL).
@@ -33,6 +38,11 @@ HMDA reliability 동작을 검증할 수 있도록 원천을 수정하지 않고
 
 - **WHEN** `income`에 유효한 null fraction을 적용할 때
 - **THEN** 결과 파일의 `income` null 비율은 원본보다 검증 가능하게 증가해야 한다.
+
+#### Scenario: Missing target column
+
+- **WHEN** source에 존재하지 않는 target column에 null spike를 요청할 때
+- **THEN** 시스템은 synthetic case failure로 요청을 거부해야 한다.
 
 ### Requirement: Schema drift case
 

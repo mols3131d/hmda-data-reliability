@@ -87,4 +87,4 @@ uv run python scripts/run_actual_source.py
 - [Data Platform Domain](../../domains/data-platform.md)
 - [Reliability Domain](../../domains/reliability.md)
 - [ARCHITECTURE](../../ARCHITECTURE.md)
-- OpenSpec: `hmda-data-ingestion`, `data-platform-dbt-analytics`, `hmda-data-eda-descriptive-evidence`, `reliability-data-contracts`
+- OpenSpec: `hmda-data-ingestion`, `data-platform-duckdb-access`, `data-platform-dbt-analytics`, `hmda-data-eda-descriptive-evidence`, `reliability-data-contracts`

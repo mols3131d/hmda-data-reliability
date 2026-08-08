@@ -37,6 +37,16 @@ Draft는 필요한 경우 analytics test suggestion, backfill action과 validati
 
 Lineage evidence가 있으면 downstream assets를 draft의 affected assets에 보존해야 한다(SHALL).
 
+#### Scenario: Lineage affected assets
+
+- **WHEN** lineage evidence가 포함된 incident의 remediation draft를 만들 때
+- **THEN** draft의 affected assets는 lineage evidence의 downstream assets를 보존해야 한다.
+
 ### Requirement: Draft has no recovery side effect
 
 Remediation draft 생성은 approval을 만들거나 data를 변경하거나 recovery를 실행해서는 안 된다(MUST NOT).
+
+#### Scenario: Draft-only execution
+
+- **WHEN** remediation draft 생성이 완료될 때
+- **THEN** approval 상태와 target data는 변경되지 않아야 하며 recovery가 실행되어서는 안 된다.

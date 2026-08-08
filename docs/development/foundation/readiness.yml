@@ -14,6 +14,7 @@ scope:
   source: "Foundation readiness artifacts: `readiness.md`, `readiness.yml`"
   counted:
     - hmda-data-ingestion
+    - data-platform-duckdb-access
     - data-platform-dbt-analytics
     - hmda-data-eda-descriptive-evidence
     - reliability-data-contracts
@@ -192,6 +193,7 @@ references:
   - "[Reliability Domain](../../domains/reliability.md)"
   - "[ARCHITECTURE](../../ARCHITECTURE.md)"
   - "OpenSpec spec: `hmda-data-ingestion`"
+  - "OpenSpec spec: `data-platform-duckdb-access`"
   - "OpenSpec spec: `data-platform-dbt-analytics`"
   - "OpenSpec spec: `hmda-data-eda-descriptive-evidence`"
   - "OpenSpec spec: `reliability-data-contracts`"

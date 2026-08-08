@@ -19,6 +19,11 @@ Table schema, columns와 row count metadata를 reliability analysis가 참조 �
 
 Table metadata evidence payload는 schema hash, column 목록과 row count를 포함해야 한다(SHALL).
 
+#### Scenario: Metadata payload content
+
+- **WHEN** table metadata evidence가 생성될 때
+- **THEN** payload에는 현재 table의 schema hash, column metadata와 row count가 포함되어야 한다.
+
 ### Requirement: Metadata failure boundary
 
 Metadata lookup failure는 reliability domain이 처리할 수 있는 failure로 노출되어야 한다(SHALL).

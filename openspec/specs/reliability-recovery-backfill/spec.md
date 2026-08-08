@@ -45,3 +45,8 @@ Post-backfill profile request는 backfill target table과 같은 table을 가리
 ### Requirement: Recovery remains outside read-only lifecycle
 
 시스템은 read-only incident lifecycle이 recovery를 자동으로 실행하게 해서는 안 된다(MUST NOT).
+
+#### Scenario: Incident lifecycle execution
+
+- **WHEN** read-only incident lifecycle이 incident와 remediation draft를 생성할 때
+- **THEN** approved backfill은 자동으로 실행되어서는 안 된다.

@@ -58,6 +58,11 @@ EDA는 `activity_year + state_code + loan_purpose`가 모두 non-null인 row의 
 
 EDA는 source와 database를 수정하지 않아야 하며(MUST), 성공 또는 실패와 관계없이 자신이 연 resource를 정리해야 한다(MUST).
 
+#### Scenario: Analysis resource cleanup
+
+- **WHEN** EDA가 자신이 연 resource를 사용한 뒤 성공하거나 failure로 종료될 때
+- **THEN** 해당 resource는 정리되어야 하며 source와 database 내용은 EDA 때문에 변경되어서는 안 된다.
+
 ### Requirement: Portable actual-source observation
 
 시스템은 controlled actual-source run에서 portable JSON과 그 JSON에서 파생한 Markdown summary를 생성할 수 있어야 한다(SHALL). 두 artifact는 source fingerprint, execution revision, execution timestamp와 duration을 추적할 수 있어야 한다(MUST).

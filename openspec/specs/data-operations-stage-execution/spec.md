@@ -33,6 +33,11 @@ Raw load stage는 HMDA source discovery와 ingestion behavior를 `hmda-data` dom
 - **WHEN** dbt process가 정상 종료되고 현재 실행 artifact가 존재할 때
 - **THEN** stage는 성공 상태와 두 artifact 위치를 반환해야 한다.
 
+#### Scenario: Stale artifacts are not current success
+
+- **WHEN** 이전 실행 artifact가 존재하지만 현재 dbt 실행이 새 필수 artifact를 제공하지 못할 때
+- **THEN** stage는 이전 artifact만으로 현재 실행을 성공으로 보고해서는 안 된다.
+
 ### Requirement: dbt failure boundary
 
 시스템은 process 시작 실패, timeout, non-zero exit 또는 필수 artifact 누락을 성공으로 보고해서는 안 된다(MUST NOT). 실패는 caller가 처리할 수 있는 data-operations domain error로 노출해야 한다(SHALL).

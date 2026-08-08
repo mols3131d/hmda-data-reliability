@@ -19,6 +19,11 @@ Synthetic reliability case의 expected/actual detection과 action 결과를 집�
 
 시스템은 expected incident가 없는 normal case에서 실제 detection도 없으면 detection 성공으로 판정해야 한다(SHALL).
 
+#### Scenario: Normal case without detection
+
+- **WHEN** expected incident가 없는 case에서 실제 detected incident도 없을 때
+- **THEN** 해당 case의 detection 결과는 성공으로 집계되어야 한다.
+
 ### Requirement: Markdown evaluation output
 
 시스템은 evaluation result를 caller가 지정한 위치에 사람이 검토 가능한 Markdown으로 기록할 수 있어야 한다(SHALL).
@@ -31,3 +36,8 @@ Synthetic reliability case의 expected/actual detection과 action 결과를 집�
 ### Requirement: Evaluation remains outside incident lifecycle
 
 Read-only incident lifecycle은 synthetic evaluation이나 report write를 자동 실행해서는 안 된다(MUST NOT).
+
+#### Scenario: Read-only lifecycle execution
+
+- **WHEN** read-only incident lifecycle이 완료될 때
+- **THEN** synthetic evaluation과 evaluation report write는 자동으로 실행되어서는 안 된다.
