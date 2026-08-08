@@ -8,16 +8,13 @@ artifacts:
     description: Change intent, scope, and affected capabilities
     template: proposal.md
     instruction: |
-      변경의 목적, 범위와 영향을 받는 Capability를 합의한다.
+      변경의 목적, 범위와 영향을 받는 capability를 합의한다.
 
-      - 작성 전에 기존 Specs와 관련 맥락을 확인한다.
-      - 기존 책임으로 설명할 수 있는 변경에는 새 Capability를 만들지 않는다.
-      - 관찰 가능한 행동이나 계약이 바뀔 때만 Modified Capability로 선언한다.
-      - 독립적으로 구현하고 검증할 수 있는 변경은 별도 Proposal로 분리한다.
-      - 구현 방법, 기술 선택과 작업 순서는 Design과 Tasks에 맡긴다.
-      - 템플릿의 parser contract을 유지하고 Capability 선언과 Change-level tags를 일치시킨다.
+      기존 책임으로 설명할 수 있는 변경에는 새 capability를 만들지 않는다.
+      독립적으로 구현하고 검증할 수 있는 변경은 별도 proposal로 분리한다.
+      구현 방법과 작업 순서는 design과 tasks에 맡긴다.
 
-      목적, 경계와 Capability 범위가 후속 Specs를 작성하기에 충분할 때 완료한다.
+      목적과 경계가 후속 behavior contract를 작성하기에 충분할 때 완료한다.
     requires: []
 
   - id: specs
@@ -25,16 +22,12 @@ artifacts:
     description: Verifiable behavior contracts for affected capabilities
     template: spec.md
     instruction: |
-      Proposal에 선언된 Capability의 관찰 가능한 행동 계약을 정의한다.
+      proposal에 선언된 capability의 관찰 가능하고 검증 가능한 행동 계약을 정의한다.
 
-      - 각 Capability에는 대응하는 delta spec을 작성한다.
-      - 기존 Capability를 변경할 때는 현재 Spec을 기준으로 완전한 변경 결과를 표현한다.
-      - Requirement와 Scenario는 구현 방식과 무관하게 검증 가능해야 한다.
-      - 계약상 중요한 정상 동작, 실패 조건과 경계만 포함한다.
-      - 구현 구조, 기술 선택과 테스트 코드는 작성하지 않는다.
-      - 템플릿의 delta, Requirement, Scenario 및 tag parser contract을 유지한다.
+      기존 capability를 변경할 때는 변경 후 계약을 완전하게 표현한다.
+      중요한 정상 동작, 실패 조건과 경계를 포함하고 구현 방식은 제외한다.
 
-      Proposal의 Capability 범위가 빠짐없이 검증 가능한 계약으로 표현되었을 때 완료한다.
+      proposal의 capability 범위가 검증 가능한 계약으로 표현되었을 때 완료한다.
     requires:
       - proposal
 
@@ -43,16 +36,12 @@ artifacts:
     description: Technical approach, boundaries, and verification strategy
     template: design.md
     instruction: |
-      Proposal과 Specs를 충족하는 기술적 접근과 책임 경계를 정의한다.
+      proposal과 specs를 충족하는 기술적 접근과 책임 경계를 정의한다.
 
-      - Specs를 반복하지 않고 구현에 영향을 주는 결정과 근거에 집중한다.
-      - 책임 경계, 주요 흐름, 위험, trade-off와 검증 전략을 필요한 만큼 기록한다.
-      - 단순하거나 되돌리기 쉬운 선택을 형식적으로 문서화하지 않는다.
-      - Specs, 접근 또는 Tasks를 바꾸는 미해결 질문은 완료 전에 해소한다.
-      - 파일별 작업과 세부 구현 순서는 Tasks에 맡긴다.
-      - tags를 작성한다면 Proposal과 일치시키고 템플릿의 parser contract을 유지한다.
+      구현에 영향을 주는 결정, 주요 흐름, 위험, trade-off와 검증 전략에 집중한다.
+      specs를 반복하지 않고 tasks를 안정적으로 도출하는 데 필요한 판단만 기록한다.
 
-      중요한 구현 판단이 명확하고 Tasks를 안정적으로 도출할 수 있을 때 완료한다.
+      중요한 구현 판단이 명확하고 tasks를 도출할 수 있을 때 완료한다.
     requires:
       - proposal
       - specs
@@ -62,14 +51,11 @@ artifacts:
     description: Ordered and verifiable TDD implementation checklist
     template: tasks.md
     instruction: |
-      Specs와 Design을 순서가 있는 검증 가능한 구현 작업으로 분해한다.
+      specs와 design을 순서가 있는 검증 가능한 구현 작업으로 분해한다.
 
-      - 파일 목록보다 독립적으로 구현하고 검증할 수 있는 행동 단위를 우선한다.
-      - 행동 변경은 가능한 범위에서 실패 검증을 먼저 고정하는 순서로 구성한다.
-      - 각 작업에는 하나의 명확한 결과와 객관적인 완료 조건을 둔다.
-      - 결정되지 않은 설계나 새로운 계약을 Task에 숨기지 않는다.
-      - 구현 중 계획 오류가 발견되면 관련 artifact로 환류할 수 있게 추적성을 유지한다.
-      - 템플릿의 checkbox, progress field 및 tag parser contract을 유지한다.
+      행동 변경은 가능한 범위에서 test-first feedback loop로 구성한다.
+      각 작업은 하나의 명확한 결과와 객관적인 완료 조건을 가져야 한다.
+      계획 오류가 발견되면 관련 artifact로 되돌아갈 수 있게 추적성을 유지한다.
 
       모든 계획 범위가 의존성 순서와 검증 근거를 가진 작업으로 연결되었을 때 완료한다.
     requires:
@@ -78,50 +64,22 @@ artifacts:
 
   - id: plan-review
     generates: plan-review.md
-    description: Checklist-based pre-implementation plan gate
+    description: Evidence-based pre-implementation plan gate
     template: plan-review.md
     instruction: |
-      Proposal, Specs, Design과 Tasks를 구현 전에 검토하고
-      checklist 기반 Gate 결과를 작성한다.
+      proposal, specs, design과 tasks를 구현 전에 독립적으로 검토한다.
 
-      Review:
+      확인 가능한 계획 artifact 근거로만 판정하고 선호 차이만으로 변경을 요구하지 않는다.
+      기존 의도와 범위 안에서 해결 가능한 문제는 관련 계획 artifact에 환류한다.
+      요구사항, 범위 또는 중요한 결정의 변경이 필요하면 자동으로 보완하지 않는다.
+      계획 artifact가 바뀌면 다음 loop에서 전체 계획을 다시 검토한다.
 
-      - 현재 계획 artifact 전체를 읽고 모든 checklist 항목을 판정한다.
-      - 확인 가능한 artifact 근거가 있을 때만 항목을 통과시킨다.
-      - 선호 차이 또는 이론적 가능성만으로 변경을 요구하지 않는다.
-      - 미통과 항목은 `### Required Changes`에 같은 checklist ID의
-        미완료 최상위 checkbox로 기록한다.
-      - 각 Required Change에는 대상, 위치, 근거, 영향과 필요한 변경을 포함한다.
-      - 현재 남은 미통과 항목만 유지하고 해결된 항목은 제거한다.
-      - 통과 항목에는 checkbox 외의 상세 설명을 남기지 않는다.
-      - 같은 원인의 문제를 여러 항목에 중복 기록하지 않는다.
-      - 구현 코드, 테스트 코드와 구현 결과는 검토하지 않는다.
+      모든 검토 기준을 통과하면 approved로 종료한다.
+      인간의 판단이나 계획 변경이 필요하면 changes_requested,
+      필요한 근거나 외부 의존성이 부족하거나 8회 안에 수렴하지 못하면 blocked로 종료한다.
+      review loop는 최대 8회다.
 
-      Review Loop:
-
-      - 하나의 loop는 전체 계획 artifact와 checklist를 독립적으로 다시 검토하고,
-        발견한 문제를 보완한 뒤 변경 관계를 재검증하는 과정이다.
-      - 기존 의도와 범위 안에서 명확히 해결할 수 있는 문제는 관련 계획 artifact를 보완한다.
-      - 요구사항, 범위 또는 중요한 결정의 변경이 필요하면 자동으로 보완하지 않는다.
-      - 계획 artifact를 보완했다면 다음 loop에서 모든 항목을 처음부터 다시 판정한다.
-      - 재검토에서 새 문제나 파생된 불일치를 발견하면 같은 원칙으로 보완한다.
-      - frontmatter의 review_loop는 완료한 전체 review loop 수이며 0에서 시작한다.
-      - 각 loop가 끝날 때 review_loop를 1씩 증가시키고 8을 초과하지 않는다.
-      - 같은 loop 안의 재확인이나 plan-review.md 표현 수정은 횟수에 포함하지 않는다.
-
-      Decision:
-
-      - 검토 전에는 pending, loop 수행 중에는 in_progress를 사용한다.
-      - 모든 checklist 항목이 통과하고 미완료 Required Changes가 없으면 approved로 종료한다.
-      - 8회차에도 미통과 항목이 남으면 blocked로 종료하고
-        해결되지 않은 항목과 수렴하지 못한 이유를 기록한다.
-      - loop 한도에 도달한 뒤에는 자동 검토를 재개하지 않는다.
-      - 8회 미만에서 인간의 판단이나 계획 변경이 필요한 문제가 남으면
-        changes_requested로 종료한다.
-      - 필요한 근거나 외부 의존성이 부족하면 blocked로 종료한다.
-      - status, review_loop, checklist와 Required Changes는 서로 일치해야 한다.
-
-      Apply 진입 가능 여부가 명확하고 review loop가 종료 조건에 도달했을 때 완료한다.
+      Apply 진입 가능 여부가 명확할 때 완료한다.
     requires:
       - proposal
       - specs
@@ -133,8 +91,7 @@ apply:
     - plan-review
   tracks: tasks.md
   instruction: |
-    Plan Review의 status가 approved이고 모든 checklist 항목이 완료되었으며
-    미완료 Required Changes가 없는지 확인한다.
-    조건을 충족하지 않으면 Apply를 시작하지 않는다.
+    plan-review가 approved일 때만 Apply를 시작한다.
 
-    프로젝트 지침과 도구에 맞는 test-first feedback loop를 사용하고 작업 진행 상태를 유지한다. 구현 과정에서 계획의 오류나 누락이 확인되면 관련 artifact를 갱신하고 Plan Review를 다시 수행한다.
+    구현은 프로젝트 지침에 맞는 test-first feedback loop를 사용한다.
+    계획의 오류나 누락이 확인되면 관련 artifact를 갱신하고 plan-review를 다시 수행한다.
