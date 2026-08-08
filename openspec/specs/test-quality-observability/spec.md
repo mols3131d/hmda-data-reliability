@@ -1,14 +1,3 @@
----
-type: openspec-rpi
-category: spec
-title: Test Quality Observability Specification
-description: pytest trace와 property-based testing의 durable 요구사항을 정의한다.
-tags:
-  - testing
-  - opentelemetry
-  - hypothesis
----
-
 # Test Quality Observability Specification
 
 ## Purpose
