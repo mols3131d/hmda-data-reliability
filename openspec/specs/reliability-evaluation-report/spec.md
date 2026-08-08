@@ -8,12 +8,13 @@ Synthetic reliability case의 expected/actual detection과 action 결과를 집�
 
 ### Requirement: Synthetic case aggregation
 
-시스템은 synthetic case 결과에서 detection 성공 여부, action 성공 여부와 전체 성공률을 계산해야 한다(SHALL).
+시스템은 synthetic case별 detection과 action 성공 여부를 판정하고 전체 성공률을 계산해야 한다(SHALL). Expected incident가 있는 case는 모든 expected incident type이 detected incident에 포함될 때 detection 성공이어야 한다(MUST). 모든 required action이 remediation action에 포함될 때 action 성공이어야 한다(MUST).
 
 #### Scenario: Case result aggregation
 
-- **WHEN** case result 목록을 평가할 때
-- **THEN** 각 case의 detection/action 성공 여부와 전체 요약을 제공해야 한다.
+- **WHEN** expected incident와 required action이 있는 case result 목록을 평가할 때
+- **THEN** 각 case의 expected incident가 모두 detected되고 required action이 모두 remediation action에 포함된 경우 해당 결과를 성공으로 판정해야 한다.
+- **AND** 전체 detection/action 성공률은 각 성공 case 수를 전체 case 수로 나눈 값이어야 한다.
 
 ### Requirement: Normal case handling
 
