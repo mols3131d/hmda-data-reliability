@@ -70,12 +70,18 @@ artifacts:
       implementation 결과는 이 gate의 검토 대상이 아니다.
       기존 의도와 범위 안에서 해결 가능한 문제는 owning planning artifact에 환류한다.
       요구사항, 범위 또는 중요한 결정의 변경이 필요하면 자동으로 보완하지 않는다.
-      planning artifact가 바뀌면 다음 loop에서 전체 계획을 다시 검토한다.
+
+      검토 전에는 pending, loop 진행 중에는 in_progress를 사용한다.
+      하나의 loop는 전체 계획과 검토 기준을 다시 판정하는 단위다.
+      planning artifact가 바뀌면 다음 loop에서 모든 기준을 다시 판정한다.
+      완료한 loop마다 review_loop를 1 증가시키며 같은 loop의 재확인은 포함하지 않는다.
+      review_loop는 8을 초과하지 않는다.
+      현재 남은 미통과 finding만 gate evidence로 유지한다.
 
       모든 검토 기준을 통과하면 approved로 종료한다.
       인간의 판단이나 계획 변경이 필요하면 changes_requested,
       필요한 근거나 외부 의존성이 부족하거나 8회 안에 수렴하지 못하면 blocked로 종료한다.
-      review loop는 최대 8회다.
+      8회 한도에 도달한 뒤에는 자동 loop를 재개하지 않는다.
 
       Apply 진입 가능 여부가 명확할 때 완료한다.
     requires:
