@@ -12,13 +12,11 @@
 ## 작업 규칙
 
 - 하나의 Spec은 하나의 지속적인 capability와 하나의 owning domain을 가진다.
-- 새 Spec을 만들기 전에 기존 Spec과 책임이 겹치는지 확인한다. 같은 capability라면 기존 Spec을 우선 갱신한다.
-- 이름은 `README.md`, 내용은 `../config.yaml`의 규칙을 따른다.
-- 기존의 비표준 이름은 요청 범위에 포함될 때만 정리한다.
-- 관련 없는 Spec은 수정하지 않는다.
+- 같은 capability가 이미 있으면 새 Spec보다 기존 Spec 갱신을 우선한다.
+- 이름은 `README.md`, 내용은 `../config.yaml`을 따른다.
+- 요청 범위 밖의 Spec은 수정하지 않는다.
 
 ## 리팩토링
 
-rename, merge, split 시 기존 계약의 의미를 보존하고 영향받는 OpenSpec 참조를 확인한다.
-
+rename, merge, split 시 기존 계약의 의미와 영향받는 OpenSpec 참조를 확인한다.
 변경 후 이름, domain 소유권, 중복 책임, 참조 일관성을 검토한다.
