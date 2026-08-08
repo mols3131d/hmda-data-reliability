@@ -159,7 +159,7 @@ non_gating:
     finding: 'detection, impact, LangGraph remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
   - name: Approval Backfill Validation
     status: implemented-unverified
-    finding: 'year-level profile validation contract는 현재 구현과 정렬했지만 `source_file` scoped profile validation은 guaranteed contract 밖이며 current HEAD 실행 evidence가 없다.'
+    finding: 'profile request alignment과 row-count comparison contract는 현재 구현과 정렬했지만 `source_file` scoped 비교는 file-level population equivalence를 보장하지 않으며 current HEAD 실행 evidence가 없다.'
   - name: Evaluation Report
     status: implemented-unverified
     finding: 'aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
