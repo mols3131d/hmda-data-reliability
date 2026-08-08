@@ -13,14 +13,12 @@ tags:
 ---
 
 <!--
-작성 규칙:
+형식 규칙:
 - OpenSpec delta 헤더와 `### Requirement:`, `#### Scenario:` 형식은 파싱 계약으로 유지한다.
 - `capability:<name>` 태그는 파일 경로 `specs/<name>/spec.md`와 일치시킨다.
-- 하나의 파일은 하나의 Capability를 다룬다.
-- Requirement는 SHALL 또는 MUST로 검증 가능한 행동을 정의한다.
+- Requirement는 SHALL 또는 MUST를 사용한다.
 - 모든 Requirement에는 하나 이상의 Scenario가 있어야 한다.
 - WHEN과 THEN은 필수이며 GIVEN과 AND는 필요할 때만 사용한다.
-- 구현 방법, 파일 구조와 테스트 코드는 작성하지 않는다.
 - New Capability는 50자 이상의 Purpose를 작성하고, 기존 Capability 변경에서는 Purpose를 삭제한다.
 - 사용하지 않는 변경 유형은 섹션 전체를 삭제한다.
 -->
