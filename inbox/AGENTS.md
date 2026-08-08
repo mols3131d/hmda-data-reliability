@@ -77,7 +77,7 @@ Examples:
 
 Read only the resources needed for the current work. Do not preload every guideline, template, or skill.
 
-For writes to the dedicated `inbox` branch, read [Inbox Branch](_guidelines/branch.md).
+For writes to the dedicated `inbox` branch, follow [Inbox Branch](../docs/development/vcs-git/branch.md#inbox-branch).
 
 | Type | Guideline | Template |
 | --- | --- | --- |
