@@ -18,12 +18,12 @@ context: |
   Change의 capability는 분류에 도움이 될 때만 포함한다.
   Spec은 지속적인 capability를 나타내는 명사형으로 작성한다.
   Change의 short-title은 구체적인 의도나 결과를 짧게 표현한다.
-  update, improvement, enhancement, extension 같은 모호한 이름은 피한다.
+  short-title에는 update, improvement, enhancement, extension 같은 모호한 표현을 피한다.
   동급인 여러 domain을 하나의 이름에 나열하지 않는다.
 
 rules:
   proposal:
-    - Domain Path, Outcome과 영향받는 Spec을 명시하고 관련 capability가 있으면 함께 적는다.
+    - owning domain, 변경 결과와 영향받는 Spec을 명확히 하고 관련 capability가 있으면 함께 식별한다.
 
   design:
     - 영향이 있는 경우 grain, schema, idempotency와 recovery를 검토한다.
