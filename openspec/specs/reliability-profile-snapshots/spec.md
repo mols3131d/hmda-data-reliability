@@ -19,6 +19,11 @@ asset partition의 row count, null rate, schema와 freshness 지표를 계산해
 
 시스템은 지정된 profile column별 null 비율을 0 이상 1 이하로 계산해야 한다(SHALL). partition row count가 0이면 null rate는 0.0이어야 한다(MUST).
 
+#### Scenario: Column null rate
+
+- **WHEN** partition의 profile column에 null 값이 포함되어 있을 때
+- **THEN** 해당 column의 null rate는 `null_count / row_count`와 일치해야 한다.
+
 #### Scenario: Empty partition null rate
 
 - **WHEN** profile 대상 partition의 row count가 0일 때
@@ -28,6 +33,11 @@ asset partition의 row count, null rate, schema와 freshness 지표를 계산해
 
 시스템은 table schema의 column name과 physical type에서 결정적인 schema hash를 생성해야 한다(SHALL).
 
+#### Scenario: Stable schema hash
+
+- **WHEN** 같은 table schema에 대해 schema hash를 반복 계산할 때
+- **THEN** 같은 hash를 반환해야 한다.
+
 #### Scenario: Schema change
 
 - **WHEN** column name 또는 type이 변경될 때
@@ -36,6 +46,11 @@ asset partition의 row count, null rate, schema와 freshness 지표를 계산해
 ### Requirement: Freshness metric
 
 시스템은 freshness column이 제공되면 partition의 최대 timestamp를 `freshness_at`으로 사용해야 한다(SHALL). freshness column이 없거나 측정값이 없으면 `observed_at`을 fallback으로 사용해야 한다(MUST).
+
+#### Scenario: Measured freshness
+
+- **WHEN** partition의 freshness column에 측정 가능한 timestamp가 있을 때
+- **THEN** `freshness_at`은 해당 partition의 최대 timestamp와 일치해야 한다.
 
 #### Scenario: Missing freshness measurement
 

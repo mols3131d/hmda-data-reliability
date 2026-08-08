@@ -58,6 +58,11 @@ HMDA 원천 파일을 발견·검증하고 Bronze dataset으로 전체 또는 pa
 - **WHEN** `source_file`이 지정된 partition 적재를 실행할 때
 - **THEN** 지정된 파일 범위만 교체 대상이 되어야 한다.
 
+#### Scenario: Failed partition replacement
+
+- **WHEN** 기존 partition을 새 입력으로 교체하는 transaction이 완료되기 전에 실패할 때
+- **THEN** 기존 partition은 부분적으로 삭제되거나 새 입력과 혼합된 상태로 남아서는 안 된다.
+
 ### Requirement: Source value preservation
 
 시스템은 원천의 null, 코드값과 수치 이상치를 정규화하거나 품질 판단으로 제거하지 않고 Bronze에 보존해야 한다(SHALL).

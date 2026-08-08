@@ -8,16 +8,26 @@
 
 ### Requirement: Managed DuckDB connection
 
-시스템은 caller가 파일 기반 또는 격리된 in-memory DuckDB 연결을 선택할 수 있게 하고, 관리 범위를 벗어날 때 열린 연결을 닫아야 한다(SHALL).
+시스템은 caller가 파일 기반 또는 격리된 in-memory DuckDB 연결과 read-only mode를 선택할 수 있게 하고, 관리 범위를 벗어날 때 열린 연결을 닫아야 한다(SHALL).
 
 #### Scenario: Isolated in-memory connection
 
 - **WHEN** caller가 database path 없이 연결을 요청할 때
 - **THEN** 시스템은 다른 파일 기반 database와 독립된 in-memory 연결을 제공해야 한다.
 
+#### Scenario: Read-only connection
+
+- **WHEN** caller가 기존 database에 read-only mode로 연결할 때
+- **THEN** 시스템은 해당 연결을 read-only로 열어 write operation이 허용되지 않게 해야 한다.
+
 ### Requirement: Schema and table metadata access
 
 시스템은 지정한 schema의 존재를 보장하고 table의 row count와 column names를 조회할 수 있어야 한다(SHALL).
+
+#### Scenario: Schema initialization
+
+- **WHEN** caller가 아직 존재하지 않는 schema의 존재를 보장하도록 요청할 때
+- **THEN** 이후 같은 연결에서 해당 schema를 사용할 수 있어야 한다.
 
 #### Scenario: Existing table metadata
 

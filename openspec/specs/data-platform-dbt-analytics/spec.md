@@ -68,4 +68,4 @@ Analytics metadata는 Bronze source, staging과 mart의 dependency를 downstream
 #### Scenario: Repeated build
 
 - **WHEN** 동일 raw input으로 analytics build를 반복할 때
-- **THEN** mart의 grain set과 row count는 이전 성공 결과와 같아야 한다.
+- **THEN** mart의 grain set, row count와 metric 결과는 이전 성공 결과와 같아야 한다.

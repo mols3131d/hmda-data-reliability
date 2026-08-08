@@ -15,6 +15,11 @@ HMDA raw load와 dbt build를 orchestration과 분리된 application stage로 �
 - **WHEN** caller가 유효한 request로 하나의 stage를 호출할 때
 - **THEN** 해당 stage의 결과만 반환되어야 한다.
 
+#### Scenario: Stage isolation
+
+- **WHEN** caller가 raw load 또는 dbt build stage 하나만 직접 호출할 때
+- **THEN** 다른 pipeline stage가 암묵적으로 실행되어서는 안 된다.
+
 ### Requirement: Raw load delegation
 
 Raw load stage는 HMDA source discovery와 ingestion behavior를 `hmda-data` domain에 위임하고 처리 파일 수와 적재 행 수를 결과로 제공해야 한다(SHALL).

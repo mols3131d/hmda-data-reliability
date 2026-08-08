@@ -15,9 +15,9 @@ baseline과 current profile의 차이를 rule 기반 Data Reliability Incident�
 - **WHEN** profile 차이가 configured threshold를 넘지 않을 때
 - **THEN** incident를 생성하지 않아야 한다.
 
-#### Scenario: Incompatible partition comparison
+#### Scenario: Incompatible profile pair
 
-- **WHEN** baseline과 current profile의 partition identity가 다를 때
+- **WHEN** baseline과 current profile의 asset identity 또는 partition identity가 다를 때
 - **THEN** 시스템은 두 profile을 detection 대상으로 받아들이지 않아야 한다.
 
 ### Requirement: Volume drop detection
