@@ -32,10 +32,12 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
 
     _run_dbt(database_path, "debug")
     _run_dbt(database_path, "build")
+    _assert_staging_oracle(database_path)
     first_stats = _mart_stats(database_path)
     first_metric_rows = _mart_metric_rows(database_path)
 
     _run_dbt(database_path, "build")
+    _assert_staging_oracle(database_path)
     second_stats = _mart_stats(database_path)
     second_metric_rows = _mart_metric_rows(database_path)
 
@@ -93,12 +95,39 @@ def _write_hmda_csv(tmp_path: Path) -> Path:
                 "2025,1,2,450000,130,CA,06001",
                 "2025,31,3,420000,95,NY,36061",
                 "2025,31,7,380000,95,NY,36061",
-                "2025,1,1,300000,100,,",
+                "2025,1,1,invalid,Exempt,,",
             ]
         ),
         encoding="utf-8",
     )
     return path
+
+
+def _assert_staging_oracle(database_path: Path) -> None:
+    with DuckDBConnectionManager(database_path, read_only=True) as connection:
+        count = connection.execute(
+            "SELECT count(*) FROM staging.stg_hmda_loans"
+        ).fetchone()
+        assert count is not None and count[0] == 5
+
+        column_types = dict(
+            connection.execute(
+                "SELECT column_name, data_type FROM information_schema.columns "
+                "WHERE table_schema = 'staging' AND table_name = 'stg_hmda_loans'"
+            ).fetchall()
+        )
+        assert column_types["loan_amount"] == "DOUBLE"
+        assert column_types["income"] == "DOUBLE"
+
+        null_row = connection.execute(
+            "SELECT state_code, county_code, loan_amount, income "
+            "FROM staging.stg_hmda_loans WHERE state_code IS NULL"
+        ).fetchone()
+        assert null_row is not None
+        assert null_row[0] is None
+        assert null_row[1] is None
+        assert null_row[2] is None
+        assert null_row[3] is None
 
 
 def _mart_stats(database_path: Path) -> tuple[int, int]:

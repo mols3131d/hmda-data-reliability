@@ -3,7 +3,7 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: "HMDA EDA core scope reduction tasks"
 description: "6개 core column EDA, 최소 Notebook과 actual-source evidence로 Foundation 범위를 닫는다."
-tasks_completed: 0
+tasks_completed: 21
 tasks_total: 21
 ---
 
