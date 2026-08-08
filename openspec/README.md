@@ -23,4 +23,4 @@
 - 동급인 여러 domain을 하나의 이름에 나열하지 않는다.
 - domain ownership은 [`docs/domains/OVERVIEW.md`](../docs/domains/OVERVIEW.md)를 따른다.
 
-Spec과 Change의 세부 의미는 각 디렉토리의 `README.md`를 따른다.
+하위 `README.md`에는 Spec 또는 Change에만 필요한 설명만 둔다.
