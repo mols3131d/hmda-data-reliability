@@ -1,10 +1,13 @@
 # Foundation Readiness Dashboard
 
 > **Snapshot:** 2026-08-08  
-> **Decision:** 🟢 GO  
-> **Audited revision:** `feea63fe5945c353f2f9b70b57a29cbe7294dafa`
+> **Decision:** 🟢 GO (audited runtime)  
+> **Audited test revision:** `feea63fe5945c353f2f9b70b57a29cbe7294dafa`  
+> **Actual-source execution revision:** `17522ddc42748fe22e779f50b8e328ebaf2d4abb`  
+> **Evidence commit:** `feea63fe5945c353f2f9b70b57a29cbe7294dafa`  
+> **Current PR validation:** ⚪ Not run
 
-`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. Audited revision에서 Foundation suite 57개 test 및 actual-source evidence가 모두 통과되었다.
+`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. Foundation focused suite는 audited test revision에서 57개 test가 통과했다. Actual-source evidence는 별도 execution revision에서 생성되었고, evidence commit까지 EDA runtime·source·generator 변경이 없어 현재 audited evidence에 적용 가능하다.
 
 ## Foundation Gate
 
@@ -23,24 +26,34 @@
 | Reliability Contracts | 🟢 Implemented | `7/7` | 🟢 Verified | `7/7` |
 | **Total** | **🟢 GO** | **`147/147`** | **🟢 Verified** | **`111/111`** |
 
-Implementation coverage는 `147/147`이며, Verification checklist coverage는 `111/111` (전건 통과)이다.
+Implementation coverage는 `147/147`이며, Verification checklist coverage는 `111/111`이다. 표의 `Verified`는 audited evidence 상태이며 current PR head의 재실행 결과를 의미하지 않는다.
 
 ## Blockers
 
-현재 식별된 Foundation blocker 없음 (B1, B2, B4 모두 해결 완료).
+Audited Foundation runtime 기준 blocker 없음 (B1, B2, B4 해결 완료).
 
 ## Audited Verification
 
-Audited revision (`feea63fe5945c353f2f9b70b57a29cbe7294dafa`)에서 Foundation 관련 pytest/dbt/actual-source 실행 결과: **Passing** (57 passed in 13.63s).
+Foundation focused suite:
 
-실행 command:
+- Revision: `feea63fe5945c353f2f9b70b57a29cbe7294dafa`
+- Result: **57 passed in 13.63s**
+
+Actual-source observation:
+
+- Execution revision: `17522ddc42748fe22e779f50b8e328ebaf2d4abb`
+- Evidence commit: `feea63fe5945c353f2f9b70b57a29cbe7294dafa`
+- Source fingerprint: canonical evidence의 SHA-256 사용
+- Applicability: execution revision과 evidence commit 사이 변경은 generated EDA evidence artifact뿐이며 EDA calculation, source, evidence generator semantics는 변경되지 않았다.
+
+재현 command:
 
 ```bash
 mkdir -p artifacts && uv run pytest tests/hmda_data tests/data_platform tests/dbt tests/reliability/contracts
 uv run python scripts/run_actual_source.py
 ```
 
-이 dashboard는 위 audited execution을 근거로 한다. 이후 문서/OpenSpec 정합화에서 runtime validation을 다시 수행하지 않았다면 이를 current HEAD execution으로 표현하지 않는다.
+이 PR에서는 OpenSpec provenance 계약과 Gold metric oracle을 강화했지만 CLI/runtime validation을 다시 실행하지 않았다. 따라서 위 결과를 current PR head execution으로 표현하지 않는다.
 
 ## Non-Gating Inventory
 
@@ -50,7 +63,7 @@ uv run python scripts/run_actual_source.py
 | --- | --- |
 | Reliability freshness semantics | Risk — Foundation contract는 `freshness_at` 존재만 요구하고 후속 profile spec은 미측정 시 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
 | Profile / incident / impact / remediation lifecycle | Implemented, current execution unverified |
-| Approval backfill validation | Implemented, current execution unverified |
+| Approval backfill validation | Implemented, current execution unverified — year-level profile validation contract는 정렬했지만 `source_file` scoped profile validation은 guaranteed contract 밖이다. |
 | Evaluation report | Implemented, current execution unverified |
 | Dagster orchestration | Blocked — standard pipeline에서 dbt skip materialization semantics 충돌 |
 | dbt last-known-good evidence retention | Blocked — build 전 기존 artifact 삭제 |
