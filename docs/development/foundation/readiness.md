@@ -7,7 +7,7 @@
 > **Evidence commit:** `feea63fe5945c353f2f9b70b57a29cbe7294dafa`  
 > **Current PR validation:** ⚪ Not run
 
-`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. Foundation focused suite는 audited test revision에서 57개 test가 통과했다. Actual-source evidence는 별도 execution revision에서 생성되었고, evidence commit까지 EDA runtime·source·generator 변경이 없어 현재 audited evidence에 적용 가능하다.
+Foundation phase의 완료 범위와 evidence는 `docs/development/foundation/`이 소유한다. 아래 집계는 해당 범위에 필요한 current canonical capability Spec과 audited evidence를 연결한다. Foundation focused suite는 audited test revision에서 57개 test가 통과했다. Actual-source evidence는 별도 execution revision에서 생성되었고, evidence commit까지 EDA runtime·source·generator 변경이 없어 현재 audited evidence에 적용 가능하다.
 
 ## Foundation Gate
 
@@ -53,22 +53,22 @@ mkdir -p artifacts && uv run pytest tests/hmda_data tests/data_platform tests/db
 uv run python scripts/run_actual_source.py
 ```
 
-이 PR에서는 OpenSpec provenance 계약과 Gold metric oracle을 강화했지만 CLI/runtime validation을 다시 실행하지 않았다. 따라서 위 결과를 current PR head execution으로 표현하지 않는다.
+이 PR에서는 canonical Spec taxonomy와 참조만 정리하며 runtime validation을 다시 실행하지 않았다. 따라서 위 결과를 current PR head execution으로 표현하지 않는다.
 
 ## Non-Gating Inventory
 
-다음 capability는 현재 구현되어 있거나 위험이 확인됐지만 `foundation-baseline`에 따라 Foundation 총계에는 포함하지 않는다.
+다음 capability와 development concern은 현재 구현되어 있거나 위험이 확인됐지만 Foundation 총계에는 포함하지 않는다.
 
 | Capability | Audit Status |
 | --- | --- |
-| Reliability freshness semantics | Risk — Foundation contract는 `freshness_at` 존재만 요구하고 후속 profile spec은 미측정 시 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
+| Reliability freshness semantics | Risk — Foundation contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 미측정 시 fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
 | Profile / incident / impact / remediation lifecycle | Implemented, current execution unverified |
-| Approval backfill validation | Implemented, current execution unverified — profile request alignment과 row-count comparison contract는 정렬했지만 `source_file` scoped 비교는 file-level population equivalence를 보장하지 않는다. |
-| Evaluation report | Implemented, current execution unverified |
-| Dagster orchestration | Blocked — standard pipeline에서 dbt skip materialization semantics 충돌 |
+| Reliability recovery backfill | Implemented, current execution unverified — profile request alignment과 row-count comparison contract는 정렬했지만 `source_file` scoped 비교는 file-level population equivalence를 보장하지 않는다. |
+| Reliability evaluation report | Implemented, current execution unverified |
+| Orchestration pipeline | Blocked — standard pipeline에서 dbt skip materialization semantics 충돌 |
 | dbt last-known-good evidence retention | Blocked — build 전 기존 artifact 삭제 |
-| Synthetic reliability cases | Implemented, current execution unverified |
-| Test quality observability | Implemented, current execution unverified |
+| HMDA synthetic defects | Implemented, current execution unverified |
+| Test quality observability | Implemented, current execution unverified — development/test tooling concern이며 canonical runtime Spec은 아니다. |
 
 ## Additional Drift
 
@@ -88,4 +88,4 @@ uv run python scripts/run_actual_source.py
 - [Data Platform Domain](../../domains/data-platform.md)
 - [Reliability Domain](../../domains/reliability.md)
 - [ARCHITECTURE](../../ARCHITECTURE.md)
-- OpenSpec: `foundation-baseline`, `hmda-data-foundation`, `partition-ingestion`, `hmda-eda-baseline`, `dbt-analytics-foundation`, `reliability-contracts`
+- OpenSpec: `hmda-data-ingestion`, `data-platform-dbt-analytics`, `hmda-data-eda-descriptive-evidence`, `reliability-contracts`
