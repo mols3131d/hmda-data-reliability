@@ -63,7 +63,7 @@ uv run python scripts/run_actual_source.py
 | --- | --- |
 | Reliability freshness semantics | Risk — Foundation contract는 `freshness_at` 존재만 요구하고 후속 profile spec은 미측정 시 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
 | Profile / incident / impact / remediation lifecycle | Implemented, current execution unverified |
-| Approval backfill validation | Implemented, current execution unverified — year-level profile validation contract는 정렬했지만 `source_file` scoped profile validation은 guaranteed contract 밖이다. |
+| Approval backfill validation | Implemented, current execution unverified — profile request alignment과 row-count comparison contract는 정렬했지만 `source_file` scoped 비교는 file-level population equivalence를 보장하지 않는다. |
 | Evaluation report | Implemented, current execution unverified |
 | Dagster orchestration | Blocked — standard pipeline에서 dbt skip materialization semantics 충돌 |
 | dbt last-known-good evidence retention | Blocked — build 전 기존 artifact 삭제 |
