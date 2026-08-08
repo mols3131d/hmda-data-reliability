@@ -15,13 +15,10 @@ tags:
 ---
 
 <!--
-작성 규칙:
-- review_loop는 완료한 전체 review loop 수이며 0부터 8까지의 정수다.
-- 확인 가능한 계획 artifact 근거로만 checklist를 판정한다.
-- 모든 항목이 통과하고 미완료 Required Changes가 없을 때만 approved다.
-- 미통과 항목마다 같은 ID의 Required Change를 작성한다.
+형식 규칙:
+- review_loop는 0부터 8까지의 정수다.
+- checklist 항목과 Required Changes는 같은 checklist ID를 사용한다.
 - 통과 항목의 상세 설명과 빈 Required Changes section은 남기지 않는다.
-- 계획 artifact가 변경되면 다음 loop에서 모든 항목을 다시 판정한다.
 -->
 
 # Plan Review
