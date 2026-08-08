@@ -28,17 +28,15 @@ Preserve behavior. Remove the main reading bottleneck. Make the smallest change.
    - hidden policy or constraint: add one intent comment;
    - independent responsibility with a clearer call site: extract a function;
    - nested or mixed abstraction levels: simplify control flow.
-1. Preserve public APIs, return values, exceptions, state, side-effect order, logs, and validation.
+1. Preserve behavior according to the source-development instructions; do not change contracts.
 1. Run relevant tests before and after. Without tests, use static, type, or I/O checks and report the gap.
 1. Remove unrelated formatting and future-only abstractions.
 
 ## Guardrails
 
-- Comment only on policies, exceptions, ordering, or constraints the code cannot clarify.
 - Do not extract helpers only to reduce line count.
 - Do not add one-use abstractions, future extension points, or navigation overhead.
 - Use one name or comment for each intent; do not duplicate explanations.
-- Preserve error handling, validation, and observability.
 
 ## Report
 
