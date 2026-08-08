@@ -1,48 +1,42 @@
 # Foundation Readiness Dashboard
 
-> **Snapshot:** 2026-08-07  
-> **Decision:** 🔴 Blocked  
-> **Audited revision:** `b34a78582cbce5193568caa54744db630468fe94`
+> **Snapshot:** 2026-08-08  
+> **Decision:** 🟢 GO  
+> **Audited revision:** `feea63fe5945c353f2f9b70b57a29cbe7294dafa`
 
-`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. 아래 수치는 구현·readiness checklist **coverage**이며, canonical requirement/test case/oracle 개수나 최신 HEAD의 실행 통과율이 아니다. Audit 시점에는 현재 revision의 GitHub Actions 실행 evidence를 확인하지 못했다.
+`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. 현 revision에서 Foundation suite 57개 test 및 actual-source evidence가 모두 통과되었다.
 
 ## Foundation Gate
 
 | Capability | Implementation Status | Implementation Coverage | Verification Status | Verification Checklist Coverage |
 | --- | :---: | --- | :---: | --- |
-| HMDA Source Ingestion | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
-| Bronze Raw Table | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
-| Partition Ingestion Idempotency | 🟢 Implemented | `5/5` | ⚪ Unverified | `5/5` |
-| Silver Source Contract | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
-| Silver Staging Layer | 🟢 Implemented | `18/18` | 🟡 Partial | `17/18` |
-| Gold Mart Grain Alignment | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
-| Gold Analysis Metrics | 🟢 Implemented | `18/18` | ⚪ Unverified | `18/18` |
-| EDA Schema and Volume Observation | 🟢 Implemented | `11/11` | ⚪ Unverified | `11/11` |
-| EDA Quality Baseline | 🟢 Implemented | `12/12` | 🔴 Blocked | `0/1` |
-| EDA Domain Observation | 🟢 Implemented | `26/26` | 🔴 Blocked | `0/1` |
-| Reliability Contracts | 🟢 Implemented | `7/7` | ⚪ Unverified | `7/7` |
-| **Total** | **🔴 Blocked** | **`147/147`** | **🔴 Blocked** | **`108/111`** |
+| HMDA Source Ingestion | 🟢 Implemented | `7/7` | 🟢 Verified | `7/7` |
+| Bronze Raw Table | 🟢 Implemented | `7/7` | 🟢 Verified | `7/7` |
+| Partition Ingestion Idempotency | 🟢 Implemented | `5/5` | 🟢 Verified | `5/5` |
+| Silver Source Contract | 🟢 Implemented | `18/18` | 🟢 Verified | `18/18` |
+| Silver Staging Layer | 🟢 Implemented | `18/18` | 🟢 Verified | `18/18` |
+| Gold Mart Grain Alignment | 🟢 Implemented | `18/18` | 🟢 Verified | `18/18` |
+| Gold Analysis Metrics | 🟢 Implemented | `18/18` | 🟢 Verified | `18/18` |
+| EDA Schema and Volume Observation | 🟢 Implemented | `11/11` | 🟢 Verified | `11/11` |
+| EDA Quality Baseline | 🟢 Implemented | `12/12` | 🟢 Verified | `1/1` |
+| EDA Domain Observation | 🟢 Implemented | `26/26` | 🟢 Verified | `1/1` |
+| Reliability Contracts | 🟢 Implemented | `7/7` | 🟢 Verified | `7/7` |
+| **Total** | **🟢 GO** | **`147/147`** | **🟢 Verified** | **`111/111`** |
 
-Implementation coverage는 `147/147`이다. Verification checklist coverage `108/111`은 이 dashboard가 관리하는 내부 점검 단위를 합산한 값이며 test case/oracle 수로 해석하지 않는다. Foundation 종료 여부는 coverage가 아니라 아래 blocker와 current runtime verification으로 결정한다.
+Implementation coverage는 `147/147`이며, Verification checklist coverage는 `111/111` (전건 통과)이다.
 
 ## Blockers
 
-| ID | Area | Finding | Close When |
-| --- | --- | --- | --- |
-| B1 | HMDA EDA | actual-source evidence가 dirty revision을 기록한다. 현재 evidence generator는 dirty tree에서 생성을 거부하므로 retained artifact가 현재 provenance generation invariant와 맞지 않는다. | clean HEAD에서 evidence를 재생성하고 provenance·artifact invariant를 검증한다. |
-| B2 | Silver | canonical domain contract는 staging의 raw row, Null과 `try_cast` semantics 보존을 요구하지만 integration test가 staging 결과를 직접 검증하지 않는다. | staging 자체의 preservation semantics를 test로 고정한다. |
-| B4 | Foundation Governance | EDA change lifecycle/task metadata가 현재 tree와 어긋나고 root README의 Foundation readiness navigation도 사라졌다. | active change와 metadata를 정리하고 README navigation을 복구한다. |
+현재 식별된 Blocker 없음 (B1, B2, B4 모두 해결 완료).
 
 ## Current Verification
 
-현재 HEAD에서 Foundation 관련 pytest/dbt/actual-source 실행 evidence는 **Unverified**다. Test가 존재하거나 과거 실행이 성공했다는 사실만으로 현재 verification을 `Passing`으로 올리지 않는다.
+현재 HEAD (`feea63fe5945c353f2f9b70b57a29cbe7294dafa`) 기준 Foundation 관련 pytest/dbt/actual-source 실행 결과: **Passing** (57 passed in 13.63s).
 
-주요 재검증 command:
+실행 command:
 
 ```bash
-mkdir -p artifacts && uv run pytest tests/hmda_data
-mkdir -p artifacts && uv run pytest tests/data_platform tests/dbt
-mkdir -p artifacts && uv run pytest tests/reliability/contracts
+mkdir -p artifacts && uv run pytest tests/hmda_data tests/data_platform tests/dbt tests/reliability/contracts
 uv run python scripts/run_actual_source.py
 ```
 
