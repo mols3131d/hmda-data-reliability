@@ -49,6 +49,8 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 `inbox`는 non-canonical artifact를 지속적으로 저장하는 장기 유지 branch다. Routine inbox artifact에만 일반 naming과 pull request delivery의 예외를 허용한다.
 
+`inbox` branch가 없으면 current remote `main`에서 한 번 생성한다.
+
 ### Direct Push
 
 허용 경로:
@@ -67,17 +69,18 @@ Push 전에는 다음을 확인한다.
 
 1. Local branch와 push destination이 모두 `inbox`다.
 1. Remote `inbox`를 갱신했고 push가 fast-forward다.
-1. Remote `inbox` 이후 추가되는 commit의 모든 변경 경로가 허용 범위 안이다.
+1. Remote `inbox` 이후 추가되는 routine artifact commit의 모든 변경 경로가 허용 범위 안이다.
 1. 예상하지 못한 변경이나 unresolved conflict가 없다.
 
 Remote가 앞서 있으면 먼저 반영하고 다시 검증한다. Force-push, remote history rewrite, 다른 작업자의 변경을 덮어쓰기 위한 reset 또는 branch replacement는 금지한다. Scope가 불명확하면 일반 작업 branch와 Draft Pull Request를 사용한다.
 
 ### Main Sync
 
-`main`의 최신 운영 자산은 routine artifact push와 분리해 current remote `main`을 merge하는 방식으로만 `inbox`에 반영한다.
+`main`의 최신 운영 자산은 routine artifact와 분리된 sync commit과 push로 current remote `main`을 merge해 반영한다.
 
-- Sync commit에 수동 수정을 섞지 않는다.
+- Sync commit에 수동 수정이나 routine artifact 변경을 섞지 않는다.
 - Merge conflict가 발생하면 중단한다.
+- Sync push에는 sync commit만 포함한다.
 - Sync는 `inbox` content를 `main`에 반영하는 근거가 아니다.
 
 ### Promotion
