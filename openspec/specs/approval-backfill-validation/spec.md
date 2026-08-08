@@ -2,7 +2,7 @@
 
 ## Purpose
 
-승인 상태와 필수 recovery action을 검증한 뒤 HMDA target partition을 overwrite하고, year-level backfill에서 같은 `source_year` 범위의 profile을 재생성해 결과를 검증하는 계약을 정의한다.
+승인 상태와 필수 recovery action을 검증한 뒤 HMDA target partition을 overwrite하고, aligned profile snapshot을 재생성해 backfill row count와 비교하는 계약을 정의한다.
 
 ## Requirements
 
@@ -29,12 +29,21 @@
 - **WHEN** 유효한 approval, source input과 target partition identity가 주어질 때
 - **THEN** 시스템은 해당 partition을 재적재하고 적재 row count를 반환해야 한다.
 
-### Requirement: Year-level post-backfill profile validation
+### Requirement: Profile request alignment
 
-시스템은 `source_file`이 지정되지 않은 year-level backfill 완료 후 같은 target table과 `source_year` 범위의 profile snapshot을 재생성해야 한다(SHALL).
+시스템은 profile request의 target table이 backfill target table과 같고 partition identity가 `source_year`와 같아야 한다(SHALL).
 
-#### Scenario: year partition profile 재생성
+#### Scenario: profile request가 target과 다른 경우
 
-- **WHEN** `source_file`이 지정되지 않은 승인된 backfill이 성공할 때
-- **THEN** 결과는 갱신된 `source_year` 범위를 기반으로 생성된 profile snapshot을 포함해야 한다.
-- **AND** 재생성된 profile row count와 적재 row count의 일치 여부를 validation 결과로 제공해야 한다.
+- **WHEN** profile request의 target table 또는 partition identity가 backfill target과 다를 때
+- **THEN** 시스템은 backfill 실행 전에 요청을 거부해야 한다.
+
+### Requirement: Post-backfill profile comparison
+
+시스템은 승인된 backfill 완료 후 aligned profile request로 snapshot을 재생성하고, snapshot row count와 backfill 적재 row count의 일치 여부를 validation 결과로 제공해야 한다(SHALL). `source_file` scoped backfill에서 profile selector가 더 넓은 population을 가리킬 수 있으므로, 이 비교 결과를 file-level population equivalence로 해석해서는 안 된다(MUST NOT).
+
+#### Scenario: profile snapshot 재생성
+
+- **WHEN** 승인된 backfill이 성공할 때
+- **THEN** 결과는 aligned profile request로 생성된 profile snapshot을 포함해야 한다.
+- **AND** `validation_passed`는 profile row count와 적재 row count가 같은지 나타내야 한다.
