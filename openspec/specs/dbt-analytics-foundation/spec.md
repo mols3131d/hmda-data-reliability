@@ -40,12 +40,22 @@ DuckDB raw HMDA 데이터를 안정적인 dbt staging/mart 모델과 lineage art
 
 ### Requirement: HMDA mart 모델 생성
 
-시스템은 staging 모델을 기반으로 `mart_hmda_loan_outcomes` 모델을 생성해야 한다(SHALL). mart grain은 `activity_year`, `state_code`, `loan_purpose` 단위로 고정해야 하며(MUST), 신청 건수, 승인 건수, 거절 건수, 승인율, 평균 대출 금액, 평균 소득 지표를 포함해야 한다(MUST).
+시스템은 staging 모델을 기반으로 `mart_hmda_loan_outcomes` 모델을 생성해야 한다(SHALL). Mart population은 `activity_year`, `state_code`, `loan_purpose`가 모두 non-null인 staging row이며(MUST), grain은 해당 세 컬럼 조합으로 고정해야 한다(MUST).
+
+각 grain은 다음 metric semantics를 사용해야 한다(MUST).
+
+- `application_count`: grain의 전체 row 수
+- `approval_count`: `action_taken IN (1, 2)` row 수
+- `denial_count`: `action_taken IN (3, 7)` row 수
+- `approval_rate`: `approval_count / application_count`를 소수점 여섯 자리로 반올림한 값
+- `average_loan_amount`: grain의 non-null `loan_amount` 평균
+- `average_income`: grain의 non-null `income` 평균
 
 #### Scenario: HMDA mart 지표 생성
 
 - **WHEN** staging 모델이 준비된 상태에서 mart 모델을 빌드할 때
-- **THEN** `activity_year`, `state_code`, `loan_purpose` 단위의 집계 행이 생성되고 핵심 지표 컬럼이 조회 가능해야 한다.
+- **THEN** eligible population만 `activity_year`, `state_code`, `loan_purpose` 단위로 집계되어야 한다.
+- **AND** count, approval rate와 평균 metric은 위 정의에 따라 계산되어야 한다.
 
 #### Scenario: HMDA mart grain 중복 방지
 
