@@ -17,9 +17,12 @@ If another workflow defines an owning review artifact, such as an OpenSpec `plan
 - Record performed validation, omitted validation, and remaining risk.
 - Prefer a small number of well-supported findings over speculative volume.
 
-## Template
+## Resources
 
-Use [`inbox/_templates/review.md`](../_templates/review.md) when a reusable structure helps. Adapt or omit sections that do not serve the review.
+- Template: [`inbox/_templates/review.md`](../_templates/review.md)
+- Skill: `pivot-review-code` only for implementation or test review; broader targets use this guideline without forcing that skill.
+
+Use only resources that serve the review target. Adapt or omit template sections that do not.
 
 ## Output
 
@@ -31,4 +34,4 @@ Lead with the review result or highest-impact findings. Keep evidence close to t
 - Do not broaden the review into unrelated existing defects or redesign.
 - Do not claim validation, reproduction, or verification that was not performed.
 - Do not treat the Review artifact as the canonical fix, decision, or requirement.
-- Follow the lifecycle, path, frontmatter, and canonical-boundary rules in `inbox/AGENTS.md`.
+- Follow the common artifact and lifecycle rules in `inbox/AGENTS.md`.

@@ -45,9 +45,52 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 기존 branch는 동일 작업의 후속 수정일 때만 재사용한다.
 
+## Inbox Branch
+
+`inbox`는 non-canonical artifact를 지속적으로 저장하는 장기 유지 branch다. Routine inbox artifact에만 일반 naming과 pull request delivery의 예외를 허용한다.
+
+`inbox` branch가 없으면 current remote `main`에서 한 번 생성한다.
+
+### Direct Push
+
+허용 경로:
+
+```text
+inbox/YYYY-MM-DD/**
+inbox/archive/**
+```
+
+- Routine artifact는 `inbox`에 직접 commit하고 push하며 Pull Request를 만들지 않는다.
+- 하나의 commit에는 하나의 artifact 또는 함께 소비되는 하나의 bundle만 포함한다.
+- Routine artifact push에는 routine artifact commit만 포함한다.
+- Commit message는 [Commits](commit.md) 규칙을 따른다.
+- 그 밖의 경로는 최신 `main`에서 일반 작업 branch와 Draft Pull Request로 변경한다.
+
+Push 전에는 다음을 확인한다.
+
+1. Local branch와 push destination이 모두 `inbox`다.
+1. Remote `inbox`를 갱신했고 push가 fast-forward다.
+1. Push에 포함된 모든 commit의 변경 경로가 허용 범위 안이다.
+1. 예상하지 못한 변경이나 unresolved conflict가 없다.
+
+Remote가 앞서 있으면 먼저 반영하고 다시 검증한다. Force-push, remote history rewrite, 다른 작업자의 변경을 덮어쓰기 위한 reset 또는 branch replacement는 금지한다. Scope가 불명확하면 일반 작업 branch와 Draft Pull Request를 사용한다.
+
+### Main Sync
+
+`main`의 최신 운영 자산은 routine artifact push와 분리된 sync push로 current remote `main`을 merge해 반영한다.
+
+- Sync commit에 수동 수정이나 routine artifact 변경을 섞지 않는다.
+- Sync push에는 sync commit만 포함한다.
+- Merge conflict가 발생하면 중단한다.
+- Sync는 `inbox` content를 `main`에 반영하는 근거가 아니다.
+
+### Promotion
+
+Inbox content가 채택되면 최신 `main`에서 일반 작업 branch를 만들고 필요한 내용만 owning artifact에 다시 작성한다. `inbox` branch나 inbox artifact 자체를 `main`에 merge하지 않는다.
+
 ## Agent Instructions
 
-- `agent` actor namespace와 자신의 작업 branch를 사용한다.
+- `agent` actor namespace와 자신의 작업 branch를 사용한다. Routine inbox artifact는 `Inbox Branch` 규칙을 따른다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
 - 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.

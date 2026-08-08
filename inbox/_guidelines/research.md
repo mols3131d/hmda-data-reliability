@@ -11,9 +11,12 @@ Use `research` when the artifact's primary purpose is to answer a question by ga
 - Compare alternatives only when they can change the answer or decision.
 - Stop when additional investigation is unlikely to change the answer or a material uncertainty.
 
-## Template
+## Resources
 
-Use [`inbox/_templates/research.md`](../_templates/research.md) when a reusable structure helps. Adapt or omit sections that do not serve the question.
+- Template: [`inbox/_templates/research.md`](../_templates/research.md)
+- Skill: `pivot-research-workspace` when evidence-backed investigation of current behavior, scope, dependencies, alternatives, or failures is useful.
+
+Use only the resources that help answer the research question. Adapt or omit template sections that do not serve it.
 
 ## Output
 
@@ -26,4 +29,4 @@ Research supports decisions but does not make requirements, design, implementati
 - Do not use `research` for a simple reference dump or summary with no investigation question.
 - Do not expand into unrelated repository-wide investigation.
 - Do not present unverified assumptions as repository facts.
-- Follow the lifecycle, path, frontmatter, and canonical-boundary rules in `inbox/AGENTS.md`.
+- Follow the common artifact and lifecycle rules in `inbox/AGENTS.md`.
