@@ -88,7 +88,7 @@ EDA entrypoint는 원천 파일과 데이터베이스를 수정하지 않아야 
 
 ### Requirement: Actual-source observation
 
-actual-source observation은 한 controlled run에서 portable JSON과 그 JSON에서 파생한 Markdown summary를 생성해야 한다(SHALL). 두 artifact는 source ID, SHA-256, repository revision, execution timestamp, total duration과 같은 key metrics를 기록해야 한다(MUST).
+actual-source observation은 한 controlled run에서 portable JSON과 그 JSON에서 파생한 Markdown summary를 생성해야 한다(SHALL). 두 artifact는 source ID, SHA-256, evidence execution revision, execution timestamp, total duration과 같은 key metrics를 기록해야 한다(MUST).
 
 #### Scenario: Evidence consistency
 
@@ -96,8 +96,14 @@ actual-source observation은 한 controlled run에서 portable JSON과 그 JSON�
 - **THEN** Markdown의 income null count와 grain distinct group count는 같은 JSON 값과 일치해야 한다.
 - **AND** absolute source path와 temporary directory는 canonical evidence에 포함되어서는 안 된다.
 
-#### Scenario: Current revision evidence is absent
+#### Scenario: Evidence applicability across revisions
 
-- **WHEN** current code revision에 대한 controlled actual-source observation이 없거나 evidence가 유효하지 않을 때
+- **WHEN** readiness revision이 evidence execution revision보다 뒤에 있을 때
+- **THEN** source fingerprint가 같고 두 revision 사이에 EDA calculation, evidence generator 또는 observation semantics에 영향을 주는 변경이 없음을 확인한 경우에만 기존 evidence를 사용할 수 있어야 한다.
+- **AND** readiness는 audited revision과 evidence execution revision을 구분해 기록해야 한다.
+
+#### Scenario: Applicable evidence is absent
+
+- **WHEN** 현재 readiness revision에 직접 생성된 controlled actual-source observation이 없고 이전 evidence의 applicability도 입증할 수 없을 때
 - **THEN** EDA readiness는 blocked 또는 unverified로 표시되어야 한다.
 - **AND** 해당 상태를 Foundation completion evidence로 표현해서는 안 된다.
