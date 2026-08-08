@@ -32,7 +32,7 @@ tags:
 
 ### F1. `volume_drop`이 첫 recovery vertical slice에 가장 적합하다
 
-현재 Foundation은 HMDA ingestion, partition overwrite, read-only incident lifecycle, dbt impact analysis와 approval-gated recovery를 분리된 capability로 제공한다. `volume_drop`은 deterministic row removal과 명확한 row-count oracle을 사용하므로 이 capability들을 하나의 recovery 흐름으로 연결하기에 가장 작다.
+현재 repository는 Foundation data path에 더해 partition overwrite, read-only incident lifecycle, dbt impact analysis와 approval-gated recovery를 분리된 capability로 제공한다. `volume_drop`은 deterministic row removal과 명확한 row-count oracle을 사용하므로 이 capability들을 하나의 recovery 흐름으로 연결하기에 가장 작다.
 
 ```text
 clean fixture
@@ -60,7 +60,7 @@ Foundation의 non-gating inventory는 MVP 설계 입력으로 사용한다. 특�
 
 ### F3. Approval은 실제로 수행되는 모든 mutation에 결합되어야 한다
 
-현재 approval은 incident와 requested action만 표현하고, recovery executor는 `overwrite_partition`, `rerun_profile_snapshot`만 요구한다. MVP가 실제 target에서 `dbt build`까지 수행하면 marts table materialization도 승인 대상 mutation이다.
+현재 approval은 실행 대상 binding 관점에서 `incident_id`와 requested actions만 가지며 target, candidate, validation state와 dbt execution identity를 고정하지 않는다. Recovery executor도 `overwrite_partition`, `rerun_profile_snapshot`만 요구한다. MVP가 실제 target에서 `dbt build`까지 수행하면 marts table materialization도 승인 대상 mutation이다.
 
 후속 contract는 최소한 다음 stable identity를 approval에 결합해야 한다.
 
@@ -121,7 +121,7 @@ Candidate file digest만으로는 ingestion contract를 통과한 결과 rows를
 
 - candidate digest
 - applied row count
-- full partition fingerprint
+- expected recovered partition fingerprint
 - required-column/schema validation result
 - analysis digest
 - validated target-state digest
@@ -143,7 +143,7 @@ MVP contract는 다음을 보장해야 한다.
 
 - candidate validation은 run-scoped artifact workspace를 사용하고 current shared dbt artifacts를 변경하지 않는다.
 - recovery build가 실패해도 이전 last-known-good shared artifacts를 유지한다.
-- failed build의 artifact/evidence는 해당 run에 귀속해 보존한다.
+- failed build가 생성한 artifact가 있으면 run-scoped evidence로 보존하고, artifact가 없어도 command/result/error evidence를 남긴다.
 - 성공한 build만 검증 후 새로운 current artifact projection으로 승격한다.
 - approval과 run evidence는 validation/recovery 판단에 사용한 artifact projection을 식별한다.
 
@@ -176,12 +176,13 @@ Exact enum은 Planning/Design에서 정한다. Behavioral contract는 다음만 
 
 - target mutation이 시작됐는지 evidence로 구분한다.
 - partition commit 이후 failure를 성공으로 보고하지 않는다.
-- 같은 run, approval, candidate에 대해 idempotent reconciliation을 허용한다.
-- reconciliation은 current partition fingerprint를 확인해 불필요한 overwrite를 피하고 profile/dbt verification을 재실행한다.
+- reconciliation은 writer gate 아래에서 current target fingerprint를 다시 확인한다.
+- current partition이 expected recovered fingerprint와 같으면 overwrite를 생략하고 profile/dbt verification만 재실행한다.
+- current partition이 approval에 결합된 pre-recovery target state와도 expected recovered state와도 다르면 old approval로 mutation하지 않고 candidate validation과 approval을 새로 요구한다.
 - failed dbt run evidence와 last-known-good artifact를 함께 보존한다.
 
 - **Evidence** - `docs/ARCHITECTURE.md`, `dbt/dbt_project.yml`, `src/project_pivot/data_operations/runner.py`
-- **Implication** - success oracle뿐 아니라 partial failure의 관찰 가능성과 안전한 replay가 MVP completion의 일부다.
+- **Implication** - reconciliation은 replay convenience가 아니라 stale approval 규칙을 그대로 유지하는 recovery continuation이어야 한다.
 
 ### F8. Research는 behavioral decision만 고정하고 세부 구현은 Planning으로 넘긴다
 
@@ -235,7 +236,8 @@ Planning/Design이 결정할 사항:
 | Candidate dbt failure | target database와 current shared dbt artifacts 변경 없음, failed-run evidence 보존 |
 | Approved recovery | partition identity, incident resolution, profile과 full dbt build 검증 통과 |
 | Recovery dbt failure | `verification_failed`, prior last-known-good shared artifact 유지 |
-| Recovery reconciliation | 같은 run/approval/candidate로 idempotent하게 verification 완료 |
+| Recovery reconciliation | expected recovered fingerprint면 overwrite 없이 verification 재실행 |
+| Diverged reconciliation target | old approval mutation 차단, 새 validation/approval 요구 |
 | Repeated recovery | duplicate 증가와 semantic drift 없음 |
 | Omitted-column corruption | full-source fingerprint mismatch로 실패 |
 | Replay | volatile metadata를 제외한 stable projection이 동일 |
@@ -297,5 +299,4 @@ Out of scope:
 | Local writer gate의 owner와 mechanism은 무엇인가? | snapshot과 overwrite 사이 경쟁 조건을 닫아야 함 | Design에서 process lock + DuckDB boundary 결정 |
 | Full-source fingerprint normalization은 무엇인가? | type/null/duplicate/order에 독립적인 oracle 필요 | Spec scenario + property test로 확정 |
 | dbt run workspace와 current artifact promotion은 어떻게 분리하는가? | failed build가 prior evidence를 파괴하면 안 됨 | Design에서 path/promotion/retention 결정 |
-| Reconciliation이 partition overwrite를 언제 생략하는가? | partial failure 재실행이 안전하고 idempotent해야 함 | fingerprint와 phase evidence 조건 설계 |
 | Active runner refactor는 언제 archive하는가? | 동일 runner의 overlapping Change를 피해야 함 | MVP Change 생성 전 lifecycle 정리 |
