@@ -15,7 +15,8 @@ context: |
 
   모든 ID는 owning domain부터 시작하고 lowercase kebab-case를 사용한다.
   Spec의 capability와 Change의 short-title은 필수다.
-  Change의 capability, subdomain과 extensions는 분류나 구분에 필요할 때만 사용한다.
+  Subdomain과 extensions는 필요할 때만 사용한다.
+  Change의 capability는 분류에 도움이 될 때만 포함한다.
   Spec은 지속적인 capability를 나타내는 명사형으로 작성한다.
   Change의 short-title은 구체적인 의도나 결과를 짧게 표현한다.
   update, improvement, enhancement, extension 같은 모호한 이름은 피한다.
