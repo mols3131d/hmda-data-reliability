@@ -59,7 +59,6 @@ uv run python scripts/run_actual_source.py
 
 ## Additional Drift
 
-- Gold metric의 `action_taken` 모집단과 `approval_rate` 분모는 canonical Data Platform domain 문서에 정의되어 있고 현재 SQL/test와 일치한다. 다만 `dbt-analytics-foundation` OpenSpec에는 세부 semantics가 없어 traceability가 약하다.
 - `DEVELOPMENT.md`와 `pyproject.toml`에는 제거된 Marimo EDA runtime 관련 설명·설정이 남아 있다.
 - Foundation draft README에는 이미 결정된 Gold grain과 제거된 notebook smoke가 미결정 항목으로 남아 있다.
 
