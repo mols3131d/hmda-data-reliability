@@ -30,7 +30,7 @@ asset partition의 row count, null rate, schema와 freshness 지표를 계산해
 
 ### Requirement: Freshness metric
 
-시스템은 freshness column이 제공되면 partition의 최대 timestamp를 freshness로 사용해야 한다(SHALL). freshness를 측정할 값이 없으면 snapshot contract가 정의한 fallback 값을 사용해야 한다(MUST).
+시스템은 freshness column이 제공되면 partition의 최대 timestamp를 `freshness_at`으로 사용해야 한다(SHALL). freshness column이 없거나 측정값이 없으면 `observed_at`을 fallback으로 사용해야 한다(MUST).
 
 ### Requirement: Serializable snapshot
 

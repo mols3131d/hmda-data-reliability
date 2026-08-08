@@ -17,7 +17,7 @@ HMDA 원천 파일을 발견·검증하고 Bronze dataset으로 전체 또는 pa
 
 ### Requirement: Source contract validation
 
-시스템은 적재 전에 `activity_year`, `state_code`, `county_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income` 컬럼의 존재를 검증해야 한다(SHALL). 필수 컬럼이 누락된 입력을 성공한 적재로 처리해서는 안 된다(MUST NOT).
+시스템은 ingestion 과정에서 `activity_year`, `state_code`, `county_code`, `loan_purpose`, `action_taken`, `loan_amount`, `income` 컬럼의 존재를 검증해야 한다(SHALL). 필수 컬럼이 누락된 입력을 성공한 적재로 보고해서는 안 된다(MUST NOT).
 
 #### Scenario: Missing required column
 
@@ -36,7 +36,7 @@ HMDA 원천 파일을 발견·검증하고 Bronze dataset으로 전체 또는 pa
 
 ### Requirement: Partition replacement
 
-시스템은 `source_year`와 optional `source_file`로 대상 partition을 선택해 해당 범위만 교체할 수 있어야 한다(SHALL). 교체는 기존 범위를 제거하고 새 범위를 반영하는 하나의 원자적 결과로 끝나야 한다(MUST).
+시스템은 `source_year`와 optional `source_file`로 대상 partition을 선택해 해당 범위만 교체할 수 있어야 한다(SHALL). Partition 교체는 기존 범위를 제거하고 새 범위를 반영하는 하나의 transaction으로 수행해야 한다(MUST).
 
 #### Scenario: Year partition reload
 

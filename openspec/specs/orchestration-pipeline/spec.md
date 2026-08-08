@@ -35,8 +35,8 @@ HMDA Bronze load와 analytics build를 data-plane asset graph로 연결하고 �
 
 #### Scenario: Analytics materialization
 
-- **WHEN** analytics asset이 완료되거나 configured skip으로 종료될 때
-- **THEN** 실행 여부, 성공 여부와 available analytics artifact 위치를 구분해 확인할 수 있어야 한다.
+- **WHEN** analytics asset materialization이 완료될 때
+- **THEN** analytics 실행 상태와 available artifact 위치를 확인할 수 있어야 한다.
 
 ### Requirement: Domain delegation
 
