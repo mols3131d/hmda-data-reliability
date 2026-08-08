@@ -15,6 +15,7 @@ tags:
 <!--
 형식 규칙:
 - OpenSpec delta 헤더와 `### Requirement:`, `#### Scenario:` 형식은 파싱 계약으로 유지한다.
+- 하나의 파일은 하나의 Capability를 다룬다.
 - `capability:<name>` 태그는 파일 경로 `specs/<name>/spec.md`와 일치시킨다.
 - Requirement는 SHALL 또는 MUST를 사용한다.
 - 모든 Requirement에는 하나 이상의 Scenario가 있어야 한다.
