@@ -60,7 +60,7 @@ For writes to the dedicated `inbox` branch, follow [Inbox Branch](../docs/develo
 ## Lifecycle
 
 - Dated and archived inbox artifacts are non-canonical; canonical artifacts must not depend on or link to them.
-- Rewrite accepted content into its canonical owner and delete obsolete or low-value content.
-- If another workflow defines the owning artifact, use it instead of creating competing authority in `inbox/`.
-- When `inbox/` reaches 8 date directories, move the oldest 4 to `inbox/archive/`; do not update links.
+- Rewrite accepted content into its canonical owner. Delete obsolete or low-value content.
+- Use an owning workflow's artifact instead of creating competing authority in `inbox/`.
+- At 8 date directories, move the oldest 4 to `inbox/archive/` without updating links.
 - Humans may delete inbox or archived content at their discretion.
