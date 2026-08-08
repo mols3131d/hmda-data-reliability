@@ -17,4 +17,4 @@
 - rename, merge, split 시 의미와 영향받는 OpenSpec 참조를 함께 확인한다.
 - 변경 후 이름, domain ownership, 중복 책임, 참조 일관성을 검토한다.
 
-Spec과 Change의 추가 규칙은 각 디렉토리의 `AGENTS.md`를 따른다.
+하위 `AGENTS.md`에는 Spec 또는 Change에만 필요한 추가 규칙만 둔다.
