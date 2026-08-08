@@ -37,7 +37,7 @@ flowchart LR
 
 | Need | Document |
 | --- | --- |
-| 원천 파일, Bronze 적재, 합성 결함 | [`HMDA Data`](domains/hmda-data.md) |
+| 원천 파일, Bronze 적재, descriptive EDA, 합성 결함 | [`HMDA Data`](domains/hmda-data.md) |
 | 실행 request, 결과, dbt build | [`Data Operations`](domains/data-operations.md) |
 | DuckDB, dbt model, lineage | [`Data Platform`](domains/data-platform.md) |
 | Incident, impact, remediation, recovery, evaluation | [`Reliability`](domains/reliability.md) |
