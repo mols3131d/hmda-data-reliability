@@ -62,6 +62,7 @@ inbox/archive/**
 
 - Routine artifact는 `inbox`에 직접 commit하고 push하며 Pull Request를 만들지 않는다.
 - 하나의 commit에는 하나의 artifact 또는 함께 소비되는 하나의 bundle만 포함한다.
+- Routine artifact push에는 routine artifact commit만 포함한다.
 - Commit message는 [Commits](commit.md) 규칙을 따른다.
 - 그 밖의 경로는 최신 `main`에서 일반 작업 branch와 Draft Pull Request로 변경한다.
 
@@ -69,18 +70,18 @@ Push 전에는 다음을 확인한다.
 
 1. Local branch와 push destination이 모두 `inbox`다.
 1. Remote `inbox`를 갱신했고 push가 fast-forward다.
-1. Remote `inbox` 이후 추가되는 routine artifact commit의 모든 변경 경로가 허용 범위 안이다.
+1. Push에 포함된 모든 commit의 변경 경로가 허용 범위 안이다.
 1. 예상하지 못한 변경이나 unresolved conflict가 없다.
 
 Remote가 앞서 있으면 먼저 반영하고 다시 검증한다. Force-push, remote history rewrite, 다른 작업자의 변경을 덮어쓰기 위한 reset 또는 branch replacement는 금지한다. Scope가 불명확하면 일반 작업 branch와 Draft Pull Request를 사용한다.
 
 ### Main Sync
 
-`main`의 최신 운영 자산은 routine artifact와 분리된 sync commit과 push로 current remote `main`을 merge해 반영한다.
+`main`의 최신 운영 자산은 routine artifact push와 분리된 sync push로 current remote `main`을 merge해 반영한다.
 
 - Sync commit에 수동 수정이나 routine artifact 변경을 섞지 않는다.
-- Merge conflict가 발생하면 중단한다.
 - Sync push에는 sync commit만 포함한다.
+- Merge conflict가 발생하면 중단한다.
 - Sync는 `inbox` content를 `main`에 반영하는 근거가 아니다.
 
 ### Promotion
