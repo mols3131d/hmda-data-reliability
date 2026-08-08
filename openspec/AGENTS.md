@@ -4,10 +4,10 @@
 
 ## 먼저 확인
 
-- [`README.md`](README.md): 지침 소유권과 구조
-- [`config.yaml`](config.yaml): Project Pivot 전용 OpenSpec 규칙
-- 사용 중인 schema와 작업 대상의 `README.md`, `AGENTS.md`
-- 관련 current Spec과 active Change
+- [`README.md`](README.md)의 지침 소유권
+- 작업 대상의 `README.md`와 `AGENTS.md`
+- Spec 또는 Change 작업: [`config.yaml`](config.yaml), 선택된 schema, 관련 current Spec과 active Change
+- schema 작업: 해당 schema의 `README.md`와 필요한 `docs/`; project config를 schema 요구사항으로 사용하지 않는다.
 
 ## 작업 규칙
 
