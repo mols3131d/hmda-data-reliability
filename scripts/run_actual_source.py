@@ -31,7 +31,7 @@ def _sha256(path: Path) -> str:
 
 def _repository_revision(project_root: Path) -> str:
     status_proc = subprocess.run(
-        ["git", "status", "--porcelain"],
+        ["git", "status", "--porcelain", ":(exclude)inbox"],
         cwd=project_root,
         check=True,
         capture_output=True,
