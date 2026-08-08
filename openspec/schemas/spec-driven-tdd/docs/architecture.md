@@ -13,12 +13,12 @@ flowchart LR
     D --> T[Tasks]
     T --> R[Plan Review]
     R -->|approved| A[Apply]
-    R -->|changes_requested| U[Revise Artifacts]
+    R -->|changes_requested| U[Revise Planning Artifacts]
     U --> R
     R -->|blocked| B[Resolve Blocker]
     B --> R
     A --> V[Verify]
-    V -->|artifact issue| P
+    V -->|planning issue| U
     V -->|implementation issue| A
     V -->|pass| X[Sync / Archive]
 ```
@@ -91,7 +91,7 @@ tasks_completed = 완료된 [x] 체크박스 수
 | `schema.yaml` | `templates/` | Project config |
 | --- | --- | --- |
 | artifact DAG와 template 연결 | 문서 구조와 field | 기술 stack과 저장소 관례 |
-| artifact 목적과 완료 조건 | parser contract | naming과 project ownership |
+| artifact 목적과 완료 조건 | parser contract | naming과 project-specific convention |
 | Plan Review 상태·gate·loop 의미 | checklist와 Required Changes 표현 | 구체적인 validation과 tool 지침 |
 | 범용 test-first와 계획 환류 | task progress 표현 | 배포·병렬화 등 실행 정책 |
 
