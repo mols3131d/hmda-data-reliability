@@ -54,12 +54,13 @@ EDA는 `activity_year + state_code + loan_purpose`가 모두 non-null인 row의 
 
 ### Requirement: Portable evidence boundary
 
-시스템은 source path와 명시적 resource 설정을 입력받아 JSON-serializable evidence를 반환하고 YAML로 export할 수 있어야 한다(SHALL). 시각화가 필요하면 동일 evidence에서 정적 이미지 또는 독립 실행형 HTML을 생성할 수 있어야 한다(SHALL).
+시스템은 source path와 명시적 resource 설정을 입력받아 JSON-serializable evidence를 반환하고 YAML로 export할 수 있어야 한다(SHALL). Evidence는 retained aggregate 계산에 소요된 `duration_seconds`를 포함해야 한다(MUST). 시각화가 필요하면 동일 evidence에서 정적 이미지 또는 독립 실행형 HTML을 생성할 수 있어야 한다(SHALL).
 
 #### Scenario: Shared calculation path
 
 - **WHEN** automated test와 exploration 경로가 같은 source를 분석할 때
 - **THEN** 둘은 같은 descriptive calculation boundary를 사용해야 한다.
+- **AND** evidence는 retained aggregate 계산의 duration을 포함해야 한다.
 
 ### Requirement: Read-only resource lifecycle
 
