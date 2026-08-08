@@ -18,4 +18,5 @@
 
 ## Archive
 
-archive 전 구현과 검증 근거를 확인하고, current Spec과의 일관성을 검토한다.
+archive 전 구현과 검증 근거를 확인하고 current Spec과의 일관성을 검토한다.
+기존 archive는 이름 규칙 준수만을 위해 수정하지 않는다.
