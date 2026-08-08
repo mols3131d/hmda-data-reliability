@@ -47,7 +47,9 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 ## Inbox Branch
 
-`inbox`는 non-canonical artifact를 지속적으로 저장하는 장기 유지 branch다. Routine inbox artifact에만 일반 naming과 pull request delivery의 예외를 허용한다.
+`inbox`는 non-canonical artifact를 지속적으로 생성하고 보관하는 장기 유지 branch다. Routine inbox artifact에만 일반 naming과 pull request delivery의 예외를 허용한다.
+
+작업에 계속 유용한 inbox artifact는 선택적으로 `main:/inbox/**`에 승격할 수 있으며, 위치와 관계없이 non-canonical 상태를 유지한다.
 
 `inbox` branch가 없으면 current remote `main`에서 한 번 생성한다.
 
@@ -86,7 +88,15 @@ Remote가 앞서 있으면 먼저 반영하고 다시 검증한다. Force-push, 
 
 ### Promotion
 
-Inbox content가 채택되면 최신 `main`에서 일반 작업 branch를 만들고 필요한 내용만 owning artifact에 다시 작성한다. `inbox` branch나 inbox artifact 자체를 `main`에 merge하지 않는다.
+현재 또는 후속 작업의 근거로 유지할 가치가 있는 inbox artifact는 `main:/inbox/**`에 승격할 수 있다.
+
+- 최신 `main`에서 일반 작업 branch를 만든다.
+- 필요한 artifact만 선택적으로 가져오며 `inbox` branch 자체를 `main`에 merge하지 않는다.
+- 승격은 일반 Draft Pull Request로 전달한다.
+- 승격된 artifact도 non-canonical이다.
+- Canonical contract와 결정은 owning artifact에 자족적으로 기록한다. Inbox artifact는 근거로 참조할 수 있지만 규범적 내용을 대신 소유하지 않는다.
+- 내용이 canonical contract나 결정으로 채택되면 필요한 부분을 owning artifact에 다시 작성한다.
+- 독립적인 작업·근거 가치가 사라진 promoted artifact는 삭제하거나 archive한다.
 
 ## Agent Instructions
 
