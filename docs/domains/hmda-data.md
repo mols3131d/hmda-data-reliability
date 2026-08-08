@@ -1,6 +1,6 @@
 # HMDA Data: Source to Bronze
 
-**`hmda_data`는 HMDA 원천을 DuckDB Bronze로 적재하고 합성 결함 입력을 만든다.** 원천 파일 발견·검증과 결정론적 Parquet 생성까지 소유한다.
+**`hmda_data`는 HMDA 원천을 DuckDB Bronze로 적재하고, read-only descriptive EDA와 합성 결함 입력을 제공한다.** 원천 파일 발견·검증, descriptive evidence와 결정론적 Parquet 생성까지 소유한다.
 
 > [!IMPORTANT]
 > **Boundary:** 실행 설정·순서·결과 조합은 `data_operations`가 소유한다. `hmda_data`는 dbt 변환이나 incident 판단을 수행하지 않는다.
@@ -10,7 +10,8 @@
 | CSV/Parquet 원천 파일 발견 | 원천 데이터 다운로드 |
 | `raw.hmda_loans` 전체·파티션 적재 | dbt Silver/Gold 변환 |
 | 필수 컬럼 검증과 적재 오류 변환 | 실행 설정, 실행 결과 모델, orchestration |
-| 결정론적 합성 결함 Parquet 생성 | incident 탐지·영향 분석·remediation |
+| read-only descriptive EDA evidence | incident 탐지·영향 분석·remediation |
+| 결정론적 합성 결함 Parquet 생성 | reliability recovery와 evaluation |
 
 상위 application boundary는 [`data-operations.md`](data-operations.md)다. Bronze 이후 데이터 계약은 [`ARCHITECTURE`](../ARCHITECTURE.md)를 따른다.
 
@@ -61,6 +62,12 @@
 
 공개 API는 [`hmda_data/__init__.py`](../../src/project_pivot/hmda_data/__init__.py), 적재 동작은 [`tests/hmda_data`](../../tests/hmda_data)에서 확인한다.
 
+## Descriptive EDA
+
+EDA는 HMDA 원천을 변경하지 않고 six-core schema compatibility, volume, null, categorical distribution, numeric summary와 complete-key grain coverage를 구조화된 evidence로 계산한다. 품질 이상을 incident로 판정하거나 원천 값을 정제하지 않는다.
+
+상세 행동 계약은 [`hmda-data-eda-descriptive-evidence`](../../openspec/specs/hmda-data-eda-descriptive-evidence/spec.md), 동작 검증은 [`tests/hmda_data/eda`](../../tests/hmda_data/eda)에서 확인한다.
+
 ## Synthetic Defect Cases
 
 **Output**: 합성 API는 원천 파일을 읽어 `output_root` 아래에 Parquet 파일을 만든다. case name은 출력 root 밖을 가리킬 수 없고, 입력 파일은 수정하지 않는다.
@@ -78,9 +85,9 @@
 
 | Owner | Responsibility |
 | --- | --- |
-| `hmda_data` | 파일 발견, 원천 검증, Bronze 적재, 결함 입력 생성 |
+| `hmda_data` | 파일 발견, 원천 검증, Bronze 적재, descriptive EDA, 결함 입력 생성 |
 | `data_operations` | 실행 설정·순서·결과 조합 |
 | `data_platform` | dbt 모델과 Bronze 이후의 grain |
-| `reliability` | 합성 파일을 활용한 품질 판단 |
+| `reliability` | profile, incident 판단과 recovery/evaluation |
 
-구현을 따라갈 때는 [`__init__.py`](../../src/project_pivot/hmda_data/__init__.py)에서 공개 API를 확인한 뒤 [`ingestion/__init__.py`](../../src/project_pivot/hmda_data/ingestion/__init__.py), [`synthetic/__init__.py`](../../src/project_pivot/hmda_data/synthetic/__init__.py), [`tests/hmda_data`](../../tests/hmda_data) 순으로 읽는다.
+구현을 따라갈 때는 [`__init__.py`](../../src/project_pivot/hmda_data/__init__.py)에서 공개 API를 확인한 뒤 [`ingestion/__init__.py`](../../src/project_pivot/hmda_data/ingestion/__init__.py), [`eda/__init__.py`](../../src/project_pivot/hmda_data/eda/__init__.py), [`synthetic/__init__.py`](../../src/project_pivot/hmda_data/synthetic/__init__.py), [`tests/hmda_data`](../../tests/hmda_data) 순으로 읽는다.
