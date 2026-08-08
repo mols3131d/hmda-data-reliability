@@ -10,9 +10,9 @@ artifacts:
     instruction: |
       변경의 목적, 범위와 영향을 받는 capability를 합의한다.
 
-      기존 책임으로 설명할 수 있는 변경에는 새 capability를 만들지 않는다.
+      기존 capability로 설명할 수 있는 변경에는 새 capability를 만들지 않는다.
       독립적으로 구현하고 검증할 수 있는 변경은 별도 proposal로 분리한다.
-      구현 방법과 작업 순서는 design과 tasks에 맡긴다.
+      구현 접근과 작업 순서는 design과 tasks에 맡긴다.
 
       목적과 경계가 후속 behavior contract를 작성하기에 충분할 때 완료한다.
     requires: []
@@ -24,8 +24,7 @@ artifacts:
     instruction: |
       proposal에 선언된 capability의 관찰 가능하고 검증 가능한 행동 계약을 정의한다.
 
-      기존 capability를 변경할 때는 변경 후 계약을 완전하게 표현한다.
-      중요한 정상 동작, 실패 조건과 경계를 포함하고 구현 방식은 제외한다.
+      행동 계약은 구현 방법과 독립적이어야 하며 중요한 정상 동작, 실패 조건과 경계를 포함한다.
 
       proposal의 capability 범위가 검증 가능한 계약으로 표현되었을 때 완료한다.
     requires:
@@ -36,12 +35,11 @@ artifacts:
     description: Technical approach, boundaries, and verification strategy
     template: design.md
     instruction: |
-      proposal과 specs를 충족하는 기술적 접근과 책임 경계를 정의한다.
+      proposal과 specs를 충족하는 구현 접근과 책임 경계를 정의한다.
 
-      구현에 영향을 주는 결정, 주요 흐름, 위험, trade-off와 검증 전략에 집중한다.
-      specs를 반복하지 않고 tasks를 안정적으로 도출하는 데 필요한 판단만 기록한다.
+      specs를 반복하지 않고 구현에 필요한 중요한 판단만 기록한다.
 
-      중요한 구현 판단이 명확하고 tasks를 도출할 수 있을 때 완료한다.
+      tasks를 안정적으로 도출할 수 있을 때 완료한다.
     requires:
       - proposal
       - specs
@@ -54,8 +52,7 @@ artifacts:
       specs와 design을 순서가 있는 검증 가능한 구현 작업으로 분해한다.
 
       행동 변경은 가능한 범위에서 test-first feedback loop로 구성한다.
-      각 작업은 하나의 명확한 결과와 객관적인 완료 조건을 가져야 한다.
-      계획 오류가 발견되면 관련 artifact로 되돌아갈 수 있게 추적성을 유지한다.
+      계획 오류를 owning artifact로 되돌릴 수 있게 추적성을 유지한다.
 
       모든 계획 범위가 의존성 순서와 검증 근거를 가진 작업으로 연결되었을 때 완료한다.
     requires:
@@ -69,10 +66,11 @@ artifacts:
     instruction: |
       proposal, specs, design과 tasks를 구현 전에 독립적으로 검토한다.
 
-      확인 가능한 계획 artifact 근거로만 판정하고 선호 차이만으로 변경을 요구하지 않는다.
-      기존 의도와 범위 안에서 해결 가능한 문제는 관련 계획 artifact에 환류한다.
+      template이 정의한 고정 검토 기준을 확인 가능한 planning artifact 근거로 판정한다.
+      implementation 결과는 이 gate의 검토 대상이 아니다.
+      기존 의도와 범위 안에서 해결 가능한 문제는 owning planning artifact에 환류한다.
       요구사항, 범위 또는 중요한 결정의 변경이 필요하면 자동으로 보완하지 않는다.
-      계획 artifact가 바뀌면 다음 loop에서 전체 계획을 다시 검토한다.
+      planning artifact가 바뀌면 다음 loop에서 전체 계획을 다시 검토한다.
 
       모든 검토 기준을 통과하면 approved로 종료한다.
       인간의 판단이나 계획 변경이 필요하면 changes_requested,
@@ -91,7 +89,7 @@ apply:
     - plan-review
   tracks: tasks.md
   instruction: |
-    plan-review가 approved일 때만 Apply를 시작한다.
+    plan-review가 approved이고 gate evidence가 해당 상태와 일치할 때만 Apply를 시작한다.
 
     구현은 프로젝트 지침에 맞는 test-first feedback loop를 사용한다.
-    계획의 오류나 누락이 확인되면 관련 artifact를 갱신하고 plan-review를 다시 수행한다.
+    계획의 오류나 누락이 확인되면 owning artifact를 갱신하고 plan-review를 다시 수행한다.
