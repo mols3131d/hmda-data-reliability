@@ -11,7 +11,7 @@
 
 ## 작업 규칙
 
-- 지침은 `README.md`의 소유권에 맞는 파일 한 곳에 두고 다른 문서에서는 링크한다.
+- 활성 지침은 `README.md`의 소유권에 맞는 파일 한 곳에서만 관리한다.
 - 새 artifact를 만들기 전에 기존 artifact와 목적이나 책임이 겹치는지 확인한다.
 - 요청 범위와 직접 관련된 artifact만 수정한다.
 - rename, merge, split 시 의미와 영향받는 OpenSpec 참조를 함께 확인한다.
