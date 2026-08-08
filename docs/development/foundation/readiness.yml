@@ -11,12 +11,12 @@ dashboard:
     summary: 'Foundation focused suite는 audited test revision에서 57 passed이며, actual-source evidence는 별도 execution revision에서 생성된 뒤 EDA runtime·source·generator 변경 없이 evidence commit에 반영됐다.'
 
 scope:
-  source: "Foundation phase docs: `docs/development/foundation/`"
+  source: "Foundation readiness artifacts: `readiness.md`, `readiness.yml`"
   counted:
     - hmda-data-ingestion
     - data-platform-dbt-analytics
     - hmda-data-eda-descriptive-evidence
-    - reliability-contracts
+    - reliability-data-contracts
   excluded_from_total:
     - hmda-data-synthetic-defects
     - data-operations-stage-execution
@@ -127,7 +127,7 @@ items:
       status: verified
       progress: 1/1
 
-  - name: Reliability Contracts
+  - name: Reliability Data Contracts
     implementation:
       status: implemented
       progress: 7/7
@@ -142,7 +142,7 @@ unverified: []
 non_gating:
   - name: Reliability Freshness Semantics
     status: risk
-    finding: 'Foundation reliability contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 freshness를 측정할 수 없을 때 fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다.'
+    finding: 'Foundation data contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 freshness를 측정할 수 없을 때 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다.'
   - name: dbt Last-Known-Good Evidence Retention
     status: blocked
     finding: '`run_dbt_build`가 새 build 전에 기존 manifest와 run_results를 삭제하며 test도 이를 기대 동작으로 고정한다.'
@@ -178,9 +178,6 @@ risks:
   - area: Documentation Drift
     text: '`DEVELOPMENT.md`와 `pyproject.toml`에 Marimo가 active tool/dev dependency로 남아 있지만 EDA runtime과 notebook은 제거됐다.'
     impact: '현재 EDA 실행 방식과 개발 환경 설명이 다르게 읽힌다.'
-  - area: Foundation Draft Drift
-    text: 'Foundation README의 미결정 목록에 Gold grain과 notebook smoke가 남아 있어 현재 canonical contract와 맞지 않는다.'
-    impact: 'non-canonical 초안을 읽는 사람이 이미 결정·제거된 항목을 미해결로 오해할 수 있다.'
 
 references:
   - "[Foundation](README.md)"
@@ -197,4 +194,4 @@ references:
   - "OpenSpec spec: `hmda-data-ingestion`"
   - "OpenSpec spec: `data-platform-dbt-analytics`"
   - "OpenSpec spec: `hmda-data-eda-descriptive-evidence`"
-  - "OpenSpec spec: `reliability-contracts`"
+  - "OpenSpec spec: `reliability-data-contracts`"
