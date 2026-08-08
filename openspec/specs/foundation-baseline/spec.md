@@ -38,7 +38,8 @@ Foundation 완료 전 HMDA EDA는 six-core schema/type compatibility, volume, nu
 
 - **WHEN** 사용자가 Foundation readiness를 검토할 때
 - **THEN** current `hmda-eda-baseline` contract를 만족하는 controlled actual-source evidence를 확인할 수 있어야 한다.
-- **AND** current revision에 유효한 actual-source evidence가 없으면 EDA readiness를 verified로 표시해서는 안 된다.
+- **AND** 이전 execution revision의 evidence를 사용하는 경우 `hmda-eda-baseline`의 evidence applicability 조건을 충족해야 한다.
+- **AND** audited revision과 evidence execution revision이 다르면 readiness에서 둘을 구분해 기록해야 한다.
 
 #### Scenario: Contract 기준 확인
 
@@ -62,7 +63,7 @@ Foundation 완료 전 HMDA EDA는 six-core schema/type compatibility, volume, nu
 
 ### Requirement: Foundation readiness verification
 
-시스템은 Foundation baseline을 현재 repository revision에서 검증할 수 있는 readiness view를 제공해야 한다(SHALL). readiness는 decision, audited revision, capability coverage, blocker와 재현 가능한 검증 command를 포함해야 한다(MUST).
+시스템은 Foundation baseline을 현재 repository revision에서 검증할 수 있는 readiness view를 제공해야 한다(SHALL). readiness는 decision, audited revision, capability coverage, blocker와 재현 가능한 검증 command를 포함해야 하며(MUST), evidence execution revision이 audited revision과 다르면 별도로 기록해야 한다(MUST).
 
 #### Scenario: Readiness 확인
 
