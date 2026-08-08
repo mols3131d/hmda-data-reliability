@@ -4,7 +4,7 @@
 > **Decision:** 🟢 GO  
 > **Audited revision:** `feea63fe5945c353f2f9b70b57a29cbe7294dafa`
 
-`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. 현 revision에서 Foundation suite 57개 test 및 actual-source evidence가 모두 통과되었다.
+`foundation-baseline` OpenSpec을 기준으로 Foundation 완료에 필요한 capability만 합산한다. Audited revision에서 Foundation suite 57개 test 및 actual-source evidence가 모두 통과되었다.
 
 ## Foundation Gate
 
@@ -27,11 +27,11 @@ Implementation coverage는 `147/147`이며, Verification checklist coverage는 `
 
 ## Blockers
 
-현재 식별된 Blocker 없음 (B1, B2, B4 모두 해결 완료).
+현재 식별된 Foundation blocker 없음 (B1, B2, B4 모두 해결 완료).
 
-## Current Verification
+## Audited Verification
 
-현재 HEAD (`feea63fe5945c353f2f9b70b57a29cbe7294dafa`) 기준 Foundation 관련 pytest/dbt/actual-source 실행 결과: **Passing** (57 passed in 13.63s).
+Audited revision (`feea63fe5945c353f2f9b70b57a29cbe7294dafa`)에서 Foundation 관련 pytest/dbt/actual-source 실행 결과: **Passing** (57 passed in 13.63s).
 
 실행 command:
 
@@ -39,6 +39,8 @@ Implementation coverage는 `147/147`이며, Verification checklist coverage는 `
 mkdir -p artifacts && uv run pytest tests/hmda_data tests/data_platform tests/dbt tests/reliability/contracts
 uv run python scripts/run_actual_source.py
 ```
+
+이 dashboard는 위 audited execution을 근거로 한다. 이후 문서/OpenSpec 정합화에서 runtime validation을 다시 수행하지 않았다면 이를 current HEAD execution으로 표현하지 않는다.
 
 ## Non-Gating Inventory
 
@@ -60,7 +62,6 @@ uv run python scripts/run_actual_source.py
 - Gold metric의 `action_taken` 모집단과 `approval_rate` 분모는 canonical Data Platform domain 문서에 정의되어 있고 현재 SQL/test와 일치한다. 다만 `dbt-analytics-foundation` OpenSpec에는 세부 semantics가 없어 traceability가 약하다.
 - `DEVELOPMENT.md`와 `pyproject.toml`에는 제거된 Marimo EDA runtime 관련 설명·설정이 남아 있다.
 - Foundation draft README에는 이미 결정된 Gold grain과 제거된 notebook smoke가 미결정 항목으로 남아 있다.
-- `approval-backfill-validation`, `evaluation-report` canonical spec의 `Purpose`가 아직 `TBD`다.
 
 ## References
 
