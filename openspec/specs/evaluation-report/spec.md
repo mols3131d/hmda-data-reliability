@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change add-evaluation-report. Update Purpose after archive.
+Synthetic incident case의 detection과 remediation action 결과를 집계하고 사람이 검토 가능한 Markdown evaluation evidence로 내보내는 계약을 정의한다.
 
 ## Requirements
 
@@ -26,9 +26,9 @@ TBD - created by archiving change add-evaluation-report. Update Purpose after ar
 
 ### Requirement: Markdown report output
 
-시스템은 evaluation 결과를 `evaluation_report.md` Markdown 파일로 내보내야 한다(SHALL).
+시스템은 evaluation 결과를 caller가 지정한 출력 경로에 Markdown 파일로 내보낼 수 있어야 한다(SHALL).
 
 #### Scenario: report 파일 생성
 
-- **WHEN** evaluation report writer를 실행할 때
-- **THEN** 출력 경로에 case별 기대/실제 detection과 action 성공 여부가 표시된 Markdown 파일이 생성되어야 한다.
+- **WHEN** evaluation report를 유효한 출력 경로에 쓸 때
+- **THEN** 해당 경로에 case별 기대/실제 detection과 action 성공 여부가 표시된 Markdown 파일이 생성되어야 한다.
