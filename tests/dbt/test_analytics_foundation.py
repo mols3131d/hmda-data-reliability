@@ -1,4 +1,4 @@
-"""dbt 분석 파운데이션 통합 테스트."""
+"""dbt 분석 파운데이션 테스트."""
 
 from __future__ import annotations
 
@@ -13,12 +13,11 @@ import pytest
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import load_hmda_loans
 
-pytestmark = pytest.mark.integration
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DBT_PROJECT_DIR = PROJECT_ROOT / "dbt"
 
 
+@pytest.mark.component
 def test_dbt_profile_requires_caller_database_path() -> None:
     """dbt profile은 application과 별도의 DuckDB path fallback을 소유하지 않는다."""
 
@@ -27,6 +26,7 @@ def test_dbt_profile_requires_caller_database_path() -> None:
     assert "path: \"{{ env_var('PROJECT_PIVOT_DUCKDB_PATH') }}\"" in profile
 
 
+@pytest.mark.integration
 def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
     tmp_path: Path,
 ) -> None:
