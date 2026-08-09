@@ -20,7 +20,7 @@ Clarification은 behavior-preserving change다. 가독성 개선을 이유로 �
 
 ## Before and After
 
-관련 test는 검증 수단일 뿐 아니라 관찰 가능한 contract와 중요한 경계를 복원하는 단서로 읽는다.
+관련 test는 검증 수단일 뿐 아니라 관찰 가능한 동작 계약과 중요한 경계를 복원하는 단서로 읽는다.
 
 가능하면 같은 좁은 validation을 변경 전후에 적용한다.
 
