@@ -11,7 +11,7 @@ clean baseline
 → controlled volume_drop
 → incident + impact + remediation draft
 → isolated candidate validation
-→ proposal-bound human approval
+→ recovery-proposal-bound human approval
 → approved recovery
 → data + dbt verification
 → run evidence
@@ -19,9 +19,9 @@ clean baseline
 
 MVP는 다음을 증명해야 한다.
 
-- clean baseline은 incident를 만들지 않고, controlled `volume_drop`은 evidence·downstream impact·remediation draft를 만든다.
-- candidate validation은 target에서 격리되며, 검증된 proposal과 변하지 않은 target state에 결합된 approval만 target mutation을 허용한다.
-- recovery는 expected stable content를 복원하고 incident를 해소하며 downstream dbt verification을 통과한다. 실패한 validation이나 recovery는 prior last-known-good evidence를 파괴하지 않는다.
+- clean baseline은 incident와 remediation draft를 만들지 않고, controlled `volume_drop`은 evidence·downstream impact·remediation draft를 만든다.
+- candidate validation은 current target과 shared dbt evidence를 변경하지 않으며, 검증된 recovery proposal과 변하지 않은 target state에 결합된 approval만 target mutation을 허용한다.
+- recovery는 expected stable content를 복원하고 incident를 해소하며 downstream dbt verification을 통과한다. 실패한 validation이나 recovery는 prior last-known-good dbt artifact를 파괴하지 않는다.
 - failure와 retry는 evidence로 구분되고 현재 state에 맞게 reconciliation되며 duplicate 또는 semantic drift를 만들지 않는다.
 
 세부 requirement와 behavior는 OpenSpec change가 소유하고, 이를 검증하는 scenario와 oracle은 test에서 구체화한다.
