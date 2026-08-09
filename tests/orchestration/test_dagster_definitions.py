@@ -130,11 +130,16 @@ def test_dagster_materialization_records_metadata(
         )
 
     def run_dbt_build_stub(_request: DataOperationRequest) -> DbtBuildResult:
+        manifest_path = tmp_path / "manifest.json"
+        run_results_path = tmp_path / "run_results.json"
+        manifest_path.write_text("{}", encoding="utf-8")
+        run_results_path.write_text("{}", encoding="utf-8")
         return DbtBuildResult(
             command=["dbt", "build"],
             return_code=0,
-            manifest_path=tmp_path / "manifest.json",
-            run_results_path=tmp_path / "run_results.json",
+            manifest_path=manifest_path,
+            run_results_path=run_results_path,
+            projection_id="sha256:test",
             succeeded=True,
         )
 

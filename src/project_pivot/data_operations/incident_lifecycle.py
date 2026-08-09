@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from hashlib import sha256
 from typing import cast
 
 from project_pivot.data_operations.errors import DataOperationError
 from project_pivot.data_operations.lifecycle_result import LifecycleResult
 from project_pivot.data_operations.request import DataOperationRequest
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.hmda_data import PartitionContentIdentity, partition_content_identity
 from project_pivot.reliability import (
     DetectionRequest,
     DetectionResult,
@@ -65,12 +67,24 @@ def run_incident_lifecycle(
             DetectionRequest(baseline=baseline, current=current)
         )
         analyses = [_analyze_detection(request, detection) for detection in detections]
+        target_content_identity = (
+            partition_content_identity(
+                connection,
+                table_name=request.raw_table_name,
+                source_year=request.source_year,
+                source_file=request.source_file,
+            )
+            if analyses
+            else None
+        )
 
     return _build_lifecycle_result(
         metadata_row_count=int(cast(int, metadata_evidence.payload["row_count"])),
         baseline=baseline,
         current=current,
         analyses=analyses,
+        target_content_identity=target_content_identity,
+        dbt_projection_id=_dbt_projection_id(request) if analyses else None,
     )
 
 
@@ -101,11 +115,16 @@ def _build_lifecycle_result(
     baseline: ProfileSnapshot,
     current: ProfileSnapshot,
     analyses: list[_IncidentAnalysis],
+    target_content_identity: PartitionContentIdentity | None,
+    dbt_projection_id: str | None,
 ) -> LifecycleResult:
     return LifecycleResult(
         metadata_row_count=metadata_row_count,
         baseline_row_count=baseline.row_count,
         current_row_count=current.row_count,
+        detected_incident_ids=_unique(
+            detection.incident.incident_id for detection, _, _ in analyses
+        ),
         detected_incident_types=_unique(
             detection.incident.incident_type for detection, _, _ in analyses
         ),
@@ -131,7 +150,16 @@ def _build_lifecycle_result(
         validation_actions=_unique(
             action for _, _, draft in analyses for action in draft.validation_actions
         ),
+        target_content_identity=target_content_identity,
+        dbt_projection_id=dbt_projection_id,
     )
+
+
+def _dbt_projection_id(request: DataOperationRequest) -> str:
+    digest = sha256()
+    for path in (request.dbt_manifest_path, request.dbt_run_results_path):
+        digest.update(path.read_bytes())
+    return f"sha256:{digest.hexdigest()}"
 
 
 def _validate_profile_compatibility(
