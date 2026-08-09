@@ -60,7 +60,7 @@ tags:
 - **Severity** - Minor
 - **Location** - PR #14 frontmatter, F7 Evidence/Research lifecycle references
 - **Evidence** - Reviewed Research는 `type: openspec-rpi`, `category: research`를 사용하고 `research/templates/research.md`를 참조한다. Snapshot의 `research/AGENTS.md`는 shared `inbox/_templates/research.md`를 사용하고 local `research/templates/` copy를 두지 않도록 하며, shared template의 artifact type은 `research`다.
-- **Impact** - Runtime safety 문제는 아니지만 Research ownership과 lifecycle 기준을 벗어나고 stale path를 Planning evidence로 남긴다. Artifact 검색·유지보수와 후속 handoff의 해석 비용이 증가한다.
+- **Impact** - Research lifecycle 규칙과 맞지 않고 stale template path를 Planning evidence로 남긴다.
 - **Required Change** - Frontmatter를 snapshot Research contract에 맞춰 `type: research`로 정렬하고 legacy `category`를 제거한다. Template/evidence reference는 shared `inbox/_templates/research.md`와 snapshot Research lifecycle owner를 사용한다.
 
 ## Validation
