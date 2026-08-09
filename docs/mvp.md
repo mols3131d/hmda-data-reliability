@@ -30,7 +30,7 @@ clean baseline
 - target mutation 이후 실패는 성공으로 보고되지 않으며, 현재 state를 다시 확인한 뒤 recovery verification을 재개하거나 새 approval을 요구한다.
 - recovery 재실행은 duplicate 또는 semantic drift를 만들지 않는다.
 
-세부 scenario, contract field, oracle과 test case는 OpenSpec change와 test가 소유한다.
+세부 requirement와 behavior는 OpenSpec change가 소유하고, 이를 검증하는 scenario와 oracle은 test에서 구체화한다.
 
 ## Scope
 
