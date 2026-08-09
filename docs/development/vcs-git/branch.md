@@ -43,7 +43,7 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 작업 branch는 원칙적으로 원격 저장소의 현재 `main` head에서 생성한다. 별도의 기준 branch가 지정되면 해당 branch를 사용한다.
 
-기존 branch는 동일 작업의 후속 수정일 때만 재사용한다. `inbox`와 `inbox-promotion`은 반복되는 동일 운영 목적을 위해 유지하는 예외 branch다.
+기존 branch는 동일 작업의 후속 수정일 때만 재사용한다. `inbox`는 반복되는 routine artifact 생성을 위한 장기 유지 예외이고, `inbox-promotion`은 반복되는 승격에 같은 이름을 사용하는 transit branch 예외다.
 
 ## Inbox Branch
 
@@ -90,25 +90,27 @@ Remote가 앞서 있으면 먼저 반영하고 다시 검증한다. Force-push, 
 
 현재 또는 후속 작업의 근거로 유지할 가치가 있는 inbox artifact는 `main:/inbox/**`에 승격할 수 있다.
 
-승격에는 장기 유지 branch `inbox-promotion` 하나만 사용한다. Artifact, 날짜 또는 승격 요청마다 새 branch를 만들지 않는다.
+승격 branch 이름은 항상 `inbox-promotion`을 사용한다. Artifact, 날짜 또는 승격 요청마다 다른 branch 이름을 만들지 않는다.
+
+`inbox-promotion`은 history나 artifact를 보관하는 branch가 아니라 현재 promotion batch만 운반하는 transit branch다. 원본 artifact는 `inbox`가 보관하고, 채택된 결과는 `main`이 보관한다.
 
 ```text
 inbox ── select artifact ──> inbox-promotion ── Draft PR ──> main
-                                  ▲                         │
-                                  └──── fast-forward ───────┘
+                                  │
+                                  └── batch 종료 후 삭제
 ```
-
-`inbox-promotion`이 없으면 current remote `main`에서 한 번 생성한다. Promotion Pull Request가 열려 있지 않은 idle 상태에서는 `inbox-promotion`이 `main`과 같은 history를 가리켜야 한다.
 
 #### Promotion Cycle
 
-1. 열린 promotion Pull Request와 `main`에 없는 기존 promotion commit이 없는지 확인한다.
-1. `inbox-promotion`을 current remote `main`으로 fast-forward한다. Fast-forward할 수 없으면 중단한다.
+1. 열린 promotion Pull Request가 없는지 확인한다.
+1. Current remote `main`에서 `inbox-promotion`을 생성한다.
 1. `inbox`에서 이번 batch에 승격할 artifact만 같은 경로로 가져온다.
 1. `main`에 같은 path가 이미 있으면 비교한다. 내용이 같으면 제외하고, 다르면 의도한 갱신인지 확인한 뒤 포함한다.
 1. 함께 검토할 artifact를 하나의 promotion batch로 commit하고 Draft Pull Request 하나를 연다.
-1. Promotion Pull Request는 merge commit 방식으로 병합한다. Squash 또는 rebase merge는 장기 branch 재사용 history를 깨뜨리므로 사용하지 않는다.
-1. Merge 후 `inbox-promotion`을 새 `main` merge commit으로 fast-forward해 다시 idle 상태로 만든다.
+1. Pull Request가 merge되거나 명시적으로 close되면 `inbox-promotion`을 삭제한다.
+1. 다음 승격은 다시 최신 `main`에서 같은 이름으로 시작한다.
+
+이전 cycle의 `inbox-promotion`이 남아 있고 열린 Pull Request가 없다면 새 batch를 추가하지 않는다. 이전 cycle이 종료됐음을 확인한 뒤 branch를 삭제하고 최신 `main`에서 다시 생성한다. Force-push나 reset으로 재사용하지 않는다.
 
 Promotion Pull Request는 동시에 하나만 유지한다. 이미 열려 있으면 같은 review scope의 artifact만 현재 batch에 추가하고, 독립적인 승격은 기존 batch가 끝난 뒤 시작한다.
 
@@ -126,7 +128,7 @@ inbox/archive/**
 - Source code, canonical document, configuration 또는 승격과 무관한 수정은 포함하지 않는다.
 - Artifact 내용을 크게 고쳐야 하면 먼저 `inbox`에서 개선한 뒤 그 결과를 승격한다.
 - Pull Request가 열린 뒤 `main` 변경을 반영해야 할 때는 scope 변경 없이 `main`을 merge한다. Conflict가 발생하면 자동으로 의미를 결정하지 않고 중단한다.
-- Force-push, history rewrite와 branch replacement는 금지한다.
+- Force-push와 history rewrite는 금지한다.
 - 승격된 artifact도 non-canonical이다.
 - Canonical contract와 결정은 owning artifact에 자족적으로 기록한다. Inbox artifact는 근거로 참조할 수 있지만 규범적 내용을 대신 소유하지 않는다.
 - 내용이 canonical contract나 결정으로 채택되면 필요한 부분을 owning artifact에 다시 작성한다.
@@ -137,7 +139,7 @@ inbox/archive/**
 - `agent` actor namespace와 자신의 작업 branch를 사용한다. Routine inbox artifact와 inbox promotion은 `Inbox Branch` 규칙을 따른다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
-- 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.
+- 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다. 종료된 `inbox-promotion` cleanup은 명시적으로 요청된 promotion lifecycle의 일부로 본다.
 - 규칙이나 권한이 충돌하면 우회하지 않고 보고한다.
 
 ## Related
