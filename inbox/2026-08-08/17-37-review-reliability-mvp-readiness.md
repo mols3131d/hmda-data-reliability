@@ -43,7 +43,7 @@ tags:
 
 - **Severity** - Major
 - **Location** - PR #14 F4, Required Acceptance `Recovery reconciliation`
-- **Evidence** - Research는 `verification_failed` 이후 같은 run, approval과 candidate로 reconciliation을 허용하고 partition fingerprint를 확인해 필요할 때 overwrite를 반복하도록 한다. 그러나 current partition이 **승인 당시 pre-recovery state와 expected recovered state 어느 쪽에도 일치하지 않는 경우**의 fail-closed behavior는 명시하지 않는다. F3의 stale-state rule은 최초 approved recovery 진입에는 적용되지만 post-mutation reconciliation의 diverged state까지 닫지 않는다.
+- **Evidence** - Research는 `verification_failed` 이후 같은 run, approval과 candidate로 reconciliation을 허용하고 partition fingerprint를 확인해 필요할 때 overwrite를 반복하도록 한다. 그러나 current partition이 **승인 당시 pre-recovery state와 expected recovered state 어느 쪽에도 일치하지 않는 경우**의 fail-closed behavior는 명시하지 않는다. PR #14 F3의 stale-state rule은 최초 approved recovery 진입에는 적용되지만 post-mutation reconciliation의 diverged state까지 닫지 않는다.
 - **Impact** - Recovery 실패 뒤 다른 writer나 별도 작업이 target을 변경하면 과거 approval이 새로운 target state를 덮어쓰는 권한처럼 재사용될 수 있다. 이는 candidate-bound approval과 stale-state protection을 우회한다.
 - **Required Change** - Reconciliation에서 current partition identity를 구분한다. Expected recovered state면 overwrite를 생략하고 verification을 재개한다. Approved pre-recovery state면 기존 approval의 binding 범위 안에서 recovery를 재개할 수 있다. 둘 다 아니면 target mutation 전에 중단하고 새 candidate validation과 approval을 요구한다. `Diverged reconciliation target` acceptance case를 추가한다.
 
@@ -53,7 +53,7 @@ tags:
 - **Location** - PR #14 frontmatter, F7 Evidence/Research lifecycle references
 - **Evidence** - Reviewed Research는 `type: openspec-rpi`, `category: research`를 사용하고 `research/templates/research.md`를 참조한다. Snapshot의 `research/AGENTS.md`는 shared `inbox/_templates/research.md`를 사용하고 local `research/templates/` copy를 두지 않도록 하며, shared template의 artifact type은 `research`다.
 - **Impact** - Runtime safety 문제는 아니지만 Research ownership과 lifecycle 기준을 벗어나고 stale path를 Planning evidence로 남긴다. Artifact 검색·유지보수와 후속 handoff의 해석 비용이 증가한다.
-- **Required Change** - Frontmatter를 현재 Research contract에 맞춰 `type: research`로 정렬하고 legacy `category`를 제거한다. Template/evidence reference는 shared `inbox/_templates/research.md`와 current Research lifecycle owner를 사용한다.
+- **Required Change** - Frontmatter를 snapshot Research contract에 맞춰 `type: research`로 정렬하고 legacy `category`를 제거한다. Template/evidence reference는 shared `inbox/_templates/research.md`와 snapshot Research lifecycle owner를 사용한다.
 
 ## Validation
 
@@ -83,7 +83,7 @@ tags:
 
 이 section은 original review verdict를 변경하지 않고 이후 lifecycle만 기록한다.
 
-- PR #14는 F1/F2와 추가 safety/contract 보강을 반영한 뒤 2026-08-08 merge됐다. 따라서 **`PR #14: Revise`는 reviewed head `acc2733`에만 적용**한다.
+- PR #14는 stale gate와 dbt artifact safety, 추가 safety/contract 보강을 반영한 뒤 2026-08-08 merge됐다. 따라서 **`PR #14: Revise`는 reviewed head `acc2733`에만 적용**한다.
 - Revised Research에는 diverged reconciliation target에서 old approval mutation을 차단하는 rule, run-scoped dbt artifact workspace와 last-known-good 보존, current Research frontmatter/template 정렬이 포함됐다.
 - Active Research는 이후 lifecycle에 따라 제거됐고 현재 후속 Research evidence는 `inbox/archive/2026-08-08/reliability-mvp-volume-drop-vertical-slice.md`에 보존돼 있다. 현재 Planning 판단은 이 Review가 아니라 최신 canonical/owning artifact와 재검증된 repository state를 사용한다.
 
@@ -94,4 +94,4 @@ tags:
 | **MVP Entry: Pass** | Snapshot에서 Foundation gate는 닫혔고 단일 `volume_drop` slice는 architecture boundary와 맞는다. | Reliability MVP OpenSpec Planning 시작 |
 | **PR #14 `acc2733`: Revise** | Stale Foundation gate, dbt artifact safety, reconciliation stale-state gap과 Research contract drift를 수정해야 snapshot 기준 Planning input이 된다. | PR #14 재검증·수정 후 Planning handoff |
 
-MVP의 핵심은 기능 폭을 넓히는 것이 아니라 **`volume_drop` 하나에서 detection → validation → approval → recovery → verification evidence를 안전하게 닫는 것**이다. Snapshot에서 MVP phase-entry를 막는 추가 blocker는 확인되지 않았지만, F1~F3은 Planning handoff 전에 닫아야 하는 correctness 문제다. F4는 handoff 품질과 artifact lifecycle을 위한 maintenance finding이다.
+MVP의 핵심은 기능 폭을 넓히는 것이 아니라 **`volume_drop` 하나에서 detection → validation → approval → recovery → verification evidence를 안전하게 닫는 것**이다. Snapshot에서 MVP phase-entry를 막는 추가 blocker는 확인되지 않았다. F1~F3은 Planning handoff 전에 닫아야 하는 required finding이며, F2~F3은 recovery correctness safety와 직접 관련된다. F4는 handoff 품질과 artifact lifecycle을 위한 maintenance finding이다.
