@@ -21,9 +21,8 @@ from project_pivot.reliability import (
     create_profile_snapshot,
 )
 
-pytestmark = pytest.mark.component
 
-
+@pytest.mark.integration
 def test_lifecycle_compares_baseline_with_actual_current(tmp_path: Path) -> None:
     """합성값 대신 DuckDB partition의 실제 current를 비교한다."""
 
@@ -42,6 +41,7 @@ def test_lifecycle_compares_baseline_with_actual_current(tmp_path: Path) -> None
     assert result.detected_incident_types == ["volume_drop", "null_spike"]
 
 
+@pytest.mark.integration
 def test_lifecycle_analyzes_all_detections_in_order(tmp_path: Path) -> None:
     """모든 incident의 영향과 조치를 순서 보존·중복 제거해 반환한다."""
 
@@ -79,6 +79,7 @@ def test_lifecycle_analyzes_all_detections_in_order(tmp_path: Path) -> None:
     ]
 
 
+@pytest.mark.integration
 def test_lifecycle_skips_impact_when_no_incident(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -106,12 +107,14 @@ def test_lifecycle_skips_impact_when_no_incident(
     assert result.validation_actions == []
 
 
+@pytest.mark.unit
 def test_runner_reexports_incident_lifecycle() -> None:
     """기존 runner module import 경로를 유지한다."""
 
     assert runner.run_incident_lifecycle is run_incident_lifecycle
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     ("baseline_update", "expected_context"),
     [
@@ -133,6 +136,7 @@ def test_lifecycle_rejects_incompatible_baseline(
         run_incident_lifecycle(request, baseline)
 
 
+@pytest.mark.integration
 def test_lifecycle_has_no_recovery_or_evaluation_side_effects(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
