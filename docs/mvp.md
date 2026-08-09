@@ -13,7 +13,7 @@ clean baseline
 → controlled volume_drop
 → incident + impact + remediation draft
 → isolated candidate validation
-→ bound human approval
+→ proposal-bound human approval
 → approved recovery
 → data + dbt verification
 → run evidence
@@ -23,11 +23,11 @@ clean baseline
 
 - `volume_drop`이 기대한 evidence와 downstream impact를 가진 incident로 탐지된다.
 - 검증된 recovery proposal과 target state에 결합된 approval만 target mutation을 허용한다.
-- invalid candidate, incomplete approval 또는 stale target은 mutation 전에 차단된다.
+- invalid candidate, incomplete approval 또는 stale target은 target mutation 전에 차단된다.
 - recovery 결과는 row count만이 아니라 stable partition content로 검증된다.
 - candidate와 실패한 recovery의 dbt 실행이 prior last-known-good artifact를 파괴하지 않는다.
-- mutation 이후 실패는 성공으로 보고되지 않으며 evidence를 남기고 안전하게 reconciliation할 수 있다.
-- 반복 실행이 duplicate 또는 semantic drift를 만들지 않는다.
+- target mutation 이후 실패는 성공으로 보고되지 않으며, 현재 state를 다시 확인한 뒤 recovery verification을 재개하거나 새 approval을 요구한다.
+- recovery 재실행이 duplicate 또는 semantic drift를 만들지 않는다.
 
 세부 scenario, contract field, oracle과 test case는 OpenSpec change와 test가 소유한다.
 
