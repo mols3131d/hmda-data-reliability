@@ -70,11 +70,11 @@ files = ["src", "tests"]
 [tool.pytest.ini_options]
 addopts = "--timeout=60 --strict-markers -m 'not memory and not stress'"
 markers = [
-  "unit: pure function and isolated domain tests",
-  "component: package-level tests using local files",
-  "integration: cross-system workflow tests",
-  "memory: representative process-level memory-budget test",
-  "stress: worst-case resource stress test",
+  "unit: isolated behavior without real I/O or cross-component boundaries",
+  "component: single component behavior with real local I/O or tool boundaries",
+  "integration: behavior across multiple project components or systems",
+  "memory: representative process memory-budget contract",
+  "stress: deliberately high-cost worst-case resource behavior",
 ]
 pythonpath = ["src"]
 testpaths = ["tests"]
