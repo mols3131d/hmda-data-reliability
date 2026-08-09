@@ -19,9 +19,8 @@ from project_pivot.reliability import (
     execute_approved_backfill,
 )
 
-pytestmark = pytest.mark.integration
 
-
+@pytest.mark.component
 def test_pending_approval_blocks_before_source_access(tmp_path: Path) -> None:
     """미승인 요청은 source 파일을 보기 전에 차단된다."""
 
@@ -40,6 +39,7 @@ def test_pending_approval_blocks_before_source_access(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.component
 def test_approval_without_backfill_actions_is_rejected(tmp_path: Path) -> None:
     """다른 action 승인을 partition overwrite에 재사용하지 못하게 한다."""
 
@@ -60,6 +60,7 @@ def test_approval_without_backfill_actions_is_rejected(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.integration
 def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
     tmp_path: Path,
 ) -> None:
@@ -95,6 +96,7 @@ def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
     ]
 
 
+@pytest.mark.unit
 def test_backfill_request_rejects_non_path_source_items() -> None:
     """source_paths 원소 타입 오류를 Pydantic validation error로 반환한다."""
 
