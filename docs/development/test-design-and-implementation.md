@@ -75,14 +75,20 @@ Mock은 network, clock, file system, external service처럼 test가 통제해야
 
 ## Choose The Lowest Useful Level
 
-가장 낮은 비용으로 requirement를 신뢰성 있게 입증할 수 있는 marker를 선택한다.
+가장 낮은 비용으로 requirement를 신뢰성 있게 입증하는 primary level marker 하나를 선택한다.
 
 | Level | Best for | Avoid when |
 | --- | --- | --- |
-| `unit` | pure rule, calculation, validation | 실제 file·database boundary가 contract일 때 |
-| `component` | package public API와 local resource | 여러 real subsystem을 반드시 연결해야 할 때 |
-| `integration` | cross-system workflow | isolated rule 하나만 확인하면 될 때 |
-| `memory` / `stress` | 명시적 resource contract | 일반 correctness만 확인할 때 |
+| `unit` | real I/O가 없는 isolated rule, calculation, validation | 실제 resource boundary가 contract일 때 |
+| `component` | 하나의 component와 real local file, database 또는 tool boundary | 여러 project component를 반드시 연결해야 할 때 |
+| `integration` | 여러 project component 또는 system을 연결한 behavior | 더 낮은 경계에서 같은 contract를 입증할 수 있을 때 |
+
+Resource contract가 있으면 primary level을 유지한 채 별도 marker를 추가한다.
+
+| Resource marker | Best for |
+| --- | --- |
+| `memory` | 대표 input의 process memory-budget contract |
+| `stress` | 의도적으로 고비용인 worst-case resource behavior |
 
 실행 방법과 marker의 전체 설명은 [Testing Guide](testing.md)에 있다.
 

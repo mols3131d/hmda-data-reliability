@@ -46,13 +46,20 @@ Lefthook은 빠른 commit feedback과 push 전 회귀 검증을 분리한다.
 
 ### Markers
 
+`unit`, `component`, `integration`은 test가 연결하는 경계를 나타내는 primary level marker다. 일반 test는 requirement를 입증하는 가장 낮은 유효 경계 하나를 선택한다.
+
 | Marker | 언제 사용하나 |
 | --- | --- |
-| `unit` | pure function 또는 격리된 domain rule을 검증할 때 |
-| `component` | package와 local file boundary를 함께 검증할 때 |
-| `integration` | 둘 이상의 subsystem이 연결된 workflow를 검증할 때 |
-| `memory` | 대표 input의 process memory budget을 검증할 때 |
-| `stress` | worst-case resource behavior를 검증할 때 |
+| `unit` | real I/O나 다른 component 연결 없이 isolated behavior를 검증할 때 |
+| `component` | 하나의 component를 real local I/O 또는 tool boundary와 함께 검증할 때 |
+| `integration` | 둘 이상의 project component 또는 system을 연결한 behavior를 검증할 때 |
+
+`memory`와 `stress`는 test level을 대체하지 않는 resource marker다. 해당 contract를 검증하는 test의 primary level marker와 함께 사용할 수 있다.
+
+| Marker | 언제 사용하나 |
+| --- | --- |
+| `memory` | 대표 input에서 process memory-budget contract를 검증할 때 |
+| `stress` | 의도적으로 고비용인 worst-case resource behavior를 검증할 때 |
 
 ```bash
 uv run pytest -m unit
