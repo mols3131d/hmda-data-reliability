@@ -37,10 +37,10 @@
 
 현재 MVP의 목표와 완료 경계는 [`mvp.md`](mvp.md)를 따른다. 다른 incident 유형과 운영 control-plane 확장은 MVP 이후 범위다.
 
-## Post-MVP Priorities
+## Beyond MVP
 
-1. `null_spike`, `schema_drift`, `freshness_delay` vertical slice 확장.
-1. Dagster reliability control-plane과 approval/audit integration 검토.
+- `null_spike`, `schema_drift`, `freshness_delay` vertical slice 확장.
+- Dagster reliability control-plane과 approval/audit integration 검토.
 
 ## Non-Goals
 
