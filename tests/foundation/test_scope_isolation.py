@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.component
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DISALLOWED_PR_PATHS = {
