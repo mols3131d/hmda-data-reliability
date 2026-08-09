@@ -13,9 +13,8 @@ from project_pivot.data_operations import (
 from project_pivot.data_operations.errors import DataOperationError
 from project_pivot.data_operations.request import DataOperationRequest
 
-pytestmark = pytest.mark.component
 
-
+@pytest.mark.unit
 def test_request_from_environment_applies_pipeline_overrides() -> None:
     """공개 pipeline environment 설정을 execution request로 변환한다."""
 
@@ -32,12 +31,14 @@ def test_request_from_environment_applies_pipeline_overrides() -> None:
     assert request.source_year == 2024
 
 
+@pytest.mark.unit
 def test_request_from_environment_preserves_local_defaults() -> None:
     """설정되지 않은 environment는 기존 로컬 실행 기본값을 유지한다."""
 
     assert data_operation_request_from_environment({}) == DataOperationRequest()
 
 
+@pytest.mark.unit
 def test_request_from_environment_rejects_invalid_source_year() -> None:
     """정수가 아닌 source year는 request validation error로 노출한다."""
 
@@ -45,6 +46,7 @@ def test_request_from_environment_rejects_invalid_source_year() -> None:
         data_operation_request_from_environment({"PROJECT_PIVOT_SOURCE_YEAR": "next"})
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     ("key", "field"),
     [
@@ -59,6 +61,7 @@ def test_request_from_environment_rejects_empty_paths(key: str, field: str) -> N
         data_operation_request_from_environment({key: ""})
 
 
+@pytest.mark.component
 def test_run_dbt_build_requires_artifacts(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -75,6 +78,7 @@ def test_run_dbt_build_requires_artifacts(
         runner.run_dbt_build(_request(tmp_path))
 
 
+@pytest.mark.unit
 def test_run_dbt_build_wraps_timeout(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -90,6 +94,7 @@ def test_run_dbt_build_wraps_timeout(
         runner.run_dbt_build(_request(tmp_path))
 
 
+@pytest.mark.unit
 def test_run_dbt_build_includes_last_stderr_line(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -111,6 +116,7 @@ def test_run_dbt_build_includes_last_stderr_line(
         runner.run_dbt_build(_request(tmp_path))
 
 
+@pytest.mark.component
 def test_run_dbt_build_rejects_preexisting_artifacts(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -133,6 +139,7 @@ def test_run_dbt_build_rejects_preexisting_artifacts(
     assert not request.dbt_run_results_path.exists()
 
 
+@pytest.mark.component
 def test_run_dbt_build_returns_verified_artifacts(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -155,6 +162,7 @@ def test_run_dbt_build_returns_verified_artifacts(
     assert result.run_results_path == request.dbt_run_results_path
 
 
+@pytest.mark.unit
 def test_build_dbt_command_structures_arguments(tmp_path: Path) -> None:
     """dbt build 인자 리스트가 올바른 옵션으로 구성되는지 검증한다."""
 
