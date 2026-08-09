@@ -34,10 +34,10 @@ tags:
 ### F2. Isolated candidate validation이 shared dbt artifact를 보호하지 못한다
 
 - **Severity** - Major
-- **Location** - PR #14 F2/F3/F4, Required Acceptance; `src/project_pivot/data_operations/runner.py`; `DataOperationRequest`
+- **Location** - PR #14 F3-F5, Required Acceptance; `src/project_pivot/data_operations/runner.py`; `DataOperationRequest`
 - **Evidence** - Research는 candidate validation과 approved recovery에서 full `dbt build`, post-mutation failure evidence와 replay를 요구한다. Snapshot의 `run_dbt_build()`는 실행 전에 `manifest.json`과 `run_results.json`을 삭제하며 `DataOperationRequest` 기본 artifact 경로는 공용 `dbt/target/`이다. Foundation readiness도 `dbt last-known-good evidence retention`을 blocked non-gating risk로 기록한다.
 - **Impact** - Candidate validation 또는 recovery build가 실패하면 이전 artifact가 소실되거나 candidate run artifact로 교체될 수 있다. 그러면 isolated validation, impact evidence, failure reconciliation과 replay의 근거가 흔들린다.
-- **Required Change** - MVP OpenSpec contract에 **run/phase별 dbt artifact isolation 또는 last-known-good의 원자적 보존**을 포함한다. 실패한 `dbt build`가 이전 유효 artifact를 훼손하지 않는 acceptance case와 validation/approval/recovery evidence가 어떤 artifact projection에 결합되는지도 명시한다. Exact path와 구현 방식은 Design에서 결정한다.
+- **Required Change** - Candidate validation은 **run-scoped dbt artifact workspace로 shared current artifact와 격리**한다. Target recovery build는 실패해도 **prior last-known-good artifact를 보존**하고, 성공·검증된 build만 current artifact projection으로 승격한다. Validation/approval/recovery evidence가 판단에 사용한 artifact projection을 식별하는 acceptance case도 포함한다. Exact path, promotion 방식과 retention은 Design에서 결정한다.
 
 ### F3. Reconciliation이 diverged target에 old approval을 재사용할 수 있다
 
@@ -62,7 +62,7 @@ tags:
 | Review snapshot boundary | PR head `acc2733`, `main@22fdfd0` | Pass |
 | Foundation phase gate | `docs/development/foundation/readiness.md` | Pass |
 | Readiness audit → snapshot behavioral drift | `feea63f...22fdfd0`: source/spec/test 변경 없음 | Pass |
-| Research revision currency | `22fdfd0...acc2733` compare | Fail — 84 behind / 1 ahead |
+| Research revision currency | `main@22fdfd0` ↔ PR head `acc2733` | Fail — PR head 84 behind / 1 ahead |
 | Existing approval binding | `contracts/approval.py`, `recovery/executor.py` | MVP gap confirmed |
 | Partition replacement atomicity | `hmda_data/ingestion/partition.py` transaction | Pass |
 | dbt artifact preservation | `data_operations/runner.py`, readiness non-gating inventory | Fail |
@@ -74,7 +74,7 @@ tags:
 
 ## Remaining Risks
 
-- Profile/incident/impact/remediation lifecycle과 approval backfill은 snapshot에서 구현되어 있으나 canonical readiness의 current execution은 unverified다. MVP의 첫 integration baseline에서 검증해야 한다.
+- Profile/incident/impact/remediation lifecycle과 approval backfill은 snapshot에서 구현되어 있으나 canonical readiness에서 snapshot execution은 unverified다. MVP의 첫 integration baseline에서 검증해야 한다.
 - `data-operations-refactor-runner` OpenSpec change는 snapshot에서 plan approved, tasks `4/4`이며 코드에 반영돼 있지만 active다. MVP change가 같은 runner/capability를 수정한다면 archive하거나 변경 순서를 명확히 해 overlapping ownership을 피한다.
 - Dagster orchestration blocker와 freshness semantics는 PR #14의 `volume_drop` recovery slice 범위 밖이므로 MVP entry blocker로 승격하지 않는다.
 - 이 Review는 `main@22fdfd0` 이후 runtime drift를 재검증하지 않는다. 후속 Planning은 최신 owning evidence에서 다시 확인해야 한다.
