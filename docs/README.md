@@ -13,4 +13,5 @@ Project Pivot 문서의 디렉토리 구조 및 각 디렉토리별 설명입니
 ## Core Documents
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): 시스템 아키텍처 개요
-- [vision.md](vision.md): 프로젝트 비전 및 목표
+- [vision.md](vision.md): 프로젝트 장기 비전과 원칙
+- [mvp.md](mvp.md): 현재 MVP 목표와 완료 경계

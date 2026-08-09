@@ -33,20 +33,14 @@
 - **Reproducible**: 같은 입력·설정은 같은 workflow 재현.
 - **Scope-bounded**: DuckDB, dbt, Dagster, reliability contract만 소유.
 
-## MVP 완료 기준
+## Current MVP
 
-- 반복 적재에도 raw row 중복 없음.
-- dbt build 성공과 최신 artifacts 생성.
-- 모든 incident의 evidence, affected asset, remediation action 반환.
-- Synthetic case detection/action 성공률 100%.
-- 승인 backfill 후 적재 row count와 profile row count 일치.
-- 미승인 backfill 실행 전 차단.
+현재 MVP의 목표와 완료 경계는 [`mvp.md`](mvp.md)를 따른다. 다른 incident 유형과 운영 control-plane 확장은 MVP 이후 범위다.
 
-## Next Priorities
+## Beyond MVP
 
-1. 외부 approval과 감사 이력을 Dagster에 연결.
-1. Remediation을 격리된 dbt compile/build로 검증.
-1. Null spike, schema drift, freshness delay end-to-end evaluation 추가.
+- `null_spike`, `schema_drift`, `freshness_delay` vertical slice 확장.
+- Dagster reliability control-plane과 approval/audit integration 검토.
 
 ## Non-Goals
 
