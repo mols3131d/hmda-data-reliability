@@ -24,7 +24,7 @@ pre-commit:
       run: uv run ty check
     pytest-affected:
       glob: "**/*.py"
-      run: mkdir -p artifacts && uv run pytest --testmon --testmon-forceselect -n 0
+      run: mkdir -p artifacts && uv run pytest --testmon --testmon-forceselect
 
 pre-push:
   commands:
