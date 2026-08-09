@@ -31,6 +31,19 @@
 
 `artifacts/pytest.html`은 local 실행 결과물이다. 검증 근거가 아닌 임시 결과이므로 commit하지 않는다.
 
+## Git Hooks
+
+Lefthook은 빠른 commit feedback과 push 전 전체 회귀 검증을 분리한다.
+
+| Hook | Trigger | Command | Role |
+| --- | --- | --- | --- |
+| `pre-commit` | staged Python file | `uv run pytest --testmon --testmon-forceselect` | 변경 영향 test만 실행 |
+| `pre-push` | pushed Python, dependency 또는 dbt runtime file | `uv run pytest --testmon-noselect` | 기본 suite 전체 실행 및 testmon data 갱신 |
+
+`pre-commit`은 기본 marker selector와 testmon selection을 함께 유지하기 위해 `--testmon-forceselect`를 사용한다. 병렬 실행, timeout, report와 marker 기본값은 `pyproject.toml`을 그대로 따른다. `pre-push`는 `--testmon-noselect`로 기본 suite를 모두 실행하므로 testmon 선택 결과에 의존하는 validation gate가 아니다.
+
+`.testmondata`는 local selection cache이며 검증 evidence가 아니다. Cache가 없으면 첫 testmon 실행의 선택 이점이 작을 수 있고, 이후 `pre-push` 전체 실행이 dependency data를 갱신한다.
+
 ## Select Tests
 
 ### Markers
