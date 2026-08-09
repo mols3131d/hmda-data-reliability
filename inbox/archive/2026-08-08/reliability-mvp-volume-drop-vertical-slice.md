@@ -1,7 +1,7 @@
 ---
 type: research
 title: Reliability MVP Volume-Drop Vertical Slice
-description: Foundation 이후 volume_drop 단일 recovery vertical slice의 범위, 안전 계약과 OpenSpec planning 진입 조건을 최신 main 기준으로 결정한다.
+description: Foundation 이후 volume_drop 단일 recovery vertical slice의 범위, 안전 계약과 OpenSpec planning 진입 조건을 2026-08-09 main snapshot 기준으로 결정한다.
 status: completed
 tags:
   - reliability
@@ -11,7 +11,7 @@ tags:
 ---
 
 > [!NOTE]
-> 첫 MVP는 `volume_drop` 하나를 detection부터 승인된 recovery와 재검증까지 연결하는 vertical slice로 제한한다. Foundation의 phase decision은 `GO`지만 current `main`에는 audited revision 이후 runtime 변경이 있으므로 Planning은 즉시 시작하고, Apply 전에는 MVP 관련 baseline을 current `main`에서 다시 검증한다. MVP의 필수 safety behavior는 exact recovery proposal에 결합된 approval, mutation 직전 target-state 재검증, content-level partition identity, dbt artifact 격리와 last-known-good 보존, mutation 이후 failure/reconciliation이다.
+> 첫 MVP는 `volume_drop` 하나를 detection부터 승인된 recovery와 재검증까지 연결하는 vertical slice로 제한한다. Foundation의 phase decision은 `GO`지만 audited revision 이후 runtime 변경이 있으므로 Planning은 즉시 시작하고, Apply 전에는 MVP 관련 baseline을 snapshot 이후 최신 `main`에서 다시 검증한다. MVP의 필수 safety behavior는 exact recovery proposal에 결합된 approval, mutation 직전 target-state 재검증, content-level partition identity, dbt artifact 격리와 last-known-good 보존, mutation 이후 failure/reconciliation이다.
 
 ## Question
 
@@ -20,15 +20,21 @@ tags:
 ### Scope
 
 - `volume_drop` incident의 detection, impact, candidate validation, human approval, recovery, failure handling과 post-recovery verification
-- current `main`의 Foundation readiness, recovery, ingestion, dbt execution과 active OpenSpec Change 상태
+- Foundation readiness, recovery, ingestion, dbt execution과 active OpenSpec Change 상태
 - 여러 incident 유형, Dagster control-plane, 운영 UI, cloud deployment, security-grade authorization은 제외
 
 ### Stop Condition
 
 - 하나의 vertical slice를 선택한다.
 - MVP에 필요한 safety behavior와 Design 선택을 분리한다.
-- acceptance case를 current repository evidence에 연결한다.
+- acceptance case를 repository evidence에 연결한다.
 - 오래된 repository-state 전제를 제거한다.
+
+## Evidence Snapshot
+
+- Repository: `main@587eb64f1b5a1c49a17532823561cd50ce8d12ba` (2026-08-09)
+- Foundation audited revision: `feea63fe5945c353f2f9b70b57a29cbe7294dafa`
+- 이 Research 보강 과정에서는 runtime command를 재실행하지 않았다. 아래 pass 수치는 repository에 기록된 기존 validation evidence를 인용한다.
 
 ## Findings
 
@@ -51,22 +57,22 @@ clean fixture
 - **Evidence** - `docs/ARCHITECTURE.md`, `docs/domains/reliability.md`, `openspec/specs/reliability-incident-detection/spec.md`
 - **Implication** - 첫 MVP는 detector 종류를 늘리지 않고 기존 capability 사이의 안전한 handoff와 recovery 증명에 집중한다.
 
-### F2. Foundation은 Planning을 막지 않지만 current-main validation freshness는 별도 gate다
+### F2. Foundation은 Planning을 막지 않지만 runtime validation freshness는 별도 gate다
 
-Canonical Foundation readiness는 2026-08-08 snapshot에서 `GO`, implementation `147/147`, verification `111/111`, blocker 없음으로 판정했다. 그러나 current `main` head `587eb64f1b5a1c49a17532823561cd50ce8d12ba`에는 audited revision 이후 runtime, ingestion, dbt configuration 관련 변경이 포함된다.
+Canonical Foundation readiness는 2026-08-08 snapshot에서 `GO`, implementation `147/147`, verification `111/111`, blocker 없음으로 판정했다. 그러나 이 Research의 repository snapshot에는 audited revision 이후 runtime, ingestion, dbt configuration 관련 변경이 포함된다.
 
-최근 hardcoding RPI 작업은 cross-domain regression `67 passed`, HMDA ingestion/EDA suite `36 passed`를 기록하지만 Foundation focused suite 전체를 current `main`에서 재실행한 evidence는 아니다.
+최근 hardcoding RPI 작업은 cross-domain regression `67 passed`, HMDA ingestion/EDA suite `36 passed`를 기록하지만 Foundation focused suite 전체를 snapshot `main`에서 재실행한 evidence는 아니다.
 
 따라서 gate를 다음처럼 분리한다.
 
 | Gate | Decision |
 | --- | --- |
 | MVP Planning 진입 | **GO** |
-| MVP Apply 진입 | current `main`에서 MVP 관련 baseline 재검증 필요 |
+| MVP Apply 진입 | 최신 `main`에서 MVP 관련 baseline 재검증 필요 |
 | MVP acceptance | 새 Change가 정의한 end-to-end acceptance 통과 필요 |
 
 - **Evidence** - `docs/development/foundation/readiness.md`, commit `587eb64f1b5a1c49a17532823561cd50ce8d12ba`
-- **Implication** - Foundation을 다시 설계하지는 않지만 과거 audited result를 current runtime result로 간주하지 않는다.
+- **Implication** - Foundation을 다시 설계하지는 않지만 과거 audited result를 최신 runtime result로 간주하지 않는다.
 
 Foundation non-gating risk 중 `dbt last-known-good evidence retention`은 이 slice가 직접 사용하므로 MVP 범위에 들어온다. Dagster dbt skip/materialization semantics는 Dagster control-plane을 제외하는 한 이 MVP의 blocker가 아니다.
 
@@ -161,7 +167,7 @@ Exact enum과 run-state model은 Planning/Design이 결정한다.
 
 ### F8. 현재 active OpenSpec Change는 Planning blocker가 아니지만 Apply 전에 sequencing이 필요하다
 
-`data-operations-refactor-runner`는 더 이상 active Change가 아니다. Current `main`에는 다음 완료된 hardcoding 관련 Change가 active 상태로 남아 있다.
+`data-operations-refactor-runner`는 더 이상 active Change가 아니다. Repository snapshot에는 다음 완료된 hardcoding 관련 Change가 active 상태로 남아 있다.
 
 - `data-operations-centralize-runtime-settings`
 - `data-platform-require-database-path`
@@ -190,6 +196,7 @@ Planning/Design이 결정할 사항:
 
 - contract model과 enum
 - serialization/locking 방식
+- fixture identity와 defect parameter 고정 방식
 - fingerprint canonicalization과 hashing
 - dbt workspace와 artifact promotion
 - runner/command surface
@@ -212,6 +219,7 @@ Planning/Design이 결정할 사항:
 
 | Case | Expected Result |
 | --- | --- |
+| Deterministic fixture | 같은 baseline identity와 defect parameters가 같은 expected recovery state를 만든다. |
 | Clean baseline | incident와 remediation draft가 생성되지 않는다. |
 | Controlled volume drop | 예상한 `volume_drop` incident, downstream impact와 remediation draft를 생성한다. |
 | Invalid candidate | content-level expected state를 만족하지 못하면 approval/recovery 진입을 차단한다. |
@@ -226,15 +234,15 @@ Planning/Design이 결정할 사항:
 
 ## Conclusion
 
-Project Pivot의 첫 MVP는 versioned HMDA fixture에서 `volume_drop`을 재현하고 read-only analysis, isolated candidate validation, bound human approval, approved recovery와 post-recovery verification을 하나의 evidence-backed vertical slice로 연결한다.
+Project Pivot의 첫 MVP는 controlled deterministic HMDA fixture에서 `volume_drop`을 재현하고 read-only analysis, isolated candidate validation, bound human approval, approved recovery와 post-recovery verification을 하나의 evidence-backed vertical slice로 연결한다.
 
-**Planning은 지금 시작해도 된다.** 다만 current `main`은 Foundation audited revision 이후 runtime 변경이 있으므로 Apply 전에 MVP 관련 baseline을 재검증하고, 완료됐지만 active 상태인 관련 OpenSpec Change를 sequencing해야 한다. MVP Change는 approval binding, stale-state protection, content-level recovery oracle, dbt artifact safety와 mutation-aware reconciliation을 필수 behavior로 가져가되 구현 방식은 Design이 소유한다.
+**Planning은 지금 시작해도 된다.** 다만 snapshot 이후 최신 `main`은 Foundation audited revision 이후 runtime 변경을 포함할 수 있으므로 Apply 전에 MVP 관련 baseline을 재검증하고, 완료됐지만 active 상태인 관련 OpenSpec Change를 sequencing해야 한다. MVP Change는 approval binding, stale-state protection, content-level recovery oracle, dbt artifact safety와 mutation-aware reconciliation을 필수 behavior로 가져가되 구현 방식은 Design이 소유한다.
 
 ### Next Step
 
 1. `reliability-mvp-volume-drop-vertical-slice` OpenSpec Change를 생성한다.
 1. 이 Research의 accepted behavior와 Required Acceptance만 Proposal/Spec/Design/Tasks로 이전한다.
-1. Apply 전에 current `main`에서 MVP 관련 baseline을 재검증하고 overlapping active Change를 archive/sync 또는 명시적으로 sequence한다.
+1. Apply 전에 최신 `main`에서 MVP 관련 baseline을 재검증하고 overlapping active Change를 archive/sync 또는 명시적으로 sequence한다.
 1. OpenSpec artifact가 normative contract를 소유한 뒤 이 문서는 archived evidence로만 사용한다.
 
 ## OpenSpec Direction
@@ -259,6 +267,7 @@ Out of scope:
 
 | Question | Owner |
 | --- | --- |
+| Controlled fixture identity와 defect parameters를 어떤 stable projection으로 고정할 것인가? | Design + tests |
 | Stable partition fingerprint의 canonical projection은 무엇인가? | Design + property tests |
 | Candidate/target dbt workspace와 current artifact promotion을 어떻게 분리할 것인가? | Design |
 | Target-state recheck와 mutation을 어떤 serialization primitive로 묶을 것인가? | Design |
