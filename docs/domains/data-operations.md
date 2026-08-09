@@ -19,6 +19,7 @@
 | --- | --- | --- |
 | `load_raw_data()` | HMDA 원천 파일을 DuckDB raw table에 적재 | `RawLoadResult` |
 | `run_dbt_build()` | `dbt build` 실행과 artifact 검증 | `DbtBuildResult` |
+| `promote_dbt_artifacts()` | Caller가 검증한 successful run artifact pair를 current projection으로 승격 | `None` |
 | `run_incident_lifecycle()` | current 측정, 탐지, 영향 분석, 조치 초안 생성 | `LifecycleResult` |
 
 공개 API와 모델은 [`__init__.py`](../../src/project_pivot/data_operations/__init__.py)에서 확인한다.
@@ -47,12 +48,13 @@ flowchart LR
 
 `run_dbt_build()`는 다음 경계를 책임진다.
 
-1. 이전 artifact 삭제
-1. `dbt build` subprocess 실행
+1. Request의 run-scoped target directory 준비
+1. `dbt build --target-path ...` subprocess 실행
 1. 종료 코드와 제한 시간 확인
-1. 새 `manifest.json`, `run_results.json` 존재 확인
+1. 현재 run의 `manifest.json`, `run_results.json` 존재 확인
+1. Artifact pair의 `projection_id` 반환
 
-artifact가 없으면 종료 코드가 0이어도 성공으로 처리하지 않는다.
+Runner는 shared current artifact를 실행 전에 삭제하거나 자동 승격하지 않는다. Candidate와 failed run은 current projection을 보존하며, target caller는 downstream validation 성공 뒤 `promote_dbt_artifacts(result, request)`를 호출한다. Process failure는 command, return code, stderr와 run target path를 `DataOperationError.context`에 남긴다.
 
 ### Incident Lifecycle
 
@@ -64,8 +66,10 @@ current profile 측정
 → incident 전체 탐지
 → dbt downstream 영향 분석
 → remediation draft 생성
-→ 중복 제거 후 요약 반환
+→ target content identity와 dbt projection identity를 포함해 요약 반환
 ```
+
+Detection이 없으면 recovery proposal input identity는 비어 있다. Lifecycle은 identity를 읽어 반환할 뿐 approval이나 recovery를 실행하지 않는다.
 
 ## Core Contracts
 
