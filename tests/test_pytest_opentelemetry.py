@@ -1,10 +1,10 @@
-"""pytest-opentelemetry integration 테스트."""
+"""pytest-opentelemetry plugin boundary 테스트."""
 
 from __future__ import annotations
 
 import pytest
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.component
 pytest_plugins = ("pytester",)
 
 

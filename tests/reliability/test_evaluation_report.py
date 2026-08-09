@@ -14,9 +14,8 @@ from project_pivot.reliability import (
     write_evaluation_report,
 )
 
-pytestmark = pytest.mark.component
 
-
+@pytest.mark.unit
 def test_evaluation_report_calculates_case_success_rates() -> None:
     """normal/incident case 성공률을 계산한다."""
     report = build_evaluation_report(
@@ -55,6 +54,7 @@ def test_evaluation_report_calculates_case_success_rates() -> None:
     assert report.action_success_rate == 2 / 3
 
 
+@pytest.mark.component
 def test_write_evaluation_report_creates_markdown(tmp_path: Path) -> None:
     """evaluation_report.md에 case별 기대/실제 결과를 표시한다."""
     output_path = tmp_path / "evaluation_report.md"

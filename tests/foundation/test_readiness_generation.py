@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.component
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 READINESS_YAML_PATH = PROJECT_ROOT / "docs/development/foundation/readiness.yml"
