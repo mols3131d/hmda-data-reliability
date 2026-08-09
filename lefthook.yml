@@ -22,3 +22,19 @@ pre-commit:
     ty-check:
       glob: "**/*.py"
       run: uv run ty check
+    pytest-affected:
+      glob: "**/*.py"
+      run: mkdir -p artifacts && uv run pytest --testmon --testmon-forceselect -n 0
+
+pre-push:
+  commands:
+    pytest-full:
+      glob:
+        - "**/*.py"
+        - ".python-version"
+        - "pyproject.toml"
+        - "uv.lock"
+        - "dbt/**/*.sql"
+        - "dbt/**/*.yml"
+        - "dbt/**/*.yaml"
+      run: mkdir -p artifacts && uv run pytest --testmon-noselect
