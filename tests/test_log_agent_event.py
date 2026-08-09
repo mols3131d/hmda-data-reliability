@@ -9,7 +9,7 @@ from types import ModuleType
 
 import pytest
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.component
 REPOSITORY_ROOT = Path(__file__).parents[1]
 
 
