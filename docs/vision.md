@@ -39,11 +39,11 @@
 
 **하나의 `volume_drop` incident를 탐지부터 승인된 recovery와 재검증까지 연결해 evidence-first, human-controlled reliability 가치를 end-to-end로 증명한다.** 다른 incident 유형과 운영 control-plane 확장은 MVP 이후로 미룬다.
 
-## Next Priorities
+## Post-MVP Priorities
 
-1. 외부 approval과 감사 이력을 Dagster에 연결.
-1. Remediation을 격리된 dbt compile/build로 검증.
-1. Null spike, schema drift, freshness delay end-to-end evaluation 추가.
+1. `null_spike`, `schema_drift`, `freshness_delay` vertical slice 확장.
+1. Dagster reliability control-plane과 approval/audit integration 검토.
+1. 운영 UI와 장기 monitoring 범위 검토.
 
 ## Non-Goals
 
