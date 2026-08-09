@@ -90,37 +90,43 @@ Remote가 앞서 있으면 먼저 반영하고 다시 검증한다. Force-push, 
 
 현재 또는 후속 작업의 근거로 유지할 가치가 있는 inbox artifact는 `main:/inbox/**`에 승격할 수 있다.
 
-승격에는 장기 유지 branch `inbox-promotion`을 사용한다. Artifact, 날짜 또는 승격 요청마다 새 branch를 만들지 않는다.
+승격에는 장기 유지 branch `inbox-promotion` 하나만 사용한다. Artifact, 날짜 또는 승격 요청마다 새 branch를 만들지 않는다.
 
 ```text
 inbox ── select artifact ──> inbox-promotion ── Draft PR ──> main
-                                  ▲
-                                  └──── sync from main
+                                  ▲                         │
+                                  └──── fast-forward ───────┘
 ```
 
-`inbox-promotion`이 없으면 current remote `main`에서 한 번 생성한다. 이후 merge 뒤에도 삭제하지 않고 다음 승격에 재사용한다.
+`inbox-promotion`이 없으면 current remote `main`에서 한 번 생성한다. Promotion Pull Request가 열려 있지 않은 idle 상태에서는 `inbox-promotion`이 `main`과 같은 history를 가리켜야 한다.
 
 #### Promotion Cycle
 
-1. `inbox-promotion`에 미병합 변경이 없는지 확인한다.
-1. Current remote `main`을 `inbox-promotion`에 merge해 기준 상태를 맞춘다.
-1. `inbox`에서 승격할 artifact만 같은 경로로 가져온다.
-1. 함께 검토할 artifact는 하나의 promotion batch로 commit할 수 있다.
-1. `inbox-promotion`에서 `main`으로 Draft Pull Request를 만든다.
-1. Pull Request가 merge되면 branch는 유지하고, 다음 승격 전에 다시 `main`과 동기화한다.
+1. 열린 promotion Pull Request와 `main`에 없는 기존 promotion commit이 없는지 확인한다.
+1. `inbox-promotion`을 current remote `main`으로 fast-forward한다. Fast-forward할 수 없으면 중단한다.
+1. `inbox`에서 이번 batch에 승격할 artifact만 같은 경로로 가져온다.
+1. `main`에 같은 path가 이미 있으면 비교한다. 내용이 같으면 제외하고, 다르면 의도한 갱신인지 확인한 뒤 포함한다.
+1. 함께 검토할 artifact를 하나의 promotion batch로 commit하고 Draft Pull Request 하나를 연다.
+1. Promotion Pull Request는 merge commit 방식으로 병합한다. Squash 또는 rebase merge는 장기 branch 재사용 history를 깨뜨리므로 사용하지 않는다.
+1. Merge 후 `inbox-promotion`을 새 `main` merge commit으로 fast-forward해 다시 idle 상태로 만든다.
 
-승격 branch에는 다음만 허용한다.
+Promotion Pull Request는 동시에 하나만 유지한다. 이미 열려 있으면 같은 review scope의 artifact만 현재 batch에 추가하고, 독립적인 승격은 기존 batch가 끝난 뒤 시작한다.
 
-- `main` sync commit
-- 선택한 `inbox/**` artifact의 승격 commit
+승격 대상으로 허용하는 경로는 routine artifact 경로와 같다.
 
-Source code, canonical document, configuration 또는 승격과 무관한 수정은 포함하지 않는다. Artifact 내용 자체를 크게 고쳐야 한다면 먼저 `inbox`에서 개선한 뒤 그 결과를 승격한다.
+```text
+inbox/YYYY-MM-DD/**
+inbox/archive/**
+```
+
+`inbox/AGENTS.md`, `inbox/_guidelines/**`, `inbox/_templates/**`는 운영 자산이며 promotion artifact가 아니다.
 
 - 필요한 artifact만 선택적으로 가져오며 `inbox` branch 자체를 `main`에 merge하지 않는다.
-- 같은 승격 요청의 여러 날짜·artifact는 하나의 Draft Pull Request로 묶을 수 있다.
-- 이미 열린 promotion Pull Request가 있으면 같은 승격 batch에 속하는 artifact만 추가한다.
+- Promotion branch에는 선택한 inbox artifact와 필요한 `main` synchronization 외의 변경을 포함하지 않는다.
+- Source code, canonical document, configuration 또는 승격과 무관한 수정은 포함하지 않는다.
+- Artifact 내용을 크게 고쳐야 하면 먼저 `inbox`에서 개선한 뒤 그 결과를 승격한다.
+- Pull Request가 열린 뒤 `main` 변경을 반영해야 할 때는 scope 변경 없이 `main`을 merge한다. Conflict가 발생하면 자동으로 의미를 결정하지 않고 중단한다.
 - Force-push, history rewrite와 branch replacement는 금지한다.
-- Sync 또는 승격 중 conflict가 발생하면 자동으로 의미를 결정하지 않고 중단한다.
 - 승격된 artifact도 non-canonical이다.
 - Canonical contract와 결정은 owning artifact에 자족적으로 기록한다. Inbox artifact는 근거로 참조할 수 있지만 규범적 내용을 대신 소유하지 않는다.
 - 내용이 canonical contract나 결정으로 채택되면 필요한 부분을 owning artifact에 다시 작성한다.
