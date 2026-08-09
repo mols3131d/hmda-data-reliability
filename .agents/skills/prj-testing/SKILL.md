@@ -19,10 +19,10 @@ These documents have separate ownership. Do not duplicate their detailed rules i
 
 - Run pytest through `uv`.
 - Start with the narrowest relevant test path, test node, keyword, or marker.
-- `pyproject.toml` supplies parallel execution, timeout, HTML report, strict markers, and the default marker filter.
-- Use `-n 0 -vv -s` only to investigate output, ordering, or concurrency.
+- `pyproject.toml` supplies timeout, strict markers, and the default resource-test filter.
+- Parallel execution, hook selection, and report generation are execution policies owned by `testing.md` and `lefthook.yml`; do not assume they are global pytest defaults.
 - Use `--lf` only to rerun a known previous failure.
-- Collect coverage only when it adds evidence for the change.
+- Collect HTML, coverage, trace, or JUnit evidence only when it adds evidence for the change.
 
 ## Agent Evidence
 

@@ -68,7 +68,7 @@ strict = true
 files = ["src", "tests"]
 
 [tool.pytest.ini_options]
-addopts = "-n auto --timeout=60 --html=artifacts/pytest.html --self-contained-html --strict-markers -m 'not memory and not stress'"
+addopts = "--timeout=60 --strict-markers -m 'not memory and not stress'"
 markers = [
   "unit: pure function and isolated domain tests",
   "component: package-level tests using local files",

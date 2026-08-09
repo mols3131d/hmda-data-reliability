@@ -24,11 +24,11 @@ pre-commit:
       run: uv run ty check
     pytest-affected:
       glob: "**/*.py"
-      run: mkdir -p artifacts && uv run pytest --testmon --testmon-forceselect
+      run: uv run pytest --testmon --testmon-forceselect
 
 pre-push:
   commands:
-    pytest-full:
+    pytest-regression:
       glob:
         - "**/*.py"
         - ".python-version"
@@ -37,4 +37,4 @@ pre-push:
         - "dbt/**/*.sql"
         - "dbt/**/*.yml"
         - "dbt/**/*.yaml"
-      run: mkdir -p artifacts && uv run pytest --testmon-noselect
+      run: uv run pytest -n auto --testmon-noselect
