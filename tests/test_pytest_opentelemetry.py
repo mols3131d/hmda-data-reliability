@@ -1,4 +1,4 @@
-"""pytest-opentelemetry integration 테스트."""
+"""pytest-opentelemetry plugin boundary 테스트."""
 
 from __future__ import annotations
 
