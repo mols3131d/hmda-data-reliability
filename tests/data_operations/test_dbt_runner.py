@@ -78,7 +78,7 @@ def test_run_dbt_build_requires_artifacts(
         runner.run_dbt_build(_request(tmp_path))
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_run_dbt_build_wraps_timeout(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -94,7 +94,7 @@ def test_run_dbt_build_wraps_timeout(
         runner.run_dbt_build(_request(tmp_path))
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_run_dbt_build_includes_last_stderr_line(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
