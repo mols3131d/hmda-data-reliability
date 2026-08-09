@@ -18,7 +18,7 @@ rename이나 extraction 전에 대상 이름·경로·등록 방식이 caller-vi
 | --- | --- | --- |
 | Intent | 이름과 call site만으로 목적이 불분명하다 | internal rename, local regrouping |
 | Caller contract | type·signature로 표현되지 않는 사용 의미가 숨어 있다 | docstring, 더 정확한 type/name |
-| 공개 API 구조 | package/module의 책임, 주요 진입점 또는 중요한 사용 제약을 공개된 구조만 보고 복원하기 어렵다 | 최소 module/package docstring, 기존 공개 계약을 보존하는 export 정돈 |
+| 공개 API 구조 | package/module의 책임, 주요 진입점 또는 중요한 사용 제약을 공개된 구조만 보고 복원하기 어렵다 | 최소 module/package docstring |
 | Rationale | 정책, invariant, 예외, 순서의 이유가 복원되지 않는다 | intent comment |
 | Responsibility | 독립적인 책임이 한 함수에 섞인다 | 경계가 선명할 때만 extract |
 | Control flow | nesting이나 abstraction level 혼합이 흐름을 가린다 | guard clause, local simplification |
