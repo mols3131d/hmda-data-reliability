@@ -108,7 +108,7 @@ read -r mem_total_kb mem_available_kb < <(
 mem_used_kb=$((mem_total_kb - mem_available_kb))
 mem_usage_pct=$(percent "$mem_used_kb" "$mem_total_kb")
 mem_used_mib=$(mib "$mem_used_kb")
-mem_available_mib=$(mib "$mem_available_mib")
+mem_available_mib=$(mib "$mem_available_kb")
 mem_total_mib=$(mib "$mem_total_kb")
 
 read -r disk_total_kb disk_used_kb disk_available_kb disk_usage_pct < <(
