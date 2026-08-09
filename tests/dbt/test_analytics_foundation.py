@@ -19,6 +19,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DBT_PROJECT_DIR = PROJECT_ROOT / "dbt"
 
 
+def test_dbt_profile_requires_caller_database_path() -> None:
+    """dbt profile은 application과 별도의 DuckDB path fallback을 소유하지 않는다."""
+
+    profile = (DBT_PROJECT_DIR / "profiles.yml").read_text(encoding="utf-8")
+
+    assert "path: \"{{ env_var('PROJECT_PIVOT_DUCKDB_PATH') }}\"" in profile
+
+
 def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
     tmp_path: Path,
 ) -> None:

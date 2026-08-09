@@ -17,6 +17,7 @@ from project_pivot.hmda_data.ingestion._common import (
 )
 from project_pivot.hmda_data.ingestion._source_query import (
     source_union_sql,
+    table_schema_name,
     validate_source_paths,
 )
 
@@ -61,7 +62,7 @@ def _create_hmda_loans_table(
     *,
     table_name: str = HMDA_LOANS_TABLE,
 ) -> None:
-    ensure_schema(connection)
+    ensure_schema(connection, table_schema_name(table_name))
     qualified_table = qualify_table_name(table_name)
     query = source_union_sql(source_paths)
     connection.execute(

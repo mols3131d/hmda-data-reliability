@@ -70,6 +70,41 @@ def test_load_hmda_loans_loads_csv_and_parquet_idempotently(
     assert stats == (3, 2, 2024, 2025, 3)
 
 
+def test_load_hmda_loans_creates_custom_target_schema(hmda_csv_path: Path) -> None:
+    """전체 적재는 configured qualified target의 schema를 새 DB에 생성한다."""
+
+    with DuckDBConnectionManager() as connection:
+        row_count = load_hmda_loans(
+            connection,
+            [hmda_csv_path],
+            table_name="bronze.hmda_loans",
+        )
+        table = connection.execute(
+            """
+            SELECT table_schema, table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'bronze' AND table_name = 'hmda_loans'
+            """
+        ).fetchone()
+
+    assert row_count == 2
+    assert table == ("bronze", "hmda_loans")
+
+
+def test_load_hmda_loans_rejects_multipart_target_table(hmda_csv_path: Path) -> None:
+    """현재 loader contract 밖의 multipart target은 schema 생성 전에 거부한다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(HMDADataLoadError, match="target table"),
+    ):
+        load_hmda_loans(
+            connection,
+            [hmda_csv_path],
+            table_name="catalog.bronze.hmda_loans",
+        )
+
+
 def test_load_hmda_loans_partition_after_full_load(
     hmda_csv_path: Path,
     hmda_parquet_path: Path,

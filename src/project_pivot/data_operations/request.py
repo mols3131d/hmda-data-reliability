@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 
@@ -28,6 +30,14 @@ class DataOperationRequest(BaseModel):
     dbt_manifest_path: Path = Path("dbt/target/manifest.json")
     dbt_run_results_path: Path = Path("dbt/target/run_results.json")
     run_dbt_build: bool = True
+
+    @field_validator("database_path", "source_root", mode="before")
+    @classmethod
+    def _validate_non_empty_path(cls, value: Path | str) -> Path | str:
+        if isinstance(value, str) and not value.strip():
+            msg = "경로는 비어 있을 수 없습니다."
+            raise ValueError(msg)
+        return value
 
     @field_validator(
         "asset_name",
@@ -64,3 +74,21 @@ class DataOperationRequest(BaseModel):
             msg = "profile_columns는 빈 컬럼명을 포함할 수 없습니다."
             raise ValueError(msg)
         return value
+
+
+def data_operation_request_from_environment(
+    environment: Mapping[str, str] | None = None,
+) -> DataOperationRequest:
+    """지원되는 pipeline environment override로 실행 request를 생성한다."""
+
+    values = os.environ if environment is None else environment
+    overrides = {
+        field: values[key]
+        for key, field in (
+            ("PROJECT_PIVOT_DUCKDB_PATH", "database_path"),
+            ("PROJECT_PIVOT_SOURCE_ROOT", "source_root"),
+            ("PROJECT_PIVOT_SOURCE_YEAR", "source_year"),
+        )
+        if key in values
+    }
+    return DataOperationRequest(**overrides)

@@ -18,6 +18,7 @@ from project_pivot.hmda_data.ingestion._common import (
 )
 from project_pivot.hmda_data.ingestion._source_query import (
     source_union_sql,
+    table_schema_name,
     validate_source_paths,
 )
 
@@ -76,9 +77,9 @@ def _ensure_hmda_loans_table(
     source_paths: Sequence[Path],
     table_name: str,
 ) -> None:
-    """파티션 적재 대상 테이블을 빈 raw 스키마로 보장한다."""
+    """파티션 적재 대상 테이블과 schema를 보장한다."""
 
-    ensure_schema(connection)
+    ensure_schema(connection, table_schema_name(table_name))
     qualified_table = qualify_table_name(table_name)
     query = source_union_sql(source_paths)
     connection.execute(

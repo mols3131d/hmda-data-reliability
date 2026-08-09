@@ -24,6 +24,66 @@ from project_pivot.orchestration.defs.resource import DataOperationsResource
 pytestmark = pytest.mark.integration
 
 
+def test_resource_uses_environment_backed_request_defaults(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """기본 resource는 Data Operations runtime settings를 소비한다."""
+
+    monkeypatch.setenv("PROJECT_PIVOT_DUCKDB_PATH", "scratch/environment.duckdb")
+    monkeypatch.setenv("PROJECT_PIVOT_SOURCE_ROOT", "scratch/environment-hmda")
+    monkeypatch.setenv("PROJECT_PIVOT_SOURCE_YEAR", "2024")
+
+    request = DataOperationsResource().to_request()
+
+    assert request.database_path == Path("scratch/environment.duckdb")
+    assert request.source_root == Path("scratch/environment-hmda")
+    assert request.source_year == 2024
+
+
+def test_resource_config_overrides_environment_backed_defaults(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """명시적인 Dagster resource config가 같은 runtime setting을 우선한다."""
+
+    monkeypatch.setenv("PROJECT_PIVOT_DUCKDB_PATH", "scratch/environment.duckdb")
+
+    request = DataOperationsResource(
+        database_path="scratch/configured.duckdb"
+    ).to_request()
+
+    assert request.database_path == Path("scratch/configured.duckdb")
+
+
+def test_resource_config_overrides_invalid_environment_value(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """명시 config는 같은 field의 invalid environment 값보다 우선한다."""
+
+    monkeypatch.setenv("PROJECT_PIVOT_SOURCE_YEAR", "next")
+
+    request = DataOperationsResource(source_year=2025).to_request()
+
+    assert request.source_year == 2025
+
+
+def test_resource_revalidates_explicit_configuration() -> None:
+    """명시적인 Dagster config도 Data Operations request validation을 따른다."""
+
+    with pytest.raises(ValueError, match="source_year"):
+        DataOperationsResource(source_year=1999).to_request()
+
+    with pytest.raises(ValueError, match="source_file"):
+        DataOperationsResource(source_file="").to_request()
+
+
+@pytest.mark.parametrize("field", ["database_path", "source_root"])
+def test_resource_rejects_empty_path_configuration(field: str) -> None:
+    """명시적인 빈 path config는 environment/default로 fallback하지 않는다."""
+
+    with pytest.raises(ValueError, match=field):
+        DataOperationsResource(**{field: ""}).to_request()
+
+
 def test_dagster_definitions_expose_medallion_assets_and_job() -> None:
     """Pipeline asset, group, dependency가 Dagster definitions에 등록되는지 검증한다."""
 

@@ -71,6 +71,7 @@ current profile 측정
 
 [`request.py`](../../src/project_pivot/data_operations/request.py)의 `DataOperationRequest`가 공통 입력이다.
 기본값은 로컬 HMDA·DuckDB·dbt 경로를 가리키며, 알 수 없는 필드는 거부된다.
+`data_operation_request_from_environment()`는 `PROJECT_PIVOT_DUCKDB_PATH`, `PROJECT_PIVOT_SOURCE_ROOT`, `PROJECT_PIVOT_SOURCE_YEAR` override를 같은 request contract로 해석한다.
 
 결과 모델은 모두 변경 불가다.
 
@@ -80,7 +81,7 @@ current profile 측정
 
 ## Callers And Tests
 
-Dagster resource가 설정을 `DataOperationRequest`로 변환하고, asset이 공개 진입점을 호출한다.
+Dagster resource는 environment 기반 request를 시작점으로 사용하고 명시 Dagster config만 override해 `DataOperationRequest`로 변환한다. asset은 공개 진입점을 호출한다.
 
 - [`resource.py`](../../src/project_pivot/orchestration/defs/resource.py)
 - [`assets.py`](../../src/project_pivot/orchestration/defs/assets.py)

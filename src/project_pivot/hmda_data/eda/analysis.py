@@ -9,6 +9,10 @@ from typing import Any
 import duckdb
 
 from project_pivot.hmda_data.errors import HMDADataValidationError
+from project_pivot.hmda_data.ingestion._source_query import (
+    HMDA_CSV_OPTIONS,
+    csv_reader_sql,
+)
 
 REQUIRED_EDA_COLUMNS = (
     "activity_year",
@@ -94,11 +98,7 @@ EXPECTED_TYPE_FAMILIES = {
         }
     ),
 }
-CSV_OPTIONS = {
-    "header": True,
-    "nullstr": ["NA", ""],
-    "sample_size": 200_000,
-}
+CSV_OPTIONS = HMDA_CSV_OPTIONS
 
 
 def _quote_identifier(identifier: str) -> str:
@@ -357,13 +357,8 @@ def analyze_hmda_csv(
     connection = duckdb.connect(config=duckdb_config)
     try:
         source_relation = connection.sql(
-            """
-            SELECT * FROM read_csv_auto(
-                $input_path,
-                header=true,
-                nullstr=['NA', ''],
-                sample_size=200000
-            )
+            f"""
+            SELECT * FROM {csv_reader_sql("$input_path", include_filename=False)}
             """,
             params={"input_path": str(input_path)},
         )
@@ -390,7 +385,10 @@ def analyze_hmda_csv(
             "source": {
                 "path": str(input_path),
                 "scope": "full_file",
-                "csv_options": CSV_OPTIONS,
+                "csv_options": {
+                    key: value.copy() if isinstance(value, list) else value
+                    for key, value in CSV_OPTIONS.items()
+                },
                 "duckdb_config": duckdb_config,
             },
             "duration_seconds": duration_seconds,

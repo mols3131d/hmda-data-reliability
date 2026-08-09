@@ -12,8 +12,70 @@ import pytest
 
 from project_pivot.hmda_data import analyze_hmda_csv
 from project_pivot.hmda_data.errors import HMDADataValidationError
+from project_pivot.hmda_data.ingestion._source_query import (
+    HMDA_CSV_OPTIONS,
+    csv_reader_sql,
+)
 
 pytestmark = pytest.mark.component
+
+
+def test_eda_evidence_uses_ingestion_csv_parse_contract(tmp_path: Path) -> None:
+    """EDA evidence와 ingestion reader는 동일한 HMDA CSV options를 사용한다."""
+
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,loan_purpose,action_taken,loan_amount,income",
+                "2025,CA,1,1,350000,120",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+
+    assert evidence["source"]["csv_options"] == HMDA_CSV_OPTIONS
+    reader_sql = csv_reader_sql("$input_path", include_filename=False)
+    assert f"header = {str(HMDA_CSV_OPTIONS['header']).lower()}" in reader_sql
+    assert f"nullstr = {HMDA_CSV_OPTIONS['nullstr']!r}" in reader_sql
+    assert f"sample_size = {HMDA_CSV_OPTIONS['sample_size']}" in reader_sql
+    assert "filename = true" not in reader_sql
+    assert "filename" not in [
+        column["name"] for column in evidence["schema"]["columns"]
+    ]
+
+
+def test_eda_evidence_csv_options_do_not_mutate_parse_contract(tmp_path: Path) -> None:
+    """EDA evidence 수정은 이후 ingestion CSV reader semantics에 영향을 주지 않는다."""
+
+    source_path = tmp_path / "hmda.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,state_code,loan_purpose,action_taken,loan_amount,income",
+                "2025,CA,1,1,350000,120",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    evidence = analyze_hmda_csv(
+        source_path,
+        memory_limit="256MB",
+        threads=1,
+        temp_directory=tmp_path / "duckdb-temp",
+    )
+    evidence["source"]["csv_options"]["nullstr"].append("NULL")
+
+    assert "'NULL'" not in csv_reader_sql()
+    assert HMDA_CSV_OPTIONS["nullstr"] == ["NA", ""]
 
 
 def test_analyze_hmda_csv_returns_core_code_distributions(tmp_path: Path) -> None:

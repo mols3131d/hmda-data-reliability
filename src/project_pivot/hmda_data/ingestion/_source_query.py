@@ -7,6 +7,42 @@ from pathlib import Path
 
 from project_pivot.hmda_data.errors import HMDADataLoadError
 
+HMDA_CSV_OPTIONS = {
+    "header": True,
+    "nullstr": ["NA", ""],
+    "sample_size": 200_000,
+}
+
+
+def table_schema_name(table_name: str) -> str:
+    """Qualified HMDA target의 schema를 반환하고 생략 시 raw를 사용한다."""
+
+    parts = table_name.split(".")
+    if len(parts) == 1:
+        return "raw"
+    if len(parts) == 2 and all(parts):
+        return parts[0]
+    msg = f"지원하지 않는 HMDA target table 이름입니다: {table_name}"
+    raise HMDADataLoadError(msg, context={"table_name": table_name})
+
+
+def csv_reader_sql(
+    path_parameter: str = "?",
+    *,
+    include_filename: bool = True,
+) -> str:
+    """공유 HMDA CSV parse contract를 사용하는 DuckDB reader SQL을 반환한다."""
+
+    filename_option = ",\n            filename = true" if include_filename else ""
+    return f"""
+        read_csv_auto(
+            {path_parameter},
+            header = {str(HMDA_CSV_OPTIONS["header"]).lower()},
+            nullstr = {HMDA_CSV_OPTIONS["nullstr"]!r},
+            sample_size = {HMDA_CSV_OPTIONS["sample_size"]}{filename_option}
+        )
+    """
+
 
 def validate_source_paths(source_paths: Sequence[str | Path]) -> list[Path]:
     """HMDA 원천 파일 경로를 검증하고 Path 목록으로 반환한다."""
@@ -74,15 +110,7 @@ def _reader_sql(path: Path) -> str:
 def _csv_reader_sql() -> str:
     """CSV reader SQL을 반환한다."""
 
-    return """
-        read_csv_auto(
-            ?,
-            header = true,
-            nullstr = ['NA', ''],
-            sample_size = 200000,
-            filename = true
-        )
-    """
+    return csv_reader_sql()
 
 
 def _parquet_reader_sql() -> str:

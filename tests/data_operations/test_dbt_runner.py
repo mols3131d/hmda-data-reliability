@@ -6,11 +6,57 @@ from subprocess import CompletedProcess, TimeoutExpired
 
 import pytest
 
-from project_pivot.data_operations import runner
+from project_pivot.data_operations import (
+    data_operation_request_from_environment,
+    runner,
+)
 from project_pivot.data_operations.errors import DataOperationError
 from project_pivot.data_operations.request import DataOperationRequest
 
 pytestmark = pytest.mark.component
+
+
+def test_request_from_environment_applies_pipeline_overrides() -> None:
+    """공개 pipeline environment 설정을 execution request로 변환한다."""
+
+    request = data_operation_request_from_environment(
+        {
+            "PROJECT_PIVOT_DUCKDB_PATH": "scratch/test.duckdb",
+            "PROJECT_PIVOT_SOURCE_ROOT": "scratch/hmda",
+            "PROJECT_PIVOT_SOURCE_YEAR": "2024",
+        }
+    )
+
+    assert request.database_path == Path("scratch/test.duckdb")
+    assert request.source_root == Path("scratch/hmda")
+    assert request.source_year == 2024
+
+
+def test_request_from_environment_preserves_local_defaults() -> None:
+    """설정되지 않은 environment는 기존 로컬 실행 기본값을 유지한다."""
+
+    assert data_operation_request_from_environment({}) == DataOperationRequest()
+
+
+def test_request_from_environment_rejects_invalid_source_year() -> None:
+    """정수가 아닌 source year는 request validation error로 노출한다."""
+
+    with pytest.raises(ValueError, match="source_year"):
+        data_operation_request_from_environment({"PROJECT_PIVOT_SOURCE_YEAR": "next"})
+
+
+@pytest.mark.parametrize(
+    ("key", "field"),
+    [
+        ("PROJECT_PIVOT_DUCKDB_PATH", "database_path"),
+        ("PROJECT_PIVOT_SOURCE_ROOT", "source_root"),
+    ],
+)
+def test_request_from_environment_rejects_empty_paths(key: str, field: str) -> None:
+    """빈 pipeline path는 fallback하지 않고 request validation error로 노출한다."""
+
+    with pytest.raises(ValueError, match=field):
+        data_operation_request_from_environment({key: ""})
 
 
 def test_run_dbt_build_requires_artifacts(

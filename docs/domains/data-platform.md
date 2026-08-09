@@ -38,7 +38,7 @@
 
 ## dbt Project
 
-dbt project는 [`dbt_project.yml`](../../dbt/dbt_project.yml)에서 `project_pivot`으로 정의한다. 기본 profile은 [`profiles.yml`](../../dbt/profiles.yml)의 `data/project_pivot.duckdb`를 사용하며, `PROJECT_PIVOT_DUCKDB_PATH` 환경 변수로 대체할 수 있다.
+dbt project는 [`dbt_project.yml`](../../dbt/dbt_project.yml)에서 `project_pivot`으로 정의한다. [`profiles.yml`](../../dbt/profiles.yml)은 `PROJECT_PIVOT_DUCKDB_PATH`를 필수 DuckDB target으로 사용한다. 직접 dbt 실행 caller는 이 environment variable을 설정해야 하며, `data_operations.run_dbt_build()`는 request의 database path를 subprocess에 전달한다.
 
 | Layer | Schema | Materialization | Input | Output |
 | --- | --- | --- | --- | --- |
