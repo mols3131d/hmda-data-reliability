@@ -15,6 +15,7 @@ from project_pivot.reliability.contracts.incident import (
 )
 from project_pivot.reliability.contracts.lineage import LineageEvidence
 from project_pivot.reliability.contracts.profile import ProfileSnapshot
+from project_pivot.reliability.contracts.recovery_proposal import RecoveryProposal
 from project_pivot.reliability.contracts.validation import validate_contract
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     "IncidentStatus",
     "LineageEvidence",
     "ProfileSnapshot",
+    "RecoveryProposal",
     "ReliabilityContract",
     "can_execute_risky_action",
     "validate_contract",

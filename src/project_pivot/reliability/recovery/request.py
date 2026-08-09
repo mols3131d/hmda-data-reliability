@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from project_pivot.hmda_data.ingestion import HMDA_LOANS_TABLE
-from project_pivot.reliability.contracts import Approval
+from project_pivot.reliability.contracts import Approval, RecoveryProposal
 from project_pivot.reliability.profiling import ProfileSnapshotRequest
 
 
@@ -17,6 +17,7 @@ class ApprovedBackfillRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, arbitrary_types_allowed=True)
 
     approval: Approval
+    proposal: RecoveryProposal
     source_paths: tuple[Path, ...] = Field(min_length=1)
     source_year: int = Field(ge=2000, le=2100)
     source_file: str | None = None
@@ -61,6 +62,7 @@ class ApprovedBackfillRequest(BaseModel):
 def approved_backfill_request(
     *,
     approval: Approval,
+    proposal: RecoveryProposal,
     source_paths: tuple[Path, ...],
     source_year: int,
     profile_request: ProfileSnapshotRequest,
@@ -71,6 +73,7 @@ def approved_backfill_request(
 
     return ApprovedBackfillRequest(
         approval=approval,
+        proposal=proposal,
         source_paths=source_paths,
         source_year=source_year,
         source_file=source_file,
