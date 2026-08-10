@@ -20,12 +20,16 @@
 
 <!--
 Optional — 필요한 section만 추가한다.
+- Boundaries: scope를 오해할 수 있을 때
+- Review Focus: 인간 판단이 특히 필요할 때
+- Risks: 미검증 사항이나 위험이 남을 때
+- References: 판단 근거를 다른 artifact가 소유할 때
 
 ## Boundaries
 - **Out of Scope:** <의도적으로 제외한 범위>
 
 ## Review Focus
-- <인간 판단이 특히 필요한 부분>
+- <집중해서 검토할 부분>
 
 ## Risks
 - <미검증 사항 또는 남은 위험>
