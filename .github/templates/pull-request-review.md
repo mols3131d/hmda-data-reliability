@@ -1,57 +1,64 @@
-```yaml
-# OPTIONAL: Agent가 review 작성을 주도했으나 GitHub 계정만으로 실제 작성 주체를 구별할 수 없을 때만 사용한다.
-# author:
-#   - <user-id>:<provider>-<service>
-```
+## Summary
 
 <!--
-작성 규칙:
-- 결론 요약, Findings, Validation은 기본적으로 유지한다.
-- Scope와 Remaining Risks는 필요한 경우에만 유지한다.
-- 확인된 문제만 finding으로 기록하고 같은 root cause를 반복하지 않는다.
-- GitHub가 소유하는 Approve / Comment / Request Changes decision은 본문에 반복하지 않는다.
-- 빈 placeholder와 불필요한 안내 주석은 작성 후 제거할 수 있다.
+전체적으로 어떻게 판단했는가? 가장 중요한 근거는 무엇인가?
+2~4문장으로 결론부터 쓰고 필요한 경우 다음 조치를 덧붙인다.
+GitHub review decision은 본문에 반복하지 않는다.
 -->
 
-> [!NOTE]
-> <!-- REQUIRED: 검토 결론과 가장 중요한 근거를 짧게 요약한다. 수정이 필요하면 필요한 다음 조치까지 포함한다. -->
-> <검토 결론과 핵심 근거>
-
-## Scope
-
-<!-- OPTIONAL: 전체 PR이 아닌 일부만 검토했거나 특별한 기준을 적용했을 때만 유지한다. -->
-
-- <검토한 범위와 기준>
-- <판단에 영향을 주는 미검토 범위 또는 제한>
+<검토 결론과 핵심 근거>
 
 ## Findings
 
 <!--
-REQUIRED:
-- 발견 사항이 없으면 `None`만 기록한다.
-- 발견 사항이 있으면 F1부터 독립적인 finding 단위로 반복한다.
-- Location, Evidence, Impact, Required Change가 서로 같은 문제를 설명해야 한다.
-- Uncertainty는 중요한 미확인 전제가 있을 때만 유지한다.
+수정하지 않으면 동작 오류, 위험 또는 저장소 계약 위반이 남는가?
+확인된 문제만 finding으로 기록한다. 단순 선호나 근거 없는 가능성은 제외한다.
+문제가 없으면 `✅ No findings`를 기록한다. 문제가 있으면 원인별로 F1, F2...를 작성한다.
 -->
 
+<finding 결과>
+
+<!--
 ### F1 — <finding title>
 
-- **Location:** <file, symbol, document 또는 behavior>
-- **Evidence:** <확인된 code, contract, test 또는 관찰 결과>
-- **Impact:** <수정하지 않을 때의 구체적인 영향>
-- **Required Change:** <필요한 수정 또는 충족 조건>
-- **Uncertainty:** <남은 불확실성 또는 미확인 전제>
+- **Location:** 어디에서 발생하는가?
+- **Evidence:** 무엇으로 확인했는가?
+- **Impact:** 수정하지 않으면 어떤 문제가 생기는가?
+- **Required Change:** 무엇이 바뀌어야 해결되는가?
+- **Uncertainty:** 중요한 미확인 전제가 있을 때만 추가한다.
+-->
 
 ## Validation
 
-<!-- REQUIRED: 실제 검토에 사용한 check와 evidence를 기록한다. 수행하지 않은 검증은 Not Verified로 구분한다. -->
+<!--
+무엇을 직접 확인했고 어떤 근거가 있는가?
+diff, contract, test, command 등 실제 확인 결과만 기록한다.
+중요한 미확인 영역은 ⚪ Not Verified로 남긴다.
+상태: ✅ Pass / ❌ Fail / ⚪ Not Verified
+-->
 
-| Check | Evidence | Result |
+- <status> — `<check>`: <result 또는 evidence>
+
+<!--
+Optional — 판단 비용을 줄일 때만 해당 section을 추가한다.
+
+- Scope — 일부만 검토했거나 특별한 기준을 적용했을 때
+  `## Scope` → `- <검토 범위, 기준 또는 미검토 제한>`
+- Remaining Risks — finding과 별개로 중요한 위험이나 후속 확인이 남을 때
+  `## Remaining Risks` → `- ⚠️ <남은 위험 또는 후속 확인>`
+
+Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 table을 사용할 수 있다.
+
+| Check | Result | Evidence |
 | --- | --- | --- |
-| <검증 항목> | <실행 결과, 문서, diff 또는 관찰 근거> | <Pass / Fail / Not Verified> |
+| <check> | <status> | <evidence> |
+-->
 
-## Remaining Risks
+<!--
+Author metadata — Agent가 review를 주도했고 GitHub 작성자만으로 실제 작성 주체를 구별할 수 없을 때만 문서 맨 위에 추가한다.
 
-<!-- OPTIONAL: finding 수정 후에도 남는 위험, 검토 범위 밖의 중요한 제한 또는 후속 확인이 있을 때만 유지한다. -->
-
-- <남은 위험 또는 후속 확인>
+```yaml
+author:
+  - <user-id>:<provider>-<service>
+```
+-->
