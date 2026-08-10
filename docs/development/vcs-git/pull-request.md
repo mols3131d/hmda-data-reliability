@@ -14,14 +14,14 @@ Pull request에는 현재 변경을 판단하는 데 필요한 내용만 기록�
 
 - `Summary`는 **왜 변경하는지와 기대 결과**를 먼저 설명한다.
 - `Changes`는 시행착오나 되돌린 시도가 아니라 최종 net change를 기록한다.
-- `Boundaries`는 이번 PR이 책임지는 범위와 의도적으로 다루지 않는 범위를 구분한다.
+- `Boundaries`는 의도적으로 제외한 범위나 scope 오해 가능성이 있을 때만 사용한다.
 - `Validation`은 수행한 검증과 그 evidence를 연결하고, 실패하거나 확인하지 못한 결과를 숨기지 않는다.
 - `Review Focus`는 인간 또는 다음 reviewer의 판단이 특히 필요한 부분이 있을 때만 사용한다.
 - `Risks`와 `References`는 실제 내용이 있을 때만 유지한다.
 
-Agent의 작업 과정, 상세 reasoning, commit별 변경 내역은 PR description에 복제하지 않는다. GitHub UI나 CI가 이미 충분히 제공하는 정보도 판단에 필요한 추가 맥락이 없다면 반복하지 않는다.
+Agent의 작업 과정, 상세 reasoning, RPI 단계별 진행 기록, 시행착오와 commit별 변경 내역은 PR description에 복제하지 않는다. 그 과정 자체가 보존할 가치가 있으면 owning artifact에 기록하고 PR에서는 최종 결과나 필요한 reference만 남긴다.
 
-관련 OpenSpec change, inbox artifact 또는 canonical document가 있으면 `References`에서 연결한다. 요구사항이나 acceptance criteria의 source를 PR 본문에 다시 복제하지 않는다.
+GitHub UI나 CI가 이미 충분히 제공하는 정보도 판단에 필요한 추가 맥락이 없다면 반복하지 않는다. 관련 OpenSpec change, inbox artifact 또는 canonical document가 있으면 `References`에서 연결하며, 요구사항이나 acceptance criteria의 source를 PR 본문에 다시 복제하지 않는다.
 
 Template 상단의 YAML code block과 `author` 규칙은 [GitHub Templates](../../../.github/templates/README.md)를 따른다.
 
