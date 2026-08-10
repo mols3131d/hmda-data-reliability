@@ -42,7 +42,7 @@ validation: auto
 
 현재 판단에 필요한 reference만 읽고, 관련 없는 reference는 로드하지 않는다.
 
-- 병목 종류나 최소 intervention이 불명확하거나 rename·extraction을 고려하면 [Diagnosis](references/diagnosis.md)를 읽는다.
+- 병목 종류나 최소 intervention이 불명확하거나 공개 package/module surface를 검토하거나 rename·extraction을 고려하면 [Diagnosis](references/diagnosis.md)를 읽는다.
 - docstring이나 comment를 추가·수정하려면 [Documentation](references/documentation.md)을 읽는다.
 - 코드 구조를 바꾸거나 behavior 보존 근거가 불명확하면 [Validation](references/validation.md)을 읽는다.
 
