@@ -3,8 +3,8 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Reliability MVP Volume-Drop Vertical Slice Tasks
 description: Partition identity부터 exact approval, isolated dbt, recovery reconciliation과 end-to-end acceptance까지 TDD로 구현한다.
-tasks_completed: 21
-tasks_total: 37
+tasks_completed: 25
+tasks_total: 25
 tags:
   - "domain:reliability"
   - "capability:reliability-recovery-backfill"
@@ -17,7 +17,7 @@ tags:
 ---
 
 > [!NOTE]
-> 최초 Apply의 25개 checklist는 실행됐지만 current-head implementation review에서 Critical 3건과 Major finding이 확인됐다. 기존 완료 기록은 당시 수행 evidence로 유지하고, review finding을 기존 Change 범위의 remediation task로 추가한다. 최종 Self-Review는 remediation과 재검증이 끝날 때까지 다시 연다.
+> Apply gate를 최신 baseline과 active Change sequencing 확인으로 시작한 뒤, partition identity와 artifact isolation 같은 하위 primitive부터 approval/recovery와 deterministic vertical slice까지 연결한다. 각 GREEN은 대응 RED와 focused validation을 통과해야 완료한다.
 
 ## Prerequisites
 
@@ -105,55 +105,10 @@ tags:
 - [x] 6.3 Canonical domain documentation과 public exports를 새 recovery safety contract에 맞게 갱신한다.
   - **Done when:** `docs/domains`의 owning 문서가 approval binding, content identity, artifact promotion과 reconciliation boundary를 설명한다.
 
-### 7. Current-head review remediation
-
-- [ ] 7.1 **RED** — default dbt target resolution, independent run directory와 dangerous cleanup path regression을 고정한다.
-  - **Covers:** F1, F6, F7; `Safe run workspace`
-  - **Done when:** real local dbt default request는 현재 path mismatch를 드러내고, project/root/outside-run-root cleanup 입력은 target directory가 변하지 않았음을 독립 oracle로 확인한다.
-
-- [ ] 7.2 **GREEN** — trusted run root 아래 unique run directory와 canonical dbt target resolution을 적용한다.
-  - **Done when:** CLI와 runner artifact path가 동일하고 arbitrary existing directory를 recursive cleanup할 수 없으며 failed-run workspace가 다음 실행에 의해 삭제되지 않는다.
-
-- [ ] 7.3 **RED/GREEN** — approved candidate source를 staging identity로 mutation 전에 결합하고 post-mutation failure를 structured evidence로 보존한다.
-  - **Covers:** F2, F3; `Approved candidate source mismatch`, `Mutation-aware recovery result`
-  - **Done when:** different source content는 zero-mutation으로 실패하고 profile/content/dbt verification failure 뒤 같은 approval replay가 `resume_verification`으로 이어진다.
-
-- [ ] 7.4 **RED** — cross-run promotion, post-validation artifact mutation, mid-publish observation과 backup cleanup failure를 주입한다.
-  - **Covers:** F4, F5, F8; `Artifact promotion binding`, `Projection-consistent publication and evidence`
-  - **Done when:** current implementation에서 provenance 또는 projection consistency 위반이 독립 oracle로 재현된다.
-
-- [ ] 7.5 **GREEN** — exact run/request provenance와 projection-consistent promotion/read 경계를 적용한다.
-  - **Done when:** validated exact artifact만 승격되고 mixed projection이 evidence로 관찰되지 않으며 install 이후 cleanup failure가 current와 last-known-good를 함께 손상하지 않는다.
-
-- [ ] 7.6 **RED/GREEN** — evaluation을 disposable workspace로 격리하고 safety case를 실제 runner/recovery failure에서 생성한다.
-  - **Covers:** F9, F10; `Evaluation workspace isolation`, `Recovery safety case evaluation`
-  - **Done when:** caller target database가 synthetic injection 전후 동일하고 candidate/recovery dbt failure가 callback label이 아니라 실제 run evidence로 판정된다.
-
-- [ ] 7.7 **RED/GREEN** — multi-year provenance와 deterministic total ordering을 고정한다.
-  - **Covers:** F11, F12; `Source provenance preservation`
-  - **Done when:** 다른 source year row가 target year로 재작성되지 않고 physical input order가 달라도 같은 synthetic content identity가 나온다.
-
-- [ ] 7.8 **RED/GREEN** — approval requested actions와 recovery state vocabulary를 immutable typed contract로 전환한다.
-  - **Covers:** F13, F14; `Immutable approval binding`, `Mutation-aware recovery result`
-  - **Done when:** approved object의 action binding을 post-construction mutation할 수 없고 unknown state가 validation에서 거부된다.
-
-- [x] 7.9 Feature PR에서 routine inbox report를 제거한다.
-  - **Covers:** F15
-  - **Done when:** PR changed files에 `inbox/2026-08-10/03-57-report-reliability-mvp-volume-drop-vertical-slice.md`가 남지 않는다.
-
-- [ ] 7.10 변경한 contract와 component의 focused validation을 가장 좁은 범위부터 실행한다.
-  - **Done when:** HMDA ingestion, Data Operations, Reliability focused suite와 real dbt integration case가 통과하고 failure injection oracle이 실제 state를 검증한다.
-
-- [ ] 7.11 전체 validation을 다시 실행하고 결과를 현재 head 기준으로 기록한다.
-  - **Done when:** `uv run pytest`, `uv run ruff check src tests`, `uv run ty check`, OpenSpec strict validation과 Markdown validation 결과가 현재 revision에 대해 확인된다.
-
-- [ ] 7.12 Current head를 3차 implementation review와 adversarial review에 통과시킨다.
-  - **Done when:** Critical/Major merge blocker가 없고 남은 finding과 validation 한계가 PR에 기록된다.
-
 ## Self-Review
 
-- [ ] 모든 관련 Requirement와 Scenario가 구현 및 테스트에 반영되었는지 확인한다.
-- [ ] Design의 Decision과 Boundary를 지키면서 중복과 불필요한 복잡성을 제거한다.
-- [ ] 관련 테스트, 실패 경로와 정적 검사가 통과하는지 확인한다.
-- [ ] 필요한 문서, 설정과 운영 절차를 갱신한다.
-- [ ] 알려진 제약과 후속 작업을 명시한다.
+- [x] 모든 관련 Requirement와 Scenario가 구현 및 테스트에 반영되었는지 확인한다.
+- [x] Design의 Decision과 Boundary를 지키면서 중복과 불필요한 복잡성을 제거한다.
+- [x] 관련 테스트, 실패 경로와 정적 검사가 통과하는지 확인한다.
+- [x] 필요한 문서, 설정과 운영 절차를 갱신한다.
+- [x] 알려진 제약과 후속 작업을 명시한다.
