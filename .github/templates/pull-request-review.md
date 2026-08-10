@@ -8,8 +8,10 @@
 
 ## Scope
 
-- 검토한 변경 범위와 기준을 작성한다.
-- 확인하지 않은 범위가 판단에 영향을 줄 수 있으면 함께 기록한다.
+<!-- OPTIONAL: 전체 PR이 아닌 일부만 검토했거나 특별한 기준을 적용했을 때만 유지한다. -->
+
+- <검토한 범위와 기준>
+- <판단에 영향을 주는 미검토 범위가 있으면 기록>
 
 ## Findings
 
@@ -17,7 +19,6 @@
 
 ### F1 — <finding title>
 
-- **Severity:** <severity>
 - **Location:** <file, symbol, document 또는 behavior>
 - **Evidence:** <확인된 code, contract, test 또는 관찰 결과>
 - **Impact:** <수정하지 않을 때의 구체적인 영향>
@@ -32,6 +33,6 @@
 
 ## Remaining Risks
 
-<!-- OPTIONAL: 남은 위험, 제한 또는 후속 확인이 있을 때만 유지한다. -->
+<!-- OPTIONAL: 수정 후에도 남는 위험, 제한 또는 후속 확인이 있을 때만 유지한다. -->
 
 - <remaining risk>
