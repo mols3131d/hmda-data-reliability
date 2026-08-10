@@ -21,10 +21,9 @@
 <!--
 무엇을 확인했고 결과는 어땠는가?
 실제로 수행한 검증만 기록한다. 중요한 미수행 검증은 ⚪ Not Verified로 남긴다.
-상태 표기: ✅ Pass / ❌ Fail / ⚪ Not Verified
 -->
 
-- ✅ **Pass** — `<check>`: <result 또는 evidence>
+- <✅ **Pass** | ❌ **Fail** | ⚪ **Not Verified**> — `<check>`: <result 또는 evidence>
 
 <!--
 Optional — 판단 비용을 줄일 때만 해당 section을 추가한다.
@@ -39,7 +38,10 @@ Optional — 판단 비용을 줄일 때만 해당 section을 추가한다.
   `## References` → `- <repository-relative path 또는 link>`
 
 Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 table을 사용할 수 있다.
-`| Check | Result | Evidence |`
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| <check> | <✅ Pass / ❌ Fail / ⚪ Not Verified> | <evidence> |
 -->
 
 <!--
