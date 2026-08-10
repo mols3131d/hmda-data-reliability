@@ -17,7 +17,7 @@ Pull request에는 현재 변경을 판단하는 데 필요한 내용만 기록�
 - `Validation`은 실제 수행한 검증과 evidence를 연결하고, 실패하거나 확인하지 못한 결과를 숨기지 않는다.
 - `Boundaries`, `Review Focus`, `Risks`, `References`는 해당 정보가 검토자의 판단 비용을 줄일 때만 추가한다.
 
-Validation은 항목이 적으면 list를 사용한다. 비교 가능한 check가 많아 `Check / Result / Evidence`를 반복해야 하면 table을 사용할 수 있다. 상태 marker를 사용하면 `✅ Pass`, `❌ Fail`, `⚪ Not Verified`처럼 text label을 함께 적는다.
+Validation은 항목이 적으면 list를 사용한다. 비교 가능한 check가 많아 `Check / Result / Evidence`를 반복해야 하면 table을 사용할 수 있다. 상태는 `✅ Pass`, `❌ Fail`, `⚪ Not Verified` 중 실제 결과로 `<status>` placeholder를 교체한다.
 
 Agent의 작업 과정, 상세 reasoning, RPI 단계별 진행 기록, 시행착오와 commit별 변경 내역은 PR description에 복제하지 않는다. 그 과정 자체가 보존할 가치가 있으면 owning artifact에 기록하고 PR에서는 최종 결과나 필요한 reference만 남긴다.
 
