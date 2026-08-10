@@ -4,36 +4,51 @@
 #   - <user-id>:<provider>-<service>
 ```
 
-<!-- 기본: Summary, Changes, Validation. Optional은 reviewer의 추론을 줄일 때만 추가한다. -->
+<!--
+기본은 Summary, Changes, Validation이다.
+작업 과정보다 reviewer가 변경 목적, 결과, 검증을 빠르게 이해하는 데 필요한 최종 정보만 남긴다.
+Optional section은 실제 판단 비용을 줄일 때만 추가하고, 사용하지 않는 placeholder는 제거한다.
+-->
 
 ## Summary
+
+<!-- 2~4문장: 왜 이 변경이 필요한가? merge되면 무엇이 달라지는가? -->
 
 <변경 이유와 기대 결과>
 
 ## Changes
 
-- <최종 net change>
+<!-- reviewer가 확인해야 할 주요 net change를 적는다. 파일 목록보다 behavior, contract, 구조의 변화에 집중한다. -->
+
+- <주요 변경>
 
 ## Validation
 
-- **<Pass | Fail | Not Verified>** — <check>: <evidence>
+<!-- 실제 수행한 검증과 결과를 적는다. 중요한 미수행 검증은 Not Verified로 명시한다. -->
+
+- **<Pass | Fail | Not Verified>** — <check>: <result 또는 evidence>
 
 <!--
 Optional — 필요한 section만 추가한다.
-- Boundaries: scope를 오해할 수 있을 때
-- Review Focus: 인간 판단이 특히 필요할 때
-- Risks: merge 후에도 위험이나 제한이 남을 때
-- References: 판단 근거를 다른 artifact가 소유할 때
+
+- Boundaries: PR이 다루지 않는 범위를 오해하기 쉬울 때
+- Review Focus: trade-off, 가정 등 인간 판단이 특히 필요한 부분이 있을 때
+- Risks: validation과 별개로 merge 후에도 위험이나 제한이 남을 때
+- References: 요구사항이나 판단 근거를 다른 artifact가 소유할 때
 
 ## Boundaries
+
 - **Out of Scope:** <의도적으로 제외한 범위>
 
 ## Review Focus
-- <집중해서 검토할 부분>
+
+- <집중해서 검토할 결정, trade-off 또는 가정>
 
 ## Risks
+
 - <merge 후에도 남는 위험 또는 제한>
 
 ## References
+
 - <OpenSpec, inbox artifact 또는 canonical document>
 -->
