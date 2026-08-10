@@ -16,7 +16,7 @@ GitHub review decision은 본문에 반복하지 않는다.
 문제가 없으면 `✅ No findings`를 기록한다. 문제가 있으면 원인별로 F1, F2...를 작성한다.
 -->
 
-<✅ No findings 또는 아래 finding 형식>
+<finding 결과>
 
 <!--
 ### F1 — <finding title>
@@ -34,9 +34,10 @@ GitHub review decision은 본문에 반복하지 않는다.
 무엇을 직접 확인했고 어떤 근거가 있는가?
 diff, contract, test, command 등 실제 확인 결과만 기록한다.
 중요한 미확인 영역은 ⚪ Not Verified로 남긴다.
+상태: ✅ Pass / ❌ Fail / ⚪ Not Verified
 -->
 
-- <✅ **Pass** | ❌ **Fail** | ⚪ **Not Verified**> — `<check>`: <result 또는 evidence>
+- <status> — `<check>`: <result 또는 evidence>
 
 <!--
 Optional — 판단 비용을 줄일 때만 해당 section을 추가한다.
@@ -50,7 +51,7 @@ Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 tab
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| <check> | <✅ Pass / ❌ Fail / ⚪ Not Verified> | <evidence> |
+| <check> | <status> | <evidence> |
 -->
 
 <!--
