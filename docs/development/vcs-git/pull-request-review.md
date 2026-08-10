@@ -18,7 +18,7 @@ Severity는 repository 또는 해당 review workflow에 정의된 taxonomy가 �
 
 확인되지 않은 전제나 validation 한계가 finding의 확실성에 영향을 주면 uncertainty를 명시한다. 근거 없이 가능성만 제시하거나 변경 범위를 벗어난 선호를 blocker로 만들지 않는다.
 
-발견 사항이 없으면 `Findings`에 `✅ No findings`를 기록한다. 문제가 있으면 이를 제거하고 root cause별 finding을 작성한다.
+발견 사항이 없으면 `Findings`의 `<finding 결과>`를 `✅ No findings`로 교체한다. 문제가 있으면 placeholder를 제거하고 root cause별 finding을 작성한다.
 
 Review decision은 GitHub가 소유하므로 review body에 `Approve`, `Comment`, `Request Changes`를 별도 metadata로 반복하지 않는다.
 
@@ -26,7 +26,7 @@ Review decision은 GitHub가 소유하므로 review body에 `Approve`, `Comment`
 
 수행한 check와 evidence, result를 구분해 기록한다. 실행하지 못한 validation, 접근할 수 없는 evidence 또는 확인하지 않은 범위가 review 판단에 영향을 줄 수 있으면 명시한다.
 
-항목이 적으면 list를 사용한다. 비교 가능한 check가 많아 `Check / Result / Evidence`를 반복해야 하면 table을 사용할 수 있다. 상태 marker를 사용하면 `✅ Pass`, `❌ Fail`, `⚪ Not Verified`처럼 text label을 함께 적는다.
+항목이 적으면 list를 사용한다. 비교 가능한 check가 많아 `Check / Result / Evidence`를 반복해야 하면 table을 사용할 수 있다. 상태는 `✅ Pass`, `❌ Fail`, `⚪ Not Verified` 중 실제 결과로 `<status>` placeholder를 교체한다.
 
 Automation pass는 finding 부재를 증명하지 않으며, 실행하지 않은 validation을 수행한 것처럼 표현하지 않는다.
 
