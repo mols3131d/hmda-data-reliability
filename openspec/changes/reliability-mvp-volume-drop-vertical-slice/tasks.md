@@ -3,8 +3,8 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Reliability MVP Volume-Drop Vertical Slice Tasks
 description: Partition identity부터 exact approval, isolated dbt, recovery reconciliation과 end-to-end acceptance까지 TDD로 구현한다.
-tasks_completed: 25
-tasks_total: 25
+tasks_completed: 41
+tasks_total: 41
 tags:
   - "domain:reliability"
   - "capability:reliability-recovery-backfill"
@@ -112,3 +112,22 @@ tags:
 - [x] 관련 테스트, 실패 경로와 정적 검사가 통과하는지 확인한다.
 - [x] 필요한 문서, 설정과 운영 절차를 갱신한다.
 - [x] 알려진 제약과 후속 작업을 명시한다.
+
+## Review Follow-up
+
+- [x] 7.1 승인된 candidate와 실행 source의 staged content identity를 target mutation 전에 비교하고 mismatch zero-mutation regression을 추가한다.
+- [x] 7.2 dbt run마다 unique artifact directory를 사용하고 promotion 직전 projection identity를 재확인하는 regression을 추가한다.
+- [x] 7.3 artifact pair commit과 backup cleanup을 분리하고 cleanup failure가 committed pair를 손상시키지 않는 regression을 추가한다.
+- [x] 7.4 검증한 recovery source를 immutable staged artifact로 고정하고 source replacement TOCTOU regression을 추가한다.
+- [x] 7.5 dbt artifact projection digest에 pair boundary를 포함하고 collision regression을 추가한다.
+- [x] 7.6 current artifact promotion을 local lock으로 직렬화하고 concurrent promotion regression을 추가한다.
+- [x] 7.7 artifact promotion lock을 impact/projection reader와 공유해 mixed current pair read를 차단한다.
+- [x] 7.8 promotion lock 획득 뒤 projection identity를 재확인하고 lock-wait artifact mutation regression을 추가한다.
+- [x] 7.9 recovery candidate staging failure를 `BackfillValidationError`로 변환하고 regression을 추가한다.
+- [x] 7.10 artifact lock setup 오류와 locked body의 artifact read 오류를 분리하고 regression을 추가한다.
+- [x] 7.11 recovery temporary staging directory failure를 `BackfillValidationError`로 변환하고 regression을 추가한다.
+- [x] 7.12 lifecycle impact analysis와 projection identity를 하나의 shared-lock artifact snapshot에서 결합한다.
+- [x] 7.13 artifact lock setup failure가 typed lock error로 변환되는 regression을 추가한다.
+- [x] 7.14 post-mutation target dbt validation failure를 vertical-slice safety case evidence로 반환하는 regression을 추가한다.
+- [x] 7.15 post-mutation target dbt failure safety case에 prior last-known-good target projection을 기록한다.
+- [x] 7.16 target dbt failure evidence의 prior projection identity를 shared artifact lock 안에서 읽는다.

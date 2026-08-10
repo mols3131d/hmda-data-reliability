@@ -14,7 +14,7 @@ tags:
 
 ### Requirement: dbt build execution
 
-시스템은 request의 dbt project와 profile 설정으로 isolated run을 실행하고 성공한 현재 실행의 `manifest.json`과 `run_results.json`을 확인한 뒤에만 성공 결과를 반환해야 한다(SHALL). Candidate run은 current target database와 shared current artifact를 변경해서는 안 된다(MUST NOT). Target run은 성공하고 caller validation을 통과한 artifact만 current projection으로 승격해야 한다(SHALL).
+시스템은 request의 dbt project와 profile 설정으로 unique run directory에서 isolated run을 실행하고 성공한 현재 실행의 `manifest.json`과 `run_results.json`을 확인한 뒤에만 성공 결과를 반환해야 한다(SHALL). Candidate run은 current target database와 shared current artifact를 변경해서는 안 된다(MUST NOT). Target run은 성공하고 caller validation을 통과했으며 promotion 직전 projection identity가 재확인된 artifact만 current projection으로 승격해야 한다(SHALL).
 
 #### Scenario: Successful target artifact promotion
 
@@ -30,6 +30,35 @@ tags:
 
 - **WHEN** 이전 실행 artifact가 존재하지만 현재 dbt 실행이 새 필수 artifact를 제공하지 못할 때
 - **THEN** stage는 이전 artifact만으로 현재 실행을 성공으로 보고해서는 안 된다.
+
+#### Scenario: Earlier verified run promotion
+
+- **GIVEN** run A가 검증된 뒤 run B가 완료되었을 때
+- **WHEN** caller가 run A를 current projection으로 승격할 때
+- **THEN** run A의 artifact bytes만 승격해야 한다.
+
+#### Scenario: Changed verified artifact
+
+- **GIVEN** 검증된 run artifact가 promotion 전에 변경되었을 때
+- **WHEN** caller가 해당 run을 승격할 때
+- **THEN** current projection을 변경하지 않고 promotion을 거부해야 한다.
+
+#### Scenario: Concurrent promotion
+
+- **GIVEN** 둘 이상의 verified run이 같은 current projection으로 승격을 요청할 때
+- **WHEN** promotion을 실행할 때
+- **THEN** current artifact pair는 하나의 verified run에 속하는 manifest와 run-results로만 구성되어야 한다.
+
+#### Scenario: Locked projection read
+
+- **WHEN** current artifact pair를 사용하는 impact 또는 projection identity를 읽을 때
+- **THEN** promotion과 같은 local lock protocol으로 complete artifact pair만 읽어야 한다.
+
+#### Scenario: Artifact mutation while waiting
+
+- **GIVEN** promotion이 current projection lock을 기다리는 동안 verified run artifact가 변경되었을 때
+- **WHEN** promotion lock을 획득할 때
+- **THEN** 변경된 artifact를 current projection으로 승격하지 않고 promotion을 거부해야 한다.
 
 ### Requirement: dbt failure boundary
 
@@ -50,6 +79,12 @@ tags:
 - **GIVEN** prior last-known-good target artifact가 있을 때
 - **WHEN** recovery target dbt run이 실패할 때
 - **THEN** prior artifact를 유지하고 failed-run evidence를 별도로 제공해야 한다.
+
+#### Scenario: Backup cleanup failure
+
+- **GIVEN** artifact pair가 current projection으로 성공적으로 교체되었을 때
+- **WHEN** 이전 artifact backup의 cleanup이 실패할 때
+- **THEN** committed current artifact pair를 rollback하거나 손상시켜서는 안 된다.
 
 ## ADDED Requirements
 

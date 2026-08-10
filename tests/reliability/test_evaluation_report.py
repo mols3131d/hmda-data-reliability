@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
+import project_pivot.reliability.evaluation.volume_drop as volume_drop
 from project_pivot.data_operations import DataOperationRequest
+from project_pivot.data_platform.artifacts import artifact_projection_id
 from project_pivot.reliability import (
     Approval,
     ApprovalStatus,
@@ -212,6 +214,9 @@ def test_volume_drop_vertical_slice_preserves_source_file_scope(
             recovery_proposal=proposal,
         )
 
+    def fail_target_validation(_request: DataOperationRequest) -> str:
+        raise RuntimeError("dbt failed")
+
     result = evaluate_volume_drop_vertical_slice(
         request=request,
         source_paths=(selected, other),
@@ -233,6 +238,87 @@ def test_volume_drop_vertical_slice_preserves_source_file_scope(
         recovery=failed_recovery,
     )
     assert not failed_case.action_passed
+
+
+@pytest.mark.integration
+def test_volume_drop_vertical_slice_records_target_dbt_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Partition mutation 뒤 target dbt failure는 safety case evidence로 반환한다."""
+
+    source_path = tmp_path / "year_2025.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,county_code",
+                *[f"2025,1,1,{index},100,CA,06001" for index in range(10)],
+            ]
+        ),
+        encoding="utf-8",
+    )
+    target = tmp_path / "dbt" / "target"
+    target.mkdir(parents=True)
+    (target / "manifest.json").write_text('{"sources":{},"nodes":{}}', encoding="utf-8")
+    (target / "run_results.json").write_text("{}", encoding="utf-8")
+    request = DataOperationRequest(
+        database_path=tmp_path / "target.duckdb",
+        dbt_manifest_path=target / "manifest.json",
+        dbt_run_results_path=target / "run_results.json",
+        observed_at=datetime(2026, 6, 10, 0, 0, tzinfo=UTC),
+    )
+
+    def approve(proposal):
+        assert request.observed_at is not None
+        return Approval(
+            approval_id="approval_target_failure",
+            incident_id=proposal.incident_id,
+            status=ApprovalStatus.APPROVED,
+            requested_by="data-platform",
+            requested_at=request.observed_at,
+            approved_by="data-owner",
+            approved_at=request.observed_at,
+            requested_actions=list(proposal.target_actions),
+            recovery_proposal=proposal,
+        )
+
+    def fail_target_validation(_request: DataOperationRequest) -> str:
+        raise RuntimeError("dbt failed")
+
+    lock_calls: list[tuple[Path, bool]] = []
+    original_lock = volume_drop.artifact_projection_lock
+
+    def track_prior_projection_lock(directory: Path, *, exclusive: bool):
+        lock_calls.append((directory, exclusive))
+        return original_lock(directory, exclusive=exclusive)
+
+    monkeypatch.setattr(
+        volume_drop,
+        "artifact_projection_lock",
+        track_prior_projection_lock,
+    )
+
+    result = evaluate_volume_drop_vertical_slice(
+        request=request,
+        source_paths=(source_path,),
+        workspace=tmp_path / "run",
+        approve=approve,
+        validate_candidate=lambda _request: "sha256:candidate",
+        validate_target=fail_target_validation,
+    )
+
+    assert result.recovery.mutation_state == "partition_changed"
+    assert result.target_dbt_projection_id is None
+    assert result.target_dbt_failure == "dbt failed"
+    assert result.post_recovery_case.failure_stage == "after_partition_mutation"
+    assert result.post_recovery_case.target_mutated
+    assert result.post_recovery_case.artifact_projection_ids == [
+        artifact_projection_id(
+            request.dbt_manifest_path,
+            request.dbt_run_results_path,
+        )
+    ]
+    assert (request.dbt_manifest_path.parent, False) in lock_calls
 
 
 @pytest.mark.unit

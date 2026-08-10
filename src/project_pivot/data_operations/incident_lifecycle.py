@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import UTC, datetime
-from hashlib import sha256
 from typing import cast
 
 from project_pivot.data_operations.errors import DataOperationError
 from project_pivot.data_operations.lifecycle_result import LifecycleResult
 from project_pivot.data_operations.request import DataOperationRequest
+from project_pivot.data_platform.artifacts import (
+    ArtifactProjectionLockError,
+    artifact_projection_id,
+    artifact_projection_lock,
+)
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import PartitionContentIdentity, partition_content_identity
 from project_pivot.reliability import (
@@ -66,7 +70,14 @@ def run_incident_lifecycle(
         detections = detect_basic_incidents(
             DetectionRequest(baseline=baseline, current=current)
         )
-        analyses = [_analyze_detection(request, detection) for detection in detections]
+        with artifact_projection_lock(
+            request.dbt_manifest_path.parent,
+            exclusive=False,
+        ):
+            analyses = [
+                _analyze_detection(request, detection) for detection in detections
+            ]
+            dbt_projection_id = _dbt_projection_id(request) if analyses else None
         target_content_identity = (
             partition_content_identity(
                 connection,
@@ -84,7 +95,7 @@ def run_incident_lifecycle(
         current=current,
         analyses=analyses,
         target_content_identity=target_content_identity,
-        dbt_projection_id=_dbt_projection_id(request) if analyses else None,
+        dbt_projection_id=dbt_projection_id,
     )
 
 
@@ -156,10 +167,20 @@ def _build_lifecycle_result(
 
 
 def _dbt_projection_id(request: DataOperationRequest) -> str:
-    digest = sha256()
-    for path in (request.dbt_manifest_path, request.dbt_run_results_path):
-        digest.update(path.read_bytes())
-    return f"sha256:{digest.hexdigest()}"
+    try:
+        with artifact_projection_lock(
+            request.dbt_manifest_path.parent,
+            exclusive=False,
+        ):
+            return artifact_projection_id(
+                request.dbt_manifest_path,
+                request.dbt_run_results_path,
+            )
+    except ArtifactProjectionLockError as exc:
+        raise DataOperationError(
+            "dbt artifact projection lock을 획득할 수 없습니다.",
+            context={"directory": str(request.dbt_manifest_path.parent)},
+        ) from exc
 
 
 def _validate_profile_compatibility(

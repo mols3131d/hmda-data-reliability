@@ -9,6 +9,10 @@ from typing import TYPE_CHECKING
 import duckdb
 from pydantic import BaseModel, ConfigDict
 
+from project_pivot.data_platform.artifacts import (
+    artifact_projection_id,
+    artifact_projection_lock,
+)
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.data_platform.sql import quote_string_literal
 from project_pivot.hmda_data import (
@@ -19,6 +23,9 @@ from project_pivot.hmda_data import (
 )
 from project_pivot.reliability.contracts import Approval, RecoveryProposal
 from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
+from project_pivot.reliability.evaluation.recovery_case import (
+    build_recovery_evaluation_case,
+)
 from project_pivot.reliability.profiling import (
     ProfileSnapshotRequest,
     create_profile_snapshot,
@@ -50,7 +57,8 @@ class VolumeDropVerticalSliceResult(BaseModel):
     recovery: BackfillValidationResult
     replay: BackfillValidationResult
     candidate_dbt_projection_id: str
-    target_dbt_projection_id: str
+    target_dbt_projection_id: str | None = None
+    target_dbt_failure: str | None = None
 
 
 def evaluate_volume_drop_vertical_slice(
@@ -165,19 +173,43 @@ def evaluate_volume_drop_vertical_slice(
     with DuckDBConnectionManager(target_request.database_path) as connection:
         recovery = execute_approved_backfill(connection, recovery_request)
         replay = execute_approved_backfill(connection, recovery_request)
-    target_projection_id = validate_target(target_request)
     post_recovery_lifecycle = run_incident_lifecycle(target_request, baseline)
+    with artifact_projection_lock(
+        target_request.dbt_manifest_path.parent,
+        exclusive=False,
+    ):
+        prior_target_projection_id = artifact_projection_id(
+            target_request.dbt_manifest_path,
+            target_request.dbt_run_results_path,
+        )
+    try:
+        target_projection_id = validate_target(target_request)
+        target_dbt_failure = None
+        post_recovery_case = _case_result("post_recovery", post_recovery_lifecycle)
+    except Exception as exc:
+        target_projection_id = None
+        target_dbt_failure = str(exc)
+        post_recovery_case = build_recovery_evaluation_case(
+            case_name="recovery_dbt_failure",
+            expected_incident_types=[],
+            detected_incident_types=post_recovery_lifecycle.detected_incident_types,
+            recovery=recovery,
+            failure_stage="after_partition_mutation",
+            evidence_refs=[target_dbt_failure],
+            artifact_projection_ids=[prior_target_projection_id],
+        )
 
     return VolumeDropVerticalSliceResult(
         fixture_identity=fixture_identity,
         expected_recovery_identity=expected_identity,
         clean_case=_case_result("clean", clean_lifecycle),
         volume_drop_case=_case_result("volume_drop", volume_drop_lifecycle),
-        post_recovery_case=_case_result("post_recovery", post_recovery_lifecycle),
+        post_recovery_case=post_recovery_case,
         recovery=recovery,
         replay=replay,
         candidate_dbt_projection_id=candidate_projection_id,
         target_dbt_projection_id=target_projection_id,
+        target_dbt_failure=target_dbt_failure,
     )
 
 

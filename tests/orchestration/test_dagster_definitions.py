@@ -13,6 +13,7 @@ from project_pivot.data_operations import (
     DbtBuildResult,
     RawLoadResult,
 )
+from project_pivot.data_platform.artifacts import artifact_projection_id
 from project_pivot.orchestration.definitions import defs
 from project_pivot.orchestration.defs import assets as dagster_assets
 from project_pivot.orchestration.defs.assets import (
@@ -139,7 +140,10 @@ def test_dagster_materialization_records_metadata(
             return_code=0,
             manifest_path=manifest_path,
             run_results_path=run_results_path,
-            projection_id="sha256:test",
+            projection_id=artifact_projection_id(
+                manifest_path,
+                run_results_path,
+            ),
             succeeded=True,
         )
 

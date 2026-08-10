@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import duckdb
 
+from project_pivot.data_platform.sql import quote_string_literal
 from project_pivot.hmda_data import (
     load_hmda_loans_partition,
     partition_content_identity,
@@ -30,47 +34,53 @@ class ApprovalBackfillValidator:
         """승인된 요청만 partition overwrite와 profile validation을 실행한다."""
 
         _ensure_approved(request)
-        current_identity = partition_content_identity(
-            self._connection,
-            table_name=request.table_name,
-            source_year=request.source_year,
-            source_file=request.source_file,
-        )
-        if current_identity == request.proposal.expected_after_identity:
-            mutation_state = "already_recovered"
-            reconciliation_action = "resume_verification"
-            executed_actions = ["rerun_profile_snapshot"]
-        elif current_identity == request.proposal.approved_before_identity:
-            mutation_state = "partition_changed"
-            reconciliation_action = "overwrite_partition"
-            executed_actions = ["overwrite_partition", "rerun_profile_snapshot"]
-        else:
-            raise ApprovalGateError(
-                "recovery target이 approved before/after state와 다른 "
-                "diverged state입니다."
-            )
         try:
-            if reconciliation_action == "overwrite_partition":
-                row_count = load_hmda_loans_partition(
-                    self._connection,
-                    request.source_paths,
-                    request.source_year,
-                    source_file=request.source_file,
-                    table_name=request.table_name,
-                    expected_identity=request.proposal.approved_before_identity,
+            with TemporaryDirectory() as temporary_directory:
+                staged_source_path = _stage_approved_candidate_source(
+                    request,
+                    Path(temporary_directory),
                 )
-            else:
-                row_count = current_identity.row_count
-            snapshot = create_profile_snapshot(
-                self._connection,
-                request.profile_request,
-            )
+                current_identity = partition_content_identity(
+                    self._connection,
+                    table_name=request.table_name,
+                    source_year=request.source_year,
+                    source_file=request.source_file,
+                )
+                if current_identity == request.proposal.expected_after_identity:
+                    mutation_state = "already_recovered"
+                    reconciliation_action = "resume_verification"
+                    executed_actions = ["rerun_profile_snapshot"]
+                elif current_identity == request.proposal.approved_before_identity:
+                    mutation_state = "partition_changed"
+                    reconciliation_action = "overwrite_partition"
+                    executed_actions = ["overwrite_partition", "rerun_profile_snapshot"]
+                else:
+                    raise ApprovalGateError(
+                        "recovery target이 approved before/after state와 다른 "
+                        "diverged state입니다."
+                    )
+                if reconciliation_action == "overwrite_partition":
+                    row_count = load_hmda_loans_partition(
+                        self._connection,
+                        [staged_source_path],
+                        request.source_year,
+                        source_file=request.source_file,
+                        table_name=request.table_name,
+                        expected_identity=request.proposal.approved_before_identity,
+                        preserve_source_metadata=True,
+                    )
+                else:
+                    row_count = current_identity.row_count
+                snapshot = create_profile_snapshot(
+                    self._connection,
+                    request.profile_request,
+                )
         except HMDAStalePartitionError as exc:
             raise ApprovalGateError(
                 "recovery target이 승인 후 변경되어 "
                 "새 validation과 approval이 필요합니다."
             ) from exc
-        except (HMDADataLoadError, duckdb.Error) as exc:
+        except (HMDADataLoadError, OSError, duckdb.Error) as exc:
             msg = (
                 "승인된 backfill validation 실행에 실패했습니다: "
                 f"incident_id={request.approval.incident_id}, "
@@ -143,3 +153,38 @@ def _ensure_approved(request: ApprovedBackfillRequest) -> None:
         raise ApprovalGateError(
             f"recovery proposal에 필요한 action이 없습니다: {joined_actions}"
         )
+
+
+def _stage_approved_candidate_source(
+    request: ApprovedBackfillRequest,
+    temporary_directory: Path,
+) -> Path:
+    """승인된 candidate를 immutable staged source로 고정한다."""
+
+    source_connection = duckdb.connect(":memory:")
+    staged_source_path = temporary_directory / "approved-candidate.parquet"
+    try:
+        load_hmda_loans_partition(
+            source_connection,
+            request.source_paths,
+            request.source_year,
+            source_file=request.source_file,
+            table_name=request.table_name,
+        )
+        source_identity = partition_content_identity(
+            source_connection,
+            table_name=request.table_name,
+            source_year=request.source_year,
+            source_file=request.source_file,
+        )
+        if source_identity != request.proposal.candidate_identity:
+            raise ApprovalGateError(
+                "recovery source가 승인된 candidate content와 일치하지 않습니다."
+            )
+        staged_source_literal = quote_string_literal(staged_source_path.as_posix())
+        source_connection.execute(
+            f"COPY {request.table_name} TO {staged_source_literal} (FORMAT PARQUET)"
+        )
+    finally:
+        source_connection.close()
+    return staged_source_path

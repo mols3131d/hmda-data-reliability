@@ -14,7 +14,7 @@ tags:
 
 ### Requirement: Approval gate
 
-시스템은 recovery 실행 전에 approval이 승인 상태이며 exact recovery proposal의 incident, target partition, validated candidate, validation evidence, approved target state와 모든 target mutation action에 결합되어 있는지 확인해야 한다(SHALL). 결합 정보가 없거나 실제 실행 request와 다르면 source 처리와 target mutation 전에 차단해야 한다(SHALL).
+시스템은 recovery 실행 전에 approval이 승인 상태이며 exact recovery proposal의 incident, target partition, validated candidate, validation evidence, approved target state와 모든 target mutation action에 결합되어 있는지 확인해야 한다(SHALL). 실행 source의 staged content identity가 validated candidate와 다르거나 결합 정보가 없거나 실제 실행 request와 다르면 source 처리와 target mutation 전에 차단해야 한다(SHALL). 검증된 staged candidate는 target mutation까지 immutable artifact로 유지해야 한다(SHALL).
 
 #### Scenario: Missing approval
 
@@ -31,6 +31,18 @@ tags:
 - **GIVEN** approval이 식별하는 candidate, target state 또는 action과 recovery request가 다를 때
 - **WHEN** recovery 실행을 요청할 때
 - **THEN** 기존 approval로 target을 변경해서는 안 된다.
+
+#### Scenario: Mismatched approved source
+
+- **GIVEN** approval 이후 실행 source content가 validated candidate와 달라졌을 때
+- **WHEN** recovery 실행을 요청할 때
+- **THEN** target partition을 변경하지 않고 recovery를 차단해야 한다.
+
+#### Scenario: Source replacement after staging
+
+- **GIVEN** staged candidate identity 검증 뒤 원본 source가 변경되었을 때
+- **WHEN** approved recovery가 target mutation을 수행할 때
+- **THEN** 검증된 staged candidate만 target에 적용해야 한다.
 
 ### Requirement: Post-backfill validation
 

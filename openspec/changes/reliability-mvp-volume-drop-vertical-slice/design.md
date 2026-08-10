@@ -57,6 +57,7 @@ flowchart LR
 | --- | --- | --- |
 | `hmda_data.ingestion` | Partition scope와 atomic replacement | `PartitionContentIdentity` 계산과 transaction 내부 expected-state 비교를 추가한다. |
 | `data_operations.runner` | Independent dbt build stage | Run-scoped target path, failure evidence와 explicit current artifact promotion을 추가한다. |
+| `data_platform.artifacts` | Current dbt projection concurrency primitive | Length-delimited artifact pair identity와 local shared/exclusive lock protocol을 제공한다. |
 | `data_operations.incident_lifecycle` | Read-only detection/impact/draft composition | Target content와 dbt projection identity를 recovery proposal input으로 반환한다. |
 | `reliability.contracts` | Approval과 immutable identity contract | Candidate, evidence, before/after target과 action을 하나의 recovery proposal identity로 묶는다. |
 | `reliability.recovery` | Approved mutation과 verification | Gate, compare-and-replace, mutation state, content oracle와 reconciliation을 조합한다. |
@@ -68,6 +69,7 @@ flowchart LR
 | --- | --- | --- |
 | Ingestion | Canonical partition scope, row multiset identity, atomic compare-and-replace | Approval과 recovery policy |
 | Data Operations | dbt process, run artifact, promotion과 process failure | Candidate correctness와 recovery state machine |
+| Data Platform artifacts | Projection identity, current artifact reader/writer lock protocol | dbt process 실행, impact semantics와 recovery policy |
 | Reliability lifecycle | Read-only current observation과 proposal inputs | Candidate mutation, approval과 target recovery |
 | Reliability recovery | Approval policy, state reconciliation과 verification ordering | Raw SQL replacement internals과 dbt process internals |
 | Reliability evaluation | Deterministic case composition과 acceptance evidence | Production scheduling과 report retention |
@@ -117,6 +119,12 @@ flowchart LR
 - **Rationale** - Exception만으로는 partition commit 이후 failure와 pre-mutation failure를 구분하거나 안전한 retry를 결정할 수 없다.
 - **Trade-off** - Result contract가 커지지만 recovery policy를 caller 추론에 맡기지 않는다.
 
+### D7. Current artifact projection은 shared lock protocol으로 읽고 쓴다
+
+- **Decision** - `data_platform.artifacts`가 manifest/run-results pair의 length-delimited identity와 local shared/exclusive lock을 소유한다. Promotion은 exclusive lock 획득 뒤 identity를 다시 검증하고, lifecycle은 impact analysis와 projection identity를 하나의 shared-lock snapshot에서 결합한다.
+- **Rationale** - 고정 artifact path 두 개의 순차 replace 중 reader가 서로 다른 run의 pair를 관찰하거나, lock 대기 중 바뀐 verified artifact가 승격되는 것을 막는다.
+- **Trade-off** - 같은 local protocol을 쓰지 않는 외부 reader는 보호하지 않으며, MVP는 external artifact registry나 multi-host coordination을 추가하지 않는다.
+
 ### D6. Vertical-slice runner는 evaluation API가 조합한다
 
 - **Decision** - Deterministic fixture 생성, baseline/current load, lifecycle, candidate validation, external approval 입력, recovery와 evaluation case 변환을 `reliability.evaluation`의 별도 API로 둔다. Approval 생성은 caller callback/input으로 유지한다.
@@ -131,6 +139,7 @@ flowchart LR
 | Serialized replacement | DuckDB component | Expected identity 일치 시 교체, stale identity 시 zero mutation |
 | Approval binding | Reliability unit/component | Missing/mismatched proposal이 source access 전 실패 |
 | dbt isolation/promotion | Data Operations component with subprocess boundary stub | Candidate/failed run은 current 보존, validated target만 pair promotion |
+| Artifact projection protocol | Data Operations/Reliability component | Lock 대기 중 artifact drift 차단, shared reader가 complete current pair만 관찰 |
 | Mutation/reconciliation state | Recovery component | Pre/post mutation failure와 resume/diverged result 구분 |
 | Clean/volume-drop slice | Local integration | Detection, impact, exact approval, content recovery, dbt verification과 replay evidence |
 

@@ -1,7 +1,7 @@
 """dbt 작업 runner 경계 테스트."""
 
-import shutil
 import subprocess
+import threading
 from pathlib import Path
 from subprocess import CompletedProcess, TimeoutExpired
 
@@ -13,6 +13,10 @@ from project_pivot.data_operations import (
 )
 from project_pivot.data_operations.errors import DataOperationError
 from project_pivot.data_operations.request import DataOperationRequest
+from project_pivot.data_platform.artifacts import (
+    artifact_projection_id,
+    artifact_projection_lock,
+)
 
 
 @pytest.mark.unit
@@ -95,8 +99,9 @@ def test_run_dbt_build_wraps_timeout(
         runner.run_dbt_build(_request(tmp_path))
 
     assert error.value.context["command"][0:2] == ["dbt", "build"]
-    assert error.value.context["run_target_path"] == str(
-        _request(tmp_path).dbt_run_target_path
+    assert (
+        Path(error.value.context["run_target_path"]).parent
+        == _request(tmp_path).dbt_run_target_path
     )
 
 
@@ -124,8 +129,9 @@ def test_run_dbt_build_includes_last_stderr_line(
         runner.run_dbt_build(_request(tmp_path))
 
     assert error.value.context["return_code"] == 1
-    assert error.value.context["run_target_path"] == str(
-        _request(tmp_path).dbt_run_target_path
+    assert (
+        Path(error.value.context["run_target_path"]).parent
+        == _request(tmp_path).dbt_run_target_path
     )
     assert error.value.context["command"][0:2] == ["dbt", "build"]
 
@@ -158,18 +164,14 @@ def test_run_dbt_build_fails_when_run_target_cannot_be_cleared(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """Run target cleanup failure는 stale artifact 사용 전에 중단한다."""
+    """Run target root 생성 실패는 dbt 실행 전에 중단한다."""
 
     request = _request(tmp_path)
-    request.dbt_run_target_path.mkdir(parents=True)
-    (request.dbt_run_target_path / "manifest.json").write_text(
-        "stale", encoding="utf-8"
-    )
 
-    def fail_cleanup(path: Path) -> None:
-        raise OSError(f"cannot remove {path}")
+    def fail_mkdir(*args: object, **kwargs: object) -> None:
+        raise OSError("cannot create run target")
 
-    monkeypatch.setattr(shutil, "rmtree", fail_cleanup)
+    monkeypatch.setattr(Path, "mkdir", fail_mkdir)
 
     with pytest.raises(DataOperationError, match="준비"):
         runner.run_dbt_build(request)
@@ -184,11 +186,12 @@ def test_run_dbt_build_returns_verified_artifacts(
 
     request = _request(tmp_path)
 
-    def write_artifacts(*args: object, **kwargs: object) -> CompletedProcess[str]:
-        (request.dbt_run_target_path / "manifest.json").write_text(
+    def write_artifacts(command: list[str], **kwargs: object) -> CompletedProcess[str]:
+        run_target = Path(command[-1])
+        run_target.joinpath("manifest.json").write_text(
             '{"run": "current"}', encoding="utf-8"
         )
-        (request.dbt_run_target_path / "run_results.json").write_text(
+        run_target.joinpath("run_results.json").write_text(
             '{"run": "current"}', encoding="utf-8"
         )
         return CompletedProcess(["dbt", "build"], 0, "", "")
@@ -198,8 +201,8 @@ def test_run_dbt_build_returns_verified_artifacts(
     result = runner.run_dbt_build(request)
 
     assert result.succeeded
-    assert result.manifest_path == request.dbt_run_target_path / "manifest.json"
-    assert result.run_results_path == request.dbt_run_target_path / "run_results.json"
+    assert result.manifest_path.parent.parent == request.dbt_run_target_path
+    assert result.run_results_path.parent == result.manifest_path.parent
     assert result.projection_id.startswith("sha256:")
     assert not request.dbt_manifest_path.exists()
     runner.promote_dbt_artifacts(result, request)
@@ -220,11 +223,10 @@ def test_candidate_dbt_build_does_not_promote_artifacts(
     request.dbt_manifest_path.write_text("last-known-good", encoding="utf-8")
     request.dbt_run_results_path.write_text("last-known-good", encoding="utf-8")
 
-    def write_artifacts(*args: object, **kwargs: object) -> CompletedProcess[str]:
-        (request.dbt_run_target_path / "manifest.json").write_text(
-            "candidate", encoding="utf-8"
-        )
-        (request.dbt_run_target_path / "run_results.json").write_text(
+    def write_artifacts(command: list[str], **kwargs: object) -> CompletedProcess[str]:
+        run_target = Path(command[-1])
+        run_target.joinpath("manifest.json").write_text("candidate", encoding="utf-8")
+        run_target.joinpath("run_results.json").write_text(
             "candidate", encoding="utf-8"
         )
         return CompletedProcess(["dbt", "build"], 0, "", "")
@@ -239,6 +241,174 @@ def test_candidate_dbt_build_does_not_promote_artifacts(
 
 
 @pytest.mark.component
+def test_promotion_uses_the_verified_run_artifacts_after_a_later_run(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A 결과는 B 실행 뒤에도 A bytes를 current projection으로 승격한다."""
+
+    request = _request(tmp_path)
+    run_number = 0
+
+    def write_artifacts(command: list[str], **kwargs: object) -> CompletedProcess[str]:
+        nonlocal run_number
+        run_number += 1
+        run_target = Path(command[-1])
+        run_target.joinpath("manifest.json").write_text(
+            f"manifest-{run_number}", encoding="utf-8"
+        )
+        run_target.joinpath("run_results.json").write_text(
+            f"results-{run_number}", encoding="utf-8"
+        )
+        return CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", write_artifacts)
+
+    first_result = runner.run_dbt_build(request)
+    second_result = runner.run_dbt_build(request)
+    runner.promote_dbt_artifacts(first_result, request)
+
+    assert first_result.manifest_path != second_result.manifest_path
+    assert request.dbt_manifest_path.read_text(encoding="utf-8") == "manifest-1"
+    assert request.dbt_run_results_path.read_text(encoding="utf-8") == "results-1"
+
+
+@pytest.mark.component
+def test_promotion_rejects_artifacts_changed_after_verification(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """검증 뒤 artifact bytes가 바뀌면 stale result를 승격하지 않는다."""
+
+    request = _request(tmp_path)
+
+    def write_artifacts(command: list[str], **kwargs: object) -> CompletedProcess[str]:
+        run_target = Path(command[-1])
+        run_target.joinpath("manifest.json").write_text("manifest", encoding="utf-8")
+        run_target.joinpath("run_results.json").write_text("results", encoding="utf-8")
+        return CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", write_artifacts)
+    result = runner.run_dbt_build(request)
+    result.manifest_path.write_text("changed", encoding="utf-8")
+
+    with pytest.raises(DataOperationError, match="projection"):
+        runner.promote_dbt_artifacts(result, request)
+
+    assert not request.dbt_manifest_path.exists()
+    assert not request.dbt_run_results_path.exists()
+
+
+@pytest.mark.component
+def test_promotion_rejects_pair_boundary_collision(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """개별 artifact 경계를 바꾼 동일 concatenation bytes는 승격하지 않는다."""
+
+    request = _request(tmp_path)
+
+    def write_artifacts(command: list[str], **kwargs: object) -> CompletedProcess[str]:
+        run_target = Path(command[-1])
+        run_target.joinpath("manifest.json").write_text("{} ", encoding="utf-8")
+        run_target.joinpath("run_results.json").write_text("{}", encoding="utf-8")
+        return CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", write_artifacts)
+    result = runner.run_dbt_build(request)
+    result.manifest_path.write_text("{}", encoding="utf-8")
+    result.run_results_path.write_text(" {}", encoding="utf-8")
+
+    with pytest.raises(DataOperationError, match="projection"):
+        runner.promote_dbt_artifacts(result, request)
+
+    assert not request.dbt_manifest_path.exists()
+    assert not request.dbt_run_results_path.exists()
+
+
+@pytest.mark.component
+def test_concurrent_promotions_do_not_cross_artifact_pairs(tmp_path: Path) -> None:
+    """동시 promotion은 manifest/run-results를 서로 다른 run으로 섞지 않는다."""
+
+    request = _request(tmp_path)
+    first_run = tmp_path / "first-run"
+    second_run = tmp_path / "second-run"
+    first_run.mkdir()
+    second_run.mkdir()
+    first_manifest = first_run / "manifest.json"
+    first_results = first_run / "run_results.json"
+    second_manifest = second_run / "manifest.json"
+    second_results = second_run / "run_results.json"
+    first_manifest.write_text("manifest-first", encoding="utf-8")
+    first_results.write_text("results-first", encoding="utf-8")
+    second_manifest.write_text("manifest-second", encoding="utf-8")
+    second_results.write_text("results-second", encoding="utf-8")
+    first_result = _build_result(first_manifest, first_results)
+    second_result = _build_result(second_manifest, second_results)
+    barrier = threading.Barrier(2)
+    errors: list[BaseException] = []
+
+    def promote(result: runner.DbtBuildResult) -> None:
+        try:
+            barrier.wait()
+            runner.promote_dbt_artifacts(result, request)
+        except BaseException as exc:
+            errors.append(exc)
+
+    first_thread = threading.Thread(target=promote, args=(first_result,))
+    second_thread = threading.Thread(target=promote, args=(second_result,))
+    first_thread.start()
+    second_thread.start()
+    first_thread.join()
+    second_thread.join()
+
+    assert errors == []
+    current_pair = (
+        request.dbt_manifest_path.read_text(encoding="utf-8"),
+        request.dbt_run_results_path.read_text(encoding="utf-8"),
+    )
+    assert current_pair in {
+        ("manifest-first", "results-first"),
+        ("manifest-second", "results-second"),
+    }
+
+
+@pytest.mark.component
+def test_promotion_rechecks_artifacts_after_waiting_for_lock(tmp_path: Path) -> None:
+    """Lock 대기 중 검증 artifact가 바뀌면 promotion은 거부한다."""
+
+    request = _request(tmp_path)
+    run_target = tmp_path / "run"
+    run_target.mkdir()
+    manifest_path = run_target / "manifest.json"
+    run_results_path = run_target / "run_results.json"
+    manifest_path.write_text("manifest", encoding="utf-8")
+    run_results_path.write_text("results", encoding="utf-8")
+    result = _build_result(manifest_path, run_results_path)
+    promotion_started = threading.Event()
+    errors: list[BaseException] = []
+
+    def promote() -> None:
+        promotion_started.set()
+        try:
+            runner.promote_dbt_artifacts(result, request)
+        except BaseException as exc:
+            errors.append(exc)
+
+    with artifact_projection_lock(request.dbt_manifest_path.parent, exclusive=True):
+        thread = threading.Thread(target=promote)
+        thread.start()
+        assert promotion_started.wait(timeout=1)
+        manifest_path.write_text("changed", encoding="utf-8")
+    thread.join()
+
+    assert len(errors) == 1
+    assert isinstance(errors[0], DataOperationError)
+    assert not request.dbt_manifest_path.exists()
+    assert not request.dbt_run_results_path.exists()
+
+
+@pytest.mark.component
 def test_artifact_promotion_restores_pair_when_second_replace_fails(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -248,8 +418,8 @@ def test_artifact_promotion_restores_pair_when_second_replace_fails(
     request = _request(tmp_path)
     request.dbt_manifest_path.write_text("old-manifest", encoding="utf-8")
     request.dbt_run_results_path.write_text("old-results", encoding="utf-8")
-    run_target = request.dbt_run_target_path
-    run_target.mkdir(parents=True)
+    run_target = tmp_path / "run"
+    run_target.mkdir()
     run_manifest = run_target / "manifest.json"
     run_results = run_target / "run_results.json"
     run_manifest.write_text("new-manifest", encoding="utf-8")
@@ -273,6 +443,46 @@ def test_artifact_promotion_restores_pair_when_second_replace_fails(
 
     assert request.dbt_manifest_path.read_text(encoding="utf-8") == "old-manifest"
     assert request.dbt_run_results_path.read_text(encoding="utf-8") == "old-results"
+
+
+@pytest.mark.component
+def test_artifact_backup_cleanup_failure_preserves_committed_pair(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Commit 뒤 backup cleanup 오류는 current artifact pair를 rollback하지 않는다."""
+
+    request = _request(tmp_path)
+    request.dbt_manifest_path.write_text("old-manifest", encoding="utf-8")
+    request.dbt_run_results_path.write_text("old-results", encoding="utf-8")
+    run_target = tmp_path / "run"
+    run_target.mkdir()
+    run_manifest = run_target / "manifest.json"
+    run_results = run_target / "run_results.json"
+    run_manifest.write_text("new-manifest", encoding="utf-8")
+    run_results.write_text("new-results", encoding="utf-8")
+    original_unlink = Path.unlink
+    cleanup_count = 0
+
+    def fail_second_cleanup(path: Path, missing_ok: bool = False) -> None:
+        nonlocal cleanup_count
+        if path.suffix == ".previous":
+            cleanup_count += 1
+            if cleanup_count == 4:
+                raise OSError("simulated cleanup failure")
+        original_unlink(path, missing_ok=missing_ok)
+
+    monkeypatch.setattr(Path, "unlink", fail_second_cleanup)
+
+    runner._promote_dbt_artifacts(
+        run_manifest,
+        run_results,
+        request.dbt_manifest_path,
+        request.dbt_run_results_path,
+    )
+
+    assert request.dbt_manifest_path.read_text(encoding="utf-8") == "new-manifest"
+    assert request.dbt_run_results_path.read_text(encoding="utf-8") == "new-results"
 
 
 @pytest.mark.unit
@@ -299,4 +509,15 @@ def _request(tmp_path: Path) -> DataOperationRequest:
         dbt_manifest_path=tmp_path / "manifest.json",
         dbt_run_results_path=tmp_path / "run_results.json",
         dbt_run_target_path=tmp_path / "runs" / "current",
+    )
+
+
+def _build_result(manifest_path: Path, run_results_path: Path):
+    return runner.DbtBuildResult(
+        command=["dbt", "build"],
+        return_code=0,
+        manifest_path=manifest_path,
+        run_results_path=run_results_path,
+        projection_id=artifact_projection_id(manifest_path, run_results_path),
+        succeeded=True,
     )

@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-from hashlib import sha256
+import tempfile
 from pathlib import Path
 from subprocess import CompletedProcess
 
@@ -16,6 +16,11 @@ from project_pivot.data_operations.incident_lifecycle import (
 )
 from project_pivot.data_operations.raw_result import RawLoadResult
 from project_pivot.data_operations.request import DataOperationRequest
+from project_pivot.data_platform.artifacts import (
+    ArtifactProjectionLockError,
+    artifact_projection_id,
+    artifact_projection_lock,
+)
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans_partition
 
@@ -47,9 +52,9 @@ def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
 def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
     """dbt build를 실행하고 artifact 경로를 반환한다."""
 
-    command = _build_dbt_command(request)
-    _prepare_run_target(request.dbt_run_target_path)
-    result = _run_dbt_command(command, request)
+    run_target_path = _create_run_target(request.dbt_run_target_path)
+    command = _build_dbt_command(request, run_target_path)
+    result = _run_dbt_command(command, request, run_target_path)
     if result.returncode != 0:
         stderr_lines = result.stderr.strip().splitlines()
         stderr = stderr_lines[-1][:500] if stderr_lines else "출력 없음"
@@ -62,13 +67,13 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
             context={
                 "command": command,
                 "return_code": result.returncode,
-                "run_target_path": str(request.dbt_run_target_path),
+                "run_target_path": str(run_target_path),
                 "stderr": result.stderr,
             },
         )
-    manifest_path, run_results_path = _run_artifact_paths(request)
+    manifest_path, run_results_path = _run_artifact_paths(run_target_path)
     _validate_dbt_artifacts(manifest_path, run_results_path)
-    projection_id = _artifact_projection_id(manifest_path, run_results_path)
+    projection_id = artifact_projection_id(manifest_path, run_results_path)
     return DbtBuildResult(
         command=command,
         return_code=result.returncode,
@@ -87,16 +92,31 @@ def promote_dbt_artifacts(
 
     if not result.succeeded:
         raise DataOperationError("실패한 dbt run artifact는 승격할 수 없습니다.")
-    _promote_dbt_artifacts(
-        result.manifest_path,
-        result.run_results_path,
-        request.dbt_manifest_path,
-        request.dbt_run_results_path,
-    )
+    try:
+        with artifact_projection_lock(
+            request.dbt_manifest_path.parent,
+            exclusive=True,
+        ):
+            _ensure_artifact_projection(result)
+            _promote_dbt_artifacts(
+                result.manifest_path,
+                result.run_results_path,
+                request.dbt_manifest_path,
+                request.dbt_run_results_path,
+            )
+    except ArtifactProjectionLockError as exc:
+        raise DataOperationError(
+            "dbt artifact projection lock을 획득할 수 없습니다.",
+            context={"directory": str(request.dbt_manifest_path.parent)},
+        ) from exc
 
 
-def _build_dbt_command(request: DataOperationRequest) -> list[str]:
+def _build_dbt_command(
+    request: DataOperationRequest,
+    run_target_path: Path | None = None,
+) -> list[str]:
     """dbt build 커맨드 리스트를 생성합니다."""
+    target_path = run_target_path or request.dbt_run_target_path
     return [
         "dbt",
         "build",
@@ -105,12 +125,14 @@ def _build_dbt_command(request: DataOperationRequest) -> list[str]:
         "--profiles-dir",
         str(request.dbt_profiles_dir),
         "--target-path",
-        str(request.dbt_run_target_path),
+        str(target_path),
     ]
 
 
 def _run_dbt_command(
-    command: list[str], request: DataOperationRequest
+    command: list[str],
+    request: DataOperationRequest,
+    run_target_path: Path,
 ) -> CompletedProcess[str]:
     """dbt build를 실행하고 결과 CompletedProcess를 반환합니다."""
     env = os.environ.copy()
@@ -131,7 +153,7 @@ def _run_dbt_command(
             msg,
             context={
                 "command": command,
-                "run_target_path": str(request.dbt_run_target_path),
+                "run_target_path": str(run_target_path),
                 "timeout_seconds": _DBT_BUILD_TIMEOUT_SECONDS,
             },
         ) from exc
@@ -141,26 +163,25 @@ def _run_dbt_command(
             msg,
             context={
                 "command": command,
-                "run_target_path": str(request.dbt_run_target_path),
+                "run_target_path": str(run_target_path),
                 "os_error": str(exc),
             },
         ) from exc
 
 
-def _prepare_run_target(target_path: Path) -> None:
+def _create_run_target(target_root: Path) -> Path:
     try:
-        if target_path.exists():
-            shutil.rmtree(target_path)
-        target_path.mkdir(parents=True, exist_ok=True)
+        target_root.mkdir(parents=True, exist_ok=True)
+        return Path(tempfile.mkdtemp(prefix="run-", dir=target_root))
     except OSError as exc:
-        msg = f"dbt run target을 준비할 수 없습니다: {target_path}"
+        msg = f"dbt run target을 준비할 수 없습니다: {target_root}"
         raise DataOperationError(msg) from exc
 
 
-def _run_artifact_paths(request: DataOperationRequest) -> tuple[Path, Path]:
+def _run_artifact_paths(run_target_path: Path) -> tuple[Path, Path]:
     return (
-        request.dbt_run_target_path / "manifest.json",
-        request.dbt_run_target_path / "run_results.json",
+        run_target_path / "manifest.json",
+        run_target_path / "run_results.json",
     )
 
 
@@ -174,11 +195,13 @@ def _validate_dbt_artifacts(manifest_path: Path, run_results_path: Path) -> None
         raise DataOperationError(msg)
 
 
-def _artifact_projection_id(manifest_path: Path, run_results_path: Path) -> str:
-    digest = sha256()
-    digest.update(manifest_path.read_bytes())
-    digest.update(run_results_path.read_bytes())
-    return f"sha256:{digest.hexdigest()}"
+def _ensure_artifact_projection(result: DbtBuildResult) -> None:
+    _validate_dbt_artifacts(result.manifest_path, result.run_results_path)
+    if (
+        artifact_projection_id(result.manifest_path, result.run_results_path)
+        != result.projection_id
+    ):
+        raise DataOperationError("dbt artifact projection이 검증 결과와 다릅니다.")
 
 
 def _promote_dbt_artifacts(
@@ -208,8 +231,6 @@ def _promote_dbt_artifacts(
                 backup_paths.append((backup, destination))
             temporary.replace(destination)
             promoted_destinations.append(destination)
-        for backup, _ in backup_paths:
-            backup.unlink(missing_ok=True)
     except OSError as exc:
         for temporary, _ in temporary_paths:
             temporary.unlink(missing_ok=True)
@@ -220,3 +241,8 @@ def _promote_dbt_artifacts(
         raise DataOperationError(
             "dbt artifact projection을 승격할 수 없습니다."
         ) from exc
+    for backup, _ in backup_paths:
+        try:
+            backup.unlink(missing_ok=True)
+        except OSError:
+            continue

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 import pytest
 from pydantic import ValidationError
@@ -22,6 +24,7 @@ from project_pivot.reliability import (
     ApprovalGateError,
     ApprovalStatus,
     ApprovedBackfillRequest,
+    BackfillValidationError,
     ProfileSnapshotRequest,
     RecoveryProposal,
     execute_approved_backfill,
@@ -190,10 +193,24 @@ def test_recovery_classifies_compare_and_replace_race_as_stale_approval(
     proposal = _proposal_for_source(source_path)
     approval = _approval(ApprovalStatus.APPROVED, proposal=proposal)
 
-    def raise_stale(*args: object, **kwargs: object) -> int:
-        raise HMDAStalePartitionError("stale")
+    original_load = cast(
+        Callable[..., int],
+        recovery_executor.load_hmda_loans_partition,
+    )
+    load_count = 0
 
-    monkeypatch.setattr(recovery_executor, "load_hmda_loans_partition", raise_stale)
+    def raise_stale_on_target_load(*args: object, **kwargs: object) -> int:
+        nonlocal load_count
+        load_count += 1
+        if load_count == 2:
+            raise HMDAStalePartitionError("stale")
+        return original_load(*args, **kwargs)
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "load_hmda_loans_partition",
+        raise_stale_on_target_load,
+    )
 
     with (
         DuckDBConnectionManager() as connection,
@@ -210,10 +227,114 @@ def test_recovery_classifies_compare_and_replace_race_as_stale_approval(
 
 
 @pytest.mark.integration
-def test_equal_count_content_mismatch_is_post_mutation_failure(
+def test_recovery_uses_approved_staged_source_when_original_changes(
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """같은 row count의 다른 source는 content validation 실패로 관찰된다."""
+    """Source 검증 뒤 원본이 바뀌어도 target에는 승인된 staged content만 쓴다."""
+
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    approval = _approval(ApprovalStatus.APPROVED, proposal=proposal)
+    original_identity = cast(
+        Callable[..., PartitionContentIdentity],
+        recovery_executor.partition_content_identity,
+    )
+    identity_count = 0
+
+    def replace_original_after_source_identity(*args: object, **kwargs: object):
+        nonlocal identity_count
+        identity = original_identity(*args, **kwargs)
+        identity_count += 1
+        if identity_count == 1:
+            source_path.write_text(
+                source_path.read_text(encoding="utf-8").replace("120,CA", "121,CA"),
+                encoding="utf-8",
+            )
+        return identity
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "partition_content_identity",
+        replace_original_after_source_identity,
+    )
+
+    with DuckDBConnectionManager() as connection:
+        result = execute_approved_backfill(
+            connection,
+            _request(
+                approval=approval,
+                proposal=proposal,
+                source_paths=(source_path,),
+            ),
+        )
+
+    assert result.validation_passed
+    assert result.actual_identity == proposal.expected_after_identity
+
+
+@pytest.mark.component
+def test_recovery_wraps_staging_source_failure(tmp_path: Path) -> None:
+    """Approved source staging 실패도 recovery domain error로 반환한다."""
+
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    approval = _approval(ApprovalStatus.APPROVED, proposal=proposal)
+    source_path.unlink()
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(BackfillValidationError, match="backfill validation"),
+    ):
+        execute_approved_backfill(
+            connection,
+            _request(
+                approval=approval,
+                proposal=proposal,
+                source_paths=(source_path,),
+            ),
+        )
+
+
+@pytest.mark.component
+def test_recovery_wraps_staging_directory_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Approved recovery의 staging directory 생성 실패도 domain error로 반환한다."""
+
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    approval = _approval(ApprovalStatus.APPROVED, proposal=proposal)
+
+    def fail_temporary_directory(*args: object, **kwargs: object) -> None:
+        raise OSError("cannot create staging directory")
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "TemporaryDirectory",
+        fail_temporary_directory,
+    )
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(BackfillValidationError, match="backfill validation"),
+    ):
+        execute_approved_backfill(
+            connection,
+            _request(
+                approval=approval,
+                proposal=proposal,
+                source_paths=(source_path,),
+            ),
+        )
+
+
+@pytest.mark.integration
+def test_equal_count_content_mismatch_is_rejected_before_target_mutation(
+    tmp_path: Path,
+) -> None:
+    """승인한 candidate와 다른 source는 target 변경 전에 차단한다."""
 
     approved_source = _write_hmda_csv(tmp_path)
     mismatched_source = tmp_path / "year_2025_mismatched.csv"
@@ -225,19 +346,20 @@ def test_equal_count_content_mismatch_is_post_mutation_failure(
     approval = _approval(ApprovalStatus.APPROVED, proposal=proposal)
 
     with DuckDBConnectionManager() as connection:
-        result = execute_approved_backfill(
-            connection,
-            _request(
-                approval=approval,
-                proposal=proposal,
-                source_paths=(mismatched_source,),
-            ),
-        )
+        before = partition_content_identity(connection, source_year=2025)
+        with pytest.raises(ApprovalGateError, match="candidate"):
+            execute_approved_backfill(
+                connection,
+                _request(
+                    approval=approval,
+                    proposal=proposal,
+                    source_paths=(mismatched_source,),
+                ),
+            )
+        after = partition_content_identity(connection, source_year=2025)
 
-    assert result.row_count == proposal.expected_after_identity.row_count
-    assert result.actual_identity != proposal.expected_after_identity
-    assert not result.validation_passed
-    assert result.mutation_state == "partition_changed"
+    assert before == proposal.approved_before_identity
+    assert after == before
 
 
 @pytest.mark.unit
