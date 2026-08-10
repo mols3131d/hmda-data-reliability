@@ -14,7 +14,7 @@ tags:
 
 ### Requirement: Approval gate
 
-시스템은 recovery 실행 전에 approval이 승인 상태이며 exact recovery proposal의 incident, target partition, validated candidate, validation evidence, approved target state와 모든 target mutation action에 결합되어 있는지 확인해야 한다(SHALL). 결합 정보가 없거나 실제 실행 request와 다르면 source 처리와 target mutation 전에 차단해야 한다(SHALL).
+시스템은 recovery 실행 전에 approval이 승인 상태이며 exact recovery proposal의 incident, target partition, validated candidate, validation evidence, approved target state와 모든 target mutation action에 결합되어 있는지 확인해야 한다(SHALL). 결합 정보가 없거나 실제 실행 request와 다르면 source 처리와 target mutation 전에 차단해야 한다(SHALL). 실제 recovery source에서 staging한 candidate content identity도 approved expected-after identity와 mutation 전에 일치해야 한다(SHALL).
 
 #### Scenario: Missing approval
 
@@ -31,6 +31,12 @@ tags:
 - **GIVEN** approval이 식별하는 candidate, target state 또는 action과 recovery request가 다를 때
 - **WHEN** recovery 실행을 요청할 때
 - **THEN** 기존 approval로 target을 변경해서는 안 된다.
+
+#### Scenario: Approved candidate source mismatch
+
+- **GIVEN** recovery source에서 staging한 candidate content identity가 approval의 expected recovered identity와 다를 때
+- **WHEN** approved recovery를 실행할 때
+- **THEN** target mutation 전에 중단하고 기존 target content를 유지해야 한다.
 
 ### Requirement: Post-backfill validation
 
@@ -65,15 +71,30 @@ tags:
 - **WHEN** approved recovery가 실행될 때
 - **THEN** 첫 target mutation 전에 중단하고 새 candidate validation과 approval을 요구해야 한다.
 
+### Requirement: Immutable approval binding
+
+승인된 recovery의 proposal과 requested target actions는 승인 이후 변경할 수 없는 contract여야 한다(SHALL). 승인 객체의 lifetime 중 mutable nested value를 변경해 기존 approval의 실행 권한을 넓힐 수 있어서는 안 된다(MUST NOT).
+
+#### Scenario: Post-approval action mutation
+
+- **GIVEN** required action이 없는 approval contract가 생성되었을 때
+- **WHEN** caller가 생성 이후 action binding을 변경하려 할 때
+- **THEN** 변경이 허용되어서는 안 되고 같은 approval의 gate 결과가 달라져서는 안 된다.
+
 ### Requirement: Mutation-aware recovery result
 
-시스템은 target mutation 전 실패, partition 변경 완료와 downstream verification 성공 또는 실패를 구분해 반환해야 한다(SHALL). Post-mutation failure를 recovery 성공으로 보고해서는 안 된다(MUST NOT).
+시스템은 target mutation 전 실패, partition 변경 완료와 downstream verification 성공 또는 실패를 구분해 반환해야 한다(SHALL). Post-mutation failure를 recovery 성공으로 보고해서는 안 된다(MUST NOT). Mutation state와 reconciliation action은 정의된 closed vocabulary만 허용하고 알 수 없는 값은 유효한 safety evidence로 받아들여서는 안 된다(MUST NOT).
 
 #### Scenario: Downstream verification failure
 
 - **GIVEN** partition replacement는 완료됐지만 profile 또는 dbt verification이 실패했을 때
 - **WHEN** recovery result를 반환할 때
-- **THEN** partition이 변경된 post-mutation failure임을 식별해야 한다.
+- **THEN** partition이 변경된 post-mutation failure임을 식별하고 approved/expected/actual identity와 재개 가능한 reconciliation evidence를 보존해야 한다.
+
+#### Scenario: Unknown recovery state
+
+- **WHEN** 정의되지 않은 mutation state 또는 reconciliation action으로 recovery evidence를 생성하려 할 때
+- **THEN** contract validation에서 거부해야 한다.
 
 ### Requirement: Recovery reconciliation
 
