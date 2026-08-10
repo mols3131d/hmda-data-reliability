@@ -12,15 +12,15 @@ Optional section은 실제 판단 비용을 줄일 때만 추가하고, 사용�
 
 ## Summary
 
-<!-- 2~4문장: 전체 평가와 가장 중요한 근거를 먼저 적고, 필요한 경우 다음 조치를 덧붙인다. GitHub review decision은 반복하지 않는다. -->
+<!-- 작성 질문: 전체적으로 어떻게 판단했는가? 가장 중요한 근거는 무엇인가? 필요한 경우 다음 조치를 덧붙인다. GitHub review decision은 반복하지 않는다. -->
 
 <검토 결론과 핵심 근거>
 
 ## Findings
 
 <!--
-Finding은 수정하지 않으면 correctness, risk 또는 repository contract 문제가 남는 확인된 문제다.
-문제가 없으면 `None`. 문제가 있으면 root cause별로 F1, F2...를 작성한다.
+Finding 기준: 수정하지 않으면 동작 오류, 위험 또는 repository contract 위반이 남는 확인된 문제인가?
+문제가 없으면 `None`. 문제가 있으면 원인별로 F1, F2...를 작성한다.
 단순 선호나 근거 없는 가능성은 finding으로 만들지 않는다.
 -->
 
@@ -38,7 +38,7 @@ None
 
 ## Validation
 
-<!-- 실제 확인한 diff, contract, test, command와 결과를 적는다. 중요한 미확인 영역은 Not Verified로 명시한다. -->
+<!-- 작성 질문: 무엇을 직접 확인했고 어떤 근거가 있는가? 실제 확인한 diff, contract, test, command와 결과를 기록하고 중요한 미확인 영역은 Not Verified로 명시한다. -->
 
 - **<Pass | Fail | Not Verified>** — <check>: <result 또는 evidence>
 
