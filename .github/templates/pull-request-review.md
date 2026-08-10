@@ -14,18 +14,23 @@ GitHub review decision은 본문에 반복하지 않는다.
 수정하지 않으면 동작 오류, 위험 또는 저장소 계약 위반이 남는가?
 확인된 문제만 finding으로 기록한다. 단순 선호나 근거 없는 가능성은 제외한다.
 문제가 없으면 `✅ No findings`를 기록한다. 문제가 있으면 원인별로 F1, F2...를 작성한다.
+
+중요도는 impact와 urgency를 기준으로 색 원형과 text label을 함께 표시한다.
+🔴 Critical / 🟠 High / 🟡 Medium / 🔵 Low
 -->
 
 <finding 결과>
 
 <!--
-### F1 — <finding title>
+### <importance> — F1 · <finding title>
 
 - **Location:** 어디에서 발생하는가?
 - **Evidence:** 무엇으로 확인했는가?
 - **Impact:** 수정하지 않으면 어떤 문제가 생기는가?
 - **Required Change:** 무엇이 바뀌어야 해결되는가?
 - **Uncertainty:** 중요한 미확인 전제가 있을 때만 추가한다.
+
+예: `### 🟠 High — F1 · 검증 실패 전에 입력 기록이 생성됨`
 -->
 
 ## Validation
