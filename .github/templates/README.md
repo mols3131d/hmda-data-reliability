@@ -22,6 +22,14 @@ author:
   - mols3131d:openai-chatgpt
 ```
 
+## Writing Rules
+
+- 현재 변경과 판단에 필요한 최종 정보만 남긴다. Agent의 상세 reasoning, 시행착오와 되돌린 시도는 기록하지 않는다.
+- GitHub UI, CI 또는 다른 canonical artifact가 이미 소유하는 정보를 필요 없이 복제하지 않는다.
+- optional section은 내용이 있을 때만 유지하고 빈 placeholder를 남기지 않는다.
+- repository 내부 경로와 artifact는 repository-relative reference를 사용한다.
+- 요구사항이나 결정의 source가 따로 있으면 내용을 다시 쓰기보다 해당 artifact를 연결한다.
+
 ## Templates
 
 - [`pull-request.md`](pull-request.md): Pull Request description
