@@ -1,16 +1,20 @@
 # Pull Request Reviews
 
-Pull Request review는 변경을 채택하기 전에 correctness, risk와 repository contract 일관성을 검토하고 actionable finding을 기록한다.
+Pull Request review는 변경을 채택하기 전에 correctness, risk와 repository contract 일관성을 검토하고 evidence-backed finding을 기록한다.
 
 ## Scope
 
 Review는 Pull Request diff를 중심으로 변경 목적, owning contract, 관련 test와 validation evidence를 필요한 범위에서 확인한다. 변경과 직접 관련 없는 개선 제안은 현재 review finding과 분리한다.
 
+검토한 범위와 기준을 명시하고, 확인하지 않은 범위가 판단에 영향을 줄 수 있으면 함께 기록한다.
+
 ## Findings
 
 Review body는 [Pull Request Review Template](../../../.github/templates/pull-request-review.md)을 기본 형식으로 사용한다.
 
-Finding은 중요도와 함께 문제, 근거, 영향, 필요한 수정을 명확히 기록한다. 근거 없이 가능성만 제시하거나 변경 범위를 벗어난 선호를 blocker로 만들지 않는다.
+Review의 결론과 가장 중요한 근거를 먼저 요약한다. Finding은 독립적인 ID를 사용하고 location, evidence, impact와 required change를 연결한다. Severity taxonomy가 별도로 정의된 review context가 있으면 이를 따르며, 근거 없이 임의의 severity 체계를 만들지 않는다.
+
+확인되지 않은 전제나 validation 한계가 finding의 확실성에 영향을 주면 uncertainty를 명시한다. 근거 없이 가능성만 제시하거나 변경 범위를 벗어난 선호를 blocker로 만들지 않는다.
 
 발견 사항이 없으면 `Findings`에 `None`을 기록한다.
 
@@ -18,9 +22,15 @@ Review decision은 GitHub가 소유하므로 review body에 `Approve`, `Comment`
 
 ## Validation
 
-검토한 범위와 사용한 근거를 기록한다. 실행하지 못한 validation, 접근할 수 없는 evidence 또는 확인하지 않은 범위가 review 판단에 영향을 줄 수 있으면 명시한다.
+수행한 check와 evidence, result를 구분해 기록한다. 실행하지 못한 validation, 접근할 수 없는 evidence 또는 확인하지 않은 범위가 review 판단에 영향을 줄 수 있으면 명시한다.
+
+Automation pass는 finding 부재를 증명하지 않으며, 실행하지 않은 validation을 수행한 것처럼 표현하지 않는다.
 
 Pull Request가 변경되어 기존 finding이나 validation 근거가 달라지면 영향을 받는 부분을 다시 검토한다.
+
+## Remaining Risks
+
+수정 후에도 남는 위험, review 범위 밖의 중요한 제한 또는 후속 확인이 있을 때만 기록한다. 별도 작업으로 분리해야 하는 개선 사항을 현재 PR의 required change로 만들지 않는다.
 
 ## Metadata
 
