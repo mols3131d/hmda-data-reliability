@@ -4,40 +4,55 @@
 #   - <user-id>:<provider>-<service>
 ```
 
-<!-- 기본: Summary, Findings, Validation. Optional은 reviewer의 추론을 줄일 때만 추가한다. -->
+<!--
+기본은 Summary, Findings, Validation이다.
+Review 과정이 아니라 merge 판단에 필요한 결론, 확인된 문제, 검증 근거를 남긴다.
+Optional section은 실제 판단 비용을 줄일 때만 추가하고, 사용하지 않는 placeholder는 제거한다.
+-->
 
 ## Summary
 
-<결론과 핵심 근거; 필요한 경우 다음 조치>
+<!-- 2~4문장: 전체 평가와 가장 중요한 근거를 먼저 적고, 필요한 경우 다음 조치를 덧붙인다. GitHub review decision은 반복하지 않는다. -->
+
+<검토 결론과 핵심 근거>
 
 ## Findings
 
-<!-- Finding이 없으면 `None`. 있으면 `None`을 지우고 아래 형식을 문제별로 반복한다. -->
+<!--
+Finding은 수정하지 않으면 correctness, risk 또는 repository contract 문제가 남는 확인된 문제다.
+문제가 없으면 `None`. 문제가 있으면 root cause별로 F1, F2...를 작성한다.
+단순 선호나 근거 없는 가능성은 finding으로 만들지 않는다.
+-->
 
 None
 
 <!--
 ### F1 — <finding title>
 
-- **Location:** <file, symbol, document 또는 behavior>
-- **Evidence:** <확인된 code, contract, test 또는 관찰 결과>
-- **Impact:** <수정하지 않을 때의 구체적인 영향>
-- **Required Change:** <필요한 수정 또는 충족 조건>
-- **Uncertainty:** <중요한 미확인 전제가 있을 때만 추가>
+- **Location:** <문제가 있는 file, symbol, document 또는 behavior>
+- **Evidence:** <문제를 확인한 code, contract, test 또는 관찰 결과>
+- **Impact:** <수정하지 않을 때 발생하는 구체적인 영향>
+- **Required Change:** <문제를 해소하기 위한 수정 또는 충족 조건>
+- **Uncertainty:** <판단에 중요한 미확인 전제가 있을 때만 추가>
 -->
 
 ## Validation
 
-- **<Pass | Fail | Not Verified>** — <check>: <evidence>
+<!-- 실제 확인한 diff, contract, test, command와 결과를 적는다. 중요한 미확인 영역은 Not Verified로 명시한다. -->
+
+- **<Pass | Fail | Not Verified>** — <check>: <result 또는 evidence>
 
 <!--
 Optional — 필요한 section만 추가한다.
-- Scope: 일부만 검토했거나 특별한 기준을 적용했을 때
-- Remaining Risks: 수정 후에도 중요한 위험이나 후속 확인이 남을 때
+
+- Scope: 일부만 검토했거나 특별한 기준을 적용해 review 범위를 오해할 수 있을 때
+- Remaining Risks: finding과 별개로 검토 후에도 중요한 위험이나 후속 확인이 남을 때
 
 ## Scope
+
 - <검토 범위, 특별한 기준 또는 미검토 제한>
 
 ## Remaining Risks
+
 - <남은 중요한 위험 또는 후속 확인>
 -->
