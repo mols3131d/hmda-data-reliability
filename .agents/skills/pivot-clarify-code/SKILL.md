@@ -27,7 +27,7 @@ validation: auto
 
 ## Workflow
 
-1. 적용되는 repository/source instructions와 target, caller·entrypoint, 관련 test를 읽는다. 공유 contract가 걸릴 때만 범위를 넓힌다.
+1. 적용되는 repository/source instructions와 target, caller·entrypoint, 관련 test를 읽어 현재 동작과 중요한 경계를 확인한다. 공유 contract가 걸릴 때만 범위를 넓힌다.
 1. 보존할 observable behavior와 caller-visible contract를 확인한다.
 1. 가장 중요한 reading bottleneck 하나를 진단한다. 오해가 misuse, destructive side effect, 잘못된 ordering 또는 invariant 위반을 만들 수 있으면 단순한 시각적 복잡성보다 우선한다.
 1. 가장 작은 해법을 선택한다. 내부 이름과 코드 구조로 명확해질 수 있으면 prose보다 먼저 개선하되, caller-visible API는 contract 변경 없이 rename하지 않는다.
@@ -54,4 +54,5 @@ validation: auto
 - 광범위한 style·formatting·rename을 섞지 않는다.
 - test를 약화하거나 기존 failure를 숨겨 behavior 보존을 증명하지 않는다.
 - correctness review를 대신하지 않는다. defect 의심은 별도 작업으로 분리한다.
+- 코드 자체보다 저장소 또는 문서 탐색 구조가 주된 병목이면 범위를 확대하지 않고 별도 작업으로 분리한다.
 - 실행하지 않은 validation을 수행했다고 보고하지 않는다.
