@@ -38,7 +38,7 @@
 - **<Pass | Fail | Not Verified>** — <check>: <result 또는 evidence>
 
 <!--
-Optional — 판단에 도움이 될 때만 해당 section을 추가한다.
+Optional — 판단에 도움이 될 때만 추가한다.
 
 - Boundaries: 범위를 오해하기 쉬울 때
   `## Boundaries` → `- **Out of Scope:** <의도적으로 제외한 범위>`
