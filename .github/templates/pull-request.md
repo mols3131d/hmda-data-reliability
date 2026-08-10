@@ -22,7 +22,7 @@
 Optional — 필요한 section만 추가한다.
 - Boundaries: scope를 오해할 수 있을 때
 - Review Focus: 인간 판단이 특히 필요할 때
-- Risks: 미검증 사항이나 위험이 남을 때
+- Risks: merge 후에도 위험이나 제한이 남을 때
 - References: 판단 근거를 다른 artifact가 소유할 때
 
 ## Boundaries
@@ -32,7 +32,7 @@ Optional — 필요한 section만 추가한다.
 - <집중해서 검토할 부분>
 
 ## Risks
-- <미검증 사항 또는 남은 위험>
+- <merge 후에도 남는 위험 또는 제한>
 
 ## References
 - <OpenSpec, inbox artifact 또는 canonical document>
