@@ -52,7 +52,7 @@ diff, contract, test, command 등 실제 확인 결과만 기록한다.
 - **<Pass | Fail | Not Verified>** — <check>: <result 또는 evidence>
 
 <!--
-Optional — 판단에 도움이 될 때만 해당 section을 추가한다.
+Optional — 판단에 도움이 될 때만 추가한다.
 
 - Scope: 일부만 검토했거나 특별한 기준을 적용했을 때
   `## Scope` → `- <검토 범위, 기준 또는 미검토 제한>`
