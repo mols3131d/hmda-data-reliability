@@ -3,14 +3,17 @@
 #   - <user-id>:<provider>-<service>
 ```
 
-> [!NOTE]
-> <왜 변경하는지와 변경 후 기대되는 결과를 짧게 요약한다.>
+## Summary
+
+<왜 변경하는지와 변경 후 기대되는 결과를 짧게 설명한다.>
 
 ## Changes
 
 - <최종적으로 반영된 주요 변경>
 
 ## Boundaries
+
+<!-- OPTIONAL: 의도적으로 제외한 범위나 scope 오해 가능성이 있을 때만 유지한다. -->
 
 | In Scope | Out of Scope |
 | --- | --- |
