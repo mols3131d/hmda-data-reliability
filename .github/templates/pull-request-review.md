@@ -3,22 +3,35 @@
 #   - <user-id>:<provider>-<service>
 ```
 
+> [!NOTE]
+> <검토 결론, 가장 중요한 근거와 필요한 다음 조치를 짧게 요약한다.>
+
+## Scope
+
+- 검토한 변경 범위와 기준을 작성한다.
+- 확인하지 않은 범위가 판단에 영향을 줄 수 있으면 함께 기록한다.
+
 ## Findings
 
 발견 사항이 없으면 `None`으로 기록한다.
 
-### P1 — <finding>
+### F1 — <finding title>
 
-- **Problem:** 문제
-- **Evidence:** 근거
-- **Impact:** 영향
-- **Required:** 필요한 수정
+- **Severity:** <severity>
+- **Location:** <file, symbol, document 또는 behavior>
+- **Evidence:** <확인된 code, contract, test 또는 관찰 결과>
+- **Impact:** <수정하지 않을 때의 구체적인 영향>
+- **Required Change:** <필요한 수정 또는 충족 조건>
+- **Uncertainty:** <남은 불확실성이 있을 때만 유지>
 
 ## Validation
 
-- 검토한 범위와 근거를 작성한다.
-- 검토하지 못했거나 확인할 수 없는 범위가 있으면 기록한다.
+| Check | Evidence | Result |
+| --- | --- | --- |
+| <검증 항목> | <실행 결과, 문서, diff 또는 관찰 근거> | <Pass / Fail / Not Verified> |
 
-## Notes
+## Remaining Risks
 
-- review 판단에 필요한 제한, 잔여 위험 또는 후속 사항이 있으면 작성한다.
+<!-- OPTIONAL: 남은 위험, 제한 또는 후속 확인이 있을 때만 유지한다. -->
+
+- <remaining risk>
