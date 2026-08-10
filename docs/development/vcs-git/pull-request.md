@@ -10,7 +10,7 @@ Pull request는 branch의 변경을 검토하고 repository에 반영할지 결�
 
 ## Description
 
-Pull request에는 변경을 판단하는 데 필요한 내용만 기록한다.
+Pull request에는 변경을 판단하는 데 필요한 내용만 기록한다. 기본 형식은 [Pull Request Template](../../../.github/templates/pull-request.md)을 따른다.
 
 ```markdown
 ## Summary
@@ -27,11 +27,15 @@ Pull request에는 변경을 판단하는 데 필요한 내용만 기록한다.
 - 중요한 결정, 위험 또는 제한
 ```
 
-관련 Issue, OpenSpec change 또는 개발 문서가 있으면 연결한다. 내용이 없는 section은 생략할 수 있다.
+관련 OpenSpec change, inbox artifact 또는 개발 문서가 있으면 연결한다. 내용이 없는 section은 생략할 수 있다.
+
+Template 상단의 YAML code block과 `author` 규칙은 [GitHub Templates](../../../.github/templates/README.md)를 따른다.
 
 ## Review And Validation
 
 Validation과 review 범위는 변경의 위험과 영향에 비례한다. 수행한 검증과 수행하지 못한 검증을 구분하고, 기존 review의 근거를 바꾸는 수정은 다시 검토한다.
+
+Pull Request review의 기록 형식과 finding 기준은 [Pull Request Reviews](pull-request-review.md)를 따른다.
 
 필요한 review와 required check가 완료되고 중요한 conflict가 해결된 뒤 merge한다.
 
@@ -54,3 +58,5 @@ Draft PR → 변경 갱신 → 인간 검토 → merge 또는 명시적 close
 
 - [Branches](branch.md): pull request가 소유하는 변경 목적과 branch 기준
 - [Commits](commit.md): pull request history를 구성하는 commit 기준
+- [Pull Request Reviews](pull-request-review.md): pull request review 기준과 기록 방식
+- [GitHub Templates](../../../.github/templates/README.md): Pull Request와 review template metadata 규칙
