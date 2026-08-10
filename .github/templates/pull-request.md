@@ -39,13 +39,8 @@
 
 <!--
 Optional — 판단에 도움이 될 때만 추가한다.
-
 - Boundaries: 범위를 오해하기 쉬울 때
-  `## Boundaries` → `- **Out of Scope:** <의도적으로 제외한 범위>`
 - Review Focus: 중요한 결정, trade-off, 가정을 집중 검토해야 할 때
-  `## Review Focus` → `- <집중해서 검토할 부분>`
-- Risks: Validation과 별개로 병합 후에도 위험이나 제한이 남을 때
-  `## Risks` → `- <남은 위험 또는 제한>`
-- References: 요구사항이나 판단 근거를 다른 artifact가 소유할 때
-  `## References` → `- <OpenSpec, inbox artifact 또는 canonical document>`
+- Risks: 병합 후에도 위험이나 제한이 남을 때
+- References: 판단 근거를 다른 artifact가 소유할 때
 -->
