@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import duckdb
+from pydantic import ValidationError
 
 from project_pivot.data_platform.sql import quote_string_literal
 from project_pivot.hmda_data import (
@@ -13,8 +14,16 @@ from project_pivot.hmda_data import (
     partition_content_identity,
 )
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
-from project_pivot.reliability.contracts import can_execute_risky_action
-from project_pivot.reliability.errors import ApprovalGateError, BackfillValidationError
+from project_pivot.reliability.contracts import (
+    Approval,
+    RecoveryProposal,
+    can_execute_risky_action,
+)
+from project_pivot.reliability.errors import (
+    ApprovalGateError,
+    BackfillValidationError,
+    ProfileSnapshotError,
+)
 from project_pivot.reliability.profiling import create_profile_snapshot
 from project_pivot.reliability.recovery.request import ApprovedBackfillRequest
 from project_pivot.reliability.recovery.result import BackfillValidationResult
@@ -33,7 +42,7 @@ class ApprovalBackfillValidator:
     def execute(self, request: ApprovedBackfillRequest) -> BackfillValidationResult:
         """승인된 요청만 partition overwrite와 profile validation을 실행한다."""
 
-        _ensure_approved(request)
+        approval, proposal = _ensure_approved(request)
         try:
             with TemporaryDirectory() as temporary_directory:
                 staged_source_path = _stage_approved_candidate_source(
@@ -46,11 +55,11 @@ class ApprovalBackfillValidator:
                     source_year=request.source_year,
                     source_file=request.source_file,
                 )
-                if current_identity == request.proposal.expected_after_identity:
+                if current_identity == proposal.expected_after_identity:
                     mutation_state = "already_recovered"
                     reconciliation_action = "resume_verification"
                     executed_actions = ["rerun_profile_snapshot"]
-                elif current_identity == request.proposal.approved_before_identity:
+                elif current_identity == proposal.approved_before_identity:
                     mutation_state = "partition_changed"
                     reconciliation_action = "overwrite_partition"
                     executed_actions = ["overwrite_partition", "rerun_profile_snapshot"]
@@ -66,7 +75,7 @@ class ApprovalBackfillValidator:
                         request.source_year,
                         source_file=request.source_file,
                         table_name=request.table_name,
-                        expected_identity=request.proposal.approved_before_identity,
+                        expected_identity=proposal.approved_before_identity,
                         preserve_source_metadata=True,
                     )
                 else:
@@ -75,6 +84,38 @@ class ApprovalBackfillValidator:
                     self._connection,
                     request.profile_request,
                 )
+        except ProfileSnapshotError as exc:
+            actual_identity = partition_content_identity(
+                self._connection,
+                table_name=request.table_name,
+                source_year=request.source_year,
+                source_file=request.source_file,
+            )
+            msg = (
+                "partition commit 후 profile validation에 실패했습니다: "
+                f"incident_id={request.approval.incident_id}, "
+                f"source_year={request.source_year}"
+            )
+            diverged = actual_identity != proposal.expected_after_identity
+            raise BackfillValidationError(
+                msg,
+                mutation_state=(
+                    "diverged_after_profile_failure" if diverged else mutation_state
+                ),
+                reconciliation_action=(
+                    "request_new_validation_and_approval"
+                    if diverged
+                    else "resume_verification"
+                ),
+                context={
+                    "actual_identity": actual_identity.model_dump(mode="json"),
+                    "expected_after_identity": (
+                        proposal.expected_after_identity.model_dump(mode="json")
+                    ),
+                    "execution_mutation_state": mutation_state,
+                    "profile_error": str(exc),
+                },
+            ) from exc
         except HMDAStalePartitionError as exc:
             raise ApprovalGateError(
                 "recovery target이 승인 후 변경되어 "
@@ -96,19 +137,17 @@ class ApprovalBackfillValidator:
         )
 
         return BackfillValidationResult(
-            approval_id=request.approval.approval_id,
-            incident_id=request.approval.incident_id,
+            approval_id=approval.approval_id,
+            incident_id=approval.incident_id,
             partition=str(request.source_year),
             row_count=row_count,
             profile_snapshot=snapshot,
-            approved_before_identity=request.proposal.approved_before_identity,
-            expected_after_identity=request.proposal.expected_after_identity,
+            approved_before_identity=proposal.approved_before_identity,
+            expected_after_identity=proposal.expected_after_identity,
             actual_identity=actual_identity,
             mutation_state=mutation_state,
             reconciliation_action=reconciliation_action,
-            validation_passed=(
-                actual_identity == request.proposal.expected_after_identity
-            ),
+            validation_passed=(actual_identity == proposal.expected_after_identity),
             executed_actions=executed_actions,
         )
 
@@ -122,37 +161,47 @@ def execute_approved_backfill(
     return ApprovalBackfillValidator(connection).execute(request)
 
 
-def _ensure_approved(request: ApprovedBackfillRequest) -> None:
-    if not can_execute_risky_action(request.approval):
+def _ensure_approved(
+    request: ApprovedBackfillRequest,
+) -> tuple[Approval, RecoveryProposal]:
+    try:
+        approval = Approval.model_validate(request.approval.model_dump(warnings=False))
+        proposal = RecoveryProposal.model_validate(
+            request.proposal.model_dump(warnings=False)
+        )
+    except ValidationError as exc:
+        raise ApprovalGateError(
+            "backfill approval 또는 recovery proposal contract가 유효하지 않습니다."
+        ) from exc
+    if not can_execute_risky_action(approval):
         msg = (
             "승인되지 않은 backfill 요청입니다: "
-            f"approval_id={request.approval.approval_id}, "
-            f"status={request.approval.status}"
+            f"approval_id={approval.approval_id}, "
+            f"status={approval.status}"
         )
         raise ApprovalGateError(msg)
-    if request.approval.recovery_proposal != request.proposal:
+    if approval.recovery_proposal != proposal:
         raise ApprovalGateError(
             "backfill approval의 recovery proposal이 일치하지 않습니다."
         )
-    if request.approval.incident_id != request.proposal.incident_id:
+    if approval.incident_id != proposal.incident_id:
         raise ApprovalGateError(
             "backfill approval의 incident가 proposal과 일치하지 않습니다."
         )
-    missing_actions = _REQUIRED_APPROVAL_ACTIONS.difference(
-        request.approval.requested_actions
-    )
+    missing_actions = _REQUIRED_APPROVAL_ACTIONS.difference(approval.requested_actions)
     if missing_actions:
         joined_actions = ", ".join(sorted(missing_actions))
         msg = f"backfill 승인에 필요한 action이 없습니다: {joined_actions}"
         raise ApprovalGateError(msg)
     proposal_missing_actions = _REQUIRED_APPROVAL_ACTIONS.difference(
-        request.proposal.target_actions
+        proposal.target_actions
     )
     if proposal_missing_actions:
         joined_actions = ", ".join(sorted(proposal_missing_actions))
         raise ApprovalGateError(
             f"recovery proposal에 필요한 action이 없습니다: {joined_actions}"
         )
+    return approval, proposal
 
 
 def _stage_approved_candidate_source(

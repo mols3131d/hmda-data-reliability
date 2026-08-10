@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
+import duckdb
 import pytest
 from pydantic import ValidationError
 
@@ -69,6 +70,49 @@ def test_approval_without_backfill_actions_is_rejected(tmp_path: Path) -> None:
                 source_paths=(tmp_path / "missing.csv",),
             ),
         )
+
+
+@pytest.mark.unit
+def test_approved_action_set_is_immutable() -> None:
+    """승인 이후 action scope를 nested mutation으로 바꿀 수 없다."""
+
+    approval = _approval(ApprovalStatus.APPROVED)
+
+    with pytest.raises(AttributeError):
+        cast(list[str], approval.requested_actions).append("delete_partition")
+
+    assert approval.requested_actions == (
+        "overwrite_partition",
+        "rerun_profile_snapshot",
+    )
+
+
+@pytest.mark.component
+def test_approval_gate_revalidates_model_copy_updates(tmp_path: Path) -> None:
+    """Pydantic copy로 validator를 우회한 approval은 실행 경계에서 거부한다."""
+
+    proposal = _proposal()
+    approval = _approval(ApprovalStatus.PENDING).model_copy(
+        update={
+            "status": ApprovalStatus.APPROVED,
+            "requested_actions": [
+                "overwrite_partition",
+                "rerun_profile_snapshot",
+            ],
+            "recovery_proposal": proposal,
+        }
+    )
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(tmp_path / "missing.csv",),
+    ).model_copy(update={"approval": approval})
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(ApprovalGateError, match="contract"),
+    ):
+        execute_approved_backfill(connection, request)
 
 
 @pytest.mark.component
@@ -294,6 +338,87 @@ def test_recovery_wraps_staging_source_failure(tmp_path: Path) -> None:
                 source_paths=(source_path,),
             ),
         )
+
+
+@pytest.mark.integration
+def test_profile_failure_preserves_post_mutation_recovery_state(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Partition commit 후 profile 실패도 resume 가능한 상태로 반환한다."""
+
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    approval = _approval(ApprovalStatus.APPROVED, proposal=proposal)
+    original_profile_builder = recovery_executor.create_profile_snapshot
+
+    def fail_profile(*args: object, **kwargs: object) -> None:
+        raise recovery_executor.ProfileSnapshotError("profile failed")
+
+    monkeypatch.setattr(recovery_executor, "create_profile_snapshot", fail_profile)
+
+    with DuckDBConnectionManager() as connection:
+        with pytest.raises(BackfillValidationError) as error:
+            execute_approved_backfill(
+                connection,
+                _request(
+                    approval=approval,
+                    proposal=proposal,
+                    source_paths=(source_path,),
+                ),
+            )
+        monkeypatch.setattr(
+            recovery_executor,
+            "create_profile_snapshot",
+            original_profile_builder,
+        )
+        retry = execute_approved_backfill(
+            connection,
+            _request(approval=approval, proposal=proposal, source_paths=(source_path,)),
+        )
+
+    assert error.value.mutation_state == "partition_changed"
+    assert error.value.reconciliation_action == "resume_verification"
+    assert error.value.context["profile_error"] == "profile failed"
+    assert error.value.context["actual_identity"]["row_count"] == 2
+    assert retry.mutation_state == "already_recovered"
+    assert retry.reconciliation_action == "resume_verification"
+
+
+@pytest.mark.integration
+def test_profile_failure_reports_diverged_post_mutation_state(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Profile 실패 시 실제 target이 diverged면 새 approval을 요구한다."""
+
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    approval = _approval(ApprovalStatus.APPROVED, proposal=proposal)
+
+    def diverge_then_fail_profile(*args: object, **kwargs: object) -> None:
+        connection = cast(duckdb.DuckDBPyConnection, args[0])
+        connection.execute("UPDATE raw.hmda_loans SET income = income + 1")
+        raise recovery_executor.ProfileSnapshotError("profile failed")
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "create_profile_snapshot",
+        diverge_then_fail_profile,
+    )
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(BackfillValidationError) as error,
+    ):
+        execute_approved_backfill(
+            connection,
+            _request(approval=approval, proposal=proposal, source_paths=(source_path,)),
+        )
+
+    assert error.value.mutation_state == "diverged_after_profile_failure"
+    assert error.value.reconciliation_action == "request_new_validation_and_approval"
+    assert error.value.context["execution_mutation_state"] == "partition_changed"
 
 
 @pytest.mark.component

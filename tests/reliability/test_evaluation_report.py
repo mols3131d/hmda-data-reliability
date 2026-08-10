@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
+from subprocess import CompletedProcess
 
 import pytest
 
 import project_pivot.reliability.evaluation.volume_drop as volume_drop
-from project_pivot.data_operations import DataOperationRequest
+from project_pivot.data_operations import (
+    DataOperationRequest,
+    promote_dbt_artifacts,
+    run_dbt_build,
+)
+from project_pivot.data_operations.errors import DataOperationError
 from project_pivot.data_platform.artifacts import artifact_projection_id
+from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.reliability import (
     Approval,
     ApprovalStatus,
@@ -93,6 +101,7 @@ def test_write_evaluation_report_creates_markdown(tmp_path: Path) -> None:
 
 @pytest.mark.integration
 def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     """Clean/volume-drop flow는 content recovery와 replay evidence를 재현한다."""
@@ -120,8 +129,42 @@ def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
         source_root=tmp_path,
         dbt_manifest_path=target / "manifest.json",
         dbt_run_results_path=target / "run_results.json",
+        dbt_run_target_path=target / "runs",
         observed_at=datetime(2026, 6, 10, 0, 0, tzinfo=UTC),
     )
+    initial_projection_id = artifact_projection_id(
+        request.dbt_manifest_path,
+        request.dbt_run_results_path,
+    )
+
+    def run_dbt_stub(*args: object, **kwargs: object) -> CompletedProcess[str]:
+        raw_command = args[0]
+        assert isinstance(raw_command, list)
+        command = [str(part) for part in raw_command]
+        target_path = Path(command[command.index("--target-path") + 1])
+        target_path.mkdir(parents=True, exist_ok=True)
+        environment = kwargs.get("env")
+        assert isinstance(environment, dict)
+        duckdb_path = environment.get("PROJECT_PIVOT_DUCKDB_PATH")
+        assert isinstance(duckdb_path, str | Path)
+        database_path = Path(duckdb_path)
+        run_kind = "candidate" if database_path.name == "candidate.duckdb" else "target"
+        with DuckDBConnectionManager(database_path) as connection:
+            row_count = connection.execute(
+                "SELECT count(*) FROM raw.hmda_loans WHERE activity_year = 2025"
+            ).fetchone()
+        assert row_count == (10,)
+        (target_path / "manifest.json").write_text(
+            f'{{"metadata":{{"run":"{run_kind}"}},"nodes":{{}},"sources":{{}}}}',
+            encoding="utf-8",
+        )
+        (target_path / "run_results.json").write_text(
+            f'{{"metadata":{{"run":"{run_kind}"}},"results":[]}}',
+            encoding="utf-8",
+        )
+        return CompletedProcess[str](command, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", run_dbt_stub)
 
     def approve(proposal):
         assert request.observed_at is not None
@@ -137,13 +180,36 @@ def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
             recovery_proposal=proposal,
         )
 
+    def validate_candidate(candidate_request: DataOperationRequest) -> str:
+        projection_before_run = artifact_projection_id(
+            request.dbt_manifest_path,
+            request.dbt_run_results_path,
+        )
+        result = run_dbt_build(candidate_request)
+        assert (
+            artifact_projection_id(
+                request.dbt_manifest_path,
+                request.dbt_run_results_path,
+            )
+            == projection_before_run
+        )
+        return result.projection_id
+
+    def validate_target(target_request: DataOperationRequest) -> str:
+        result = run_dbt_build(target_request)
+        promote_dbt_artifacts(result, target_request)
+        return artifact_projection_id(
+            target_request.dbt_manifest_path,
+            target_request.dbt_run_results_path,
+        )
+
     first = evaluate_volume_drop_vertical_slice(
         request=request,
         source_paths=(source_path,),
         workspace=tmp_path / "run-1",
         approve=approve,
-        validate_candidate=lambda _request: "sha256:candidate",
-        validate_target=lambda _request: "sha256:target",
+        validate_candidate=validate_candidate,
+        validate_target=validate_target,
         sample_fraction=0.1,
     )
     second = evaluate_volume_drop_vertical_slice(
@@ -153,8 +219,8 @@ def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
         source_paths=(source_path,),
         workspace=tmp_path / "run-2",
         approve=approve,
-        validate_candidate=lambda _request: "sha256:candidate",
-        validate_target=lambda _request: "sha256:target",
+        validate_candidate=validate_candidate,
+        validate_target=validate_target,
         sample_fraction=0.1,
     )
 
@@ -165,6 +231,17 @@ def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
     assert first.post_recovery_case.detected_incident_types == []
     assert first.recovery.validation_passed
     assert first.replay.reconciliation_action == "resume_verification"
+    assert first.candidate_dbt_projection_id != initial_projection_id
+    assert first.target_dbt_projection_id is not None
+    assert first.candidate_dbt_projection_id == second.candidate_dbt_projection_id
+    assert first.target_dbt_projection_id == second.target_dbt_projection_id
+    assert (
+        artifact_projection_id(
+            request.dbt_manifest_path,
+            request.dbt_run_results_path,
+        )
+        == second.target_dbt_projection_id
+    )
 
 
 @pytest.mark.integration
@@ -213,9 +290,6 @@ def test_volume_drop_vertical_slice_preserves_source_file_scope(
             requested_actions=list(proposal.target_actions),
             recovery_proposal=proposal,
         )
-
-    def fail_target_validation(_request: DataOperationRequest) -> str:
-        raise RuntimeError("dbt failed")
 
     result = evaluate_volume_drop_vertical_slice(
         request=request,
@@ -283,7 +357,13 @@ def test_volume_drop_vertical_slice_records_target_dbt_failure(
         )
 
     def fail_target_validation(_request: DataOperationRequest) -> str:
-        raise RuntimeError("dbt failed")
+        raise DataOperationError(
+            "dbt failed",
+            context={
+                "run_target_path": str(tmp_path / "failed-run"),
+                "return_code": 1,
+            },
+        )
 
     lock_calls: list[tuple[Path, bool]] = []
     original_lock = volume_drop.artifact_projection_lock
@@ -310,6 +390,10 @@ def test_volume_drop_vertical_slice_records_target_dbt_failure(
     assert result.recovery.mutation_state == "partition_changed"
     assert result.target_dbt_projection_id is None
     assert result.target_dbt_failure == "dbt failed"
+    assert result.target_dbt_failure_context == {
+        "run_target_path": str(tmp_path / "failed-run"),
+        "return_code": 1,
+    }
     assert result.post_recovery_case.failure_stage == "after_partition_mutation"
     assert result.post_recovery_case.target_mutated
     assert result.post_recovery_case.artifact_projection_ids == [
@@ -318,6 +402,10 @@ def test_volume_drop_vertical_slice_records_target_dbt_failure(
             request.dbt_run_results_path,
         )
     ]
+    assert (
+        f"failed-run:{tmp_path / 'failed-run'}"
+        in result.post_recovery_case.evidence_refs
+    )
     assert (request.dbt_manifest_path.parent, False) in lock_calls
 
 

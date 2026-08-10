@@ -107,7 +107,10 @@ def promote_dbt_artifacts(
     except ArtifactProjectionLockError as exc:
         raise DataOperationError(
             "dbt artifact projection lock을 획득할 수 없습니다.",
-            context={"directory": str(request.dbt_manifest_path.parent)},
+            context={
+                "directory": str(request.dbt_manifest_path.parent),
+                "run_target_path": str(result.manifest_path.parent),
+            },
         ) from exc
 
 
@@ -192,7 +195,13 @@ def _validate_dbt_artifacts(manifest_path: Path, run_results_path: Path) -> None
     if invalid_paths:
         joined_paths = ", ".join(str(path) for path in invalid_paths)
         msg = f"dbt build artifact를 확인할 수 없습니다: {joined_paths}"
-        raise DataOperationError(msg)
+        raise DataOperationError(
+            msg,
+            context={
+                "run_target_path": str(manifest_path.parent),
+                "invalid_artifact_paths": [str(path) for path in invalid_paths],
+            },
+        )
 
 
 def _ensure_artifact_projection(result: DbtBuildResult) -> None:
@@ -201,7 +210,10 @@ def _ensure_artifact_projection(result: DbtBuildResult) -> None:
         artifact_projection_id(result.manifest_path, result.run_results_path)
         != result.projection_id
     ):
-        raise DataOperationError("dbt artifact projection이 검증 결과와 다릅니다.")
+        raise DataOperationError(
+            "dbt artifact projection이 검증 결과와 다릅니다.",
+            context={"run_target_path": str(result.manifest_path.parent)},
+        )
 
 
 def _promote_dbt_artifacts(
@@ -239,7 +251,8 @@ def _promote_dbt_artifacts(
         for backup, destination in reversed(backup_paths):
             backup.replace(destination)
         raise DataOperationError(
-            "dbt artifact projection을 승격할 수 없습니다."
+            "dbt artifact projection을 승격할 수 없습니다.",
+            context={"run_target_path": str(run_manifest_path.parent)},
         ) from exc
     for backup, _ in backup_paths:
         try:

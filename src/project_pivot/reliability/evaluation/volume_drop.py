@@ -59,6 +59,7 @@ class VolumeDropVerticalSliceResult(BaseModel):
     candidate_dbt_projection_id: str
     target_dbt_projection_id: str | None = None
     target_dbt_failure: str | None = None
+    target_dbt_failure_context: dict[str, object] | None = None
 
 
 def evaluate_volume_drop_vertical_slice(
@@ -185,17 +186,27 @@ def evaluate_volume_drop_vertical_slice(
     try:
         target_projection_id = validate_target(target_request)
         target_dbt_failure = None
+        target_dbt_failure_context = None
         post_recovery_case = _case_result("post_recovery", post_recovery_lifecycle)
     except Exception as exc:
         target_projection_id = None
         target_dbt_failure = str(exc)
+        error_context = getattr(exc, "context", None)
+        target_dbt_failure_context = (
+            dict(error_context) if isinstance(error_context, dict) else None
+        )
+        failure_evidence = [target_dbt_failure]
+        if target_dbt_failure_context and (
+            run_target_path := target_dbt_failure_context.get("run_target_path")
+        ):
+            failure_evidence.append(f"failed-run:{run_target_path}")
         post_recovery_case = build_recovery_evaluation_case(
             case_name="recovery_dbt_failure",
             expected_incident_types=[],
             detected_incident_types=post_recovery_lifecycle.detected_incident_types,
             recovery=recovery,
             failure_stage="after_partition_mutation",
-            evidence_refs=[target_dbt_failure],
+            evidence_refs=failure_evidence,
             artifact_projection_ids=[prior_target_projection_id],
         )
 
@@ -210,6 +221,7 @@ def evaluate_volume_drop_vertical_slice(
         candidate_dbt_projection_id=candidate_projection_id,
         target_dbt_projection_id=target_projection_id,
         target_dbt_failure=target_dbt_failure,
+        target_dbt_failure_context=target_dbt_failure_context,
     )
 
 

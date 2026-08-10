@@ -79,8 +79,14 @@ def test_run_dbt_build_requires_artifacts(
         lambda *args, **kwargs: CompletedProcess(args[0], 0, "", ""),
     )
 
-    with pytest.raises(DataOperationError, match="artifact"):
+    with pytest.raises(DataOperationError, match="artifact") as error:
         runner.run_dbt_build(_request(tmp_path))
+
+    assert (
+        Path(error.value.context["run_target_path"]).parent
+        == _request(tmp_path).dbt_run_target_path
+    )
+    assert error.value.context["invalid_artifact_paths"]
 
 
 @pytest.mark.component
@@ -406,6 +412,35 @@ def test_promotion_rechecks_artifacts_after_waiting_for_lock(tmp_path: Path) -> 
     assert isinstance(errors[0], DataOperationError)
     assert not request.dbt_manifest_path.exists()
     assert not request.dbt_run_results_path.exists()
+
+
+@pytest.mark.component
+def test_promotion_lock_failure_preserves_failed_run_context(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Promotion lock 실패도 verified run artifact 위치를 보존한다."""
+
+    request = _request(tmp_path)
+    run_target = tmp_path / "run"
+    run_target.mkdir()
+    manifest_path = run_target / "manifest.json"
+    run_results_path = run_target / "run_results.json"
+    manifest_path.write_text("manifest", encoding="utf-8")
+    run_results_path.write_text("results", encoding="utf-8")
+
+    def fail_lock(*args: object, **kwargs: object) -> None:
+        raise runner.ArtifactProjectionLockError("lock failed")
+
+    monkeypatch.setattr(runner, "artifact_projection_lock", fail_lock)
+
+    with pytest.raises(DataOperationError, match="lock") as error:
+        runner.promote_dbt_artifacts(
+            _build_result(manifest_path, run_results_path),
+            request,
+        )
+
+    assert error.value.context["run_target_path"] == str(run_target)
 
 
 @pytest.mark.component
