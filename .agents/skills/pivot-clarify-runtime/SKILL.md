@@ -46,7 +46,8 @@ validation: auto
 
 - 관찰 공백의 종류나 책임 경계가 불명확하면 [Diagnosis](references/diagnosis.md)를 읽는다.
 - result, metadata, exception context, logging 중 evidence surface를 선택하거나 구성하려면 [Evidence](references/evidence.md)를 읽는다.
-- logging을 추가·수정하려면 [Logging](references/logging.md)을 읽는다.
+- logging event의 필요성, message, context, level, 중복과 noise 품질을 판단하려면 [Logging](references/logging.md)을 읽는다.
+- Python 표준 `logging`의 logger hierarchy, configuration, `extra`, exception 또는 adapter 구현을 다루면 [Python Standard Logging](references/python-logging.md)을 읽는다.
 - domain behavior 보존 또는 evidence 검증 방법이 불명확하면 [Validation](references/validation.md)을 읽는다.
 
 ## Completion
