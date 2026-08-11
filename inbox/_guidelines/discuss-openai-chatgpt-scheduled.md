@@ -17,24 +17,26 @@ OpenAI currently does not allow a Scheduled Task to run more than once per hour.
 
 ## Schedule Configuration
 
-Use the same values in both participant prompts.
+Use the same values for A and B.
 
-| Field | Default | Rule |
-| --- | --- | --- |
-| `started_at` | required | absolute timestamp with timezone |
-| `ends_at` | required | later than `started_at` |
-| `participant_interval` | 60 minutes | scheduler-supported and not faster than the platform limit |
-| `b_offset` | 30 minutes | greater than 0 and less than `participant_interval` |
+| Field | Default | Owner | Rule |
+| --- | --- | --- | --- |
+| `started_at` | required | discussion `README.md` | absolute timestamp with timezone |
+| `ends_at` | required | discussion `README.md` | later than `started_at` |
+| `participant_interval` | 60 minutes | ChatGPT task runtime | scheduler-supported and not faster than the platform limit |
+| `b_offset` | 30 minutes | ChatGPT task runtime | greater than 0 and less than `participant_interval` |
 
 `ends_at - started_at` must be an exact multiple of `participant_interval` so the session ends on an A recurrence boundary.
 
-The defaults produce the original hourly A/B schedule, but the protocol does not require exactly 60/30-minute timing.
+Persist only the session anchors required by the common bundle. Keep recurrence and offset configuration in the scheduled task runtime, consistent with `discuss.md` keeping trigger intervals outside the common bundle contract.
+
+The defaults produce the original hourly A/B schedule, but the extension does not require exactly 60/30-minute timing.
 
 ## Runtime Model
 
 Use two independent ChatGPT chats: one for **A**, one for **B**.
 
-Persist the shared schedule configuration in the discussion `README.md` and treat the persisted values as the source of truth.
+Repository state is authoritative for turn order, topic state, discussion status, `started_at`, and `ends_at`. Each ChatGPT task owns its recurrence configuration.
 
 Let:
 
@@ -65,7 +67,7 @@ When the A prompt is first submitted:
 1. read the repository and discussion guidance;
 2. validate the shared schedule configuration;
 3. create or initialize the discussion bundle when needed;
-4. persist the shared schedule configuration;
+4. persist `started_at` and `ends_at`;
 5. define only the topics needed by the goal, following the common topic defaults and one-active-topic rule;
 6. publish the first eligible A turn immediately;
 7. arrange later A invocations every `participant_interval` through `ends_at`.
@@ -82,7 +84,7 @@ When the B prompt is first submitted:
 4. do **not** publish a B turn immediately;
 5. arrange the first B invocation for `started_at + b_offset` and later B invocations every `participant_interval` while the scheduled time is strictly before `ends_at`.
 
-If the bundle does not yet exist during B bootstrap, schedule from the shared absolute session anchors and exit. The first scheduled B invocation must re-read the repository; if A still has not initialized the bundle or published A1, follow the common recovery rules.
+If the bundle does not yet exist during B bootstrap, schedule from the shared session anchors and exit. The first scheduled B invocation must re-read the repository; if A still has not initialized the bundle or published A1, follow the common recovery rules.
 
 Bootstrap configuration is not itself a participant turn.
 
@@ -94,7 +96,7 @@ Every scheduled invocation follows the common rule:
 refresh → check eligibility → run Turn Workflow → publish → exit
 ```
 
-Before writing, the participant must read the latest persisted discussion `README.md` and turns from the repository. Chat history is supporting context, not the source of truth for turn order, topics, or session timing.
+Before writing, the participant must read the latest persisted discussion `README.md` and turns from the repository. Chat history is supporting context, not the source of truth for turn order, topics, status, or session anchors.
 
 A scheduled trigger does not guarantee an argumentative turn. Follow the common no-op, terminal-turn, research-block, and synthesis rules when applicable.
 
@@ -119,11 +121,12 @@ Use these templates as the initial user messages for the two ChatGPT chats:
 - [A — Lead Prompt](../_templates/discuss/openai-chatgpt-scheduled/a-prompt.md)
 - [B — Challenger Prompt](../_templates/discuss/openai-chatgpt-scheduled/b-prompt.md)
 
-Fill the same repository, discussion ID, goal, and schedule configuration in both prompts. Keep common discussion behavior in `discuss.md` instead of duplicating it here or in both prompts unless ChatGPT needs the instruction to execute correctly.
+Fill the same repository, discussion ID, goal, session anchors, `participant_interval`, and `b_offset` in both prompts. Keep common discussion behavior in `discuss.md` instead of duplicating it here or in both prompts unless ChatGPT needs the instruction to execute correctly.
 
 ## Boundaries
 
 - Do not move task IDs, recurrence syntax, model names, notification settings, or UI instructions into the common `discuss` contract.
+- Do not persist provider-specific recurrence or offset fields as common discussion state.
 - Do not hard-code topic count in this extension; topic scope belongs to the discussion goal and common `discuss` rules.
 - Do not infer eligibility from wall-clock order alone; persisted turns decide who may act.
 - Do not let both chats write the same shared state. A owns shared discussion state; B owns only B turns.
