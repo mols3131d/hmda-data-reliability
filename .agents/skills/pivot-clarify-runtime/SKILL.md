@@ -1,6 +1,6 @@
 ---
 name: pivot-clarify-runtime
-description: Use this skill to reduce runtime understanding debt in existing Project Pivot code when important execution paths, decisions, state transitions, external actions, or failure causes cannot be reconstructed from existing runtime evidence. Preserve domain behavior and caller contracts. Prefer existing results, exceptions, framework artifacts or metadata, and logs; add only the smallest missing evidence. Do not use for defect debugging, correctness review, test design, monitoring, telemetry-platform design, performance profiling, or feature implementation.
+description: Use this skill to reduce runtime understanding debt in Project Pivot when important execution paths, decisions, state transitions, external actions, or failure causes cannot be reconstructed from existing runtime evidence. Preserve domain behavior and caller contracts. Prefer existing results, exceptions, framework artifacts or metadata, and logs; add only the smallest missing evidence. Do not use for defect debugging, correctness review, test design, monitoring, telemetry-platform design, performance profiling, or feature implementation.
 ---
 
 # Clarify Runtime
@@ -32,11 +32,11 @@ validation: auto
 1. 적용되는 지침과 target, entrypoint/caller, 관련 test, 기존 result·exception·artifact·metadata·log를 읽어 현재 실행 경계를 복원한다.
 1. **복원 질문 하나**를 정한다: 어떤 경로를 탔는가, 왜 결정됐는가, 어떤 상태가 바뀌었는가, 무엇이 실패했는가, 어떤 실행과 연결되는가.
 1. 오해 비용이 가장 큰 관찰 공백 하나를 선택한다. 위험한 mutation, approval/validation gate, 외부 실행과 실패 원인을 우선한다.
-1. 가장 작은 owning surface를 고른다. caller 결과는 result, 실패 진단은 exception context, framework/dbt 실행 사실은 artifact·metadata, 시간적 흐름이나 내부 결정은 logging을 우선 고려한다. 기존 surface를 먼저 보강한다.
+1. 가장 작은 evidence surface를 고른다. caller 결과는 result, 실패 진단은 exception context, framework/dbt 실행 사실은 artifact·metadata, 시간적 흐름이나 내부 결정은 logging을 우선 고려한다. 기존 surface를 먼저 보강한다.
 1. 선택한 책임 경계에 필요한 evidence만 추가·정리한다. 같은 사실을 여러 surface에 반복하거나 포괄적 observability 체계를 만들지 않는다.
 1. 가능한 경우 같은 좁은 validation으로 domain behavior가 보존되고 복원 질문에 실제로 답할 수 있는지 확인한다. 불필요한 field·event를 제거하고 질문이 해소되면 중단한다.
 
-기존 evidence만으로 이미 질문에 답할 수 있으면 수정하지 않는다.
+기존 evidence만으로 이미 질문에 답할 수 있으면 수정하지 않는다. 넓은 audit에서는 여러 관찰 공백을 찾을 수 있지만 변경은 복원 질문 하나씩 같은 절차로 처리한다.
 
 ## Progressive Disclosure
 
@@ -48,7 +48,7 @@ validation: auto
 | result, exception, artifact/metadata, log 중 surface 선택 | [Evidence](references/evidence.md) |
 | 좋은 log event, context, level, 중복과 noise 판단 | [Logging](references/logging.md) |
 | Python 표준 `logging` 구현 | [Python Standard Logging](references/python-logging.md) |
-| dbt command, artifact와 log evidence | [dbt Runtime Evidence](references/dbt-logging.md) |
+| dbt command, artifact와 log evidence | [dbt Runtime Evidence](references/dbt-evidence.md) |
 | behavior 보존과 evidence 검증 | [Validation](references/validation.md) |
 
 ## Boundaries
