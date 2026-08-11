@@ -23,7 +23,7 @@ Agent의 작업 과정, 상세 reasoning, RPI 단계별 진행 기록, 시행착
 
 GitHub UI나 CI가 이미 충분히 제공하는 정보도 판단에 필요한 추가 맥락이 없다면 반복하지 않는다. 관련 OpenSpec change, inbox artifact 또는 canonical document가 있으면 `References`에서 연결하며, 요구사항이나 acceptance criteria의 source를 PR 본문에 다시 복제하지 않는다.
 
-Optional `author` metadata는 [GitHub Templates](../../../.github/templates/README.md)를 따른다.
+Optional `author`와 `revision` metadata는 [GitHub Templates](../../../.github/templates/README.md)를 따른다. `revision`을 사용하면 본문이 기준으로 삼은 exact base/head commit pair를 기록하고, 변경된 비교 상태를 기준으로 본문을 갱신할 때 함께 갱신한다.
 
 ## Review And Validation
 

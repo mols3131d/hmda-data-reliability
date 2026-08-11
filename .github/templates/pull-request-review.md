@@ -60,10 +60,17 @@ Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 tab
 -->
 
 <!--
-Author metadata — Agent가 review를 주도했고 GitHub 작성자만으로 실제 작성 주체를 구별할 수 없을 때만 문서 맨 위에 추가한다.
+Optional metadata — GitHub가 제공하지 않는 provenance가 판단에 필요할 때만 문서 맨 위에 추가한다.
+공통 규칙은 `.github/templates/README.md`를 따른다.
+
+`author`는 Agent가 review를 주도했지만 GitHub 작성자만으로 실제 작성 주체를 구별할 수 없을 때 사용한다.
+`revision`은 이 review가 실제로 검토한 exact base/head commit pair를 고정한다. 이후 PR head가 바뀌어도 과거 review의 값은 바꾸지 않는다.
 
 ```yaml
 author:
   - <user-id>:<provider>-<service>
+revision:
+  base: <full-base-commit-sha>
+  head: <full-head-commit-sha>
 ```
 -->
