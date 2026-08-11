@@ -3,8 +3,8 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Reliability MVP Volume-Drop Vertical Slice Tasks
 description: Partition identity부터 exact approval, isolated dbt, recovery reconciliation과 end-to-end acceptance까지 TDD로 구현한다.
-tasks_completed: 41
-tasks_total: 41
+tasks_completed: 44
+tasks_total: 44
 tags:
   - "domain:reliability"
   - "capability:reliability-recovery-backfill"
@@ -131,3 +131,6 @@ tags:
 - [x] 7.14 post-mutation target dbt validation failure를 vertical-slice safety case evidence로 반환하는 regression을 추가한다.
 - [x] 7.15 post-mutation target dbt failure safety case에 prior last-known-good target projection을 기록한다.
 - [x] 7.16 target dbt failure evidence의 prior projection identity를 shared artifact lock 안에서 읽는다.
+- [x] 7.17 invalid candidate, candidate dbt failure, incomplete approval, stale/diverged target을 execution-level evaluation case로 변환하고 pre-mutation regression을 추가한다.
+- [x] 7.18 target validation은 `DataOperationError`만 recovery failure로 변환하고 promotion 이후 exception의 실제 current artifact 경계를 regression으로 고정한다.
+- [x] 7.19 current head 기준 focused/full validation 결과와 Plan Review 근거를 갱신한다.

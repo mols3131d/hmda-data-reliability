@@ -4,7 +4,7 @@ category: review
 title: Reliability MVP Volume-Drop Vertical Slice Plan Review
 description: Volume-drop recovery vertical slice 계획의 behavior coverage와 implementation readiness를 판정한다.
 status: "approved"
-review_loop: 5
+review_loop: 6
 tags:
   - "domain:reliability"
   - "capability:reliability-recovery-backfill"
@@ -52,3 +52,10 @@ tags:
 
 - [x] **Independent confirmation:** Quality, adversarial, and planning reviewer pass가 source, artifact lock, recovery, lifecycle, vertical-slice failure evidence와 OpenSpec artifact를 재검토했고 unresolved finding을 보고하지 않았다.
 - [x] **Validation:** Full default pytest suite (162 passed), Ruff, OpenSpec strict validation, and diff whitespace check가 통과했다.
+
+## Review Loop 6
+
+- [x] **F1 — Execution-level safety evidence:** Invalid candidate, candidate dbt failure, incomplete approval, stale/diverged target이 target mutation stage와 evidence를 가진 evaluation case로 반환되며, 각 pre-mutation failure regression이 추가됐다.
+- [x] **F2 — Artifact-state boundary:** Target validation은 `DataOperationError`만 recovery dbt failure로 변환하고, promotion 이후 unexpected exception은 전파되어 actual current artifact state를 숨기지 않는다. Post-promotion failure regression이 추가됐다.
+- [x] **F3 — Current-head evidence:** Current head 기준 focused evaluation suite 7 passed, full pytest 170 passed, Ruff, OpenSpec strict validation과 diff check가 통과했다.
+- [x] **Consistency:** Design D8, Tasks 7.17-7.19와 implementation/tests의 ownership과 추적성이 일치한다.

@@ -125,6 +125,12 @@ flowchart LR
 - **Rationale** - 고정 artifact path 두 개의 순차 replace 중 reader가 서로 다른 run의 pair를 관찰하거나, lock 대기 중 바뀐 verified artifact가 승격되는 것을 막는다.
 - **Trade-off** - 같은 local protocol을 쓰지 않는 외부 reader는 보호하지 않으며, MVP는 external artifact registry나 multi-host coordination을 추가하지 않는다.
 
+### D8. 예상된 safety failure는 execution-level evaluation case로 변환한다
+
+- **Decision** - Candidate validation, approval gate와 recovery reconciliation에서 예상되는 domain failure는 evaluation boundary에서 `EvaluationCaseResult`로 변환한다. Target dbt failure는 `DataOperationError`만 recovery case로 변환하고, promotion 이후의 예기치 않은 exception은 실제 artifact 상태를 숨기지 않도록 전파한다.
+- **Rationale** - 실패를 예외 유무만으로 표현하면 target mutation 여부와 retry evidence를 report에서 판정할 수 없다. 반대로 모든 exception을 dbt failure로 처리하면 promotion 이후 current projection과 evidence가 어긋날 수 있다.
+- **Trade-off** - Failure result의 recovery/replay field는 optional이 되지만, happy path API와 기존 success evidence는 유지한다.
+
 ### D6. Vertical-slice runner는 evaluation API가 조합한다
 
 - **Decision** - Deterministic fixture 생성, baseline/current load, lifecycle, candidate validation, external approval 입력, recovery와 evaluation case 변환을 `reliability.evaluation`의 별도 API로 둔다. Approval 생성은 caller callback/input으로 유지한다.
@@ -142,6 +148,7 @@ flowchart LR
 | Artifact projection protocol | Data Operations/Reliability component | Lock 대기 중 artifact drift 차단, shared reader가 complete current pair만 관찰 |
 | Mutation/reconciliation state | Recovery component | Pre/post mutation failure와 resume/diverged result 구분 |
 | Clean/volume-drop slice | Local integration | Detection, impact, exact approval, content recovery, dbt verification과 replay evidence |
+| Safety failure adapter | Local integration | Candidate failure는 pre-mutation case로 반환하고, promotion 이후 exception은 current artifact를 숨기지 않고 전파 |
 
 - **TDD Boundary:** Content identity와 compare-and-replace를 가장 먼저 RED로 고정한 뒤 approval, dbt artifact와 recovery state를 순서대로 연결한다.
 - **Failure Signals:** Unexpected target fingerprint change, current artifact pair change, overwrite call 반복, incorrect mutation state, missing failed-run evidence 또는 unstable repeated evidence다.

@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from subprocess import CompletedProcess
+from typing import cast
 
 import pytest
 
 import project_pivot.reliability.evaluation.volume_drop as volume_drop
+import project_pivot.reliability.recovery.executor as recovery_executor
 from project_pivot.data_operations import (
     DataOperationRequest,
     promote_dbt_artifacts,
@@ -18,6 +21,7 @@ from project_pivot.data_operations import (
 from project_pivot.data_operations.errors import DataOperationError
 from project_pivot.data_platform.artifacts import artifact_projection_id
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.hmda_data.errors import HMDAStalePartitionError
 from project_pivot.reliability import (
     Approval,
     ApprovalStatus,
@@ -229,6 +233,8 @@ def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
     assert first.clean_case.detected_incident_types == []
     assert first.volume_drop_case.detected_incident_types == ["volume_drop"]
     assert first.post_recovery_case.detected_incident_types == []
+    assert first.recovery is not None
+    assert first.replay is not None
     assert first.recovery.validation_passed
     assert first.replay.reconciliation_action == "resume_verification"
     assert first.candidate_dbt_projection_id != initial_projection_id
@@ -242,6 +248,180 @@ def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
         )
         == second.target_dbt_projection_id
     )
+
+    def fail_candidate(_request: DataOperationRequest) -> str:
+        raise DataOperationError(
+            "candidate dbt failed",
+            context={
+                "run_target_path": str(tmp_path / "candidate-failed-run"),
+                "return_code": 1,
+            },
+        )
+
+    failed_candidate = evaluate_volume_drop_vertical_slice(
+        request=request.model_copy(
+            update={"database_path": tmp_path / "target-3.duckdb"}
+        ),
+        source_paths=(source_path,),
+        workspace=tmp_path / "run-3",
+        approve=approve,
+        validate_candidate=fail_candidate,
+        validate_target=validate_target,
+        sample_fraction=0.1,
+    )
+
+    assert failed_candidate.recovery is None
+    assert failed_candidate.post_recovery_case.failure_stage == (
+        "before_target_mutation"
+    )
+    assert "failed-run:" in " ".join(failed_candidate.post_recovery_case.evidence_refs)
+
+    prior_projection_id = artifact_projection_id(
+        request.dbt_manifest_path,
+        request.dbt_run_results_path,
+    )
+
+    def fail_after_promotion(target_request: DataOperationRequest) -> str:
+        result = run_dbt_build(target_request)
+        result.manifest_path.write_text(
+            '{"metadata":{"run":"post-promotion"}}',
+            encoding="utf-8",
+        )
+        result.run_results_path.write_text(
+            '{"metadata":{"run":"post-promotion"}}',
+            encoding="utf-8",
+        )
+        result = result.model_copy(
+            update={
+                "projection_id": artifact_projection_id(
+                    result.manifest_path,
+                    result.run_results_path,
+                )
+            }
+        )
+        promote_dbt_artifacts(result, target_request)
+        raise RuntimeError("post-promotion read failed")
+
+    with pytest.raises(RuntimeError, match="post-promotion"):
+        evaluate_volume_drop_vertical_slice(
+            request=request.model_copy(
+                update={"database_path": tmp_path / "target-4.duckdb"}
+            ),
+            source_paths=(source_path,),
+            workspace=tmp_path / "run-4",
+            approve=approve,
+            validate_candidate=validate_candidate,
+            validate_target=fail_after_promotion,
+            sample_fraction=0.1,
+        )
+
+    assert (
+        artifact_projection_id(
+            request.dbt_manifest_path,
+            request.dbt_run_results_path,
+        )
+        != prior_projection_id
+    )
+
+
+@pytest.mark.integration
+def test_volume_drop_vertical_slice_returns_pre_mutation_safety_cases(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Recovery gate failure를 evaluation evidence로 반환한다."""
+
+    def evaluate(
+        request: DataOperationRequest,
+        source_path: Path,
+        approve,
+    ):
+        return evaluate_volume_drop_vertical_slice(
+            request=request,
+            source_paths=(source_path,),
+            workspace=request.database_path.with_suffix(""),
+            approve=approve,
+            validate_candidate=lambda _request: "sha256:candidate",
+            validate_target=lambda _request: "sha256:target",
+            sample_fraction=0.1,
+        )
+
+    invalid_source, invalid_request = _volume_drop_fixture(tmp_path / "invalid")
+
+    def approve_then_invalidate(proposal):
+        invalid_source.write_text(
+            invalid_source.read_text(encoding="utf-8").replace(",100,CA", ",101,CA"),
+            encoding="utf-8",
+        )
+        return _approved(proposal)
+
+    invalid_candidate = evaluate(
+        invalid_request,
+        invalid_source,
+        approve_then_invalidate,
+    )
+
+    incomplete_source, incomplete_request = _volume_drop_fixture(
+        tmp_path / "incomplete"
+    )
+
+    def approve_incomplete(proposal):
+        return _approved(proposal).model_copy(
+            update={"requested_actions": ("overwrite_partition",)}
+        )
+
+    incomplete_approval = evaluate(
+        incomplete_request,
+        incomplete_source,
+        approve_incomplete,
+    )
+
+    diverged_source, diverged_request = _volume_drop_fixture(tmp_path / "diverged")
+
+    def approve_then_diverge(proposal):
+        with DuckDBConnectionManager(diverged_request.database_path) as connection:
+            connection.execute("UPDATE raw.hmda_loans SET income = income + 1")
+        return _approved(proposal)
+
+    diverged_target = evaluate(
+        diverged_request,
+        diverged_source,
+        approve_then_diverge,
+    )
+
+    stale_source, stale_request = _volume_drop_fixture(tmp_path / "stale")
+    original_load = cast(
+        Callable[..., int],
+        recovery_executor.load_hmda_loans_partition,
+    )
+    load_count = 0
+
+    def raise_stale_on_target_load(*args: object, **kwargs: object) -> int:
+        nonlocal load_count
+        load_count += 1
+        if load_count == 2:
+            raise HMDAStalePartitionError("stale")
+        return original_load(*args, **kwargs)
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "load_hmda_loans_partition",
+        raise_stale_on_target_load,
+    )
+    stale_target = evaluate(stale_request, stale_source, _approved)
+
+    for result, case_name in (
+        (invalid_candidate, "invalid_candidate"),
+        (incomplete_approval, "incomplete_approval"),
+        (diverged_target, "diverged_target"),
+        (stale_target, "stale_target"),
+    ):
+        assert result.recovery is None
+        assert result.replay is None
+        assert result.post_recovery_case.case_name == case_name
+        assert result.post_recovery_case.failure_stage == "before_target_mutation"
+        assert not result.post_recovery_case.target_mutated
+        assert result.post_recovery_case.artifact_projection_ids
 
 
 @pytest.mark.integration
@@ -303,6 +483,7 @@ def test_volume_drop_vertical_slice_preserves_source_file_scope(
 
     assert result.fixture_identity.row_count == 10
     assert result.expected_recovery_identity.row_count == 10
+    assert result.recovery is not None
     assert result.recovery.validation_passed
     failed_recovery = result.recovery.model_copy(update={"validation_passed": False})
     failed_case = build_recovery_evaluation_case(
@@ -387,6 +568,7 @@ def test_volume_drop_vertical_slice_records_target_dbt_failure(
         validate_target=fail_target_validation,
     )
 
+    assert result.recovery is not None
     assert result.recovery.mutation_state == "partition_changed"
     assert result.target_dbt_projection_id is None
     assert result.target_dbt_failure == "dbt failed"
@@ -442,3 +624,43 @@ def test_recovery_safety_cases_preserve_mutation_and_artifact_evidence() -> None
         "sha256:last-known-good",
         "sha256:failed-run",
     ]
+
+
+def _volume_drop_fixture(tmp_path: Path) -> tuple[Path, DataOperationRequest]:
+    source_path = tmp_path / "year_2025.csv"
+    source_path.parent.mkdir(parents=True)
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,county_code",
+                *[f"2025,1,1,{index},100,CA,06001" for index in range(10)],
+            ]
+        ),
+        encoding="utf-8",
+    )
+    target = tmp_path / "dbt" / "target"
+    target.mkdir(parents=True)
+    (target / "manifest.json").write_text('{"sources":{},"nodes":{}}', encoding="utf-8")
+    (target / "run_results.json").write_text("{}", encoding="utf-8")
+    return source_path, DataOperationRequest(
+        database_path=tmp_path / "target.duckdb",
+        source_root=tmp_path,
+        dbt_manifest_path=target / "manifest.json",
+        dbt_run_results_path=target / "run_results.json",
+        observed_at=datetime(2026, 6, 10, 0, 0, tzinfo=UTC),
+    )
+
+
+def _approved(proposal) -> Approval:
+    approved_at = datetime(2026, 6, 10, 0, 0, tzinfo=UTC)
+    return Approval(
+        approval_id="approval_volume_drop",
+        incident_id=proposal.incident_id,
+        status=ApprovalStatus.APPROVED,
+        requested_by="data-platform",
+        requested_at=approved_at,
+        approved_by="data-owner",
+        approved_at=approved_at,
+        requested_actions=proposal.target_actions,
+        recovery_proposal=proposal,
+    )

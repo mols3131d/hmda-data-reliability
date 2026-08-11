@@ -13,16 +13,17 @@ def build_recovery_evaluation_case(
     detected_incident_types: Sequence[str],
     recovery: BackfillValidationResult | None = None,
     failure_stage: str | None = None,
+    reconciliation_action: str | None = None,
     evidence_refs: Sequence[str] = (),
     artifact_projection_ids: Sequence[str] = (),
 ) -> EvaluationCaseResult:
     """Convert recovery success or failure into observable evaluation evidence."""
 
     target_mutated = None
-    reconciliation_action = None
+    resolved_reconciliation_action = reconciliation_action
     if recovery is not None:
         target_mutated = recovery.mutation_state == "partition_changed"
-        reconciliation_action = recovery.reconciliation_action
+        resolved_reconciliation_action = recovery.reconciliation_action
     elif failure_stage is not None:
         target_mutated = failure_stage != "before_target_mutation"
     return EvaluationCaseResult(
@@ -38,6 +39,6 @@ def build_recovery_evaluation_case(
         evidence_refs=list(evidence_refs),
         target_mutated=target_mutated,
         failure_stage=failure_stage,
-        reconciliation_action=reconciliation_action,
+        reconciliation_action=resolved_reconciliation_action,
         artifact_projection_ids=list(artifact_projection_ids),
     )
