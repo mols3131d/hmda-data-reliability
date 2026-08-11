@@ -92,6 +92,8 @@ stop_condition: review_has_no_findings
 
 Scheduled discussion is a long-running asynchronous sequence of **A/B invocations** during a session window. It supports ChatGPT-style scheduled chats while remaining portable to other chat applications and agent runners.
 
+Provider-specific runtime behavior belongs in extensions. For OpenAI ChatGPT scheduled chats, use [OpenAI ChatGPT Scheduled Discussion](discuss-openai-chatgpt-scheduled.md).
+
 ### Defaults
 
 | Field | Default |
