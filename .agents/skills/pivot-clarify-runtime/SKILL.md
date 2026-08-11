@@ -30,7 +30,7 @@ validation: auto
 ## Workflow
 
 1. 적용되는 지침과 target, entrypoint/caller, 관련 test, 기존 result·exception·artifact·metadata·log를 읽어 현재 실행 경계를 복원한다.
-1. 먼저 문제를 분류한다. 핵심 문제가 runtime evidence가 아니면 instrumentation하지 말고 `pivot-clarify-code`, review/debugging, monitoring 또는 performance 책임으로 넘긴다.
+1. 먼저 문제를 분류한다. 주된 문제가 runtime evidence가 아니면 instrumentation하지 않고 해당 책임으로 넘긴다. 경계가 애매하면 [Diagnosis](references/diagnosis.md)의 routing을 따른다.
 1. **복원 질문 하나**를 정한다: 어떤 경로를 탔는가, 왜 결정됐는가, 어떤 상태가 바뀌었는가, 무엇이 실패했는가, 어떤 실행과 연결되는가.
 1. 관찰 공백의 형태를 진단한다: evidence가 부족한가, 중복됐는가, 잘못된 boundary가 소유하는가, noise가 과한가, 서로 연결되지 않는가.
 1. 가장 작은 intervention과 owner를 고른다. 기존 evidence를 재사용·보강·이동·병합·제거하는 것을 새 evidence 추가보다 먼저 고려한다. caller 결과는 result, 실패 진단은 exception context, framework/tool 실행 사실은 artifact·metadata, 시간적 흐름이나 내부 결정은 logging을 우선한다.
