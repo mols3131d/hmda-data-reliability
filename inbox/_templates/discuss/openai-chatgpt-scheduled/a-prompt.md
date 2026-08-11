@@ -15,6 +15,8 @@ Session end: <absolute-timestamp-with-timezone>
 
 Scheduled Task 실행에서 필요한 GitHub repository를 읽고 쓸 수 없는 경우 추정하거나 채팅 기억으로 대체하지 말고 blocked 상태와 원인을 보고한다.
 
+`Session end`는 `Session start`보다 늦고 그 차이는 60분의 정수배여야 한다. 아니면 예약을 만들지 말고 입력 오류를 보고한다.
+
 이 프롬프트를 받은 현재 실행에서 다음을 수행한다.
 
 1. 동일 Discussion ID의 bundle이 없으면 현재 inbox 규칙에 맞게 초기화한다.
@@ -29,9 +31,11 @@ Scheduled Task 실행에서 필요한 GitHub repository를 읽고 쓸 수 없는
 
 B의 최신 turn이 있으면 그 turn의 가장 강한 evidence 또는 objection부터 검토한다. 입장을 유지하기 위한 반복 발언은 만들지 말고, material delta가 있을 때만 새 argumentative turn을 작성한다.
 
-`Session end`에 실행되면 새 argumentative turn을 만들지 않는다. persisted discussion 전체를 검토하고 `discuss.md`에 따라 final synthesis/finalization을 수행한다. 마지막 participant turn이 A인지 B인지는 중요하지 않다. 유효한 synthesis가 불가능하면 blocked 상태와 남은 요구사항을 기록한다.
+수렴 등 stop condition으로 synthesis가 `Session end` 전에 eligible해지면 다음 A 실행에서 즉시 synthesis하고 discussion을 종료한다. `Session end`까지 기다리지 않는다.
 
-수렴 등 stop condition이 `Session end` 전에 충족되면 추가 논쟁을 만들지 않는다. 이후 예약 실행은 필요한 no-op 또는 finalization만 수행한다.
+Discussion이 아직 open인 상태로 `Session end`에 도달하면 새 argumentative turn을 만들지 않는다. persisted discussion 전체를 검토하고 `discuss.md`에 따라 final synthesis/finalization을 수행한다. 마지막 participant turn이 A인지 B인지는 중요하지 않다. 유효한 synthesis가 불가능하면 blocked 상태와 남은 요구사항을 기록한다.
+
+이미 completed 또는 blocked로 종료 처리된 discussion에 대해서는 이후 예약 실행에서 equivalent turn을 만들지 않는다.
 
 A는 `README.md`, A turns, topic transition, synthesis만 자신의 권한 범위에서 수정한다. Source code 구현은 하지 않는다. Routine discussion artifact의 branch/publish 규칙은 repository 지침을 따른다.
 ```
