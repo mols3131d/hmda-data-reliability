@@ -57,7 +57,34 @@ Cadence:
 - **Manual**: a human or Moderator advances turns.
 - **Scheduled**: two chat agents revisit the discussion asynchronously during a session window.
 
-Ordinary discussion defaults to **3 exchanges per decision**. Scheduled discussion uses its session window and stop conditions instead.
+Manual `iterative` discussion defaults to at most **3 exchanges**. `one-shot` and `cross-review` use their own bounds. Scheduled discussion uses its session window and stop conditions instead.
+
+## Turn Workflow
+
+Every eligible A/B turn uses the same minimal workflow:
+
+```text
+Research → Plan → Work → Review → publish
+```
+
+1. **Research** — read `README.md`, the latest relevant turn, repository guidance, and decision-relevant evidence before forming a position. Refresh only what may change the current decision. If evidence gathering becomes substantial, route it to `research` instead of expanding the discussion turn.
+1. **Plan** — choose the smallest claim, challenge, correction, or transition this turn must resolve.
+1. **Work** — write only the participant-owned contribution. A may also update A-owned shared state or synthesis when allowed.
+1. **Review** — self-review correctness, evidence, strongest counterargument, repetition, and scope. If a material finding remains, repeat the full workflow from Research.
+1. **Publish** — persist the completed turn, prefer one turn per commit, push, then exit.
+
+Default refinement bounds:
+
+```yaml
+max_loops: 10
+stop_condition: review_has_no_findings
+```
+
+- A loop counts only when Research, Plan, Work, and Review all run.
+- Later loops start from unresolved findings or new evidence; repeated wording does not count.
+- Stop early when Review has no material findings.
+- At loop 10, publish only if the result is still useful and record unresolved findings; otherwise block instead of pretending completion.
+- When an `rpi-loop` capability is available, use it for this refinement contract. Otherwise follow the same contract locally.
 
 ## Scheduled Discussion
 
@@ -77,25 +104,27 @@ Scheduled discussion is a long-running asynchronous session between **A and B**.
 
 More topics or a longer session require a reason tied to the discussion goal.
 
-### Roles
+### A — Lead Workflow
 
-**A — Lead**
+A carries Moderator coordination in addition to the common Turn Workflow.
 
-- opens topics and controls topic order;
-- revises after reading B;
-- owns `README.md` shared state and topic transitions;
-- chooses continue, Research, topic change, or stop from this protocol;
-- writes the final synthesis and represents B's strongest evidence fairly.
+1. On the first turn, define the active topic and evidence baseline in `README.md`.
+1. On later turns, read B's latest turn and test its strongest evidence or objection before revising A's position.
+1. Keep topic state and transitions in `README.md`; do not open another topic while the current one can still be resolved.
+1. If a stop condition is met, synthesize instead of creating another argumentative turn.
 
-**B — Challenger**
+A owns `README.md`, A turns, topic transitions, and synthesis.
 
-- responds to A's latest published position;
-- checks evidence, assumptions, trade-offs, and omitted alternatives;
-- strengthens, challenges, or agrees based on evidence;
-- recommends state or topic changes without rewriting shared control;
-- writes only B's turns.
+### B — Challenger Workflow
 
-Agreement is valid when A's position survives scrutiny.
+B applies the common Turn Workflow independently against A's latest published position.
+
+1. Verify A's important evidence and assumptions rather than accepting its framing by default.
+1. Search for the strongest counterexample, omitted alternative, trade-off, or reason to agree.
+1. Write only B's turn; recommend shared-state or topic changes through `Next` instead of editing A-owned state.
+1. If Review finds no material objection or alternative, write a **terminal turn** that records convergence or no remaining finding and sets `Next: synthesize` rather than silently no-oping.
+
+B owns only B turns.
 
 ### Topics And Session
 
@@ -111,21 +140,10 @@ The **6–12 hour window is a timebox, not a quota**. Stop early when resolved. 
 ### One Invocation = One Turn
 
 ```text
-read → check eligibility → reason/research → write → self-review → commit/push → exit
+read → check eligibility → run Turn Workflow → commit/push → exit
 ```
 
-Each invocation:
-
-1. reads this guideline, bundle `README.md`, and latest relevant turn;
-2. exits when this actor is not eligible;
-3. refreshes only decision-relevant evidence;
-4. performs the configured reasoning or bounded RPI refinement;
-5. writes one contribution with a material delta;
-6. self-reviews unsupported claims, repetition, and scope drift;
-7. commits and pushes the completed turn;
-8. exits without waiting for the other participant.
-
-Do not sleep, wait for another participant, or attempt delayed turns inside one invocation. Time budgets are soft ceilings for useful work.
+Each invocation handles at most one participant turn or A synthesis. Do not sleep, wait for another participant, or attempt delayed turns inside one invocation. Time budgets are soft ceilings for useful work.
 
 Default order:
 
@@ -142,16 +160,13 @@ Derive eligibility from persisted turns, not a shared mutable `next_actor`:
 
 The filename sequence records the persisted discussion order. Participant-local numbering is not stored unless a future workflow demonstrates a concrete need for it.
 
-Do not publish two equivalent turns against the same input state. A material delta is new or corrected evidence, a stronger or narrower argument, a changed assumption or concession, a decision-relevant risk, narrowed disagreement, or a justified recommendation change. No material delta → no new argumentative turn.
+Do not publish two equivalent argumentative turns against the same input state. A material delta is new or corrected evidence, a stronger or narrower argument, a changed assumption or concession, a decision-relevant risk, narrowed disagreement, or a justified recommendation change. A terminal turn that records convergence, a research block, or a justified request to synthesize is also a valid workflow delta.
 
 Reusable discussion configuration and topic state live in `README.md`. Keep task IDs, recurrence syntax, model names, trigger intervals, and notifications outside the common bundle contract.
 
-### Ownership And Recovery
+### Recovery
 
-- **A** owns `README.md`, A turns, topic transitions, and synthesis.
-- **B** owns only B turns and recommends shared-state changes in its turn.
 - Never rewrite a turn already consumed by the other participant; correct it in the next eligible turn.
-- Prefer **one turn = one commit** and keep unrelated repository work out.
 - Missing prerequisite or duplicate invocation → no-op.
 - Stale state or write conflict → refresh, preserve existing outputs, retry from current state.
 - Missed turn → resume from the latest valid turn.
@@ -167,7 +182,7 @@ Stop a discussion or active topic when:
 - A and B converge on the same material proposal;
 - the remaining difference is human priority, risk tolerance, or preference;
 - new evidence is required before reasoning can advance;
-- the latest eligible turn adds no material information;
+- the latest eligible turn adds no material information beyond a terminal signal;
 - an explicit safety bound or session window is reached;
 - the decision authority closes the topic.
 
