@@ -4,7 +4,7 @@
 
 ## Purpose
 
-기능과 domain behavior를 불필요하게 변경하지 않으면서 runtime 이해 부채를 줄인다.
+기능을 추가하거나 domain behavior를 변경하지 않고 runtime 이해 부채를 줄인다.
 
 runtime 이해 부채는 실행 후 중요한 경로, 결정, 상태 변화 또는 실패 원인을 기존 evidence만으로 신뢰할 수 있게 복원하기 어려운 상태다. 문제는 evidence의 부족뿐 아니라 품질과 소유권에서도 생길 수 있다.
 
@@ -16,7 +16,7 @@ logging 확대, 포괄적인 observability 구축 또는 runtime 이해와 다�
 
 | ID | Requirement |
 | --- | --- |
-| R-01 | domain behavior와 기존 caller/consumer contract를 불필요하게 변경하지 않아야 한다. |
+| R-01 | domain behavior와 기존 caller/consumer contract를 보존해야 한다. |
 | R-02 | 오해 비용이 가장 큰 복원 문제 하나를 우선해야 한다. |
 | R-03 | 복원 문제를 해소할 가장 작은 evidence 변경을 선택하고 기존 evidence를 새 관찰 수단보다 우선해야 한다. |
 | R-04 | evidence의 의미는 그 사실이나 결정을 소유하는 책임 경계에 두고, 불필요한 중복·noise·분산을 만들지 않아야 한다. |
@@ -29,6 +29,7 @@ logging 확대, 포괄적인 observability 구축 또는 runtime 이해와 다�
 
 | Decision | Rationale |
 | --- | --- |
+| runtime clarification을 behavior-preserving change로 제한한다. | 이해 개선과 domain behavior 변경을 분리해야 변경 이유와 검증 범위가 명확하게 유지되기 때문이다. |
 | runtime clarification을 logging과 동일시하지 않는다. | 핵심 문제는 특정 도구의 부재가 아니라 실행 의미를 복원할 evidence의 품질과 소유권에 있기 때문이다. |
 | 하나의 복원 문제를 작업 단위로 삼는다. | 변경 범위를 실제 이해 비용과 직접 연결해 과잉 관찰과 일반적인 정리 작업으로의 확장을 막기 위해서다. |
 | 최소한의 기존 evidence를 우선한다. | 새로운 관찰 수단 자체가 noise, 중복과 추가 이해 부채를 만들 수 있기 때문이다. |
