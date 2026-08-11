@@ -120,19 +120,20 @@ Conflict가 발생하면 `git merge --abort`하고 중단한다. Push 직전에�
 
 ```bash
 git fetch origin inbox
-test "$(git rev-parse origin/inbox)" = "$INBOX"
-git push origin HEAD:inbox
+test "$(git rev-parse origin/inbox)" = "$INBOX" &&
+  git push origin HEAD:inbox
 ```
 
-Push 후에는 remote state를 다시 읽어 `inbox`가 sync 대상 `MAIN`을 포함하고, current `main`과 비교했을 때 허용된 고유 content만 남는지 확인한다.
+Push 후에는 remote state를 다시 읽어 sync 대상과 현재 `main`이 `inbox`에 포함되는지 확인하고, branch 간 고유 content도 다시 검사한다.
 
 ```bash
 git fetch origin main inbox
 git merge-base --is-ancestor "$MAIN" origin/inbox
+git merge-base --is-ancestor origin/main origin/inbox
 git diff --name-status origin/main...origin/inbox
 ```
 
-작업 중 `main`이 더 진행되었다면 이미 반영한 sync를 되돌리거나 rewrite하지 않는다. `origin/main`이 아직 `origin/inbox`의 ancestor가 아니면 새 state를 대상으로 다음 sync cycle을 수행한다.
+두 번째 ancestor 검사가 실패하면 작업 중 `main`이 더 진행된 것이다. 이미 반영한 sync를 되돌리거나 rewrite하지 않고 새 state를 대상으로 다음 sync cycle을 수행한다.
 
 #### Connector Or API
 
