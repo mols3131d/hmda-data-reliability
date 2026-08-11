@@ -21,12 +21,10 @@ Use two independent ChatGPT chats: one for **A**, one for **B**.
 
 Both prompts use the same absolute session anchors. Persist these anchors in the discussion `README.md` and treat the persisted values as the source of truth.
 
-```text
-started_at: T+00m
-ends_at:    T+Nh
-```
+For the default hourly pattern:
 
-For the default hourly schedule, choose `ends_at` on an A recurrence boundary.
+- `ends_at` must be later than `started_at`;
+- session duration must be a whole number of hours so `ends_at` is an A recurrence boundary.
 
 ```text
 T+00m       A1
@@ -35,19 +33,15 @@ T+60m       A2
 T+90m       B2
 ...
 T+(N-30)m   Bn
-T+Nh        A final synthesis
+T+Nh        A finalization
 ```
-
-Default schedule:
 
 | Participant | First action | Recurrence | End boundary |
 | --- | --- | --- | --- |
-| A | immediately | every 60 minutes | invocation at `ends_at` is finalization |
+| A | immediately | every 60 minutes | `ends_at` is reserved for finalization if still open |
 | B | after 30 minutes | every 60 minutes | last invocation is strictly before `ends_at` |
 
 The discussion therefore advances every 30 minutes while each participant task runs at most once per hour.
-
-The final A invocation is reserved for synthesis/finalization. It does not start another argumentative turn.
 
 The offset, recurrence, and absolute session timestamps are runtime configuration, not part of the common discussion artifact contract.
 
@@ -58,10 +52,11 @@ The offset, recurrence, and absolute session timestamps are runtime configuratio
 When the A prompt is first submitted:
 
 1. read the repository and discussion guidance;
-2. create or initialize the discussion bundle when needed;
-3. persist the shared `started_at` and `ends_at` values;
-4. publish the first eligible A turn immediately;
-5. arrange later A invocations at 60-minute intervals, including one invocation at `ends_at` for finalization.
+2. validate the shared session anchors;
+3. create or initialize the discussion bundle when needed;
+4. persist `started_at` and `ends_at`;
+5. publish the first eligible A turn immediately;
+6. arrange later A invocations at 60-minute intervals through `ends_at`.
 
 A is the Lead and carries Moderator coordination as defined by `discuss.md`.
 
@@ -70,12 +65,12 @@ A is the Lead and carries Moderator coordination as defined by `discuss.md`.
 When the B prompt is first submitted:
 
 1. read the repository and discussion guidance;
-2. do not create the discussion bundle or A-owned shared state;
-3. do **not** publish a B turn immediately;
-4. arrange the first B invocation for `started_at + 30 minutes` and later B invocations every 60 minutes while the scheduled time is strictly before `ends_at`;
-5. on each invocation, refresh persisted state and respond only when B is eligible.
+2. validate the same session anchors;
+3. do not create the discussion bundle or A-owned shared state;
+4. do **not** publish a B turn immediately;
+5. arrange the first B invocation for `started_at + 30 minutes` and later B invocations every 60 minutes while the scheduled time is strictly before `ends_at`.
 
-If the bundle does not yet exist during B bootstrap, schedule the first B invocation from the shared absolute session anchors and exit. The first scheduled B invocation must re-read the repository; if A still has not initialized the bundle or published A1, follow the common no-op/block rules.
+If the bundle does not yet exist during B bootstrap, schedule from the shared absolute session anchors and exit. The first scheduled B invocation must re-read the repository; if A still has not initialized the bundle or published A1, follow the common recovery rules.
 
 Bootstrap configuration is not itself a participant turn.
 
@@ -89,7 +84,9 @@ refresh → check eligibility → run Turn Workflow → publish → exit
 
 Before writing, the participant must read the latest persisted discussion `README.md` and turns from the repository. Chat history is supporting context, not the source of truth for turn order or session timing.
 
-A scheduled trigger does not guarantee that an argumentative turn should be written. If the participant is not eligible, the topic is closed, material evidence is missing, or no material delta exists, follow the common no-op, terminal-turn, research-block, or synthesis rules instead.
+A scheduled trigger does not guarantee an argumentative turn. Follow the common no-op, terminal-turn, research-block, and synthesis rules when applicable.
+
+If a stop condition makes synthesis eligible before `ends_at`, the **next A invocation synthesizes immediately** instead of waiting for the session boundary. Later scheduled invocations no-op against the completed discussion.
 
 Never wait inside one invocation for the other participant. The next scheduled invocation resumes from persisted repository state.
 
@@ -98,9 +95,8 @@ Never wait inside one invocation for the other participant. The next scheduled i
 The session window is a timebox, not a turn quota.
 
 - No B argumentative invocation is scheduled at or after `ends_at`.
-- At `ends_at`, A performs finalization instead of starting a new argumentative turn.
-- The last participant turn may belong to A or B; the completed discussion ends with A synthesis unless synthesis is blocked.
-- If the discussion converges early, later scheduled invocations must not create equivalent turns; they may no-op until A finalizes.
+- If the discussion is still open at `ends_at`, A performs finalization instead of starting a new argumentative turn.
+- The last participant turn may belong to A or B; a normally completed discussion ends with A synthesis.
 - If required evidence or repository access prevents a valid synthesis, A records the blocked state and unresolved requirement instead of pretending completion.
 
 ## Prompt Templates
