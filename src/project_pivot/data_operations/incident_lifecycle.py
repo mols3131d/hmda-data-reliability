@@ -116,8 +116,6 @@ def _analyze_detection(
     request: DataOperationRequest,
     detection: DetectionResult,
 ) -> _IncidentAnalysis:
-    """한 detection을 downstream impact와 remediation draft까지 확장한다."""
-
     impact = analyze_dbt_impact(
         ImpactAnalysisRequest(
             incident=detection.incident,
@@ -212,8 +210,6 @@ def _validate_profile_compatibility(
     baseline: ProfileSnapshot,
     current: ProfileSnapshot,
 ) -> None:
-    """Asset과 partition이 같은 profile만 비교 가능한 baseline으로 인정한다."""
-
     if (
         baseline.asset_name == current.asset_name
         and baseline.partition == current.partition
@@ -229,6 +225,4 @@ def _validate_profile_compatibility(
 
 
 def _unique(values: Iterable[str]) -> list[str]:
-    """최초 관측 순서를 유지하면서 중복 문자열을 제거한다."""
-
     return list(dict.fromkeys(values))

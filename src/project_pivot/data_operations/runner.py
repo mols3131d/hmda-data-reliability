@@ -1,8 +1,8 @@
 """Raw load와 dbt build/promotion의 application execution boundary.
 
-dbt build는 run-scoped candidate artifact만 만들고 shared current projection을
-자동으로 바꾸지 않는다. Current projection 변경은 caller가 검증을 마친 뒤
-``promote_dbt_artifacts()``를 명시적으로 호출할 때만 일어난다.
+dbt build가 생성한 artifact는 run-scoped candidate에 남으며 shared current
+artifact projection은 자동으로 바꾸지 않는다. Current projection 변경은 caller가
+검증을 마친 뒤 ``promote_dbt_artifacts()``를 명시적으로 호출할 때만 일어난다.
 """
 
 from __future__ import annotations
@@ -279,7 +279,7 @@ def _promote_dbt_artifacts(
             temporary = destination.with_suffix(f"{destination.suffix}.next")
             shutil.copyfile(source, temporary)
             temporary_paths.append((temporary, destination))
-        # 기존 current를 backup한 뒤 교체해야 중간 실패 시 pair 전체를 복구할 수 있다.
+        # 기존 current를 backup한 뒤 교체해 중간 실패 시 rollback 경로를 남긴다.
         for temporary, destination in temporary_paths:
             backup = destination.with_suffix(f"{destination.suffix}.previous")
             backup.unlink(missing_ok=True)
