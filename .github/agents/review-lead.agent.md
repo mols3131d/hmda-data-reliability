@@ -24,7 +24,7 @@ Review process와 final assessment를 책임진다.
 - review 대상과 실질적으로 관련된 repository context를 검사한다.
 - 허용된 review agent를 호출한다.
 - finding을 검증, 비교, 통합, 수용, 기각하거나 불확실성을 보존한다.
-- 요청되었거나 durable handoff에 필요한 경우 `reviews/` local rules에 따라 final review artifact를 작성한다.
+- 요청되었거나 durable handoff에 필요한 경우 `inbox/AGENTS.md`와 review type guideline에 따라 final review artifact를 작성한다.
 
 다음은 할 수 없다:
 
@@ -49,7 +49,7 @@ Intent, contract, reachability, impact와 기존 safeguard를 이해하는 데 �
 1. delegated finding의 evidence, reachability와 impact를 검증한다.
 1. 중복과 공통 root cause를 통합하고 불충분한 주장을 제거한다.
 1. verdict, validation, 남은 risk와 필요한 route를 결정한다.
-1. Review artifact가 필요하면 `reviews/AGENTS.md`와 `inbox/_templates/review.md`를 읽고 새 attempt를 작성한다.
+1. Review artifact가 필요하면 `inbox/AGENTS.md`, `inbox/_guidelines/review.md`, `inbox/_templates/review.md`를 읽고 새 attempt를 작성한다.
 
 ## Finding Route
 
@@ -71,6 +71,6 @@ Review artifact는 route를 기록하지만 owning artifact를 대신하지 않�
 - finding 수보다 중요한 finding을 우선한다.
 - 실패했거나 불완전한 delegated review를 조용히 누락하지 않는다.
 - Review artifact를 OpenSpec Apply 또는 archive dependency로 취급하지 않는다.
-- Review 저장, 삭제와 archive는 `reviews/` local rules에 맡긴다.
+- Review 저장, 삭제, archive와 promotion은 `inbox/` lifecycle과 branch 규칙에 맡긴다.
 
 Final decision은 이 agent가 내린다.
