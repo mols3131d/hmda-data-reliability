@@ -46,6 +46,9 @@ Template에서는 기본 읽기 흐름을 방해하지 않도록 metadata 예시
 - 결론과 판단에 필요한 핵심 정보를 먼저 둔다.
 - 작업 과정이나 시행착오보다 최종 결과와 근거를 기록한다.
 - GitHub UI, CI 또는 canonical artifact가 이미 소유하는 정보는 필요 없이 복제하지 않는다.
+- 구조화된 사실, 경로, 근거, 변경 항목처럼 독립적으로 훑어야 하는 값은 긴 문단보다 list를 우선한다.
+- 하나의 field에 값이 하나면 inline으로 쓸 수 있고, 값이 여러 개면 nested list로 분리한다.
+- List depth는 2단계를 권장하고 최대 3단계까지만 사용한다. 4단계가 필요하면 section이나 field 구조를 다시 나눈다.
 - optional section과 metadata는 판단 비용을 줄일 때만 사용하고 빈 placeholder는 제거한다.
 - `revision`을 기록했다면 본문의 validation, finding과 상태 설명이 해당 base/head 기준과 일치해야 한다.
 - 상태는 `✅ Pass`, `❌ Fail`, `⚪ Not Verified`처럼 marker와 text label을 함께 적는다.
