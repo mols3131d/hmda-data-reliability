@@ -5,7 +5,11 @@ from typing import Any
 
 
 class DataOperationError(Exception):
-    """데이터 작업 실행에 실패했다."""
+    """Caller가 처리할 수 있는 data operation 실패를 표현한다.
+
+    ``context``에는 command, return code, artifact path처럼 message만으로 부족한
+    structured diagnostic을 담아 caller가 실패 원인을 식별할 수 있게 한다.
+    """
 
     def __init__(
         self,
