@@ -61,15 +61,15 @@ Manual `iterative` discussion defaults to at most **3 exchanges**. `one-shot` an
 
 ## Turn Workflow
 
-Every eligible A/B turn uses the same minimal workflow:
+Every eligible A/B turn uses the same minimal RPI workflow:
 
 ```text
-Research → Plan → Work → Review → publish
+Research → Plan → Implement → Review → publish
 ```
 
 1. **Research** — read `README.md`, the latest relevant turn, repository guidance, and decision-relevant evidence before forming a position. Refresh only what may change the current decision. If evidence gathering becomes substantial, route it to `research` instead of expanding the discussion turn.
 1. **Plan** — choose the smallest claim, challenge, correction, or transition this turn must resolve.
-1. **Work** — write only the participant-owned contribution. A may also update A-owned shared state or synthesis when allowed.
+1. **Implement** — author only the participant-owned contribution. In this workflow, Implement means writing the discussion artifact, not modifying source code. A may also update A-owned shared state or synthesis when allowed.
 1. **Review** — self-review correctness, evidence, strongest counterargument, repetition, and scope. If a material finding remains, repeat the full workflow from Research.
 1. **Publish** — persist the completed turn, prefer one turn per commit, push, then exit.
 
@@ -80,7 +80,7 @@ max_loops: 10
 stop_condition: review_has_no_findings
 ```
 
-- A loop counts only when Research, Plan, Work, and Review all run.
+- A loop counts only when Research, Plan, Implement, and Review all run.
 - Later loops start from unresolved findings or new evidence; repeated wording does not count.
 - Stop early when Review has no material findings.
 - At loop 10, publish only if the result is still useful and record unresolved findings; otherwise block instead of pretending completion.
