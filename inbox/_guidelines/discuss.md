@@ -67,7 +67,7 @@ Every eligible A/B turn uses the same minimal RPI workflow:
 Research → Plan → Implement → Review → publish
 ```
 
-1. **Research** — read `README.md`, the latest relevant turn, repository guidance, and decision-relevant evidence before forming a position. Refresh only what may change the current decision. If evidence gathering becomes substantial, record `Next: research` and block the topic instead of expanding the discussion turn.
+1. **Research** — read `README.md`, the latest relevant turn, repository guidance, and decision-relevant evidence before forming a position. Refresh only what may change the current decision. If evidence gathering becomes substantial, record `Next: research` and stop argumentative work instead of expanding the discussion turn.
 1. **Plan** — choose the smallest claim, challenge, correction, or transition this turn must resolve.
 1. **Implement** — author only the participant-owned contribution. In this workflow, Implement means writing the discussion artifact, not modifying source code. A may also update A-owned shared state or synthesis when allowed.
 1. **Review** — self-review correctness, evidence, strongest counterargument, repetition, and scope. If a material finding remains, repeat the full workflow from Research.
@@ -83,7 +83,7 @@ stop_condition: review_has_no_findings
 - A loop counts only when Research, Plan, Implement, and Review all run.
 - Later loops start from unresolved findings or new evidence; repeated wording does not count.
 - Stop early when Review has no material findings.
-- At loop 10, publish only if the result is still useful and record unresolved findings; otherwise block instead of pretending completion.
+- At loop 10, publish only if the result is still useful and record unresolved findings in `Next`; otherwise block instead of pretending completion.
 - When an `rpi-loop` capability is available, use it for this refinement contract. Otherwise follow the same contract locally.
 
 ## Scheduled Discussion
@@ -170,7 +170,7 @@ Reusable discussion configuration and topic state live in `README.md`. Keep task
 - Missing prerequisite or duplicate invocation → no-op.
 - Stale state or write conflict → refresh, preserve existing outputs, retry from current state.
 - Missed turn → resume from the latest valid turn.
-- Missing material evidence → request Research and block or close the topic.
+- Missing material evidence → participant sets `Next: research`; A marks shared topic state blocked when needed.
 - Session expiry → stop new turns and hand synthesis to A.
 
 The protocol requires only that a platform can invoke A/B, expose durable shared state and prior turns, persist a turn, and invoke the other actor later. Scheduler-specific implementation may vary.
