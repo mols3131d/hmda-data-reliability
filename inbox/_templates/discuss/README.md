@@ -25,8 +25,9 @@ tags:
 <!--
 작성 규칙:
 - discuss artifact는 반드시 이 디렉터리를 루트로 하는 번들이다.
-- 토론 목적, 범위, 설정과 공유 참조만 이 파일이 소유한다.
-- Topic 상태는 topics.md, participant 발언은 rounds/, 최종 종합은 synthesis.md가 소유한다.
+- README.md가 Goal, Scope, Topics, 상태, 설정, References와 기본 Synthesis를 소유한다.
+- participant 발언만 rounds/에 분리한다.
+- Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
 - scheduled가 아니면 scheduled 전용 frontmatter 필드를 제거한다.
 - OPTIONAL 블록과 빈 placeholder를 남기지 않는다.
 - KISS, DRY 원칙을 지킨다.
@@ -44,12 +45,38 @@ tags:
 - **In** - <토론에 포함하는 범위>
 - **Out** - <명시적으로 제외하는 범위>
 
+## Topics
+
+### T1. <Topic title>
+
+- **Status** - <pending | active | paused | blocked | completed>
+- **Question** - <이 Topic에서 답해야 할 질문>
+- **Done When** - <종료 또는 전환 조건>
+
+### T2. <Topic title> <!-- OPTIONAL -->
+
+- **Status** - <pending | active | paused | blocked | completed>
+- **Question** - <이 Topic에서 답해야 할 질문>
+- **Done When** - <종료 또는 전환 조건>
+
 ## References
 
 - <canonical 문서, 코드, PR, Research/Review artifact 등>
 
-## Bundle
+## Synthesis <!-- 토론 종료 시 작성. 커지면 synthesis.md로 분리한다. -->
 
-- [`topics.md`](topics.md) - Topic과 상태
-- `rounds/` - A/B의 immutable turn
-- `synthesis.md` - 토론 종료 시 생성하는 최종 종합
+### Result
+
+<각 Topic의 결론 또는 남은 선택지>
+
+### Evidence
+
+- <핵심 근거와 반대 근거>
+
+### Agreement And Disagreement
+
+- <합의점, 남은 이견과 그 원인>
+
+### Next
+
+- <권장 다음 행동, 추가 Research/Validation, 인간 결정이 필요한 항목>
