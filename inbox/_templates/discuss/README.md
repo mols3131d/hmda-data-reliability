@@ -31,6 +31,7 @@ tags:
 - 각 turn의 실행 규칙은 discuss 지침의 Turn Workflow를 따른다.
 - Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
 - scheduled가 아니면 scheduled 전용 frontmatter 필드를 제거한다.
+- OpenAI ChatGPT scheduled discussion은 `openai-chatgpt-scheduled/a-prompt.md`, `b-prompt.md`를 초기 채팅 프롬프트 템플릿으로 사용한다.
 - OPTIONAL 블록과 빈 placeholder를 남기지 않는다.
 - KISS, DRY 원칙을 지킨다.
 -->
