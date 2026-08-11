@@ -11,6 +11,7 @@ from project_pivot.reliability.contracts import (
     IncidentStatus,
     LineageEvidence,
     ProfileSnapshot,
+    RecoveryProposal,
     can_execute_risky_action,
     validate_contract,
 )
@@ -33,7 +34,10 @@ from project_pivot.reliability.errors import (
 from project_pivot.reliability.evaluation import (
     EvaluationCaseResult,
     EvaluationReport,
+    VolumeDropVerticalSliceResult,
     build_evaluation_report,
+    build_recovery_evaluation_case,
+    evaluate_volume_drop_vertical_slice,
     render_evaluation_report_markdown,
     write_evaluation_report,
 )
@@ -87,6 +91,7 @@ __all__ = [
     "EvidenceSource",
     "EvaluationCaseResult",
     "EvaluationReport",
+    "VolumeDropVerticalSliceResult",
     "HumanReviewStatus",
     "ImpactAnalysisRequest",
     "ImpactAnalysisResult",
@@ -96,6 +101,7 @@ __all__ = [
     "IncidentStatus",
     "LineageEvidence",
     "ProfileSnapshot",
+    "RecoveryProposal",
     "ProfileSnapshotError",
     "ProfileSnapshotRequest",
     "RemediationError",
@@ -105,6 +111,8 @@ __all__ = [
     "can_execute_risky_action",
     "analyze_dbt_impact",
     "build_evaluation_report",
+    "build_recovery_evaluation_case",
+    "evaluate_volume_drop_vertical_slice",
     "create_profile_snapshot",
     "create_table_metadata_evidence",
     "execute_approved_backfill",

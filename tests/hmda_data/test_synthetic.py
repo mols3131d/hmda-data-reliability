@@ -91,6 +91,73 @@ def test_synthetic_case_rejects_missing_columns(
         )
 
 
+def test_row_count_drop_is_invariant_to_input_order_for_partial_key_ties(
+    tmp_path: Path,
+) -> None:
+    """Sampling은 HMDA partial key가 같은 row의 입력 순서에 의존하지 않는다."""
+
+    header = (
+        "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,"
+        "county_code,loan_type"
+    )
+    rows = [
+        "2025,1,1,350000,120,CA,06001,conventional",
+        "2025,1,1,350000,120,CA,06001,fha",
+    ]
+    first_source = tmp_path / "first.csv"
+    second_source = tmp_path / "second.csv"
+    first_source.write_text("\n".join([header, *rows]), encoding="utf-8")
+    second_header = (
+        "loan_type,county_code,state_code,income,loan_amount,action_taken,"
+        "loan_purpose,activity_year"
+    )
+    second_rows = [",".join(reversed(row.split(","))) for row in reversed(rows)]
+    second_source.write_text(
+        "\n".join([second_header, *second_rows]),
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager() as connection:
+        first_path = row_count_drop(
+            connection,
+            [first_source],
+            tmp_path / "first-case",
+            sample_fraction=0.5,
+        )
+        second_path = row_count_drop(
+            connection,
+            [second_source],
+            tmp_path / "second-case",
+            sample_fraction=0.5,
+        )
+        selected_values = [
+            row[0]
+            for row in (
+                connection.execute(
+                    "SELECT loan_type FROM read_parquet(?)",
+                    [str(path)],
+                ).fetchall()
+                for path in (first_path, second_path)
+            )
+        ]
+
+    assert selected_values[0] == selected_values[1]
+
+
+def test_row_count_drop_wraps_source_schema_failure(tmp_path: Path) -> None:
+    """Synthetic schema 조회 실패는 domain error로 노출한다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="스키마 조회"),
+    ):
+        row_count_drop(
+            connection,
+            [tmp_path / "missing.csv"],
+            tmp_path / "cases",
+        )
+
+
 def test_write_case_file_rejects_parent_directory_case_name(tmp_path: Path) -> None:
     """case name이 출력 root 밖의 디렉터리를 가리키지 못하게 한다."""
 

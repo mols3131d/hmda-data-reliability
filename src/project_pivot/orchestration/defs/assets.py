@@ -2,7 +2,11 @@
 
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 
-from project_pivot.data_operations import load_raw_data, run_dbt_build
+from project_pivot.data_operations import (
+    load_raw_data,
+    promote_dbt_artifacts,
+    run_dbt_build,
+)
 from project_pivot.orchestration.defs.resource import DataOperationsResource
 
 
@@ -47,6 +51,7 @@ def dbt_loan_analytics(
             }
         )
     result = run_dbt_build(request)
+    promote_dbt_artifacts(result, request)
     context.log.info("dbt build 완료", extra={"return_code": result.return_code})
     return MaterializeResult(
         metadata={

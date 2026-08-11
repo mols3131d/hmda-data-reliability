@@ -64,9 +64,13 @@ Lifecycle 밖의 side effect는 명시적 API로만 실행한다.
 | --- | --- | --- |
 | Recovery | `execute_approved_backfill(connection, request)` | 승인 상태와 `overwrite_partition`, `rerun_profile_snapshot` action을 검증한 뒤 partition을 덮어쓰고 profile을 다시 만든다. |
 | Evaluation | `build_evaluation_report(cases)` | synthetic case 결과를 집계한다. |
+| Volume-drop evaluation | `evaluate_volume_drop_vertical_slice(...)` | Clean baseline, controlled `volume_drop`, external approval, content recovery와 replay를 deterministic evidence로 조합한다. |
+| Recovery case evidence | `build_recovery_evaluation_case(...)` | Mutation 여부, failure stage, reconciliation과 artifact projection을 evaluation case로 변환한다. |
 | Evaluation output | `write_evaluation_report(report, output_path)` | Markdown report 파일을 쓴다. |
 
-승인되지 않았거나 필수 action이 없는 backfill은 source 파일을 읽기 전에 `ApprovalGateError`로 차단한다. 승인된 backfill 결과는 적재 행 수와 새 profile row count의 일치 여부를 `BackfillValidationResult`로 반환한다.
+`RecoveryProposal`은 incident, target partition, candidate content identity, validation evidence, approved before/after identity, dbt projection과 target action을 하나의 immutable contract로 묶는다. `Approval`과 `ApprovedBackfillRequest`의 exact proposal이 다르거나 필수 action이 없으면 source 접근과 target mutation 전에 `ApprovalGateError`로 차단한다.
+
+Recovery는 current partition identity를 승인된 before/after state와 비교한다. Before state면 transaction 내부 compare-and-replace를 실행하고, expected after state면 overwrite 없이 profile verification을 재개한다. 어느 state와도 다르면 기존 approval로 추가 mutation하지 않는다. `BackfillValidationResult`는 content identity를 최종 oracle로 사용하고 mutation state와 reconciliation action을 함께 반환한다.
 
 ## Public Surface
 
@@ -78,7 +82,7 @@ Lifecycle 밖의 side effect는 명시적 API로만 실행한다.
 | Detection | `detect_basic_incidents` |
 | Impact and draft | `analyze_dbt_impact`, `create_remediation_draft` |
 | Recovery | `execute_approved_backfill` |
-| Evaluation | `build_evaluation_report`, `render_evaluation_report_markdown`, `write_evaluation_report` |
+| Evaluation | `evaluate_volume_drop_vertical_slice`, `build_recovery_evaluation_case`, `build_evaluation_report`, `render_evaluation_report_markdown`, `write_evaluation_report` |
 
 계약 모델은 `reliability/contracts`에 있으며, 알 수 없는 필드는 거부되고 모델은 변경 불가다.
 

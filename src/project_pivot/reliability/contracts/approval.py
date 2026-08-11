@@ -6,6 +6,7 @@ from enum import StrEnum
 from pydantic import Field, model_validator
 
 from project_pivot.reliability.contracts.base import ReliabilityContract
+from project_pivot.reliability.contracts.recovery_proposal import RecoveryProposal
 
 
 class ApprovalStatus(StrEnum):
@@ -24,7 +25,8 @@ class Approval(ReliabilityContract):
     approved_at: datetime | None = None
     rejected_by: str | None = None
     rejected_at: datetime | None = None
-    requested_actions: list[str] = Field(default_factory=list)
+    requested_actions: tuple[str, ...] = Field(default_factory=tuple)
+    recovery_proposal: RecoveryProposal | None = None
     reason: str | None = None
 
     @model_validator(mode="after")

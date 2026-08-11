@@ -39,6 +39,9 @@ def test_lifecycle_compares_baseline_with_actual_current(tmp_path: Path) -> None
     assert result.baseline_row_count == 8
     assert result.current_row_count == 4
     assert result.detected_incident_types == ["volume_drop", "null_spike"]
+    assert result.target_content_identity is not None
+    assert result.target_content_identity.row_count == 4
+    assert result.dbt_projection_id is not None
 
 
 @pytest.mark.integration
@@ -105,6 +108,8 @@ def test_lifecycle_skips_impact_when_no_incident(
     assert result.recommended_actions == []
     assert result.backfill_actions == []
     assert result.validation_actions == []
+    assert result.target_content_identity is None
+    assert result.dbt_projection_id is None
 
 
 @pytest.mark.unit
@@ -168,17 +173,20 @@ def _prepare_request(tmp_path: Path) -> DataOperationRequest:
             CREATE TABLE raw.hmda_loans (
                 activity_year INTEGER,
                 loan_amount DOUBLE,
-                income DOUBLE
+                income DOUBLE,
+                source_year INTEGER,
+                source_file_name VARCHAR,
+                ingested_at TIMESTAMPTZ
             )
             """
         )
         connection.execute(
             """
             INSERT INTO raw.hmda_loans VALUES
-                (2025, 350000, 120),
-                (2025, NULL, 130),
-                (2025, 420000, 95),
-                (2025, NULL, 95)
+                (2025, 350000, 120, 2025, 'fixture.csv', TIMESTAMPTZ '2026-07-19'),
+                (2025, NULL, 130, 2025, 'fixture.csv', TIMESTAMPTZ '2026-07-19'),
+                (2025, 420000, 95, 2025, 'fixture.csv', TIMESTAMPTZ '2026-07-19'),
+                (2025, NULL, 95, 2025, 'fixture.csv', TIMESTAMPTZ '2026-07-19')
             """
         )
 

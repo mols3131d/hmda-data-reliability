@@ -52,9 +52,10 @@ def render_evaluation_report_markdown(report: EvaluationReport) -> str:
         "",
         (
             "| Case | Expected incidents | Detected incidents | "
-            "Detection | Action | Evidence refs |"
+            "Detection | Action | Mutation | Failure stage | Reconciliation | "
+            "Evidence refs | Artifact projections |"
         ),
-        "|---|---|---|---|---|---|",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     lines.extend(_case_line(case) for case in report.cases)
     lines.append("")
@@ -77,7 +78,11 @@ def _case_line(case: EvaluationCaseResult) -> str:
         f"{_join_values(case.detected_incident_types)} | "
         f"{_status(case.detection_passed)} | "
         f"{_status(case.action_passed)} | "
-        f"{_join_values(case.evidence_refs)} |"
+        f"{_optional_bool(case.target_mutated)} | "
+        f"{case.failure_stage or '-'} | "
+        f"{case.reconciliation_action or '-'} | "
+        f"{_join_values(case.evidence_refs)} | "
+        f"{_join_values(case.artifact_projection_ids)} |"
     )
 
 
@@ -89,6 +94,12 @@ def _join_values(values: Sequence[str]) -> str:
 
 def _status(value: bool) -> str:
     return "PASS" if value else "FAIL"
+
+
+def _optional_bool(value: bool | None) -> str:
+    if value is None:
+        return "-"
+    return "YES" if value else "NO"
 
 
 def _rate(passed: int, total: int) -> float:

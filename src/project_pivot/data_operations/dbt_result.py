@@ -14,4 +14,5 @@ class DbtBuildResult(BaseModel):
     return_code: int
     manifest_path: Path
     run_results_path: Path
+    projection_id: str
     succeeded: bool

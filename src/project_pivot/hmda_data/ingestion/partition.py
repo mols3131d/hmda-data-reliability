@@ -10,7 +10,7 @@ import duckdb
 
 from project_pivot.data_platform.duckdb import ensure_schema, table_row_count
 from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
-from project_pivot.hmda_data.errors import HMDADataLoadError
+from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 from project_pivot.hmda_data.ingestion._common import (
     _LOGGER,
     HMDA_LOANS_TABLE,
@@ -20,6 +20,10 @@ from project_pivot.hmda_data.ingestion._source_query import (
     source_union_sql,
     table_schema_name,
     validate_source_paths,
+)
+from project_pivot.hmda_data.ingestion.identity import (
+    PartitionContentIdentity,
+    partition_content_identity,
 )
 
 _STAGING_TABLE = "__hmda_loans_partition_stage"
@@ -32,12 +36,19 @@ def load_hmda_loans_partition(
     *,
     source_file: str | None = None,
     table_name: str = HMDA_LOANS_TABLE,
+    expected_identity: PartitionContentIdentity | None = None,
+    preserve_source_metadata: bool = False,
 ) -> int:
     """HMDA source_year/source_file 파티션을 멱등 적재한다."""
 
     paths = validate_source_paths(source_paths)
     try:
-        _ensure_hmda_loans_table(connection, paths, table_name)
+        _ensure_hmda_loans_table(
+            connection,
+            paths,
+            table_name,
+            preserve_source_metadata=preserve_source_metadata,
+        )
     except duckdb.Error as exc:
         context = {
             "table_name": table_name,
@@ -53,6 +64,8 @@ def load_hmda_loans_partition(
         source_year=source_year,
         source_file=source_file,
         table_name=table_name,
+        expected_identity=expected_identity,
+        preserve_source_metadata=preserve_source_metadata,
     )
     row_count = _partition_row_count(
         connection,
@@ -76,12 +89,17 @@ def _ensure_hmda_loans_table(
     connection: duckdb.DuckDBPyConnection,
     source_paths: Sequence[Path],
     table_name: str,
+    *,
+    preserve_source_metadata: bool,
 ) -> None:
     """파티션 적재 대상 테이블과 schema를 보장한다."""
 
     ensure_schema(connection, table_schema_name(table_name))
     qualified_table = qualify_table_name(table_name)
-    query = source_union_sql(source_paths)
+    query = source_union_sql(
+        source_paths,
+        preserve_source_metadata=preserve_source_metadata,
+    )
     connection.execute(
         f"""
         CREATE TABLE IF NOT EXISTS {qualified_table} AS
@@ -100,6 +118,8 @@ def _overwrite_hmda_loans_partition(
     source_year: int,
     source_file: str | None,
     table_name: str,
+    expected_identity: PartitionContentIdentity | None,
+    preserve_source_metadata: bool,
 ) -> None:
     """source_year/source_file 파티션을 staging 테이블 기준으로 덮어쓴다."""
 
@@ -109,6 +129,7 @@ def _overwrite_hmda_loans_partition(
             source_paths=source_paths,
             source_year=source_year,
             source_file=source_file,
+            preserve_source_metadata=preserve_source_metadata,
         )
         _validate_staging_rows(
             connection=connection,
@@ -121,7 +142,10 @@ def _overwrite_hmda_loans_partition(
             table_name=table_name,
             source_year=source_year,
             source_file=source_file,
+            expected_identity=expected_identity,
         )
+    except HMDAStalePartitionError:
+        raise
     except duckdb.Error as exc:
         context = _partition_context(table_name, source_year, source_file)
         msg = "HMDA 파티션 적재에 실패했습니다."
@@ -166,13 +190,18 @@ def _create_staging_table(
     source_paths: Sequence[Path],
     source_year: int,
     source_file: str | None,
+    preserve_source_metadata: bool,
 ) -> None:
     source_file_filter, source_file_params = _source_file_filter(source_file)
+    source_query = source_union_sql(
+        source_paths,
+        preserve_source_metadata=preserve_source_metadata,
+    )
     connection.execute(
         f"""
         CREATE OR REPLACE TEMP TABLE {quote_identifier(_STAGING_TABLE)} AS
         SELECT *
-        FROM ({source_union_sql(source_paths)})
+        FROM ({source_query})
         WHERE source_year = ?
         {source_file_filter}
         """,
@@ -205,11 +234,28 @@ def _replace_partition_in_transaction(
     table_name: str,
     source_year: int,
     source_file: str | None,
+    expected_identity: PartitionContentIdentity | None,
 ) -> None:
     """기존 파티션 삭제와 staging 데이터 삽입을 원자적으로 수행한다."""
 
     connection.execute("BEGIN TRANSACTION")
     try:
+        if expected_identity is not None:
+            actual_identity = partition_content_identity(
+                connection,
+                table_name=table_name,
+                source_year=source_year,
+                source_file=source_file,
+            )
+            if actual_identity != expected_identity:
+                context = {
+                    **_partition_context(table_name, source_year, source_file),
+                    "expected_identity": expected_identity.model_dump(),
+                    "actual_identity": actual_identity.model_dump(),
+                }
+                raise HMDAStalePartitionError(
+                    "HMDA target partition이 stale state입니다.", context=context
+                )
         _replace_partition_rows(
             connection=connection,
             table_name=table_name,
@@ -217,7 +263,7 @@ def _replace_partition_in_transaction(
             source_file=source_file,
         )
         connection.execute("COMMIT")
-    except duckdb.Error:
+    except (HMDAStalePartitionError, duckdb.Error):
         connection.execute("ROLLBACK")
         raise
 

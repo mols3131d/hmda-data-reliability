@@ -10,6 +10,7 @@ from project_pivot.data_operations.request import (
 )
 from project_pivot.data_operations.runner import (
     load_raw_data,
+    promote_dbt_artifacts,
     run_dbt_build,
     run_incident_lifecycle,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "data_operation_request_from_environment",
     "RawLoadResult",
     "load_raw_data",
+    "promote_dbt_artifacts",
     "run_dbt_build",
     "run_incident_lifecycle",
 ]

@@ -49,7 +49,8 @@
 | --- | --- | --- |
 | `discover_hmda_files(raw_dir)` | 지원 원천 파일 발견 | 정렬된 `list[Path]` |
 | `load_hmda_loans(connection, source_paths)` | raw 테이블 전체를 생성 또는 교체 | 전체 행 수 `int` |
-| `load_hmda_loans_partition(connection, source_paths, source_year, source_file=None)` | 연도, 선택 파일명 범위만 교체 | 대상 파티션 행 수 `int` |
+| `load_hmda_loans_partition(connection, source_paths, source_year, source_file=None, expected_identity=None)` | 연도, 선택 파일명 범위를 atomic compare-and-replace | 대상 파티션 행 수 `int` |
+| `partition_content_identity(connection, source_year=..., source_file=None, table_name=...)` | Partition logical row multiset의 stable identity 계산 | `PartitionContentIdentity` |
 | `validate_required_columns(connection, table_name=...)` | 필수 컬럼 존재 확인 | `None` 또는 검증 오류 |
 
 ### Replacement Guarantees
@@ -58,7 +59,10 @@
 | --- | --- |
 | 전체 적재 | `CREATE OR REPLACE TABLE`을 사용하므로 같은 입력을 다시 적재해도 중복되지 않는다. |
 | 파티션 적재 | 임시 테이블에서 필수 컬럼과 비어 있지 않은 행을 검증한 뒤, 기존 범위를 삭제하고 새 행을 하나의 transaction으로 삽입한다. |
+| Expected-state replacement | `expected_identity`가 있으면 같은 transaction 안에서 actual identity와 비교하고 다를 때 `HMDAStalePartitionError`로 zero mutation을 보장한다. |
 | 빈 대상 파티션 | `source_file`가 빈 문자열이거나 대상 행이 없으면 기존 파티션을 변경하지 않고 오류로 끝난다. |
+
+`PartitionContentIdentity`는 `table + source_year + optional source_file` scope를 포함한다. Row order와 `ingested_at`은 identity에 영향을 주지 않지만 logical value와 duplicate multiplicity는 보존한다.
 
 공개 API는 [`hmda_data/__init__.py`](../../src/project_pivot/hmda_data/__init__.py), 적재 동작은 [`tests/hmda_data`](../../tests/hmda_data)에서 확인한다.
 
