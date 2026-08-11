@@ -6,7 +6,12 @@ from project_pivot.hmda_data import PartitionContentIdentity
 
 
 class LifecycleResult(BaseModel):
-    """실제 관측값과 탐지, 영향, 조치 요약."""
+    """Read-only incident 분석을 caller가 소비할 수 있는 형태로 요약한다.
+
+    Detection이 없으면 action 목록은 비어 있고 recovery proposal input에 필요한
+    ``target_content_identity``와 ``dbt_projection_id``도 ``None``이다.
+    Recovery나 evaluation 실행 결과는 이 model의 책임이 아니다.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

@@ -1,4 +1,9 @@
-"""실제 profile 기반 incident lifecycle을 실행한다."""
+"""Current profile 기반 incident lifecycle을 analysis-only 경계로 조합한다.
+
+이 module은 detection, impact analysis, remediation draft까지만 계산하며 raw partition,
+approval, recovery, evaluation 또는 report output을 변경하지 않는다. dbt artifact
+일관성을 위한 shared lock은 lock file I/O를 수행할 수 있다.
+"""
 
 from __future__ import annotations
 
@@ -45,7 +50,13 @@ def run_incident_lifecycle(
     request: DataOperationRequest,
     baseline: ProfileSnapshot,
 ) -> LifecycleResult:
-    """실제 current를 측정해 incident와 조치 초안을 요약한다."""
+    """Baseline과 실제 current를 비교해 incident 분석 요약을 반환한다.
+
+    Baseline은 current와 같은 asset과 partition이어야 한다. 실행은 raw partition,
+    approval, recovery, evaluation output을 변경하지 않는 analysis-only 경계다.
+    Current dbt artifact를 일관되게 읽기 위한 shared lock file I/O는 수행할 수 있다.
+    Detection이 없으면 recovery proposal input identity도 반환하지 않는다.
+    """
 
     observed_at = request.observed_at or datetime.now(UTC)
     profile_request = ProfileSnapshotRequest(
@@ -71,6 +82,8 @@ def run_incident_lifecycle(
         detections = detect_basic_incidents(
             DetectionRequest(baseline=baseline, current=current)
         )
+        # Impact와 projection identity가 같은 current artifact projection을 보도록
+        # shared lock을 유지한 채 detection 전체를 분석한다.
         with artifact_projection_lock(
             request.dbt_manifest_path.parent,
             exclusive=False,
@@ -79,6 +92,7 @@ def run_incident_lifecycle(
                 _analyze_detection(request, detection) for detection in detections
             ]
             dbt_projection_id = _dbt_projection_id(request) if analyses else None
+        # Recovery proposal의 target identity는 실제 incident가 있을 때만 필요하다.
         target_content_identity = (
             partition_content_identity(
                 connection,
@@ -130,6 +144,8 @@ def _build_lifecycle_result(
     target_content_identity: PartitionContentIdentity | None,
     dbt_projection_id: str | None,
 ) -> LifecycleResult:
+    """Incident별 분석을 최초 관측 순서를 유지하는 caller summary로 평탄화한다."""
+
     return LifecycleResult(
         metadata_row_count=metadata_row_count,
         baseline_row_count=baseline.row_count,
