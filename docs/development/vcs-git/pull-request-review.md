@@ -45,7 +45,7 @@ Pull Request가 실질적으로 변경되어 기존 finding이나 validation 근
 
 ## Metadata
 
-Optional `author` metadata는 [GitHub Templates](../../../.github/templates/README.md)를 따른다. GitHub가 이미 제공하는 reviewer 계정이나 review decision은 중복 기록하지 않는다.
+Optional `author`와 `revision` metadata는 [GitHub Templates](../../../.github/templates/README.md)를 따른다. `revision`은 review가 실제로 검토한 exact base/head commit pair를 기록하며, 이후 PR head가 변경되어도 과거 review의 기준은 바꾸지 않는다. GitHub가 이미 제공하는 reviewer 계정이나 review decision은 중복 기록하지 않는다.
 
 ## Agent Instructions
 
@@ -55,4 +55,4 @@ Agent의 review action과 lifecycle 제약은 [Pull Requests](pull-request.md#ag
 
 - [Pull Requests](pull-request.md): Pull Request scope, lifecycle과 validation 기준
 - [Pull Request Review Template](../../../.github/templates/pull-request-review.md): review body 형식
-- [GitHub Templates](../../../.github/templates/README.md): 공통 metadata와 `author` 규칙
+- [GitHub Templates](../../../.github/templates/README.md): 공통 metadata와 `author`, `revision` 규칙

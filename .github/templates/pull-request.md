@@ -12,6 +12,7 @@
 <!--
 검토자가 diff에서 확인해야 할 최종 변화는 무엇인가?
 파일 목록보다 동작, 계약, 구조의 변화에 집중한다.
+여러 하위 항목이 필요한 경우 nested list를 사용할 수 있으며 depth 2를 권장하고 최대 3까지만 사용한다.
 -->
 
 - <주요 변경>
@@ -46,10 +47,19 @@ Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 tab
 -->
 
 <!--
-Author metadata — Agent가 작성을 주도했고 GitHub 작성자만으로 실제 작성 주체를 구별할 수 없을 때만 문서 맨 위에 추가한다.
+Optional metadata — GitHub가 제공하지 않는 provenance가 판단에 필요할 때만 본문 마지막에 추가한다.
+Footnote 정의가 있으면 metadata를 그 바로 앞에 두고 별도 Metadata heading은 만들지 않는다.
+공통 규칙은 `.github/templates/README.md`를 따른다.
+
+`author`는 Agent 주도 작성의 실제 작성 주체를 식별한다.
+`revision`은 이 description의 validation과 상태 설명이 기준으로 삼은 exact base/head commit pair다.
+`revision`을 사용한 뒤 base 또는 head가 바뀐 상태로 본문을 갱신하면 값도 함께 갱신한다.
 
 ```yaml
 author:
   - <user-id>:<provider>-<service>
+revision:
+  base: <full-base-commit-sha>
+  head: <full-head-commit-sha>
 ```
 -->
