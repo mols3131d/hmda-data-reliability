@@ -1,4 +1,9 @@
-"""데이터 적재와 dbt build를 실행한다."""
+"""Raw load와 dbt build/promotion의 application execution boundary.
+
+dbt build는 run-scoped candidate artifact만 만들고 shared current projection을
+자동으로 바꾸지 않는다. Current projection 변경은 caller가 검증을 마친 뒤
+``promote_dbt_artifacts()``를 명시적으로 호출할 때만 일어난다.
+"""
 
 from __future__ import annotations
 
@@ -29,7 +34,11 @@ _DBT_BUILD_TIMEOUT_SECONDS = 300
 
 
 def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
-    """원천 파일을 DuckDB raw table로 멱등 적재한다."""
+    """원천 파일을 DuckDB raw table로 멱등 적재한다.
+
+    같은 partition의 재실행 의미와 중복 방지는 ``hmda_data`` ingestion contract에
+    위임하며, 이 함수는 request를 해당 domain API와 result contract로 연결한다.
+    """
 
     hmda_paths = discover_hmda_files(request.source_root)
     with DuckDBConnectionManager(request.database_path) as connection:
@@ -51,7 +60,12 @@ def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
 
 
 def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
-    """dbt build를 실행하고 artifact 경로를 반환한다."""
+    """dbt build를 고유 run target에서 실행하고 candidate artifact를 반환한다.
+
+    성공해도 shared current artifact projection은 변경하지 않는다. Caller는 이
+    결과에 필요한 downstream validation을 끝낸 뒤 ``promote_dbt_artifacts()``를
+    별도로 호출해야 한다.
+    """
 
     run_target_path = _create_run_target(request.dbt_run_target_path)
     command = _build_dbt_command(request, run_target_path)
@@ -92,7 +106,12 @@ def promote_dbt_artifacts(
     result: DbtBuildResult,
     request: DataOperationRequest,
 ) -> None:
-    """Promote a caller-validated successful run to the current projection."""
+    """Caller가 검증한 successful run을 current artifact projection으로 승격한다.
+
+    Build 때 계산한 ``projection_id``와 현재 candidate bytes가 일치하는지 다시
+    확인하므로, 검증 뒤 변경된 stale result는 승격하지 않는다. Promotion 중
+    file operation이 실패하면 기존 current pair를 보존하거나 복구한다.
+    """
 
     if not result.succeeded:
         raise DataOperationError("실패한 dbt run artifact는 승격할 수 없습니다.")
@@ -179,6 +198,8 @@ def _run_dbt_command(
 
 
 def _create_run_target(target_root: Path) -> Path:
+    """각 dbt build가 이전/current artifact와 섞이지 않는 고유 target을 만든다."""
+
     try:
         target_root.mkdir(parents=True, exist_ok=True)
         return Path(tempfile.mkdtemp(prefix="run-", dir=target_root))
@@ -211,6 +232,8 @@ def _validate_dbt_artifacts(manifest_path: Path, run_results_path: Path) -> None
 
 
 def _ensure_artifact_projection(result: DbtBuildResult) -> None:
+    """Promotion 직전 candidate가 build 때 검증한 artifact pair인지 확인한다."""
+
     _validate_dbt_artifacts(result.manifest_path, result.run_results_path)
     if (
         artifact_projection_id(result.manifest_path, result.run_results_path)
@@ -249,11 +272,14 @@ def _promote_dbt_artifacts(
     backup_paths: list[tuple[Path, Path]] = []
     promoted_destinations: list[Path] = []
     try:
+        # Current를 직접 덮어쓰지 않고 두 candidate copy를 먼저 준비한다.
+        # Copy 단계 실패가 기존 current pair를 일부만 변경하지 않게 하기 위함이다.
         for source, destination in destinations:
             destination.parent.mkdir(parents=True, exist_ok=True)
             temporary = destination.with_suffix(f"{destination.suffix}.next")
             shutil.copyfile(source, temporary)
             temporary_paths.append((temporary, destination))
+        # 기존 current를 backup한 뒤 교체해야 중간 실패 시 pair 전체를 복구할 수 있다.
         for temporary, destination in temporary_paths:
             backup = destination.with_suffix(f"{destination.suffix}.previous")
             backup.unlink(missing_ok=True)
@@ -273,6 +299,7 @@ def _promote_dbt_artifacts(
             "dbt artifact projection을 승격할 수 없습니다.",
             context={"run_target_path": str(run_manifest_path.parent)},
         ) from exc
+    # 승격은 이미 완료되었으므로 backup cleanup 실패가 성공 결과를 뒤집지 않게 한다.
     for backup, _ in backup_paths:
         try:
             backup.unlink(missing_ok=True)

@@ -1,4 +1,9 @@
-"""데이터 적재, 변환, 신뢰성 작업을 실행한다."""
+"""데이터 작업의 application execution boundary.
+
+Caller가 사용하는 request, result, error와 public entry point를 노출한다.
+dbt build는 candidate artifact만 만들며 current projection 승격은 별도 호출이다.
+Incident lifecycle은 분석만 수행하고 recovery나 evaluation을 실행하지 않는다.
+"""
 
 from project_pivot.data_operations.dbt_result import DbtBuildResult
 from project_pivot.data_operations.errors import DataOperationError
