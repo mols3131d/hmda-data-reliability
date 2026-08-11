@@ -6,12 +6,14 @@ Discussion is not Research, Review, or a canonical decision. Route substantial e
 
 ## Roles
 
-Every structured discussion has three roles.
+Every structured discussion has three logical roles.
 
 - **Moderator**: frames the question, chooses the discussion type and exchange pattern, keeps shared context stable, opens and closes rounds, and synthesizes the result. The Moderator does not manufacture disagreement or silently turn its own preference into a decision.
 - **A** and **B**: independent participants. They argue from evidence and project constraints, respond to the strongest opposing point, and may change position when the evidence warrants it.
 
 `A` and `B` identify participants, not fixed sides. A participant may support, oppose, combine, or revise an option during the discussion.
+
+The Moderator is a **coordination role, not necessarily a separate agent, chat, or scheduled task**. Its responsibilities may be carried by the human, one participant at a defined boundary, or deterministic discussion state and protocol. Use a separate Moderator execution only when independent synthesis or active coordination materially improves the discussion.
 
 ## Discussion Types
 
@@ -46,9 +48,11 @@ Cadence controls when rounds run; it does not define the discussion type.
 
 Scheduled discussion is useful when latency is acceptable and human presence is unnecessary between rounds. Overnight discussion is one scheduled use case, not the default discussion model.
 
+A scheduled discussion does **not** require a third schedule for the Moderator. Prefer two participant schedules when independent A/B execution matters, and let shared state plus this protocol carry round control. A participant may write the final synthesis when the configured stop condition assigns that responsibility.
+
 For scheduled discussion:
 
-- the Moderator owns the active decision, next actor, round limit, and stop state;
+- shared state records the active decision, next actor, round limit, and stop state;
 - each run reads the latest shared state before writing;
 - A and B write only to their own round output;
 - a run produces no new round when there is no material delta or when the discussion is stopped;
@@ -69,8 +73,9 @@ A bundle may separate context, topics, rounds, synthesis, and decision log into 
 
 ## Write Ownership
 
-- The Moderator owns shared context, round control, synthesis, and discussion status.
+- The Moderator role owns shared context, round control, synthesis, and discussion status.
 - A owns only A's round outputs; B owns only B's round outputs.
+- When no separate Moderator execution exists, the configured protocol assigns Moderator writes at explicit boundaries; participants must not opportunistically rewrite shared state.
 - Participants do not rewrite the other's output or previously consumed rounds. Corrections go into a later round.
 - GPT agreement never edits a human-owned decision into `Accepted` unless the human explicitly authorizes it.
 
@@ -91,7 +96,7 @@ Do not repeat an earlier position with different wording. Distinguish repository
 
 ## Moderator Contract
 
-The Moderator:
+The Moderator role:
 
 1. chooses the discussion type and exchange pattern from the decision's uncertainty and cost;
 2. gives A and B the same shared context for independent first positions when independence matters;
@@ -101,6 +106,8 @@ The Moderator:
 6. synthesizes both participants fairly, including concessions and unresolved disagreement;
 7. routes unanswered factual questions to Research when more evidence is required;
 8. leaves the final decision to the declared decision authority.
+
+These responsibilities describe required coordination behavior. They do not imply that a dedicated Moderator model invocation must exist.
 
 ## Stop Conditions
 
@@ -117,7 +124,7 @@ The result may be agreement, disagreement, or a request for Research. Convergenc
 
 ## Output
 
-The Moderator's synthesis should make the decision cheaper for a human to review. Prefer:
+The Moderator synthesis should make the decision cheaper for a human to review. Prefer:
 
 - current recommendation or viable options;
 - strongest evidence for each material position;
@@ -128,6 +135,7 @@ The Moderator's synthesis should make the decision cheaper for a human to review
 
 ## Boundaries
 
+- Do not require a separate Moderator execution when protocol and shared state are sufficient.
 - Do not use role assignment to force theatrical opposition.
 - Do not let `discuss` become an unbounded brainstorming log.
 - Do not treat scheduled repetition as deeper reasoning by itself.
