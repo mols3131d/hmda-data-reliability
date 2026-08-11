@@ -21,7 +21,7 @@ Research와 Review는 입력일 수 있지만 durable dependency는 아니다. H
 ## Core Contract
 
 - `spec-driven-tdd`가 planning artifact, dependency와 Apply contract를 소유한다.
-- Research는 `research/`, Review artifact는 `reviews/`의 local rules를 따른다.
+- Research와 implementation Review artifact는 `inbox/AGENTS.md`의 공통 규칙과 해당 type guideline을 따른다.
 - OpenSpec Plan Review와 implementation Review를 구분한다.
 - Entry는 phase 실행 이력이 아니라 현재 entry에 필요한 artifact로 결정한다.
 - Finding handoff는 채택된 결론, 조치와 필요한 근거가 임시 artifact에만 남지 않을 때 완료된다.
@@ -77,10 +77,10 @@ Artifact 간 모순이나 근거 부족이 확인되면 영향을 소유하는 a
 
 ## Temporary Artifact Lifecycle
 
-Research의 저장, 삭제와 archive는 `research/`, Review artifact는 `reviews/`의 local rules를 따른다.
+Research와 implementation Review artifact의 저장, 삭제와 archive는 `inbox/AGENTS.md`와 해당 type guideline을 따른다.
 
 - Handoff가 완료되면 임시 artifact를 삭제해도 이후 planning, Apply와 archive를 계속할 수 있어야 한다.
-- Archive는 각 local rule이 요구하는 인간의 명시적 승인을 따른다.
+- Archive와 promotion은 inbox lifecycle과 branch 규칙을 따른다.
 - Planning 또는 구현이 바뀌어 근거가 다시 부족해지면 현재 질문에 필요한 Research나 Review로 route한다.
 - Review의 validation과 남은 risk는 필요한 경우 PR, Issue 또는 canonical artifact로 이전한다.
 
