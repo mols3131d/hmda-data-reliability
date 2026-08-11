@@ -8,7 +8,7 @@ The common `discuss` protocol remains authoritative for bundle structure, partic
 
 Use this extension only when scheduled runs can access and update the shared GitHub discussion state required by `discuss.md`.
 
-- Scheduled Tasks must be available for the account and model in use.
+- Two active Scheduled Task slots are required: one for A and one for B.
 - The scheduled run must be able to use the required GitHub connection or tool with sufficient repository permissions.
 - Do not depend on files attached only to a ChatGPT Project; Scheduled Tasks may not have access to those project files. Keep durable discussion state in the repository.
 - If a scheduled run cannot read or persist the required repository state, treat the discussion as blocked instead of reconstructing state from chat memory.
@@ -98,6 +98,7 @@ The session window is a timebox, not a turn quota.
 - If the discussion is still open at `ends_at`, A performs finalization instead of starting a new argumentative turn.
 - The last participant turn may belong to A or B; a normally completed discussion ends with A synthesis.
 - If required evidence or repository access prevents a valid synthesis, A records the blocked state and unresolved requirement instead of pretending completion.
+- If the reserved final A invocation is missed or paused, recover by invoking A again; A synthesizes from the persisted repository state rather than replaying missed turns.
 
 ## Prompt Templates
 
