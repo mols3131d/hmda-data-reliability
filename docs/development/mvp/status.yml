@@ -6,40 +6,41 @@ snapshot:
   repository_revision: 02aa81fbd9e3ca55cfb3b3eacddfbea70db4fd80
   implementation_basis:
     pull_request: 48
-    pull_request_head: 736732b7940b90486185dc93200161f8ae09a542
+    final_pull_request_head: 736732b7940b90486185dc93200161f8ae09a542
     merge_commit: 02aa81fbd9e3ca55cfb3b3eacddfbea70db4fd80
   current_main_validation: not_run
 
 status_semantics:
   implemented: goal implementation exists in the snapshot revision
-  audited: validation evidence exists on the related PR revision but was not rerun on the snapshot revision
+  reported: validation was reported in the related PR but was not independently rerun for this snapshot
   boundary_preserved: no new MVP implementation is required; the existing non-responsibility boundary remains the goal
 
 domains:
   - name: hmda-data
     goal: controlled volume drop, partition identity, and safe replacement
     implementation: implemented
-    verification: audited
+    verification: reported
   - name: data-platform
     goal: isolated dbt evidence and projection integrity
     implementation: implemented
-    verification: audited
+    verification: reported
   - name: data-operations
     goal: run-scoped dbt, explicit promotion, and identity handoff
     implementation: implemented
-    verification: audited
+    verification: reported
   - name: reliability
     goal: volume-drop detection through recovery and evaluation
     implementation: implemented
-    verification: audited
+    verification: reported
   - name: orchestration
     goal: preserve the data-plane and reliability control-plane boundary
     implementation: boundary_preserved
-    verification: audited
+    verification: reported
 
 validation_evidence:
-  revision: 736732b7940b90486185dc93200161f8ae09a542
-  source: "PR #48"
+  source: "PR #48 description"
+  revision: not_attributed
+  note: "GitHub final head is 736732b7940b90486185dc93200161f8ae09a542 while the PR description still identifies Current head as 2b6d42d, so reported validation is not attributed to the final head."
   checks:
     - "tests/reliability/test_evaluation_report.py: 7 passed"
     - "full pytest suite: 170 passed"
