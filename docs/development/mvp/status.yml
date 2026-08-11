@@ -1,0 +1,78 @@
+version: 1
+
+dashboard:
+  level: project
+  title: MVP Development Dashboard
+  snapshot: 2026-08-11 / main@222bfaa / implementation@736732b
+  current_focus: 완료된 volume-drop MVP의 requirement/verification coverage를 유지하고 OpenSpec Change lifecycle을 정리한다.
+  include_total: true
+
+items:
+  - name: HMDA Data
+    implementation:
+      status: implemented
+      progress: 4/4
+      gaps: []
+    verification:
+      status: passing
+      progress: 4/4
+      gaps: []
+
+  - name: Data Platform
+    implementation:
+      status: implemented
+      progress: 4/4
+      gaps: []
+    verification:
+      status: passing
+      progress: 4/4
+      gaps: []
+
+  - name: Data Operations
+    implementation:
+      status: implemented
+      progress: 4/4
+      gaps: []
+    verification:
+      status: passing
+      progress: 4/4
+      gaps: []
+
+  - name: Reliability
+    implementation:
+      status: implemented
+      progress: 9/9
+      gaps: []
+    verification:
+      status: passing
+      progress: 9/9
+      gaps: []
+
+  - name: Orchestration
+    implementation:
+      status: implemented
+      progress: 3/3
+      gaps: []
+    verification:
+      status: passing
+      progress: 3/3
+      gaps: []
+
+risks:
+  - area: Repository lifecycle
+    text: 완료된 reliability-mvp-volume-drop-vertical-slice Change가 active directory에 남아 있다.
+    impact: MVP 구현·검증 상태에는 영향이 없지만 current Spec 동기화와 archive가 필요하다.
+
+references:
+  - docs/development/mvp/hmda-data.md
+  - docs/development/mvp/data-platform.md
+  - docs/development/mvp/data-operations.md
+  - docs/development/mvp/reliability.md
+  - docs/development/mvp/orchestration.md
+  - openspec/changes/reliability-mvp-volume-drop-vertical-slice/tasks.md
+  - openspec/changes/reliability-mvp-volume-drop-vertical-slice/specs/
+  - tests/hmda_data/
+  - tests/data_platform/
+  - tests/data_operations/
+  - tests/reliability/
+  - tests/orchestration/
