@@ -2,20 +2,14 @@
 
 ## Goal
 
-`volume_drop`을 결정론적으로 만들고 recovery가 안전하게 대상을 식별·교체할 수 있는 partition evidence를 제공한다.
+`volume_drop`을 결정론적으로 재현하고, recovery가 대상 partition의 현재 상태와 복원 결과를 신뢰할 수 있게 한다.
 
-## MVP Responsibilities
+## Outcomes
 
-- 원천을 수정하지 않고 controlled `volume_drop` 입력을 생성한다.
-- 같은 logical partition content를 안정적으로 식별하고 실제 content divergence를 구분한다.
-- 승인된 expected state와 현재 state가 다르면 mutation 없이 중단할 수 있는 replacement 경계를 제공한다.
-
-## Done When
-
-- clean, dropped, restored partition의 content identity를 재현 가능하게 비교할 수 있다.
-- expected identity가 일치하는 recovery는 target partition을 정확히 복원한다.
-- stale 또는 diverged target은 기존 approval로 변경하지 않는다.
-- row order나 ingestion timestamp 같은 비본질적 차이는 recovery identity를 흔들지 않는다.
+- 원천을 수정하지 않고 같은 controlled `volume_drop` 입력을 재현할 수 있다.
+- 같은 logical partition content와 실제 content divergence를 안정적으로 구분할 수 있다.
+- 승인 이후 target이 바뀌면 기존 approval로 mutation하지 않는다.
+- 복원 결과가 기대한 partition content와 같은지 검증할 수 있다.
 
 ## Non-Goals
 

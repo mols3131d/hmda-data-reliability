@@ -1,8 +1,8 @@
 # Development Documentation
 
-이 directory는 phase별 개발 현황과 repository 공통 test 실행·설계 기준을 관리한다.
+이 directory는 현재 MVP 개발 현황과 repository 공통 test 실행·설계 기준을 관리한다.
 
-## Phase Documents
+## MVP
 
 | Document | Role | Use when |
 | --- | --- | --- |

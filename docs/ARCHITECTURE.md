@@ -30,6 +30,7 @@ flowchart LR
 - Dagster는 data plane 실행만 담당하며 reliability lifecycle을 자동으로 묶지 않는다.
 - approval은 lifecycle 외부에서 결정하고, recovery API는 승인 정보를 입력으로 요구한다.
 - ingestion과 dbt는 재실행 가능해야 하며, 같은 partition의 중복 row를 만들지 않는다.
+- candidate dbt evidence와 current last-known-good artifact projection은 분리하며, current projection 변경은 검증된 target에 한정한다.
 
 ## Canonical Domain Contracts
 
@@ -38,8 +39,8 @@ flowchart LR
 | Need | Document |
 | --- | --- |
 | 원천 파일, Bronze 적재, descriptive EDA, 합성 결함 | [`HMDA Data`](domains/hmda-data.md) |
-| 실행 request, 결과, dbt build | [`Data Operations`](domains/data-operations.md) |
-| DuckDB, dbt model, lineage | [`Data Platform`](domains/data-platform.md) |
+| 실행 request, 결과, dbt build와 promotion | [`Data Operations`](domains/data-operations.md) |
+| DuckDB, dbt model·lineage, artifact projection primitive | [`Data Platform`](domains/data-platform.md) |
 | Incident, impact, remediation, recovery, evaluation | [`Reliability`](domains/reliability.md) |
 | Dagster asset graph와 config | [`Orchestration`](domains/orchestration.md) |
 

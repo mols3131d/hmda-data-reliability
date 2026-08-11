@@ -1,15 +1,16 @@
-# Data Platform: DuckDB And dbt Contracts
+# Data Platform: DuckDB, dbt And Artifact Contracts
 
-**`data_platform`은 DuckDB helper와 dbt Bronze-to-Gold 계약을 소유한다.** 원천 파일 적재, dbt subprocess 실행, orchestration은 이 domain의 책임이 아니다.
+**`data_platform`은 DuckDB helper, dbt Bronze-to-Gold 계약과 dbt artifact projection primitive를 소유한다.** 원천 파일 적재, dbt subprocess 실행, candidate 선택과 promotion 결정, orchestration은 이 domain의 책임이 아니다.
 
 ## Scope
 
 | In scope | Out of scope |
 | --- | --- |
 | DuckDB 연결·schema·table metadata 헬퍼 | HMDA 원천 파일 발견과 적재 |
-| DuckDB 식별자·문자열 literal quoting | `dbt build` subprocess 실행과 artifact 수명 관리 |
-| `raw.hmda_loans` source 선언 | 실행 요청, 실행 결과 모델, orchestration |
-| staging view와 mart table, schema tests | reliability incident 판단 |
+| DuckDB 식별자·문자열 literal quoting | `dbt build` subprocess 실행 |
+| `raw.hmda_loans` source 선언 | candidate 선택과 promotion 호출 결정 |
+| staging view와 mart table, schema tests | 실행 요청, 실행 결과 모델, orchestration |
+| dbt artifact pair identity와 local reader/writer lock | reliability incident·approval·recovery policy |
 
 원천 Bronze 적재 계약은 [`hmda-data.md`](hmda-data.md), 실행 경계는 [`data-operations.md`](data-operations.md)에 있다.
 
@@ -87,6 +88,17 @@ Staging은 모든 raw 행을 유지한다. `state_code`, `county_code`, `loan_am
 
 `mart_grain_key`는 `activity_year:state_code:loan_purpose`다. [`marts/schema.yml`](../../dbt/models/marts/schema.yml)은 이 키에 `not_null`, `unique` test를 적용하고 각 grain과 count metric의 `not_null`을 검증한다.
 
+## dbt Artifact Projection
+
+[`artifacts.py`](../../src/project_pivot/data_platform/artifacts.py)는 dbt artifact pair를 하나의 local projection으로 다루는 primitive를 제공한다.
+
+| API | Contract |
+| --- | --- |
+| `artifact_projection_id(manifest_path, run_results_path)` | `manifest.json`과 `run_results.json` bytes와 pair boundary로 stable projection identity를 계산한다. |
+| `artifact_projection_lock(directory, exclusive=...)` | current artifact pair의 local shared/exclusive access를 직렬화한다. |
+
+Artifact byte read와 lock I/O failure는 typed Data Platform error로 노출한다. `data_operations`는 이 primitive를 사용해 run evidence를 식별하고 application error로 변환하며, 어떤 successful candidate를 current로 promotion할지는 상위 실행 경계가 결정한다.
+
 ## Lineage And Execution Boundary
 
 dbt lineage는 다음과 같다.
@@ -101,16 +113,15 @@ flowchart LR
 ```
 
 > [!IMPORTANT]
-> **`data_platform`은 dbt를 실행하지 않는다.** `data_operations.run_dbt_build()`가 이전 artifact 제거, `dbt build` 실행, 종료 코드 확인, 새 `manifest.json`·`run_results.json` 존재 검증을 책임진다.
+> **`data_platform`은 dbt를 실행하거나 promotion 시점을 결정하지 않는다.** `data_operations.run_dbt_build()`가 run-scoped dbt 실행과 결과 검증을 책임지고, 검증된 target을 current로 채택하는 application flow가 `promote_dbt_artifacts()`를 호출한다. `data_platform`은 model/source/test/lineage와 artifact projection primitive를 소유한다.
 
-`data_platform`은 model, source, test와 lineage 계약만 소유한다.
-
-통합 계약은 [`tests/dbt/test_analytics_foundation.py`](../../tests/dbt/test_analytics_foundation.py)에서 raw source, 두 모델의 manifest dependency, mart 멱등성과 metric 결과를 검증한다. Python helper 계약은 [`tests/data_platform`](../../tests/data_platform)에서 확인한다.
+통합 계약은 [`tests/dbt/test_analytics_foundation.py`](../../tests/dbt/test_analytics_foundation.py)에서 raw source, 두 모델의 manifest dependency, mart 멱등성과 metric 결과를 검증한다. Python helper와 artifact primitive 계약은 [`tests/data_platform`](../../tests/data_platform)에서 확인한다.
 
 ## Reading Order
 
 1. [`duckdb.py`](../../src/project_pivot/data_platform/duckdb.py)
 1. [`sql.py`](../../src/project_pivot/data_platform/sql.py)
+1. [`artifacts.py`](../../src/project_pivot/data_platform/artifacts.py)
 1. [`sources.yml`](../../dbt/models/sources.yml)
 1. [`stg_hmda_loans.sql`](../../dbt/models/staging/stg_hmda_loans.sql)
 1. [`mart_hmda_loan_outcomes.sql`](../../dbt/models/marts/mart_hmda_loan_outcomes.sql)
