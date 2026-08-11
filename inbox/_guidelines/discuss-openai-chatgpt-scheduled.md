@@ -2,7 +2,7 @@
 
 This document extends [`discuss.md`](discuss.md) for scheduled discussions run by two OpenAI ChatGPT chats.
 
-The common `discuss` protocol remains authoritative for bundle structure, participant ownership, turn workflow, eligibility, recovery, stop conditions, and synthesis. This extension owns only ChatGPT-specific scheduling and bootstrap behavior.
+The common `discuss` protocol remains authoritative for bundle structure, participant ownership, topic handling, turn workflow, eligibility, recovery, stop conditions, and synthesis. This extension owns only ChatGPT-specific scheduling and bootstrap behavior.
 
 ## Preconditions
 
@@ -13,37 +13,48 @@ Use this extension only when scheduled runs can access and update the shared Git
 - Do not depend on files attached only to a ChatGPT Project; Scheduled Tasks may not have access to those project files. Keep durable discussion state in the repository.
 - If a scheduled run cannot read or persist the required repository state, treat the discussion as blocked instead of reconstructing state from chat memory.
 
-OpenAI currently limits a Scheduled Task to at most one run per hour. The default pattern below respects that limit by using two independent hourly tasks with a 30-minute phase offset. See [Scheduled Tasks in ChatGPT](https://help.openai.com/en/articles/10291617-tasks-in-chatgpt).
+OpenAI currently does not allow a Scheduled Task to run more than once per hour. The default schedule below respects that limit. See [Scheduled Tasks in ChatGPT](https://help.openai.com/en/articles/10291617-tasks-in-chatgpt).
+
+## Schedule Configuration
+
+Use the same values in both participant prompts.
+
+| Field | Default | Rule |
+| --- | --- | --- |
+| `started_at` | required | absolute timestamp with timezone |
+| `ends_at` | required | later than `started_at` |
+| `participant_interval` | 60 minutes | scheduler-supported and not faster than the platform limit |
+| `b_offset` | 30 minutes | greater than 0 and less than `participant_interval` |
+
+`ends_at - started_at` must be an exact multiple of `participant_interval` so the session ends on an A recurrence boundary.
+
+The defaults produce the original hourly A/B schedule, but the protocol does not require exactly 60/30-minute timing.
 
 ## Runtime Model
 
 Use two independent ChatGPT chats: one for **A**, one for **B**.
 
-Both prompts use the same absolute session anchors. Persist these anchors in the discussion `README.md` and treat the persisted values as the source of truth.
+Persist the shared schedule configuration in the discussion `README.md` and treat the persisted values as the source of truth.
 
-For the default hourly pattern:
+Let:
 
-- `ends_at` must be later than `started_at`;
-- session duration must be a whole number of hours so `ends_at` is an A recurrence boundary.
+- `I = participant_interval`
+- `O = b_offset`
 
 ```text
-T+00m       A1
-T+30m       B1
-T+60m       A2
-T+90m       B2
+T+0        A1
+T+O        B1
+T+I        A2
+T+(I+O)    B2
 ...
-T+(N-30)m   Bn
-T+Nh        A finalization
+T+ends_at  A finalization
 ```
 
-| Participant | First action | Recurrence | End boundary |
-| --- | --- | --- | --- |
-| A | immediately | every 60 minutes | `ends_at` is reserved for finalization if still open |
-| B | after 30 minutes | every 60 minutes | last invocation is strictly before `ends_at` |
+A runs at `started_at + kI`. B runs at `started_at + O + kI` while that time is strictly before `ends_at`.
 
-The discussion therefore advances every 30 minutes while each participant task runs at most once per hour.
+When `O = I / 2`, participant invocations are evenly interleaved. Otherwise the gaps alternate between `O` and `I - O`; ordering remains A → B → A → B.
 
-The offset, recurrence, and absolute session timestamps are runtime configuration, not part of the common discussion artifact contract.
+The schedule determines when a participant is invoked. Persisted discussion state still determines whether that participant is eligible to publish a turn.
 
 ## Bootstrap
 
@@ -52,11 +63,12 @@ The offset, recurrence, and absolute session timestamps are runtime configuratio
 When the A prompt is first submitted:
 
 1. read the repository and discussion guidance;
-2. validate the shared session anchors;
+2. validate the shared schedule configuration;
 3. create or initialize the discussion bundle when needed;
-4. persist `started_at` and `ends_at`;
-5. publish the first eligible A turn immediately;
-6. arrange later A invocations at 60-minute intervals through `ends_at`.
+4. persist the shared schedule configuration;
+5. define only the topics needed by the goal, following the common topic defaults and one-active-topic rule;
+6. publish the first eligible A turn immediately;
+7. arrange later A invocations every `participant_interval` through `ends_at`.
 
 A is the Lead and carries Moderator coordination as defined by `discuss.md`.
 
@@ -65,10 +77,10 @@ A is the Lead and carries Moderator coordination as defined by `discuss.md`.
 When the B prompt is first submitted:
 
 1. read the repository and discussion guidance;
-2. validate the same session anchors;
+2. validate the same schedule configuration;
 3. do not create the discussion bundle or A-owned shared state;
 4. do **not** publish a B turn immediately;
-5. arrange the first B invocation for `started_at + 30 minutes` and later B invocations every 60 minutes while the scheduled time is strictly before `ends_at`.
+5. arrange the first B invocation for `started_at + b_offset` and later B invocations every `participant_interval` while the scheduled time is strictly before `ends_at`.
 
 If the bundle does not yet exist during B bootstrap, schedule from the shared absolute session anchors and exit. The first scheduled B invocation must re-read the repository; if A still has not initialized the bundle or published A1, follow the common recovery rules.
 
@@ -82,7 +94,7 @@ Every scheduled invocation follows the common rule:
 refresh → check eligibility → run Turn Workflow → publish → exit
 ```
 
-Before writing, the participant must read the latest persisted discussion `README.md` and turns from the repository. Chat history is supporting context, not the source of truth for turn order or session timing.
+Before writing, the participant must read the latest persisted discussion `README.md` and turns from the repository. Chat history is supporting context, not the source of truth for turn order, topics, or session timing.
 
 A scheduled trigger does not guarantee an argumentative turn. Follow the common no-op, terminal-turn, research-block, and synthesis rules when applicable.
 
@@ -107,12 +119,13 @@ Use these templates as the initial user messages for the two ChatGPT chats:
 - [A — Lead Prompt](../_templates/discuss/openai-chatgpt-scheduled/a-prompt.md)
 - [B — Challenger Prompt](../_templates/discuss/openai-chatgpt-scheduled/b-prompt.md)
 
-Fill the same discussion ID, goal, `started_at`, and `ends_at` in both prompts. Keep common protocol details in `discuss.md` instead of duplicating them into each prompt unless ChatGPT needs the instruction to execute correctly.
+Fill the same repository, discussion ID, goal, and schedule configuration in both prompts. Keep common discussion behavior in `discuss.md` instead of duplicating it here or in both prompts unless ChatGPT needs the instruction to execute correctly.
 
 ## Boundaries
 
 - Do not move task IDs, recurrence syntax, model names, notification settings, or UI instructions into the common `discuss` contract.
+- Do not hard-code topic count in this extension; topic scope belongs to the discussion goal and common `discuss` rules.
 - Do not infer eligibility from wall-clock order alone; persisted turns decide who may act.
 - Do not let both chats write the same shared state. A owns shared discussion state; B owns only B turns.
 - Do not treat a missed scheduled invocation as a broken discussion. Resume from the latest valid persisted state.
-- Do not create a faster-than-hourly task for either participant. Use the phase offset between two hourly tasks to obtain the effective 30-minute discussion cadence.
+- Do not configure `participant_interval` faster than the platform supports.
