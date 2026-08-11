@@ -26,7 +26,9 @@ tags:
 작성 규칙:
 - discuss artifact는 반드시 이 디렉터리를 루트로 하는 번들이다.
 - README.md가 Goal, Scope, Topics, 상태, 설정, References와 기본 Synthesis를 소유한다.
-- participant 발언만 rounds/에 분리한다.
+- participant 발언만 turns/에 분리한다.
+- turn 파일명은 <sequence>-<participant>-<participant-sequence>.md 형식을 사용한다.
+- 예: 001-a-001.md, 002-b-001.md, 003-a-002.md
 - Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
 - scheduled가 아니면 scheduled 전용 frontmatter 필드를 제거한다.
 - OPTIONAL 블록과 빈 placeholder를 남기지 않는다.
