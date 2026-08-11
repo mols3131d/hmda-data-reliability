@@ -109,7 +109,7 @@ flowchart LR
 
 ### D4. dbt artifact는 run directory에서 생성하고 성공 시 promotion한다
 
-- **Decision** - dbt command에 unique caller-provided run target path를 사용한다. Runner는 run result와 artifact path를 보존하고 current projection을 직접 삭제하지 않는다. Target run의 caller validation 성공 후에만 manifest/run_results pair를 temporary copy 후 replace로 promotion한다. Candidate는 promotion하지 않는다.
+- **Decision** - dbt command에 unique caller-provided run target path를 사용한다. Runner는 run result와 artifact path를 보존하고 current projection을 직접 삭제하지 않는다. Target run의 caller validation 성공 후에만 manifest/run_results pair를 temporary copy 후 replace로 promotion한다. Candidate는 promotion하지 않는다. Data Platform은 projection byte-read failure를 typed I/O error로 노출하고 public Data Operations boundary는 이를 run target과 artifact path가 포함된 `DataOperationError`로 변환한다.
 - **Rationale** - Candidate/failed run과 prior last-known-good를 동시에 보존하며 stale artifact success를 차단한다.
 - **Trade-off** - Run directory cleanup과 retention은 caller가 소유하며 MVP는 자동 기간 삭제를 추가하지 않는다.
 
@@ -121,13 +121,13 @@ flowchart LR
 
 ### D7. Current artifact projection은 shared lock protocol으로 읽고 쓴다
 
-- **Decision** - `data_platform.artifacts`가 manifest/run-results pair의 length-delimited identity와 local shared/exclusive lock을 소유한다. Promotion은 exclusive lock 획득 뒤 identity를 다시 검증하고, lifecycle은 impact analysis와 projection identity를 하나의 shared-lock snapshot에서 결합한다.
+- **Decision** - `data_platform.artifacts`가 manifest/run-results pair의 length-delimited identity, typed projection read failure와 local shared/exclusive lock을 소유한다. Promotion은 exclusive lock 획득 뒤 identity를 다시 검증하고, lifecycle은 impact analysis와 projection identity를 하나의 shared-lock snapshot에서 결합한다.
 - **Rationale** - 고정 artifact path 두 개의 순차 replace 중 reader가 서로 다른 run의 pair를 관찰하거나, lock 대기 중 바뀐 verified artifact가 승격되는 것을 막는다.
 - **Trade-off** - 같은 local protocol을 쓰지 않는 외부 reader는 보호하지 않으며, MVP는 external artifact registry나 multi-host coordination을 추가하지 않는다.
 
 ### D8. 예상된 safety failure는 execution-level evaluation case로 변환한다
 
-- **Decision** - Candidate validation, approval gate와 recovery reconciliation에서 예상되는 domain failure는 evaluation boundary에서 `EvaluationCaseResult`로 변환한다. Target dbt failure는 `DataOperationError`만 recovery case로 변환하고, promotion 이후의 예기치 않은 exception은 실제 artifact 상태를 숨기지 않도록 전파한다.
+- **Decision** - Candidate validation, approval gate와 recovery reconciliation에서 예상되는 domain failure는 evaluation boundary에서 `EvaluationCaseResult`로 변환한다. 첫 recovery와 replay는 독립 failure boundary로 실행해 이미 완료된 recovery를 보존한다. Evaluation boundary가 failure phase와 최종 reconciliation action을 결정하며 명시적 action은 이전 recovery action보다 우선한다. Target `DataOperationError`는 shared lock 아래 current projection을 다시 관찰해 prior projection 유지, post-promotion 변경 또는 관찰 실패를 구분한다. 예기치 않은 exception은 실제 artifact 상태를 숨기지 않도록 전파한다.
 - **Rationale** - 실패를 예외 유무만으로 표현하면 target mutation 여부와 retry evidence를 report에서 판정할 수 없다. 반대로 모든 exception을 dbt failure로 처리하면 promotion 이후 current projection과 evidence가 어긋날 수 있다.
 - **Trade-off** - Failure result의 recovery/replay field는 optional이 되지만, happy path API와 기존 success evidence는 유지한다.
 
@@ -148,7 +148,8 @@ flowchart LR
 | Artifact projection protocol | Data Operations/Reliability component | Lock 대기 중 artifact drift 차단, shared reader가 complete current pair만 관찰 |
 | Mutation/reconciliation state | Recovery component | Pre/post mutation failure와 resume/diverged result 구분 |
 | Clean/volume-drop slice | Local integration | Detection, impact, exact approval, content recovery, dbt verification과 replay evidence |
-| Safety failure adapter | Local integration | Candidate failure는 pre-mutation case로 반환하고, promotion 이후 exception은 current artifact를 숨기지 않고 전파 |
+| Safety failure adapter | Local integration | Candidate failure는 pre-mutation case로 반환하고, post-promotion `DataOperationError`는 locked current projection을 재관찰해 evidence로 변환 |
+| Unexpected target failure | Local integration | Domain contract 밖의 unexpected exception은 current artifact 상태를 숨기지 않고 전파 |
 
 - **TDD Boundary:** Content identity와 compare-and-replace를 가장 먼저 RED로 고정한 뒤 approval, dbt artifact와 recovery state를 순서대로 연결한다.
 - **Failure Signals:** Unexpected target fingerprint change, current artifact pair change, overwrite call 반복, incorrect mutation state, missing failed-run evidence 또는 unstable repeated evidence다.

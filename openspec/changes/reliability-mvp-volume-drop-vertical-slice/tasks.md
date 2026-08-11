@@ -3,8 +3,8 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Reliability MVP Volume-Drop Vertical Slice Tasks
 description: Partition identity부터 exact approval, isolated dbt, recovery reconciliation과 end-to-end acceptance까지 TDD로 구현한다.
-tasks_completed: 44
-tasks_total: 44
+tasks_completed: 49
+tasks_total: 49
 tags:
   - "domain:reliability"
   - "capability:reliability-recovery-backfill"
@@ -134,3 +134,11 @@ tags:
 - [x] 7.17 invalid candidate, candidate dbt failure, incomplete approval, stale/diverged target을 execution-level evaluation case로 변환하고 pre-mutation regression을 추가한다.
 - [x] 7.18 target validation은 `DataOperationError`만 recovery failure로 변환하고 promotion 이후 exception의 실제 current artifact 경계를 regression으로 고정한다.
 - [x] 7.19 current head 기준 focused/full validation 결과와 Plan Review 근거를 갱신한다.
+- [x] 7.20 **RED/GREEN** — 첫 recovery 성공 뒤 replay verification failure를 분리해 완료된 recovery, target mutation stage와 `resume_verification` evidence를 보존한다.
+- [x] 7.21 **RED/GREEN** — evaluation boundary의 최종 reconciliation action을 명시하고 target dbt failure는 `resume_verification`, stale/diverged target은 `request_new_validation_and_approval` 값까지 검증한다.
+- [x] 7.22 **RED/GREEN** — artifact projection byte-read I/O failure를 typed Data Platform error로 구분하고 public Data Operations boundary에서 `run_target_path`, 실패 artifact path를 포함한 `DataOperationError`로 변환한다.
+  - **Done when:** Build/promotion read failure가 raw `OSError`를 노출하지 않고 current projection을 변경하지 않는 regression이 통과한다.
+- [x] 7.23 **RED/GREEN** — promotion 이후 `DataOperationError`에서 locked current projection을 다시 관찰해 actual artifact state 또는 typed 관찰 실패를 evidence에 기록한다.
+- [x] 7.24 current head 기준 focused/domain/full pytest, Ruff, OpenSpec strict validation과 diff check를 실행하고 command/result를 task completion 및 PR evidence에 기록한다.
+  - **Evidence:** Initial F1-F4 focused regression 6 passed, review follow-up regression 3 passed, full default pytest 177 passed.
+  - **Evidence:** `uv run ruff check src tests`, `openspec validate reliability-mvp-volume-drop-vertical-slice --strict`, `git diff --check`와 editor diagnostics가 통과했다.

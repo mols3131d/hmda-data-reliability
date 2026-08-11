@@ -69,6 +69,12 @@ tags:
 - **WHEN** dbt process가 실패하거나 필수 artifact를 제공하지 못할 때
 - **THEN** stage는 실패 원인과 failed-run evidence를 식별할 수 있는 domain failure로 종료해야 한다.
 
+#### Scenario: Artifact projection read failure
+
+- **WHEN** dbt build 결과 또는 promotion 대상의 artifact bytes를 읽지 못할 때
+- **THEN** public Data Operations boundary는 run target과 실패한 artifact를 식별할 수 있는 domain failure로 종료해야 한다.
+- **AND** raw filesystem exception을 외부 caller에 노출하거나 current projection을 변경해서는 안 된다.
+
 #### Scenario: Candidate dbt failure
 
 - **WHEN** candidate dbt process 또는 artifact validation이 실패할 때

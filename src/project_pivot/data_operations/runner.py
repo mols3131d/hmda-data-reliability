@@ -18,6 +18,7 @@ from project_pivot.data_operations.raw_result import RawLoadResult
 from project_pivot.data_operations.request import DataOperationRequest
 from project_pivot.data_platform.artifacts import (
     ArtifactProjectionLockError,
+    ArtifactProjectionReadError,
     artifact_projection_id,
     artifact_projection_lock,
 )
@@ -73,7 +74,10 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
         )
     manifest_path, run_results_path = _run_artifact_paths(run_target_path)
     _validate_dbt_artifacts(manifest_path, run_results_path)
-    projection_id = artifact_projection_id(manifest_path, run_results_path)
+    try:
+        projection_id = artifact_projection_id(manifest_path, run_results_path)
+    except ArtifactProjectionReadError as exc:
+        raise _artifact_read_error(run_target_path, exc) from exc
     return DbtBuildResult(
         command=command,
         return_code=result.returncode,
@@ -112,6 +116,8 @@ def promote_dbt_artifacts(
                 "run_target_path": str(result.manifest_path.parent),
             },
         ) from exc
+    except ArtifactProjectionReadError as exc:
+        raise _artifact_read_error(result.manifest_path.parent, exc) from exc
 
 
 def _build_dbt_command(
@@ -214,6 +220,19 @@ def _ensure_artifact_projection(result: DbtBuildResult) -> None:
             "dbt artifact projection이 검증 결과와 다릅니다.",
             context={"run_target_path": str(result.manifest_path.parent)},
         )
+
+
+def _artifact_read_error(
+    run_target_path: Path,
+    error: ArtifactProjectionReadError,
+) -> DataOperationError:
+    return DataOperationError(
+        "dbt artifact를 읽을 수 없습니다.",
+        context={
+            "run_target_path": str(run_target_path),
+            "artifact_path": str(error.artifact_path),
+        },
+    )
 
 
 def _promote_dbt_artifacts(

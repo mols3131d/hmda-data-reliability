@@ -7,6 +7,7 @@ from subprocess import CompletedProcess, TimeoutExpired
 
 import pytest
 
+import project_pivot.data_platform.artifacts as artifacts
 from project_pivot.data_operations import (
     data_operation_request_from_environment,
     runner,
@@ -219,6 +220,49 @@ def test_run_dbt_build_returns_verified_artifacts(
 
 
 @pytest.mark.component
+def test_run_dbt_build_wraps_artifact_byte_read_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Build artifact read I/O failure는 run과 artifact를 식별하는 domain error다."""
+
+    request = _request(tmp_path)
+    request.dbt_manifest_path.write_text("last-known-good-manifest", encoding="utf-8")
+    request.dbt_run_results_path.write_text("last-known-good-results", encoding="utf-8")
+    original_read_bytes = Path.read_bytes
+    failed_artifact_path: Path | None = None
+
+    def write_artifacts(command: list[str], **kwargs: object) -> CompletedProcess[str]:
+        run_target = Path(command[-1])
+        run_target.joinpath("manifest.json").write_text("manifest", encoding="utf-8")
+        run_target.joinpath("run_results.json").write_text("results", encoding="utf-8")
+        return CompletedProcess(command, 0, "", "")
+
+    def fail_run_manifest_read(path: Path) -> bytes:
+        nonlocal failed_artifact_path
+        if path.name == "manifest.json" and request.dbt_run_target_path in path.parents:
+            failed_artifact_path = path
+            raise OSError("artifact bytes unavailable")
+        return original_read_bytes(path)
+
+    monkeypatch.setattr(subprocess, "run", write_artifacts)
+    monkeypatch.setattr(Path, "read_bytes", fail_run_manifest_read)
+
+    with pytest.raises(DataOperationError, match="artifact") as error:
+        runner.run_dbt_build(request)
+
+    assert failed_artifact_path is not None
+    assert error.value.context["run_target_path"] == str(failed_artifact_path.parent)
+    assert error.value.context["artifact_path"] == str(failed_artifact_path)
+    assert request.dbt_manifest_path.read_text(encoding="utf-8") == (
+        "last-known-good-manifest"
+    )
+    assert request.dbt_run_results_path.read_text(encoding="utf-8") == (
+        "last-known-good-results"
+    )
+
+
+@pytest.mark.component
 def test_candidate_dbt_build_does_not_promote_artifacts(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -303,6 +347,41 @@ def test_promotion_rejects_artifacts_changed_after_verification(
 
     assert not request.dbt_manifest_path.exists()
     assert not request.dbt_run_results_path.exists()
+
+
+@pytest.mark.component
+def test_promotion_wraps_artifact_byte_read_failure_and_preserves_current(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Promotion read I/O failure는 raw OSError 없이 current pair를 보존한다."""
+
+    request = _request(tmp_path)
+    request.dbt_manifest_path.write_text("old-manifest", encoding="utf-8")
+    request.dbt_run_results_path.write_text("old-results", encoding="utf-8")
+    run_target = tmp_path / "verified-run"
+    run_target.mkdir()
+    manifest_path = run_target / "manifest.json"
+    run_results_path = run_target / "run_results.json"
+    manifest_path.write_text("new-manifest", encoding="utf-8")
+    run_results_path.write_text("new-results", encoding="utf-8")
+    result = _build_result(manifest_path, run_results_path)
+    original_read_bytes = Path.read_bytes
+
+    def fail_verified_manifest_read(path: Path) -> bytes:
+        if path == manifest_path:
+            raise OSError("artifact bytes unavailable")
+        return original_read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", fail_verified_manifest_read)
+
+    with pytest.raises(DataOperationError, match="artifact") as error:
+        runner.promote_dbt_artifacts(result, request)
+
+    assert error.value.context["run_target_path"] == str(run_target)
+    assert error.value.context["artifact_path"] == str(manifest_path)
+    assert request.dbt_manifest_path.read_text(encoding="utf-8") == "old-manifest"
+    assert request.dbt_run_results_path.read_text(encoding="utf-8") == "old-results"
 
 
 @pytest.mark.component
@@ -441,6 +520,40 @@ def test_promotion_lock_failure_preserves_failed_run_context(
         )
 
     assert error.value.context["run_target_path"] == str(run_target)
+
+
+@pytest.mark.component
+def test_promotion_release_failure_reports_committed_current_pair(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Commit 뒤 lock release failure는 promoted pair와 domain error를 함께 보존한다."""
+
+    request = _request(tmp_path)
+    request.dbt_manifest_path.write_text("old-manifest", encoding="utf-8")
+    request.dbt_run_results_path.write_text("old-results", encoding="utf-8")
+    run_target = tmp_path / "run"
+    run_target.mkdir()
+    manifest_path = run_target / "manifest.json"
+    run_results_path = run_target / "run_results.json"
+    manifest_path.write_text("new-manifest", encoding="utf-8")
+    run_results_path.write_text("new-results", encoding="utf-8")
+    result = _build_result(manifest_path, run_results_path)
+    original_flock = artifacts.fcntl.flock
+
+    def fail_unlock(file_descriptor: int, operation: int) -> None:
+        if operation == artifacts.fcntl.LOCK_UN:
+            raise OSError("cannot release artifact lock")
+        original_flock(file_descriptor, operation)
+
+    monkeypatch.setattr(artifacts.fcntl, "flock", fail_unlock)
+
+    with pytest.raises(DataOperationError, match="lock") as error:
+        runner.promote_dbt_artifacts(result, request)
+
+    assert error.value.context["run_target_path"] == str(run_target)
+    assert request.dbt_manifest_path.read_text(encoding="utf-8") == "new-manifest"
+    assert request.dbt_run_results_path.read_text(encoding="utf-8") == "new-results"
 
 
 @pytest.mark.component

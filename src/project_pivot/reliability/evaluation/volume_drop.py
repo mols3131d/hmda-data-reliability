@@ -10,6 +10,8 @@ import duckdb
 from pydantic import BaseModel, ConfigDict
 
 from project_pivot.data_platform.artifacts import (
+    ArtifactProjectionLockError,
+    ArtifactProjectionReadError,
     artifact_projection_id,
     artifact_projection_lock,
 )
@@ -199,31 +201,50 @@ def evaluate_volume_drop_vertical_slice(
         table_name=target_request.raw_table_name,
         profile_request=_profile_request(target_request),
     )
-    try:
-        with DuckDBConnectionManager(target_request.database_path) as connection:
+    with DuckDBConnectionManager(target_request.database_path) as connection:
+        try:
             recovery = execute_approved_backfill(connection, recovery_request)
+        except (ApprovalGateError, BackfillValidationError) as exc:
+            failure_stage = _failure_stage(exc)
+            case_name = _recovery_failure_case_name(exc)
+            return _failure_result(
+                clean_lifecycle=clean_lifecycle,
+                volume_drop_lifecycle=volume_drop_lifecycle,
+                fixture_identity=fixture_identity,
+                expected_identity=expected_identity,
+                candidate_projection_id=candidate_projection_id,
+                case_name=case_name,
+                exc=exc,
+                failure_stage=failure_stage,
+                reconciliation_action=_reconciliation_action(
+                    case_name=case_name,
+                    exc=exc,
+                    failure_stage=failure_stage,
+                ),
+                target_request=target_request,
+            )
+        try:
             replay = execute_approved_backfill(connection, recovery_request)
-    except (ApprovalGateError, BackfillValidationError) as exc:
-        return _failure_result(
-            clean_lifecycle=clean_lifecycle,
-            volume_drop_lifecycle=volume_drop_lifecycle,
-            fixture_identity=fixture_identity,
-            expected_identity=expected_identity,
-            candidate_projection_id=candidate_projection_id,
-            case_name=_recovery_failure_case_name(exc),
-            exc=exc,
-            failure_stage=_failure_stage(exc),
-            target_request=target_request,
-        )
+        except (ApprovalGateError, BackfillValidationError) as exc:
+            replay_failure_case = _recovery_failure_case_name(exc)
+            return _failure_result(
+                clean_lifecycle=clean_lifecycle,
+                volume_drop_lifecycle=volume_drop_lifecycle,
+                fixture_identity=fixture_identity,
+                expected_identity=expected_identity,
+                candidate_projection_id=candidate_projection_id,
+                case_name="replay_failure",
+                exc=exc,
+                failure_stage="after_partition_mutation",
+                reconciliation_action=_reconciliation_action(
+                    case_name=replay_failure_case,
+                    exc=exc,
+                    failure_stage="after_partition_mutation",
+                ),
+                target_request=target_request,
+                recovery=recovery,
+            )
     post_recovery_lifecycle = run_incident_lifecycle(target_request, baseline)
-    with artifact_projection_lock(
-        target_request.dbt_manifest_path.parent,
-        exclusive=False,
-    ):
-        prior_target_projection_id = artifact_projection_id(
-            target_request.dbt_manifest_path,
-            target_request.dbt_run_results_path,
-        )
     try:
         target_projection_id = validate_target(target_request)
         target_dbt_failure = None
@@ -241,14 +262,17 @@ def evaluate_volume_drop_vertical_slice(
             run_target_path := target_dbt_failure_context.get("run_target_path")
         ):
             failure_evidence.append(f"failed-run:{run_target_path}")
+        artifact_ids, observation_evidence = _observe_current_projection(target_request)
+        failure_evidence.extend(observation_evidence)
         post_recovery_case = build_recovery_evaluation_case(
             case_name="recovery_dbt_failure",
             expected_incident_types=[],
             detected_incident_types=post_recovery_lifecycle.detected_incident_types,
             recovery=recovery,
             failure_stage="after_partition_mutation",
+            reconciliation_action="resume_verification",
             evidence_refs=failure_evidence,
-            artifact_projection_ids=[prior_target_projection_id],
+            artifact_projection_ids=artifact_ids,
         )
 
     return VolumeDropVerticalSliceResult(
@@ -277,6 +301,8 @@ def _failure_result(
     exc: Exception,
     failure_stage: str,
     target_request: DataOperationRequest,
+    reconciliation_action: str | None = None,
+    recovery: BackfillValidationResult | None = None,
 ) -> VolumeDropVerticalSliceResult:
     """예상된 safety failure를 실행형 evaluation case로 변환한다."""
 
@@ -285,13 +311,15 @@ def _failure_result(
     evidence_refs = [f"failure:{type(exc).__name__}", str(exc)]
     if run_target_path := context.get("run_target_path"):
         evidence_refs.append(f"failed-run:{run_target_path}")
-    artifact_ids = _current_projection_ids(target_request)
+    artifact_ids, observation_evidence = _observe_current_projection(target_request)
+    evidence_refs.extend(observation_evidence)
     recovery_case = build_recovery_evaluation_case(
         case_name=case_name,
         expected_incident_types=["volume_drop"],
         detected_incident_types=volume_drop_lifecycle.detected_incident_types,
+        recovery=recovery,
         failure_stage=failure_stage,
-        reconciliation_action=getattr(exc, "reconciliation_action", None),
+        reconciliation_action=reconciliation_action,
         evidence_refs=evidence_refs,
         artifact_projection_ids=artifact_ids,
     )
@@ -301,7 +329,7 @@ def _failure_result(
         clean_case=_case_result("clean", clean_lifecycle),
         volume_drop_case=_case_result("volume_drop", volume_drop_lifecycle),
         post_recovery_case=recovery_case,
-        recovery=None,
+        recovery=recovery,
         replay=None,
         candidate_dbt_projection_id=candidate_projection_id,
     )
@@ -327,20 +355,40 @@ def _recovery_failure_case_name(exc: Exception) -> str:
     return "recovery_failure"
 
 
-def _current_projection_ids(request: DataOperationRequest) -> list[str]:
+def _reconciliation_action(
+    *,
+    case_name: str,
+    exc: Exception,
+    failure_stage: str,
+) -> str | None:
+    if case_name in {"stale_target", "diverged_target"}:
+        return "request_new_validation_and_approval"
+    exception_action = getattr(exc, "reconciliation_action", None)
+    if exception_action == "request_new_validation_and_approval":
+        return exception_action
+    if failure_stage == "after_partition_mutation":
+        return "resume_verification"
+    return exception_action
+
+
+def _observe_current_projection(
+    request: DataOperationRequest,
+) -> tuple[list[str], list[str]]:
     try:
         with artifact_projection_lock(
             request.dbt_manifest_path.parent,
             exclusive=False,
         ):
-            return [
-                artifact_projection_id(
-                    request.dbt_manifest_path,
-                    request.dbt_run_results_path,
-                )
-            ]
-    except (OSError, ValueError):
-        return []
+            projection_id = artifact_projection_id(
+                request.dbt_manifest_path,
+                request.dbt_run_results_path,
+            )
+    except (ArtifactProjectionLockError, ArtifactProjectionReadError) as exc:
+        evidence = [f"failure:{type(exc).__name__}", str(exc)]
+        if isinstance(exc, ArtifactProjectionReadError):
+            evidence.append(f"artifact:{exc.artifact_path}")
+        return [], evidence
+    return [projection_id], []
 
 
 def _profile_request(request: DataOperationRequest) -> ProfileSnapshotRequest:

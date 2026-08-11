@@ -4,7 +4,7 @@ category: review
 title: Reliability MVP Volume-Drop Vertical Slice Plan Review
 description: Volume-drop recovery vertical slice 계획의 behavior coverage와 implementation readiness를 판정한다.
 status: "approved"
-review_loop: 6
+review_loop: 8
 tags:
   - "domain:reliability"
   - "capability:reliability-recovery-backfill"
@@ -59,3 +59,21 @@ tags:
 - [x] **F2 — Artifact-state boundary:** Target validation은 `DataOperationError`만 recovery dbt failure로 변환하고, promotion 이후 unexpected exception은 전파되어 actual current artifact state를 숨기지 않는다. Post-promotion failure regression이 추가됐다.
 - [x] **F3 — Current-head evidence:** Current head 기준 focused evaluation suite 7 passed, full pytest 170 passed, Ruff, OpenSpec strict validation과 diff check가 통과했다.
 - [x] **Consistency:** Design D8, Tasks 7.17-7.19와 implementation/tests의 ownership과 추적성이 일치한다.
+
+## Review Loop 7
+
+**Verdict: changes_requested.** F1-F4 방향은 기존 Change에 handoff됐지만 stale target exact action, post-promotion domain/unexpected exception 구분, typed artifact error의 task dependency, progress metadata와 validation evidence route가 불완전했다.
+
+- [x] Stale target의 `request_new_validation_and_approval` action을 evaluation Spec에 명시했다.
+- [x] Design Testability에서 post-promotion `DataOperationError` re-observation과 unexpected exception propagation을 분리했다.
+- [x] Typed artifact read failure task를 post-promotion re-observation보다 앞에 배치하고 객관적 완료 조건을 추가했다.
+- [x] Task progress를 44/49로 수정하고 implementation validation을 task/PR evidence로 route했다.
+
+## Review Loop 8
+
+**Verdict: approved.** Loop 7 Required Changes를 반영한 전체 planning artifact를 독립 재검토했고 C1-C5가 모두 통과했다.
+
+- [x] Specs가 replay partial-success, exact reconciliation action, post-promotion actual artifact state와 artifact read domain failure를 검증 가능한 scenario로 정의한다.
+- [x] Design D4/D7/D8과 Testability가 typed I/O translation, recovery/replay phase, action precedence, domain/unexpected exception 경계를 일관되게 소유한다.
+- [x] Tasks 7.20-7.24는 하위 typed error부터 evaluation consumer와 validation까지 dependency 순서와 독립 oracle을 갖는다.
+- [x] Task metadata 44/49가 실제 checkbox 상태와 일치하며 Apply를 막는 planning defect가 없다.

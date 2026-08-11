@@ -11,6 +11,7 @@ from project_pivot.data_operations.lifecycle_result import LifecycleResult
 from project_pivot.data_operations.request import DataOperationRequest
 from project_pivot.data_platform.artifacts import (
     ArtifactProjectionLockError,
+    ArtifactProjectionReadError,
     artifact_projection_id,
     artifact_projection_lock,
 )
@@ -180,6 +181,14 @@ def _dbt_projection_id(request: DataOperationRequest) -> str:
         raise DataOperationError(
             "dbt artifact projection lock을 획득할 수 없습니다.",
             context={"directory": str(request.dbt_manifest_path.parent)},
+        ) from exc
+    except ArtifactProjectionReadError as exc:
+        raise DataOperationError(
+            "dbt artifact를 읽을 수 없습니다.",
+            context={
+                "run_target_path": str(request.dbt_manifest_path.parent),
+                "artifact_path": str(exc.artifact_path),
+            },
         ) from exc
 
 

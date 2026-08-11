@@ -23,7 +23,8 @@ def build_recovery_evaluation_case(
     resolved_reconciliation_action = reconciliation_action
     if recovery is not None:
         target_mutated = recovery.mutation_state == "partition_changed"
-        resolved_reconciliation_action = recovery.reconciliation_action
+        if resolved_reconciliation_action is None:
+            resolved_reconciliation_action = recovery.reconciliation_action
     elif failure_stage is not None:
         target_mutated = failure_stage != "before_target_mutation"
     return EvaluationCaseResult(

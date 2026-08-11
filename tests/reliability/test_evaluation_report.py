@@ -9,12 +9,14 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from typing import cast
 
+import duckdb
 import pytest
 
 import project_pivot.reliability.evaluation.volume_drop as volume_drop
 import project_pivot.reliability.recovery.executor as recovery_executor
 from project_pivot.data_operations import (
     DataOperationRequest,
+    DbtBuildResult,
     promote_dbt_artifacts,
     run_dbt_build,
 )
@@ -26,12 +28,15 @@ from project_pivot.reliability import (
     Approval,
     ApprovalStatus,
     EvaluationCaseResult,
+    ProfileSnapshot,
     build_evaluation_report,
     build_recovery_evaluation_case,
     evaluate_volume_drop_vertical_slice,
     render_evaluation_report_markdown,
     write_evaluation_report,
 )
+from project_pivot.reliability.errors import ProfileSnapshotError
+from project_pivot.reliability.profiling import ProfileSnapshotRequest
 
 
 @pytest.mark.unit
@@ -423,6 +428,103 @@ def test_volume_drop_vertical_slice_returns_pre_mutation_safety_cases(
         assert not result.post_recovery_case.target_mutated
         assert result.post_recovery_case.artifact_projection_ids
 
+    assert diverged_target.post_recovery_case.reconciliation_action == (
+        "request_new_validation_and_approval"
+    )
+    assert stale_target.post_recovery_case.reconciliation_action == (
+        "request_new_validation_and_approval"
+    )
+
+
+@pytest.mark.integration
+def test_replay_profile_failure_preserves_completed_recovery_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """첫 recovery 뒤 replay failure는 이미 완료된 mutation을 숨기지 않는다."""
+
+    source_path, request = _volume_drop_fixture(tmp_path / "fixture")
+    original_snapshot = recovery_executor.create_profile_snapshot
+    snapshot_count = 0
+
+    def fail_replay_snapshot(
+        connection: duckdb.DuckDBPyConnection,
+        profile_request: ProfileSnapshotRequest,
+    ) -> ProfileSnapshot:
+        nonlocal snapshot_count
+        snapshot_count += 1
+        if snapshot_count == 2:
+            raise ProfileSnapshotError("replay profile failed")
+        return original_snapshot(connection, profile_request)
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "create_profile_snapshot",
+        fail_replay_snapshot,
+    )
+
+    result = evaluate_volume_drop_vertical_slice(
+        request=request,
+        source_paths=(source_path,),
+        workspace=tmp_path / "run",
+        approve=_approved,
+        validate_candidate=lambda _request: "sha256:candidate",
+        validate_target=lambda _request: "sha256:target",
+        sample_fraction=0.1,
+    )
+
+    assert result.recovery is not None
+    assert result.recovery.mutation_state == "partition_changed"
+    assert result.replay is None
+    assert result.post_recovery_case.failure_stage == "after_partition_mutation"
+    assert result.post_recovery_case.target_mutated
+    assert result.post_recovery_case.reconciliation_action == "resume_verification"
+
+
+@pytest.mark.integration
+def test_replay_diverged_target_requests_new_validation_and_approval(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """첫 recovery 뒤 diverged replay는 새 validation과 approval을 요구한다."""
+
+    source_path, request = _volume_drop_fixture(tmp_path / "fixture")
+    original_recovery = volume_drop.execute_approved_backfill
+    recovery_count = 0
+
+    def diverge_after_first_recovery(connection, recovery_request):
+        nonlocal recovery_count
+        recovery_count += 1
+        recovery = original_recovery(connection, recovery_request)
+        if recovery_count == 1:
+            connection.execute("UPDATE raw.hmda_loans SET income = income + 1")
+        return recovery
+
+    monkeypatch.setattr(
+        volume_drop,
+        "execute_approved_backfill",
+        diverge_after_first_recovery,
+    )
+
+    result = evaluate_volume_drop_vertical_slice(
+        request=request,
+        source_paths=(source_path,),
+        workspace=tmp_path / "run",
+        approve=_approved,
+        validate_candidate=lambda _request: "sha256:candidate",
+        validate_target=lambda _request: "sha256:target",
+        sample_fraction=0.1,
+    )
+
+    assert result.recovery is not None
+    assert result.recovery.mutation_state == "partition_changed"
+    assert result.replay is None
+    assert result.post_recovery_case.failure_stage == "after_partition_mutation"
+    assert result.post_recovery_case.target_mutated
+    assert result.post_recovery_case.reconciliation_action == (
+        "request_new_validation_and_approval"
+    )
+
 
 @pytest.mark.integration
 def test_volume_drop_vertical_slice_preserves_source_file_scope(
@@ -578,6 +680,7 @@ def test_volume_drop_vertical_slice_records_target_dbt_failure(
     }
     assert result.post_recovery_case.failure_stage == "after_partition_mutation"
     assert result.post_recovery_case.target_mutated
+    assert result.post_recovery_case.reconciliation_action == "resume_verification"
     assert result.post_recovery_case.artifact_projection_ids == [
         artifact_projection_id(
             request.dbt_manifest_path,
@@ -589,6 +692,63 @@ def test_volume_drop_vertical_slice_records_target_dbt_failure(
         in result.post_recovery_case.evidence_refs
     )
     assert (request.dbt_manifest_path.parent, False) in lock_calls
+
+
+@pytest.mark.integration
+def test_post_promotion_data_operation_failure_reports_actual_current_projection(
+    tmp_path: Path,
+) -> None:
+    """Promotion 뒤 domain failure는 prior가 아닌 actual current evidence를 남긴다."""
+
+    source_path, request = _volume_drop_fixture(tmp_path / "fixture")
+    prior_projection_id = artifact_projection_id(
+        request.dbt_manifest_path,
+        request.dbt_run_results_path,
+    )
+    promoted_projection_id: str | None = None
+
+    def fail_after_promotion(target_request: DataOperationRequest) -> str:
+        nonlocal promoted_projection_id
+        run_target = tmp_path / "promoted-run"
+        run_target.mkdir()
+        run_manifest = run_target / "manifest.json"
+        run_results = run_target / "run_results.json"
+        run_manifest.write_text("promoted-manifest", encoding="utf-8")
+        run_results.write_text("promoted-results", encoding="utf-8")
+        promoted_projection_id = artifact_projection_id(
+            run_manifest,
+            run_results,
+        )
+        promote_dbt_artifacts(
+            DbtBuildResult(
+                command=["dbt", "build"],
+                return_code=0,
+                manifest_path=run_manifest,
+                run_results_path=run_results,
+                projection_id=promoted_projection_id,
+                succeeded=True,
+            ),
+            target_request,
+        )
+        raise DataOperationError(
+            "post-promotion observation failed",
+            context={"run_target_path": str(run_target)},
+        )
+
+    result = evaluate_volume_drop_vertical_slice(
+        request=request,
+        source_paths=(source_path,),
+        workspace=tmp_path / "run",
+        approve=_approved,
+        validate_candidate=lambda _request: "sha256:candidate",
+        validate_target=fail_after_promotion,
+        sample_fraction=0.1,
+    )
+
+    assert promoted_projection_id is not None
+    assert result.post_recovery_case.artifact_projection_ids == [promoted_projection_id]
+    assert prior_projection_id not in result.post_recovery_case.artifact_projection_ids
+    assert result.post_recovery_case.reconciliation_action == "resume_verification"
 
 
 @pytest.mark.unit
