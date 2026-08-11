@@ -13,21 +13,23 @@ Default runtime shape:
 ```text
 <discuss-bundle>/
 ├── README.md
-└── rounds/
-    └── <topic>-<turn>-<a|b>.md
+└── turns/
+    └── <sequence>-<participant>-<participant-sequence>.md
 ```
 
-`README.md` is the entrypoint and owns goal, scope, configuration, topics, current state, references, and synthesis by default. `rounds/` contains immutable participant turns.
+`README.md` is the entrypoint and owns goal, scope, configuration, topics, current state, references, and synthesis by default. `turns/` contains immutable participant turns.
+
+Turn filenames use the discussion-global sequence first, then participant identity, then that participant's own sequence. Example: `001-a-001.md`, `002-b-001.md`, `003-a-002.md`. Use zero-padding so lexical order matches discussion order. Topic identity belongs in the turn metadata, not the filename.
 
 Split content into an additional file only when it materially improves readability. A large final synthesis may move to `synthesis.md`; link it from `README.md`. Do not create extension files preemptively.
 
-Template: [`inbox/_templates/discuss/`](../_templates/discuss/). `rounds/_turn.md` and `_synthesis.md` are authoring templates, not required runtime files.
+Template: [`inbox/_templates/discuss/`](../_templates/discuss/). `turns/_turn.md` and `_synthesis.md` are authoring templates, not required runtime files.
 
 ## Core
 
 Structured discussion has three logical roles:
 
-- **Moderator**: frames the question, controls scope and rounds, and synthesizes the result.
+- **Moderator**: frames the question, controls scope and turns, and synthesizes the result.
 - **A**, **B**: independent participants that argue from evidence and may change position when warranted.
 
 `A` and `B` are identities, not fixed sides. The Moderator is a coordination role, not necessarily a separate agent or chat. In scheduled discussion, **A carries it by default**.
@@ -55,7 +57,7 @@ Cadence:
 - **Manual**: a human or Moderator advances turns.
 - **Scheduled**: two chat agents revisit the discussion asynchronously during a session window.
 
-Ordinary discussion defaults to **3 rounds per decision**. Scheduled discussion uses its session window and stop conditions instead.
+Ordinary discussion defaults to **3 exchanges per decision**. Scheduled discussion uses its session window and stop conditions instead.
 
 ## Scheduled Discussion
 
@@ -138,6 +140,8 @@ Derive eligibility from persisted turns, not a shared mutable `next_actor`:
 - latest valid turn B → A;
 - discussion/topic closed → no argumentative turn.
 
+The filename sequence records this persisted order. The participant sequence is local to each participant and is useful for references such as "A's third turn" without replacing the global sequence.
+
 Do not publish two equivalent turns against the same input state. A material delta is new or corrected evidence, a stronger or narrower argument, a changed assumption or concession, a decision-relevant risk, narrowed disagreement, or a justified recommendation change. No material delta → no new argumentative turn.
 
 Reusable discussion configuration and topic state live in `README.md`. Keep task IDs, recurrence syntax, model names, trigger intervals, and notifications outside the common bundle contract.
@@ -152,7 +156,7 @@ Reusable discussion configuration and topic state live in `README.md`. Keep task
 - Stale state or write conflict → refresh, preserve existing outputs, retry from current state.
 - Missed turn → resume from the latest valid turn.
 - Missing material evidence → request Research and block or close the topic.
-- Session expiry → stop new rounds and hand synthesis to A.
+- Session expiry → stop new turns and hand synthesis to A.
 
 The protocol requires only that a platform can invoke A/B, expose durable shared state and prior turns, persist a turn, and invoke the other actor later. Scheduler-specific implementation may vary.
 
