@@ -57,7 +57,7 @@ Cadence:
 - **Manual**: a human or Moderator advances turns.
 - **Scheduled**: two chat agents revisit the discussion asynchronously during a session window.
 
-Manual `iterative` discussion defaults to at most **3 exchanges**. `one-shot` and `cross-review` use their own bounds. Scheduled discussion uses its session window and stop conditions instead.
+Manual `iterative` discussion defaults to at most **3 A↔B exchanges**. `one-shot` and `cross-review` use their own bounds. Scheduled discussion uses its session window and stop conditions instead.
 
 ## Turn Workflow
 
@@ -151,12 +151,14 @@ Default order:
 A1 → B1 → A2 → B2 → ... → A synthesis
 ```
 
-Derive eligibility from persisted turns, not a shared mutable `next_actor`:
+Derive participant-turn eligibility from persisted turns, not a shared mutable `next_actor`:
 
 - no turn → A;
 - latest valid turn A → B;
 - latest valid turn B → A;
 - discussion/topic closed → no argumentative turn.
+
+Synthesis eligibility is separate: when a stop condition or session expiry is reached, A may synthesize regardless of which participant wrote the latest turn.
 
 The filename sequence records the persisted discussion order. Participant-local numbering is not stored unless a future workflow demonstrates a concrete need for it.
 
