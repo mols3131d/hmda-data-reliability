@@ -4,7 +4,7 @@
 
 ## Metadata
 
-GitHub가 제공하지 않는 정보만 optional metadata로 보완한다. Metadata를 사용하면 본문 맨 위에 `yaml` code block으로 두며, Front Matter나 GitHub metadata로 취급하지 않는다.
+GitHub가 제공하지 않는 정보만 optional metadata로 보완한다. Metadata를 사용하면 본문의 마지막에 하나의 `yaml` code block으로 두며, Front Matter나 GitHub metadata로 취급하지 않는다. Footnote 정의가 있으면 metadata를 그 바로 앞에 두고, 본문에는 별도 `Metadata` heading을 만들지 않는다.
 
 Metadata field는 서로 독립적이며 필요한 field만 사용한다.
 
@@ -39,7 +39,7 @@ revision:
   head: <full-head-commit-sha>
 ```
 
-Template에서는 기본 읽기 흐름을 방해하지 않도록 metadata 예시를 HTML comment 안에 둔다. 실제 사용할 때만 본문 맨 위로 옮긴다.
+Template에서는 기본 읽기 흐름을 방해하지 않도록 metadata 예시를 HTML comment 안에 둔다. 실제 사용할 때는 comment를 제거하고 본문 마지막에 두며, footnote 정의가 있으면 그 바로 앞에 둔다.
 
 ## Writing Rules
 

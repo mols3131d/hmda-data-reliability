@@ -60,7 +60,8 @@ Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 tab
 -->
 
 <!--
-Optional metadata — GitHub가 제공하지 않는 provenance가 판단에 필요할 때만 문서 맨 위에 추가한다.
+Optional metadata — GitHub가 제공하지 않는 provenance가 판단에 필요할 때만 본문 마지막에 추가한다.
+Footnote 정의가 있으면 metadata를 그 바로 앞에 두고 별도 Metadata heading은 만들지 않는다.
 공통 규칙은 `.github/templates/README.md`를 따른다.
 
 `author`는 Agent가 review를 주도했지만 GitHub 작성자만으로 실제 작성 주체를 구별할 수 없을 때 사용한다.
