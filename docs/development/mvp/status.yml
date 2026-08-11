@@ -3,50 +3,55 @@ version: 1
 snapshot:
   date: "2026-08-11"
   repository_ref: main
-  repository_revision: 02aa81fbd9e3ca55cfb3b3eacddfbea70db4fd80
+  repository_revision: 99151101cf2872a15985e973c8835b923a3565c6
   implementation_basis:
     pull_request: 48
     final_pull_request_head: 736732b7940b90486185dc93200161f8ae09a542
     merge_commit: 02aa81fbd9e3ca55cfb3b3eacddfbea70db4fd80
-  current_main_validation: not_run
+  current_main_runtime_validation: not_run
+
+planning:
+  tasks: 49/49
+  plan_review:
+    loop: 8
+    status: approved
 
 status_semantics:
-  implemented: goal implementation exists in the snapshot revision
-  reported: validation was reported in the related PR but was not independently rerun for this snapshot
+  implemented: goal implementation exists in the snapshot main revision
+  verified_pr_head: validation evidence is recorded on the final implementation PR head
   boundary_preserved: no new MVP implementation is required; the existing non-responsibility boundary remains the goal
 
 domains:
   - name: hmda-data
     goal: controlled volume drop, partition identity, and safe replacement
     implementation: implemented
-    verification: reported
+    verification: verified_pr_head
   - name: data-platform
     goal: isolated dbt evidence and projection integrity
     implementation: implemented
-    verification: reported
+    verification: verified_pr_head
   - name: data-operations
     goal: run-scoped dbt, explicit promotion, and identity handoff
     implementation: implemented
-    verification: reported
+    verification: verified_pr_head
   - name: reliability
     goal: volume-drop detection through recovery and evaluation
     implementation: implemented
-    verification: reported
+    verification: verified_pr_head
   - name: orchestration
     goal: preserve the data-plane and reliability control-plane boundary
     implementation: boundary_preserved
-    verification: reported
+    verification: verified_pr_head
 
 validation_evidence:
-  source: "PR #48 description"
-  revision: not_attributed
-  note: "GitHub final head is 736732b7940b90486185dc93200161f8ae09a542 while the PR description still identifies Current head as 2b6d42d, so reported validation is not attributed to the final head."
+  source: "OpenSpec tasks 7.24 on PR #48 final head"
+  revision: 736732b7940b90486185dc93200161f8ae09a542
   checks:
-    - "tests/reliability/test_evaluation_report.py: 7 passed"
-    - "full pytest suite: 170 passed"
+    - "focused regression: 6 passed"
+    - "review follow-up regression: 3 passed"
+    - "full default pytest: 177 passed"
     - "ruff check src tests: passed"
-    - "ty check: passed via pre-commit hook"
     - "openspec strict validation: passed"
-    - "pre-push regression: 170 passed"
+    - "git diff --check and editor diagnostics: passed"
 
 next_gate: "Rerun MVP end-to-end acceptance and related regression on current main, then update both status files to the same snapshot."
