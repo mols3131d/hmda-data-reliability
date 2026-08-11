@@ -15,6 +15,7 @@ status: completed
 - topic 등 부가 정보는 파일명이 아니라 frontmatter가 소유한다.
 - 이미 상대가 소비한 turn은 수정하지 않는다. 정정은 다음 turn에 기록한다.
 - 첫 turn에는 Response/Change가 필요 없으면 제거한다.
+- 새 논점이 없어도 convergence, research block, synthesize 요청은 terminal turn으로 기록할 수 있다.
 - private chain-of-thought가 아니라 검토 가능한 결론과 근거만 남긴다.
 -->
 
