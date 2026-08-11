@@ -67,7 +67,7 @@ Every eligible A/B turn uses the same minimal RPI workflow:
 Research → Plan → Implement → Review → publish
 ```
 
-1. **Research** — read `README.md`, the latest relevant turn, repository guidance, and decision-relevant evidence before forming a position. Refresh only what may change the current decision. If evidence gathering becomes substantial, route it to `research` instead of expanding the discussion turn.
+1. **Research** — read `README.md`, the latest relevant turn, repository guidance, and decision-relevant evidence before forming a position. Refresh only what may change the current decision. If evidence gathering becomes substantial, record `Next: research` and block the topic instead of expanding the discussion turn.
 1. **Plan** — choose the smallest claim, challenge, correction, or transition this turn must resolve.
 1. **Implement** — author only the participant-owned contribution. In this workflow, Implement means writing the discussion artifact, not modifying source code. A may also update A-owned shared state or synthesis when allowed.
 1. **Review** — self-review correctness, evidence, strongest counterargument, repetition, and scope. If a material finding remains, repeat the full workflow from Research.
@@ -113,7 +113,7 @@ A carries Moderator coordination in addition to the common Turn Workflow.
 1. Keep topic state and transitions in `README.md`; do not open another topic while the current one can still be resolved.
 1. If a stop condition is met, synthesize instead of creating another argumentative turn.
 
-A owns `README.md`, A turns, topic transitions, and synthesis.
+A owns `README.md`, A turns, topic transitions, and synthesis. A synthesis uses the same RPI refinement bounds but does not create another participant turn.
 
 ### B — Challenger Workflow
 
