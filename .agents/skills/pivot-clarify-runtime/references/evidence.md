@@ -12,7 +12,7 @@ runtime evidence는 목적이 아니라 **복원 질문에 답하기 위한 surf
 | Logging | 시간적 흐름, 내부 결정 또는 경계 통과를 실행 중 복원해야 한다 |
 | Correlation field | 서로 분리된 evidence를 같은 실행으로 연결해야 한다 |
 
-## Choose The Intervention
+## Choose The Change
 
 새 evidence 추가만 해법으로 보지 않는다.
 
@@ -34,15 +34,6 @@ runtime evidence는 목적이 아니라 **복원 질문에 답하기 위한 surf
 1. **연결이 필요한가?** 서로 다른 surface의 관계가 이미 명확하면 correlation field를 추가하지 않는다.
 
 모든 runtime evidence를 하나의 공통 schema로 표준화하려 하지 않는다. 선택한 질문에 필요하지 않은 field는 추가하지 않는다.
-
-## Ownership
-
-같은 사실은 가능한 한 한 surface가 소유한다.
-
-- caller-visible outcome → result
-- failure-specific detail → exception context
-- framework/tool execution fact → artifact 또는 framework metadata
-- 다른 surface가 표현하지 못하는 temporal/decision context → log
 
 상위 계층은 새로운 의미를 추가할 때만 하위 계층의 evidence를 projection한다. 단순 복제는 제거한다.
 

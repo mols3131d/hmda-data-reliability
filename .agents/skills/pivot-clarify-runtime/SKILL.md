@@ -1,6 +1,6 @@
 ---
 name: pivot-clarify-runtime
-description: Use this skill to reduce runtime understanding debt in Project Pivot when important execution paths, decisions, state transitions, external actions, or failure causes are hard to reconstruct, or when existing runtime evidence is duplicated, noisy, disconnected, or owned at the wrong boundary. Preserve domain behavior and established caller/consumer contracts. Clarify one reconstruction question at a time by reusing, moving, reducing, removing, or adding the smallest evidence needed. Do not use for defect debugging, correctness review, test design, monitoring, telemetry-platform design, performance profiling, or feature implementation.
+description: Use this skill to reduce runtime understanding debt in Project Pivot when important execution paths, decisions, state transitions, external actions, or failure causes are hard to reconstruct, or when existing runtime evidence is duplicated, noisy, disconnected, or owned at the wrong boundary. Preserve domain behavior and existing caller/consumer contracts. Clarify one reconstruction question at a time by reusing, moving, reducing, removing, or adding the smallest evidence needed. Do not use for defect debugging, correctness review, test design, monitoring, telemetry-platform design, performance profiling, or feature implementation.
 ---
 
 # Clarify Runtime
@@ -33,7 +33,7 @@ validation: auto
 1. 먼저 문제를 분류한다. 주된 문제가 runtime evidence가 아니면 instrumentation하지 않고 해당 책임으로 넘긴다. 경계가 애매하면 [Diagnosis](references/diagnosis.md)의 routing을 따른다.
 1. **복원 질문 하나**를 정한다: 어떤 경로를 탔는가, 왜 결정됐는가, 어떤 상태가 바뀌었는가, 무엇이 실패했는가, 어떤 실행과 연결되는가.
 1. 관찰 공백의 형태를 진단한다: evidence가 부족한가, 중복됐는가, 잘못된 boundary가 소유하는가, noise가 과한가, 서로 연결되지 않는가.
-1. 가장 작은 intervention과 owner를 고른다. 기존 evidence를 재사용·보강·이동·병합·제거하는 것을 새 evidence 추가보다 먼저 고려한다. caller 결과는 result, 실패 진단은 exception context, framework/tool 실행 사실은 artifact·metadata, 시간적 흐름이나 내부 결정은 logging을 우선한다.
+1. 가장 작은 변경 방식과 owner를 고른다. 기존 evidence를 재사용·보강·이동·병합·제거하는 것을 새 evidence 추가보다 먼저 고려한다. caller 결과는 result, 실패 진단은 exception context, framework/tool 실행 사실은 artifact·metadata, 시간적 흐름이나 내부 결정은 logging을 우선한다.
 1. 선택한 책임 경계만 수정한다. 같은 사실을 여러 surface에 반복하거나 포괄적 observability 체계를 만들지 않는다.
 1. 가능한 경우 같은 좁은 validation으로 domain behavior와 기존 contract가 보존되고, 변경 후 남은 evidence만으로 복원 질문에 답할 수 있는지 확인한다. 불필요한 field·event를 제거하고 질문이 해소되면 중단한다.
 
@@ -46,7 +46,7 @@ validation: auto
 | Need | Reference |
 | --- | --- |
 | 복원 질문, 문제 형태, 우선순위 또는 책임 경계 진단 | [Diagnosis](references/diagnosis.md) |
-| result, exception, artifact/metadata, log의 owner와 intervention 선택 | [Evidence](references/evidence.md) |
+| result, exception, artifact/metadata, log의 owner와 변경 방식 선택 | [Evidence](references/evidence.md) |
 | 좋은 log event, context, level, 중복과 noise 판단 | [Logging](references/logging.md) |
 | Python 표준 `logging` 구현 | [Python Standard Logging](references/python-logging.md) |
 | dbt command, artifact와 log evidence | [dbt Runtime Evidence](references/dbt-evidence.md) |

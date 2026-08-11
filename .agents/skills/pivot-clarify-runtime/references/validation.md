@@ -1,6 +1,6 @@
 # Validation
 
-Runtime clarification은 evidence를 의도적으로 바꾸지만 **domain behavior와 established caller/consumer contract는 보존**해야 한다.
+Runtime clarification은 evidence를 의도적으로 바꾸지만 **domain behavior와 기존 caller/consumer contract는 보존**해야 한다.
 
 ## Behavior Envelope
 
@@ -25,7 +25,7 @@ Runtime clarification은 evidence를 의도적으로 바꾸지만 **domain behav
 1. runtime clarification을 적용한다.
 1. 같은 validation으로 return, exception, state와 side effect가 의도치 않게 달라지지 않았는지 확인한다.
 1. 변경 후 **남은 evidence만 보고** 선택한 복원 질문에 실제로 답할 수 있는지 확인한다.
-1. 제거·이동한 evidence가 established consumer contract를 깨지 않았는지 확인한다.
+1. 제거·이동한 evidence가 기존 consumer contract를 깨지 않았는지 확인한다.
 1. 질문에 필요하지 않은 field, event 또는 duplication이 남아 있으면 제거한다.
 
 기존 safeguard가 충분하면 instrumentation 검증만을 위해 넓은 test suite나 새로운 test infrastructure를 만들지 않는다.
