@@ -4,15 +4,15 @@ discussion: <discussion-id>
 topic: <topic-id>
 sequence: <global-sequence>
 participant: <A | B>
-participant_sequence: <participant-sequence>
 status: completed
 ---
 
 <!--
-- 파일명: <sequence>-<participant>-<participant-sequence>.md
-- 예: 001-a-001.md, 002-b-001.md, 003-a-002.md
-- sequence는 토론 전체의 시간 순서, participant_sequence는 해당 participant의 발언 순서다.
+- 파일명: <sequence>-<participant>.md
+- 예: 001-a.md, 002-b.md, 003-a.md
+- sequence는 토론 전체의 시간 순서다.
 - sequence 값은 정렬이 안정되도록 0-padding한다.
+- topic 등 부가 정보는 파일명이 아니라 frontmatter가 소유한다.
 - 이미 상대가 소비한 turn은 수정하지 않는다. 정정은 다음 turn에 기록한다.
 - 첫 turn에는 Response/Change가 필요 없으면 제거한다.
 - private chain-of-thought가 아니라 검토 가능한 결론과 근거만 남긴다.
