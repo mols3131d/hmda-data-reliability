@@ -47,6 +47,11 @@ OpenSpec planning은 이 목표에서 시작할 수 있다. 구현 전에는 현
 
 MVP는 위 Proof를 deterministic end-to-end acceptance로 재현하고 실패 경로의 evidence까지 검증하면 완료한다.
 
+## Development Tracking
+
+- [MVP Development](development/mvp/README.md): domain별 MVP 목표와 읽기 경로
+- [MVP Status](development/mvp/status.md): 현재 구현·검증 snapshot과 다음 gate
+
 ## References
 
 - [`vision.md`](vision.md): 프로젝트 장기 비전과 원칙

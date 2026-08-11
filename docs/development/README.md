@@ -1,8 +1,14 @@
 # Development Documentation
 
-이 directory는 test 실행 정책과 test design 기준을 관리한다.
+이 directory는 phase별 개발 현황과 repository 공통 test 실행·설계 기준을 관리한다.
 
-## Documents
+## Phase Documents
+
+| Document | Role | Use when |
+| --- | --- | --- |
+| [MVP Development](mvp/README.md) | domain별 MVP 목표와 개발 현황 | 현재 MVP 범위, 상태와 다음 gate를 확인할 때 |
+
+## Test Guides
 
 | Document | Role | Use when |
 | --- | --- | --- |
@@ -11,6 +17,7 @@
 
 ## Document Boundary
 
+- `mvp/`는 현재 MVP의 domain별 목표와 개발 상태를 추적한다.
 - `testing.md`는 **어떻게 test를 실행하는가**를 소유한다.
 - `test-design-and-implementation.md`는 **무엇을 검증할지 어떻게 설계하는가**를 소유한다.
 - `tests/AGENTS.md`는 **tests/에서 실제로 지켜야 하는 작성·fixture·validation 규칙**을 소유한다.
@@ -19,6 +26,7 @@
 ## Reading Order
 
 1. [DEVELOPMENT.md](../../DEVELOPMENT.md)에서 repository 개발 환경을 확인한다.
+1. 현재 MVP 작업이면 [MVP Development](mvp/README.md)에서 목표와 상태를 확인한다.
 1. [Testing Guide](testing.md)에서 test command와 report 정책을 확인한다.
 1. [Test Design and Implementation](test-design-and-implementation.md)에서 test 설계 기준을 확인한다.
 1. [tests/AGENTS.md](../../tests/AGENTS.md)에서 test 작성과 validation 규칙을 확인한다.

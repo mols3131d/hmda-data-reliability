@@ -1,0 +1,51 @@
+version: 1
+
+snapshot:
+  date: "2026-08-11"
+  repository_ref: main
+  repository_revision: 02aa81fbd9e3ca55cfb3b3eacddfbea70db4fd80
+  implementation_basis:
+    pull_request: 48
+    pull_request_head: 736732b7940b90486185dc93200161f8ae09a542
+    merge_commit: 02aa81fbd9e3ca55cfb3b3eacddfbea70db4fd80
+  current_main_validation: not_run
+
+status_semantics:
+  implemented: goal implementation exists in the snapshot revision
+  audited: validation evidence exists on the related PR revision but was not rerun on the snapshot revision
+  boundary_preserved: no new MVP implementation is required; the existing non-responsibility boundary remains the goal
+
+domains:
+  - name: hmda-data
+    goal: controlled volume drop, partition identity, and safe replacement
+    implementation: implemented
+    verification: audited
+  - name: data-platform
+    goal: isolated dbt evidence and projection integrity
+    implementation: implemented
+    verification: audited
+  - name: data-operations
+    goal: run-scoped dbt, explicit promotion, and identity handoff
+    implementation: implemented
+    verification: audited
+  - name: reliability
+    goal: volume-drop detection through recovery and evaluation
+    implementation: implemented
+    verification: audited
+  - name: orchestration
+    goal: preserve the data-plane and reliability control-plane boundary
+    implementation: boundary_preserved
+    verification: audited
+
+validation_evidence:
+  revision: 736732b7940b90486185dc93200161f8ae09a542
+  source: "PR #48"
+  checks:
+    - "tests/reliability/test_evaluation_report.py: 7 passed"
+    - "full pytest suite: 170 passed"
+    - "ruff check src tests: passed"
+    - "ty check: passed via pre-commit hook"
+    - "openspec strict validation: passed"
+    - "pre-push regression: 170 passed"
+
+next_gate: "Rerun MVP end-to-end acceptance and related regression on current main, then update both status files to the same snapshot."
