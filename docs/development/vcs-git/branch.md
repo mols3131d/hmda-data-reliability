@@ -79,12 +79,71 @@ Remote가 앞서 있으면 먼저 반영하고 다시 검증한다. Force-push, 
 
 ### Main Sync
 
-`main`의 최신 운영 자산은 routine artifact push와 분리된 sync push로 current remote `main`을 merge해 반영한다.
+`main`의 최신 상태는 routine artifact push와 분리된 sync commit으로 `inbox`에 merge한다. 방향은 항상 **`main` → `inbox`**이며 `main`은 read-only다.
 
-- Sync commit에 수동 수정이나 routine artifact 변경을 섞지 않는다.
-- Sync push에는 sync commit만 포함한다.
-- Merge conflict가 발생하면 중단한다.
-- Sync는 `inbox` content를 `main`에 반영하는 근거가 아니다.
+- Sync commit에는 `main` 반영 외의 수정이나 routine artifact 변경을 섞지 않는다.
+- `inbox`의 고유 content는 `Direct Push`의 허용 경로에만 있어야 한다.
+- Conflict, 예상 밖 path 또는 remote `inbox` 변경이 확인되면 자동 해결하지 않고 중단한다.
+- Force-push, rebase, history rewrite 또는 branch replacement로 sync하지 않는다.
+- Sync는 `inbox` content를 `main`에 반영하거나 promotion하는 근거가 아니다.
+
+#### Git CLI
+
+Remote state를 기준으로 시작한다.
+
+```bash
+git fetch origin main inbox
+git switch inbox
+git pull --ff-only origin inbox
+
+MAIN=$(git rev-parse origin/main)
+INBOX=$(git rev-parse origin/inbox)
+```
+
+Working tree가 clean하고 `HEAD`가 `INBOX`와 같은지 확인한다. `MAIN`이 이미 `INBOX`의 ancestor면 추가 sync는 필요 없다.
+
+Sync 전에는 다음 비교에서 `inbox` 고유 변경이 `Direct Push`의 허용 경로에만 있는지 확인한다.
+
+```bash
+git diff --name-status "$MAIN...$INBOX"
+```
+
+검사가 통과하면 merge하고 결과를 확인한다.
+
+```bash
+git merge --no-ff "$MAIN" -m "chore: sync inbox with main"
+git merge-base --is-ancestor "$MAIN" HEAD
+git diff --name-status "$MAIN...HEAD"
+```
+
+Conflict가 발생하면 `git merge --abort`하고 중단한다. Push 직전에는 remote `inbox`를 다시 fetch해 여전히 `INBOX`인지 확인한다. 달라졌으면 push하지 않는다.
+
+```bash
+git fetch origin inbox
+test "$(git rev-parse origin/inbox)" = "$INBOX" &&
+  git push origin HEAD:inbox
+```
+
+Push 후에는 remote state를 다시 읽어 sync 대상과 현재 `main`이 `inbox`에 포함되는지 확인하고, branch 간 고유 content도 다시 검사한다.
+
+```bash
+git fetch origin main inbox
+git merge-base --is-ancestor "$MAIN" origin/inbox
+git merge-base --is-ancestor origin/main origin/inbox
+git diff --name-status origin/main...origin/inbox
+```
+
+두 번째 ancestor 검사가 실패하면 작업 중 `main`이 더 진행된 것이다. 이미 반영한 sync를 되돌리거나 rewrite하지 않고 새 state를 대상으로 다음 sync cycle을 수행한다.
+
+#### Connector Or API
+
+GitHub connector나 Git object API도 같은 경계를 따른다.
+
+1. `main`, `inbox`와 merge base를 읽고 `inbox` 고유 content를 검증한다.
+1. Conflict-free merge commit을 기존 `inbox` first parent, 대상 `main` second parent로 만든다.
+1. Ref update 직전에 `inbox`를 다시 읽는다. Snapshot과 달라졌으면 중단한다. `main`이 달라졌으면 최신 `main`을 기준으로 merge 결과를 다시 계산한다.
+1. `inbox` ref만 fast-forward update하고 force option을 사용하지 않는다.
+1. Update 후 current `main`이 `inbox`의 ancestor인지 확인한다. 아니면 history를 rewrite하지 않고 다음 sync cycle을 수행한다.
 
 ### Promotion
 
