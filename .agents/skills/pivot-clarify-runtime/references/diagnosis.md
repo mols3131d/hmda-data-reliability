@@ -2,6 +2,20 @@
 
 runtime 문제를 모두 관찰하려 하지 않는다. **실행 후 답하기 어렵고 오해 비용이 큰 복원 질문 하나**를 먼저 고른다.
 
+## Route Before Instrumenting
+
+먼저 runtime evidence가 실제 병목인지 확인한다.
+
+| Main question | Route |
+| --- | --- |
+| 실행 후 무엇이 일어났는지 복원하기 어렵다 | `pivot-clarify-runtime` |
+| 코드를 읽어도 의미, 책임 또는 caller contract를 이해하기 어렵다 | `pivot-clarify-code` |
+| 현재 동작이 올바른지, defect인지 판단해야 한다 | review/debugging |
+| 지속적인 상태 감시, alert, SLO가 필요하다 | monitoring/observability |
+| 왜 느리거나 자원을 많이 쓰는지 찾아야 한다 | profiling/performance |
+
+주된 문제가 runtime evidence가 아니면 clarification 명목으로 logging이나 metadata를 추가하지 않는다.
+
 ## Reconstruction Question
 
 | Question | Typical signal |
@@ -14,6 +28,18 @@ runtime 문제를 모두 관찰하려 하지 않는다. **실행 후 답하기 �
 
 여러 질문이 보여도 가장 위험하거나 반복적으로 코드를 다시 추적하게 만드는 하나를 먼저 해결한다.
 
+## Debt Form
+
+복원 질문을 어렵게 만드는 주된 형태를 하나 고른다.
+
+| Form | Signal |
+| --- | --- |
+| Missing | 필요한 결과, 이유 또는 실패 context가 남지 않는다. |
+| Duplicate | 같은 사실이 여러 layer나 surface에서 반복된다. |
+| Misowned | 사실을 가장 잘 아는 boundary와 evidence 위치가 다르다. |
+| Noisy | routine detail이 많아 중요한 event를 찾기 어렵다. |
+| Disconnected | 필요한 evidence는 있으나 같은 실행으로 연결하기 어렵다. |
+
 ## Priority
 
 오해했을 때 영향이 큰 순서로 본다.
@@ -24,14 +50,7 @@ runtime 문제를 모두 관찰하려 하지 않는다. **실행 후 답하기 �
 1. 중요한 branch 또는 state transition
 1. 일반적인 내부 진행 상황
 
-로그가 적다는 사실 자체는 관찰 공백의 근거가 아니다.
-
-## Route Elsewhere
-
-- 코드 구조, 이름, caller contract가 주된 병목이면 `pivot-clarify-code`로 분리한다.
-- 실제 defect 여부를 판단해야 하면 review/debugging으로 분리한다.
-- 지속적인 운영 감시, SLO, telemetry pipeline이 목적이면 monitoring/observability 작업으로 분리한다.
-- 성능 원인 분석이 목적이면 profiling/performance 작업으로 분리한다.
+로그가 적거나 많다는 사실 자체는 관찰 공백의 근거가 아니다.
 
 ## Stop
 
