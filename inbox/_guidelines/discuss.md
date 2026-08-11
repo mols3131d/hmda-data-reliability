@@ -57,7 +57,7 @@ Cadence describes how the next invocation is advanced, not a capability required
 - **Manual**: a human or Moderator invokes the next eligible participant.
 - **Scheduled**: a scheduler, host, or external runner invokes eligible participants asynchronously during a session window.
 
-A and B do not need timer, sleep, recurrence, or scheduling APIs. If scheduling is unavailable, use Manual cadence with the same bundle, Turn Workflow, persisted-state eligibility, and recovery rules.
+A and B do not need timer, sleep, recurrence, or scheduling APIs. If scheduling is unavailable, use Manual cadence; the bundle, Turn Workflow, persisted-state turn ordering, and applicable recovery rules do not change.
 
 Manual `iterative` discussion defaults to at most **3 A↔B exchanges**. `one-shot` and `cross-review` use their own bounds. Scheduled discussion uses its session window and stop conditions instead.
 
@@ -90,7 +90,7 @@ stop_condition: review_has_no_findings
 
 ## Scheduled Discussion
 
-Scheduled discussion is a long-running asynchronous sequence of **A/B invocations** during a session window. It is designed around ChatGPT-style scheduled chats but must remain portable to other chat applications and agent runners.
+Scheduled discussion is a long-running asynchronous sequence of **A/B invocations** during a session window. It supports ChatGPT-style scheduled chats while remaining portable to other chat applications and agent runners.
 
 ### Defaults
 
@@ -177,7 +177,7 @@ Reusable discussion configuration and topic state live in `README.md`. Keep task
 - Missing material evidence → participant sets `Next: research`; A marks shared topic state blocked when needed.
 - Session expiry → stop new turns and hand synthesis to A.
 
-The protocol requires only that a human or automated orchestrator can invoke A/B, expose durable shared state and prior turns, persist a turn, and invoke the other actor later. The orchestrator may be a human, scheduler, CI job, host application, or external runner.
+The protocol requires only that the surrounding environment can invoke A/B, expose durable shared state and prior turns, persist a turn, and invoke the other actor later. Scheduler-specific implementation stays outside the participant contract.
 
 ## Stop And Synthesis
 
