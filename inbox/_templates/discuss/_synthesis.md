@@ -5,8 +5,8 @@ status: completed
 ---
 
 <!--
-기본 Synthesis는 README.md에 작성한다.
-README가 비대해져 가독성이 떨어질 때만 이 템플릿을 `synthesis.md`로 생성하고 README에서 링크한다.
+README.md의 Synthesis가 너무 커져 가독성을 해칠 때만 이 템플릿을 `synthesis.md`로 사용한다.
+기본 토론 번들은 README.md + turns/만 사용한다.
 합의를 강제하지 말고 실제 합의와 남은 이견을 분리한다.
 토론 결과는 canonical decision이 아니다.
 -->
