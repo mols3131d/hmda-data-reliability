@@ -17,6 +17,10 @@ GitHub review decision은 본문에 반복하지 않는다.
 
 중요도는 impact와 urgency를 기준으로 색 원형과 text label을 함께 표시한다.
 🔴 Critical / 🟠 High / 🟡 Medium / 🔵 Low
+
+Finding field의 값이 하나면 inline으로 쓸 수 있다.
+경로, 근거, required change처럼 값이 여러 개면 nested list로 분리한다.
+List depth는 2단계를 권장하고 최대 3단계까지만 사용한다.
 -->
 
 <finding 결과>
@@ -24,11 +28,17 @@ GitHub review decision은 본문에 반복하지 않는다.
 <!--
 ### <importance> — F1 · <finding title>
 
-- **Location:** 어디에서 발생하는가?
-- **Evidence:** 무엇으로 확인했는가?
-- **Impact:** 수정하지 않으면 어떤 문제가 생기는가?
-- **Required Change:** 무엇이 바뀌어야 해결되는가?
-- **Uncertainty:** 중요한 미확인 전제가 있을 때만 추가한다.
+- **Location**
+  - <path 또는 symbol 1>
+  - <path 또는 symbol 2>
+- **Evidence**
+  - <확인 근거 1>
+  - <확인 근거 2>
+- **Impact:** <수정하지 않으면 생기는 문제>
+- **Required Change**
+  - <필요한 변경 1>
+  - <필요한 변경 2>
+- **Uncertainty:** <중요한 미확인 전제가 있을 때만 추가>
 
 예: `### 🟠 High — F1 · 검증 실패 전에 입력 기록이 생성됨`
 -->
@@ -60,10 +70,18 @@ Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 tab
 -->
 
 <!--
-Author metadata — Agent가 review를 주도했고 GitHub 작성자만으로 실제 작성 주체를 구별할 수 없을 때만 문서 맨 위에 추가한다.
+Optional metadata — GitHub가 제공하지 않는 provenance가 판단에 필요할 때만 본문 마지막에 추가한다.
+Footnote 정의가 있으면 metadata를 그 바로 앞에 두고 별도 Metadata heading은 만들지 않는다.
+공통 규칙은 `.github/templates/README.md`를 따른다.
+
+`author`는 Agent가 review를 주도했지만 GitHub 작성자만으로 실제 작성 주체를 구별할 수 없을 때 사용한다.
+`revision`은 이 review가 실제로 검토한 exact base/head commit pair를 고정한다. 이후 PR head가 바뀌어도 과거 review의 값은 바꾸지 않는다.
 
 ```yaml
 author:
   - <user-id>:<provider>-<service>
+revision:
+  base: <full-base-commit-sha>
+  head: <full-head-commit-sha>
 ```
 -->

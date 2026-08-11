@@ -14,6 +14,10 @@ class EvaluationCaseResult(BaseModel):
     required_actions: list[str] = Field(default_factory=list)
     remediation_actions: list[str] = Field(default_factory=list)
     evidence_refs: list[str] = Field(default_factory=list)
+    target_mutated: bool | None = None
+    failure_stage: str | None = None
+    reconciliation_action: str | None = None
+    artifact_projection_ids: list[str] = Field(default_factory=list)
 
     @field_validator("case_name")
     @classmethod

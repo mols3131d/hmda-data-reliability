@@ -7,8 +7,11 @@ from pathlib import Path
 import pytest
 
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.hmda_data import load_hmda_loans_partition
-from project_pivot.hmda_data.errors import HMDADataLoadError
+from project_pivot.hmda_data import (
+    load_hmda_loans_partition,
+    partition_content_identity,
+)
+from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 
 pytestmark = pytest.mark.component
 
@@ -48,6 +51,89 @@ def test_load_hmda_loans_partition_is_idempotent(
         row = connection.execute("SELECT count(*) FROM raw.hmda_loans").fetchone()
 
     assert row == (2,)
+
+
+def test_partition_content_identity_tracks_logical_row_multiset(
+    hmda_csv_path: Path,
+) -> None:
+    """Identity는 row order/ingestion time을 무시하고 value와 duplicate를 보존한다."""
+
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        baseline = partition_content_identity(connection, source_year=2025)
+
+        connection.execute(
+            """
+            CREATE OR REPLACE TABLE reordered AS
+            SELECT * REPLACE (ingested_at + INTERVAL '1 day' AS ingested_at)
+            FROM raw.hmda_loans
+            ORDER BY loan_amount DESC
+            """
+        )
+        connection.execute("CREATE OR REPLACE TABLE raw.hmda_loans AS FROM reordered")
+        reordered = partition_content_identity(connection, source_year=2025)
+
+        connection.execute(
+            """
+            UPDATE raw.hmda_loans
+            SET income = income + 1
+            WHERE loan_amount = 350000
+            """
+        )
+        changed_value = partition_content_identity(connection, source_year=2025)
+
+        connection.execute(
+            """
+            INSERT INTO raw.hmda_loans
+            SELECT *
+            FROM raw.hmda_loans
+            WHERE loan_amount = 350000
+            LIMIT 1
+            """
+        )
+        duplicated = partition_content_identity(connection, source_year=2025)
+
+    assert reordered == baseline
+    assert changed_value != baseline
+    assert duplicated != changed_value
+
+
+def test_partition_load_compares_expected_identity_before_replacement(
+    hmda_csv_path: Path,
+    tmp_path: Path,
+) -> None:
+    """Stale expected identity는 transaction 안에서 zero mutation으로 실패한다."""
+
+    replacement_path = tmp_path / "year_2025_replacement.csv"
+    replacement_path.write_text(
+        hmda_csv_path.read_text(encoding="utf-8").replace("120,CA", "121,CA"),
+        encoding="utf-8",
+    )
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        before = partition_content_identity(connection, source_year=2025)
+        assert (
+            load_hmda_loans_partition(
+                connection,
+                [replacement_path],
+                2025,
+                expected_identity=before,
+            )
+            == 2
+        )
+        replaced = partition_content_identity(connection, source_year=2025)
+
+        with pytest.raises(HMDAStalePartitionError, match="stale"):
+            load_hmda_loans_partition(
+                connection,
+                [hmda_csv_path],
+                2025,
+                expected_identity=before,
+            )
+        after_stale = partition_content_identity(connection, source_year=2025)
+
+    assert replaced != before
+    assert after_stale == replaced
 
 
 def test_partition_load_creates_custom_target_schema(hmda_csv_path: Path) -> None:

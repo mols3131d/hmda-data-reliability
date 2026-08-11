@@ -9,7 +9,14 @@ from typing import cast
 from project_pivot.data_operations.errors import DataOperationError
 from project_pivot.data_operations.lifecycle_result import LifecycleResult
 from project_pivot.data_operations.request import DataOperationRequest
+from project_pivot.data_platform.artifacts import (
+    ArtifactProjectionLockError,
+    ArtifactProjectionReadError,
+    artifact_projection_id,
+    artifact_projection_lock,
+)
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.hmda_data import PartitionContentIdentity, partition_content_identity
 from project_pivot.reliability import (
     DetectionRequest,
     DetectionResult,
@@ -64,13 +71,32 @@ def run_incident_lifecycle(
         detections = detect_basic_incidents(
             DetectionRequest(baseline=baseline, current=current)
         )
-        analyses = [_analyze_detection(request, detection) for detection in detections]
+        with artifact_projection_lock(
+            request.dbt_manifest_path.parent,
+            exclusive=False,
+        ):
+            analyses = [
+                _analyze_detection(request, detection) for detection in detections
+            ]
+            dbt_projection_id = _dbt_projection_id(request) if analyses else None
+        target_content_identity = (
+            partition_content_identity(
+                connection,
+                table_name=request.raw_table_name,
+                source_year=request.source_year,
+                source_file=request.source_file,
+            )
+            if analyses
+            else None
+        )
 
     return _build_lifecycle_result(
         metadata_row_count=int(cast(int, metadata_evidence.payload["row_count"])),
         baseline=baseline,
         current=current,
         analyses=analyses,
+        target_content_identity=target_content_identity,
+        dbt_projection_id=dbt_projection_id,
     )
 
 
@@ -101,11 +127,16 @@ def _build_lifecycle_result(
     baseline: ProfileSnapshot,
     current: ProfileSnapshot,
     analyses: list[_IncidentAnalysis],
+    target_content_identity: PartitionContentIdentity | None,
+    dbt_projection_id: str | None,
 ) -> LifecycleResult:
     return LifecycleResult(
         metadata_row_count=metadata_row_count,
         baseline_row_count=baseline.row_count,
         current_row_count=current.row_count,
+        detected_incident_ids=_unique(
+            detection.incident.incident_id for detection, _, _ in analyses
+        ),
         detected_incident_types=_unique(
             detection.incident.incident_type for detection, _, _ in analyses
         ),
@@ -131,7 +162,34 @@ def _build_lifecycle_result(
         validation_actions=_unique(
             action for _, _, draft in analyses for action in draft.validation_actions
         ),
+        target_content_identity=target_content_identity,
+        dbt_projection_id=dbt_projection_id,
     )
+
+
+def _dbt_projection_id(request: DataOperationRequest) -> str:
+    try:
+        with artifact_projection_lock(
+            request.dbt_manifest_path.parent,
+            exclusive=False,
+        ):
+            return artifact_projection_id(
+                request.dbt_manifest_path,
+                request.dbt_run_results_path,
+            )
+    except ArtifactProjectionLockError as exc:
+        raise DataOperationError(
+            "dbt artifact projection lock을 획득할 수 없습니다.",
+            context={"directory": str(request.dbt_manifest_path.parent)},
+        ) from exc
+    except ArtifactProjectionReadError as exc:
+        raise DataOperationError(
+            "dbt artifact를 읽을 수 없습니다.",
+            context={
+                "run_target_path": str(request.dbt_manifest_path.parent),
+                "artifact_path": str(exc.artifact_path),
+            },
+        ) from exc
 
 
 def _validate_profile_compatibility(

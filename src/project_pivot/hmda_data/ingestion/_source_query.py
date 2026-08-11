@@ -64,16 +64,28 @@ def validate_source_paths(source_paths: Sequence[str | Path]) -> list[Path]:
     return paths
 
 
-def source_union_sql(source_paths: Sequence[Path]) -> str:
+def source_union_sql(
+    source_paths: Sequence[Path],
+    *,
+    preserve_source_metadata: bool = False,
+) -> str:
     """여러 원천 파일을 이름 기준 UNION하는 SQL을 만든다."""
 
     return "\nUNION ALL BY NAME\n".join(
-        _source_select_sql(path) for path in source_paths
+        _source_select_sql(path, preserve_source_metadata=preserve_source_metadata)
+        for path in source_paths
     )
 
 
-def _source_select_sql(path: Path) -> str:
+def _source_select_sql(path: Path, *, preserve_source_metadata: bool) -> str:
     """원천 파일을 읽고 파일 경로·이름·연도·적재 시각을 추가한다."""
+
+    if preserve_source_metadata:
+        return f"""
+            SELECT
+                * EXCLUDE (filename)
+            FROM {_reader_sql(path)}
+        """
 
     return f"""
         SELECT

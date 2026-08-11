@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import ValidationError
 
 
@@ -19,6 +21,19 @@ class ApprovalGateError(ReliabilityError):
 
 class BackfillValidationError(ReliabilityError):
     """Approved backfill validation failed."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        mutation_state: str | None = None,
+        reconciliation_action: str | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.mutation_state = mutation_state
+        self.reconciliation_action = reconciliation_action
+        self.context = dict(context or {})
 
 
 class TableMetadataEvidenceError(ReliabilityError):

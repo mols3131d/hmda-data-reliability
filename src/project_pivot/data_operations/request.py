@@ -29,6 +29,7 @@ class DataOperationRequest(BaseModel):
     dbt_profiles_dir: Path = Path("dbt")
     dbt_manifest_path: Path = Path("dbt/target/manifest.json")
     dbt_run_results_path: Path = Path("dbt/target/run_results.json")
+    dbt_run_target_path: Path = Path("dbt/target/runs/current")
     run_dbt_build: bool = True
 
     @field_validator("database_path", "source_root", mode="before")

@@ -23,6 +23,10 @@ class HMDADataLoadError(HMDADataFoundationError):
     """HMDA 원천 데이터 적재에 실패했다."""
 
 
+class HMDAStalePartitionError(HMDADataLoadError):
+    """HMDA target partition이 caller의 expected state와 다르다."""
+
+
 class HMDADataValidationError(HMDADataFoundationError):
     """HMDA 원천 데이터 검증에 실패했다."""
 

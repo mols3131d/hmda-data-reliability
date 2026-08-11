@@ -28,7 +28,7 @@ def row_count_drop(
     """연도 분포를 보존하며 행 수를 대폭 줄인 파일을 생성한다."""
 
     _validate_fraction(sample_fraction, "sample_fraction")
-    ranked_query = _ranked_sample_query(source_paths)
+    ranked_query = _ranked_sample_query(connection, source_paths)
     case_query = f"""
         WITH ranked AS ({ranked_query})
         SELECT * EXCLUDE (__sample_rank, __partition_count)
@@ -59,7 +59,7 @@ def null_spike(
     _validate_fraction(sample_fraction, "sample_fraction")
     require_columns(connection, source_paths, {target_column})
     quoted_target = quote_identifier(target_column)
-    ranked_query = _ranked_sample_query(source_paths)
+    ranked_query = _ranked_sample_query(connection, source_paths)
     case_query = f"""
         WITH ranked AS ({ranked_query}),
         sampled AS (
@@ -120,7 +120,7 @@ def schema_drift(
     _validate_fraction(sample_fraction, "sample_fraction")
     require_columns(connection, source_paths, {target_column})
     quoted_target = quote_identifier(target_column)
-    ranked_query = _ranked_sample_query(source_paths)
+    ranked_query = _ranked_sample_query(connection, source_paths)
     case_query = f"""
         WITH ranked AS ({ranked_query})
         SELECT
@@ -151,7 +151,7 @@ def freshness_delay(
 
     _validate_fraction(sample_fraction, "sample_fraction")
     delayed_observed_at = observed_at or datetime.now(UTC) - timedelta(days=delay_days)
-    ranked_query = _ranked_sample_query(source_paths)
+    ranked_query = _ranked_sample_query(connection, source_paths)
     case_query = f"""
         WITH ranked AS ({ranked_query})
         SELECT
@@ -192,23 +192,35 @@ def _sample_limit_sql() -> str:
     """
 
 
-def _ranked_sample_query(source_paths: Sequence[str | Path]) -> str:
+def _ranked_sample_query(
+    connection: duckdb.DuckDBPyConnection,
+    source_paths: Sequence[str | Path],
+) -> str:
     """연도별 안정적 샘플 순위를 붙인 원천 조회 SQL을 만든다."""
 
     source_query = source_union_sql(source_paths)
+    try:
+        columns = sorted(
+            str(row[0])
+            for row in connection.execute(
+                f"DESCRIBE SELECT * FROM ({source_query}) LIMIT 0",
+                source_paths_parameter(source_paths),
+            ).fetchall()
+            if str(row[0]) != "ingested_at"
+        )
+    except duckdb.Error as exc:
+        raise SyntheticCaseError("HMDA 합성 원천 스키마 조회에 실패했습니다.") from exc
+    packed_columns = ", ".join(
+        f"{quote_identifier(column)} := {quote_identifier(column)}"
+        for column in columns
+    )
     return f"""
         SELECT
             *,
             row_number() OVER (
                 PARTITION BY activity_year
                 ORDER BY
-                    activity_year,
-                    state_code,
-                    county_code,
-                    loan_purpose,
-                    action_taken,
-                    loan_amount,
-                    income
+                    md5(to_json(struct_pack({packed_columns})))
             ) AS __sample_rank,
             count(*) OVER (PARTITION BY activity_year) AS __partition_count
         FROM ({source_query})

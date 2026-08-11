@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from project_pivot.hmda_data import PartitionContentIdentity
 from project_pivot.reliability.contracts import ProfileSnapshot
 
 
@@ -15,5 +16,10 @@ class BackfillValidationResult(BaseModel):
     partition: str
     row_count: int = Field(ge=0)
     profile_snapshot: ProfileSnapshot
+    approved_before_identity: PartitionContentIdentity
+    expected_after_identity: PartitionContentIdentity
+    actual_identity: PartitionContentIdentity
+    mutation_state: str
+    reconciliation_action: str
     validation_passed: bool
     executed_actions: list[str] = Field(default_factory=list)
