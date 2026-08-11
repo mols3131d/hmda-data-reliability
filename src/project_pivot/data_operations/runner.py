@@ -107,9 +107,10 @@ def promote_dbt_artifacts(
 ) -> None:
     """Caller가 검증한 successful run을 current artifact projection으로 승격한다.
 
-    Build 때 계산한 ``projection_id``와 현재 candidate bytes가 일치하는지 다시
-    확인하므로, 검증 뒤 변경된 stale result는 승격하지 않는다. Promotion 중
-    file operation이 실패하면 기존 current pair 복구를 시도한다.
+    Promotion 시작 시 build 때 계산한 ``projection_id``와 현재 candidate bytes가
+    일치하는지 다시 확인한다. 이 확인은 candidate writer와 실제 copy 사이의 동시
+    변경까지 차단하지는 않는다. Promotion 중 file operation이 실패하면 기존
+    current pair 복구를 시도한다.
     """
 
     if not result.succeeded:

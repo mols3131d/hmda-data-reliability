@@ -1,7 +1,8 @@
-"""Current profile 기반 incident lifecycle을 read-only로 조합한다.
+"""Current profile 기반 incident lifecycle을 analysis-only 경계로 조합한다.
 
-이 module은 detection, impact analysis, remediation draft까지만 계산한다.
-Approval, backfill, recovery, evaluation 또는 report write는 실행하지 않는다.
+이 module은 detection, impact analysis, remediation draft까지만 계산하며 raw partition,
+approval, recovery, evaluation 또는 report output을 변경하지 않는다. dbt artifact
+일관성을 위한 shared lock은 lock file I/O를 수행할 수 있다.
 """
 
 from __future__ import annotations
@@ -51,8 +52,9 @@ def run_incident_lifecycle(
 ) -> LifecycleResult:
     """Baseline과 실제 current를 비교해 incident 분석 요약을 반환한다.
 
-    Baseline은 current와 같은 asset과 partition이어야 한다. 실행은 read-only이며
-    remediation action을 제안할 뿐 approval이나 recovery를 수행하지 않는다.
+    Baseline은 current와 같은 asset과 partition이어야 한다. 실행은 raw partition,
+    approval, recovery, evaluation output을 변경하지 않는 analysis-only 경계다.
+    Current dbt artifact를 일관되게 읽기 위한 shared lock file I/O는 수행할 수 있다.
     Detection이 없으면 recovery proposal input identity도 반환하지 않는다.
     """
 
