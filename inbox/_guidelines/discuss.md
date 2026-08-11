@@ -8,12 +8,12 @@ Discussion is not Research, Review, or a canonical decision. Route substantial e
 
 Every structured discussion has three logical roles.
 
-- **Moderator**: frames the question, chooses the discussion type and exchange pattern, controls scope and rounds, and synthesizes the result.
-- **A** and **B**: independent participants. They argue from evidence and project constraints and may change position when warranted.
+- **Moderator**: frames the question, controls scope and rounds, and synthesizes the result.
+- **A** and **B**: independent participants that argue from evidence and project constraints and may change position when warranted.
 
 `A` and `B` identify participants, not fixed sides. Do not force artificial opposition.
 
-The Moderator is a **coordination role, not necessarily a separate agent, chat, or scheduled task**. Its responsibilities may be carried by the human, one participant at an explicit boundary, or deterministic protocol. Use a separate Moderator execution only when independent synthesis or active coordination materially improves the discussion.
+The Moderator is a **coordination role, not necessarily a separate agent, chat, or scheduled task**. Its responsibilities may be carried by the human, one participant at an explicit boundary, or deterministic protocol.
 
 ## Discussion Types
 
@@ -33,149 +33,250 @@ Do not use `explore` to hide a question that actually needs Research.
 
 Discussion type and exchange pattern are independent.
 
-- **One-shot**: A and B respond independently once, then synthesize.
-- **Cross-review**: A and B start independently, then each responds once to the other's strongest case. Default for consequential decisions.
-- **Iterative**: A and B continue for multiple rounds while each round can materially change the result.
+- **One-shot**: A and B respond once, then synthesize.
+- **Cross-review**: A and B produce positions and each reviews the other's strongest case once. Default for consequential decisions.
+- **Iterative**: A and B continue while another turn can materially change the result.
 
-Default maximum: **3 rounds per decision**. Extend only for new evidence, a verified correction, a new human constraint, or material narrowing of disagreement.
+Ordinary discussion defaults to **3 rounds per decision**. Extended scheduled discussion uses its configured session window and stop conditions instead of inheriting that limit blindly.
 
 ## Cadence
 
 Cadence controls when participant turns run.
 
 - **Manual**: the human or Moderator advances turns.
-- **Scheduled**: automations run turns asynchronously at predefined times or intervals.
+- **Scheduled**: two chat agents revisit the discussion asynchronously during a configured session window.
 
-Overnight discussion is one scheduled use case, not the default discussion model.
+Overnight discussion is one scheduled use case, not the definition of `discuss`.
 
 ## Scheduled Discussion
 
-Use scheduled discussion when a human does not need to intervene between turns and repository artifacts can carry the shared context.
+Scheduled discussion is a **long-running asynchronous session between two chat agents**. The rules are designed around ChatGPT-style scheduled chats but must remain portable to other chat applications, agent runners, and schedulers.
 
-A separate Moderator schedule is not required. Prefer two participant schedules when independent A/B execution matters; assign synthesis to one participant or a later human action.
+Default session shape:
 
-### Model
+- participants: **A and B**;
+- **A is the Lead** and carries the Moderator coordination role;
+- topics: normally **1 primary topic**, optionally **1 secondary topic**;
+- window: normally **6 to 12 hours**;
+- exchange: A-led iterative review;
+- final decision authority: human or the declared owning workflow.
 
-Treat **one scheduled run as one complete participant turn**:
+More topics or a longer window are allowed when the discussion goal requires them. They are not defaults.
+
+A scheduled discussion does **not** require a third scheduled Moderator.
+
+### A — Lead
+
+A owns session direction without owning the final human decision.
+
+A:
+
+- establishes the initial framing and topic order;
+- opens each topic with the first substantive position;
+- reads B's latest contribution before revising, defending, or narrowing its position;
+- owns shared session state and topic transitions;
+- decides from the protocol whether to continue, pause, request Research, change topic, or stop;
+- writes the final synthesis;
+- represents B's strongest evidence fairly and does not use Lead status to overrule it.
+
+### B — Challenger
+
+B is the independent counterweight to A's lead.
+
+B:
+
+- responds to A's latest published position for the active topic;
+- verifies A's evidence, assumptions, trade-offs, and omitted alternatives;
+- strengthens, challenges, or agrees with A based on evidence;
+- records concessions and changed positions explicitly;
+- may recommend another topic when it is necessary to answer the original discussion goal;
+- does not rewrite shared session control or silently redefine the active topic.
+
+B is not required to oppose A. Agreement is valid when A's position survives scrutiny.
+
+### Topics
+
+A session normally starts with **1 topic** and may contain **1 additional topic** when it materially serves the same discussion goal.
+
+- Keep only one topic active at a time.
+- Finish, block, or deliberately pause the active topic before switching.
+- Keep subquestions inside the current topic unless separating them changes the decision.
+- Add topics beyond two only when a newly discovered issue is necessary to resolve the original goal; A records why it was added.
+- Do not add topics merely because session time remains.
+
+Topic count is a default constraint, not a hard schema limit.
+
+### Session Window
+
+A session normally runs for **6 to 12 hours**.
+
+- The window is a timebox, not a quota that must be consumed.
+- Stop early when all active topics satisfy a Stop Condition.
+- Extend beyond the configured window only when the human requested a longer session or new material evidence justifies an explicit extension.
+- Do not create filler turns to occupy unused time.
+- After expiry, do not start another argumentative turn. A may still synthesize the persisted discussion.
+
+The common protocol does not prescribe a provider-specific trigger interval. Each platform maps the session window to schedules it actually supports.
+
+### Turn Model
+
+Treat **one scheduled invocation as one complete participant turn**:
 
 ```text
-read → check turn → reason/research → write → review → commit/push → exit
+read → check eligibility → reason/research → write → self-review → commit/push → exit
 ```
 
-Do not keep a run alive to fill time, wait for the other participant, or attempt multiple delayed turns. Time values are soft work budgets, not guaranteed runtime.
+A turn should:
 
-Prefer staggered schedules:
+1. read this guideline, the active discussion configuration, the current topic, and the latest relevant turn;
+2. verify that this actor is eligible to act;
+3. refresh only evidence that can materially change the active topic;
+4. perform the configured reasoning, Research, or bounded RPI-style refinement needed for this turn;
+5. write one reviewable contribution containing material changes only;
+6. self-review unsupported claims, repetition, scope drift, and whether a material delta exists;
+7. commit and push the completed turn as one reviewable unit;
+8. exit without waiting for the other participant.
+
+Do not keep a run alive to fill a target duration, sleep until the other participant acts, or attempt delayed turns inside one invocation. The scheduler provides the waiting interval; each invocation provides completed work.
+
+A configured turn or RPI time value is a **soft work budget**, not guaranteed runtime and not a reason to delay completion.
+
+### Exchange
+
+Default scheduled exchange:
 
 ```text
-A schedule ── A1 ───── A2 ───── A3
-                 │        │
-B schedule ───── B1 ───── B2 ───── B3
+A1 → B1 → A2 → B2 → ... → A synthesis
 ```
 
-If each schedule can run only hourly, offsetting A and B by 30 minutes yields a 30-minute exchange cadence. Do not emulate a denser cadence with internal waiting; use more scheduler capacity or another orchestrator when necessary.
+A and B do not need equal numbers of contributions. If the latest evidence resolves the topic, advance or close it without a ceremonial rebuttal.
+
+A turn should add at least one material delta:
+
+- new or corrected evidence;
+- a stronger or narrower argument;
+- a changed assumption or concession;
+- a newly identified decision-relevant risk;
+- a material narrowing of disagreement;
+- a justified recommendation change.
+
+If no material delta exists, do not create another argumentative turn merely because a schedule fired.
 
 ### Configuration
 
-Keep scheduler timing outside reusable discussion behavior. The active bundle only needs execution-relevant configuration, for example:
+Keep reusable discussion behavior independent from provider-specific scheduling syntax.
+
+A portable configuration may look like:
 
 ```yaml
 discussion:
   id: <discussion-id>
-  decision: <decision-id>
+  status: active
   type: debate
   exchange: iterative
   cadence: scheduled
-  first_round: independent
-  max_rounds: 3
-  round_work: rpi-loop
-  rpi_budget_minutes: 10
-  turn_budget_minutes: 14
-  synthesis_owner: B
+  lead: A
   decision_authority: human
+  started_at: <timestamp>
+  ends_at: <timestamp>
+  active_topic: <topic-id>
+  topics:
+    - id: <topic-id>
+      status: active
+  round_work: rpi-loop
 ```
 
-`rpi_budget_minutes` and `turn_budget_minutes` are optional **soft budgets**. Finish early when the turn is complete. Never implement them as sleep or deliberate delay.
+Optional safety fields such as `max_rounds`, `rpi_budget_minutes`, or `turn_budget_minutes` may be added when useful. The session window plus material-delta rules are the primary bounds for an extended scheduled session.
 
-`round_work: rpi-loop` means the participant uses the project's RPI loop to improve the current turn only. It does not expand discussion scope or authorize unrelated implementation.
+`round_work: rpi-loop` means the participant uses the project's RPI loop to improve **its current turn only**. It does not expand scope or authorize unrelated implementation.
 
-### Run Contract
+Keep provider-specific task IDs, recurrence syntax, model names, notification settings, and delivery metadata outside the common discussion contract.
 
-On every scheduled invocation:
+### Turn Eligibility
 
-1. Read this guideline, active configuration, shared context, and existing rounds.
-2. Exit without a discussion write when synthesis already exists, this turn already exists, or the required preceding turn is missing.
-3. Determine the next eligible round for this actor.
-4. Refresh only evidence that can materially change the active decision.
-5. If configured, run the RPI loop as a bounded improvement loop for this round.
-6. Write one immutable participant round following the Participant Contract.
-7. Self-review for unsupported claims, repetition, and whether the turn adds a material delta.
-8. Commit and push the completed turn as one reviewable unit.
-9. If this actor owns synthesis and a Stop Condition is met, synthesize when both sides can be represented fairly.
-10. Exit. Never wait inside the run for the other participant.
+Derive the next actor from **persisted immutable turns**, not from both agents racing to update a shared `next_actor` field.
 
-When using RPI inside a turn, preserve only conclusions, evidence, changed assumptions, and reviewable rationale. Do not expose private chain-of-thought.
+For one active topic:
 
-### Turn Order
+- no participant turn exists → A is eligible;
+- latest valid turn is A → B is eligible;
+- latest valid turn is B → A is eligible;
+- synthesis exists or topic/session is closed → neither is eligible for a new argumentative turn.
 
-For normal iterative exchange:
+An actor must not publish two equivalent turns against the same input state.
 
-```text
-A1 → B1 → A2 → B2 → ... → synthesis
-```
+If the expected input is missing, this actor is not eligible, the intended turn already exists, or the session window expired, perform no new argumentative write and exit cleanly.
 
-- A1 starts only when A1 does not exist.
-- B1 starts after A1 exists. With `first_round: independent`, B records its own initial position without using A1's argument content.
-- A<n> starts only after B<n-1> exists and A<n> does not.
-- B<n> starts only after A<n> exists and B<n> does not.
+### Write Ownership
 
-These checks make scheduled turns idempotent and allow a missed run to recover later without inventing missing rounds.
+Scheduled discussion intentionally uses asymmetric ownership.
 
-### Commit And Recovery
+- **A** owns shared session state, topic transitions, A turns, and final synthesis.
+- **B** owns only B turns.
+- Neither participant rewrites a contribution already consumed by the other; corrections go into the next eligible turn.
+- B recommends state changes in its contribution; A applies shared-state changes at its next eligible boundary.
 
-Prefer **one participant turn = one commit**. Include only that round and, when owned by the same turn, its synthesis or control update.
+This keeps both chat agents from racing to modify the same control file.
 
-- Missing prerequisite → no-op; retry on the next scheduled run.
-- Duplicate invocation → no-op if the intended output exists.
+### Commit Boundary
+
+Prefer **one participant turn = one reviewable commit**.
+
+The commit contains the completed turn and, for A only when needed, its small session-state transition or final synthesis. Do not mix unrelated repository work into a discussion turn.
+
+If a stale revision or write conflict is detected, re-read the current artifacts before retrying. Never overwrite the other participant's contribution to resolve a conflict.
+
+### Failure And Recovery
+
+Scheduled execution may be late, skipped, duplicated, or unavailable. Recover from persisted state rather than assumed wall-clock order.
+
+- Missing prerequisite turn → no-op; retry on a later invocation.
+- Duplicate invocation → no-op if the intended turn already exists.
 - Stale repository state → refresh before writing.
-- Write conflict → preserve existing outputs; never overwrite the other participant's round.
-- Missing material evidence → record the Research need and recommend stopping.
-- Round limit reached → synthesize remaining agreement and disagreement rather than extending automatically.
+- Write conflict → preserve existing outputs and retry from current state.
+- Missed turns → resume from the latest valid persisted turn.
+- Missing evidence required to proceed → request Research and block or close the topic.
+- Session expiry → stop new rounds and hand final synthesis to A.
 
-### Scheduled Task Prompt
+### Portability
 
-Participant schedules should differ only by actor identity, timing, and active bundle path. Keep reusable behavior here.
+The common protocol assumes only that a platform can eventually:
 
-```text
-Act as participant <A|B> for the active scheduled discussion.
-Read inbox/_guidelines/discuss.md and the discussion bundle first.
-Run only when your next turn is eligible; otherwise make no discussion write.
-Use the configured round_work and soft budgets for one complete turn.
-Write only your participant output, self-review it, commit and push the turn,
-and exit without waiting for the other participant.
-If you own synthesis and a stop condition is reached, write the synthesis.
-Never accept the human decision on the user's behalf.
-```
+1. invoke A or B;
+2. let that actor read durable shared state and prior published turns;
+3. persist the actor's completed output;
+4. invoke the other actor later.
+
+ChatGPT scheduled tasks, another chat application's scheduler, or an external orchestrator may implement those capabilities differently without changing the discussion rules.
+
+### End Of Session
+
+A writes the final synthesis when all topics close, a Stop Condition is reached, or the session window expires.
+
+The synthesis records:
+
+- result for each topic;
+- strongest evidence and counterevidence;
+- where A or B changed position;
+- agreements and remaining disagreements;
+- unresolved uncertainty or required Research;
+- recommended next action;
+- the exact human decision still required, if any.
+
+The synthesis is a discussion result, not a canonical project decision.
 
 ## Shared Context
 
-Before the first round, establish only what the decision needs:
+Before the first turn, establish only what the discussion needs:
 
 - question or decision ID;
 - scope and explicit non-goals;
 - current evidence snapshot or canonical references;
-- options or proposition when already known;
-- discussion type, exchange pattern, cadence, and round limit;
+- initial topic list or proposition when known;
+- discussion type, exchange pattern, cadence, and applicable bounds;
 - final decision authority.
 
-A bundle may separate context, topics, configuration, rounds, synthesis, and decision log. Exact filenames are flexible, but ownership must remain clear.
-
-## Write Ownership
-
-- The Moderator role owns shared context, round control, synthesis, and discussion status.
-- A owns only A's round outputs; B owns only B's round outputs.
-- Without a separate Moderator execution, assign Moderator writes only at explicit protocol boundaries.
-- Do not rewrite another participant's output or a previously consumed round. Correct errors in the next round.
-- GPT agreement never changes a human-owned decision to `Accepted` without explicit human authorization.
+A bundle may separate context, topics, configuration, turns, synthesis, and decision log. Exact filenames are flexible, but ownership must remain clear.
 
 ## Participant Contract
 
@@ -187,7 +288,7 @@ A useful contribution contains only what changes the decision:
 - concessions or changed assumptions;
 - current proposal;
 - unresolved question only when it can change the choice;
-- continue or synthesize recommendation when rounds are iterative.
+- continue, change topic, Research, or stop recommendation when iterative.
 
 Distinguish repository facts from inference and preference. Do not repeat an earlier position with different wording.
 
@@ -196,24 +297,24 @@ Distinguish repository facts from inference and preference. Do not repeat an ear
 The Moderator role:
 
 1. chooses type and exchange pattern from uncertainty and decision cost;
-2. gives A and B equivalent context when independent positions matter;
-3. keeps discussion scoped to the active decision;
-4. stops when another round has no material value;
-5. synthesizes both sides fairly, including concessions and unresolved disagreement;
-6. routes unanswered factual questions to Research when needed;
-7. leaves the final decision to the declared decision authority.
+2. keeps discussion scoped to the active decision;
+3. stops when another turn has no material value;
+4. synthesizes both sides fairly, including concessions and unresolved disagreement;
+5. routes unanswered factual questions to Research when needed;
+6. leaves the final decision to the declared decision authority.
 
-These are coordination responsibilities, not a requirement for a dedicated Moderator invocation.
+These are coordination responsibilities, not a requirement for a dedicated Moderator invocation. In scheduled discussion, A carries them by default.
 
 ## Stop Conditions
 
-Stop when any of the following is true:
+Stop a discussion or active topic when any of the following is true:
 
 - A and B converge on the same material proposal;
 - the remaining difference is human priority, risk tolerance, or preference;
 - new evidence is required before reasoning can advance;
-- the latest round adds no material information;
-- the configured round limit is reached;
+- the latest eligible turn adds no material information;
+- an explicitly configured safety bound is reached;
+- the scheduled session window expires;
 - the decision authority closes the topic.
 
 The result may be agreement, disagreement, or a Research request. Convergence is useful but not mandatory.
@@ -234,8 +335,9 @@ Synthesis is not a canonical decision.
 ## Boundaries
 
 - Do not require a separate Moderator execution when protocol is sufficient.
+- Do not bind the common protocol to one chat provider, scheduler, trigger interval, task API, or model.
 - Do not force theatrical opposition.
 - Do not let `discuss` become an unbounded brainstorming log.
-- Do not treat scheduled repetition or elapsed time as deeper reasoning by itself.
+- Do not treat scheduled repetition, elapsed time, or equal turn counts as deeper reasoning by itself.
 - Do not create canonical requirements or decisions inside the discussion artifact.
 - Follow the common artifact and lifecycle rules in `inbox/AGENTS.md`.
