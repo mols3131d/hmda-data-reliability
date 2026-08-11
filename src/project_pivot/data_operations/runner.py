@@ -36,8 +36,7 @@ _DBT_BUILD_TIMEOUT_SECONDS = 300
 def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
     """원천 파일을 DuckDB raw table로 멱등 적재한다.
 
-    같은 partition의 재실행 의미와 중복 방지는 ``hmda_data`` ingestion contract에
-    위임하며, 이 함수는 request를 해당 domain API와 result contract로 연결한다.
+    같은 partition을 다시 적재해도 중복 row를 만들지 않는 ingestion contract를 따른다.
     """
 
     hmda_paths = discover_hmda_files(request.source_root)
@@ -60,7 +59,7 @@ def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
 
 
 def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
-    """dbt build를 고유 run target에서 실행하고 candidate artifact를 반환한다.
+    """dbt build를 고유 run target에서 실행하고 candidate artifact 정보를 반환한다.
 
     성공해도 shared current artifact projection은 변경하지 않는다. Caller는 이
     결과에 필요한 downstream validation을 끝낸 뒤 ``promote_dbt_artifacts()``를
@@ -232,7 +231,7 @@ def _validate_dbt_artifacts(manifest_path: Path, run_results_path: Path) -> None
 
 
 def _ensure_artifact_projection(result: DbtBuildResult) -> None:
-    """Promotion 직전 candidate가 build 때 검증한 artifact pair인지 확인한다."""
+    """Build 결과의 projection identity와 현재 candidate bytes가 같은지 확인한다."""
 
     _validate_dbt_artifacts(result.manifest_path, result.run_results_path)
     if (
