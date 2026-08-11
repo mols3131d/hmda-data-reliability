@@ -14,12 +14,12 @@ Default runtime shape:
 <discuss-bundle>/
 ├── README.md
 └── turns/
-    └── <sequence>-<participant>-<participant-sequence>.md
+    └── <sequence>-<participant>.md
 ```
 
 `README.md` is the entrypoint and owns goal, scope, configuration, topics, current state, references, and synthesis by default. `turns/` contains immutable participant turns.
 
-Turn filenames use the discussion-global sequence first, then participant identity, then that participant's own sequence. Example: `001-a-001.md`, `002-b-001.md`, `003-a-002.md`. Use zero-padding so lexical order matches discussion order. Topic identity belongs in the turn metadata, not the filename.
+Turn filenames contain only the discussion-global sequence and participant identity. Example: `001-a.md`, `002-b.md`, `003-a.md`. Zero-pad the sequence so lexical order matches discussion order. Topic and other metadata belong in the turn content, not the filename.
 
 Split content into an additional file only when it materially improves readability. A large final synthesis may move to `synthesis.md`; link it from `README.md`. Do not create extension files preemptively.
 
@@ -140,7 +140,7 @@ Derive eligibility from persisted turns, not a shared mutable `next_actor`:
 - latest valid turn B → A;
 - discussion/topic closed → no argumentative turn.
 
-The filename sequence records this persisted order. The participant sequence is local to each participant and is useful for references such as "A's third turn" without replacing the global sequence.
+The filename sequence records the persisted discussion order. Participant-local numbering is not stored unless a future workflow demonstrates a concrete need for it.
 
 Do not publish two equivalent turns against the same input state. A material delta is new or corrected evidence, a stronger or narrower argument, a changed assumption or concession, a decision-relevant risk, narrowed disagreement, or a justified recommendation change. No material delta → no new argumentative turn.
 
