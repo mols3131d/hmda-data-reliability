@@ -28,8 +28,7 @@ tags:
 - participant 발언만 turns/에 분리한다.
 - turn 파일명은 <sequence>-<participant>.md만 사용한다.
 - 예: 001-a.md, 002-b.md, 003-a.md
-- 각 turn은 discuss 지침의 Research → Plan → Implement → Review workflow를 따른다.
-- Review finding이 없으면 종료하고, finding이 남으면 최대 10 loop까지 전체 workflow를 반복한다.
+- 각 turn의 실행 규칙은 discuss 지침의 Turn Workflow를 따른다.
 - Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
 - scheduled가 아니면 scheduled 전용 frontmatter 필드를 제거한다.
 - OPTIONAL 블록과 빈 placeholder를 남기지 않는다.
