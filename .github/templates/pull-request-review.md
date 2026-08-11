@@ -17,6 +17,10 @@ GitHub review decision은 본문에 반복하지 않는다.
 
 중요도는 impact와 urgency를 기준으로 색 원형과 text label을 함께 표시한다.
 🔴 Critical / 🟠 High / 🟡 Medium / 🔵 Low
+
+Finding field의 값이 하나면 inline으로 쓸 수 있다.
+경로, 근거, required change처럼 값이 여러 개면 nested list로 분리한다.
+List depth는 2단계를 권장하고 최대 3단계까지만 사용한다.
 -->
 
 <finding 결과>
@@ -24,11 +28,17 @@ GitHub review decision은 본문에 반복하지 않는다.
 <!--
 ### <importance> — F1 · <finding title>
 
-- **Location:** 어디에서 발생하는가?
-- **Evidence:** 무엇으로 확인했는가?
-- **Impact:** 수정하지 않으면 어떤 문제가 생기는가?
-- **Required Change:** 무엇이 바뀌어야 해결되는가?
-- **Uncertainty:** 중요한 미확인 전제가 있을 때만 추가한다.
+- **Location**
+  - <path 또는 symbol 1>
+  - <path 또는 symbol 2>
+- **Evidence**
+  - <확인 근거 1>
+  - <확인 근거 2>
+- **Impact:** <수정하지 않으면 생기는 문제>
+- **Required Change**
+  - <필요한 변경 1>
+  - <필요한 변경 2>
+- **Uncertainty:** <중요한 미확인 전제가 있을 때만 추가>
 
 예: `### 🟠 High — F1 · 검증 실패 전에 입력 기록이 생성됨`
 -->
