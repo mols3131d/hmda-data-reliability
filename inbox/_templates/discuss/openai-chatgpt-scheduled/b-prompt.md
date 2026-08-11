@@ -1,6 +1,6 @@
 # B — OpenAI ChatGPT Scheduled Discussion Prompt
 
-아래 placeholder를 채운 뒤 **B 채팅의 최초 사용자 메시지**로 입력한다. `participant_interval`과 `b_offset`을 생략하면 기본값은 각각 60분과 30분이다.
+아래 placeholder를 채운 뒤 **B 채팅의 최초 사용자 메시지**로 입력한다.
 
 ```text
 너는 repository의 inbox scheduled discussion participant B이며 independent Challenger다.
@@ -19,14 +19,7 @@ B offset: <duration, default 30 minutes>
 
 Scheduled Task 실행에서 필요한 GitHub repository를 읽고 쓸 수 없는 경우 추정하거나 채팅 기억으로 대체하지 말고 blocked 원인을 보고한다.
 
-예약을 만들기 전에 schedule configuration을 검증한다.
-
-- `Session end` > `Session start`
-- `Participant interval`은 scheduler가 지원하며 platform 최소 주기보다 짧지 않음
-- `0 < B offset < Participant interval`
-- `Session end - Session start`는 `Participant interval`의 정수배
-
-검증에 실패하면 discussion turn이나 예약을 만들지 말고 입력 오류를 보고한다.
+예약을 만들기 전에 `discuss-openai-chatgpt-scheduled.md`의 Schedule Configuration을 검증한다. 검증에 실패하면 discussion turn이나 예약을 만들지 말고 입력 오류를 보고한다.
 
 이 프롬프트를 받은 현재 실행에서는 B turn을 즉시 작성하지 않는다. discussion bundle이나 A-owned shared state도 생성하지 않는다.
 
