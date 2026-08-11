@@ -8,24 +8,20 @@ Discussion is non-canonical. Route substantial evidence gathering to `research`,
 
 Every `discuss` artifact **must be a bundle**. Do not create a single-file discussion artifact.
 
-Runtime shape:
+Default runtime shape:
 
 ```text
 <discuss-bundle>/
 ├── README.md
-├── topics.md
-├── rounds/
-│   └── <topic>-<turn>-<a|b>.md
-└── synthesis.md  # created only when the discussion ends
+└── rounds/
+    └── <topic>-<turn>-<a|b>.md
 ```
 
-- `README.md` is the entrypoint and owns goal, scope, configuration, and references.
-- `topics.md` owns topic questions and status.
-- `rounds/` contains immutable participant turns.
-- `synthesis.md` is created only when the discussion ends.
-- Add other files only when they materially reduce interpretation cost.
+`README.md` is the entrypoint and owns goal, scope, configuration, topics, current state, references, and synthesis by default. `rounds/` contains immutable participant turns.
 
-Template: [`inbox/_templates/discuss/`](../_templates/discuss/). The template's `_synthesis.md` and `rounds/_turn.md` are authoring templates, not runtime outputs.
+Split content into an additional file only when it materially improves readability. A large final synthesis may move to `synthesis.md`; link it from `README.md`. Do not create extension files preemptively.
+
+Template: [`inbox/_templates/discuss/`](../_templates/discuss/). `rounds/_turn.md` and `_synthesis.md` are authoring templates, not required runtime files.
 
 ## Core
 
@@ -85,7 +81,7 @@ More topics or a longer session require a reason tied to the discussion goal.
 
 - opens topics and controls topic order;
 - revises after reading B;
-- owns shared state and topic transitions;
+- owns `README.md` shared state and topic transitions;
 - chooses continue, Research, topic change, or stop from this protocol;
 - writes the final synthesis and represents B's strongest evidence fairly.
 
@@ -102,7 +98,8 @@ Agreement is valid when A's position survives scrutiny.
 ### Topics And Session
 
 - Keep **one topic active at a time**.
-- Finish, block, or deliberately pause it before switching.
+- Keep topic definitions and status in `README.md`.
+- Finish, block, or deliberately pause the active topic before switching.
 - Keep subquestions inside the topic unless separation changes the decision.
 - Add topics beyond two only when necessary to resolve the original goal.
 - Do not add topics or turns merely because time remains.
@@ -117,7 +114,7 @@ read → check eligibility → reason/research → write → self-review → com
 
 Each invocation:
 
-1. reads this guideline, bundle `README.md`, `topics.md`, and latest relevant turn;
+1. reads this guideline, bundle `README.md`, and latest relevant turn;
 2. exits when this actor is not eligible;
 3. refreshes only decision-relevant evidence;
 4. performs the configured reasoning or bounded RPI refinement;
@@ -139,15 +136,15 @@ Derive eligibility from persisted turns, not a shared mutable `next_actor`:
 - no turn → A;
 - latest valid turn A → B;
 - latest valid turn B → A;
-- synthesis exists or topic/session closed → no argumentative turn.
+- discussion/topic closed → no argumentative turn.
 
 Do not publish two equivalent turns against the same input state. A material delta is new or corrected evidence, a stronger or narrower argument, a changed assumption or concession, a decision-relevant risk, narrowed disagreement, or a justified recommendation change. No material delta → no new argumentative turn.
 
-Configuration lives in the bundle `README.md`; topic state lives in `topics.md`. Keep task IDs, recurrence syntax, model names, trigger intervals, and notifications outside the reusable bundle contract.
+Reusable discussion configuration and topic state live in `README.md`. Keep task IDs, recurrence syntax, model names, trigger intervals, and notifications outside the common bundle contract.
 
 ### Ownership And Recovery
 
-- **A** owns shared configuration/state, topic transitions, A turns, and synthesis.
+- **A** owns `README.md`, A turns, topic transitions, and synthesis.
 - **B** owns only B turns and recommends shared-state changes in its turn.
 - Never rewrite a turn already consumed by the other participant; correct it in the next eligible turn.
 - Prefer **one turn = one commit** and keep unrelated repository work out.
@@ -170,6 +167,8 @@ Stop a discussion or active topic when:
 - an explicit safety bound or session window is reached;
 - the decision authority closes the topic.
 
+By default, A writes the synthesis in `README.md`. Split it to `synthesis.md` only when the result is large enough that separation improves readability.
+
 Synthesis records only what makes the human decision cheaper:
 
 - result for each topic;
@@ -185,6 +184,7 @@ Synthesis is a discussion result, not a canonical project decision.
 ## Boundaries
 
 - Do not create single-file `discuss` artifacts.
+- Do not create `topics.md`, `synthesis.md`, or other extension files unless separation materially improves readability.
 - Do not require a separate Moderator execution when protocol is sufficient.
 - Do not bind the protocol to one provider, scheduler, task API, trigger interval, or model.
 - Do not force opposition or equal turn counts.
