@@ -68,7 +68,7 @@ A run should:
 6. commit and push the completed turn;
 7. exit.
 
-Do not keep a run alive merely to fill a target duration, sleep until the other participant acts, or attempt multiple delayed turns inside one run. A configured time budget is a ceiling for useful work, not a requirement to consume that time.
+Do not keep a run alive merely to fill a target duration, sleep until the other participant acts, or attempt multiple delayed turns inside one run. A configured time budget is a **soft upper budget for prioritization**, not a guaranteed runtime or a requirement to consume that time.
 
 ### Schedule Topology
 
@@ -100,6 +100,8 @@ discussion:
   first_round: independent
   max_rounds: 3
   round_work: rpi-loop
+  rpi_budget_minutes: 10
+  turn_budget_minutes: 14
   synthesis_owner: B
   decision_authority: human
 ```
@@ -107,6 +109,8 @@ discussion:
 Only include fields that affect execution. Exact storage format and filename may vary by bundle.
 
 `round_work: rpi-loop` means the participant uses the project's RPI loop to improve its turn before publishing it. It does not authorize unrelated implementation or broaden the active discussion scope.
+
+`rpi_budget_minutes` and `turn_budget_minutes` are optional **soft budgets**. They tell the participant how to prioritize effort when execution time is limited. They must never be implemented as sleeping, deliberate delay, or a claim that the scheduler guarantees that runtime. Finish early when the turn is complete; prefer a complete, reviewable turn over exhausting the budget.
 
 ### Turn Eligibility
 
@@ -121,6 +125,23 @@ For a normal A→B iterative sequence:
 - Continue until a stop condition or `max_rounds` is reached.
 
 If the prerequisite output is missing, the discussion is already synthesized, or this turn already exists, perform no discussion write and exit cleanly.
+
+### Turn Work
+
+When `round_work: rpi-loop`, use the RPI loop inside the turn as a **bounded improvement loop**, not as a reason to expand scope.
+
+A scheduled RPI turn should prioritize:
+
+```text
+Research  → verify the active question and material evidence
+Plan      → choose the strongest position or response to test
+Work      → write the participant round
+Review    → challenge repetition, unsupported claims, and weak trade-offs
+```
+
+Repeat only while the next loop can materially improve the same round. Stop when the round is decision-useful, no material finding remains, or the soft work budget is exhausted.
+
+Do not expose private chain-of-thought. Preserve only conclusions, evidence, changed assumptions, and reviewable rationale in the round artifact.
 
 ### Round Output
 
@@ -164,6 +185,23 @@ Scheduled discussion must fail closed rather than invent missing turns.
 - Reached round limit → synthesize the remaining agreement and disagreement instead of extending automatically.
 
 These rules let scheduled runs recover without a dedicated Moderator process.
+
+### Scheduled Task Prompt Contract
+
+Each participant schedule should receive the same discussion contract except for its actor identity. A compact task instruction is sufficient:
+
+```text
+Act as participant <A|B> for the configured scheduled discussion.
+Read inbox/_guidelines/discuss.md and the active discussion bundle first.
+Run only when your next turn is eligible; otherwise make no discussion write.
+Use the configured round_work and soft budgets to produce one complete turn.
+Write only your participant output, self-review it, commit and push that turn,
+and exit. Never wait for the other participant inside this run.
+If you own synthesis and a stop condition is reached, write the synthesis.
+Do not accept the human decision on the user's behalf.
+```
+
+Keep scheduler timing, actor identity, and active bundle path in the scheduled task configuration. Keep reusable discussion behavior in this guideline instead of duplicating it across task prompts.
 
 ## Shared Context
 
