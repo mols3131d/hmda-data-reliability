@@ -47,6 +47,7 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 | --- | --- |
 | `research` | [Research](_guidelines/research.md) |
 | `review` | [Review](_guidelines/review.md) |
+| `discuss` | [Discuss](_guidelines/discuss.md) |
 
 Other artifact types use this common contract unless dedicated guidance exists. Add a guideline only when a recurring type needs a distinct contract.
 
