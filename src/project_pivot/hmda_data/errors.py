@@ -7,7 +7,7 @@ from typing import Any
 
 
 class HMDADataFoundationError(Exception):
-    """HMDA data domain에서 caller가 처리할 수 있는 예외의 공통 base."""
+    """HMDA data domain exception의 공통 base."""
 
     def __init__(
         self,
@@ -28,7 +28,7 @@ class HMDAStalePartitionError(HMDADataLoadError):
 
 
 class HMDADataValidationError(HMDADataFoundationError):
-    """원천 또는 EDA schema가 required schema contract를 만족하지 않을 때 발생한다."""
+    """원천 또는 EDA input이 column/type/cardinality validation을 통과하지 못할 때 발생한다."""
 
 
 class SyntheticCaseError(HMDADataFoundationError):

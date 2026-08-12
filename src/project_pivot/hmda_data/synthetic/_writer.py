@@ -24,8 +24,9 @@ def write_case_file(
 ) -> Path:
     """Case output을 단일 Parquet으로 쓰고 생성된 path를 반환한다.
 
-    동일 ``case_name`` directory가 이미 있으면 새 결과를 쓰기 전에 directory 전체를
-    삭제한다. ``case_name``은 ``output_root`` 밖을 가리킬 수 없는 단일 이름이어야 한다.
+    동일 ``case_name`` directory가 있으면 ``COPY`` 전에 directory 전체를 삭제한다.
+    새 write가 실패해도 이전 case output은 복구하지 않는다. ``case_name``은
+    ``output_root`` 밖을 가리킬 수 없는 단일 이름이어야 한다.
     """
 
     case_dir = _prepare_case_dir(output_root, case_name)

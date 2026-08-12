@@ -1,4 +1,4 @@
-"""HMDA Bronze partition의 atomic compare-and-replace 적재."""
+"""HMDA Bronze partition row의 atomic compare-and-replace 적재."""
 
 from __future__ import annotations
 
@@ -41,11 +41,11 @@ def load_hmda_loans_partition(
 ) -> int:
     """한 ``source_year``/optional file scope를 교체하고 최종 row count를 반환한다.
 
-    Source rows는 target mutation 전에 staging에서 required columns와 non-empty 조건을
-    검증한다. ``expected_identity``가 있으면 현재 identity가 일치할 때만 transaction
-    안에서 기존 scope를 교체하며, mismatch는 ``HMDAStalePartitionError``와 zero
-    mutation으로 끝난다. ``preserve_source_metadata=True``이면 input의 source tracking
-    fields를 재계산하지 않는다.
+    Target schema와 빈 table은 필요하면 staging validation 전에 생성된다. 기존 partition
+    row는 staging의 required columns와 non-empty 조건을 통과한 뒤에만 교체된다.
+    ``expected_identity``가 있으면 현재 identity 비교와 delete/insert를 같은 transaction에서
+    수행하며 mismatch 시 기존 partition row는 변경하지 않는다.
+    ``preserve_source_metadata=True``이면 input의 source tracking fields를 재계산하지 않는다.
     """
 
     paths = validate_source_paths(source_paths)
@@ -128,7 +128,7 @@ def _overwrite_hmda_loans_partition(
     expected_identity: PartitionContentIdentity | None,
     preserve_source_metadata: bool,
 ) -> None:
-    """Source scope를 staging에서 검증한 뒤 target partition을 교체한다."""
+    """Source scope를 staging에서 검증한 뒤 target partition row를 교체한다."""
 
     try:
         _create_staging_table(
@@ -243,7 +243,7 @@ def _replace_partition_in_transaction(
     source_file: str | None,
     expected_identity: PartitionContentIdentity | None,
 ) -> None:
-    """Expected identity 확인과 delete/insert를 하나의 transaction으로 수행한다."""
+    """Expected identity 확인과 partition row delete/insert를 하나의 transaction으로 묶는다."""
 
     connection.execute("BEGIN TRANSACTION")
     try:

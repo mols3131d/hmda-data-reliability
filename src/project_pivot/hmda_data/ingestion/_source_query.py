@@ -48,7 +48,7 @@ def csv_reader_sql(
 
 
 def validate_source_paths(source_paths: Sequence[str | Path]) -> list[Path]:
-    """빈 input과 unsupported format을 거부하고 source path를 정규화한다.
+    """빈 input과 unsupported format을 거부하고 source path를 ``Path``로 변환한다.
 
     파일 존재 여부와 실제 parse 가능 여부는 DuckDB read 단계에서 확인한다.
     """
@@ -126,12 +126,8 @@ def _reader_sql(path: Path) -> str:
 
 
 def _csv_reader_sql() -> str:
-    """CSV reader SQL을 반환한다."""
-
     return csv_reader_sql()
 
 
 def _parquet_reader_sql() -> str:
-    """Parquet reader SQL을 반환한다."""
-
     return "read_parquet(?, filename = true)"

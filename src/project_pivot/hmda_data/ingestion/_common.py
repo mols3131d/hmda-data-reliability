@@ -30,9 +30,10 @@ def validate_required_columns(
     table_name: str = HMDA_LOANS_TABLE,
     required_columns: Iterable[str] = REQUIRED_HMDA_COLUMNS,
 ) -> None:
-    """Required column set의 존재만 확인하고 원천 값은 정규화하지 않는다.
+    """Required column set의 존재만 확인한다.
 
-    누락된 컬럼은 ``HMDADataValidationError``로 노출한다.
+    Column type이나 row value는 검증하지 않는다. 누락된 컬럼은
+    ``HMDADataValidationError``로 노출한다.
     """
 
     actual_columns = table_columns(connection, table_name)

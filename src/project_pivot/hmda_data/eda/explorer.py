@@ -11,7 +11,7 @@ import yaml
 
 
 def export_eda_evidence_yaml(evidence: dict[str, Any]) -> str:
-    """Evidence key order를 유지한 agent-readable YAML 문자열을 반환한다."""
+    """Evidence key order와 Unicode를 보존한 YAML 문자열을 반환한다."""
     return yaml.dump(evidence, sort_keys=False, allow_unicode=True)
 
 
@@ -20,10 +20,10 @@ def render_eda_static_charts(
     *,
     output_directory: str | Path,
 ) -> list[Path]:
-    """사용 가능한 evidence slice만 HTML chart로 쓰고 생성된 path를 반환한다.
+    """사용 가능한 evidence slice만 HTML chart로 쓰고 이번에 생성한 path를 반환한다.
 
-    Output directory는 필요하면 생성한다. Volume 또는 null evidence가 비어 있으면
-    해당 chart를 만들지 않는다.
+    Output directory는 필요하면 생성한다. Volume 또는 null evidence가 비어 있으면 해당
+    chart를 만들지 않으며 기존 output directory의 다른 파일은 정리하지 않는다.
     """
     out_dir = Path(output_directory).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
