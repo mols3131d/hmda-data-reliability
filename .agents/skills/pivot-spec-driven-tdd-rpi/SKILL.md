@@ -10,7 +10,7 @@ compatibility: >-
   external skill, project document, repository convention, or standalone
   template is required by this skill.
 metadata:
-  version: "0.4.2"
+  version: "0.3.0"
 ---
 
 # Spec-Driven TDD RPI
