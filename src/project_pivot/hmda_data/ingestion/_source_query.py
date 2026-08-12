@@ -105,8 +105,6 @@ def _source_select_sql(path: Path, *, preserve_source_metadata: bool) -> str:
 
 
 def _source_year_sql() -> str:
-    """파일명에서 네 자리 연도를 추출하는 SQL을 반환한다."""
-
     return """
         TRY_CAST(
             regexp_extract(parse_filename(filename), '(\\d{4})', 1)

@@ -28,7 +28,7 @@ class HMDAStalePartitionError(HMDADataLoadError):
 
 
 class HMDADataValidationError(HMDADataFoundationError):
-    """원천 또는 EDA input이 column/type/cardinality validation을 통과하지 못할 때 발생한다."""
+    """원천 또는 EDA input의 column/type/cardinality validation 실패를 나타낸다."""
 
 
 class SyntheticCaseError(HMDADataFoundationError):

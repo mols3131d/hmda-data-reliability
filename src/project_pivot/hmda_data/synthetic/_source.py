@@ -72,8 +72,6 @@ def source_union_sql(source_paths: Sequence[str | Path]) -> str:
 
 
 def _reader_sql(path: Path) -> str:
-    """파일 format에 맞는 DuckDB reader를 선택한다."""
-
     suffix = path.suffix.lower()
     if suffix == ".csv":
         return _csv_reader_sql()

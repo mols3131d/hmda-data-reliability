@@ -33,7 +33,7 @@ def load_hmda_loans(
     Append가 아니라 ``CREATE OR REPLACE TABLE``을 사용하므로 같은 input의 재실행은
     중복 row를 만들지 않는다. 필수 컬럼 검증은 table 교체 뒤 수행되므로 validation
     실패 시에도 새 target table이 남을 수 있다. DuckDB read/write 실패는
-    ``HMDADataLoadError``로 변환하고 required-column validation error는 그대로 노출한다.
+    ``HMDADataLoadError``로 변환하고 ``HMDADataValidationError``는 그대로 노출한다.
     """
 
     paths = validate_source_paths(source_paths)
