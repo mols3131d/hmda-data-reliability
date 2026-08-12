@@ -14,6 +14,7 @@ from project_pivot.hmda_data import (
     partition_content_identity,
 )
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
+from project_pivot.logger import get_logger
 from project_pivot.reliability.contracts import (
     Approval,
     RecoveryProposal,
@@ -28,6 +29,7 @@ from project_pivot.reliability.profiling import create_profile_snapshot
 from project_pivot.reliability.recovery.request import ApprovedBackfillRequest
 from project_pivot.reliability.recovery.result import BackfillValidationResult
 
+_LOGGER = get_logger(__name__)
 _REQUIRED_APPROVAL_ACTIONS = frozenset(
     {"overwrite_partition", "rerun_profile_snapshot"}
 )
@@ -72,6 +74,14 @@ class ApprovalBackfillValidator:
                         "diverged state입니다."
                     )
                 if reconciliation_action == "overwrite_partition":
+                    _LOGGER.info(
+                        "event=reliability_recovery_overwrite_started "
+                        "incident_id=%s approval_id=%s source_year=%s table_name=%s",
+                        approval.incident_id,
+                        approval.approval_id,
+                        request.source_year,
+                        request.table_name,
+                    )
                     # Keep compare-and-replace inside the loader's mutation transaction.
                     row_count = load_hmda_loans_partition(
                         self._connection,
