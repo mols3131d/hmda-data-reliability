@@ -165,6 +165,10 @@ def test_dagster_materialization_records_metadata(
     assert "source_year" in raw_materialization.metadata
     assert "succeeded" in dbt_materialization.metadata
     assert "manifest_path" in dbt_materialization.metadata
+    assert dbt_materialization.metadata["projection_id"].value == artifact_projection_id(
+        tmp_path / "manifest.json",
+        tmp_path / "run_results.json",
+    )
 
 
 def test_skipped_dbt_build_records_boolean_metadata(

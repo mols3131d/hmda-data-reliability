@@ -49,7 +49,6 @@ def dbt_loan_analytics(
 
     request = data_operations.to_request()
     if not request.run_dbt_build:
-        context.log.info("dbt build 건너뜀")
         return MaterializeResult(
             metadata={
                 "succeeded": MetadataValue.bool(False),
@@ -61,7 +60,6 @@ def dbt_loan_analytics(
     # run_dbt_build()는 current를 바꾸지 않는다. 성공한 candidate만 current로
     # 승격하도록 build 다음에 promotion을 둔다.
     promote_dbt_artifacts(result, request)
-    context.log.info("dbt build 완료", extra={"return_code": result.return_code})
     return MaterializeResult(
         metadata={
             "succeeded": MetadataValue.bool(result.succeeded),
@@ -69,5 +67,6 @@ def dbt_loan_analytics(
             "return_code": MetadataValue.int(result.return_code),
             "manifest_path": MetadataValue.path(str(result.manifest_path)),
             "run_results_path": MetadataValue.path(str(result.run_results_path)),
+            "projection_id": MetadataValue.text(result.projection_id),
         }
     )
