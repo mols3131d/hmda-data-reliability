@@ -57,7 +57,9 @@ class DuckDBConnectionManager:
         if connection is not None:
             connection.close()
             self._connection = None
-            database = ":memory:" if self.database_path is None else str(self.database_path)
+            database = (
+                ":memory:" if self.database_path is None else str(self.database_path)
+            )
             _LOGGER.debug("DuckDB 연결 종료", extra={"database": database})
         if self.cleanup_on_close and self.database_path is not None:
             # DuckDB가 database/WAL file handle을 해제한 뒤에만 파일을 제거한다.
