@@ -2,7 +2,7 @@
 
 ## Purpose
 
-이 schema는 작업자 한 명의 세부 실행 순서가 아니라 OpenSpec Change의 계획 lifecycle과 artifact dependency를 정의한다. OpenSpec은 변경의 목적, 행동 계약, 기술적 경계와 구현 준비 상태를 관리하고, Apply worker는 프로젝트 설정에 맞는 TDD-compatible feedback loop로 이를 구현한다.
+이 schema는 작업자 한 명의 세부 실행 순서가 아니라 OpenSpec Change의 계획 lifecycle과 artifact dependency를 정의한다. OpenSpec은 변경의 목적, 행동 계약, 기술적 경계와 구현 계획을 관리하고, Apply worker는 프로젝트 설정에 맞는 TDD-compatible feedback loop로 이를 구현한다.
 
 ## Workflow
 
@@ -11,16 +11,7 @@ flowchart LR
     P[Proposal] --> S[Specs]
     S --> D[Design]
     D --> T[Tasks]
-    T --> R[Plan Review]
-    R -->|approved| A[Apply]
-    R -->|changes_requested| U[Revise Planning Artifacts]
-    U --> R
-    R -->|blocked| B[Resolve Blocker]
-    B --> R
-    A --> V[Verify]
-    V -->|planning issue| U
-    V -->|implementation issue| A
-    V -->|pass| X[Sync / Archive]
+    T --> A[Apply]
 ```
 
 ## Artifact Responsibilities
@@ -31,25 +22,8 @@ flowchart LR
 | Specs | 외부에서 관찰 가능한 행동 계약 |
 | Design | 책임 경계, 기술적 결정과 검증 전략 |
 | Tasks | 검증 가능한 구현 작업과 진행률 |
-| Plan Review | 계획의 일관성, 추적성과 실행 가능성 판정 |
 
-## Plan Review
-
-Plan Review는 고정 checklist로 계획 artifact 전체를 검토한다. 기존 의도와 범위 안에서 명확히 해결할 수 있는 문제는 계획 artifact에 반영하고, 다음 loop에서 모든 항목을 다시 판정한다.
-
-`review_loop`는 완료한 전체 review loop 수다. `0`에서 시작하고 최대 `8`까지 증가한다. 모든 항목이 통과하면 즉시 종료하며, 8회차에도 미통과 항목이 남으면 자동 검토를 중단하고 `blocked`로 판정한다.
-
-### Status
-
-| Status | Meaning | Next Action |
-| --- | --- | --- |
-| `pending` | 검토가 시작되지 않았다. | 검토 시작 |
-| `in_progress` | review loop가 진행 중이다. | 검토 계속 |
-| `approved` | 모든 checklist 항목이 통과했다. | Apply 진행 |
-| `changes_requested` | 자동 보완 범위를 넘는 계획 변경이나 인간 판단이 필요하다. | 수정 후 재검토 |
-| `blocked` | 근거·외부 조건이 부족하거나 review loop 한도에 도달했다. | Blocker 해결 또는 인간 판단 |
-
-`approved`와 `changes_requested`는 일반적인 review decision 용어를 사용한다. `completed`처럼 결과를 숨기는 상태나 별도 verdict 필드는 사용하지 않는다.
+각 planning artifact는 자신의 책임을 직접 소유한다. 계획의 오류나 누락이 구현 중 확인되면 해당 책임을 소유하는 artifact를 수정하고 영향받는 downstream planning artifact를 다시 일치시킨다.
 
 ## Parsing Contract
 
@@ -63,7 +37,6 @@ Plan Review는 고정 checklist로 계획 artifact 전체를 검토한다. 기�
 | OpenSpec delta specs | operation, Requirement, Scenario 헤더 |
 | Task progress | 최상위 `- [ ]`, `- [x]` 체크박스 |
 | Task counters | `tasks_total`, `tasks_completed` 파생 필드 |
-| Plan Review gate | frontmatter `status`, `review_loop`; 고정 checklist ID; `### Required Changes`의 최상위 체크박스 |
 
 ### Tag Contract
 
@@ -73,7 +46,7 @@ Plan Review는 고정 checklist로 계획 artifact 전체를 검토한다. 기�
 ^(?:(?:domain|subdomain|capability):)?[a-z0-9]+(?:-[a-z0-9]+)*$
 ```
 
-Tags는 검색과 분류 metadata다. workflow 상태, artifact dependency 또는 gate를 결정하지 않는다.
+Tags는 검색과 분류 metadata다. workflow 상태, artifact dependency 또는 소유권 결정에 사용하지 않는다.
 
 ### Task Counters
 
@@ -92,7 +65,7 @@ tasks_completed = 완료된 [x] 체크박스 수
 | --- | --- | --- |
 | artifact DAG와 template 연결 | 문서 구조와 field | 기술 stack과 저장소 관례 |
 | artifact 목적과 완료 조건 | parser contract | naming과 project-specific convention |
-| Plan Review 상태·gate·loop 의미 | checklist와 Required Changes 표현 | 구체적인 validation과 tool 지침 |
-| 범용 test-first와 계획 환류 | task progress 표현 | 배포·병렬화 등 실행 정책 |
+| 범용 test-first와 계획 환류 | task progress 표현 | 구체적인 validation과 tool 지침 |
+| Apply dependency와 tracking | artifact별 작성 surface | 배포·병렬화 등 실행 정책 |
 
 `schema.yaml`은 여러 프로젝트와 도구에서 재사용할 수 있는 workflow 의미만 가진다. 문서 surface의 세부 계약은 template이, 프로젝트별 지침은 project config가 소유한다.
