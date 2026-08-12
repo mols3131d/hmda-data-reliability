@@ -4,10 +4,10 @@
 
 ## Current State
 
-`pivot-research`는 명세, 구현 또는 기술 판단 전에 근거를 수집하고 정리하는 Research 스킬이다.
+`pivot-research-workspace`는 명세, 구현 또는 기술 판단 전에 근거를 수집하고 정리하는 Research 스킬이다.
 
 ```text
-pivot-research/
+pivot-research-workspace/
 ├── README.md
 ├── SKILL.md
 ├── docs/
@@ -96,5 +96,6 @@ Question
 - 실제 Research 작업에서 자동 탐색이 적절한 템플릿을 낮은 비용으로 찾는지 확인해야 한다.
 - 플레이스홀더와 주석을 실제 출력 문자열로 잘못 해석하지 않는지 도그푸딩(Dogfooding)이 필요하다.
 - 보고서 저장 경로 주변의 로컬 지침 우선순위가 실제 프로젝트 관례와 맞는지 확인해야 한다.
+- `lite`, `standard`, `strict`가 실제 조사에서 과도한 반복 없이 의도한 검증 강도 차이를 만드는지 확인해야 한다.
 
 정적 구조와 문서 간 책임 검증은 완료됐다. 현재 차단 요소(Blocker)는 없다.
