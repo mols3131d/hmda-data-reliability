@@ -24,7 +24,7 @@ class DuckDBProfileSnapshotBuilder:
         self._connection = connection
 
     def build(self, request: ProfileSnapshotRequest) -> ProfileSnapshot:
-        """Return a snapshot; missing freshness falls back to observed_at and is flagged."""
+        """Return a snapshot and flag freshness fallback to observed_at."""
 
         try:
             schema_hash = calculate_schema_hash(self._connection, request.table_name)

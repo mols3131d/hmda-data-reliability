@@ -40,7 +40,7 @@ class ApprovalBackfillValidator:
         self._connection = connection
 
     def execute(self, request: ApprovedBackfillRequest) -> BackfillValidationResult:
-        """Recover approved before-state or resume verification from exact after-state."""
+        """Recover approved before-state or verify the exact after-state on replay."""
 
         # Approval scope is validated before the candidate source is read.
         approval, proposal = _ensure_approved(request)
