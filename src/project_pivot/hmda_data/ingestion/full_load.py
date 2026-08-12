@@ -1,4 +1,4 @@
-"""HMDA 원천 테이블 전체 적재."""
+"""HMDA 원천 전체를 target Bronze table로 교체하는 full-load path."""
 
 from __future__ import annotations
 
@@ -28,7 +28,13 @@ def load_hmda_loans(
     *,
     table_name: str = HMDA_LOANS_TABLE,
 ) -> int:
-    """HMDA CSV/Parquet 파일을 raw.hmda_loans에 멱등 적재한다."""
+    """모든 source로 target table을 교체하고 최종 row count를 반환한다.
+
+    Append가 아니라 ``CREATE OR REPLACE TABLE``을 사용하므로 같은 input의 재실행은
+    중복 row를 만들지 않는다. 필수 컬럼 검증은 table 교체 뒤 수행되므로 validation
+    실패 시에도 새 target table이 남을 수 있다. DuckDB read/write 실패는
+    ``HMDADataLoadError``로 변환하고 ``HMDADataValidationError``는 그대로 노출한다.
+    """
 
     paths = validate_source_paths(source_paths)
     try:

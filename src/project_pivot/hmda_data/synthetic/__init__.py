@@ -1,4 +1,4 @@
-"""HMDA 합성 결함 케이스 API."""
+"""HMDA 원천을 수정하지 않고 합성 결함 Parquet을 만드는 public API."""
 
 from project_pivot.hmda_data.synthetic.cases import (
     freshness_delay,

@@ -1,4 +1,4 @@
-"""HMDA 데이터 파운데이션 예외."""
+"""HMDA source-to-Bronze와 합성 입력 생성에서 노출하는 domain exceptions."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Any
 
 
 class HMDADataFoundationError(Exception):
-    """HMDA 데이터 파운데이션 기본 예외."""
+    """HMDA data domain exception의 공통 base."""
 
     def __init__(
         self,
@@ -20,16 +20,16 @@ class HMDADataFoundationError(Exception):
 
 
 class HMDADataLoadError(HMDADataFoundationError):
-    """HMDA 원천 데이터 적재에 실패했다."""
+    """원천 발견·읽기 또는 Bronze 적재를 완료할 수 없을 때 발생한다."""
 
 
 class HMDAStalePartitionError(HMDADataLoadError):
-    """HMDA target partition이 caller의 expected state와 다르다."""
+    """Expected-state 파티션 교체가 stale identity로 거부될 때 발생한다."""
 
 
 class HMDADataValidationError(HMDADataFoundationError):
-    """HMDA 원천 데이터 검증에 실패했다."""
+    """원천 또는 EDA input의 column/type/cardinality validation 실패를 나타낸다."""
 
 
 class SyntheticCaseError(HMDADataFoundationError):
-    """HMDA 합성 결함 데이터 생성에 실패했다."""
+    """합성 결함 입력·parameter·출력 생성 contract를 만족하지 못할 때 발생한다."""

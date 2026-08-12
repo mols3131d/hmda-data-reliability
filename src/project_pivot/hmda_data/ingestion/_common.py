@@ -1,4 +1,4 @@
-"""HMDA 적재 내부 공통 헬퍼."""
+"""HMDA ingestion이 공유하는 Bronze schema contract와 validation."""
 
 from __future__ import annotations
 
@@ -30,7 +30,11 @@ def validate_required_columns(
     table_name: str = HMDA_LOANS_TABLE,
     required_columns: Iterable[str] = REQUIRED_HMDA_COLUMNS,
 ) -> None:
-    """HMDA 핵심 컬럼 존재 여부를 검증한다."""
+    """Required column set의 존재만 확인한다.
+
+    Column type이나 row value는 검증하지 않는다. 누락된 컬럼은
+    ``HMDADataValidationError``로 노출한다.
+    """
 
     actual_columns = table_columns(connection, table_name)
     expected_columns = set(required_columns)

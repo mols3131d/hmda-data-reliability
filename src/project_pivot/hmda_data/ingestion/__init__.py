@@ -1,4 +1,7 @@
-"""HMDA 원천 데이터 적재 API."""
+"""HMDA 원천을 Bronze table로 적재하는 public API.
+
+Full load와 partition load는 append가 아니라 replace semantics를 사용한다.
+"""
 
 from project_pivot.hmda_data.ingestion._common import (
     HMDA_LOANS_TABLE,

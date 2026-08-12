@@ -1,4 +1,4 @@
-"""HMDA 합성 원천 파일 검증."""
+"""합성 결함 생성에 사용할 HMDA source set의 format과 schema를 검증한다."""
 
 from __future__ import annotations
 
@@ -11,7 +11,10 @@ from project_pivot.hmda_data.errors import SyntheticCaseError
 
 
 def source_paths_parameter(source_paths: Sequence[str | Path]) -> list[str]:
-    """합성 케이스 원천 파일 경로를 DuckDB 파라미터로 정규화한다."""
+    """빈 source set과 unsupported format을 거부하고 DuckDB path parameter를 만든다.
+
+    파일 존재 여부와 parse 가능 여부는 실제 DuckDB read 단계에서 확인한다.
+    """
 
     if not source_paths:
         raise SyntheticCaseError("HMDA 합성 데이터 원천 파일이 없습니다.")
@@ -34,7 +37,7 @@ def require_columns(
     source_paths: Sequence[str | Path],
     required_columns: set[str],
 ) -> None:
-    """원천 파일에 필요한 컬럼이 모두 있는지 검증한다."""
+    """Synthetic transformation에 필요한 source columns가 모두 존재하는지 확인한다."""
 
     existing_columns = _source_columns(connection, source_paths)
     missing_columns = sorted(required_columns.difference(existing_columns))
@@ -47,7 +50,7 @@ def _source_columns(
     connection: duckdb.DuckDBPyConnection,
     source_paths: Sequence[str | Path],
 ) -> set[str]:
-    """원천 CSV/Parquet 파일의 컬럼명을 조회한다."""
+    """실제 row materialization 없이 combined source schema를 조회한다."""
 
     try:
         rows = connection.execute(
@@ -61,7 +64,7 @@ def _source_columns(
 
 
 def source_union_sql(source_paths: Sequence[str | Path]) -> str:
-    """여러 원천 파일을 이름 기준 UNION ALL 하는 SQL을 만든다."""
+    """Source column order와 무관하게 파일들을 ``UNION ALL BY NAME``으로 결합한다."""
 
     paths = [Path(path) for path in source_paths]
     selects = [_reader_sql(path) for path in paths]
@@ -69,8 +72,6 @@ def source_union_sql(source_paths: Sequence[str | Path]) -> str:
 
 
 def _reader_sql(path: Path) -> str:
-    """파일 확장자에 맞는 DuckDB reader SQL을 반환한다."""
-
     suffix = path.suffix.lower()
     if suffix == ".csv":
         return _csv_reader_sql()
@@ -81,8 +82,6 @@ def _reader_sql(path: Path) -> str:
 
 
 def _csv_reader_sql() -> str:
-    """CSV reader SQL을 반환한다."""
-
     return """
         SELECT *
         FROM read_csv_auto(
@@ -95,6 +94,4 @@ def _csv_reader_sql() -> str:
 
 
 def _parquet_reader_sql() -> str:
-    """Parquet reader SQL을 반환한다."""
-
     return "SELECT * FROM read_parquet(?)"

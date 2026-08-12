@@ -1,4 +1,4 @@
-"""HMDA partition content identity."""
+"""Optimistic partition replacement를 위한 logical content identity."""
 
 from __future__ import annotations
 
@@ -11,12 +11,16 @@ from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
 from project_pivot.hmda_data.ingestion._common import HMDA_LOANS_TABLE
 
 _IDENTITY_VERSION = "sha256-v1"
+# 동일 logical content를 재적재한 시각 차이로 stale 처리하지 않도록 제외한다.
 _VOLATILE_COLUMNS = frozenset({"ingested_at"})
 _EMPTY_DIGEST = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 
 class PartitionContentIdentity(BaseModel):
-    """Stable identity for one HMDA table partition row multiset."""
+    """Row order와 ingestion time에 독립적인 HMDA partition content identity.
+
+    Logical values와 duplicate multiplicity는 identity에 포함된다.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -35,7 +39,11 @@ def partition_content_identity(
     source_file: str | None = None,
     table_name: str = HMDA_LOANS_TABLE,
 ) -> PartitionContentIdentity:
-    """Calculate an order-independent identity that preserves duplicate rows."""
+    """지정 partition의 stable logical identity를 계산한다.
+
+    Target table이 아직 없으면 empty identity를 반환한다. Row order와 ``ingested_at``은
+    digest에 영향을 주지 않지만 logical value 변경과 duplicate row 증감은 구분한다.
+    """
 
     try:
         described_columns = connection.execute(

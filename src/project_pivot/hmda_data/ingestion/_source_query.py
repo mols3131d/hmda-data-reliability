@@ -1,4 +1,4 @@
-"""HMDA 원천 파일 reader SQL 생성."""
+"""CSV/Parquet 원천을 Bronze metadata projection으로 읽는 DuckDB SQL builders."""
 
 from __future__ import annotations
 
@@ -15,7 +15,10 @@ HMDA_CSV_OPTIONS = {
 
 
 def table_schema_name(table_name: str) -> str:
-    """Qualified HMDA target의 schema를 반환하고 생략 시 raw를 사용한다."""
+    """``table`` 또는 ``schema.table`` target의 schema를 결정한다.
+
+    Schema를 생략하면 Bronze 기본값인 ``raw``를 사용하고 multipart name은 거부한다.
+    """
 
     parts = table_name.split(".")
     if len(parts) == 1:
@@ -31,7 +34,7 @@ def csv_reader_sql(
     *,
     include_filename: bool = True,
 ) -> str:
-    """공유 HMDA CSV parse contract를 사용하는 DuckDB reader SQL을 반환한다."""
+    """Ingestion 전체가 공유하는 CSV parse options로 DuckDB reader SQL을 만든다."""
 
     filename_option = ",\n            filename = true" if include_filename else ""
     return f"""
@@ -45,7 +48,10 @@ def csv_reader_sql(
 
 
 def validate_source_paths(source_paths: Sequence[str | Path]) -> list[Path]:
-    """HMDA 원천 파일 경로를 검증하고 Path 목록으로 반환한다."""
+    """빈 input과 unsupported format을 거부하고 source path를 ``Path``로 변환한다.
+
+    파일 존재 여부와 실제 parse 가능 여부는 DuckDB read 단계에서 확인한다.
+    """
 
     if not source_paths:
         raise HMDADataLoadError(message="적재할 HMDA CSV 또는 Parquet 파일이 없습니다.")
@@ -69,7 +75,7 @@ def source_union_sql(
     *,
     preserve_source_metadata: bool = False,
 ) -> str:
-    """여러 원천 파일을 이름 기준 UNION하는 SQL을 만든다."""
+    """원천 column order와 무관하게 여러 파일을 ``UNION ALL BY NAME``으로 결합한다."""
 
     return "\nUNION ALL BY NAME\n".join(
         _source_select_sql(path, preserve_source_metadata=preserve_source_metadata)
@@ -78,7 +84,7 @@ def source_union_sql(
 
 
 def _source_select_sql(path: Path, *, preserve_source_metadata: bool) -> str:
-    """원천 파일을 읽고 파일 경로·이름·연도·적재 시각을 추가한다."""
+    """Bronze tracking metadata를 추가하거나 기존 metadata를 그대로 보존한다."""
 
     if preserve_source_metadata:
         return f"""
@@ -99,8 +105,6 @@ def _source_select_sql(path: Path, *, preserve_source_metadata: bool) -> str:
 
 
 def _source_year_sql() -> str:
-    """파일명에서 네 자리 연도를 추출하는 SQL을 반환한다."""
-
     return """
         TRY_CAST(
             regexp_extract(parse_filename(filename), '(\\d{4})', 1)
@@ -120,12 +124,8 @@ def _reader_sql(path: Path) -> str:
 
 
 def _csv_reader_sql() -> str:
-    """CSV reader SQL을 반환한다."""
-
     return csv_reader_sql()
 
 
 def _parquet_reader_sql() -> str:
-    """Parquet reader SQL을 반환한다."""
-
     return "read_parquet(?, filename = true)"
