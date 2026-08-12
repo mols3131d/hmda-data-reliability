@@ -85,11 +85,17 @@ Target
 - 비용 통제: 가장 작은 validation과 finding을 바꿀 수 있는 context만 탐색한다.
 - 인간 편집성: 각 file의 책임과 변경 지점이 명확하다.
 
+### Static Dogfooding
+
+세 가지 변경 형태에 스킬을 정적으로 적용했다. 실제 command 실행으로 일반화하지 않는다.
+
+- **Implementation-only — PR #75:** source-only logging 변경에서 target, PR base, HMDA partition contract와 reachable success path를 구분해 해석했다. `expected_identity`가 transaction 안에서 일치한 경우에만 completion event에 도달함을 확인했고 material finding은 없었다.
+- **Test-only — PR #46:** marker-only 변경을 test behavior 자체가 아니라 collection/selection과 validation 신뢰성 변경으로 분류했다. Marker taxonomy와 diff는 정적으로 일치했으며 실제 pytest collection은 실행하지 않았으므로 uncertainty로 남겼다.
+- **Implementation + tests — PR #74:** overwrite 진입 event와 storage-failure test를 같은 behavior contract로 교차 검증했다. Test oracle이 event 위치와 context를 직접 확인하며 두 lens에서 같은 root cause의 중복 finding은 만들지 않았다.
+
 ## Remaining Validation
 
-- 실제 implementation-only Review로 scope와 baseline 자동 해석을 검증해야 한다.
-- test-only Review로 oracle과 false green 기준을 도그푸딩해야 한다.
-- 구현·테스트 혼합 변경에서 두 lens가 중복 finding을 만들지 않는지 확인해야 한다.
+- 실제 실행 가능한 Review 환경에서 focused validation 선택과 실행 결과 reporting까지 포함한 end-to-end 사용을 검증해야 한다.
 - 서로 다른 reviewer perspective에서도 같은 evidence가 과도하게 같은 결론을 강제하지 않는지 확인해야 한다.
 
-정적 구조와 문서 간 책임 검증은 완료됐다. 현재 차단 요소는 없다.
+정적 구조, 문서 책임과 세 가지 target 형태의 정적 dogfooding은 완료됐다. 현재 차단 요소는 없다.
