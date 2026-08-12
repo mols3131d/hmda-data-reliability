@@ -3,7 +3,7 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Reliability Null-Spike Recovery Vertical Slice Tasks
 description: Controlled null-spike recovery와 quality acceptance를 기존 safety primitives 위에 TDD로 구현한다.
-tasks_completed: 24
+tasks_completed: 18
 tasks_total: 24
 tags:
   - "domain:reliability"
@@ -74,7 +74,7 @@ tags:
   - **Covers:** `Existing evaluation database`, `Aliased evaluation database paths`, `Evaluation path preflight`
   - **Done when:** Existing target, workspace clean 또는 candidate database와 세 path 사이 physical alias는 workspace directory/file/database 생성, source load와 callback 전에 거부되고 기존 content와 workspace 부재 상태가 보존된다.
 
-- [x] 4.5 **RED/GREEN** — Exact null-rate evidence와 content/null-rate quality reconciliation을 구현한다.
+- [ ] 4.5 **RED/GREEN** — Exact null-rate evidence와 content/null-rate quality reconciliation을 구현한다.
   - **Covers:** `Independent null-rate acceptance evidence`
   - **Done when:** Success evidence는 baseline/recovery/replay null rate를 포함한다. Content validation failure는 새 validation과 approval을 요구하고, content validation은 성공하지만 null rate만 다르면 `resume_verification`으로 종료한다. Recovery와 replay quality acceptance가 완료된 뒤 downstream verification이 실패해도 이미 확정한 baseline/recovery/replay null-rate evidence를 보존한다.
 
@@ -98,8 +98,8 @@ tags:
 
 ## Self-Review
 
-- [x] 모든 관련 Requirement와 Scenario가 구현 및 테스트에 반영되었는지 확인한다.
-- [x] Design의 Decision과 Boundary를 지키면서 중복과 불필요한 복잡성을 제거한다.
-- [x] 관련 테스트, 실패 경로와 정적 검사가 통과하는지 확인한다.
-- [x] 필요한 문서, 설정과 운영 절차를 갱신한다.
-- [x] 알려진 제약과 후속 작업을 명시한다.
+- [ ] 모든 관련 Requirement와 Scenario가 구현 및 테스트에 반영되었는지 확인한다.
+- [ ] Design의 Decision과 Boundary를 지키면서 중복과 불필요한 복잡성을 제거한다.
+- [ ] 관련 테스트, 실패 경로와 정적 검사가 통과하는지 확인한다.
+- [ ] 필요한 문서, 설정과 운영 절차를 갱신한다.
+- [ ] 알려진 제약과 후속 작업을 명시한다.

@@ -1,7 +1,7 @@
 # MVP Development Dashboard
 
-> **Snapshot:** 2026-08-13
-> **Current Focus:** MVP Phase 1 완료 및 다음 Phase 준비
+> **Snapshot:** 2026-08-13 / main@61aaba4 / implementation@736732b
+> **Current Focus:** 완료된 volume-drop MVP의 requirement/verification coverage와 archived Change evidence를 유지한다.
 
 ## Development Progress
 
@@ -14,12 +14,6 @@
 | Orchestration | 🟢 Implemented | `██████████ 3/3` | 🟢 Passing | `██████████ 3/3` |
 | **Total** | **🟢 Implemented** | **`██████████ 24/24`** | **🟢 Passing** | **`██████████ 24/24`** |
 
-## Risks / Blockers
-
-| Area | Risk / Blocker | Impact |
-| --- | --- | --- |
-| None | None | None |
-
 ## References
 
 - docs/development/mvp/hmda-data.md
@@ -27,8 +21,8 @@
 - docs/development/mvp/data-operations.md
 - docs/development/mvp/reliability.md
 - docs/development/mvp/orchestration.md
-- openspec/changes/reliability-mvp-volume-drop-vertical-slice/tasks.md
-- openspec/changes/reliability-mvp-volume-drop-vertical-slice/specs/
+- Archived volume-drop completion evidence: [tasks](../../../openspec/changes/archive/2026-08-11-reliability-mvp-volume-drop-vertical-slice/tasks.md)
+- Current volume-drop contracts: [HMDA ingestion](../../../openspec/specs/hmda-data-ingestion/spec.md), [stage execution](../../../openspec/specs/data-operations-stage-execution/spec.md), [incident lifecycle](../../../openspec/specs/data-operations-incident-lifecycle/spec.md), [recovery](../../../openspec/specs/reliability-recovery-backfill/spec.md), [evaluation](../../../openspec/specs/reliability-evaluation-report/spec.md)
 - tests/hmda_data/
 - tests/data_platform/
 - tests/data_operations/
