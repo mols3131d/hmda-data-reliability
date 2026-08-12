@@ -1,10 +1,10 @@
 ---
 name: pivot-load-context-testing
 description: >-
-  Load Project Pivot testing context when writing, changing, selecting, running,
-  debugging, validating, or checking coverage for pytest tests. Also use for
-  test-first work, pytest markers, fixtures, assertions, test failures, test
-  plans, scenarios, oracles, and test design.
+  Load Project Pivot testing context for pytest work: writing or changing tests,
+  selecting or running tests, debugging failures, validating behavior, checking
+  coverage, or working with markers, fixtures, assertions, test plans,
+  scenarios, oracles, and test design.
 ---
 
 # Testing Context
@@ -48,7 +48,6 @@ Report the executed command, outcome, failure classification, and remaining risk
 
 ## Boundaries
 
-- Loading testing context does not expand the write scope of the current task.
-- Do not weaken assertions, broaden exceptions, or add unconditional skips to make an implementation pass.
-- If a failure indicates a production defect, specification gap, environment failure, or unrelated baseline failure, classify and report it; production changes follow the rules of the task that owns them.
+- Loading testing context does not expand the current task's write scope or ownership.
+- A failing test does not authorize weakening the test or modifying production code; classify the failure and follow the rules of the task that owns the change.
 - Do not redefine detailed test-design, execution, marker, hook, or reporting policy in this skill.
