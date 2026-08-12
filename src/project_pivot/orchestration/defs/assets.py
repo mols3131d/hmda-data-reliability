@@ -1,4 +1,4 @@
-"""데이터 작업을 실행하는 Dagster asset."""
+"""Data Operations API를 Dagster materialization으로 투영하는 asset."""
 
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 
@@ -15,7 +15,10 @@ def raw_hmda_loans(
     context: AssetExecutionContext,
     data_operations: DataOperationsResource,
 ) -> MaterializeResult[None]:
-    """원천 파일을 raw DuckDB table로 적재한다."""
+    """HMDA raw partition을 적재하고 materialization metadata를 기록한다.
+
+    같은 partition의 재실행은 ``load_raw_data()``의 멱등 적재 contract를 따른다.
+    """
 
     result = load_raw_data(data_operations.to_request())
     context.log.info(
@@ -38,7 +41,11 @@ def dbt_loan_analytics(
     context: AssetExecutionContext,
     data_operations: DataOperationsResource,
 ) -> MaterializeResult[None]:
-    """dbt staging/mart 모델과 테스트를 실행한다."""
+    """dbt build 실행 또는 명시적 skip 결과를 materialization으로 기록한다.
+
+    ``run_dbt_build=False``이면 ``skipped=True``, ``succeeded=False``를 기록한다.
+    실행이 성공하면 candidate artifact를 shared current projection으로 승격한다.
+    """
 
     request = data_operations.to_request()
     if not request.run_dbt_build:
@@ -51,6 +58,8 @@ def dbt_loan_analytics(
             }
         )
     result = run_dbt_build(request)
+    # run_dbt_build()는 current를 바꾸지 않는다. 성공한 candidate만 current로
+    # 승격하도록 build 다음에 promotion을 둔다.
     promote_dbt_artifacts(result, request)
     context.log.info("dbt build 완료", extra={"return_code": result.return_code})
     return MaterializeResult(

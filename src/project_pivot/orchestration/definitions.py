@@ -1,4 +1,4 @@
-"""Dagster repository definitions."""
+"""Dagster entry point for the Bronze→dbt data plane."""
 
 from dagster import Definitions, define_asset_job
 
