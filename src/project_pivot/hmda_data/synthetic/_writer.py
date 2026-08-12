@@ -1,4 +1,4 @@
-"""HMDA 합성 결함 파일 쓰기."""
+"""합성 결함 query 결과를 case-scoped Parquet output으로 materialize한다."""
 
 from __future__ import annotations
 
@@ -22,7 +22,11 @@ def write_case_file(
     query: str,
     params: list[object],
 ) -> Path:
-    """합성 결함 케이스를 단일 Parquet 파일로 쓴다."""
+    """Case output을 단일 Parquet으로 쓰고 생성된 path를 반환한다.
+
+    동일 ``case_name`` directory가 이미 있으면 새 결과를 쓰기 전에 directory 전체를
+    삭제한다. ``case_name``은 ``output_root`` 밖을 가리킬 수 없는 단일 이름이어야 한다.
+    """
 
     case_dir = _prepare_case_dir(output_root, case_name)
     target_path = case_dir / f"{case_name}.parquet"
@@ -49,7 +53,7 @@ def write_case_file(
 
 
 def _prepare_case_dir(output_root: str | Path, case_name: str) -> Path:
-    """케이스 출력 디렉터리를 비우고 다시 생성한다."""
+    """Output root 내부의 case directory만 허용하고 기존 directory를 교체한다."""
 
     if not case_name or case_name in {".", ".."} or Path(case_name).name != case_name:
         msg = "case_name은 단일 디렉터리 이름이어야 합니다."
