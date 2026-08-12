@@ -1,4 +1,4 @@
-"""dbt manifest 기반 impact analysis."""
+"""Analyze dbt manifest lineage under a shared artifact reader lock."""
 
 from project_pivot.data_platform.artifacts import (
     ArtifactProjectionLockError,
@@ -12,12 +12,13 @@ from project_pivot.reliability.impact.result import ImpactAnalysisResult
 
 
 class DbtImpactAnalyzer:
-    """incident asset의 downstream dbt 영향을 계산한다."""
+    """Attach downstream dbt lineage to a copied incident without mutating artifacts."""
 
     def analyze(self, request: ImpactAnalysisRequest) -> ImpactAnalysisResult:
-        """LineageEvidence와 affected assets가 채워진 incident를 반환한다."""
+        """Return copied incident and lineage evidence; require run-results to exist."""
 
         try:
+            # Share the manifest directory's reader lock with artifact promotion.
             with artifact_projection_lock(
                 request.dbt_manifest_path.parent,
                 exclusive=False,
@@ -54,7 +55,7 @@ class DbtImpactAnalyzer:
 
 
 def analyze_dbt_impact(request: ImpactAnalysisRequest) -> ImpactAnalysisResult:
-    """기본 dbt impact analyzer를 실행한다."""
+    """Calculate downstream impact from manifest lineage and recorded artifact paths."""
 
     return DbtImpactAnalyzer().analyze(request)
 

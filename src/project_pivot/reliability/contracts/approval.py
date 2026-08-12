@@ -16,6 +16,8 @@ class ApprovalStatus(StrEnum):
 
 
 class Approval(ReliabilityContract):
+    """Record external review; action-specific gates still validate exact scope."""
+
     approval_id: str
     incident_id: str
     status: ApprovalStatus
@@ -42,8 +44,12 @@ class Approval(ReliabilityContract):
         return self
 
     def allows_execution(self) -> bool:
+        """Return whether review status permits an execution gate to continue."""
+
         return self.status is ApprovalStatus.APPROVED
 
 
 def can_execute_risky_action(approval: Approval) -> bool:
+    """Check approval status only; callers must enforce action-specific scope."""
+
     return approval.allows_execution()

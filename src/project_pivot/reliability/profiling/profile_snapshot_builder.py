@@ -1,4 +1,4 @@
-"""DuckDB 기반 profile snapshot 계산기."""
+"""Build read-only partition metrics with table-wide schema identity from DuckDB."""
 
 from __future__ import annotations
 
@@ -18,13 +18,13 @@ from project_pivot.reliability.profiling.profile_snapshot_request import (
 
 
 class DuckDBProfileSnapshotBuilder:
-    """DuckDB table partition을 ProfileSnapshot으로 변환한다."""
+    """Build partition metrics plus the table-wide schema hash."""
 
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
 
     def build(self, request: ProfileSnapshotRequest) -> ProfileSnapshot:
-        """요청한 asset partition의 profile snapshot을 계산한다."""
+        """Return a snapshot and flag freshness fallback to observed_at."""
 
         try:
             schema_hash = calculate_schema_hash(self._connection, request.table_name)
@@ -63,7 +63,7 @@ def create_profile_snapshot(
     connection: duckdb.DuckDBPyConnection,
     request: ProfileSnapshotRequest,
 ) -> ProfileSnapshot:
-    """DuckDB connection과 요청 모델로 profile snapshot을 생성한다."""
+    """Build a snapshot, wrapping DuckDB failures as ProfileSnapshotError."""
 
     return DuckDBProfileSnapshotBuilder(connection).build(request)
 
@@ -72,7 +72,7 @@ def calculate_schema_hash(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> str:
-    """DuckDB table schema의 결정적 SHA-256 hash를 계산한다."""
+    """Hash name-sorted column names and types; row data is not included."""
 
     rows = connection.execute(f"DESCRIBE {qualify_table_name(table_name)}").fetchall()
     schema = sorted(
@@ -213,6 +213,7 @@ def _metric_values(
 
 
 def _normalize_freshness(value: object, fallback: datetime) -> datetime:
+    # Missing freshness uses observation time and is flagged in metric_values.
     if value is None:
         return fallback
     if isinstance(value, datetime):

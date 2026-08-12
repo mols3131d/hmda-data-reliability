@@ -1,4 +1,4 @@
-"""Reliability contract models."""
+"""Public reliability APIs for read-only analysis, approved recovery, and evaluation."""
 
 from project_pivot.reliability.contracts import (
     Approval,
