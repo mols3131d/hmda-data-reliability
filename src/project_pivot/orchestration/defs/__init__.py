@@ -1,1 +1,1 @@
-"""Dagster asset과 resource definition을 모은 내부 package."""
+"""Dagster asset과 resource를 정의하는 내부 package."""

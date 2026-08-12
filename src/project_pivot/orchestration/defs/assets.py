@@ -15,9 +15,9 @@ def raw_hmda_loans(
     context: AssetExecutionContext,
     data_operations: DataOperationsResource,
 ) -> MaterializeResult[None]:
-    """HMDA raw partition을 적재하고 관찰 가능한 load metadata를 기록한다.
+    """HMDA raw partition을 적재하고 materialization metadata를 기록한다.
 
-    동일 partition 재실행은 ``load_raw_data()``의 멱등 적재 contract를 따른다.
+    같은 partition의 재실행은 ``load_raw_data()``의 멱등 적재 contract를 따른다.
     """
 
     result = load_raw_data(data_operations.to_request())
@@ -41,11 +41,10 @@ def dbt_loan_analytics(
     context: AssetExecutionContext,
     data_operations: DataOperationsResource,
 ) -> MaterializeResult[None]:
-    """설정에 따라 dbt build를 실행하고 materialization 상태를 기록한다.
+    """dbt build 실행 또는 명시적 skip 결과를 materialization으로 기록한다.
 
-    ``run_dbt_build=False``이면 실행을 건너뛰며 ``skipped=True``와
-    ``succeeded=False``를 기록한다. 실행 시 successful candidate artifact를
-    shared current projection으로 승격한다.
+    ``run_dbt_build=False``이면 ``skipped=True``, ``succeeded=False``를 기록한다.
+    실행이 성공하면 candidate artifact를 shared current projection으로 승격한다.
     """
 
     request = data_operations.to_request()
@@ -59,8 +58,8 @@ def dbt_loan_analytics(
             }
         )
     result = run_dbt_build(request)
-    # run_dbt_build()는 candidate를 run-scoped로 남기므로 이 asset이
-    # successful run의 shared current projection 승격을 명시적으로 소유한다.
+    # Build는 run-scoped candidate만 남긴다. 실패한 run이 current가 되지 않도록
+    # successful build 뒤에만 current projection을 승격한다.
     promote_dbt_artifacts(result, request)
     context.log.info("dbt build 완료", extra={"return_code": result.return_code})
     return MaterializeResult(

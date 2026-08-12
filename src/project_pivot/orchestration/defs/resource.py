@@ -14,11 +14,7 @@ from project_pivot.data_operations import (
 
 
 class DataOperationsResource(ConfigurableResource[Any]):
-    """Dagster config override를 ``DataOperationRequest`` contract에 투영한다.
-
-    각 field가 ``None``이면 지원되는 environment 값 또는 request 기본값을 유지한다.
-    명시된 값은 동일 field의 environment 값보다 우선한다.
-    """
+    """명시된 Dagster field만 Data Operations request에 override한다."""
 
     database_path: str | None = None
     source_root: str | None = None
@@ -27,9 +23,10 @@ class DataOperationsResource(ConfigurableResource[Any]):
     run_dbt_build: bool | None = None
 
     def to_request(self) -> DataOperationRequest:
-        """명시 config > 지원 environment > request 기본값 순서로 요청을 만든다.
+        """Dagster config를 우선해 최종 ``DataOperationRequest``를 만든다.
 
-        최종 값은 ``DataOperationRequest``를 다시 생성해 동일한 validation을 적용한다.
+        명시되지 않은 field는 지원 environment 값 또는 request 기본값을 유지하며,
+        반환값에는 ``DataOperationRequest`` validation을 다시 적용한다.
         """
 
         overrides = {
@@ -50,8 +47,8 @@ class DataOperationsResource(ConfigurableResource[Any]):
             if value is not None
         }
         environment = os.environ.copy()
-        # 명시 config가 가리는 environment 값은 먼저 제거한다. 그렇지 않으면
-        # 사용되지 않을 잘못된 environment 값도 request 생성 단계에서 실패할 수 있다.
+        # 같은 field의 명시 config가 있으면 environment 값을 먼저 숨긴다.
+        # 그렇지 않으면 사용되지 않을 잘못된 값도 request 생성에서 실패할 수 있다.
         for field, key in (
             ("database_path", "PROJECT_PIVOT_DUCKDB_PATH"),
             ("source_root", "PROJECT_PIVOT_SOURCE_ROOT"),
