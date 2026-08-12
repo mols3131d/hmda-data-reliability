@@ -35,7 +35,7 @@ feedback: auto
 | `entry` | 현재 요청과 상태에서 `research`, `planning`, `apply`, `review-feedback` 중 진입점을 선택한다. |
 | `change` | 기존 OpenSpec change를 사용한다. Research-only 진입에는 change를 강제하지 않는다. |
 | `research` | 현재 판단에 근거가 부족할 때만 필요한 범위로 조사한다. |
-| `feedback` | 제공되었거나 현재 작업에서 확인된 Review finding만 처리한다. Plan Review 상태를 대체하지 않는다. |
+| `feedback` | 제공되었거나 현재 작업에서 확인된 Review finding만 처리한다. schema 상태를 대체하지 않는다. |
 
 명시된 argument를 우선한다. 존재하지 않는 artifact, evidence 또는 validation 결과를 가정하지 않는다.
 
@@ -48,7 +48,6 @@ feedback: auto
 - planning artifact의 종류와 책임
 - artifact dependency와 `requires`
 - artifact template과 작성 contract
-- Plan Review contract와 상태
 - Apply gate, task tracking과 TDD execution contract
 
 현재 schema contract가 이 skill의 설명보다 항상 우선한다. 이 skill은 위 규칙을 복제하거나 별도 planning model로 대체하지 않는다.
@@ -65,7 +64,7 @@ feedback: auto
 
 ## Entry Conditions
 
-아래 조건은 entry routing을 위한 최소 조건이다. `spec-driven-tdd`가 소유하는 artifact, Plan Review 또는 Apply gate를 대체하지 않는다.
+아래 조건은 entry routing을 위한 최소 조건이다. `spec-driven-tdd`가 소유하는 artifact 또는 Apply gate를 대체하지 않는다.
 
 | Entry | Condition |
 | --- | --- |
@@ -83,7 +82,7 @@ Research나 Review feedback evidence의 존재 자체를 planning 또는 Apply�
 1. 현재 판단에 필요한 근거가 부족할 때만 Research를 수행한다.
 1. Research conclusion이 채택되면 schema의 artifact responsibility를 기준으로 owning planning artifact에 필요한 내용만 반영한다.
 1. Planning artifact를 작성하거나 수정할 때는 OpenSpec과 active schema의 dependency와 contract를 그대로 따른다.
-1. Planning 수정이 다른 artifact 또는 Plan Review에 영향을 주면 schema dependency에 따라 다시 확인한다.
+1. Planning 수정이 다른 artifact에 영향을 주면 schema dependency에 따라 다시 확인한다.
 1. Apply 진입과 실행은 active schema의 Apply contract에 위임한다.
 1. Review feedback이 있으면 아래 routing contract에 따라 처리하고 필요한 OpenSpec 상태를 다시 확인한다.
 1. 요청된 entry가 완료되었거나 blocker가 명확하면 종료한다.
@@ -138,7 +137,7 @@ Research와 Review feedback evidence는 owning work로 handoff되기 전의 tran
 - Next: <action | blocker | none>
 ```
 
-확인한 상태만 기록한다. schema-owned gate나 Plan Review 상태를 별도 상태로 복제하지 않는다. 실행하거나 검증하지 않은 결과를 사실처럼 보고하지 않는다.
+확인한 상태만 기록한다. schema-owned gate 상태를 별도 상태로 복제하지 않는다. 실행하거나 검증하지 않은 결과를 사실처럼 보고하지 않는다.
 
 ## Completion
 
@@ -151,7 +150,7 @@ Research나 Review feedback을 사용했다면 채택된 결론이 transient evi
 - OpenSpec과 custom `spec-driven-tdd` schema 외의 dependency를 추가하지 않는다.
 - 특정 repository path, project document, branch, VCS host, external template 또는 다른 skill을 요구하지 않는다.
 - dependency가 없거나 해석되지 않을 때 schema contract를 자체 구현하거나 추정하지 않는다.
-- `spec-driven-tdd`의 artifact model, dependency, Plan Review 또는 Apply contract를 재정의하지 않는다.
+- `spec-driven-tdd`의 artifact model, dependency 또는 Apply contract를 재정의하지 않는다.
 - Research나 Review feedback을 OpenSpec schema artifact로 추가하지 않는다.
 - 별도의 Plan artifact나 competing workflow를 만들지 않는다.
 - Research 또는 Review feedback 존재를 schema가 정의하지 않은 gate로 만들지 않는다.
