@@ -64,13 +64,13 @@ Artifact 간 모순이나 근거 부족이 확인되면 영향을 소유하는 a
 ## Core Workflow
 
 1. 요청된 entry를 식별하고, Change가 이미 존재하거나 해당 entry에 필요한 경우에만 target change를 식별한다.
-1. OpenSpec entry라면 `openspec/schemas/spec-driven-tdd/`에서 해당 contract만 읽는다.
-1. OpenSpec entry라면 schema가 요구하는 artifact와 현재 근거를 확인한다.
+1. OpenSpec가 소유하는 planning 또는 Apply entry라면 `openspec/schemas/spec-driven-tdd/`에서 해당 contract만 읽는다.
+1. OpenSpec가 소유하는 entry라면 schema가 요구하는 artifact와 현재 근거를 확인한다.
 1. Research가 필요한 경우에만 기존 Research를 사용하거나 필요한 범위로 조사한다.
-1. accepted finding을 책임에 맞는 planning artifact로 이전한다.
+1. Planning으로 채택된 finding이 있으면 책임에 맞는 planning artifact로 이전한다.
 1. Review feedback이 있으면 원인과 범위에 따라 owning artifact 또는 후속 Change로 route한다.
-1. 변경된 artifact의 dependency와 필요한 validation을 다시 확인한다.
-1. 임시 evidence를 정리하기 전에 이후 판단에 필요한 정보가 그 파일에만 남아 있지 않은지 확인한다.
+1. Artifact를 변경했다면 dependency와 필요한 validation을 다시 확인한다.
+1. 임시 evidence를 정리한다면 이후 판단에 필요한 정보가 그 파일에만 남아 있지 않은지 확인한다.
 1. 적용되는 gate가 충족되면 요청된 entry를 수행한다.
 
 상위 planning artifact가 실질적으로 바뀌면 영향을 받는 하위 artifact를 다시 검증한다. Research나 inbox Review artifact의 부재 자체는 재조사 또는 재검토 사유가 아니다.
