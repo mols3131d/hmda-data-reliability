@@ -1,0 +1,86 @@
+"""Recovery runtime evidence tests."""
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
+
+import duckdb
+import pytest
+
+import project_pivot.reliability.recovery.executor as recovery_executor
+from project_pivot.hmda_data.errors import HMDADataLoadError
+from project_pivot.reliability import ApprovedBackfillRequest, BackfillValidationError
+
+
+@pytest.mark.unit
+def test_overwrite_boundary_is_recorded_before_storage_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Storage failure 전 destructive overwrite 진입 evidence를 남긴다."""
+
+    approved_before_identity = object()
+    approval = SimpleNamespace(
+        incident_id="inc-runtime-evidence",
+        approval_id="approval-runtime-evidence",
+    )
+    proposal = SimpleNamespace(
+        approved_before_identity=approved_before_identity,
+        expected_after_identity=object(),
+    )
+    request = SimpleNamespace(
+        approval=approval,
+        source_year=2025,
+        source_file=None,
+        table_name="raw.hmda_loans",
+        profile_request=object(),
+    )
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "_ensure_approved",
+        lambda _request: (approval, proposal),
+    )
+    monkeypatch.setattr(
+        recovery_executor,
+        "_stage_approved_candidate_source",
+        lambda _request, _directory: Path("approved-candidate.parquet"),
+    )
+    monkeypatch.setattr(
+        recovery_executor,
+        "partition_content_identity",
+        lambda *_args, **_kwargs: approved_before_identity,
+    )
+
+    def fail_target_load(*_args: object, **_kwargs: object) -> int:
+        raise HMDADataLoadError("storage failed")
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "load_hmda_loans_partition",
+        fail_target_load,
+    )
+
+    validator = recovery_executor.ApprovalBackfillValidator(
+        cast(duckdb.DuckDBPyConnection, object())
+    )
+    with (
+        caplog.at_level(logging.INFO, logger=recovery_executor.__name__),
+        pytest.raises(BackfillValidationError, match="backfill validation"),
+    ):
+        validator.execute(cast(ApprovedBackfillRequest, request))
+
+    records = [
+        record
+        for record in caplog.records
+        if record.getMessage() == "event=reliability_recovery_overwrite_started"
+    ]
+    assert len(records) == 1
+    record = records[0]
+    assert record.incident_id == "inc-runtime-evidence"
+    assert record.approval_id == "approval-runtime-evidence"
+    assert record.source_year == 2025
+    assert record.table_name == "raw.hmda_loans"
