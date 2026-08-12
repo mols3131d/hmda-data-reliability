@@ -10,11 +10,11 @@ from pathlib import Path
 
 
 class ArtifactProjectionLockError(Exception):
-    """Projection lock의 setup 또는 release I/O 실패를 나타낸다."""
+    """Projection lock 준비·해제 과정의 I/O 실패를 나타낸다."""
 
 
 class ArtifactProjectionReadError(Exception):
-    """Projection identity 계산 중 artifact byte read 실패를 나타낸다."""
+    """Projection identity 계산 중 artifact read 실패를 나타낸다."""
 
     def __init__(self, artifact_path: Path) -> None:
         super().__init__(f"dbt artifact를 읽을 수 없습니다: {artifact_path}")
@@ -22,9 +22,9 @@ class ArtifactProjectionReadError(Exception):
 
 
 def artifact_projection_id(manifest_path: Path, run_results_path: Path) -> str:
-    """Ordered artifact bytes에서 pair boundary를 보존한 identity를 계산한다.
+    """Artifact 순서와 byte 경계를 보존한 projection identity를 계산한다.
 
-    Artifact read I/O failure는 ``ArtifactProjectionReadError``로 노출한다.
+    Artifact read I/O 실패는 ``ArtifactProjectionReadError``로 노출한다.
     """
 
     digest = sha256()
@@ -33,7 +33,7 @@ def artifact_projection_id(manifest_path: Path, run_results_path: Path) -> str:
             artifact_bytes = path.read_bytes()
         except OSError as exc:
             raise ArtifactProjectionReadError(path) from exc
-        # 길이를 먼저 넣어 서로 다른 pair가 같은 byte concatenation으로 겹치지 않게 한다.
+        # 각 artifact 길이를 먼저 넣어 다른 pair가 같은 byte 연결로 겹치지 않게 한다.
         digest.update(len(artifact_bytes).to_bytes(8, byteorder="big"))
         digest.update(artifact_bytes)
     return f"sha256:{digest.hexdigest()}"
@@ -41,7 +41,7 @@ def artifact_projection_id(manifest_path: Path, run_results_path: Path) -> str:
 
 @contextmanager
 def artifact_projection_lock(directory: Path, *, exclusive: bool) -> Iterator[None]:
-    """Current artifact pair access를 shared/exclusive local lock으로 직렬화한다.
+    """Current artifact pair 접근을 shared/exclusive local lock으로 직렬화한다.
 
     ``exclusive=False``는 shared reader lock, ``True``는 exclusive writer lock이다.
     Body exception은 그대로 보존하고, body가 성공한 경우에만 release failure를
