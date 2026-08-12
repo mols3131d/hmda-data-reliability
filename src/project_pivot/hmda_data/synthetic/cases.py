@@ -1,4 +1,4 @@
-"""Reliability 평가 입력으로 사용할 deterministic HMDA defect cases."""
+"""Reliability 평가 입력으로 사용할 HMDA synthetic defect cases."""
 
 from __future__ import annotations
 
@@ -157,7 +157,7 @@ def freshness_delay(
     delay_days: int = 30,
     sample_fraction: float = 1.0,
 ) -> Path:
-    """오래된 ``observed_at``을 추가한 deterministic freshness-delay case를 만든다.
+    """오래된 ``observed_at``을 추가한 freshness-delay case를 만든다.
 
     ``observed_at``을 주면 그 값을 그대로 사용하고 ``delay_days``는 적용하지 않는다.
     생략하면 현재 UTC 시각에서 ``delay_days``를 뺀 값을 사용한다. Source file은 수정하지
@@ -215,7 +215,7 @@ def _ranked_sample_query(
 
     source_query = source_union_sql(source_paths)
     try:
-        # Canonical column order로 row hash를 만들면 source column order가 sampling을 바꾸지 않는다.
+        # Canonical column order로 만든 row hash는 source column order에 영향받지 않는다.
         columns = sorted(
             str(row[0])
             for row in connection.execute(

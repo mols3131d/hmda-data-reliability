@@ -28,7 +28,7 @@ class HMDAStalePartitionError(HMDADataLoadError):
 
 
 class HMDADataValidationError(HMDADataFoundationError):
-    """원천 또는 EDA schema가 required-column contract를 만족하지 않을 때 발생한다."""
+    """원천 또는 EDA schema가 required schema contract를 만족하지 않을 때 발생한다."""
 
 
 class SyntheticCaseError(HMDADataFoundationError):
