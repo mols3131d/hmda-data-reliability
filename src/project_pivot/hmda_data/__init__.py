@@ -1,4 +1,7 @@
-"""HMDA 데이터 파운데이션 유틸리티."""
+"""HMDA 원천의 Bronze 적재, descriptive EDA, 합성 결함 생성 API.
+
+실행 조합, dbt 변환, reliability 판정은 이 domain이 소유하지 않는다.
+"""
 
 from project_pivot.hmda_data.eda import analyze_hmda_csv
 from project_pivot.hmda_data.ingestion import (
