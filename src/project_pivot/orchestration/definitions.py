@@ -1,4 +1,9 @@
-"""Dagster repository definitions."""
+"""Dagster가 발견하는 data plane ``Definitions`` entry point.
+
+``defs``에는 Bronze→dbt asset graph와 ``pipeline_job``, ``data_operations``
+resource만 등록한다. Reliability lifecycle과 승인된 recovery/evaluation은
+이 graph에 포함하지 않는다.
+"""
 
 from dagster import Definitions, define_asset_job
 
