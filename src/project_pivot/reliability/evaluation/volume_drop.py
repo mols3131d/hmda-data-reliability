@@ -75,7 +75,13 @@ def evaluate_volume_drop_vertical_slice(
     validate_target: DbtValidationCallback,
     sample_fraction: float = 0.1,
 ) -> VolumeDropVerticalSliceResult:
-    """Run clean, controlled volume-drop, approved recovery, and replay."""
+    """Exercise controlled volume-drop recovery against request.database_path.
+
+    Evaluation fixtures are written under ``workspace`` and the target partition is
+    intentionally replaced with a synthetic defect before candidate validation or
+    approval. Approval gates recovery of that target, not defect injection; the same
+    approved request is replayed to verify reconciliation.
+    """
 
     from project_pivot.data_operations import run_incident_lifecycle
     from project_pivot.data_operations.errors import DataOperationError
@@ -115,6 +121,7 @@ def evaluate_volume_drop_vertical_slice(
             or f"row_count_drop_{request.source_year}{defect_path.suffix}",
         )
     target_request = request.model_copy(update={"database_path": request.database_path})
+    # Defect injection is part of evaluation and occurs before approval; approval gates recovery only.
     with DuckDBConnectionManager(target_request.database_path) as connection:
         load_hmda_loans_partition(
             connection,
