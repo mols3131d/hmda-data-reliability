@@ -75,12 +75,13 @@ class ApprovalBackfillValidator:
                     )
                 if reconciliation_action == "overwrite_partition":
                     _LOGGER.info(
-                        "event=reliability_recovery_overwrite_started "
-                        "incident_id=%s approval_id=%s source_year=%s table_name=%s",
-                        approval.incident_id,
-                        approval.approval_id,
-                        request.source_year,
-                        request.table_name,
+                        "event=reliability_recovery_overwrite_started",
+                        extra={
+                            "incident_id": approval.incident_id,
+                            "approval_id": approval.approval_id,
+                            "source_year": request.source_year,
+                            "table_name": request.table_name,
+                        },
                     )
                     # Keep compare-and-replace inside the loader's mutation transaction.
                     row_count = load_hmda_loans_partition(
