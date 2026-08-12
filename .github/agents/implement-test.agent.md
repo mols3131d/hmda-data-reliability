@@ -14,6 +14,8 @@ user-invocable: false
 - OpenSpec custom schema `spec-driven-tdd`에서 test design부터 test implementation까지 담당
   - workflow contract: `openspec/schemas/spec-driven-tdd/`
 
+작업 시작 시 [`pivot-load-context-testing`](../../.agents/skills/pivot-load-context-testing/SKILL.md)을 읽고 현재 task에 필요한 testing context만 로드한다. Test 설계와 실행의 세부 기준은 해당 skill이 연결하는 canonical 문서가 소유한다.
+
 ## Workflow
 
 | Phase | Responsibility | Completion |
@@ -30,11 +32,7 @@ Design은 다음 traceability를 유지한다.
 task → requirement → scenario → observable result → oracle → test
 ```
 
-- 범위 내 모든 behavior에 scenario 또는 명시적 exclusion을 설정한다.
-- 구현 상세가 아닌 observable behavior를 검증한다.
-- Oracle은 production 구현을 복제하지 않는다.
-- 하나의 test는 하나의 논리적 behavior만 검증한다.
-- test 약화나 생략으로 false green을 만들지 않는다.
+이 agent는 phase 순서와 handoff를 소유한다. Scenario, oracle, test level, assertion, fixture와 validation의 세부 기준은 loaded testing context를 따른다.
 
 의도된 RED test는 미구현으로 인해 실패하도록 작성하며, 미실행 test는 판정하지 않는다.
 

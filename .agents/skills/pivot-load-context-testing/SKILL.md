@@ -13,10 +13,11 @@ Load the smallest Project Pivot testing context needed for the task. Canonical t
 
 ## Load Context
 
-- When changing authored files under `tests/`, read [`tests/AGENTS.md`](../../../tests/AGENTS.md).
+- When changing authored files under `tests/` or deciding where a test belongs, read [`tests/AGENTS.md`](../../../tests/AGENTS.md).
 - When designing, changing, or reviewing behavior, scenarios, oracles, assertions, or test level, read [`docs/development/test-design-and-implementation.md`](../../../docs/development/test-design-and-implementation.md).
 - When selecting, running, or debugging pytest commands, markers, reports, coverage, or traces, read [`docs/development/testing.md`](../../../docs/development/testing.md).
 - When exact configured pytest defaults or plugin availability matters, inspect [`pyproject.toml`](../../../pyproject.toml). When Git hook behavior matters, inspect [`lefthook.yml`](../../../lefthook.yml).
+- When pull-request CI selection, CI-only filters, or CI execution scope matters, inspect [`.github/workflows/ci-lite.yml`](../../../.github/workflows/ci-lite.yml).
 
 Read only the context relevant to the current task. Do not duplicate detailed rules or invent a conflicting convention.
 
@@ -50,4 +51,4 @@ Report the executed command, outcome, failure classification, and remaining risk
 
 - Loading testing context does not expand the current task's write scope or ownership.
 - A failing test does not authorize weakening the test or modifying production code; classify the failure and follow the rules of the task that owns the change.
-- Do not redefine detailed test-design, execution, marker, hook, or reporting policy in this skill.
+- Do not redefine detailed test-design, execution, marker, hook, CI, or reporting policy in this skill.
