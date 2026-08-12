@@ -23,7 +23,7 @@ flowchart LR
 | Design | 책임 경계, 기술적 결정과 검증 전략 |
 | Tasks | 검증 가능한 구현 작업과 진행률 |
 
-각 planning artifact는 자신의 책임을 직접 소유한다. 계획의 오류나 누락이 구현 중 확인되면 해당 책임을 소유하는 artifact를 수정하고 영향받는 downstream planning artifact를 다시 일치시킨다.
+각 planning artifact는 자신의 책임을 직접 소유한다. Review 결과와 review process state는 이 schema의 artifact 책임이 아니다. 계획의 오류나 누락이 구현 중 확인되면 해당 책임을 소유하는 artifact를 수정하고 영향받는 downstream planning artifact를 다시 일치시킨다.
 
 ## Parsing Contract
 

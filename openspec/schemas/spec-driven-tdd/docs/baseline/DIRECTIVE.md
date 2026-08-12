@@ -3,6 +3,7 @@
 | ID | Requirement |
 | --- | --- |
 | R-001 | 이 schema는 OpenSpec Change의 계획 lifecycle과 artifact dependency를 정의해야 한다. |
+| R-002 | Apply는 Tasks를 직접 dependency로 사용해야 한다. |
 | R-003 | Specs는 관찰 가능하고 검증 가능한 행동 계약을 표현해야 한다. |
 | R-004 | Tasks는 파싱 가능한 최상위 Markdown 체크박스로 진행률을 표현해야 한다. |
 | R-005 | `tasks_total`과 `tasks_completed`는 Tasks 체크박스에서 계산하는 파생값으로 유지해야 한다. |
@@ -28,6 +29,7 @@
 | ID | Invariant |
 | --- | --- |
 | I-001 | Proposal, Specs, Design과 Tasks의 책임은 하나의 artifact로 합쳐지지 않는다. |
+| I-002 | Schema는 review 결과나 review process state를 별도 artifact로 소유하지 않는다. |
 | I-003 | Tasks 진행률의 source of truth는 frontmatter가 아니라 본문의 체크박스다. |
 | I-004 | Tags는 workflow gate, artifact dependency 또는 소유권 결정에 사용하지 않는다. |
 | I-005 | Schema template은 runtime artifact indexing과 Tasks 집계 대상이 아니다. |
@@ -50,9 +52,9 @@
 
 | Item | Record |
 | --- | --- |
-| Changed baseline | R-002, R-011, R-012 제거; D-001 수정; D-002, D-003, D-009, D-010 제거; I-001 수정; I-002, I-007 제거 |
+| Changed baseline | R-002 수정, R-011과 R-012 제거; D-001 수정, D-002·D-003·D-009·D-010 제거; I-001과 I-002 수정, I-007 제거 |
 | Problem | Plan Review는 planning content를 소유하지 않고 review process state만 별도 artifact로 유지해 artifact 책임과 Apply dependency를 불필요하게 늘렸다. |
-| Compatibility | 새 Change는 `plan-review.md`를 생성하거나 요구하지 않으며 Apply는 Tasks에 의존한다. 기존 archived `plan-review.md`는 역사 기록으로 유지하고 migration하지 않는다. |
+| Compatibility | 새 Change는 `plan-review.md`를 생성하거나 요구하지 않으며 Apply는 Tasks에 직접 의존한다. 기존 archived `plan-review.md`는 역사 기록으로 유지하고 migration하지 않는다. |
 | Rejected alternatives | 축소된 review artifact 유지와 review 상태를 다른 planning artifact에 이동하는 방식은 동일한 process state 책임을 계속 OpenSpec에 남기므로 기각한다. |
 | Synchronized changes | `schema.yaml`, schema README, `docs/architecture.md`, baseline과 `templates/plan-review.md`를 함께 갱신한다. |
 
