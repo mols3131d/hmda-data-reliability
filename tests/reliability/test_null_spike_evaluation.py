@@ -1146,6 +1146,11 @@ def test_null_spike_post_recovery_lifecycle_failure_preserves_mutation_evidence(
         "DataOperationError" in evidence
         for evidence in result.post_recovery_case.evidence_refs
     )
+    for rate in ("baseline", "recovery", "replay"):
+        assert any(
+            f"{rate}-null-rate:income:0.0" in evidence
+            for evidence in result.post_recovery_case.evidence_refs
+        )
 
 
 @pytest.mark.integration
@@ -1525,6 +1530,11 @@ def test_null_spike_target_dbt_failure_records_mutation_and_projection(
     assert result.post_recovery_case.reconciliation_action == "resume_verification"
     assert result.post_recovery_case.artifact_projection_ids == [initial_projection_id]
     assert result.recovery.actual_identity == result.expected_recovery_identity
+    for rate in ("baseline", "recovery", "replay"):
+        assert any(
+            f"{rate}-null-rate:income:0.0" in evidence
+            for evidence in result.post_recovery_case.evidence_refs
+        )
 
 
 @pytest.mark.integration
@@ -1598,6 +1608,11 @@ def test_null_spike_target_value_error_returns_structured_failure(
     assert any(
         "ValueError" in evidence for evidence in result.post_recovery_case.evidence_refs
     )
+    for rate in ("baseline", "recovery", "replay"):
+        assert any(
+            f"{rate}-null-rate:income:0.0" in evidence
+            for evidence in result.post_recovery_case.evidence_refs
+        )
 
 
 @pytest.mark.integration
