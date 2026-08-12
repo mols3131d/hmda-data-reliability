@@ -75,7 +75,9 @@ class ApprovalBackfillValidator:
                     )
                 if reconciliation_action == "overwrite_partition":
                     _LOGGER.info(
-                        "event=reliability_recovery_overwrite_started",
+                        "event=reliability_recovery_overwrite_started "
+                        "incident_id=%s",
+                        approval.incident_id,
                         extra={
                             "incident_id": approval.incident_id,
                             "approval_id": approval.approval_id,
