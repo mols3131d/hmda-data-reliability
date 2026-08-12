@@ -69,5 +69,6 @@ def dbt_loan_analytics(
             "return_code": MetadataValue.int(result.return_code),
             "manifest_path": MetadataValue.path(str(result.manifest_path)),
             "run_results_path": MetadataValue.path(str(result.run_results_path)),
+            "projection_id": MetadataValue.text(result.projection_id),
         }
     )

@@ -32,9 +32,11 @@ flowchart LR
 | Asset | Group / kinds | Delegated API | Materialization metadata |
 | --- | --- | --- | --- |
 | `raw_hmda_loans` | `bronze`, `duckdb`·`python` | `load_raw_data()` | database path, source root, file count, year, HMDA row count |
-| `dbt_loan_analytics` | `silver_gold`, `dbt` | `run_dbt_build()` | success, skipped, return code, manifest path, run results path |
+| `dbt_loan_analytics` | `silver_gold`, `dbt` | `run_dbt_build()` | success, skipped, return code, manifest path, run results path, projection identity |
 
 `dbt_loan_analytics`는 `raw_hmda_loans`에 의존한다. `run_dbt_build=False`이면 dbt 실행을 건너뛰고 `skipped=true`, `succeeded=false`, 사유 `run_dbt_build=false`를 기록한다. 건너뜀은 성공으로 표시하지 않는다.
+
+성공한 dbt materialization의 `projection_id`는 promotion gate가 검증한 run-scoped candidate artifact pair의 identity다.
 
 ## Resource Configuration
 
