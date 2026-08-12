@@ -1,7 +1,7 @@
 # MVP Development Dashboard
 
-> **Snapshot:** 2026-08-11 / main@222bfaa / implementation@736732b
-> **Current Focus:** 완료된 volume-drop MVP의 requirement/verification coverage를 유지하고 OpenSpec Change lifecycle을 정리한다.
+> **Snapshot:** 2026-08-13
+> **Current Focus:** MVP Phase 1 완료 및 다음 Phase 준비
 
 ## Development Progress
 
@@ -18,7 +18,7 @@
 
 | Area | Risk / Blocker | Impact |
 | --- | --- | --- |
-| Repository lifecycle | 완료된 reliability-mvp-volume-drop-vertical-slice Change가 active directory에 남아 있다. | MVP 구현·검증 상태에는 영향이 없지만 current Spec 동기화와 archive가 필요하다. |
+| None | None | None |
 
 ## References
 
