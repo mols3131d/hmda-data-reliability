@@ -1,4 +1,4 @@
-"""dbt manifest 기반 impact analysis."""
+"""Read one stable dbt artifact projection to calculate downstream impact."""
 
 from project_pivot.data_platform.artifacts import (
     ArtifactProjectionLockError,
@@ -12,12 +12,13 @@ from project_pivot.reliability.impact.result import ImpactAnalysisResult
 
 
 class DbtImpactAnalyzer:
-    """incident asset의 downstream dbt 영향을 계산한다."""
+    """Project an incident onto dbt lineage without changing artifact state."""
 
     def analyze(self, request: ImpactAnalysisRequest) -> ImpactAnalysisResult:
-        """LineageEvidence와 affected assets가 채워진 incident를 반환한다."""
+        """Return a copied incident with downstream assets and lineage evidence."""
 
         try:
+            # Manifest and run results must be observed from one stable projection.
             with artifact_projection_lock(
                 request.dbt_manifest_path.parent,
                 exclusive=False,
@@ -54,7 +55,7 @@ class DbtImpactAnalyzer:
 
 
 def analyze_dbt_impact(request: ImpactAnalysisRequest) -> ImpactAnalysisResult:
-    """기본 dbt impact analyzer를 실행한다."""
+    """Read current dbt artifacts and calculate downstream impact for an incident."""
 
     return DbtImpactAnalyzer().analyze(request)
 

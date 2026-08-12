@@ -1,4 +1,4 @@
-"""ProfileSnapshot 비교 기반 기본 incident detector."""
+"""Detect deterministic incidents from matching baseline/current profile snapshots."""
 
 from __future__ import annotations
 
@@ -17,10 +17,10 @@ from project_pivot.reliability.detection.result import DetectionResult
 
 
 class BasicIncidentDetector:
-    """baseline/current profile을 비교해 기본 incident를 생성한다."""
+    """Compare matched profiles without mutating pipeline or reliability state."""
 
     def detect(self, request: DetectionRequest) -> list[DetectionResult]:
-        """matching rule별 DetectionResult를 반환한다."""
+        """Return incidents in rule order, with null spikes ordered by column."""
 
         results: list[DetectionResult] = []
         results.extend(self._detect_volume_drop(request))
@@ -35,6 +35,7 @@ class BasicIncidentDetector:
     ) -> list[DetectionResult]:
         baseline = request.baseline
         current = request.current
+        # A zero-row baseline has no meaningful denominator for a drop ratio.
         if baseline.row_count == 0:
             return []
         drop_ratio = (baseline.row_count - current.row_count) / baseline.row_count
@@ -132,7 +133,7 @@ class BasicIncidentDetector:
 
 
 def detect_basic_incidents(request: DetectionRequest) -> list[DetectionResult]:
-    """기본 detector를 실행한다."""
+    """Apply the default deterministic detector to a validated profile pair."""
 
     return BasicIncidentDetector().detect(request)
 

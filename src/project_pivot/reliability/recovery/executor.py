@@ -1,4 +1,4 @@
-"""승인 기반 partition backfill 실행기."""
+"""Execute externally approved recovery and verify exact partition content identity."""
 
 from __future__ import annotations
 
@@ -34,14 +34,15 @@ _REQUIRED_APPROVAL_ACTIONS = frozenset(
 
 
 class ApprovalBackfillValidator:
-    """Approval gate 이후 backfill과 profile validation을 수행한다."""
+    """Enforce exact approval scope before candidate access or target mutation."""
 
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
 
     def execute(self, request: ApprovedBackfillRequest) -> BackfillValidationResult:
-        """승인된 요청만 partition overwrite와 profile validation을 실행한다."""
+        """Recover approved before-state or resume verification from exact after-state."""
 
+        # Approval scope is validated before the candidate source is read.
         approval, proposal = _ensure_approved(request)
         try:
             with TemporaryDirectory() as temporary_directory:
@@ -55,6 +56,8 @@ class ApprovalBackfillValidator:
                     source_year=request.source_year,
                     source_file=request.source_file,
                 )
+                # Replay resumes only from the exact approved after-state. A third
+                # state invalidates this approval rather than authorizing mutation.
                 if current_identity == proposal.expected_after_identity:
                     mutation_state = "already_recovered"
                     reconciliation_action = "resume_verification"
@@ -69,6 +72,7 @@ class ApprovalBackfillValidator:
                         "diverged state입니다."
                     )
                 if reconciliation_action == "overwrite_partition":
+                    # Keep compare-and-replace inside the loader's mutation transaction.
                     row_count = load_hmda_loans_partition(
                         self._connection,
                         [staged_source_path],
@@ -156,7 +160,7 @@ def execute_approved_backfill(
     connection: duckdb.DuckDBPyConnection,
     request: ApprovedBackfillRequest,
 ) -> BackfillValidationResult:
-    """DuckDB connection으로 승인된 backfill validation을 실행한다."""
+    """Apply the recovery gate and return identity-based validation evidence."""
 
     return ApprovalBackfillValidator(connection).execute(request)
 
@@ -208,7 +212,7 @@ def _stage_approved_candidate_source(
     request: ApprovedBackfillRequest,
     temporary_directory: Path,
 ) -> Path:
-    """승인된 candidate를 immutable staged source로 고정한다."""
+    """Materialize the approved candidate into temporary Parquet before mutation."""
 
     source_connection = duckdb.connect(":memory:")
     staged_source_path = temporary_directory / "approved-candidate.parquet"

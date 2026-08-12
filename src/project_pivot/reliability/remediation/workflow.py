@@ -1,4 +1,4 @@
-"""LangGraph 기반 remediation draft workflow."""
+"""Build deterministic remediation drafts without executing recovery actions."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from project_pivot.reliability.remediation.request import RemediationDraftReques
 
 
 class RemediationState(TypedDict, total=False):
-    """Remediation workflow state."""
+    """Internal state for deterministic triage, RCA, and plan assembly."""
 
     request: RemediationDraftRequest
     affected_assets: list[str]
@@ -26,7 +26,7 @@ class RemediationState(TypedDict, total=False):
 
 
 def create_remediation_draft(request: RemediationDraftRequest) -> RemediationDraft:
-    """Incident evidence로 remediation draft를 생성한다."""
+    """Create a review draft; never approve, backfill, validate, or run dbt."""
 
     graph = _build_graph()
     final_state = graph.invoke({"request": request})
@@ -98,6 +98,7 @@ def _plan_node(state: RemediationState) -> RemediationState:
         dbt_test_suggestions=dbt_test_suggestions,
         backfill_actions=backfill_actions,
         validation_actions=validation_actions,
+        # A backfill recommendation requires review; this flag never grants approval.
         requires_approval=bool(backfill_actions),
     )
     return {

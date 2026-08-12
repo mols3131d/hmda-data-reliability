@@ -1,4 +1,4 @@
-"""DuckDB table metadata evidence builder."""
+"""Build read-only table metadata evidence from DuckDB."""
 
 from __future__ import annotations
 
@@ -13,13 +13,13 @@ from project_pivot.reliability.profiling import calculate_schema_hash
 
 
 class DuckDBTableMetadataEvidenceBuilder:
-    """DuckDB table metadata를 Evidence contract로 변환한다."""
+    """Capture table-wide schema and row-count evidence without mutating DuckDB."""
 
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
 
     def build(self, request: TableMetadataEvidenceRequest) -> Evidence:
-        """요청 table의 metadata evidence를 생성한다."""
+        """Label table-wide metadata with the caller-provided asset and partition."""
 
         try:
             columns = _describe_table(self._connection, request.table_name)
@@ -52,7 +52,7 @@ def create_table_metadata_evidence(
     connection: duckdb.DuckDBPyConnection,
     request: TableMetadataEvidenceRequest,
 ) -> Evidence:
-    """DuckDB connection과 요청 모델로 table metadata Evidence를 생성한다."""
+    """Read table-wide metadata into an Evidence contract."""
 
     return DuckDBTableMetadataEvidenceBuilder(connection).build(request)
 

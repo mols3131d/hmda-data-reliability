@@ -1,4 +1,4 @@
-"""Evaluation report 생성기."""
+"""Aggregate evaluation evidence and render or write its Markdown report."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ def build_evaluation_report(
     *,
     generated_at: datetime | None = None,
 ) -> EvaluationReport:
-    """Synthetic case 결과를 집계해 EvaluationReport를 만든다."""
+    """Aggregate case outcomes; an empty case set has zero success rates."""
 
     case_results = list(cases)
     total_cases = len(case_results)
@@ -33,7 +33,7 @@ def build_evaluation_report(
 
 
 def render_evaluation_report_markdown(report: EvaluationReport) -> str:
-    """EvaluationReport를 Markdown 문서로 변환한다."""
+    """Render an EvaluationReport without writing to the filesystem."""
 
     lines = [
         "# Pipeline Evaluation Report",
@@ -63,7 +63,7 @@ def render_evaluation_report_markdown(report: EvaluationReport) -> str:
 
 
 def write_evaluation_report(report: EvaluationReport, output_path: str | Path) -> Path:
-    """EvaluationReport Markdown 파일을 쓴다."""
+    """Create parent directories and overwrite output_path with rendered Markdown."""
 
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
