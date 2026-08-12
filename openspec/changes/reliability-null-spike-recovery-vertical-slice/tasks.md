@@ -3,7 +3,7 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Reliability Null-Spike Recovery Vertical Slice Tasks
 description: Controlled null-spike recovery와 quality acceptance를 기존 safety primitives 위에 TDD로 구현한다.
-tasks_completed: 19
+tasks_completed: 18
 tasks_total: 24
 tags:
   - "domain:reliability"
@@ -74,9 +74,9 @@ tags:
   - **Covers:** `Existing evaluation database`, `Aliased evaluation database paths`, `Evaluation path preflight`
   - **Done when:** Existing target, workspace clean 또는 candidate database와 세 path 사이 physical alias는 workspace directory/file/database 생성, source load와 callback 전에 거부되고 기존 content와 workspace 부재 상태가 보존된다.
 
-- [x] 4.5 **RED/GREEN** — Exact null-rate evidence와 content/null-rate quality reconciliation을 구현한다.
+- [ ] 4.5 **RED/GREEN** — Exact null-rate evidence와 content/null-rate quality reconciliation을 구현한다.
   - **Covers:** `Independent null-rate acceptance evidence`
-  - **Done when:** Success evidence는 baseline/recovery/replay null rate를 포함한다. Content validation failure는 새 validation과 approval을 요구하고, content validation은 성공하지만 null rate만 다르면 `resume_verification`으로 종료한다.
+  - **Done when:** Success evidence는 baseline/recovery/replay null rate를 포함한다. Content validation failure는 새 validation과 approval을 요구하고, content validation은 성공하지만 null rate만 다르면 `resume_verification`으로 종료한다. Recovery와 replay quality acceptance가 완료된 뒤 downstream verification이 실패해도 이미 확정한 baseline/recovery/replay null-rate evidence를 보존한다.
 
 - [x] 4.6 **RED/GREEN** — Candidate와 target validation `ValueError`를 mutation-aware structured failure로 변환한다.
   - **Covers:** `Null-spike safety failure evidence`
