@@ -81,8 +81,8 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
         record for record in caplog.records if record.getMessage() == expected_message
     ]
     assert len(records) == 1
-    record = records[0]
-    assert record.incident_id == "inc-runtime-evidence"
-    assert record.approval_id == "approval-runtime-evidence"
-    assert record.source_year == 2025
-    assert record.table_name == "raw.hmda_loans"
+    context = records[0].__dict__
+    assert context["incident_id"] == "inc-runtime-evidence"
+    assert context["approval_id"] == "approval-runtime-evidence"
+    assert context["source_year"] == 2025
+    assert context["table_name"] == "raw.hmda_loans"
