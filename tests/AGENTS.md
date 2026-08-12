@@ -14,7 +14,7 @@ production source, OpenSpec artifact, project configuration, dependency와 CI는
 
 ## Local Conventions
 
-- 기존 domain directory, fixture, helper와 marker를 먼저 재사용한다.
+- observable contract를 소유하는 기존 test area, fixture, helper와 marker를 먼저 재사용한다. `src/` 구조를 기계적으로 mirror하지 않고, 새 test area는 기존 분류로 배치할 수 없을 때만 만든다.
 - module docstring은 contract, scope, 중요한 risk 또는 exclusion이 있을 때만 짧게 유지한다.
 - function docstring은 test 이름으로 드러나지 않는 policy, boundary 또는 regression 맥락에만 쓴다.
 - `test_*.design.md`는 여러 contract, 복잡한 flow 또는 scenario matrix가 있을 때만 만들고 대응 `.py`와 함께 갱신한다.
