@@ -1,4 +1,4 @@
-"""Build read-only reliability profile snapshots from DuckDB partitions."""
+"""Build read-only partition metrics with table-wide schema identity from DuckDB."""
 
 from __future__ import annotations
 
@@ -18,13 +18,13 @@ from project_pivot.reliability.profiling.profile_snapshot_request import (
 
 
 class DuckDBProfileSnapshotBuilder:
-    """Read one DuckDB partition into the ProfileSnapshot reliability contract."""
+    """Build partition metrics plus the table-wide schema hash."""
 
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
 
     def build(self, request: ProfileSnapshotRequest) -> ProfileSnapshot:
-        """Profile only the requested partition and leave the table unchanged."""
+        """Return a snapshot; missing freshness falls back to observed_at and is flagged."""
 
         try:
             schema_hash = calculate_schema_hash(self._connection, request.table_name)
@@ -63,7 +63,7 @@ def create_profile_snapshot(
     connection: duckdb.DuckDBPyConnection,
     request: ProfileSnapshotRequest,
 ) -> ProfileSnapshot:
-    """Read a partition profile from an existing DuckDB connection."""
+    """Build a snapshot, wrapping DuckDB failures as ProfileSnapshotError."""
 
     return DuckDBProfileSnapshotBuilder(connection).build(request)
 
