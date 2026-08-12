@@ -1,72 +1,54 @@
 {
   "version": 1,
   "skills": {
-    "marimo-notebook": {
-      "source": "marimo-team/skills",
-      "sourceType": "github",
-      "skillPath": "skills/marimo-notebook/SKILL.md",
-      "computedHash": "d843af038a49245369d9a91b8dda531a0d58882bc06623604b673cb144588edd"
-    },
-    "marimo-pair": {
-      "source": "marimo-team/marimo-pair",
-      "sourceType": "github",
-      "skillPath": "skills/marimo-pair/SKILL.md",
-      "computedHash": "0686fcc0854e7b3723087c0fc67831dc7122ffe696163c8e5e5a74e0222e1db2"
-    },
-    "polars": {
-      "source": "polars-inc/skills",
+    "mols-agent-asset-studio": {
+      "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "polars/SKILL.md",
-      "computedHash": "f45eae6f940edfa031d14dddad88698b69977d0c209f5c1f724eed1c9a372831"
+      "skillPath": "src/skills/mols-agent-asset-studio/SKILL.md",
+      "computedHash": "48a1a0069c23d5964ae0a641efb2f2920592a2edf27fd2da4cc9ec889fc8365b"
     },
-    "ponytail": {
-      "source": "DietrichGebert/ponytail",
+    "mols-agent-asset-tuner": {
+      "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "skills/ponytail/SKILL.md",
-      "computedHash": "210fa0831f649ce9f8a305f7b7c8cf2a0dd09ac4dd53067109941b96e7811d4e"
+      "skillPath": "src/skills/mols-agent-asset-tuner/SKILL.md",
+      "computedHash": "9c9eab499a767d659988e029b82a4542acb58c75a6e0efd8cc45e73bbbc3e1f2"
     },
-    "ponytail-audit": {
-      "source": "DietrichGebert/ponytail",
+    "mols-markdown-dashboard": {
+      "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "skills/ponytail-audit/SKILL.md",
-      "computedHash": "8b8d72e6ff70b65b6c9518d470fcf29dc696eea93d28f3efa10fdcc60cbd696d"
+      "skillPath": "src/skills/mols-markdown-dashboard/SKILL.md",
+      "computedHash": "1f9c0990d28139c955cc845ac5dfbdbfb4a9c3350d0052d22c5836944e03229f"
     },
-    "ponytail-debt": {
-      "source": "DietrichGebert/ponytail",
+    "mols-markdown-for-human": {
+      "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "skills/ponytail-debt/SKILL.md",
-      "computedHash": "0099b82174e3a4261828b4ec04d2c068b1b294fdab14f76701c2acd1f7c99539"
+      "skillPath": "src/skills/mols-markdown-for-human/SKILL.md",
+      "computedHash": "e74f1054fed6efcd1329434e0bfc5d3770c0d1857aa91e0a0d023616f5087a8b"
     },
-    "ponytail-gain": {
-      "source": "DietrichGebert/ponytail",
+    "mols-markdown-scripts": {
+      "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "skills/ponytail-gain/SKILL.md",
-      "computedHash": "c45ecba7906960eea904218b623abf097ebff84ecbacca6d68da1d0687435f75"
+      "skillPath": "src/skills/mols-markdown-scripts/SKILL.md",
+      "computedHash": "402ec9750ba77cdc87242f7efd572df958996d67ebdc17cefa87bced4ae395b3"
     },
-    "ponytail-help": {
-      "source": "DietrichGebert/ponytail",
+    "mols-mermaid-chart": {
+      "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "skills/ponytail-help/SKILL.md",
-      "computedHash": "10e8382b1033c9a0fec0073de6d3de3846b4f5dca7d78b6df2d476a1f4cd43c6"
+      "skillPath": "src/skills/mols-mermaid-chart/SKILL.md",
+      "computedHash": "03f25bd658fc85931f9a62ab570aeb9578c4e8c975999b4989c1990cd469917a"
     },
-    "ponytail-review": {
-      "source": "DietrichGebert/ponytail",
+    "mols-mermaid-diagram": {
+      "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "skills/ponytail-review/SKILL.md",
-      "computedHash": "4646594fcd75455533f7ff1425f4f1c5ba0fa65f88241bf262b1c4fc275f049a"
-    },
-    "retro-marimo-pair": {
-      "source": "marimo-team/marimo-pair",
-      "sourceType": "github",
-      "skillPath": "skills/retro-marimo-pair/SKILL.md",
-      "computedHash": "1f89f0999518297d5a0928528c87fc082da9645cac554b0101049042ec661d7b"
+      "skillPath": "src/skills/mols-mermaid-diagram/SKILL.md",
+      "computedHash": "3ab9a5a712cbf1a049e6c06e63f6530264069b9814acb7fa0a706f1d5a35cf5d"
     }
   }
 }
