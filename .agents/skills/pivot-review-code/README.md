@@ -1,6 +1,6 @@
-# MOLS Code Review
+# Pivot Code Review
 
-구현 코드와 테스트 코드의 correctness, regression, failure path와 validation evidence를 검토하는 범용 Review 스킬입니다.
+`pivot-review-code`는 구현 코드와 테스트 코드의 correctness, regression, failure path와 validation evidence를 검토하는 범용 Review 스킬입니다.
 
 특정 Agent, Review workflow, Git host 또는 artifact 형식에 의존하지 않습니다. 파일, diff, commit, pull request나 현재 작업 내용을 대상으로 사용할 수 있습니다.
 
@@ -35,7 +35,7 @@ validation: auto
 | `--focus <auto\|implementation\|tests\|all>` | 구현, 테스트 또는 둘 모두를 검토 |
 | `--validation <command\|auto\|none>` | 실행할 검증 command 또는 자동 선택 여부 |
 
-`auto`는 현재 요청과 repository context에서 가장 좁은 합리적 값을 선택합니다. 유효한 baseline이나 contract가 없으면 임의로 만들지 않고 해당 제한을 결과에 표시합니다.
+`auto`는 현재 요청과 repository context에서 가장 좁은 합리적 값을 선택합니다. 유효한 baseline이나 contract가 없으면 임의로 만들지 않고 해당 제한을 결과에 표시합니다. 구체적인 `auto` 해석과 선택 순서는 [Workflow](references/workflow.md)가 소유합니다.
 
 ## One Engine, Two Lenses
 
@@ -61,7 +61,7 @@ validation: auto
 특정 구현 경로를 이전 revision과 비교합니다.
 
 ```text
---target src/pivot/reliability/ --baseline main --focus implementation
+--target src/project_pivot/reliability/ --baseline main --focus implementation
 ```
 
 테스트의 설계와 false green 위험만 검토합니다.

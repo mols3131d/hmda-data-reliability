@@ -4,10 +4,10 @@
 
 ## Current State
 
-`mols-review-code`는 구현 코드와 테스트 코드를 근거 중심으로 검토하는 범용 Code Review 엔진이다.
+`pivot-review-code`는 구현 코드와 테스트 코드를 근거 중심으로 검토하는 범용 Code Review 엔진이다.
 
 ```text
-mols-review-code/
+pivot-review-code/
 ├── README.md
 ├── SKILL.md
 ├── docs/
@@ -24,15 +24,7 @@ mols-review-code/
 
 ## Arguments
 
-현재 지원하는 Argument는 일곱 개다.
-
-- `target`
-- `baseline`
-- `contract`
-- `scope`
-- `exclude`
-- `focus`
-- `validation`
+사용자용 interface는 `README.md#Arguments`, `auto` 해석과 선택 기준은 `references/workflow.md`가 소유한다. `SKILL.md`는 실행에 필요한 기본값만 노출한다.
 
 유효한 baseline이나 contract를 확인할 수 없으면 임의로 만들지 않고 Review 제한으로 보존한다.
 
@@ -66,7 +58,7 @@ Target
 | 분리 비용 | 공통 규칙 중복과 두 스킬의 판단 불일치 위험이 크다. |
 | 독립 필요성 | 테스트 Review만의 별도 lifecycle과 출력 계약이 아직 없다. |
 
-다음 조건이 실제로 생길 때만 `mols-review-tests` 같은 독립 스킬을 검토한다.
+다음 조건이 실제로 생길 때만 `pivot-review-tests` 같은 독립 스킬을 검토한다.
 
 - 테스트 설계와 구현이 Code Review와 별개의 반복 workflow가 됨
 - test artifact만을 위한 독립 입력, 완료 상태와 저장 계약이 생김
@@ -77,16 +69,16 @@ Target
 
 ### Structure
 
-- `SKILL.md`에는 공통 workflow, Reference 선택과 boundary만 둔다.
+- `SKILL.md`에는 Arguments 기본값, 공통 workflow, Reference 선택과 boundary만 둔다.
 - 구현, 테스트와 finding 기준은 서로 다른 Reference가 관리한다.
-- 사용자 설명과 분리 결정은 `README.md`에 있다.
+- 사용자 설명과 Argument interface, 분리 결정은 `README.md`에 있다.
 - 목적, 불변 조건과 설계 결정은 `DIRECTIVE.md`가 관리한다.
 - Agent 이름과 Agent 간 실행 구조를 포함하지 않는다.
 
 ### Quality
 
 - KISS: 하나의 engine과 네 개의 단일 책임 Reference로 구성한다.
-- DRY: target, contract, scope와 validation workflow는 한 곳에서만 정의한다.
+- DRY: Argument interface와 `auto` 해석의 ownership을 분리하고 공통 workflow를 반복 정의하지 않는다.
 - 독립성: Agent, OpenSpec, pull request와 artifact format 없이 사용할 수 있다.
 - 범용성: diff, file, revision, pull request와 current-state Review를 지원한다.
 - Finding 품질: location, evidence, reachability와 impact를 요구한다.
