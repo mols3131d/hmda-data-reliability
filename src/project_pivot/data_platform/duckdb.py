@@ -1,4 +1,4 @@
-"""DuckDB 연결, schema, table metadata 헬퍼."""
+"""DuckDB 연결 수명과 schema/table metadata helper."""
 
 from pathlib import Path
 from types import TracebackType
@@ -16,7 +16,11 @@ class DuckDBMetadataError(Exception):
 
 
 class DuckDBConnectionManager:
-    """DuckDB 연결 생성과 종료를 보장한다."""
+    """DuckDB 연결 수명과 optional file cleanup을 관리한다.
+
+    경로가 없으면 in-memory DB를 사용한다. File DB는 상위 directory를 만들며,
+    ``cleanup_on_close=True``면 연결 종료 후 database와 ``.wal`` 파일을 제거한다.
+    """
 
     def __init__(
         self,
@@ -25,8 +29,6 @@ class DuckDBConnectionManager:
         read_only: bool = False,
         cleanup_on_close: bool = False,
     ) -> None:
-        """DuckDB 연결 옵션을 저장한다."""
-
         self.database_path: Path | None = (
             Path(database_path) if database_path is not None else None
         )
@@ -35,8 +37,6 @@ class DuckDBConnectionManager:
         self._connection: duckdb.DuckDBPyConnection | None = None
 
     def __enter__(self) -> duckdb.DuckDBPyConnection:
-        """DuckDB 연결을 열고 connection 객체를 반환한다."""
-
         database = ":memory:" if self.database_path is None else str(self.database_path)
         if self.database_path is not None:
             self.database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -53,19 +53,16 @@ class DuckDBConnectionManager:
         _exc_value: BaseException | None,
         _traceback: TracebackType | None,
     ) -> None:
-        """DuckDB 연결을 닫고 필요하면 임시 파일을 정리한다."""
-
         connection = self._connection
         if connection is not None:
             connection.close()
             self._connection = None
             _LOGGER.debug("DuckDB 연결 종료")
         if self.cleanup_on_close and self.database_path is not None:
+            # DuckDB가 database/WAL file handle을 해제한 뒤에만 파일을 제거한다.
             self._remove_database_files()
 
     def _remove_database_files(self) -> None:
-        """DuckDB 파일과 WAL 파일을 삭제한다."""
-
         if self.database_path is None:
             return
         database_path = self.database_path
@@ -89,7 +86,7 @@ def table_row_count(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> int:
-    """DuckDB table의 전체 행 수를 조회한다."""
+    """Table 전체 행 수를 반환한다. 결과가 없으면 ``DuckDBMetadataError``다."""
 
     result = connection.execute(
         f"SELECT count(*) FROM {qualify_table_name(table_name)}"

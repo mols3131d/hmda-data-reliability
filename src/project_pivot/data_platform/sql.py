@@ -1,8 +1,8 @@
-"""DuckDB SQL 식별자와 리터럴 헬퍼."""
+"""DuckDB SQL identifier와 고정 string literal을 위한 quoting helper."""
 
 
 def quote_identifier(identifier: str) -> str:
-    """DuckDB 식별자를 안전하게 감싼다."""
+    """Identifier를 double-quote하며 빈 값과 NUL 문자를 거부한다."""
 
     if not identifier or "\x00" in identifier:
         msg = "식별자는 비어 있거나 null 문자를 포함할 수 없습니다."
@@ -12,7 +12,7 @@ def quote_identifier(identifier: str) -> str:
 
 
 def qualify_table_name(table_name: str) -> str:
-    """schema.table 형식의 테이블명을 DuckDB 식별자로 변환한다."""
+    """점으로 구분된 identifier를 각각 quote하며 빈 조각을 거부한다."""
 
     parts = table_name.split(".")
     if any(not part for part in parts):
@@ -22,7 +22,7 @@ def qualify_table_name(table_name: str) -> str:
 
 
 def quote_string_literal(value: str) -> str:
-    """DuckDB 문자열 리터럴을 안전하게 감싼다."""
+    """고정 SQL string literal을 quote한다. 동적 값은 parameter binding을 우선한다."""
 
     escaped_value = value.replace("'", "''")
     return f"'{escaped_value}'"
