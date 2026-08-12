@@ -1,23 +1,18 @@
 # Spec-Driven TDD
 
-OpenSpec의 artifact dependency와 Plan Review gate를 사용해 TDD-compatible implementation을 준비하는 재사용 가능한 custom schema다.
+OpenSpec의 artifact dependency를 사용해 TDD-compatible implementation을 준비하는 재사용 가능한 custom schema다.
 
 ```mermaid
 flowchart LR
     P[Proposal] --> S[Specs]
     S --> D[Design]
     D --> T[Tasks]
-    T --> R[Plan Review]
-    R -->|approved| A[Apply]
-    R -->|changes_requested| U[Revise Artifacts]
-    U --> R
-    R -->|blocked| B[Resolve Blocker]
-    B --> R
+    T --> A[Apply]
 ```
 
 | Path | Responsibility |
 | --- | --- |
-| [`schema.yaml`](schema.yaml) | 범용 workflow, artifact 의존성, 완료 조건과 Apply gate |
+| [`schema.yaml`](schema.yaml) | 범용 workflow, artifact 의존성, 완료 조건과 Apply 계약 |
 | [`templates/`](templates/) | artifact 구조·필드·parser contract와 구조에 종속된 작성 안내 |
 | [`docs/`](docs/) | schema 개발·유지보수 문서 |
 

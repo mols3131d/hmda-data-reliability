@@ -1,6 +1,6 @@
 name: spec-driven-tdd
 version: 1
-description: Spec-driven planning with bounded pre-implementation review and TDD-compatible execution
+description: Spec-driven planning with TDD-compatible execution
 
 artifacts:
   - id: proposal
@@ -60,43 +60,13 @@ artifacts:
       - specs
       - design
 
-  - id: plan-review
-    generates: plan-review.md
-    description: Evidence-based pre-implementation plan gate
-    template: plan-review.md
-    instruction: |
-      proposal, specs, design과 tasks를 구현 전에 독립적으로 검토한다.
-
-      template이 정의한 고정 검토 기준을 확인 가능한 planning artifact 근거로 판정한다.
-      implementation 결과는 이 gate의 검토 대상이 아니다.
-      기존 의도와 범위 안에서 해결 가능한 문제는 owning planning artifact에 환류한다.
-      요구사항, 범위 또는 중요한 결정의 변경이 필요하면 자동으로 보완하지 않는다.
-
-      검토 전에는 pending, loop 진행 중에는 in_progress를 사용한다.
-      하나의 loop는 전체 계획과 검토 기준을 다시 판정하는 단위다.
-      planning artifact가 바뀌면 다음 loop에서 모든 기준을 다시 판정한다.
-      완료한 loop마다 review_loop를 1 증가시키며 같은 loop의 재확인은 포함하지 않는다.
-      review_loop는 8을 초과하지 않는다.
-      현재 남은 미통과 finding만 Required Changes로 유지한다.
-
-      모든 검토 기준을 통과하면 approved로 종료한다.
-      인간의 판단이나 계획 변경이 필요하면 changes_requested,
-      필요한 근거나 외부 의존성이 부족하거나 8회 안에 수렴하지 못하면 blocked로 종료한다.
-      8회 한도에 도달한 뒤에는 자동 loop를 재개하지 않는다.
-
-      Apply 진입 가능 여부가 명확할 때 완료한다.
-    requires:
-      - proposal
-      - specs
-      - design
-      - tasks
-
 apply:
   requires:
-    - plan-review
+    - tasks
   tracks: tasks.md
   instruction: |
-    plan-review가 approved이고 checklist가 모두 통과하며 미완료 Required Changes가 없을 때만 Apply를 시작한다.
+    미완료 tasks를 의존성 순서로 구현한다.
 
     구현은 프로젝트 지침에 맞는 test-first feedback loop를 사용한다.
-    계획의 오류나 누락이 확인되면 owning artifact를 갱신하고 plan-review를 다시 수행한다.
+    계획의 오류나 누락이 확인되면 owning planning artifact를 갱신하고
+    영향받는 downstream planning artifact와 tasks를 다시 일치시킨다.
