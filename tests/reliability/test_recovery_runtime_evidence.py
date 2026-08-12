@@ -73,12 +73,10 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
     ):
         validator.execute(cast(ApprovedBackfillRequest, request))
 
-    expected_message = (
-        "event=reliability_recovery_overwrite_started "
-        "incident_id=inc-runtime-evidence"
-    )
     records = [
-        record for record in caplog.records if record.getMessage() == expected_message
+        record
+        for record in caplog.records
+        if record.getMessage() == "recovery partition overwrite attempt"
     ]
     assert len(records) == 1
     context = records[0].__dict__
