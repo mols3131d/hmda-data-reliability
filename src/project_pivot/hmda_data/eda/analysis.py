@@ -1,4 +1,4 @@
-"""HMDA 원천 CSV의 read-only EDA 계산."""
+"""HMDA source CSV를 변경하지 않고 descriptive evidence로 projection한다."""
 
 from __future__ import annotations
 
@@ -232,7 +232,7 @@ def _calculate_grain_alignment(
 def _inspect_and_validate_schema(
     source_relation: duckdb.DuckDBPyRelation,
 ) -> tuple[list[dict[str, str]], dict[str, str], list[dict[str, Any]], list[str]]:
-    """DuckDB relation의 스키마를 추출하고 필수 6개 컬럼의 유효성을 검증한다."""
+    """Six-core column의 presence와 type-family compatibility를 fail-fast 검증한다."""
 
     schema_rows = [
         {"name": name, "type": str(column_type)}
@@ -277,7 +277,7 @@ def _collect_volume_and_null_metrics(
     profile_columns: list[str],
     max_activity_years: int,
 ) -> tuple[int, dict[str, int], list[tuple[Any, ...]], int]:
-    """전체 row count, 컬럼별 null count, activity_year별 파티션 행 수를 수집한다."""
+    """한 grouped scan으로 total/null/year counts를 수집하고 year cardinality를 제한한다."""
 
     metric_select = ["count(*) AS row_count"] + [
         f"count(*) FILTER (WHERE {_quote_identifier(column)} IS NULL) "
@@ -339,7 +339,14 @@ def analyze_hmda_csv(
     temp_directory: str | Path,
     max_activity_years: int = 32,
 ) -> dict[str, Any]:
-    """HMDA CSV 전체를 aggregate하고 JSON-serializable evidence를 반환한다."""
+    """HMDA CSV 전체에서 read-only descriptive evidence를 계산한다.
+
+    필수 six-core schema compatibility를 먼저 검증하고 volume, null, categorical
+    distribution, numeric summary와 complete-key grain coverage를 JSON-serializable
+    structure로 반환한다. Source value를 정제하거나 quality/incident verdict를 내리지
+    않는다. Missing input은 ``FileNotFoundError``, schema 또는 year-cardinality 위반은
+    ``HMDADataValidationError``로 노출한다.
+    """
 
     input_path = Path(source_path).expanduser().resolve()
     if not input_path.is_file():
