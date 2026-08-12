@@ -39,6 +39,7 @@ review: auto
 
 - 이 skill의 workflow, gate, artifact responsibility와 finding routing은 이 파일이 소유한다.
 - 특정 repository path, branch, 문서 이름 또는 외부 workflow 존재를 전제로 하지 않는다.
+- Artifact는 파일을 의미하지 않는다. 현재 context, structured state, 기존 spec 또는 file 등 역할을 수행하는 surface를 semantic role로 취급한다.
 - 기존 artifact가 있으면 이름이 아니라 아래 semantic role에 매핑한다.
 - Research와 Review evidence는 기본적으로 transient input이다. 별도 artifact 생성을 workflow의 필수 조건으로 만들지 않는다.
 - 채택된 결정과 요구사항은 transient evidence가 아니라 해당 planning 또는 implementation surface에 남아야 한다.
@@ -56,7 +57,7 @@ Planning은 다섯 semantic role로 구성한다. 실제 파일명과 저장 위
 | `tasks` | 순서가 있는 검증 가능한 구현 작업 | 모든 계획 범위가 구현 단위와 완료 근거로 연결된다. |
 | `plan-review` | 구현 전 계획 정합성과 실행 가능성 판정 | 모든 required finding이 해소되고 Apply 가능 여부가 명확하다. |
 
-기존 문서가 여러 role을 함께 소유해도 된다. role마다 별도 파일을 만들 필요는 없다.
+하나의 artifact가 여러 role을 함께 소유해도 된다. role마다 별도 파일을 만들 필요는 없다.
 
 ## Entry Gates
 
