@@ -19,7 +19,10 @@ class DuckDBTableMetadataEvidenceBuilder:
         self._connection = connection
 
     def build(self, request: TableMetadataEvidenceRequest) -> Evidence:
-        """Capture table-wide metadata; partition labels evidence but does not filter rows."""
+        """Capture table-wide metadata.
+
+        ``partition`` labels the Evidence and does not filter table rows.
+        """
 
         try:
             columns = _describe_table(self._connection, request.table_name)
@@ -52,7 +55,7 @@ def create_table_metadata_evidence(
     connection: duckdb.DuckDBPyConnection,
     request: TableMetadataEvidenceRequest,
 ) -> Evidence:
-    """Build table-wide metadata evidence without partition filtering."""
+    """Build table-wide metadata evidence; partition is a label, not a filter."""
 
     return DuckDBTableMetadataEvidenceBuilder(connection).build(request)
 

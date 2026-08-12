@@ -121,7 +121,7 @@ def evaluate_volume_drop_vertical_slice(
             or f"row_count_drop_{request.source_year}{defect_path.suffix}",
         )
     target_request = request.model_copy(update={"database_path": request.database_path})
-    # Defect injection is part of evaluation and occurs before approval; approval gates recovery only.
+    # Defect injection happens before approval; approval gates only the recovery.
     with DuckDBConnectionManager(target_request.database_path) as connection:
         load_hmda_loans_partition(
             connection,
