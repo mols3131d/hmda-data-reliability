@@ -1,117 +1,158 @@
 ---
 name: pivot-spec-driven-tdd-rpi
 description: >-
-  Coordinate temporary Research, OpenSpec `spec-driven-tdd` planning and Apply
-  work. Use when Research informs a change, when creating or revising planning
-  artifacts, when entering Apply, or when Review findings must be routed to
-  their owning planning or implementation artifacts. Research and Review
-  evidence are temporary and must not become durable workflow dependencies.
+  Coordinate Research and Review feedback around OpenSpec's custom
+  `spec-driven-tdd` workflow. Use when Research may inform an OpenSpec change,
+  planning artifacts need revision, Apply entry must be checked, or Review
+  findings must be routed back to their owning work.
 compatibility: >-
-  Depends on OpenSpec and its custom `spec-driven-tdd` schema.
+  Requires OpenSpec with the custom `spec-driven-tdd` schema. No additional
+  external skill, project document, repository convention, or standalone
+  template is required by this skill.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Spec-Driven TDD RPI
 
-OpenSpec 밖의 임시 Research와 Review evidence를 `spec-driven-tdd` planning과 Apply에 연결한다.
+OpenSpec의 custom `spec-driven-tdd` workflow에 Research와 Review feedback을 연결한다.
 
-Research와 Review는 입력일 수 있지만 durable dependency는 아니다. Handoff가 완료되면 이후 workflow는 owning artifact만으로 계속되어야 한다.
+이 skill의 외부 dependency는 **OpenSpec과 `spec-driven-tdd` schema뿐**이다. 나머지 orchestration 규칙은 이 skill 안에서 처리한다.
 
-## Core Contract
+OpenSpec이 `spec-driven-tdd` contract를 제공하지 못하면 진행을 중단하고 incompatibility를 보고한다. 누락된 dependency를 자체 planning model, fallback contract 또는 추정 규칙으로 대체하지 않는다.
 
-- `spec-driven-tdd`가 planning artifact, dependency와 Apply contract를 소유한다.
-- Research와 implementation Review artifact는 `inbox/AGENTS.md`의 공통 규칙과 해당 type guideline을 따른다.
-- OpenSpec Plan Review와 implementation Review를 구분한다.
-- Entry는 phase 실행 이력이 아니라 현재 entry에 필요한 artifact로 결정한다.
-- Finding handoff는 채택된 결론, 조치와 필요한 근거가 임시 artifact에만 남지 않을 때 완료된다.
-- Research 또는 Review artifact의 존재와 verdict를 Apply나 archive dependency로 만들지 않는다.
+## Arguments
 
-## Finding Ownership
+```yaml
+entry: auto
+change: auto
+research: auto
+feedback: auto
+```
 
-Research 전체를 복제하지 않는다. 채택된 finding만 책임에 맞게 이전한다.
-
-| Finding | Owning artifact |
+| Argument | `auto` 동작 |
 | --- | --- |
-| 변경 목적, 범위, Capability와 영향 | `proposal` |
-| 관찰 가능한 행동과 계약 | `specs` |
-| 접근, 책임 경계, trade-off, 위험과 검증 전략 | `design` |
-| 구현 단위, 순서와 완료 근거 | `tasks` |
-| 계획의 정합성과 실행 가능성 판정 | `plan-review`가 독립적으로 작성 |
+| `entry` | 현재 요청과 상태에서 `research`, `planning`, `apply`, `review-feedback` 중 진입점을 선택한다. |
+| `change` | 기존 OpenSpec change를 사용한다. Research-only 진입에는 change를 강제하지 않는다. |
+| `research` | 현재 판단에 근거가 부족할 때만 필요한 범위로 조사한다. |
+| `feedback` | 제공되었거나 현재 작업에서 확인된 Review finding만 처리한다. Plan Review 상태를 대체하지 않는다. |
 
-Review finding은 원인과 변경 책임에 따라 route한다.
+명시된 argument를 우선한다. 존재하지 않는 artifact, evidence 또는 validation 결과를 가정하지 않는다.
+
+## Ownership
+
+### OpenSpec + `spec-driven-tdd`
+
+다음은 active schema contract가 소유한다.
+
+- planning artifact의 종류와 책임
+- artifact dependency와 `requires`
+- artifact template과 작성 contract
+- Plan Review contract와 상태
+- Apply gate, task tracking과 TDD execution contract
+
+현재 schema contract가 이 skill의 설명보다 항상 우선한다. 이 skill은 위 규칙을 복제하거나 별도 planning model로 대체하지 않는다.
+
+### This Skill
+
+이 skill은 다음 orchestration만 소유한다.
+
+- Research가 필요한지 판단하고 범위를 제한한다.
+- 채택된 Research finding을 schema가 소유하는 planning artifact로 handoff한다.
+- Review feedback을 원인과 변경 책임에 따라 owning work로 route한다.
+- Research와 Review feedback evidence가 durable workflow dependency가 되지 않게 한다.
+- 현재 entry의 다음 action 또는 blocker를 명확하게 전달한다.
+
+## Entry Conditions
+
+아래 조건은 entry routing을 위한 최소 조건이다. `spec-driven-tdd`가 소유하는 artifact, Plan Review 또는 Apply gate를 대체하지 않는다.
+
+| Entry | Condition |
+| --- | --- |
+| `research` | 조사할 질문과 범위가 명확하다. OpenSpec change는 아직 없어도 된다. |
+| `planning` | 대상 OpenSpec change가 `spec-driven-tdd`를 사용하며, 작성·수정할 artifact의 schema prerequisite를 충족한다. |
+| `apply` | active `spec-driven-tdd` schema가 정의한 Apply contract를 충족한다. |
+| `review-feedback` | finding, 근거와 영향을 받는 revision 또는 work surface를 식별할 수 있다. |
+
+Research나 Review feedback evidence의 존재 자체를 planning 또는 Apply의 추가 gate로 만들지 않는다.
+
+## Workflow
+
+1. 요청된 entry와, 존재하는 경우 대상 OpenSpec change를 식별한다.
+1. Planning 또는 Apply라면 OpenSpec에서 active `spec-driven-tdd` contract와 현재 artifact 상태를 확인한다.
+1. 현재 판단에 필요한 근거가 부족할 때만 Research를 수행한다.
+1. Research conclusion이 채택되면 schema의 artifact responsibility를 기준으로 owning planning artifact에 필요한 내용만 반영한다.
+1. Planning artifact를 작성하거나 수정할 때는 OpenSpec과 active schema의 dependency와 contract를 그대로 따른다.
+1. Planning 수정이 다른 artifact 또는 Plan Review에 영향을 주면 schema dependency에 따라 다시 확인한다.
+1. Apply 진입과 실행은 active schema의 Apply contract에 위임한다.
+1. Review feedback이 있으면 아래 routing contract에 따라 처리하고 필요한 OpenSpec 상태를 다시 확인한다.
+1. 요청된 entry가 완료되었거나 blocker가 명확하면 종료한다.
+
+불필요한 Research, artifact 생성, Review 반복 또는 고정 phase pipeline을 추가하지 않는다.
+
+## Research Handoff
+
+Research는 기본적으로 transient evidence다. 별도 Research artifact, 저장 경로 또는 template을 이 skill이 요구하지 않는다.
+
+- 기존 evidence로 충분하면 새 Research를 수행하지 않는다.
+- Research 전체를 planning artifact에 복제하지 않는다.
+- 채택된 conclusion, decision에 필요한 근거와 unresolved uncertainty만 owning artifact에 반영한다.
+- Research가 변경 필요성을 만들지 못하면 OpenSpec change를 억지로 생성하지 않는다.
+- Research evidence를 보존해야 한다면 저장 방식은 이 skill의 dependency나 gate가 아니다.
+
+Owning artifact는 active schema의 artifact description, instruction과 dependency를 기준으로 결정한다.
+
+## Review Feedback Routing
+
+Review feedback은 독립적인 canonical authority가 아니다. finding을 검증한 뒤 다음과 같이 route한다.
 
 | Finding | Route |
 | --- | --- |
-| Planning defect | 해당 planning artifact 수정 후 Plan Review 재수행 |
-| Implementation 또는 test defect | source 또는 tests 수정 후 관련 validation 재수행 |
-| 새로운 요구사항 또는 확장된 범위 | 후속 OpenSpec Change |
-| 문서, workflow 또는 process defect | 해당 canonical artifact |
+| Planning defect | 원인을 소유하는 `spec-driven-tdd` planning artifact를 수정하고 schema dependency에 따라 재검증한다. |
+| Implementation 또는 test defect | 해당 implementation 또는 test surface를 수정하고 관련 validation을 다시 수행한다. |
+| 새로운 요구사항 또는 현재 change 밖의 독립 범위 | 현재 change를 비대하게 만들지 않고 후속 OpenSpec change로 분리한다. |
+| 현재 workflow가 소유하지 않는 concern | 억지로 artifact나 dependency를 만들지 않고 out-of-scope로 명시한다. |
 
-문제의 수가 아니라 기존 Change의 의도와 범위 안인지로 같은 Change와 후속 Change를 구분한다.
+같은 change와 후속 change는 finding 수가 아니라 기존 change의 의도와 범위 안에서 해결 가능한지로 구분한다.
 
-## Entry Gates
+## Transient Evidence
 
-| Entry | Gate |
-| --- | --- |
-| Research | 조사할 목표와 범위가 명확하다. |
-| Planning artifact | schema가 선언한 `requires`와 해당 artifact를 작성할 충분한 근거가 준비되어 있다. Research가 필요하지 않으면 새로 만들지 않는다. |
-| Apply | schema가 선언한 `apply.requires`가 준비되어 있다. Research와 Review artifact는 요구하지 않는다. |
-| Review feedback | 대상 revision, finding과 근거가 식별되어 owning artifact로 route할 수 있다. |
+Research와 Review feedback evidence는 owning work로 handoff되기 전의 transient working evidence다.
 
-Artifact 간 모순이나 근거 부족이 확인되면 영향을 소유하는 artifact로 route하고 schema dependency에 따라 다시 검증한다.
-
-## Core Workflow
-
-1. 요청된 entry와 target change를 식별한다.
-1. `openspec/schemas/spec-driven-tdd/`에서 해당 entry의 contract만 읽는다.
-1. schema가 요구하는 artifact와 현재 근거를 확인한다.
-1. 근거가 부족할 때만 기존 Research를 사용하거나 필요한 범위로 조사한다.
-1. accepted finding을 책임에 맞는 planning artifact로 이전한다.
-1. Review feedback이 있으면 원인과 범위에 따라 owning artifact 또는 후속 Change로 route한다.
-1. 변경된 artifact의 dependency와 필요한 validation을 다시 확인한다.
-1. 임시 evidence를 정리하기 전에 이후 판단에 필요한 정보가 그 파일에만 남아 있지 않은지 확인한다.
-1. schema gate가 충족되면 요청된 entry를 수행한다.
-
-상위 planning artifact가 실질적으로 바뀌면 영향을 받는 하위 artifact를 다시 검증한다. Research나 Review artifact의 부재 자체는 재조사 또는 재검토 사유가 아니다.
-
-## Temporary Artifact Lifecycle
-
-Research와 implementation Review artifact의 저장, 삭제와 archive는 `inbox/AGENTS.md`와 해당 type guideline을 따른다.
-
-- Handoff가 완료되면 임시 artifact를 삭제해도 이후 planning, Apply와 archive를 계속할 수 있어야 한다.
-- Archive와 promotion은 inbox lifecycle과 branch 규칙을 따른다.
-- Planning 또는 구현이 바뀌어 근거가 다시 부족해지면 현재 질문에 필요한 Research나 Review로 route한다.
-- Review의 validation과 남은 risk는 필요한 경우 PR, Issue 또는 canonical artifact로 이전한다.
-
-## Boundaries
-
-- `spec-driven-tdd`의 dependency, template, parser 또는 Apply contract를 다시 정의하지 않는다.
-- Research나 implementation Review를 OpenSpec change directory 또는 schema artifact로 만들지 않는다.
-- implementation Review를 Plan Review와 합치지 않는다.
-- 별도의 Plan artifact나 고정된 phase pipeline을 추가하지 않는다.
-- Review path, sequence와 retention 규칙을 이 skill에서 다시 정의하지 않는다.
-- Research나 Review의 존재를 handoff 이후 entry의 추가 gate로 만들지 않는다.
-- Review verdict를 자동 archive 승인으로 해석하지 않는다.
-- Chat history나 숨은 추론을 durable artifact로 취급하지 않는다.
-- 임시 artifact만으로 요구사항, 설계 또는 구현 결정을 확정하지 않는다.
+- evidence 자체를 `spec-driven-tdd` artifact로 취급하지 않는다.
+- handoff 후 Research나 Review feedback 원본이 없어도 OpenSpec workflow가 계속될 수 있어야 한다.
+- schema artifact나 implementation에 필요한 결론이 transient evidence에만 남아 있지 않게 한다.
+- Chat history나 숨은 추론을 durable dependency로 만들지 않는다.
 
 ## Handoff
+
+필요할 때 다음 최소 상태만 전달한다. Handoff는 별도 artifact 생성 요구가 아니라 현재 호출의 출력 형식이다.
 
 ```markdown
 ## RPI Handoff
 
 - Entry:
-- Change:
-- Planning:
-- Research: <path | transferred | not-required>
-- Review: <path | transferred | not-required>
-- Gate: ready | blocked
-- Next:
+- Change: <id | not-applicable>
+- Research: <used | transferred | not-required>
+- Feedback: <resolved | findings | not-required>
+- Next: <action | blocker | none>
 ```
 
-확인한 artifact와 상태만 기록한다. 실행하거나 검증하지 않은 상태를 사실처럼 보고하지 않는다.
+확인한 상태만 기록한다. schema-owned gate나 Plan Review 상태를 별도 상태로 복제하지 않는다. 실행하거나 검증하지 않은 결과를 사실처럼 보고하지 않는다.
 
 ## Completion
 
-요청된 entry의 schema gate를 충족하고 다음 route 또는 blocker가 명확하면 완료한다. Research나 Review handoff를 수행했다면 이후 workflow가 원본 임시 artifact 없이도 진행 가능한 상태여야 한다.
+요청된 entry의 contract를 충족하고 다음 action 또는 blocker가 명확하면 완료한다.
+
+Research나 Review feedback을 사용했다면 채택된 결론이 transient evidence에만 남아 있지 않아야 한다.
+
+## Boundaries
+
+- OpenSpec과 custom `spec-driven-tdd` schema 외의 dependency를 추가하지 않는다.
+- 특정 repository path, project document, branch, VCS host, external template 또는 다른 skill을 요구하지 않는다.
+- dependency가 없거나 해석되지 않을 때 schema contract를 자체 구현하거나 추정하지 않는다.
+- `spec-driven-tdd`의 artifact model, dependency, Plan Review 또는 Apply contract를 재정의하지 않는다.
+- Research나 Review feedback을 OpenSpec schema artifact로 추가하지 않는다.
+- 별도의 Plan artifact나 competing workflow를 만들지 않는다.
+- Research 또는 Review feedback 존재를 schema가 정의하지 않은 gate로 만들지 않는다.
+- 새로운 finding이나 근거 없이 Review loop를 반복하지 않는다.
