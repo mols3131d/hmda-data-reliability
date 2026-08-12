@@ -1,0 +1,52 @@
+name: CI Lite
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-lite.yml"
+      - ".python-version"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "src/**"
+      - "tests/**"
+      - "!src/**.md"
+      - "!tests/**.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-lite-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version-file: ".python-version"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Lint Python
+        run: uv run --no-sync ruff check src tests
+
+      - name: Run unit tests
+        run: uv run --no-sync pytest -q -m "unit and not memory and not stress"
