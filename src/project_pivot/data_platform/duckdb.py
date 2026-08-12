@@ -1,4 +1,4 @@
-"""DuckDB 연결, schema, table metadata 헬퍼."""
+"""DuckDB connection lifetime과 schema/table metadata helper."""
 
 from pathlib import Path
 from types import TracebackType
@@ -12,11 +12,15 @@ _LOGGER = get_logger(__name__)
 
 
 class DuckDBMetadataError(Exception):
-    """DuckDB metadata 조회 실패를 나타낸다."""
+    """Metadata helper가 expected result를 만들 수 없을 때 사용한다."""
 
 
 class DuckDBConnectionManager:
-    """DuckDB 연결 생성과 종료를 보장한다."""
+    """DuckDB connection lifetime과 optional file cleanup을 관리한다.
+
+    Path가 없으면 in-memory DB를 사용한다. File DB는 parent directory를 만들며,
+    ``cleanup_on_close=True``면 connection을 닫은 뒤 database와 ``.wal``을 제거한다.
+    """
 
     def __init__(
         self,
@@ -25,8 +29,6 @@ class DuckDBConnectionManager:
         read_only: bool = False,
         cleanup_on_close: bool = False,
     ) -> None:
-        """DuckDB 연결 옵션을 저장한다."""
-
         self.database_path: Path | None = (
             Path(database_path) if database_path is not None else None
         )
@@ -35,7 +37,7 @@ class DuckDBConnectionManager:
         self._connection: duckdb.DuckDBPyConnection | None = None
 
     def __enter__(self) -> duckdb.DuckDBPyConnection:
-        """DuckDB 연결을 열고 connection 객체를 반환한다."""
+        """Configured target을 열고 DuckDB connection을 반환한다."""
 
         database = ":memory:" if self.database_path is None else str(self.database_path)
         if self.database_path is not None:
@@ -53,7 +55,7 @@ class DuckDBConnectionManager:
         _exc_value: BaseException | None,
         _traceback: TracebackType | None,
     ) -> None:
-        """DuckDB 연결을 닫고 필요하면 임시 파일을 정리한다."""
+        """Connection을 닫은 뒤 configured file cleanup을 수행한다."""
 
         connection = self._connection
         if connection is not None:
@@ -61,10 +63,11 @@ class DuckDBConnectionManager:
             self._connection = None
             _LOGGER.debug("DuckDB 연결 종료")
         if self.cleanup_on_close and self.database_path is not None:
+            # DuckDB가 database/WAL file handle을 해제한 뒤에만 파일을 제거한다.
             self._remove_database_files()
 
     def _remove_database_files(self) -> None:
-        """DuckDB 파일과 WAL 파일을 삭제한다."""
+        """File-backed database와 matching WAL을 cleanup 대상으로 제거한다."""
 
         if self.database_path is None:
             return
@@ -89,7 +92,7 @@ def table_row_count(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> int:
-    """DuckDB table의 전체 행 수를 조회한다."""
+    """전체 row count를 반환하고 결과 row가 없으면 typed metadata error를 낸다."""
 
     result = connection.execute(
         f"SELECT count(*) FROM {qualify_table_name(table_name)}"
@@ -104,7 +107,7 @@ def table_columns(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> set[str]:
-    """DuckDB table의 컬럼명 집합을 조회한다."""
+    """DESCRIBE 결과에서 table의 column name 집합을 반환한다."""
 
     rows = connection.execute(f"DESCRIBE {qualify_table_name(table_name)}").fetchall()
     return {str(row[0]) for row in rows}
