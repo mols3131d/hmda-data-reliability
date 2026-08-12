@@ -76,7 +76,11 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
     records = [
         record
         for record in caplog.records
-        if record.getMessage() == "event=reliability_recovery_overwrite_started"
+        if record.getMessage()
+        == (
+            "event=reliability_recovery_overwrite_started "
+            "incident_id=inc-runtime-evidence"
+        )
     ]
     assert len(records) == 1
     record = records[0]
