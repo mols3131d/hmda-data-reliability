@@ -86,6 +86,9 @@ def load_hmda_loans_partition(
             "table_name": table_name,
             "source_year": source_year,
             "source_file": source_file,
+            "expected_identity_digest": (
+                expected_identity.digest if expected_identity is not None else None
+            ),
             "row_count": row_count,
         },
     )
