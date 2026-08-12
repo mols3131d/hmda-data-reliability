@@ -10,7 +10,7 @@ compatibility: >-
   external skill, project document, repository convention, or standalone
   template is required by this skill.
 metadata:
-  version: "0.4.1"
+  version: "0.4.2"
 ---
 
 # Spec-Driven TDD RPI
@@ -18,6 +18,8 @@ metadata:
 OpenSpec의 custom `spec-driven-tdd` workflow에 Research와 Review feedback을 연결한다.
 
 이 skill의 외부 dependency는 **OpenSpec과 `spec-driven-tdd` schema뿐**이다. 나머지 orchestration 규칙은 이 skill 안에서 처리한다.
+
+OpenSpec이 `spec-driven-tdd` contract를 제공하지 못하면 incompatible 상태로 종료한다. 누락된 dependency를 자체 planning model, fallback contract 또는 추정 규칙으로 대체하지 않는다.
 
 ## Arguments
 
@@ -115,11 +117,11 @@ Review feedback은 독립적인 canonical authority가 아니다. finding을 검
 
 ## Transient Evidence
 
-Research와 Review feedback evidence는 planning에 들어가기 전의 작업 근거다.
+Research와 Review feedback evidence는 owning work로 handoff되기 전의 transient working evidence다.
 
 - evidence 자체를 `spec-driven-tdd` artifact로 취급하지 않는다.
 - handoff 후 Research나 Review feedback 원본이 없어도 OpenSpec workflow가 계속될 수 있어야 한다.
-- schema artifact에 필요한 결론이 transient evidence에만 남아 있지 않게 한다.
+- schema artifact나 implementation에 필요한 결론이 transient evidence에만 남아 있지 않게 한다.
 - Chat history나 숨은 추론을 durable dependency로 만들지 않는다.
 
 ## Handoff
@@ -148,6 +150,7 @@ Research나 Review feedback을 사용했다면 채택된 결론이 transient evi
 
 - OpenSpec과 custom `spec-driven-tdd` schema 외의 dependency를 추가하지 않는다.
 - 특정 repository path, project document, branch, VCS host, external template 또는 다른 skill을 요구하지 않는다.
+- dependency가 없거나 해석되지 않을 때 schema contract를 자체 구현하거나 추정하지 않는다.
 - `spec-driven-tdd`의 artifact model, dependency, Plan Review 또는 Apply contract를 재정의하지 않는다.
 - Research나 Review feedback을 OpenSpec schema artifact로 추가하지 않는다.
 - 별도의 Plan artifact나 competing workflow를 만들지 않는다.
