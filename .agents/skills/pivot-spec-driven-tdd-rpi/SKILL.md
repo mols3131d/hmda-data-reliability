@@ -19,7 +19,7 @@ OpenSpec의 custom `spec-driven-tdd` workflow에 Research와 Review feedback을 
 
 이 skill의 외부 dependency는 **OpenSpec과 `spec-driven-tdd` schema뿐**이다. 나머지 orchestration 규칙은 이 skill 안에서 처리한다.
 
-OpenSpec이 `spec-driven-tdd` contract를 제공하지 못하면 incompatible 상태로 종료한다. 누락된 dependency를 자체 planning model, fallback contract 또는 추정 규칙으로 대체하지 않는다.
+OpenSpec이 `spec-driven-tdd` contract를 제공하지 못하면 진행을 중단하고 incompatibility를 보고한다. 누락된 dependency를 자체 planning model, fallback contract 또는 추정 규칙으로 대체하지 않는다.
 
 ## Arguments
 
@@ -126,7 +126,7 @@ Research와 Review feedback evidence는 owning work로 handoff되기 전의 tran
 
 ## Handoff
 
-필요할 때 다음 최소 상태만 전달한다.
+필요할 때 다음 최소 상태만 전달한다. Handoff는 별도 artifact 생성 요구가 아니라 현재 호출의 출력 형식이다.
 
 ```markdown
 ## RPI Handoff
