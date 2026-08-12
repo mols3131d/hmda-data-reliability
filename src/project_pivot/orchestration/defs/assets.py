@@ -58,8 +58,8 @@ def dbt_loan_analytics(
             }
         )
     result = run_dbt_build(request)
-    # Build는 run-scoped candidate만 남긴다. 실패한 run이 current가 되지 않도록
-    # successful build 뒤에만 current projection을 승격한다.
+    # run_dbt_build()는 current를 바꾸지 않는다. 성공한 candidate만 current로
+    # 승격하도록 build 다음에 promotion을 둔다.
     promote_dbt_artifacts(result, request)
     context.log.info("dbt build 완료", extra={"return_code": result.return_code})
     return MaterializeResult(
