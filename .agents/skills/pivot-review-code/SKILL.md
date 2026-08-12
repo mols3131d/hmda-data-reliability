@@ -21,17 +21,7 @@ focus: auto
 validation: auto
 ```
 
-| Argument | `auto` 동작 |
-| --- | --- |
-| `--target <value\|auto>` | 요청, diff, 선택 영역 또는 현재 변경에서 검토 대상을 식별한다. |
-| `--baseline <value\|auto>` | 비교 가능한 이전 revision이나 변경 기준을 사용한다. 유효한 기준이 없으면 만들지 않는다. |
-| `--contract <value\|auto>` | 사용자 의도와 적용되는 spec, 문서, 규칙에서 기대 동작을 재구성한다. |
-| `--scope <value,...\|auto>` | 대상과 실질적으로 영향을 받는 동작까지만 포함한다. |
-| `--exclude <value,...>` | 지정한 path, relation 또는 concern을 검토에서 제외한다. |
-| `--focus <auto\|implementation\|tests\|all>` | 대상에 포함된 구현·테스트 종류에 맞는 검토 기준을 선택한다. |
-| `--validation <command\|auto\|none>` | 허용된 기존 검증 중 가장 작은 신뢰 가능한 범위를 선택한다. |
-
-명시된 argument를 우선한다. 유효한 baseline이나 contract가 없으면 추측하지 않고 제한을 보고한다.
+명시된 argument를 우선한다. 입력 형식과 사용자용 설명은 [README](README.md#arguments), `auto` 해석과 선택 기준은 [Workflow](references/workflow.md)가 소유한다. 유효한 baseline이나 contract가 없으면 추측하지 않고 제한을 보고한다.
 
 ## Workflow
 

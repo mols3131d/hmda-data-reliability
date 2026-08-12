@@ -4,10 +4,10 @@
 
 ## Current State
 
-`mols-review-code`는 구현 코드와 테스트 코드를 근거 중심으로 검토하는 범용 Code Review 엔진이다.
+`pivot-review-code`는 구현 코드와 테스트 코드를 근거 중심으로 검토하는 범용 Code Review 엔진이다.
 
 ```text
-mols-review-code/
+pivot-review-code/
 ├── README.md
 ├── SKILL.md
 ├── docs/
@@ -24,15 +24,7 @@ mols-review-code/
 
 ## Arguments
 
-현재 지원하는 Argument는 일곱 개다.
-
-- `target`
-- `baseline`
-- `contract`
-- `scope`
-- `exclude`
-- `focus`
-- `validation`
+사용자용 interface는 `README.md#Arguments`, `auto` 해석과 선택 기준은 `references/workflow.md`가 소유한다. `SKILL.md`는 실행에 필요한 기본값만 노출한다.
 
 유효한 baseline이나 contract를 확인할 수 없으면 임의로 만들지 않고 Review 제한으로 보존한다.
 
@@ -66,7 +58,7 @@ Target
 | 분리 비용 | 공통 규칙 중복과 두 스킬의 판단 불일치 위험이 크다. |
 | 독립 필요성 | 테스트 Review만의 별도 lifecycle과 출력 계약이 아직 없다. |
 
-다음 조건이 실제로 생길 때만 `mols-review-tests` 같은 독립 스킬을 검토한다.
+다음 조건이 실제로 생길 때만 `pivot-review-tests` 같은 독립 스킬을 검토한다.
 
 - 테스트 설계와 구현이 Code Review와 별개의 반복 workflow가 됨
 - test artifact만을 위한 독립 입력, 완료 상태와 저장 계약이 생김
@@ -77,27 +69,33 @@ Target
 
 ### Structure
 
-- `SKILL.md`에는 공통 workflow, Reference 선택과 boundary만 둔다.
+- `SKILL.md`에는 Arguments 기본값, 공통 workflow, Reference 선택과 boundary만 둔다.
 - 구현, 테스트와 finding 기준은 서로 다른 Reference가 관리한다.
-- 사용자 설명과 분리 결정은 `README.md`에 있다.
+- 사용자 설명과 Argument interface, 분리 결정은 `README.md`에 있다.
 - 목적, 불변 조건과 설계 결정은 `DIRECTIVE.md`가 관리한다.
 - Agent 이름과 Agent 간 실행 구조를 포함하지 않는다.
 
 ### Quality
 
 - KISS: 하나의 engine과 네 개의 단일 책임 Reference로 구성한다.
-- DRY: target, contract, scope와 validation workflow는 한 곳에서만 정의한다.
+- DRY: Argument interface와 `auto` 해석의 ownership을 분리하고 공통 workflow를 반복 정의하지 않는다.
 - 독립성: Agent, OpenSpec, pull request와 artifact format 없이 사용할 수 있다.
 - 범용성: diff, file, revision, pull request와 current-state Review를 지원한다.
 - Finding 품질: location, evidence, reachability와 impact를 요구한다.
 - 비용 통제: 가장 작은 validation과 finding을 바꿀 수 있는 context만 탐색한다.
 - 인간 편집성: 각 file의 책임과 변경 지점이 명확하다.
 
+### Static Dogfooding
+
+세 가지 변경 형태에 스킬을 정적으로 적용했다. 실제 command 실행으로 일반화하지 않는다.
+
+- **Implementation-only — PR #75:** source-only logging 변경에서 target, PR base, HMDA partition contract와 reachable success path를 구분해 해석했다. `expected_identity`가 transaction 안에서 일치한 경우에만 completion event에 도달함을 확인했고 material finding은 없었다.
+- **Test-only — PR #46:** marker-only 변경을 test behavior 자체가 아니라 collection/selection과 validation 신뢰성 변경으로 분류했다. Marker taxonomy와 diff는 정적으로 일치했으며 실제 pytest collection은 실행하지 않았으므로 uncertainty로 남겼다.
+- **Implementation + tests — PR #74:** overwrite 진입 event와 storage-failure test를 같은 behavior contract로 교차 검증했다. Test oracle이 event 위치와 context를 직접 확인하며 두 lens에서 같은 root cause의 중복 finding은 만들지 않았다.
+
 ## Remaining Validation
 
-- 실제 implementation-only Review로 scope와 baseline 자동 해석을 검증해야 한다.
-- test-only Review로 oracle과 false green 기준을 도그푸딩해야 한다.
-- 구현·테스트 혼합 변경에서 두 lens가 중복 finding을 만들지 않는지 확인해야 한다.
+- 실제 실행 가능한 Review 환경에서 focused validation 선택과 실행 결과 reporting까지 포함한 end-to-end 사용을 검증해야 한다.
 - 서로 다른 reviewer perspective에서도 같은 evidence가 과도하게 같은 결론을 강제하지 않는지 확인해야 한다.
 
-정적 구조와 문서 간 책임 검증은 완료됐다. 현재 차단 요소는 없다.
+정적 구조, 문서 책임과 세 가지 target 형태의 정적 dogfooding은 완료됐다. 현재 차단 요소는 없다.
