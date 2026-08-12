@@ -65,12 +65,17 @@ Lifecycle 밖의 side effect는 명시적 API로만 실행한다.
 | Recovery | `execute_approved_backfill(connection, request)` | 승인 상태와 `overwrite_partition`, `rerun_profile_snapshot` action을 검증한 뒤 partition을 덮어쓰고 profile을 다시 만든다. |
 | Evaluation | `build_evaluation_report(cases)` | synthetic case 결과를 집계한다. |
 | Volume-drop evaluation | `evaluate_volume_drop_vertical_slice(...)` | Clean baseline, controlled `volume_drop`, external approval, content recovery와 replay를 deterministic evidence로 조합한다. |
+| Null-spike evaluation | `evaluate_null_spike_vertical_slice(...)` | Single profiled column의 controlled `null_spike`, exact clean candidate, external approval, content recovery, null-rate restoration과 replay를 조합한다. |
 | Recovery case evidence | `build_recovery_evaluation_case(...)` | Mutation 여부, failure stage, reconciliation과 artifact projection을 evaluation case로 변환한다. |
 | Evaluation output | `write_evaluation_report(report, output_path)` | Markdown report 파일을 쓴다. |
 
 `RecoveryProposal`은 incident, target partition, candidate content identity, validation evidence, approved before/after identity, dbt projection과 target action을 하나의 immutable contract로 묶는다. `Approval`과 `ApprovedBackfillRequest`의 exact proposal이 다르거나 필수 action이 없으면 source 접근과 target mutation 전에 `ApprovalGateError`로 차단한다.
 
 Recovery는 current partition identity를 승인된 before/after state와 비교한다. Before state면 transaction 내부 compare-and-replace를 실행하고, expected after state면 overwrite 없이 profile verification을 재개한다. 어느 state와도 다르면 기존 approval로 추가 mutation하지 않는다. `BackfillValidationResult`는 content identity를 최종 oracle로 사용하고 mutation state와 reconciliation action을 함께 반환한다.
+
+Null-spike evaluation은 recovery executor의 content identity oracle을 변경하지 않는다. Expected recovery identity와 target column null rate를 original clean fixture에서 유도하고, residual-null candidate는 approval과 mutation 전에 차단한다. 성공한 recovery에서는 baseline, recovery와 replay null rate를 별도 evidence로 보존하고 post-recovery lifecycle에서 incident가 해소됐는지 확인한다. 첫 vertical slice는 전체 lifecycle incident가 target-column `null_spike` 하나인 경우로 제한한다.
+
+Synthetic setup과 recovery mutation evidence를 분리하기 위해 evaluation target, workspace clean database와 candidate database는 모두 새 path여야 한다. 하나라도 이미 존재하면 source load와 external callback 전에 요청을 거부하며 기존 content를 변경하지 않는다. Existing operational database를 직접 평가하거나 같은 연도의 다른 source-file population과 profile을 합치는 흐름은 이 API의 범위가 아니다.
 
 ## Public Surface
 
@@ -82,7 +87,7 @@ Recovery는 current partition identity를 승인된 before/after state와 비교
 | Detection | `detect_basic_incidents` |
 | Impact and draft | `analyze_dbt_impact`, `create_remediation_draft` |
 | Recovery | `execute_approved_backfill` |
-| Evaluation | `evaluate_volume_drop_vertical_slice`, `build_recovery_evaluation_case`, `build_evaluation_report`, `render_evaluation_report_markdown`, `write_evaluation_report` |
+| Evaluation | `evaluate_volume_drop_vertical_slice`, `evaluate_null_spike_vertical_slice`, `build_recovery_evaluation_case`, `build_evaluation_report`, `render_evaluation_report_markdown`, `write_evaluation_report` |
 
 계약 모델은 `reliability/contracts`에 있으며, 알 수 없는 필드는 거부되고 모델은 변경 불가다.
 
@@ -94,3 +99,4 @@ Recovery는 current partition identity를 승인된 before/after state와 비교
 1. [`tests/reliability/test_impact_analysis.py`](../../tests/reliability/test_impact_analysis.py)
 1. [`tests/reliability/test_approval_backfill_validation.py`](../../tests/reliability/test_approval_backfill_validation.py)
 1. [`tests/reliability/test_evaluation_report.py`](../../tests/reliability/test_evaluation_report.py)
+1. [`tests/reliability/test_null_spike_evaluation.py`](../../tests/reliability/test_null_spike_evaluation.py)
