@@ -399,6 +399,11 @@ def evaluate_null_spike_vertical_slice(
             recovery=recovery,
             replay=replay,
             candidate_projection_id=candidate_projection_id,
+            evidence_refs=[
+                f"baseline-null-rate:{target_column}:{baseline_null_rate}",
+                f"recovery-null-rate:{target_column}:{recovery_null_rate}",
+                f"replay-null-rate:{target_column}:{replay_null_rate}",
+            ],
         )
     try:
         target_projection_id = validate_target(target_request)
@@ -431,6 +436,13 @@ def evaluate_null_spike_vertical_slice(
             evidence_refs.append(f"failed-run:{run_target_path}")
         artifact_ids, observation_evidence = _observe_current_projection(target_request)
         evidence_refs.extend(observation_evidence)
+        evidence_refs.extend(
+            [
+                f"baseline-null-rate:{target_column}:{baseline_null_rate}",
+                f"recovery-null-rate:{target_column}:{recovery_null_rate}",
+                f"replay-null-rate:{target_column}:{replay_null_rate}",
+            ]
+        )
         post_recovery_case = build_recovery_evaluation_case(
             case_name="recovery_dbt_failure",
             expected_incident_types=[],

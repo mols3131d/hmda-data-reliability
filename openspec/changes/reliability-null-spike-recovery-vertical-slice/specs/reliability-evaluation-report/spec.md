@@ -61,6 +61,7 @@ tags:
 - **THEN** evaluation case evidence는 baseline, recovery와 replay target-column null rate를 포함해야 한다.
 - **AND** recovery 또는 replay의 content validation이 실패하거나 null rate가 baseline과 다르면 downstream success로 판정해서는 안 된다.
 - **AND** content validation은 성공하고 null rate만 baseline과 다르면 `resume_verification`을, content validation이 실패하면 새 validation과 approval 필요성을 evidence에 포함해야 한다.
+- **AND** recovery와 replay quality acceptance가 완료된 뒤 post-recovery lifecycle 또는 target validation이 실패해도 이미 확정한 baseline/recovery/replay null-rate evidence를 case result에 보존해야 한다.
 
 #### Scenario: Residual-null candidate rejection
 
