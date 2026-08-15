@@ -7,6 +7,7 @@
 | Document | Role | Use when |
 | --- | --- | --- |
 | [MVP Development](mvp/README.md) | domain별 MVP 목표와 개발 현황 | 현재 MVP 범위, 상태와 다음 gate를 확인할 때 |
+| [Next Reliability Milestone](reliability-next-milestone.md) | post-MVP 차기 Reliability capability 선정 및 scope | `volume_drop`/`null_spike` 이후 다음 capability를 확인할 때 |
 
 ## Test Guides
 

@@ -35,11 +35,11 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ### 3. 다음 Reliability milestone 하나 선정
 
-- [ ] `volume_drop`과 `null_spike`에서 재사용 가능한 approval, recovery, evaluation evidence contract를 목록화한다.
-- [ ] 새 workflow/meta-work를 늘리기 전에 가장 작은 다음 Reliability capability를 선택한다.
-- [ ] 선택한 milestone의 scope, owning package, validation boundary를 기록한다.
+- [x] `volume_drop`과 `null_spike`에서 재사용 가능한 approval, recovery, evaluation evidence contract를 목록화한다.
+- [x] 새 workflow/meta-work를 늘리기 전에 가장 작은 다음 Reliability capability를 선택한다.
+- [x] 선택한 milestone의 scope, owning package, validation boundary를 기록한다.
 
-**완료 조건:** 다음 milestone이 하나로 좁혀지고, 구현 전에 scope와 검증 경계가 설명된다.
+**완료 조건:** 다음 milestone이 하나로 좁혀지고, 구현 전에 scope와 검증 경계가 설명된다. [Next Reliability Milestone](../../docs/development/reliability-next-milestone.md)에 `schema_drift` recovery vertical slice를 차기 capability로 확정하고 재사용 contract, scope, owning package, validation boundary를 기록했다.
 
 ## Later
 
