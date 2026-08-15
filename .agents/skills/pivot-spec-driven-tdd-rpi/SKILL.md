@@ -32,7 +32,7 @@ feedback: auto
 
 | Argument | `auto` 동작 |
 | --- | --- |
-| `entry` | 현재 요청과 확인된 상태에서 `research`, `planning`, `apply`, `review-feedback` 중 진입점을 선택한다. |
+| `entry` | 현재 요청과 확인된 상태에서 `research`, `planning`, `review-feedback` 중 진입점을 선택한다. |
 | `change` | 명확히 하나로 식별되는 기존 OpenSpec change를 사용한다. Research-only 진입에는 change를 강제하지 않는다. |
 | `research` | 현재 판단에 근거가 부족할 때만 필요한 범위로 조사한다. |
 | `feedback` | 제공되었거나 현재 작업에서 확인된 Review finding만 처리한다. |
@@ -54,12 +54,12 @@ Active schema contract가 이 skill의 설명보다 우선한다. Host-project �
 ## Workflow
 
 1. 요청된 entry와 확인 가능한 대상 change를 식별한다. Research-only에는 change가 없어도 된다.
-1. Planning 또는 Apply라면 active `spec-driven-tdd` contract와 현재 artifact 상태를 확인하고 schema prerequisite를 따른다.
+1. Planning이라면 active `spec-driven-tdd` contract와 현재 artifact 상태를 확인하고 schema prerequisite를 따른다.
 1. 현재 판단에 필요한 근거가 부족할 때만 Research를 수행한다.
 1. Research가 OpenSpec change가 필요한 근거를 제공하면 기존 change를 명확히 식별하거나, 허용된 경우 OpenSpec을 통해 새 change를 준비한 뒤 planning으로 전이한다. 필요한 식별 정보나 권한이 없으면 임의로 만들지 않고 next action 또는 blocker를 반환한다.
 1. OpenSpec 작업에 채택된 Research conclusion은 schema responsibility에 따라 owning planning artifact에 필요한 내용만 반영한다.
 1. Planning artifact 수정이 downstream artifact에 영향을 주면 schema dependency에 따라 다시 일치시킨다.
-1. Apply 진입과 실행은 active schema의 Apply contract에 위임한다.
+1. Planning handoff 이후 implementation 진입과 실행은 active schema의 Apply contract에 위임한다.
 1. Review feedback은 finding, 근거와 영향을 받는 work surface를 확인한 뒤 아래 routing contract에 따라 처리한다.
 1. 요청된 entry가 완료되었거나 blocker가 명확하면 종료한다.
 
