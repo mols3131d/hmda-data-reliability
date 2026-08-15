@@ -13,7 +13,8 @@ tasks_total: 0
 - parser는 줄 시작이 정확히 `- [ ]` 또는 `- [x]`인 모든 최상위 체크박스를 progress로 집계한다.
 - 최상위 체크박스는 독립적으로 검증 가능한 구현 결과에만 사용한다.
 - RED, GREEN, REFACTOR는 TDD 실행 단계이며 별도 progress task로 나누지 않는다.
-- Review, self-review, 승인 대기와 선행 조건 같은 process/gate state는 일반 text나 list로 기록한다.
+- Review, self-review, 승인 대기 같은 process/gate state는 Tasks에 기록하지 않는다.
+- 구현에 필요한 선행 조건은 필요할 때만 일반 text나 list로 기록한다.
 - 각 task에는 객관적인 `Done when`을 둔다.
 - 빈 섹션이나 placeholder를 남기지 않는다.
 
