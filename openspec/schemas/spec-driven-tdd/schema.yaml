@@ -33,12 +33,13 @@ artifacts:
 
   - id: design
     generates: design.md
-    description: Technical approach, boundaries, and verification strategy
+    description: Minimal technical approach and non-obvious implementation decisions
     template: design.md
     instruction: |
-      Specs를 충족하기 위해 필요한 기술적 결정과 책임 경계만 기록한다.
+      Specs에서 Tasks를 도출하는 데 필요한 최소 구현 접근만 기록한다.
 
       Proposal과 Specs를 반복하지 않는다.
+      비자명한 책임 경계, 검증 전략 또는 기술적 결정이 있을 때만 추가한다.
       명백하거나 쉽게 되돌릴 수 있는 선택, 아직 필요하지 않은 확장 설계는 생략한다.
 
       Tasks를 도출하는 데 필요한 중요한 설계 판단이 해결되면 완료한다.

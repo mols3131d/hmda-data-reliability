@@ -8,19 +8,16 @@ description: <설계의 접근법과 책임 경계를 짧게 설명한다.>
 <!--
 작성 규칙:
 - Proposal의 동기·범위와 Specs의 행동 계약을 반복하지 않는다.
-- 구현에 필요한 비자명한 판단만 기록하고 명백하거나 쉽게 되돌릴 수 있는 선택은 생략한다.
-- OPTIONAL 블록은 내용이 있을 때만 유지한다.
+- Tasks를 도출하는 데 필요한 최소 구현 접근만 기록한다.
+- 비자명한 책임 경계, 검증 전략 또는 기술적 결정이 있을 때만 OPTIONAL section을 추가한다.
+- 명백하거나 쉽게 되돌릴 수 있는 선택은 생략한다.
 - 같은 내용을 Mermaid, 표와 본문으로 반복하지 않는다.
 - 빈 섹션이나 placeholder를 남기지 않는다.
 -->
 
-## Context
+## Approach
 
-<구현 판단에 필요한 현재 구조, 제약과 dependency만 설명한다.>
-
-## Architecture
-
-<Specs를 만족시키는 접근법과 책임 분리를 구현에 필요한 수준으로 설명한다.>
+<Tasks를 도출하는 데 필요한 구현 접근을 간결하게 설명한다. 단순한 변경이면 한 문단으로 충분하다.>
 
 <!-- OPTIONAL: 구조나 흐름이 텍스트보다 명확할 때만 사용한다.
 
@@ -49,9 +46,11 @@ flowchart LR
 - **Rationale:** <선택 이유>
 - **Trade-off:** <중요한 비용이 있을 때만 기록>
 
-## Testability
+<!-- OPTIONAL SECTION: Specs와 task 완료 조건만으로 검증 경계가 명확하지 않을 때만 유지한다. -->
 
-<중요한 행동과 경계를 어떤 관찰값으로 검증할지 설명한다. 구체적인 test case 목록은 Tasks나 test code에 맡긴다.>
+## Verification
+
+<중요한 행동이나 경계를 어떤 관찰값으로 검증할지 설명한다. 구체적인 test case 목록은 Tasks나 test code에 맡긴다.>
 
 <!-- OPTIONAL SECTION: 구현 전에 다뤄야 하는 실질적인 위험이 있을 때만 유지한다. -->
 
