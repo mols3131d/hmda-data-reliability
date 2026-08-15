@@ -1,6 +1,6 @@
 # Development Documentation
 
-이 directory는 현재 MVP의 목표·milestone·개발 현황과 repository 공통 test 실행·설계 기준을 관리한다.
+이 directory는 현재 MVP의 목표·milestone·개발 현황, post-MVP Reliability capability 선택과 repository 공통 test 실행·설계 기준을 관리한다.
 
 ## MVP
 
