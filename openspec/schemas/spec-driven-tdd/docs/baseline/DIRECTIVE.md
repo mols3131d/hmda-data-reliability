@@ -5,10 +5,10 @@
 | R-001 | 이 schema는 OpenSpec Change의 계획 lifecycle과 artifact dependency를 정의해야 한다. |
 | R-002 | Apply는 Tasks를 직접 dependency로 사용해야 한다. |
 | R-003 | Specs는 관찰 가능하고 검증 가능한 행동 계약을 표현해야 한다. |
-| R-004 | Tasks는 독립적으로 검증 가능한 구현 결과를 파싱 가능한 최상위 Markdown 체크박스로 표현해야 한다. |
-| R-005 | `tasks_total`과 `tasks_completed`는 Tasks 체크박스에서 계산하는 파생값으로 유지해야 한다. |
+| R-004 | Tasks는 독립적으로 검증 가능한 구현 결과에만 파싱 가능한 최상위 Markdown 체크박스를 사용해야 한다. |
+| R-005 | `tasks_total`과 `tasks_completed`는 Tasks의 파싱 대상 최상위 체크박스에서 구조적으로 계산하는 파생값으로 유지해야 한다. |
 | R-006 | artifact의 `type`은 `openspec-spec-driven-tdd-<artifact-type>` 형식을 사용해야 한다. |
-| R-007 | Tags는 `tag`와 제한된 `prefix:tag`를 허용하며 prefix는 `domain`, `subdomain`, `capability`만 사용할 수 있어야 한다. |
+| R-007 | Tags는 optional `tag`와 제한된 `prefix:tag`를 허용하며 prefix는 `domain`, `subdomain`, `capability`만 사용할 수 있어야 한다. |
 | R-008 | Schema의 Apply 지침은 특정 언어, 테스트 도구, 명령 또는 저장소 구조를 요구하지 않아야 한다. |
 | R-009 | 프로젝트별 실행 지침은 `openspec/config.yaml`에서 제공할 수 있어야 한다. |
 | R-010 | Schema 개발 문서는 `docs/`, 장기 보존할 개발 의도는 `docs/baseline/`에 위치해야 한다. |
@@ -19,11 +19,11 @@
 | --- | --- | --- |
 | D-001 | Workflow는 `Proposal → Specs → Design → Tasks → Apply` 순서를 사용한다. | 계획 artifact가 변경 의도, 행동 계약, 기술적 접근과 구현 작업을 직접 소유하며 별도 review state artifact를 두지 않는다. |
 | D-004 | 별도 Test Design artifact를 기본 workflow에 두지 않는다. | Specs, Design, Tasks와 실제 테스트 코드가 기본 검증 책임을 충분히 분담한다. |
-| D-005 | Tags는 단일 frontmatter 필드로 유지하고 namespaced tags를 허용한다. | 유연성을 유지하면서 선택적인 구조화 파싱을 지원한다. |
+| D-005 | Tags는 optional metadata로 단일 frontmatter 필드에만 표현한다. | 검색·분류를 허용하면서 planning artifact 사이의 불필요한 metadata 복제를 피한다. |
 | D-006 | Capability identifier의 canonical source는 `specs/<capability>/spec.md` 경로다. | Proposal 선언과 tags 사이의 충돌을 판정할 기준이 필요하다. |
 | D-007 | 모든 Markdown heading을 parser API로 고정하지 않는다. | 인간 가독성과 문서 편집 유연성을 보존한다. |
 | D-008 | 행동 변경은 test-first feedback loop를 사용하되 TDD phase를 별도 task로 요구하지 않는다. | TDD의 feedback 가치는 유지하면서 progress와 planning overhead를 줄인다. |
-| D-011 | 현재 범위의 feedback은 가장 작은 owning task와 직접 영향받는 planning artifact만 수정한다. | Review remediation workstream과 전체 planning 재순회를 방지한다. |
+| D-011 | 현재 범위의 feedback은 기존 owning task를 수정하거나 누락된 최소 implementation task를 추가하고, planning 수정은 owning artifact와 직접 영향받는 downstream에 한정한다. | Review remediation workstream과 전체 planning 재순회를 방지하면서 실제 누락 작업은 숨기지 않는다. |
 
 # Invariants
 
@@ -31,11 +31,11 @@
 | --- | --- |
 | I-001 | Proposal, Specs, Design과 Tasks의 책임은 하나의 artifact로 합쳐지지 않는다. |
 | I-002 | Schema는 review 결과나 review process state를 별도 artifact로 소유하지 않는다. |
-| I-003 | Tasks 진행률의 source of truth는 frontmatter가 아니라 본문의 체크박스다. |
+| I-003 | Tasks 진행률의 source of truth는 frontmatter가 아니라 본문의 파싱 대상 체크박스다. |
 | I-004 | Tags는 workflow gate, artifact dependency 또는 소유권 결정에 사용하지 않는다. |
 | I-005 | Schema template은 runtime artifact indexing과 Tasks 집계 대상이 아니다. |
 | I-006 | Project-specific command와 tool 선택을 schema baseline에 고정하지 않는다. |
-| I-008 | Review, self-review와 RED/GREEN/REFACTOR 같은 process phase는 Tasks 진행률로 추적하지 않는다. |
+| I-008 | Review, self-review, TDD phase와 다른 process/gate state는 Tasks의 최상위 체크박스로 표현하지 않는다. |
 
 # Allowed Changes
 
@@ -64,11 +64,11 @@
 
 | Item | Record |
 | --- | --- |
-| Changed baseline | R-004와 D-008 수정, D-011과 I-008 추가 |
-| Problem | TDD phase와 self-review가 top-level task로 표현되고 review feedback이 remediation workstream으로 누적되면 실제 구현 결과보다 progress item이 빠르게 증가하고 feedback이 다시 review를 만드는 재귀가 발생한다. |
-| Compatibility | Artifact DAG, parser syntax와 counter field는 유지한다. 기존 active/archive Tasks는 migration하지 않으며 새로 생성하거나 의미 있게 수정하는 Tasks부터 outcome 중심 형식을 적용한다. Schema version은 유지한다. |
+| Changed baseline | R-004, R-005, R-007과 D-005, D-008 수정; D-011과 I-008 추가 |
+| Problem | TDD phase와 self-review를 top-level task로 표현하고 review feedback을 remediation workstream으로 누적하면 실제 구현 결과보다 progress item이 증가한다. Parser는 checkbox 의미를 구분하지 않으므로 semantic exclusion을 parser 동작처럼 설명할 수도 없다. 반복 tags와 planning boilerplate도 별도 drift surface를 만든다. |
+| Compatibility | Artifact DAG, checkbox parser syntax와 counter field는 유지한다. Tags field도 계속 허용한다. 기존 active/archive artifact는 migration하지 않으며 새로 생성하거나 의미 있게 수정하는 artifact부터 최소 형식을 적용한다. Schema version은 유지한다. |
 | Rejected alternatives | Review 횟수 제한이나 최대 loop 수만 추가하면 원인인 progress modeling과 feedback ownership은 남는다. 별도 review artifact 복원도 process state를 다시 schema에 넣으므로 기각한다. |
-| Synchronized changes | `schema.yaml`, schema README, `templates/proposal.md`, `templates/design.md`, `templates/tasks.md`, `docs/architecture.md`와 baseline을 함께 갱신한다. |
+| Synchronized changes | `schema.yaml`, schema README, `templates/proposal.md`, `templates/spec.md`, `templates/design.md`, `templates/tasks.md`, `docs/architecture.md`와 baseline을 함께 갱신한다. |
 
 # Change Control
 

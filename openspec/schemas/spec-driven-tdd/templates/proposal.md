@@ -3,19 +3,17 @@ type: openspec-spec-driven-tdd-proposal
 category: proposal
 title: <title>
 description: <description>
-# OPTIONAL PARSABLE TAGS: Change-level 분류의 source of truth다.
+# OPTIONAL PARSABLE TAGS: 분류가 실제로 필요할 때만 사용한다.
 # 허용 형식: tag | domain:tag | subdomain:tag | capability:tag
-tags:
-  - "domain:domain-name"
-  - "subdomain:subdomain-name"
-  - "capability:capability-name"
-  - "tag-name"
+# tags:
+#   - "domain:domain-name"
+#   - "capability:capability-name"
 ---
 
 <!--
 작성 규칙:
-- `## Capabilities`, `### New Capabilities`, `### Modified Capabilities`와 Capability 이름 헤더는 파싱 계약으로 유지한다.
-- tags는 Change-level 분류의 source of truth이며 Capability 선언과 일치시킨다.
+- `## Capabilities`, `### New Capabilities`, `### Modified Capabilities`와 Capability 이름 heading은 파싱 계약으로 유지한다.
+- tags를 사용하면 Change-level 분류를 소유하며 Capability 선언과 충돌하지 않게 한다.
 - 구현 접근과 작업 순서는 Design과 Tasks에 맡긴다.
 - OPTIONAL 블록은 내용이 있을 때만 유지하고 빈 섹션이나 placeholder를 남기지 않는다.
 -->
@@ -53,7 +51,7 @@ tags:
 
 - <변경되는 Requirement 또는 행동>
 
-<!-- OPTIONAL SECTION: 실질적인 영향이 있을 때만 유지한다. -->
+<!-- OPTIONAL SECTION: 판단에 필요한 실질적인 영향이 있을 때만 유지한다. -->
 
 ## Impact
 

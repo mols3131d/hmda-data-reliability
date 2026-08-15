@@ -38,11 +38,12 @@ TDD는 implementation feedback loop이며 progress taxonomy가 아니다. 하나
 
 Review와 self-review process state는 schema가 추적하지 않는다.
 
-- 현재 범위의 미완료 작업이나 결함은 가장 작은 owning task를 다시 열거나 수정한다.
+- 현재 범위의 미완료 작업이나 결함에 owning task가 있으면 그 task를 다시 열거나 수정한다.
+- 현재 범위지만 owning task가 없으면 누락된 결과를 위한 가장 작은 implementation task만 추가한다.
 - 계획 오류는 원인을 소유하는 artifact와 직접 영향받는 downstream artifact만 다시 일치시킨다.
 - 독립적인 새 요구사항이나 별도 검증 가능한 범위는 현재 Change에 흡수하지 않는다.
 
-이 규칙은 review finding 자체를 새 workstream으로 만들고 다시 review하는 재귀를 방지한다.
+Review finding 자체를 별도 remediation workstream으로 만들지 않는다.
 
 ## Parsing Contract
 
@@ -51,10 +52,10 @@ Review와 self-review process state는 schema가 추적하지 않는다.
 | Surface | Stable Contract |
 | --- | --- |
 | Artifact identity | `type: openspec-spec-driven-tdd-<artifact-type>` |
-| Tags | `tag` 또는 제한된 `prefix:tag` |
+| Tags | optional `tag` 또는 제한된 `prefix:tag` 값 |
 | Capability declarations | Proposal의 Capability heading과 Spec 경로 |
 | OpenSpec delta specs | operation, Requirement, Scenario heading |
-| Task progress | 최상위 `- [ ]`, `- [x]` 체크박스 |
+| Task progress | 모든 최상위 `- [ ]`, `- [x]` 체크박스 |
 | Task counters | `tasks_total`, `tasks_completed` 파생 필드 |
 
 ### Tag Contract
@@ -65,18 +66,18 @@ Review와 self-review process state는 schema가 추적하지 않는다.
 ^(?:(?:domain|subdomain|capability):)?[a-z0-9]+(?:-[a-z0-9]+)*$
 ```
 
-Tags는 검색과 분류 metadata다. workflow 상태, artifact dependency 또는 소유권 결정에 사용하지 않는다. Proposal이 Change-level 분류를 소유하며 다른 artifact는 필요한 경우에만 tags를 명시한다.
+Tags는 optional 검색·분류 metadata다. workflow 상태, artifact dependency 또는 소유권 결정에 사용하지 않는다. Proposal이 tags를 사용하면 Change-level 분류를 소유한다. 다른 artifact는 필요한 경우에만 tags를 명시하며, Spec의 capability identity는 tag가 아니라 `specs/<capability>/spec.md` 경로가 소유한다.
 
 ### Task Counters
 
-`tasks.md`의 파싱 대상 체크박스가 source of truth이며 frontmatter counter는 파생 cache다.
+Parser는 최상위 체크박스를 구조적으로 집계한다.
 
 ```text
-tasks_total     = 독립적으로 검증 가능한 최상위 task 수
-tasks_completed = 완료된 [x] task 수
+tasks_total     = 파싱된 최상위 체크박스 수
+tasks_completed = 그중 완료된 [x] 체크박스 수
 ```
 
-Review, self-review, TDD phase와 단순 prerequisite는 task counter에 포함하지 않는다.
+따라서 authoring contract가 최상위 체크박스를 구현 결과에만 예약한다. Review, self-review, TDD phase, 선행 조건과 승인 대기 같은 process/gate state는 일반 text나 list로 표현한다.
 
 ## Configuration Boundary
 
