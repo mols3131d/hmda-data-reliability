@@ -53,7 +53,7 @@ mkdir -p artifacts && uv run pytest tests/hmda_data tests/data_platform tests/db
 uv run python scripts/run_actual_source.py
 ```
 
-이 PR에서는 canonical Spec taxonomy와 참조만 정리하며 runtime validation을 다시 실행하지 않았다. 따라서 위 결과를 current PR head execution으로 표현하지 않는다.
+위 audited verification은 지정된 historical revision의 evidence다. 이후 문서 변경이나 selective revalidation을 current PR head의 전체 runtime execution으로 해석하지 않는다.
 
 ## Non-Gating Inventory
 
@@ -63,7 +63,7 @@ uv run python scripts/run_actual_source.py
 | --- | --- |
 | Reliability freshness semantics | Risk — Foundation data contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 미측정 시 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
 | Profile / incident / impact / remediation lifecycle | Implemented, current execution unverified |
-| Reliability recovery backfill | Implemented, current execution unverified — partition content identity와 recovery 경로가 `source_file` scope를 포함하며 source-file filtering과 file-scoped recovery test가 존재한다. |
+| Reliability recovery backfill | Implemented, current execution unverified — partition content identity와 recovery 경로가 `source_file` scope를 포함하며 source-file filtering과 file-scoped recovery test가 존재한다. Content identity가 correctness oracle이며 row-count는 auxiliary evidence로만 사용한다. |
 | Reliability evaluation report | Implemented, current execution unverified |
 | Orchestration pipeline | Blocked — standard pipeline에서 dbt skip materialization semantics 충돌 |
 | dbt last-known-good evidence retention | Implemented, current execution unverified — 고유한 run-scoped target에서 candidate artifact를 만들고 current pair를 보존하며, promotion 실패 시 pair rollback test가 존재한다. |
@@ -78,10 +78,29 @@ uv run python scripts/run_actual_source.py
 
 현재 구현과 기존 test 근거를 기준으로 다음 두 Non-Gating Inventory 항목의 stale risk 설명을 갱신했다.
 
-- `reliability-recovery-backfill`: `source_file`이 partition content identity와 recovery 경로에 포함되고, source-file filtering 및 file-scoped recovery test가 존재한다.
+- `reliability-recovery-backfill`: `source_file`이 partition content identity와 recovery 경로에 포함되고, source-file filtering 및 file-scoped recovery test가 존재한다. Canonical recovery Spec에 따라 row-count comparison은 file-level population equivalence의 oracle로 사용하지 않는다.
 - `dbt Last-Known-Good Evidence Retention`: `run_dbt_build`가 고유한 run-scoped target을 사용하고 current artifact pair를 보존하며, promotion rollback test가 존재한다.
 
-선택된 focused test 결과는 **3 passed, 23 deselected**이다. Foundation 전체 재감사와 current `main` 전체 validation은 이 작업 범위에 포함하지 않는다.
+Evidence provenance:
+
+- Implementation revision: `8a3c2c785a86d80019010eb6747c8b9520aba7fe` (PR base; 이 PR은 runtime code/test를 변경하지 않는다.)
+- Recorded focused result: **3 passed, 23 deselected**
+- Original pytest command: **not recorded**
+- Reproduction targets:
+  - `tests/reliability/test_evaluation_report.py::test_volume_drop_vertical_slice_preserves_source_file_scope`
+  - `tests/data_operations/test_dbt_runner.py::test_candidate_dbt_build_does_not_promote_artifacts`
+  - `tests/data_operations/test_dbt_runner.py::test_artifact_promotion_restores_pair_when_second_replace_fails`
+
+재현 command:
+
+```bash
+uv run pytest \
+  tests/reliability/test_evaluation_report.py::test_volume_drop_vertical_slice_preserves_source_file_scope \
+  tests/data_operations/test_dbt_runner.py::test_candidate_dbt_build_does_not_promote_artifacts \
+  tests/data_operations/test_dbt_runner.py::test_artifact_promotion_restores_pair_when_second_replace_fails
+```
+
+위 command는 review follow-up에서 새로 실행한 결과가 아니다. 원래 focused execution command가 보존되지 않았으므로 `3 passed, 23 deselected` 기록을 reproducible current-HEAD execution evidence로 승격하지 않는다. Foundation 전체 재감사와 current `main` 전체 validation도 이 작업 범위에 포함하지 않는다.
 
 ## References
 
