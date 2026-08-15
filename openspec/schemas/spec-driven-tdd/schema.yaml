@@ -55,7 +55,7 @@ artifacts:
 
       하나의 최상위 체크박스는 하나의 결과를 나타낸다.
       행동 변경은 test-first feedback을 포함하되 RED, GREEN, REFACTOR를 별도 task로 나누지 않는다.
-      Review, self-review, approval과 process state를 task 진행률로 만들지 않는다.
+      Review, self-review, 승인 대기 같은 process/gate state를 task 진행률로 만들지 않는다.
 
       모든 계획 범위가 중복 없이 의존성 순서의 task로 연결되면 완료한다.
     requires:

@@ -35,7 +35,7 @@
 | I-004 | Tags는 workflow gate, artifact dependency 또는 소유권 결정에 사용하지 않는다. |
 | I-005 | Schema template은 runtime artifact indexing과 Tasks 집계 대상이 아니다. |
 | I-006 | Project-specific command와 tool 선택을 schema baseline에 고정하지 않는다. |
-| I-007 | Review, self-review와 RED/GREEN/REFACTOR 같은 process phase는 Tasks 진행률로 추적하지 않는다. |
+| I-008 | Review, self-review와 RED/GREEN/REFACTOR 같은 process phase는 Tasks 진행률로 추적하지 않는다. |
 
 # Allowed Changes
 
@@ -64,7 +64,7 @@
 
 | Item | Record |
 | --- | --- |
-| Changed baseline | R-004와 D-008 수정, D-011과 I-007 추가 |
+| Changed baseline | R-004와 D-008 수정, D-011과 I-008 추가 |
 | Problem | TDD phase와 self-review가 top-level task로 표현되고 review feedback이 remediation workstream으로 누적되면 실제 구현 결과보다 progress item이 빠르게 증가하고 feedback이 다시 review를 만드는 재귀가 발생한다. |
 | Compatibility | Artifact DAG, parser syntax와 counter field는 유지한다. 기존 active/archive Tasks는 migration하지 않으며 새로 생성하거나 의미 있게 수정하는 Tasks부터 outcome 중심 형식을 적용한다. Schema version은 유지한다. |
 | Rejected alternatives | Review 횟수 제한이나 최대 loop 수만 추가하면 원인인 progress modeling과 feedback ownership은 남는다. 별도 review artifact 복원도 process state를 다시 schema에 넣으므로 기각한다. |
