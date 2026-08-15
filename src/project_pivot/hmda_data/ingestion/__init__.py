@@ -13,6 +13,7 @@ from project_pivot.hmda_data.ingestion.full_load import load_hmda_loans
 from project_pivot.hmda_data.ingestion.identity import (
     PartitionContentIdentity,
     partition_content_identity,
+    partition_max_ingested_at,
 )
 from project_pivot.hmda_data.ingestion.partition import load_hmda_loans_partition
 
@@ -24,5 +25,6 @@ __all__ = [
     "load_hmda_loans",
     "load_hmda_loans_partition",
     "partition_content_identity",
+    "partition_max_ingested_at",
     "validate_required_columns",
 ]

@@ -172,6 +172,7 @@ def evaluate_volume_drop_vertical_slice(
     proposal = RecoveryProposal(
         proposal_id=f"recovery_{incident_id}",
         incident_id=incident_id,
+        incident_type="volume_drop",
         table_name=target_request.raw_table_name,
         source_year=target_request.source_year,
         source_file=target_request.source_file,

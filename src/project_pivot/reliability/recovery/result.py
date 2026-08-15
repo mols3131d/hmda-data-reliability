@@ -1,9 +1,11 @@
 """Backfill validation 결과 모델."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from project_pivot.hmda_data import PartitionContentIdentity
-from project_pivot.reliability.contracts import ProfileSnapshot
+from project_pivot.reliability.contracts import FreshnessObservation, ProfileSnapshot
 
 
 class BackfillValidationResult(BaseModel):
@@ -22,4 +24,8 @@ class BackfillValidationResult(BaseModel):
     mutation_state: str
     reconciliation_action: str
     validation_passed: bool
+    approved_before_freshness: FreshnessObservation | None = None
+    expected_after_freshness_at: datetime | None = None
+    actual_freshness: FreshnessObservation | None = None
+    freshness_validation_passed: bool | None = None
     executed_actions: list[str] = Field(default_factory=list)

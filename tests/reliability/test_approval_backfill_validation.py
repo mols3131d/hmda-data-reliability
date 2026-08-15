@@ -18,6 +18,7 @@ from project_pivot.hmda_data import (
     PartitionContentIdentity,
     load_hmda_loans_partition,
     partition_content_identity,
+    partition_max_ingested_at,
 )
 from project_pivot.hmda_data.errors import HMDAStalePartitionError
 from project_pivot.reliability import (
@@ -173,6 +174,10 @@ def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
     assert result.actual_identity == proposal.expected_after_identity
     assert result.mutation_state == "partition_changed"
     assert result.reconciliation_action == "overwrite_partition"
+    assert result.approved_before_freshness is None
+    assert result.expected_after_freshness_at is None
+    assert result.actual_freshness is None
+    assert result.freshness_validation_passed is None
     assert result.executed_actions == [
         "overwrite_partition",
         "rerun_profile_snapshot",
@@ -224,6 +229,207 @@ def test_recovery_blocks_diverged_target_without_mutation(tmp_path: Path) -> Non
         after = partition_content_identity(connection, source_year=2025)
 
     assert after == diverged
+
+
+@pytest.mark.integration
+def test_freshness_recovery_changes_equal_content_stale_state(tmp_path: Path) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
+    approval = _freshness_approval(proposal)
+
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        before_identity = partition_content_identity(connection, source_year=2025)
+
+        result = execute_approved_backfill(
+            connection,
+            _freshness_request(approval, proposal, candidate_path),
+        )
+        after_identity = partition_content_identity(connection, source_year=2025)
+
+    assert before_identity == after_identity == proposal.expected_after_identity
+    assert result.mutation_state == "partition_changed"
+    assert result.validation_passed
+    assert result.freshness_validation_passed
+    assert proposal.freshness_binding is not None
+    assert (
+        result.approved_before_freshness == proposal.freshness_binding.approved_before
+    )
+    assert result.expected_after_freshness_at == datetime(2026, 8, 15, 9, 0, tzinfo=UTC)
+    assert result.actual_freshness is not None
+    assert result.actual_freshness.freshness_at == result.expected_after_freshness_at
+
+
+@pytest.mark.integration
+def test_freshness_recovery_rejects_candidate_timestamp_mismatch(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
+    approval = _freshness_approval(proposal)
+    with DuckDBConnectionManager() as candidate:
+        candidate.execute(
+            """
+            CREATE TABLE candidate AS
+            SELECT * REPLACE (
+                TIMESTAMPTZ '2026-08-15 08:59:00+00' AS ingested_at
+            )
+            FROM read_parquet(?)
+            """,
+            [candidate_path.as_posix()],
+        )
+        candidate_path.unlink()
+        candidate.execute(
+            "COPY candidate TO ? (FORMAT PARQUET)",
+            [candidate_path.as_posix()],
+        )
+
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        before_freshness = partition_max_ingested_at(connection, source_year=2025)
+
+        with pytest.raises(ApprovalGateError, match="candidate.*freshness"):
+            execute_approved_backfill(
+                connection,
+                _freshness_request(approval, proposal, candidate_path),
+            )
+        after_freshness = partition_max_ingested_at(connection, source_year=2025)
+
+    assert after_freshness == before_freshness
+
+
+@pytest.mark.integration
+def test_freshness_recovery_rejects_unavailable_candidate(tmp_path: Path) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
+    approval = _freshness_approval(proposal)
+    with DuckDBConnectionManager() as candidate:
+        candidate.execute(
+            """
+            CREATE TABLE candidate AS
+            SELECT * REPLACE (NULL::TIMESTAMPTZ AS ingested_at)
+            FROM read_parquet(?)
+            """,
+            [candidate_path.as_posix()],
+        )
+        candidate_path.unlink()
+        candidate.execute(
+            "COPY candidate TO ? (FORMAT PARQUET)",
+            [candidate_path.as_posix()],
+        )
+
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        before_freshness = partition_max_ingested_at(connection, source_year=2025)
+
+        with pytest.raises(ApprovalGateError, match="candidate freshness"):
+            execute_approved_backfill(
+                connection,
+                _freshness_request(approval, proposal, candidate_path),
+            )
+        after_freshness = partition_max_ingested_at(connection, source_year=2025)
+
+    assert after_freshness == before_freshness
+
+
+@pytest.mark.integration
+def test_freshness_replay_blocks_expired_expected_state(tmp_path: Path) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
+    approval = _freshness_approval(proposal)
+
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        request = _freshness_request(approval, proposal, candidate_path)
+        execute_approved_backfill(connection, request)
+        expired_request = request.model_copy(
+            update={
+                "profile_request": request.profile_request.model_copy(
+                    update={"observed_at": datetime(2026, 8, 15, 10, 0, tzinfo=UTC)}
+                )
+            }
+        )
+
+        with pytest.raises(ApprovalGateError, match="freshness|새 validation"):
+            execute_approved_backfill(connection, expired_request)
+        after_freshness = partition_max_ingested_at(connection, source_year=2025)
+
+    assert after_freshness == datetime(2026, 8, 15, 9, 0, tzinfo=UTC)
+
+
+@pytest.mark.integration
+def test_freshness_recovery_transaction_gate_blocks_temporal_race(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
+    approval = _freshness_approval(proposal)
+    original_load = cast(
+        Callable[..., int],
+        recovery_executor.load_hmda_loans_partition,
+    )
+
+    def drift_before_target_transaction(*args: object, **kwargs: object) -> int:
+        if kwargs.get("expected_max_ingested_at") is not None:
+            connection = cast(duckdb.DuckDBPyConnection, args[0])
+            connection.execute(
+                """
+                UPDATE raw.hmda_loans
+                SET ingested_at = TIMESTAMPTZ '2026-08-15 07:30:00+00'
+                WHERE source_year = 2025
+                """
+            )
+        return original_load(*args, **kwargs)
+
+    monkeypatch.setattr(
+        recovery_executor,
+        "load_hmda_loans_partition",
+        drift_before_target_transaction,
+    )
+
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        with pytest.raises(ApprovalGateError, match="새 validation과 approval"):
+            execute_approved_backfill(
+                connection,
+                _freshness_request(approval, proposal, candidate_path),
+            )
+        after_freshness = partition_max_ingested_at(connection, source_year=2025)
+
+    assert after_freshness == datetime(2026, 8, 15, 7, 30, tzinfo=UTC)
+
+
+@pytest.mark.integration
+def test_freshness_profile_failure_preserves_temporal_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
+    approval = _freshness_approval(proposal)
+
+    def fail_profile(*args: object, **kwargs: object) -> None:
+        raise recovery_executor.ProfileSnapshotError("freshness profile failed")
+
+    monkeypatch.setattr(recovery_executor, "create_profile_snapshot", fail_profile)
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(BackfillValidationError) as error,
+    ):
+        _load_stale_freshness_target(connection, source_path)
+        execute_approved_backfill(
+            connection,
+            _freshness_request(approval, proposal, candidate_path),
+        )
+
+    assert error.value.mutation_state == "partition_changed"
+    assert error.value.reconciliation_action == "resume_verification"
+    assert error.value.context["actual_freshness_at"] == "2026-08-15T09:00:00+00:00"
+    assert error.value.context["expected_after_freshness_at"] == (
+        "2026-08-15T09:00:00+00:00"
+    )
 
 
 @pytest.mark.integration
@@ -574,6 +780,7 @@ def _proposal() -> RecoveryProposal:
     return RecoveryProposal(
         proposal_id="recovery_volume_drop_2025",
         incident_id="inc_volume_drop_2025",
+        incident_type="volume_drop",
         table_name=HMDA_LOANS_TABLE,
         source_year=2025,
         candidate_identity=expected,
@@ -599,6 +806,7 @@ def _proposal_for_source(source_path: Path) -> RecoveryProposal:
     return RecoveryProposal(
         proposal_id="recovery_volume_drop_2025",
         incident_id="inc_volume_drop_2025",
+        incident_type="volume_drop",
         table_name=HMDA_LOANS_TABLE,
         source_year=2025,
         candidate_identity=expected,
@@ -607,6 +815,96 @@ def _proposal_for_source(source_path: Path) -> RecoveryProposal:
         validation_evidence_refs=("candidate-content", "candidate-dbt"),
         dbt_projection_id="dbt:candidate",
         target_actions=("overwrite_partition", "rerun_profile_snapshot"),
+    )
+
+
+def _freshness_proposal_for_source(
+    source_path: Path,
+    tmp_path: Path,
+) -> tuple[Path, RecoveryProposal]:
+    candidate_database_path = tmp_path / "freshness-candidate.duckdb"
+    candidate_path = tmp_path / "freshness-candidate.parquet"
+    candidate_at = datetime(2026, 8, 15, 9, 0, tzinfo=UTC)
+    with DuckDBConnectionManager(candidate_database_path) as connection:
+        load_hmda_loans_partition(connection, [source_path], 2025)
+        connection.execute(
+            "UPDATE raw.hmda_loans SET ingested_at = ? WHERE source_year = 2025",
+            [candidate_at],
+        )
+        identity = partition_content_identity(connection, source_year=2025)
+        connection.execute(
+            "COPY raw.hmda_loans TO ? (FORMAT PARQUET)",
+            [candidate_path.as_posix()],
+        )
+    proposal = RecoveryProposal(
+        proposal_id="recovery_freshness_delay_2025",
+        incident_id="inc_freshness_delay_2025",
+        incident_type="freshness_delay",
+        table_name=HMDA_LOANS_TABLE,
+        source_year=2025,
+        candidate_identity=identity,
+        approved_before_identity=identity,
+        expected_after_identity=identity,
+        validation_evidence_refs=("candidate-content", "candidate-freshness"),
+        dbt_projection_id="dbt:candidate",
+        target_actions=("overwrite_partition", "rerun_profile_snapshot"),
+        freshness_binding={
+            "approved_before": {
+                "freshness_status": "measured",
+                "freshness_at": datetime(2026, 8, 15, 7, 0, tzinfo=UTC),
+                "observed_at": datetime(2026, 8, 15, 9, 0, tzinfo=UTC),
+            },
+            "expected_after_freshness_at": candidate_at,
+            "max_age_minutes": 60,
+        },
+    )
+    return candidate_path, proposal
+
+
+def _freshness_approval(proposal: RecoveryProposal) -> Approval:
+    approved_at = datetime(2026, 8, 15, 9, 0, tzinfo=UTC)
+    return Approval(
+        approval_id="approval_freshness_delay_2025",
+        incident_id=proposal.incident_id,
+        status=ApprovalStatus.APPROVED,
+        requested_by="data-platform",
+        requested_at=approved_at,
+        approved_by="data-owner",
+        approved_at=approved_at,
+        requested_actions=("overwrite_partition", "rerun_profile_snapshot"),
+        recovery_proposal=proposal,
+    )
+
+
+def _freshness_request(
+    approval: Approval,
+    proposal: RecoveryProposal,
+    candidate_path: Path,
+) -> ApprovedBackfillRequest:
+    return ApprovedBackfillRequest(
+        approval=approval,
+        proposal=proposal,
+        source_paths=(candidate_path,),
+        source_year=2025,
+        profile_request=ProfileSnapshotRequest(
+            asset_name=HMDA_LOANS_TABLE,
+            table_name=HMDA_LOANS_TABLE,
+            partition_column="activity_year",
+            partition=2025,
+            profile_columns=("loan_amount", "income"),
+            freshness_column="ingested_at",
+            observed_at=datetime(2026, 8, 15, 9, 30, tzinfo=UTC),
+        ),
+    )
+
+
+def _load_stale_freshness_target(
+    connection: duckdb.DuckDBPyConnection,
+    source_path: Path,
+) -> None:
+    load_hmda_loans_partition(connection, [source_path], 2025)
+    connection.execute(
+        "UPDATE raw.hmda_loans SET ingested_at = TIMESTAMPTZ '2026-08-15 07:00:00+00'"
     )
 
 

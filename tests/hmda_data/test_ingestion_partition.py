@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,7 @@ from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import (
     load_hmda_loans_partition,
     partition_content_identity,
+    partition_max_ingested_at,
 )
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 
@@ -134,6 +136,113 @@ def test_partition_load_compares_expected_identity_before_replacement(
 
     assert replaced != before
     assert after_stale == replaced
+
+
+def test_partition_load_compares_expected_freshness_before_replacement(
+    hmda_csv_path: Path,
+) -> None:
+    """Content가 같아도 transaction 내부 temporal drift는 zero mutation이다."""
+
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        identity = partition_content_identity(connection, source_year=2025)
+        expected_freshness = partition_max_ingested_at(
+            connection,
+            source_year=2025,
+        )
+        assert expected_freshness is not None
+        connection.execute(
+            """
+            UPDATE raw.hmda_loans
+            SET ingested_at = TIMESTAMPTZ '2026-08-15 00:00:00+00'
+            WHERE source_year = 2025
+            """
+        )
+
+        with pytest.raises(HMDAStalePartitionError, match="stale"):
+            load_hmda_loans_partition(
+                connection,
+                [hmda_csv_path],
+                2025,
+                expected_identity=identity,
+                expected_max_ingested_at=expected_freshness,
+            )
+
+        after = partition_max_ingested_at(connection, source_year=2025)
+
+    assert after == datetime(2026, 8, 15, 0, 0, tzinfo=UTC)
+
+
+def test_partition_load_preserves_approved_bronze_metadata(
+    hmda_csv_path: Path,
+    tmp_path: Path,
+) -> None:
+    candidate_path = tmp_path / "candidate.parquet"
+    approved_at = datetime(2026, 8, 15, 9, 0, tzinfo=UTC)
+
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        connection.execute(
+            "UPDATE raw.hmda_loans SET ingested_at = ? WHERE source_year = 2025",
+            [approved_at],
+        )
+        connection.execute(
+            "COPY raw.hmda_loans TO ? (FORMAT PARQUET)",
+            [candidate_path.as_posix()],
+        )
+        before = partition_content_identity(connection, source_year=2025)
+        before_freshness = partition_max_ingested_at(connection, source_year=2025)
+        assert before_freshness is not None
+
+        load_hmda_loans_partition(
+            connection,
+            [candidate_path],
+            2025,
+            expected_identity=before,
+            expected_max_ingested_at=before_freshness,
+            preserve_source_metadata=True,
+        )
+        metadata = connection.execute(
+            """
+            SELECT min(source_year), min(source_file_name), max(ingested_at)
+            FROM raw.hmda_loans
+            WHERE source_year = 2025
+            """
+        ).fetchone()
+
+    assert metadata == (2025, hmda_csv_path.name, approved_at)
+
+
+def test_partition_load_rejects_missing_preserved_provenance_before_mutation(
+    hmda_csv_path: Path,
+    tmp_path: Path,
+) -> None:
+    candidate_path = tmp_path / "candidate-without-ingested-at.parquet"
+
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        before = partition_content_identity(connection, source_year=2025)
+        connection.execute(
+            """
+            COPY (
+                SELECT * EXCLUDE (ingested_at)
+                FROM raw.hmda_loans
+            ) TO ? (FORMAT PARQUET)
+            """,
+            [candidate_path.as_posix()],
+        )
+
+        with pytest.raises(HMDADataLoadError, match="metadata|provenance"):
+            load_hmda_loans_partition(
+                connection,
+                [candidate_path],
+                2025,
+                expected_identity=before,
+                preserve_source_metadata=True,
+            )
+        after = partition_content_identity(connection, source_year=2025)
+
+    assert after == before
 
 
 def test_partition_load_creates_custom_target_schema(hmda_csv_path: Path) -> None:

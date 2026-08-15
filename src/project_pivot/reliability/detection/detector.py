@@ -7,6 +7,7 @@ from datetime import timedelta
 from project_pivot.reliability.contracts import (
     Evidence,
     EvidenceSource,
+    FreshnessMeasurementStatus,
     Incident,
     IncidentSeverity,
     IncidentStatus,
@@ -110,23 +111,30 @@ class BasicIncidentDetector:
         self,
         request: DetectionRequest,
     ) -> list[DetectionResult]:
-        delay = request.baseline.freshness_at - request.current.freshness_at
-        threshold = timedelta(minutes=request.thresholds.freshness_delay_minutes)
-        if delay < threshold:
+        current = request.current
+        if current.freshness_status is FreshnessMeasurementStatus.UNAVAILABLE:
             return []
-        delay_minutes = delay.total_seconds() / 60
+        freshness_at = current.freshness_at
+        if freshness_at is None:
+            return []
+        age = current.observed_at - freshness_at
+        threshold = timedelta(minutes=request.thresholds.freshness_max_age_minutes)
+        if age < threshold:
+            return []
+        age_minutes = age.total_seconds() / 60
         payload: dict[str, object] = {
-            "baseline_freshness_at": request.baseline.freshness_at.isoformat(),
-            "current_freshness_at": request.current.freshness_at.isoformat(),
-            "delay_minutes": delay_minutes,
-            "threshold_minutes": request.thresholds.freshness_delay_minutes,
+            "observed_at": current.observed_at.isoformat(),
+            "freshness_at": freshness_at.isoformat(),
+            "freshness_status": current.freshness_status.value,
+            "freshness_age_minutes": age_minutes,
+            "max_age_minutes": request.thresholds.freshness_max_age_minutes,
         }
         return [
             _result(
                 request=request,
                 incident_type="freshness_delay",
                 severity=IncidentSeverity.HIGH,
-                summary="freshness가 baseline 대비 지연되었다.",
+                summary="Bronze ingestion freshness age가 최대 허용치를 넘었다.",
                 payload=payload,
             )
         ]
@@ -249,5 +257,8 @@ def _recommended_actions(incident_type: str) -> list[str]:
         "volume_drop": ["validate_source_partition", "check_ingestion_run"],
         "null_spike": ["inspect_source_columns", "add_dbt_not_null_test"],
         "schema_drift": ["compare_schema_contract", "validate_dbt_build"],
-        "freshness_delay": ["check_upstream_freshness", "prepare_backfill_review"],
+        "freshness_delay": [
+            "check_bronze_ingestion_freshness",
+            "prepare_backfill_review",
+        ],
     }[incident_type]

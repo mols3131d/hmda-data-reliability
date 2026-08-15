@@ -16,6 +16,7 @@ from project_pivot.data_operations import (
 )
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.reliability import (
+    DetectionThresholds,
     ProfileSnapshot,
     ProfileSnapshotRequest,
     create_profile_snapshot,
@@ -117,6 +118,27 @@ def test_runner_reexports_incident_lifecycle() -> None:
     """기존 runner module import 경로를 유지한다."""
 
     assert runner.run_incident_lifecycle is run_incident_lifecycle
+
+
+@pytest.mark.integration
+def test_lifecycle_forwards_explicit_freshness_threshold(tmp_path: Path) -> None:
+    request = _prepare_request(tmp_path).model_copy(
+        update={
+            "freshness_column": "ingested_at",
+            "observed_at": datetime(2026, 7, 19, 2, 0, tzinfo=UTC),
+        }
+    )
+    baseline = _current_snapshot(request)
+
+    explicit = run_incident_lifecycle(
+        request,
+        baseline,
+        thresholds=DetectionThresholds(freshness_max_age_minutes=1_440),
+    )
+    default = run_incident_lifecycle(request, baseline)
+
+    assert "freshness_delay" not in explicit.detected_incident_types
+    assert "freshness_delay" in default.detected_incident_types
 
 
 @pytest.mark.integration

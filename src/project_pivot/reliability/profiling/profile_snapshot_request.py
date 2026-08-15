@@ -43,3 +43,10 @@ class ProfileSnapshotRequest(BaseModel):
             msg = "profile_columns는 빈 컬럼명을 포함할 수 없습니다."
             raise ValueError(msg)
         return value
+
+    @field_validator("observed_at")
+    @classmethod
+    def _normalize_observed_at(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)
