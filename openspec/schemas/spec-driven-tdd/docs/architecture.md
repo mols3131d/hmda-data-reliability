@@ -2,7 +2,14 @@
 
 ## Purpose
 
-이 schema는 작업자 한 명의 세부 실행 순서가 아니라 OpenSpec Change의 계획 lifecycle과 artifact dependency를 정의한다. OpenSpec은 변경의 목적, 행동 계약, 기술적 경계와 구현 계획을 관리하고, Apply worker는 프로젝트 설정에 맞는 TDD-compatible feedback loop로 이를 구현한다.
+이 schema는 OpenSpec Change의 최소 planning lifecycle과 artifact dependency를 정의한다. Apply worker는 프로젝트 지침에 맞는 test-first feedback loop로 계획을 구현한다.
+
+## Principles
+
+- **KISS:** 각 artifact는 다음 단계에 필요한 최소 책임만 소유한다.
+- **DRY:** 같은 규칙과 결론을 여러 artifact에 복제하지 않고 owning artifact를 source of truth로 둔다.
+- **YAGNI:** 현재 Change에 필요하지 않은 section, decision, gate와 speculative task를 만들지 않는다.
+- **Bounded feedback:** 오류는 원인을 소유하는 artifact와 직접 영향받는 downstream만 수정한다.
 
 ## Workflow
 
@@ -20,21 +27,33 @@ flowchart LR
 | --- | --- |
 | Proposal | 변경 이유, 범위와 영향받는 Capability |
 | Specs | 외부에서 관찰 가능한 행동 계약 |
-| Design | 책임 경계, 기술적 결정과 검증 전략 |
-| Tasks | 검증 가능한 구현 작업과 진행률 |
+| Design | 구현에 필요한 기술적 결정, 책임 경계와 검증 전략 |
+| Tasks | 독립적으로 검증 가능한 구현 결과와 진행률 |
 
-각 planning artifact는 자신의 책임을 직접 소유한다. Review 결과와 review process state는 이 schema의 artifact 책임이 아니다. 계획의 오류나 누락이 구현 중 확인되면 해당 책임을 소유하는 artifact를 수정하고 영향받는 downstream planning artifact를 다시 일치시킨다.
+각 planning artifact는 자신의 책임만 직접 소유한다. Proposal과 Specs를 Design에서 반복하거나 Design의 결정을 Tasks에 다시 설명하지 않는다.
+
+## Execution Feedback
+
+TDD는 implementation feedback loop이며 progress taxonomy가 아니다. 하나의 행동 변경 task 안에서 test-first로 RED → GREEN → 필요 시 REFACTOR를 수행한다.
+
+Review와 self-review process state는 schema가 추적하지 않는다.
+
+- 현재 범위의 미완료 작업이나 결함은 가장 작은 owning task를 다시 열거나 수정한다.
+- 계획 오류는 원인을 소유하는 artifact와 직접 영향받는 downstream artifact만 다시 일치시킨다.
+- 독립적인 새 요구사항이나 별도 검증 가능한 범위는 현재 Change에 흡수하지 않는다.
+
+이 규칙은 review finding 자체를 새 workstream으로 만들고 다시 review하는 재귀를 방지한다.
 
 ## Parsing Contract
 
-모든 frontmatter와 Markdown heading은 문법적으로 유효해야 하지만, 모든 필드와 헤더를 안정적인 API로 취급하지 않는다.
+모든 frontmatter와 Markdown heading은 문법적으로 유효해야 하지만, 모든 필드와 heading을 안정적인 API로 취급하지 않는다.
 
 | Surface | Stable Contract |
 | --- | --- |
 | Artifact identity | `type: openspec-spec-driven-tdd-<artifact-type>` |
 | Tags | `tag` 또는 제한된 `prefix:tag` |
-| Capability declarations | Proposal의 Capability 헤더와 Spec 경로 |
-| OpenSpec delta specs | operation, Requirement, Scenario 헤더 |
+| Capability declarations | Proposal의 Capability heading과 Spec 경로 |
+| OpenSpec delta specs | operation, Requirement, Scenario heading |
 | Task progress | 최상위 `- [ ]`, `- [x]` 체크박스 |
 | Task counters | `tasks_total`, `tasks_completed` 파생 필드 |
 
@@ -46,18 +65,18 @@ flowchart LR
 ^(?:(?:domain|subdomain|capability):)?[a-z0-9]+(?:-[a-z0-9]+)*$
 ```
 
-Tags는 검색과 분류 metadata다. workflow 상태, artifact dependency 또는 소유권 결정에 사용하지 않는다.
+Tags는 검색과 분류 metadata다. workflow 상태, artifact dependency 또는 소유권 결정에 사용하지 않는다. Proposal이 Change-level 분류를 소유하며 다른 artifact는 필요한 경우에만 tags를 명시한다.
 
 ### Task Counters
 
-`tasks.md` 체크박스가 source of truth이며 frontmatter 카운터는 파생 캐시다.
+`tasks.md`의 파싱 대상 체크박스가 source of truth이며 frontmatter counter는 파생 cache다.
 
 ```text
-tasks_total     = 파싱 대상 최상위 체크박스 수
-tasks_completed = 완료된 [x] 체크박스 수
+tasks_total     = 독립적으로 검증 가능한 최상위 task 수
+tasks_completed = 완료된 [x] task 수
 ```
 
-불일치 시 체크박스를 기준으로 카운터를 다시 계산한다.
+Review, self-review, TDD phase와 단순 prerequisite는 task counter에 포함하지 않는다.
 
 ## Configuration Boundary
 
@@ -65,7 +84,7 @@ tasks_completed = 완료된 [x] 체크박스 수
 | --- | --- | --- |
 | artifact DAG와 template 연결 | 문서 구조와 field | 기술 stack과 저장소 관례 |
 | artifact 목적과 완료 조건 | parser contract | naming과 project-specific convention |
-| 범용 test-first와 계획 환류 | task progress 표현 | 구체적인 validation과 tool 지침 |
+| 범용 test-first와 제한된 계획 환류 | task progress 표현 | 구체적인 validation과 tool 지침 |
 | Apply dependency와 tracking | artifact별 작성 surface | 배포·병렬화 등 실행 정책 |
 
 `schema.yaml`은 여러 프로젝트와 도구에서 재사용할 수 있는 workflow 의미만 가진다. 문서 surface의 세부 계약은 template이, 프로젝트별 지침은 project config가 소유한다.
