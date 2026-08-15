@@ -20,8 +20,9 @@
 | 영역 | 상태 | 경계 |
 | --- | --- | --- |
 | Read-only lifecycle | 재사용 | `run_incident_lifecycle`와 `detect_basic_incidents`가 table-wide schema hash drift를 탐지하고 impact/draft를 계산한다. |
-| Approval pattern | 확장 | 기존 approval gate 원칙은 재사용하되 approved before/after **schema identity**를 recovery contract에 포함해야 한다. |
-| Partition recovery | 직접 재사용 불가 | `execute_approved_backfill`은 partition content compare-and-replace용이다. table schema를 복원하는 primitive가 아니므로 schema mutation 경계를 별도로 설계한다. |
+| Approval pattern | 확장 | 기존 approval gate 원칙은 재사용하되 approved before/after schema identity(최소 expected schema hash)를 recovery contract에 포함해야 한다. |
+| Partition recovery | 직접 재사용 불가 | `execute_approved_backfill`은 partition content compare-and-replace용이므로 table schema를 복원하지 않는다. |
+| Bronze full-table load | 후보 primitive | `hmda_data`의 full-table replacement는 schema materialization을 제공하지만 approval, stale-state, replay를 포함한 recovery contract는 아니다. 안전하게 조합할지 최소 확장할지는 OpenSpec에서 결정한다. |
 | Evaluation pattern | 재사용 | isolated workspace, pre/post-mutation failure 구분, structured evidence와 replay 원칙을 유지한다. |
 | Synthetic fixture | 재사용 | 첫 vertical slice는 기존 `schema_drift` fixture의 단일 column type drift를 기준 case로 사용한다. |
 
@@ -46,12 +47,12 @@
 
 ## Ownership
 
-- `project_pivot.reliability`: schema recovery contract, approval semantics, evaluation과 recovery evidence.
-- `project_pivot.hmda_data`: HMDA table materialization 또는 안전한 table replacement primitive.
-- `project_pivot.data_platform`: generic DuckDB/schema identity helper가 실제로 재사용될 때만 담당.
+- `project_pivot.reliability`: schema recovery contract, approval semantics, evaluation과 recovery evidence를 소유한다.
+- `project_pivot.hmda_data`: 기존 Bronze full-table/partition 적재와 `schema_drift` synthetic fixture를 제공하며 approval/recovery policy는 소유하지 않는다.
+- `project_pivot.data_platform`: 기존 DuckDB schema/table metadata helper를 제공하며 recovery policy는 소유하지 않는다.
 - `project_pivot.data_operations`: 기존 read-only lifecycle 조합을 재사용하며 schema mutation은 소유하지 않는다.
 
-후속 OpenSpec 설계에서 generic primitive가 필요하지 않다면 새 abstraction을 만들지 않고 HMDA-specific ownership을 유지한다.
+후속 OpenSpec 설계는 기존 load/helper를 우선 조합한다. correctness에 필요한 최소 primitive가 없을 때만 owning domain의 contract를 명시적으로 확장한다.
 
 ## Validation Boundary
 
@@ -70,4 +71,4 @@
 
 ## Implementation Gate
 
-후속 작업은 OpenSpec Change에서 table-level schema recovery primitive와 transaction/rollback semantics를 먼저 설계한 뒤 RED/GREEN으로 구현한다. 안전한 local recovery 경계를 만들 수 없으면 기존 partition executor를 억지로 확장하지 않고 capability 선택을 다시 검토한다.
+후속 OpenSpec Change는 먼저 기존 full-table replacement를 approval-safe recovery로 조합할 수 있는지 검증한다. 부족할 때만 table-level schema recovery primitive와 transaction/rollback semantics를 최소 범위로 설계하고 RED/GREEN으로 구현한다. 안전한 local recovery 경계를 만들 수 없으면 기존 partition executor를 억지로 확장하지 않고 capability 선택을 다시 검토한다.
