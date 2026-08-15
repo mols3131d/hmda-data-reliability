@@ -2,10 +2,6 @@
   "[markdown]": {
     "editor.defaultFormatter": "rvben.rumdl",
   },
-  "workbench.editorAssociations": {
-    "*.mo.py": "marimo-notebook",
-    "*_mo.py": "marimo-notebook",
-  },
   "python.testing.pytestArgs": [
     "tests"
   ],
