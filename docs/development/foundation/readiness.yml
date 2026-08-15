@@ -8,7 +8,7 @@ dashboard:
   include_total: true
   decision:
     status: go
-    summary: 'Foundation focused suite는 audited test revision에서 57 passed이며, actual-source evidence는 별도 execution revision에서 생성된 뒤 EDA runtime·source·generator 변경 없이 evidence commit에 반영됐다.'
+    summary: "Foundation focused suite는 audited test revision에서 57 passed이며, actual-source evidence는 별도 execution revision에서 생성된 뒤 EDA runtime·source·generator 변경 없이 evidence commit에 반영됐다."
 
 scope:
   source: "Foundation readiness artifacts: `readiness.md`, `readiness.yml`"
@@ -30,22 +30,31 @@ scope:
     - reliability-recovery-backfill
     - reliability-evaluation-report
     - orchestration-pipeline
-  note: '제외 capability는 구현되어 있어도 Foundation 완료 점수에는 포함하지 않는다. Test quality observability는 development/test tooling concern이며 canonical runtime Spec이 아니다.'
+  note: "제외 capability는 구현되어 있어도 Foundation 완료 점수에는 포함하지 않는다. Test quality observability는 development/test tooling concern이며 canonical runtime Spec이 아니다."
 
 verification_basis:
   repository_ref: main
   repository_revision: feea63fe5945c353f2f9b70b57a29cbe7294dafa
   actual_source_execution_revision: 17522ddc42748fe22e779f50b8e328ebaf2d4abb
   actual_source_evidence_commit: feea63fe5945c353f2f9b70b57a29cbe7294dafa
-  evidence_applicability: 'execution revision과 evidence commit 사이에는 generated EDA evidence artifact만 변경되었고 EDA calculation, source, evidence generator semantics는 변경되지 않았다.'
+  evidence_applicability: "execution revision과 evidence commit 사이에는 generated EDA evidence artifact만 변경되었고 EDA calculation, source, evidence generator semantics는 변경되지 않았다."
   audited_execution:
     status: passing
-    note: 'Audited test revision에서 Foundation focused suite 57 passed.'
+    note: "Audited test revision에서 Foundation focused suite 57 passed."
   current_pr_validation:
     status: not_run
-    note: 'Canonical Spec taxonomy와 참조만 정리했으며 current PR head에서 runtime validation은 재실행하지 않았다.'
-  progress_semantics: 'verification progress는 readiness 내부 checklist coverage이며 canonical requirement/test case/oracle 개수나 current 실행 통과율이 아니다.'
-  status_semantics: '표시된 verification status는 audited evidence 상태다. current PR head 실행 결과로 해석하지 않는다.'
+    note: "Foundation 전체 runtime validation은 current PR head에서 재실행하지 않았다."
+  selective_revalidation:
+    implementation_revision: 8a3c2c785a86d80019010eb6747c8b9520aba7fe
+    recorded_result: "3 passed, 23 deselected"
+    original_command: not_recorded
+    reproduction_targets:
+      - "tests/reliability/test_evaluation_report.py::test_volume_drop_vertical_slice_preserves_source_file_scope"
+      - "tests/data_operations/test_dbt_runner.py::test_candidate_dbt_build_does_not_promote_artifacts"
+      - "tests/data_operations/test_dbt_runner.py::test_artifact_promotion_restores_pair_when_second_replace_fails"
+    note: "이 PR은 runtime code/test를 변경하지 않는다. 원래 focused pytest command가 보존되지 않아 recorded_result를 reproducible current-HEAD execution evidence로 승격하지 않는다."
+  progress_semantics: "verification progress는 readiness 내부 checklist coverage이며 canonical requirement/test case/oracle 개수나 current 실행 통과율이 아니다."
+  status_semantics: "표시된 verification status는 audited evidence 상태다. current PR head 실행 결과로 해석하지 않는다."
 
 items:
   - name: HMDA Source Ingestion
@@ -143,39 +152,42 @@ unverified: []
 non_gating:
   - name: Reliability Freshness Semantics
     status: risk
-    finding: 'Foundation data contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 freshness를 측정할 수 없을 때 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다.'
+    finding: "Foundation data contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 freshness를 측정할 수 없을 때 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다."
   - name: dbt Last-Known-Good Evidence Retention
-    status: blocked
-    finding: '`run_dbt_build`가 새 build 전에 기존 manifest와 run_results를 삭제하며 test도 이를 기대 동작으로 고정한다.'
+    status: implemented-unverified
+    finding: "`run_dbt_build`는 고유한 run-scoped target에서 candidate artifact를 생성하고 기존 current pair를 건드리지 않는다. Promotion은 pair 단위 rollback을 보장한다. 선택적 재검증의 구현 revision과 test target을 기록했지만 current Foundation 전체 validation은 재실행하지 않았다."
   - name: Data Platform Cleanup Ownership
     status: risk
-    finding: '`cleanup_on_close=True`가 caller-owned DuckDB 파일을 소유권 구분 없이 삭제할 수 있다.'
+    finding: "`cleanup_on_close=True`가 caller-owned DuckDB 파일을 소유권 구분 없이 삭제할 수 있다."
   - name: Default DuckDB Path Consistency
     status: risk
-    finding: '상대 기본 경로가 Python ingestion과 dbt subprocess에서 동일 파일을 가리킨다는 end-to-end oracle이 없다.'
+    finding: "상대 기본 경로가 Python ingestion과 dbt subprocess에서 동일 파일을 가리킨다는 end-to-end oracle이 없다."
   - name: Data Operations Error Boundary
     status: risk
-    finding: '일부 하위 HMDA, Reliability, DuckDB 오류가 `DataOperationError`로 정규화되지 않는다.'
+    finding: "일부 하위 HMDA, Reliability, DuckDB 오류가 `DataOperationError`로 정규화되지 않는다."
   - name: data-operations-incident-lifecycle
     status: implemented-unverified
-    finding: 'detection, impact, remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
+    finding: "detection, impact, remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다."
   - name: reliability-recovery-backfill
     status: implemented-unverified
-    finding: 'profile request alignment과 row-count comparison contract는 현재 구현과 정렬했지만 `source_file` scoped 비교는 file-level population equivalence를 보장하지 않으며 current HEAD 실행 evidence가 없다.'
+    finding: "partition content identity와 recovery 경로가 `source_file` scope를 포함하며 source-file filtering과 file-scoped recovery test가 존재한다. Content identity가 correctness oracle이며 row-count는 auxiliary evidence로만 사용한다. 선택적 재검증의 구현 revision과 test target을 기록했지만 current Foundation 전체 validation은 재실행하지 않았다."
   - name: reliability-evaluation-report
     status: implemented-unverified
-    finding: 'aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
+    finding: "aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없다."
   - name: orchestration-pipeline
     status: blocked
-    finding: '`pipeline_job`이 `run_dbt_build=false`에서도 Silver/Gold asset materialization을 남기며 실제 integration test는 dbt skip 경로만 검증한다.'
+    finding: "`pipeline_job`이 `run_dbt_build=false`에서도 Silver/Gold asset materialization을 남기며 실제 integration test는 dbt skip 경로만 검증한다."
   - name: hmda-data-synthetic-defects
     status: implemented-unverified
-    finding: 'row drop, null spike, schema drift, freshness delay component oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
+    finding: "row drop, null spike, schema drift, freshness delay component oracle은 존재하지만 current HEAD 실행 evidence가 없다."
   - name: Test Quality Observability
     status: implemented-unverified
-    finding: 'pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 development/test tooling concern이며 canonical runtime Spec이 아니다.'
+    finding: "pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 development/test tooling concern이며 canonical runtime Spec은 아니다."
 
-risks: []
+risks:
+  - area: Documentation Drift
+    text: "`DEVELOPMENT.md`와 `pyproject.toml`에 Marimo가 active tool/dev dependency로 남아 있지만 EDA runtime과 notebook은 제거됐다."
+    impact: "현재 EDA 실행 방식과 개발 환경 설명이 다르게 읽힌다."
 
 references:
   - "[Foundation](README.md)"

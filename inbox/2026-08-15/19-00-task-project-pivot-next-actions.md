@@ -25,11 +25,11 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ### 2. Foundation Non-Gating Inventory 선택적 재검증
 
-- [ ] 현재 상태와 혼동 가능성이 큰 오래된 risk 항목만 선별한다.
-- [ ] 전체 Foundation 재감사 대신 선별 항목의 현재 `main` 상태와 기존 evidence를 대조한다.
-- [ ] 과거 snapshot과 current validation 결과를 문서에서 명확히 구분한다.
+- [x] 현재 상태와 혼동 가능성이 큰 오래된 risk 항목만 선별한다.
+- [x] 전체 Foundation 재감사 대신 선별 항목의 현재 `main` 상태와 기존 evidence를 대조한다.
+- [x] 과거 snapshot과 current validation 결과를 문서에서 명확히 구분한다.
 
-**완료 조건:** 재검증 대상과 제외 대상의 기준이 기록되고, stale risk 또는 현재성 오해가 정리된다.
+**완료 조건:** 재검증 대상과 제외 대상의 기준이 기록되고 stale risk 또는 현재성 오해가 정리된다. Runtime 구현 근거는 `main@8a3c2c785a86d80019010eb6747c8b9520aba7fe`에 고정했다. `3 passed, 23 deselected`는 PR 작성 중 기록된 focused result지만 원래 pytest command가 보존되지 않아 reproducible current-HEAD execution evidence로 승격하지 않는다. 재현 가능한 test target은 Foundation readiness에 기록했다.
 
 ### 3. 다음 Reliability milestone 하나 선정
 
@@ -51,7 +51,7 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ## Validation Boundary
 
-이번 정리는 2026-08-14~15 repository brief와 Notion 통합 요약을 실행 항목으로 재구성한 것이다. 이 문서 작성 과정에서 pytest, Ruff, `ty`, OpenSpec CLI를 새로 실행하지 않았다. 따라서 기존 `24/24` 수치는 저장된 evidence의 snapshot으로만 취급하며, current `HEAD` 검증 결과로 재사용하지 않는다.
+이번 정리는 2026-08-14~15 repository brief와 Notion 통합 요약을 실행 항목으로 재구성한 것이다. 이 문서 작성 과정에서 pytest, Ruff, `ty`, OpenSpec CLI를 새로 실행하지 않았다. 따라서 기존 `24/24` 수치는 저장된 evidence의 snapshot으로만 취급하며, current `HEAD` 검증 결과로 재사용하지 않는다. Foundation 선택적 재검증의 recorded focused result도 원래 실행 command가 보존되지 않았으므로 별도 provenance 제한과 함께 취급한다.
 
 ## Source
 
