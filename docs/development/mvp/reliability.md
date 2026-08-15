@@ -26,7 +26,7 @@
 
 ## Done When
 
-[`docs/mvp.md`](../../mvp.md)의 end-to-end proof와 주요 failure path를 deterministic acceptance로 재현할 수 있다.
+[MVP](README.md)의 end-to-end proof와 주요 failure path를 deterministic acceptance로 재현할 수 있다.
 
 ## Non-Goals
 
@@ -37,5 +37,5 @@
 ## References
 
 - [Reliability Domain](../../domains/reliability.md)
-- [MVP Goal](../../mvp.md)
+- [MVP](README.md)
 - `tests/reliability/`
