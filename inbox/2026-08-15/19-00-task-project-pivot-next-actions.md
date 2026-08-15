@@ -39,7 +39,7 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 - [x] 새 workflow/meta-work를 늘리기 전에 다음 Reliability capability를 하나 선택한다.
 - [x] 선택한 capability의 scope, owning package, validation boundary를 기록한다.
 
-**완료 조건:** [Next Post-MVP Reliability Capability](../../docs/development/reliability-next-milestone.md)에서 `schema_drift` recovery vertical slice를 다음 capability로 선택하고 구현 전 경계를 기록했다. PR #90 이후 현재 MVP는 `volume_drop` proof로 명확히 한정되므로 이 선택은 MVP scope를 확장하지 않는다. 기존 partition recovery는 schema를 복원하지 못하므로 table-level schema recovery contract와 mutation boundary는 후속 OpenSpec에서 새로 검증한다.
+**완료 조건:** [Next Post-MVP Reliability Capability](../../docs/development/reliability-next-capability.md)에서 `schema_drift` recovery vertical slice를 다음 capability로 선택하고 구현 진입 조건을 기록했다. 현재 MVP는 `volume_drop` proof로 한정되므로 이 선택은 MVP scope를 확장하지 않는다. 기존 partition recovery는 schema를 복원하지 못하며, recovery strategy와 schema-level approval/rollback contract는 후속 OpenSpec에서 결정한다.
 
 ## Later
 
