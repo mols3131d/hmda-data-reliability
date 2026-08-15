@@ -53,7 +53,7 @@ mkdir -p artifacts && uv run pytest tests/hmda_data tests/data_platform tests/db
 uv run python scripts/run_actual_source.py
 ```
 
-이 PR에서는 canonical Spec taxonomy와 참조만 정리하며 runtime validation을 다시 실행하지 않았다. 따라서 위 결과를 current PR head execution으로 표현하지 않는다.
+위 audited verification은 지정된 historical revision의 evidence다. 이후 문서 변경이나 selective revalidation을 current PR head의 전체 runtime execution으로 해석하지 않는다.
 
 ## Non-Gating Inventory
 
