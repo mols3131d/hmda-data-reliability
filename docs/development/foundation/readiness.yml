@@ -173,12 +173,9 @@ non_gating:
     finding: 'row drop, null spike, schema drift, freshness delay component oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
   - name: Test Quality Observability
     status: implemented-unverified
-    finding: 'pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 development/test tooling concern이며 canonical runtime Spec은 아니다.'
+    finding: 'pytest telemetry dependency와 Hypothesis invariant tests는 존재하지만 development/test tooling concern이며 canonical runtime Spec이 아니다.'
 
-risks:
-  - area: Documentation Drift
-    text: '`DEVELOPMENT.md`와 `pyproject.toml`에 Marimo가 active tool/dev dependency로 남아 있지만 EDA runtime과 notebook은 제거됐다.'
-    impact: '현재 EDA 실행 방식과 개발 환경 설명이 다르게 읽힌다.'
+risks: []
 
 references:
   - "[Foundation](README.md)"
