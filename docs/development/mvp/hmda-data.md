@@ -19,5 +19,5 @@
 ## References
 
 - [HMDA Data Domain](../../domains/hmda-data.md)
-- [MVP Goal](../../mvp.md)
+- [MVP](README.md)
 - `tests/hmda_data/`

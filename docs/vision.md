@@ -35,7 +35,7 @@
 
 ## Current MVP
 
-현재 MVP의 목표와 완료 경계는 [`mvp.md`](mvp.md)를 따른다. 다른 incident 유형과 운영 control-plane 확장은 MVP 이후 범위다.
+현재 MVP의 목표, milestone과 완료 경계는 [`development/mvp/README.md`](development/mvp/README.md)를 따른다. 다른 incident 유형과 운영 control-plane 확장은 MVP 이후 범위다.
 
 ## Beyond MVP
 
