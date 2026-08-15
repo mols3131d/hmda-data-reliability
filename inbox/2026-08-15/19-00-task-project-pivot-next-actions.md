@@ -13,13 +13,15 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ### 1. `null_spike` archive readiness 확인 및 archive
 
-- [ ] 마지막 구현 revision과 final validation evidence의 대상 revision이 일치하는지 확인한다.
-- [ ] `tasks 24/24 완료`와 Self-Review 완료 상태를 OpenSpec Change 기록에서 다시 확인한다.
-- [ ] `reliability-null-spike-recovery-vertical-slice`에 남은 미완료 task, unresolved finding, 후속 필수 문서가 없는지 확인한다.
-- [ ] readiness가 충족되면 OpenSpec Change를 archive한다.
-- [ ] archive 후 active Change 목록에서 해당 Change가 사라지고 archive 결과가 보존되는지 확인한다.
+- [x] 마지막 구현 revision과 final validation evidence의 대상 revision이 일치하는지 확인한다.
+- [x] `tasks 24/24 완료`와 Self-Review 완료 상태를 OpenSpec Change 기록에서 다시 확인한다.
+- [x] `reliability-null-spike-recovery-vertical-slice`에 남은 미완료 task, unresolved finding, 후속 필수 문서가 없는지 확인한다.
+- [x] readiness가 충족되면 OpenSpec Change를 archive한다.
+- [x] archive 후 active Change 목록에서 해당 Change가 사라지고 archive 결과가 보존되는지 확인한다.
 
 **완료 조건:** archive 전후 상태와 근거가 확인되고, 완료된 Change가 active 상태로 남지 않는다.
+
+**Archive evidence:** `4fb6299`가 마지막 null-spike 구현/test merge revision이며, source/test 변경 없이 descendant인 current `HEAD` `8a3c2c7`에서 focused test `34 passed`, default pytest `212 passed`, `ty check`와 relevant Ruff/format/rumdl을 재실행했다. 전체 repository Ruff/format/rumdl에는 이번 Change와 무관한 기존 baseline issue가 남아 있어 pass로 기록하지 않았다. `openspec validate --all --strict`는 archive 전 `17/17`, archive 후 `16/16` 통과했다. Archive 결과는 `openspec/changes/archive/2026-08-15-reliability-null-spike-recovery-vertical-slice/`에 보존됐고 active Change 목록은 비었다.
 
 ## Next
 
@@ -51,7 +53,7 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ## Validation Boundary
 
-이번 정리는 2026-08-14~15 repository brief와 Notion 통합 요약을 실행 항목으로 재구성한 것이다. 이 문서 작성 과정에서 pytest, Ruff, `ty`, OpenSpec CLI를 새로 실행하지 않았다. 따라서 기존 `24/24` 수치는 저장된 evidence의 snapshot으로만 취급하며, current `HEAD` 검증 결과로 재사용하지 않는다.
+이번 정리는 2026-08-14~15 repository brief와 Notion 통합 요약을 실행 항목으로 재구성한 것이다. 원본 정리 문서 작성 과정에서는 pytest, Ruff, `ty`, OpenSpec CLI를 새로 실행하지 않았다. 따라서 기존 `24/24` 수치는 저장된 evidence의 snapshot으로만 취급하며, current `HEAD` 검증 결과로 재사용하지 않는다. Archive readiness 후속 작업의 current `HEAD` 검증 결과는 위 `Archive evidence`에 별도로 기록한다.
 
 ## Source
 
