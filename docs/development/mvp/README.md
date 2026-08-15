@@ -17,13 +17,19 @@ clean baseline
 → run evidence
 ```
 
-## Milestones
+## Milestone Model
+
+이 directory에서 milestone은 **현재 MVP의 end-to-end proof를 나누는 고수준 proof gate**다. 구현 task 묶음이나 MVP 이후 capability roadmap을 의미하지 않는다.
+
+`null_spike`, `schema_drift`, `freshness_delay` 같은 후속 incident 확장은 현재 MVP scope에 포함되지 않으며, MVP scope가 명시적으로 바뀌기 전에는 아래 milestone 목록에 추가하지 않는다.
+
+## Proof Milestones
 
 | Milestone | 증명하는 것 | 완료 신호 |
 | --- | --- | --- |
-| [01. Detect and Explain](milestone-01-detect-and-explain.md) | 이상을 안전하게 탐지하고 영향과 조치 근거를 설명할 수 있다. | clean/defect case가 결정론적으로 구분되고 lifecycle이 read-only다. |
-| [02. Approve and Recover](milestone-02-approve-and-recover.md) | 검증된 proposal과 approval만 실제 recovery를 허용한다. | invalid/stale state는 mutation 전에 차단되고 approved target만 복구된다. |
-| [03. Verify and Evaluate](milestone-03-verify-and-evaluate.md) | 복구 결과와 실패·retry를 evidence로 검증할 수 있다. | data/dbt verification과 reconciliation evidence까지 end-to-end로 재현된다. |
+| [01. Detect and Explain](milestone-01-detect-and-explain.md) | 이상을 안전하게 구분하고 영향과 조치 근거를 설명할 수 있다. | clean/defect case가 재현 가능하게 구분되고 분석이 current state를 바꾸지 않는다. |
+| [02. Approve and Recover](milestone-02-approve-and-recover.md) | 검증과 외부 approval이 실제 recovery의 안전 경계로 작동한다. | 승인 범위를 벗어난 상태는 변경 전에 차단되고 승인된 recovery만 기대 상태를 복원한다. |
+| [03. Verify and Evaluate](milestone-03-verify-and-evaluate.md) | 복구 결과와 failure/retry를 evidence로 검증할 수 있다. | recovery가 incident를 해소하고 end-to-end 결과와 다음 action이 재현 가능하게 남는다. |
 
 Milestone 문서는 목표와 완료 경계만 소유한다. 세부 contract와 scenario는 OpenSpec, domain 문서와 tests가 소유하며 현재 진행 상태는 [`status.md`](status.md)에서 관리한다.
 

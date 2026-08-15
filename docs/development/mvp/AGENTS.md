@@ -1,11 +1,11 @@
 # MVP Documentation Instructions
 
-이 directory는 현재 MVP의 고수준 목표, milestone, domain별 목표와 개발 현황을 추적한다.
+이 directory는 현재 MVP의 고수준 목표, proof milestone, domain별 목표와 개발 현황을 추적한다.
 
 ## Ownership
 
 - [`README.md`](README.md)는 MVP 전체 목표, scope, milestone 순서와 end-to-end proof를 소유한다.
-- `milestone-*.md`는 각 단계가 증명할 고수준 결과와 완료 경계를 소유한다.
+- `milestone-*.md`는 현재 MVP 완료에 필요한 각 proof milestone의 고수준 결과와 완료 경계를 소유한다.
 - Domain 문서는 해당 domain의 MVP 목표, 비목표와 완료 관점을 소유한다.
 - `status.yml`은 dashboard의 구조화된 current-state 정본이다.
 - `status.md`는 `status.yml`에서 렌더링한 사람이 읽는 dashboard다.
@@ -13,11 +13,12 @@
 
 ## Milestones
 
-- Milestone은 구현 task 묶음이 아니라 MVP 가치 증명을 나누는 검토 가능한 단계다.
-- 각 milestone은 goal, observable proof, done boundary와 non-goal만 고수준으로 기록한다.
-- API, class, fixture와 세부 test scenario를 milestone 문서에 복제하지 않는다.
+- Milestone은 구현 task 묶음이 아니라 MVP 가치를 독립적으로 검토할 수 있는 proof gate다.
+- `milestone-*.md`는 현재 MVP의 end-to-end proof를 구성하는 단계만 다룬다.
+- MVP 이후 incident 또는 capability 확장은 MVP scope가 명시적으로 바뀌지 않는 한 이 directory의 milestone으로 추가하지 않는다.
+- 각 milestone은 `Goal`, observable `Proof`, `Done When`, `Boundary`만 고수준으로 기록한다.
+- API, class, package, fixture와 세부 test scenario는 milestone 문서에 복제하지 않는다.
 - 현재 상태와 progress는 milestone 문서에 반복하지 않고 dashboard에서 관리한다.
-- MVP 밖의 후속 capability를 현재 milestone처럼 추가하지 않는다.
 
 ## Dashboard Model
 
