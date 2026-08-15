@@ -22,5 +22,5 @@ MVP reliability control-plane을 Dagster data plane에 암묵적으로 결합하
 
 - [Orchestration Domain](../../domains/orchestration.md)
 - [Architecture](../../ARCHITECTURE.md)
-- [MVP Goal](../../mvp.md)
+- [MVP](README.md)
 - `tests/orchestration/`

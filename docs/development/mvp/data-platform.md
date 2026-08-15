@@ -20,6 +20,6 @@ Candidate와 recovery validation 중 dbt evidence의 정체성과 last-known-goo
 ## References
 
 - [Data Platform Domain](../../domains/data-platform.md)
-- [MVP Goal](../../mvp.md)
+- [MVP](README.md)
 - `tests/data_platform/`
 - `tests/dbt/`

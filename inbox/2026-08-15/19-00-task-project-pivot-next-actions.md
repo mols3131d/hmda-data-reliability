@@ -33,13 +33,13 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 **완료 조건:** 재검증 대상과 제외 대상의 기준이 기록되고 stale risk 또는 현재성 오해가 정리된다. Runtime 구현 근거는 `main@8a3c2c785a86d80019010eb6747c8b9520aba7fe`에 고정했다. `3 passed, 23 deselected`는 PR 작성 중 기록된 focused result지만 원래 pytest command가 보존되지 않아 reproducible current-HEAD execution evidence로 승격하지 않는다. 재현 가능한 test target은 Foundation readiness에 기록했다.
 
-### 3. 다음 Reliability milestone 하나 선정
+### 3. 다음 post-MVP Reliability capability 하나 선정
 
 - [x] `volume_drop`과 `null_spike`에서 재사용 가능한 approval, recovery, evaluation evidence contract를 목록화한다.
-- [x] 새 workflow/meta-work를 늘리기 전에 가장 작은 다음 Reliability capability를 선택한다.
-- [x] 선택한 milestone의 scope, owning package, validation boundary를 기록한다.
+- [x] 새 workflow/meta-work를 늘리기 전에 다음 Reliability capability를 하나 선택한다.
+- [x] 선택한 capability의 scope, owning package, validation boundary를 기록한다.
 
-**완료 조건:** 다음 milestone이 하나로 좁혀지고, 구현 전에 scope와 검증 경계가 설명된다. [Next Reliability Milestone](../../docs/development/reliability-next-milestone.md)에 `schema_drift` recovery vertical slice를 차기 capability로 확정하고 재사용 contract, scope, owning package, validation boundary를 기록했다.
+**완료 조건:** [Next Post-MVP Reliability Capability](../../docs/development/reliability-next-milestone.md)에서 `schema_drift` recovery vertical slice를 다음 capability로 선택하고 구현 전 경계를 기록했다. PR #90 이후 현재 MVP는 `volume_drop` proof로 명확히 한정되므로 이 선택은 MVP scope를 확장하지 않는다. 기존 partition recovery는 schema를 복원하지 못하므로 table-level schema recovery contract와 mutation boundary는 후속 OpenSpec에서 새로 검증한다.
 
 ## Later
 

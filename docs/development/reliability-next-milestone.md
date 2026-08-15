@@ -1,50 +1,73 @@
-# Next Reliability Milestone: Schema-Drift Recovery Vertical Slice
+# Next Post-MVP Reliability Capability: Schema-Drift Recovery
 
-`volume_drop`과 `null_spike` recovery vertical slice 완료 이후 선정된 차기 Reliability milestone 정의 문서다.
+현재 MVP는 `volume_drop` 하나의 end-to-end recovery proof를 소유한다. `null_spike` recovery 확장 완료 이후 다음 post-MVP Reliability capability로 `schema_drift` recovery vertical slice를 선택한다.
 
-## 1. 재사용 가능한 Contract 자산
+이 문서는 capability 선택과 구현 전 safety boundary만 정의한다. 세부 runtime contract와 구현 방법은 후속 OpenSpec Change에서 검증한다.
 
-`volume_drop` 및 `null_spike` 구현에서 확립되어 `schema_drift`에 직접 재사용 가능한 계약과 실행 자산:
+## Decision
 
-| 영역 | 재사용 Contract / API | 역할 및 보증 |
+**다음 capability:** `schema_drift` recovery vertical slice
+
+선정 이유:
+
+- 현재 detector와 synthetic case가 schema hash 변화와 단일 column type drift를 결정론적으로 재현한다.
+- `null_spike`까지 다룬 row/content quality recovery에서 table schema contract recovery로 Reliability proof를 확장할 수 있다.
+- `freshness_delay`보다 scheduling과 wall-clock 의미에 덜 의존해 local deterministic evaluation을 유지하기 쉽다.
+- 기존 safety pattern은 재사용할 수 있지만, schema 복구 자체를 기존 partition overwrite로 해결할 수 있다고 가정하지 않는다.
+
+## Reuse And Required Gap
+
+| 영역 | 상태 | 경계 |
 | --- | --- | --- |
-| **Read-Only Lifecycle** | `run_incident_lifecycle`, `detect_basic_incidents` | `schema_drift` (schema hash 불일치) 탐지, manifest 기반 lineage 영향 분석, 결정론적 `RemediationDraft` 생성. 데이터 변경 없음 보증. |
-| **Approval Contract** | `RecoveryProposal`, `Approval`, `ApprovedBackfillRequest`, `ApprovalGateError` | incident, 대상 partition, candidate identity, 승인 전후 상태, target action을 immutable하게 결합. 불일치 시 mutation 전 차단. |
-| **Recovery Execution** | `execute_approved_backfill`, `BackfillValidationResult` | DuckDB 트랜잭션 기반 compare-and-replace, replay idempotency (`already_recovered` 시 `resume_verification`), content/schema identity oracle. |
-| **Evaluation Framework** | `build_recovery_evaluation_case`, `write_evaluation_report` | isolated disposable database preflight (target, clean, candidate 독립 검증), pre-mutation/post-mutation 실패 구분, structured exception handling. |
+| Read-only lifecycle | 재사용 | `run_incident_lifecycle`와 `detect_basic_incidents`가 table-wide schema hash drift를 탐지하고 impact/draft를 계산한다. |
+| Approval pattern | 확장 | 기존 approval gate 원칙은 재사용하되 approved before/after **schema identity**를 recovery contract에 포함해야 한다. |
+| Partition recovery | 직접 재사용 불가 | `execute_approved_backfill`은 partition content compare-and-replace용이다. table schema를 복원하는 primitive가 아니므로 schema mutation 경계를 별도로 설계한다. |
+| Evaluation pattern | 재사용 | isolated workspace, pre/post-mutation failure 구분, structured evidence와 replay 원칙을 유지한다. |
+| Synthetic fixture | 재사용 | 첫 vertical slice는 기존 `schema_drift` fixture의 단일 column type drift를 기준 case로 사용한다. |
 
-## 2. Milestone 선정: `schema_drift` Recovery Vertical Slice
+## Capability Boundary
 
-### 선정 이유
+### In Scope
 
-- **최소 범위 (Smallest Capability):** 기본 탐지 항목(`volume_drop`, `null_spike`, `schema_drift`, `freshness_delay`) 중 `schema_drift`는 동일한 단일 partition/table 트랜잭션 복구 경계 내에 위치한다.
-- **Orchestration 의존성 배제:** `freshness_delay`는 파이프라인 스케줄링 및 wall-clock 시간 의존성을 포함하지만, `schema_drift`는 결정론적 fixture와 schema hash oracle로 완결된다.
-- **YAGNI / 메타 작업 방지:** 신규 workflow나 거대 추상화 없이 기존 safety primitives 위에 vertical slice로 확장 가능하다.
+- HMDA table 하나의 controlled single-column type drift와 table-wide schema hash 불일치.
+- Clean baseline에서 expected schema identity와 target content identity를 유도하는 validation.
+- Candidate schema/content가 승인 대상과 다르면 mutation 전에 차단하는 approval gate.
+- 승인된 target에 한해 schema와 content를 기대 상태로 복원하는 table-level recovery boundary.
+- Recovery 후 schema hash, content identity, incident 해소와 downstream dbt verification.
+- Exact after-state replay에서는 mutation을 반복하지 않고 verification만 재개하는 안정성.
+- Stale target, invalid candidate, incomplete approval, post-recovery verification failure의 구조화 evidence.
 
-## 3. Milestone 정의
+### Out of Scope
 
-### Scope
+- Multi-table schema recovery와 연쇄 migration.
+- 범용 schema migration 생성기 또는 임의의 rename/add/drop/type-change 지원.
+- 자동 approval, human approval UI와 production authorization system.
+- `freshness_delay` recovery와 orchestration scheduling 개선.
 
-- **In Scope:**
-  - 단일 partition 대상 controlled `schema_drift` synthetic defect (컬럼 변경/누락으로 인한 schema hash 불일치).
-  - Clean baseline fixture로부터 expected schema hash 및 content identity 유도.
-  - Candidate schema hash 검증 (불일치 시 mutation 전 거부).
-  - Approved recovery를 통한 schema 및 content의 정확한 복원 검증.
-  - Replay stability (중복 overwrite 방지 및 verification 재개).
-  - Safety failure 경로 (invalid candidate, stale target, incomplete approval, downstream dbt failure) 구조화 evidence 검증.
-- **Out of Scope:**
-  - Multi-table / Multi-partition 동시 drift 복구.
-  - Schema migration 자동 생성 및 DDL 자동 실행.
-  - Human approval UI 및 자동 승인.
+## Ownership
 
-### Owning Packages
+- `project_pivot.reliability`: schema recovery contract, approval semantics, evaluation과 recovery evidence.
+- `project_pivot.hmda_data`: HMDA table materialization 또는 안전한 table replacement primitive.
+- `project_pivot.data_platform`: generic DuckDB/schema identity helper가 실제로 재사용될 때만 담당.
+- `project_pivot.data_operations`: 기존 read-only lifecycle 조합을 재사용하며 schema mutation은 소유하지 않는다.
 
-- `project_pivot.reliability`: `evaluate_schema_drift_vertical_slice`, evaluation case builder, report.
-- `project_pivot.data_operations`: 기존 read-only lifecycle 및 stage execution (변경 없음/재사용).
-- `project_pivot.data_platform` / `project_pivot.hmda_data`: 테이블 및 dbt 모델 계약 (재사용).
+후속 OpenSpec 설계에서 generic primitive가 필요하지 않다면 새 abstraction을 만들지 않고 HMDA-specific ownership을 유지한다.
 
-### Validation Boundary
+## Validation Boundary
 
-- **Isolated Workspace:** target, workspace clean, candidate database의 상호 독립 및 사전 부재 preflight 검증.
-- **Deterministic Oracles:** schema hash 일치 및 post-recovery incident 해소 검증.
-- **Spec-Driven TDD:** OpenSpec change 생성 후 RED/GREEN 사이클로 구현.
+**Before mutation**
+
+- Candidate schema identity와 content identity가 approved expected state와 일치한다.
+- Current target의 schema/content state가 approved before state와 일치한다.
+- Approval과 recovery proposal의 target, identities, actions가 exact match다.
+
+**After mutation**
+
+- Target schema identity와 content identity가 expected after state와 일치한다.
+- Post-recovery lifecycle에서 target `schema_drift` incident가 해소된다.
+- Downstream dbt verification 결과와 failure stage가 evidence로 남는다.
+- Replay target이 exact after state면 mutation하지 않고 verification을 재개하며, 제3의 state면 새 validation과 approval을 요구한다.
+
+## Implementation Gate
+
+후속 작업은 OpenSpec Change에서 table-level schema recovery primitive와 transaction/rollback semantics를 먼저 설계한 뒤 RED/GREEN으로 구현한다. 안전한 local recovery 경계를 만들 수 없으면 기존 partition executor를 억지로 확장하지 않고 capability 선택을 다시 검토한다.

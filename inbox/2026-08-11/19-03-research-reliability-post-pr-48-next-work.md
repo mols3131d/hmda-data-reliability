@@ -21,7 +21,7 @@ tags:
 
 - 현재 `main`과 merge된 PR #48의 최종 상태
 - PR #48 OpenSpec Change lifecycle
-- `docs/mvp.md`, `docs/vision.md`의 MVP 및 Beyond MVP 경계
+- `docs/development/mvp/README.md`, `docs/vision.md`의 MVP 및 Beyond MVP 경계
 - 기존 `null_spike`, `schema_drift`, `freshness_delay` detection/synthetic/remediation surface
 - 새 framework, UI, cloud/production 범위는 제외
 
@@ -144,7 +144,7 @@ Canonical MVP 완료 조건은 deterministic end-to-end acceptance와 failure ev
 | Null-rate oracle과 content identity의 역할을 어떻게 나눌 것인가? | false-green과 중복 validation을 방지한다. | detector/profile/recovery contract를 교차검토한다. |
 | Actual-source evidence가 지금 필요한가? | MVP 완료와 portfolio evidence를 구분한다. | 별도 validation 가치만 평가한다. |
 
-[^mvp]: `docs/mvp.md` — MVP는 `volume_drop` 단일 proof이며 deterministic acceptance와 failure evidence를 완료 조건으로 둔다.
+[^mvp]: `docs/development/mvp/README.md` — MVP는 `volume_drop` 단일 proof이며 deterministic acceptance와 failure evidence를 완료 조건으로 둔다.
 [^vision]: `docs/vision.md` — Beyond MVP로 다른 incident 유형과 Dagster reliability control-plane을 제시한다.
 [^architecture]: `docs/ARCHITECTURE.md` — reliability lifecycle과 recovery/evaluation을 Dagster data plane과 분리한다.
 [^orchestration]: `docs/domains/orchestration.md` — `pipeline_job` 범위에서 reliability lifecycle, approval, backfill, evaluation을 제외한다.

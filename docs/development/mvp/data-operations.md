@@ -20,5 +20,5 @@ Candidate validation과 reliability lifecycle을 조합하면서 검증 이전�
 ## References
 
 - [Data Operations Domain](../../domains/data-operations.md)
-- [MVP Goal](../../mvp.md)
+- [MVP](README.md)
 - `tests/data_operations/`
