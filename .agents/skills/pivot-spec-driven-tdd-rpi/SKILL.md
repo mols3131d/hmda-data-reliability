@@ -1,10 +1,11 @@
 ---
 name: pivot-spec-driven-tdd-rpi
 description: >-
-  Coordinate Research and Review feedback around OpenSpec's custom
-  `spec-driven-tdd` workflow. Use when Research may inform an OpenSpec change,
-  planning artifacts need revision, Apply entry must be checked, or Review
-  findings must be routed back to their owning work.
+  Route Research evidence and Review feedback into OpenSpec's custom
+  `spec-driven-tdd` workflow. Use when Research may determine or revise an
+  OpenSpec change, or Review findings must be routed back to their owning work.
+  Do not use for ordinary schema-owned planning or Apply execution without
+  Research or Review input.
 compatibility: >-
   Requires OpenSpec with the custom `spec-driven-tdd` schema. No additional
   skill, project document, repository convention, or standalone template is a
