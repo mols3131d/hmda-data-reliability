@@ -1,16 +1,16 @@
 ---
 title: "Python 데이터 파이프라인 OOM 테스트 가이드"
-description: "DuckDB, Polars, marimo 기반 파이프라인이 정해진 메모리 예산 안에서 안정적으로 완료되는지 검증하는 방법"
+description: "DuckDB, Polars 기반 파이프라인이 정해진 메모리 예산 안에서 안정적으로 완료되는지 검증하는 방법"
 date: 2026-07-30
 ---
 
 # OOM Testing: Python Data Pipeline Guide
 
-**대표 workload가 정해진 process memory budget 안에서 정확한 결과를 만드는지 검증한다.** DuckDB, Polars, marimo 기반 로컬 data pipeline을 대상으로 별도 process에 실제 hard limit을 적용한다.
+**대표 workload가 정해진 process memory budget 안에서 정확한 결과를 만드는지 검증한다.** DuckDB, Polars 기반 로컬 data pipeline을 대상으로 별도 process에 실제 hard limit을 적용한다.
 
 | Item | Scope |
 | --- | --- |
-| Target | DuckDB·Polars·marimo 기반 로컬 data pipeline |
+| Target | DuckDB·Polars 기반 로컬 data pipeline |
 | Resource boundary | 별도 process 또는 container의 hard limit |
 | Pass condition | 정상 종료와 결과 정확성을 모두 충족 |
 
@@ -185,7 +185,7 @@ def test_pipeline_completes_with_representative_fixture(
 
 fixture는 session fixture에서 즉석 생성하지 않는 것을 기본으로 한다. 미리 준비된 파일이나 이전 CI step에서 생성한 artifact를 사용한다.
 
-marimo notebook 자체를 memory gate의 실행 단위로 삼지 않는다. 계산 로직을 일반 Python entrypoint로 분리해 위 테스트에서 검증하고, notebook은 별도 smoke test로 UI 연결만 확인한다.
+Memory gate는 일반 Python entrypoint를 호출해 검증하며, UI나 notebook을 별도 실행 단위로 두지 않는다.
 
 ## 7. WSL·Linux 실행
 

@@ -27,11 +27,11 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ### 2. Foundation Non-Gating Inventory 선택적 재검증
 
-- [ ] 현재 상태와 혼동 가능성이 큰 오래된 risk 항목만 선별한다.
-- [ ] 전체 Foundation 재감사 대신 선별 항목의 현재 `main` 상태와 기존 evidence를 대조한다.
-- [ ] 과거 snapshot과 current validation 결과를 문서에서 명확히 구분한다.
+- [x] 현재 상태와 혼동 가능성이 큰 오래된 risk 항목만 선별한다.
+- [x] 전체 Foundation 재감사 대신 선별 항목의 현재 `main` 상태와 기존 evidence를 대조한다.
+- [x] 과거 snapshot과 current validation 결과를 문서에서 명확히 구분한다.
 
-**완료 조건:** 재검증 대상과 제외 대상의 기준이 기록되고, stale risk 또는 현재성 오해가 정리된다.
+**완료 조건:** 재검증 대상과 제외 대상의 기준이 기록되고 stale risk 또는 현재성 오해가 정리된다. Runtime 구현 근거는 `main@8a3c2c785a86d80019010eb6747c8b9520aba7fe`에 고정했다. `3 passed, 23 deselected`는 PR 작성 중 기록된 focused result지만 원래 pytest command가 보존되지 않아 reproducible current-HEAD execution evidence로 승격하지 않는다. 재현 가능한 test target은 Foundation readiness에 기록했다.
 
 ### 3. 다음 Reliability milestone 하나 선정
 
@@ -45,11 +45,11 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ### 4. Marimo 정책과 문서 정렬
 
-- [ ] Marimo가 현재 active tool인지 제거 대상인지 실제 사용 상태를 확인한다.
-- [ ] 결정에 따라 `DEVELOPMENT.md`와 Foundation readiness 관련 기록의 설명을 정렬한다.
-- [ ] historical drift를 current policy로 오해할 수 있는 표현을 제거한다.
+- [x] Marimo가 현재 active tool인지 제거 대상인지 실제 사용 상태를 확인한다.
+- [x] 결정에 따라 `DEVELOPMENT.md`와 Foundation readiness 관련 기록의 설명을 정렬한다.
+- [x] historical drift를 current policy로 오해할 수 있는 표현을 제거한다.
 
-**완료 조건:** Marimo ownership과 정책 상태가 관련 문서에서 일관되게 표현된다.
+**완료 조건:** Marimo ownership과 정책 상태가 관련 문서에서 일관되게 표현된다. Marimo는 active runtime/tool이 아니며, `pyproject.toml`의 dependency와 runtime 설정도 제거했다.
 
 ## Validation Boundary
 
