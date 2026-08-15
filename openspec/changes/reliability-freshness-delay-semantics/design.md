@@ -11,7 +11,7 @@ description: Bronze ingestion age와 content identity를 분리해 측정, appro
 ## Context
 
 - **Current State:** `ProfileSnapshot`은 measurement가 없어도 `observed_at`을 `freshness_at`으로 기록하고 detector는 baseline-current timestamp 차이를 사용한다. `PartitionContentIdentity`는 `ingested_at`을 제외하므로 freshness-only before/after identity가 같고 recovery executor는 stale target을 `already_recovered`로 분기할 수 있다.
-- **Constraints:** HMDA source download와 publication timestamp는 범위 밖이다. Lifecycle은 read-only이고 approval 결정, recovery와 evaluation은 외부 API에 남아야 한다. Existing volume-drop/null-spike content recovery semantics를 보존해야 한다.
+- **Constraints:** HMDA source download와 publication timestamp는 범위 밖이다. Lifecycle은 read-only이고 approval 결정, recovery와 evaluation은 외부 API에 남아야 한다. Existing volume-drop/null-spike content recovery semantics를 보존해야 한다. 완료된 volume-drop MVP의 scope, milestone과 status는 변경하지 않는다.
 - **Dependencies:** Existing Bronze `ingested_at`, `ProfileSnapshotRequest.observed_at`, `DetectionThresholds`, immutable `RecoveryProposal`, metadata-preserving partition load와 disposable evaluation path preflight를 재사용한다.
 
 ## Goals / Non-Goals
@@ -22,6 +22,7 @@ description: Bronze ingestion age와 content identity를 분리해 측정, appro
 | Current observation age로 freshness incident를 판정한다. | Scheduler delay, polling cadence와 alert를 구현한다. |
 | Content가 같아도 stale/fresh target을 approval과 replay에서 구분한다. | Generic temporal recovery framework를 만든다. |
 | Deterministic local recovery/replay evidence를 만든다. | Existing operational database 또는 actual-source cadence를 평가한다. |
+| Freshness를 post-MVP capability로 분리한다. | Current volume-drop MVP scope를 확장하거나 다시 연다. |
 
 ## Architecture
 
@@ -31,9 +32,12 @@ flowchart LR
     clean --> delayed[Delayed ingested_at target]
     delayed --> profile[Measured ProfileSnapshot]
     profile --> detect[Age-based detection]
-    clean --> candidate[Metadata-preserved candidate]
+    clean --> candidate[Candidate Bronze]
     detect --> proposal[Freshness-bound proposal]
-    candidate --> proposal
+    candidate --> candidateValidation[dbt validation]
+    candidateValidation --> artifact[Metadata-preserved artifact]
+    artifact --> artifactState[Re-measured content + freshness]
+    artifactState --> proposal
     proposal --> gate[Content + temporal transaction gate]
     gate --> recovered[Recovered Bronze]
     recovered --> verify[Profile, lifecycle, dbt, replay]
@@ -104,7 +108,8 @@ RecoveryProposal
 1. Target database에 같은 content를 적재하고 scoped `ingested_at`만 `observed_at - delay_minutes`로 변경한다.
 1. Clean/target content identity와 schema hash가 같고 target에서 exact single `freshness_delay`만 발생하는지 확인한다.
 1. Candidate database는 clean과 같은 fixed `ingested_at`을 사용하고 candidate dbt validation 뒤 Bronze provenance를 포함한 Parquet artifact로 export한다.
-1. Proposal은 target의 stale observation, candidate content identity/timestamp와 max age를 결합한 뒤 external approval을 받는다.
+1. Export한 artifact를 다시 열어 scoped content identity와 `max(ingested_at)`을 재측정하고 controlled candidate state와 exact match인지 확인한다.
+1. Proposal은 artifact에서 재측정한 content identity/timestamp, target의 stale observation과 max age를 결합한 뒤 external approval을 받는다.
 1. Executor는 candidate Parquet를 metadata-preserving mode로 temporary staging하고 content/timestamp를 다시 검증한다.
 1. Target compound state를 분류하고 필요한 경우 transaction 내부 compound gate로 candidate를 적용한다.
 1. Post-recovery profile, lifecycle, target dbt validation과 같은 approval replay를 실행하고 structured freshness observations를 보존한다.
@@ -157,9 +162,9 @@ Before/after content identity가 같아도 timestamp branch가 먼저 결론을 
 
 ### D5. Candidate timestamp를 approval 전에 고정한다
 
-- **Decision** - Candidate DB의 `ingested_at`을 explicit observation time으로 고정하고 Bronze metadata를 가진 Parquet를 validation, approval과 execution의 source로 사용한다.
-- **Rationale** - Execution 때 새 `current_timestamp`를 생성하면 approved expected state와 실제 mutation input이 달라진다.
-- **Trade-off** - Freshness evaluator가 candidate artifact materialization을 추가로 소유한다.
+- **Decision** - Candidate DB의 `ingested_at`을 explicit observation time으로 고정하고 dbt validation을 실행한 뒤 Bronze metadata를 가진 Parquet로 export한다. Export한 artifact에서 content identity와 timestamp를 다시 측정해 controlled candidate와 exact match일 때만 그 artifact state로 proposal을 만들며, 같은 artifact를 execution input으로 사용한다.
+- **Rationale** - Validation callback이 candidate DB를 변경할 수 있고, validation 전 측정값으로 approval을 만들면 승인 evidence와 실제 mutation input이 달라진다. Execution 때 새 `current_timestamp`를 생성하는 경우도 같은 invariant를 위반한다.
+- **Trade-off** - Freshness evaluator가 candidate artifact materialization과 approval 전 재측정을 추가로 소유한다.
 - **Alternatives** - Threshold acceptance만 승인하면 candidate timestamp immutability를 입증할 수 없다.
 
 ### D6. Content와 temporal target state를 같은 transaction에서 확인한다
@@ -191,7 +196,7 @@ Before/after content identity가 같아도 timestamp branch가 먼저 결론을 
 | Age detection | Unit | Exact threshold incident, below-threshold no incident, baseline-independent staleness, unavailable skip |
 | Lifecycle/remediation | Unit + component | Explicit threshold forwarding과 Bronze-specific action identifiers |
 | Ingestion gate | Component with DuckDB | Same content/different timestamp stale failure와 zero mutation |
-| Proposal/candidate gate | Unit + integration | Incident/binding validation, candidate timestamp mismatch pre-mutation failure |
+| Proposal/candidate gate | Unit + integration | Incident/binding validation, validation 중 candidate mutation의 pre-approval rejection |
 | Recovery/replay | Integration | Stale equal-content mutation, acceptable replay skip, expired replay new approval |
 | Evaluation isolation | Integration | Path preflight before side effects, source/schema/content preservation |
 | Failure evidence | Integration | Pre/post-mutation classification과 preserved clean/delayed/recovery/replay observations |
@@ -206,6 +211,7 @@ Before/after content identity가 같아도 timestamp branch가 먼저 결론을 
 | --- | --- | --- |
 | Wall-clock 사용으로 boundary test가 흔들린다. | Non-deterministic incident/replay result | Evaluator와 tests는 explicit `observed_at`, delay와 candidate timestamp만 사용한다. |
 | Metadata-preserving load가 임의 provenance를 허용한다. | 승인되지 않은 timestamp가 target에 기록된다. | Freshness binding path에서만 사용하고 staged content/timestamp를 proposal과 exact 비교한다. |
+| Candidate validation이 database state를 변경한다. | Approval evidence가 실제 artifact와 다른 state를 가리킨다. | Validation 뒤 artifact를 생성하고 artifact state를 재측정한 후에만 proposal과 approval callback을 만든다. |
 | Temporal precheck와 mutation 사이 writer가 개입한다. | Approval 뒤 stale target overwrite | Loader transaction에서 content와 timestamp를 함께 다시 확인한다. |
 | Replay가 시간이 지나 다시 stale해진다. | Old approval로 repeated refresh 가능 | Expected timestamp가 max age를 넘으면 zero mutation과 새 approval을 요구한다. |
 | Breaking contract 일부만 적용된다. | Fixture/import/serialization 불일치 | Profile, threshold, proposal call sites를 한 migration phase에서 갱신하고 focused regressions를 실행한다. |

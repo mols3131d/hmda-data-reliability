@@ -246,6 +246,40 @@ def evaluate_freshness_delay_vertical_slice(
             "(FORMAT PARQUET)"
         )
 
+    candidate_artifact_identity, candidate_artifact_freshness_at = (
+        _candidate_artifact_state(candidate_artifact_path, candidate_request)
+    )
+    candidate_artifact_mismatches: list[str] = []
+    if candidate_artifact_identity != candidate_identity:
+        candidate_artifact_mismatches.append(
+            "candidate-artifact-content-mismatch:"
+            f"expected={candidate_identity.model_dump_json()}:"
+            f"actual={candidate_artifact_identity.model_dump_json()}"
+        )
+    if candidate_artifact_freshness_at != candidate_freshness_at:
+        candidate_artifact_mismatches.append(
+            "candidate-artifact-freshness-mismatch:"
+            f"expected={candidate_freshness_at.isoformat()}:"
+            f"actual={_timestamp_text(candidate_artifact_freshness_at)}"
+        )
+    if candidate_artifact_mismatches:
+        return _failure_result(
+            clean_lifecycle=clean_lifecycle,
+            delayed_lifecycle=delayed_lifecycle,
+            fixture_identity=fixture_identity,
+            expected_identity=candidate_identity,
+            clean_freshness=clean_freshness,
+            delayed_freshness=delayed_freshness,
+            target_request=target_request,
+            case_name="candidate_artifact_mismatch",
+            failure_stage="before_target_mutation",
+            evidence_refs=candidate_artifact_mismatches,
+            candidate_projection_id=candidate_projection_id,
+        )
+    assert candidate_artifact_freshness_at is not None
+    candidate_identity = candidate_artifact_identity
+    candidate_freshness_at = candidate_artifact_freshness_at
+
     incident_id = delayed_lifecycle.detected_incident_ids[0]
     proposal = RecoveryProposal(
         proposal_id=f"recovery_{incident_id}",
@@ -662,6 +696,39 @@ def _set_partition_ingested_at(
         """,
         params,
     )
+
+
+def _candidate_artifact_state(
+    artifact_path: Path,
+    request: DataOperationRequest,
+) -> tuple[PartitionContentIdentity, datetime | None]:
+    """Re-measure the exact metadata-preserving artifact used for approval."""
+
+    connection = duckdb.connect(":memory:")
+    try:
+        load_hmda_loans_partition(
+            connection,
+            (artifact_path,),
+            request.source_year,
+            source_file=request.source_file,
+            table_name=request.raw_table_name,
+            preserve_source_metadata=True,
+        )
+        identity = partition_content_identity(
+            connection,
+            table_name=request.raw_table_name,
+            source_year=request.source_year,
+            source_file=request.source_file,
+        )
+        freshness_at = partition_max_ingested_at(
+            connection,
+            table_name=request.raw_table_name,
+            source_year=request.source_year,
+            source_file=request.source_file,
+        )
+    finally:
+        connection.close()
+    return identity, freshness_at
 
 
 def _profile_request(request: DataOperationRequest) -> ProfileSnapshotRequest:

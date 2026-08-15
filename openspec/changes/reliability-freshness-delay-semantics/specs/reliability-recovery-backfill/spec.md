@@ -41,6 +41,12 @@ tags:
 - **WHEN** approved freshness recovery를 요청할 때
 - **THEN** approval callback 또는 target mutation 전에 candidate를 거부해야 한다.
 
+#### Scenario: Candidate changes during validation
+
+- **GIVEN** candidate가 validation 전에 expected content identity와 freshness timestamp를 가질 때
+- **WHEN** candidate validation이 content 또는 `max(ingested_at)`을 변경할 때
+- **THEN** immutable staged artifact에서 state를 다시 측정하고 proposal 또는 approval callback 전에 mismatch를 거부해야 한다.
+
 #### Scenario: Candidate measurement unavailable
 
 - **WHEN** candidate에서 valid `ingested_at` freshness를 측정할 수 없을 때

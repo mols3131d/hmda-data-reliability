@@ -176,6 +176,41 @@ def test_freshness_evaluation_rejects_inexact_controlled_timestamp(
     )
 
 
+def test_freshness_evaluation_rejects_validation_mutation_before_approval(
+    tmp_path: Path,
+) -> None:
+    source_path, request = _fixture(tmp_path)
+
+    def mutate_candidate(candidate_request: DataOperationRequest) -> str:
+        with DuckDBConnectionManager(candidate_request.database_path) as connection:
+            connection.execute(
+                """
+                UPDATE raw.hmda_loans
+                SET ingested_at = TIMESTAMPTZ '2026-08-15 08:30:00+00'
+                WHERE source_year = 2025
+                """
+            )
+        return "sha256:candidate"
+
+    result = evaluate_freshness_delay_vertical_slice(
+        request=request,
+        source_paths=(source_path,),
+        workspace=tmp_path / "run",
+        approve=lambda proposal: pytest.fail(f"approval called: {proposal}"),
+        validate_candidate=mutate_candidate,
+        validate_target=lambda target: pytest.fail(f"target called: {target}"),
+    )
+
+    assert result.recovery is None
+    assert result.post_recovery_case.case_name == "candidate_artifact_mismatch"
+    assert result.post_recovery_case.failure_stage == "before_target_mutation"
+    assert result.post_recovery_case.target_mutated is False
+    assert any(
+        "candidate-artifact-freshness-mismatch" in evidence
+        for evidence in result.post_recovery_case.evidence_refs
+    )
+
+
 def test_freshness_evaluation_reports_temporal_target_drift(tmp_path: Path) -> None:
     source_path, request = _fixture(tmp_path)
 

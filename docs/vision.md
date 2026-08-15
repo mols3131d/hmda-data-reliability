@@ -21,6 +21,9 @@
 | Recovery | Lifecycle과 분리된 approval gate와 backfill validation API |
 | Evaluation | Volume/null/freshness vertical slice와 Markdown report |
 
+> [!NOTE]
+> `null_spike`와 `freshness_delay` vertical slice는 완료된 volume-drop MVP scope를 변경하지 않는 post-MVP capability다.
+
 > [!IMPORTANT]
 > **현재 recovery는 외부 human approval 연동을 포함하지 않는다.** Remediation은 코드나 dbt test를 수정하지 않는다.
 

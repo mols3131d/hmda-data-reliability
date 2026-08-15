@@ -3,8 +3,8 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Reliability Freshness Delay Semantics Tasks
 description: Bronze ingestion freshness measurement, age detection와 compound recovery/replay를 TDD로 구현한다.
-tasks_completed: 37
-tasks_total: 37
+tasks_completed: 41
+tasks_total: 41
 ---
 
 > [!NOTE]
@@ -136,19 +136,37 @@ tasks_total: 37
 - [x] 6.6 Default pytest suite를 실행하고 결과를 validation evidence로 기록한다.
   - **Done when:** `uv run pytest`가 통과하거나 현재 Change와 무관한 baseline failure가 명확히 분류된다.
 
+### 7. Review feedback remediation
+
+- [x] 7.1 **PLANNING** — Freshness Change를 완료된 volume-drop MVP 범위를 변경하지 않는 post-MVP capability로 명시한다.
+  - **Done when:** Proposal, Design, Change README와 Vision이 current MVP scope/milestone/status를 그대로 보존한다.
+
+- [x] 7.2 **RED** — Candidate validation callback이 `ingested_at`을 변경해도 approval callback이 호출되지 않는 regression test를 추가한다.
+  - **Covers:** `Approved freshness candidate` — `Candidate changes during validation`
+  - **Done when:** Validation 전 state로 proposal을 만드는 현재 evaluator에서 approval 호출로 실패한다.
+
+- [x] 7.3 **GREEN** — Validation 뒤 candidate artifact를 생성하고 artifact content/timestamp를 재측정해 proposal과 execution input을 결합한다.
+  - **Done when:** Artifact mismatch는 approval 전에 structured failure로 종료되고 exact artifact state만 proposal에 포함된다.
+
+- [x] 7.4 **REVIEW** — Focused/full test, static checks, OpenSpec validation과 approval-boundary review를 실행한다.
+  - **Done when:** Review finding을 재현한 test와 관련 regression이 통과하고 validation evidence와 남은 scope risk가 기록된다.
+
 ## Validation Evidence
 
 - Apply prerequisite: 관련 baseline 93 tests 통과, initial `openspec validate --all --json` 통과.
 - Focused regression: reliability, incident lifecycle, HMDA partition/synthetic 150 tests 통과.
-- Default suite: `uv run pytest` 249 tests 통과.
+- Review remediation RED: validation mutation 뒤 approval callback이 호출되는 expected failure를 재현했다.
+- Review remediation GREEN: exact regression 1 test와 freshness evaluation/recovery 38 tests 통과.
+- Default suite: `uv run pytest` 250 tests 통과.
 - Type: `uv run ty check` 통과.
 - Changed paths: Ruff check와 format 80 files 통과, rumdl 20 files 통과.
+- Review changed paths: Ruff check/format 2 Python files와 rumdl 15 Markdown files 통과.
 - OpenSpec: 17/17 Specs/Changes valid.
 - Diff hygiene: `git diff --check` 통과.
 - Unrelated global baseline:
   - `uv run ruff check src tests`: untouched 2 `E501` (`data_operations/dbt_result.py`, `test_dagster_definitions.py`).
   - `uv run ruff format --check .`: untouched 3 files (`pivot-clarify-code` reference, `data_operations/runner.py`, `test_dagster_definitions.py`).
-  - `uv run rumdl check .`: untouched 55 issues in 8/161 files; changed Markdown scope는 통과.
+  - `uv run rumdl check .`: untouched 70 issues in 9/162 files; changed Markdown scope는 통과.
 
 ## Self-Review
 
