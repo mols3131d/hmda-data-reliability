@@ -99,12 +99,12 @@ Review feedback은 독립적인 canonical authority가 아니다. finding을 검
 - Entry:
 - Change: <id | not-applicable | unresolved>
 - Research: <used | not-required>
-- Feedback: <routed | blocked | not-required>
+- Feedback: <handled | blocked | not-required>
 - Next: <action | blocker | none>
 ```
 
-확인한 상태만 기록한다. OpenSpec 작업에 Research conclusion을 채택했다면 owning work에 반영하거나 `Next`에 미완료 handoff를 명시한다. schema-owned gate 상태를 별도 상태로 복제하지 않으며 실행하거나 검증하지 않은 결과를 사실처럼 보고하지 않는다.
+확인한 상태만 기록한다. Planning에 채택된 Research 또는 Review 결론은 owning artifact에 반영하거나 `Next`에 미완료 handoff를 명시한다. 다른 Review finding은 owning work로 route한 상태와 필요한 next action을 기록한다. schema-owned gate 상태를 별도 상태로 복제하지 않으며 실행하거나 검증하지 않은 결과를 사실처럼 보고하지 않는다.
 
 ## Completion
 
-요청된 entry의 contract를 충족하고 다음 action 또는 blocker가 명확하면 완료한다. OpenSpec 작업에 채택된 Research나 Review feedback의 결론은 transient evidence에만 남기지 않으며, 새로운 finding이나 근거 없이 Review loop를 반복하지 않는다.
+요청된 entry의 contract를 충족하고 다음 action 또는 blocker가 명확하면 완료한다. Planning에 채택된 Research 또는 Review 결론은 transient evidence에만 남기지 않으며, 다른 Review finding은 owning work로 route한다. 새로운 finding이나 근거 없이 Review loop를 반복하지 않는다.
