@@ -72,7 +72,7 @@ uv run python scripts/run_actual_source.py
 
 ## Additional Drift
 
-- Historical snapshot (2026-08-08): `DEVELOPMENT.md`와 `pyproject.toml`에 제거된 Marimo EDA runtime 관련 설명·설정이 남아 있었다. Current policy는 Marimo를 active runtime/tool로 사용하지 않으며, 이 branch에서 해당 문서와 설정을 정렬했다.
+- Historical snapshot (2026-08-08): `DEVELOPMENT.md`와 `pyproject.toml`에 제거된 Marimo EDA runtime 관련 설명·설정이 남아 있었다. 2026-08-15 기준 current policy는 Marimo를 active runtime/tool로 사용하지 않으며 관련 dependency, runtime 설정, 개발 보조 자산을 제거해 정렬했다.
 
 ## References
 
