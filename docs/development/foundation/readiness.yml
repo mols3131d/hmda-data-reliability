@@ -43,7 +43,7 @@ verification_basis:
     note: 'Audited test revision에서 Foundation focused suite 57 passed.'
   current_pr_validation:
     status: not_run
-    note: 'Canonical Spec taxonomy와 참조만 정리했으며 current PR head에서 runtime validation은 재실행하지 않았다.'
+    note: 'Foundation 전체 runtime validation은 current PR head에서 재실행하지 않았다. 다만 source_file recovery scope와 dbt artifact retention에 대한 선택적 focused test는 3 passed, 23 deselected로 통과했다.'
   progress_semantics: 'verification progress는 readiness 내부 checklist coverage이며 canonical requirement/test case/oracle 개수나 current 실행 통과율이 아니다.'
   status_semantics: '표시된 verification status는 audited evidence 상태다. current PR head 실행 결과로 해석하지 않는다.'
 
@@ -145,8 +145,8 @@ non_gating:
     status: risk
     finding: 'Foundation data contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 freshness를 측정할 수 없을 때 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다.'
   - name: dbt Last-Known-Good Evidence Retention
-    status: blocked
-    finding: '`run_dbt_build`가 새 build 전에 기존 manifest와 run_results를 삭제하며 test도 이를 기대 동작으로 고정한다.'
+    status: implemented-unverified
+    finding: '`run_dbt_build`는 고유한 run-scoped target에서 candidate artifact를 생성하고 기존 current pair를 건드리지 않는다. Promotion은 pair 단위 rollback을 보장한다. 선택적 재검증 test가 통과했지만 current Foundation 전체 validation은 재실행하지 않았다.'
   - name: Data Platform Cleanup Ownership
     status: risk
     finding: '`cleanup_on_close=True`가 caller-owned DuckDB 파일을 소유권 구분 없이 삭제할 수 있다.'
@@ -161,7 +161,7 @@ non_gating:
     finding: 'detection, impact, remediation와 read-only side-effect oracle은 존재하지만 current HEAD 실행 evidence가 없다.'
   - name: reliability-recovery-backfill
     status: implemented-unverified
-    finding: 'profile request alignment과 row-count comparison contract는 현재 구현과 정렬했지만 `source_file` scoped 비교는 file-level population equivalence를 보장하지 않으며 current HEAD 실행 evidence가 없다.'
+    finding: 'partition content identity와 recovery 경로가 `source_file` scope를 포함하며 source-file filtering과 file-scoped recovery test가 존재한다. 선택적 재검증 test가 통과했지만 current Foundation 전체 validation은 재실행하지 않았다.'
   - name: reliability-evaluation-report
     status: implemented-unverified
     finding: 'aggregation/report oracle은 존재하지만 current HEAD 실행 evidence가 없다.'

@@ -25,11 +25,11 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ### 2. Foundation Non-Gating Inventory 선택적 재검증
 
-- [ ] 현재 상태와 혼동 가능성이 큰 오래된 risk 항목만 선별한다.
-- [ ] 전체 Foundation 재감사 대신 선별 항목의 현재 `main` 상태와 기존 evidence를 대조한다.
-- [ ] 과거 snapshot과 current validation 결과를 문서에서 명확히 구분한다.
+- [x] 현재 상태와 혼동 가능성이 큰 오래된 risk 항목만 선별한다.
+- [x] 전체 Foundation 재감사 대신 선별 항목의 현재 `main` 상태와 기존 evidence를 대조한다.
+- [x] 과거 snapshot과 current validation 결과를 문서에서 명확히 구분한다.
 
-**완료 조건:** 재검증 대상과 제외 대상의 기준이 기록되고, stale risk 또는 현재성 오해가 정리된다.
+**완료 조건:** 재검증 대상과 제외 대상의 기준이 기록되고, stale risk 또는 현재성 오해가 정리된다. `source_file` recovery scope와 dbt artifact retention focused test는 `3 passed, 23 deselected`로 통과했다. Foundation 전체 재감사는 수행하지 않았다.
 
 ### 3. 다음 Reliability milestone 하나 선정
 

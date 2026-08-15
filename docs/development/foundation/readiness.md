@@ -63,16 +63,25 @@ uv run python scripts/run_actual_source.py
 | --- | --- |
 | Reliability freshness semantics | Risk — Foundation data contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 미측정 시 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
 | Profile / incident / impact / remediation lifecycle | Implemented, current execution unverified |
-| Reliability recovery backfill | Implemented, current execution unverified — profile request alignment과 row-count comparison contract는 정렬했지만 `source_file` scoped 비교는 file-level population equivalence를 보장하지 않는다. |
+| Reliability recovery backfill | Implemented, current execution unverified — partition content identity와 recovery 경로가 `source_file` scope를 포함하며 source-file filtering과 file-scoped recovery test가 존재한다. |
 | Reliability evaluation report | Implemented, current execution unverified |
 | Orchestration pipeline | Blocked — standard pipeline에서 dbt skip materialization semantics 충돌 |
-| dbt last-known-good evidence retention | Blocked — build 전 기존 artifact 삭제 |
+| dbt last-known-good evidence retention | Implemented, current execution unverified — 고유한 run-scoped target에서 candidate artifact를 만들고 current pair를 보존하며, promotion 실패 시 pair rollback test가 존재한다. |
 | HMDA synthetic defects | Implemented, current execution unverified |
 | Test quality observability | Implemented, current execution unverified — development/test tooling concern이며 canonical runtime Spec은 아니다. |
 
 ## Additional Drift
 
 - `DEVELOPMENT.md`와 `pyproject.toml`에는 제거된 Marimo EDA runtime 관련 설명·설정이 남아 있다.
+
+## Selective Revalidation
+
+현재 구현과 기존 test 근거를 기준으로 다음 두 Non-Gating Inventory 항목의 stale risk 설명을 갱신했다.
+
+- `reliability-recovery-backfill`: `source_file`이 partition content identity와 recovery 경로에 포함되고, source-file filtering 및 file-scoped recovery test가 존재한다.
+- `dbt Last-Known-Good Evidence Retention`: `run_dbt_build`가 고유한 run-scoped target을 사용하고 current artifact pair를 보존하며, promotion rollback test가 존재한다.
+
+선택된 focused test 결과는 **3 passed, 23 deselected**이다. Foundation 전체 재감사와 current `main` 전체 validation은 이 작업 범위에 포함하지 않는다.
 
 ## References
 
