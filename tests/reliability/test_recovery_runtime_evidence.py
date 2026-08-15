@@ -30,6 +30,7 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
     proposal = SimpleNamespace(
         approved_before_identity=approved_before_identity,
         expected_after_identity=object(),
+        freshness_binding=None,
     )
     request = SimpleNamespace(
         approval=approval,

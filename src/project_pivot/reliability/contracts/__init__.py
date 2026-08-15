@@ -14,8 +14,15 @@ from project_pivot.reliability.contracts.incident import (
     IncidentStatus,
 )
 from project_pivot.reliability.contracts.lineage import LineageEvidence
-from project_pivot.reliability.contracts.profile import ProfileSnapshot
-from project_pivot.reliability.contracts.recovery_proposal import RecoveryProposal
+from project_pivot.reliability.contracts.profile import (
+    FreshnessMeasurementStatus,
+    ProfileSnapshot,
+)
+from project_pivot.reliability.contracts.recovery_proposal import (
+    FreshnessObservation,
+    FreshnessRecoveryBinding,
+    RecoveryProposal,
+)
 from project_pivot.reliability.contracts.validation import validate_contract
 
 __all__ = [
@@ -23,6 +30,9 @@ __all__ = [
     "ApprovalStatus",
     "Evidence",
     "EvidenceSource",
+    "FreshnessMeasurementStatus",
+    "FreshnessObservation",
+    "FreshnessRecoveryBinding",
     "HumanReviewStatus",
     "Incident",
     "IncidentSeverity",

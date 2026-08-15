@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import cast
 
 import duckdb
@@ -92,3 +93,36 @@ def partition_content_identity(
         row_count=int(cast(int, row[0])),
         digest=f"{_IDENTITY_VERSION}:{cast(str, row[1])}",
     )
+
+
+def partition_max_ingested_at(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    source_year: int,
+    source_file: str | None = None,
+    table_name: str = HMDA_LOANS_TABLE,
+) -> datetime | None:
+    """Return the exact maximum Bronze ingestion timestamp for a partition."""
+
+    source_file_filter = "" if source_file is None else "AND source_file_name = ?"
+    params: list[object] = [source_year]
+    if source_file is not None:
+        params.append(source_file)
+    try:
+        row = connection.execute(
+            f"""
+            SELECT max(ingested_at)
+            FROM {qualify_table_name(table_name)}
+            WHERE source_year = ?
+            {source_file_filter}
+            """,
+            params,
+        ).fetchone()
+    except duckdb.CatalogException:
+        return None
+    if row is None or row[0] is None:
+        return None
+    value = cast(datetime, row[0])
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)

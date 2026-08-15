@@ -10,7 +10,10 @@ from typing import Any
 import duckdb
 
 from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
-from project_pivot.reliability.contracts import ProfileSnapshot
+from project_pivot.reliability.contracts import (
+    FreshnessMeasurementStatus,
+    ProfileSnapshot,
+)
 from project_pivot.reliability.errors import ProfileSnapshotError
 from project_pivot.reliability.profiling.profile_snapshot_request import (
     ProfileSnapshotRequest,
@@ -24,7 +27,7 @@ class DuckDBProfileSnapshotBuilder:
         self._connection = connection
 
     def build(self, request: ProfileSnapshotRequest) -> ProfileSnapshot:
-        """Return a snapshot and flag freshness fallback to observed_at."""
+        """Return measured partition metrics without inventing freshness."""
 
         try:
             schema_hash = calculate_schema_hash(self._connection, request.table_name)
@@ -55,6 +58,7 @@ class DuckDBProfileSnapshotBuilder:
             null_rates=metrics.null_rates,
             schema_hash=schema_hash,
             freshness_at=metrics.freshness_at,
+            freshness_status=metrics.freshness_status,
             metric_values=metrics.metric_values,
         )
 
@@ -101,12 +105,14 @@ class _PartitionMetrics:
         *,
         row_count: int,
         null_rates: dict[str, float],
-        freshness_at: datetime,
+        freshness_at: datetime | None,
+        freshness_status: FreshnessMeasurementStatus,
         metric_values: dict[str, float],
     ) -> None:
         self.row_count = row_count
         self.null_rates = null_rates
         self.freshness_at = freshness_at
+        self.freshness_status = freshness_status
         self.metric_values = metric_values
 
 
@@ -160,16 +166,28 @@ def _calculate_partition_metrics(
     freshness_value = (
         result[1 + len(profile_columns)] if request.freshness_column else None
     )
-    freshness_at = _normalize_freshness(freshness_value, request.observed_at)
+    freshness_at = _normalize_freshness(freshness_value)
+    if freshness_at is not None and freshness_at > request.observed_at:
+        msg = (
+            "freshness 값이 observed_at보다 미래입니다: "
+            f"freshness_at={freshness_at.isoformat()}, "
+            f"observed_at={request.observed_at.isoformat()}"
+        )
+        raise ProfileSnapshotError(msg)
+    freshness_status = (
+        FreshnessMeasurementStatus.MEASURED
+        if freshness_at is not None
+        else FreshnessMeasurementStatus.UNAVAILABLE
+    )
     metric_values = _metric_values(
         row_count=row_count,
         null_counts=null_counts,
-        freshness_used_fallback=freshness_value is None,
     )
     return _PartitionMetrics(
         row_count=row_count,
         null_rates=null_rates,
         freshness_at=freshness_at,
+        freshness_status=freshness_status,
         metric_values=metric_values,
     )
 
@@ -199,7 +217,6 @@ def _metric_values(
     *,
     row_count: int,
     null_counts: dict[str, int],
-    freshness_used_fallback: bool,
 ) -> dict[str, float]:
     values = {"row_count": float(row_count)}
     values.update(
@@ -208,18 +225,16 @@ def _metric_values(
             for column, null_count in null_counts.items()
         }
     )
-    values["freshness_used_fallback"] = 1.0 if freshness_used_fallback else 0.0
     return values
 
 
-def _normalize_freshness(value: object, fallback: datetime) -> datetime:
-    # Missing freshness uses observation time and is flagged in metric_values.
+def _normalize_freshness(value: object) -> datetime | None:
     if value is None:
-        return fallback
+        return None
     if isinstance(value, datetime):
         if value.tzinfo is None:
             return value.replace(tzinfo=UTC)
-        return value
+        return value.astimezone(UTC)
     if isinstance(value, date):
         return datetime.combine(value, time.min, tzinfo=UTC)
     msg = f"freshness 값은 datetime/date여야 합니다: {type(value).__name__}"

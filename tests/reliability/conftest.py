@@ -12,6 +12,7 @@ from project_pivot.reliability.contracts import (
     ApprovalStatus,
     Evidence,
     EvidenceSource,
+    FreshnessMeasurementStatus,
     HumanReviewStatus,
     Incident,
     IncidentSeverity,
@@ -54,6 +55,7 @@ def synthetic_incident_fixture() -> SyntheticIncidentFixture:
         null_rates={"loan_amount": 0.02},
         schema_hash="sha256:synthetic-schema",
         freshness_at=observed_at,
+        freshness_status=FreshnessMeasurementStatus.MEASURED,
         metric_values={"baseline_row_count": 100_000.0, "row_count_drop_ratio": 0.88},
     )
     lineage_evidence = LineageEvidence(

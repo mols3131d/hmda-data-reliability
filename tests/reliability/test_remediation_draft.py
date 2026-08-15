@@ -61,6 +61,22 @@ def test_null_spike_draft_contains_dbt_test_suggestion() -> None:
     assert "validate_null_rate" in draft.validation_actions
 
 
+def test_freshness_draft_uses_bronze_ingestion_action() -> None:
+    incident = _incident("freshness_delay")
+    evidence = _evidence(
+        incident_type="freshness_delay",
+        payload={"freshness_age_minutes": 120.0},
+    )
+
+    draft = create_remediation_draft(
+        RemediationDraftRequest(incident=incident, evidence=evidence)
+    )
+
+    assert "check_bronze_ingestion_freshness" in draft.recommended_actions
+    assert "check_upstream_freshness" not in draft.recommended_actions
+    assert "baseline" not in draft.rca_summary
+
+
 def test_draft_preserves_affected_assets_and_serializes_to_json() -> None:
     """affected assets 보존과 JSON 직렬화를 검증한다."""
     incident = _incident("schema_drift")

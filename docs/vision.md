@@ -19,7 +19,7 @@
 | Data plane | HMDA CSV/Parquet 멱등 적재, dbt staging/mart/test/artifact 생성 |
 | Lifecycle | Caller baseline과 실제 current로 4개 규칙 탐지; impact와 remediation draft 반환 |
 | Recovery | Lifecycle과 분리된 approval gate와 backfill validation API |
-| Evaluation | Lifecycle과 분리된 synthetic case 평가와 Markdown report |
+| Evaluation | Volume/null/freshness vertical slice와 Markdown report |
 
 > [!IMPORTANT]
 > **현재 recovery는 외부 human approval 연동을 포함하지 않는다.** Remediation은 코드나 dbt test를 수정하지 않는다.
@@ -39,7 +39,7 @@
 
 ## Beyond MVP
 
-- `null_spike`, `schema_drift`, `freshness_delay` vertical slice 확장.
+- `schema_drift` recovery vertical slice 확장.
 - Dagster reliability control-plane과 approval/audit integration 검토.
 
 ## Non-Goals

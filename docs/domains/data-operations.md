@@ -61,7 +61,7 @@ DataOperationRequest + baseline ProfileSnapshot
 | `load_raw_data()` | DuckDB raw table | 같은 partition을 다시 적재해도 중복 row를 만들지 않는 HMDA ingestion contract에 위임한다. | `RawLoadResult` |
 | `run_dbt_build()` | Run-scoped target directory | 성공해도 current artifact를 자동 변경하지 않는다. 이번 run의 verified artifact pair를 반환한다. | `DbtBuildResult` |
 | `promote_dbt_artifacts()` | Current dbt artifact projection | promotion 시작 시 `DbtBuildResult`의 candidate identity를 재확인한 뒤 current projection 교체를 시도한다. Candidate writer와의 동시 변경까지 차단하는 contract는 아니다. | `None` |
-| `run_incident_lifecycle()` | Domain state 없음; lock file I/O 있음 | Baseline과 실제 current를 비교해 분석만 수행한다. approval, recovery, evaluation은 호출하지 않는다. | `LifecycleResult` |
+| `run_incident_lifecycle(request, baseline, thresholds=None)` | Domain state 없음; lock file I/O 있음 | Baseline과 실제 current를 비교하며 caller threshold 또는 canonical default로 분석만 수행한다. approval, recovery, evaluation은 호출하지 않는다. | `LifecycleResult` |
 
 공개 API와 모델은 [`__init__.py`](../../src/project_pivot/data_operations/__init__.py)에서 확인한다. `runner.run_incident_lifecycle` import path는 기존 caller 호환성을 위해 같은 함수 객체를 re-export한다.
 

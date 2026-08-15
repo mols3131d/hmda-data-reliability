@@ -1,6 +1,10 @@
 """Synthetic case evaluation report."""
 
 from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
+from project_pivot.reliability.evaluation.freshness_delay import (
+    FreshnessDelayVerticalSliceResult,
+    evaluate_freshness_delay_vertical_slice,
+)
 from project_pivot.reliability.evaluation.null_spike import (
     NullSpikeVerticalSliceResult,
     evaluate_null_spike_vertical_slice,
@@ -22,6 +26,8 @@ from project_pivot.reliability.evaluation.volume_drop import (
 __all__ = [
     "EvaluationCaseResult",
     "EvaluationReport",
+    "FreshnessDelayVerticalSliceResult",
+    "evaluate_freshness_delay_vertical_slice",
     "NullSpikeVerticalSliceResult",
     "VolumeDropVerticalSliceResult",
     "build_evaluation_report",

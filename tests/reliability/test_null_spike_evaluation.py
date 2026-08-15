@@ -928,6 +928,7 @@ def test_null_spike_vertical_slice_rejects_residual_null_candidate_with_evidence
                 null_rates={"income": 0.05},
                 schema_hash="residual",
                 freshness_at=request.observed_at,
+                freshness_status="measured",
             ),
             approved_before_identity=recovery_request.proposal.approved_before_identity,
             expected_after_identity=recovery_request.proposal.expected_after_identity,
