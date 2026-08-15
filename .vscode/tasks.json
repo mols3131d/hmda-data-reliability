@@ -44,13 +44,6 @@
                 "isDefault": false
             },
             "detail": "Runs npx skills update with flags."
-        },
-        {
-            "label": "Stop Marimo Kernels",
-            "type": "shell",
-            "command": "uv run python scripts/stop_marimo_kernels.py",
-            "problemMatcher": [],
-            "detail": "Stops Marimo IPC kernels running in this project."
         }
     ]
 }

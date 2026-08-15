@@ -43,11 +43,11 @@ source: https://app.notion.com/p/3bd13d7e58b98196b078f7828423e4da
 
 ### 4. Marimo 정책과 문서 정렬
 
-- [ ] Marimo가 현재 active tool인지 제거 대상인지 실제 사용 상태를 확인한다.
-- [ ] 결정에 따라 `DEVELOPMENT.md`와 Foundation readiness 관련 기록의 설명을 정렬한다.
-- [ ] historical drift를 current policy로 오해할 수 있는 표현을 제거한다.
+- [x] Marimo가 현재 active tool인지 제거 대상인지 실제 사용 상태를 확인한다.
+- [x] 결정에 따라 `DEVELOPMENT.md`와 Foundation readiness 관련 기록의 설명을 정렬한다.
+- [x] historical drift를 current policy로 오해할 수 있는 표현을 제거한다.
 
-**완료 조건:** Marimo ownership과 정책 상태가 관련 문서에서 일관되게 표현된다.
+**완료 조건:** Marimo ownership과 정책 상태가 관련 문서에서 일관되게 표현된다. Marimo는 active runtime/tool이 아니며, `pyproject.toml`의 dependency와 runtime 설정도 제거했다.
 
 ## Validation Boundary
 

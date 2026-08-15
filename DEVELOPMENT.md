@@ -24,7 +24,7 @@
 | Package manager | `uv` |
 | Data platform | `DuckDB`, `dbt` |
 | Orchestration | `Dagster` |
-| Analysis | `Marimo`, `Polars` |
+| Analysis | `Polars` |
 
 ## Layer Tool Choices
 
@@ -36,7 +36,6 @@
 | Control quality | custom profiler/detector | profile snapshot과 detection rules |
 | Remediation | `LangGraph` | remediation draft 경로만 |
 | Orchestration | `Dagster` | asset와 `pipeline_job` |
-| Notebook | `Marimo` | EDA 실행과 관찰 |
 
 `PyIceberg`는 dependency로 존재하지만 active table engine으로 사용하지 않는다. Spark, cloud warehouse, FastAPI 기반 통합 pipeline CLI, OpenTelemetry, 외부 catalog와 approval UI는 현재 Foundation의 도입 대상이 아니다.
 
@@ -51,7 +50,6 @@
 | `tests/` | domain별 test |
 | `dbt/` | model·macro·설정 |
 | `data/` | DuckDB·원천 데이터·metadata |
-| `notebooks/` | Marimo 분석 notebook |
 | `docs/` | 프로젝트 문서 |
 | `scripts/` | 설정·utility script |
 
