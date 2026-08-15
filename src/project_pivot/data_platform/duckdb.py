@@ -1,5 +1,10 @@
-"""DuckDB 연결 수명과 schema/table metadata helper."""
+"""DuckDB 연결 수명, mutation lock과 schema/table metadata helper."""
 
+from __future__ import annotations
+
+import fcntl
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from types import TracebackType
 
@@ -13,6 +18,75 @@ _LOGGER = get_logger(__name__)
 
 class DuckDBMetadataError(Exception):
     """DuckDB metadata 조회 실패를 나타낸다."""
+
+
+class DuckDBMutationLockError(Exception):
+    """Local DuckDB mutation lock 준비·해제 I/O 실패를 나타낸다."""
+
+
+@contextmanager
+def database_mutation_lock(
+    database_path: str | Path | None,
+) -> Iterator[None]:
+    """File-based DuckDB mutation을 canonical path별로 직렬화한다.
+
+    ``None``과 ``:memory:``는 다른 connection과 state를 공유하지 않으므로 file
+    lock을 만들지 않는다. Body exception은 release failure보다 우선한다.
+    """
+
+    if database_path is None or str(database_path) == ":memory:":
+        yield
+        return
+
+    canonical_path = Path(database_path).resolve(strict=False)
+    lock_path = canonical_path.with_name(f".{canonical_path.name}.mutation.lock")
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_file = lock_path.open("w")
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+    except OSError as exc:
+        msg = f"DuckDB mutation lock을 획득할 수 없습니다: {canonical_path}"
+        raise DuckDBMutationLockError(msg) from exc
+
+    body_failed = False
+    try:
+        yield
+    except BaseException:
+        body_failed = True
+        raise
+    finally:
+        release_error: OSError | None = None
+        try:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
+        except OSError as exc:
+            release_error = exc
+        try:
+            lock_file.close()
+        except OSError as exc:
+            release_error = release_error or exc
+        if release_error is not None and not body_failed:
+            msg = f"DuckDB mutation lock을 해제할 수 없습니다: {canonical_path}"
+            raise DuckDBMutationLockError(msg) from release_error
+
+
+def current_database_path(
+    connection: duckdb.DuckDBPyConnection,
+) -> Path | None:
+    """Connection의 current file database path를 반환한다.
+
+    Isolated in-memory database는 ``None``을 반환한다.
+    """
+
+    row = connection.execute(
+        """
+        SELECT path
+        FROM duckdb_databases()
+        WHERE database_name = current_database()
+        """
+    ).fetchone()
+    if row is None or row[0] is None:
+        return None
+    return Path(str(row[0]))
 
 
 class DuckDBConnectionManager:

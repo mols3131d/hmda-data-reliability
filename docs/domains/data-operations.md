@@ -3,7 +3,7 @@
 **`data_operations`는 입력, 실행 순서, 결과를 묶는 application boundary다.** 파일 파싱, DuckDB 세부 구현, incident 규칙은 각 domain에 위임한다.
 
 > [!IMPORTANT]
-> **Incident lifecycle의 `read-only`는 domain state 기준이다.** raw partition, approval, recovery, evaluation output을 변경하지 않는다. dbt artifact 일관성을 위한 shared lock 때문에 artifact directory에는 lock-file 쓰기 권한이 필요하다.
+> **Incident lifecycle의 `read-only`는 domain state 기준이다.** raw partition, approval, recovery, evaluation output을 변경하지 않는다. dbt artifact 일관성을 위한 shared lock 때문에 artifact directory에는 lock-file 쓰기 권한이 필요하다. 별도로 `run_dbt_build()`는 target DuckDB를 변경하므로 database mutation lock을 사용한다.
 
 ## Mental Model
 
@@ -59,7 +59,7 @@ DataOperationRequest + baseline ProfileSnapshot
 | API | 변경 가능 상태 | Caller가 알아야 할 contract | 결과 |
 | --- | --- | --- | --- |
 | `load_raw_data()` | DuckDB raw table | 같은 partition을 다시 적재해도 중복 row를 만들지 않는 HMDA ingestion contract에 위임한다. | `RawLoadResult` |
-| `run_dbt_build()` | Run-scoped target directory | 성공해도 current artifact를 자동 변경하지 않는다. 이번 run의 verified artifact pair를 반환한다. | `DbtBuildResult` |
+| `run_dbt_build()` | Target DuckDB, run-scoped target directory | Target database mutation lock을 subprocess 종료까지 유지한다. 성공해도 current artifact를 자동 변경하지 않고 이번 run의 verified artifact pair를 반환한다. | `DbtBuildResult` |
 | `promote_dbt_artifacts()` | Current dbt artifact projection | promotion 시작 시 `DbtBuildResult`의 candidate identity를 재확인한 뒤 current projection 교체를 시도한다. Candidate writer와의 동시 변경까지 차단하는 contract는 아니다. | `None` |
 | `run_incident_lifecycle()` | Domain state 없음; lock file I/O 있음 | Baseline과 실제 current를 비교해 분석만 수행한다. approval, recovery, evaluation은 호출하지 않는다. | `LifecycleResult` |
 
@@ -87,12 +87,14 @@ request.source_root
 
 ```text
 run_dbt_build(request)
-  1. unique run target directory 생성
-  2. dbt build --target-path <run target> 실행
-  3. return code 확인
-  4. manifest.json + run_results.json 존재 확인
-  5. artifact pair의 projection_id 계산
-  6. DbtBuildResult 반환
+  1. target DuckDB의 database mutation lock 획득
+  2. unique run target directory 생성
+  3. dbt build --target-path <run target> 실행
+  4. return code 확인
+  5. manifest.json + run_results.json 존재 확인
+  6. artifact pair의 projection_id 계산
+  7. subprocess 종료 뒤 mutation lock 해제
+  8. DbtBuildResult 반환
 
 promote_dbt_artifacts(result, request)
   1. exclusive projection lock 획득
@@ -103,6 +105,8 @@ promote_dbt_artifacts(result, request)
 ```
 
 중요한 invariant는 **`run_dbt_build()` 성공과 current projection 변경이 같은 사건이 아니라는 것**이다. `DbtBuildResult.manifest_path`와 `run_results_path`는 current 경로가 아니라 해당 run에 고정된 candidate 경로다. Promotion은 시작 시 candidate identity를 다시 확인하지만, 그 확인과 실제 copy 사이의 candidate 변경까지 직렬화하지는 않는다.
+
+Target mutation lock을 획득하지 못하면 dbt process를 시작하지 않고 `DataOperationError`로 종료한다. HMDA ingestion과 approved schema recovery가 같은 target lock을 사용하므로 이 managed writer들은 서로의 commit 또는 rollback 이후 target state를 관찰한다. Lock을 사용하지 않는 external process와 multi-host writer는 이 contract 밖이다.
 
 Dagster caller는 [`assets.py`](../../src/project_pivot/orchestration/defs/assets.py)에서 이 두 단계를 명시적으로 연속 호출한다.
 
@@ -174,6 +178,7 @@ Dagster의 [`DataOperationsResource`](../../src/project_pivot/orchestration/defs
 
 | Boundary | 보존되는 상태 |
 | --- | --- |
+| dbt target mutation lock 실패 | dbt process를 시작하지 않음 |
 | dbt build 실패 | 기존 current dbt artifact pair |
 | Candidate artifact만 생성 | 기존 current dbt artifact pair |
 | Promotion 시작 시 candidate identity 불일치 | Promotion 거부, current projection 보존 |

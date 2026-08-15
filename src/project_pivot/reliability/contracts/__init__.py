@@ -16,6 +16,11 @@ from project_pivot.reliability.contracts.incident import (
 from project_pivot.reliability.contracts.lineage import LineageEvidence
 from project_pivot.reliability.contracts.profile import ProfileSnapshot
 from project_pivot.reliability.contracts.recovery_proposal import RecoveryProposal
+from project_pivot.reliability.contracts.schema_recovery import (
+    SchemaRecoveryApproval,
+    SchemaRecoveryProposal,
+)
+from project_pivot.reliability.contracts.table_state import TableStateIdentity
 from project_pivot.reliability.contracts.validation import validate_contract
 
 __all__ = [
@@ -31,6 +36,9 @@ __all__ = [
     "ProfileSnapshot",
     "RecoveryProposal",
     "ReliabilityContract",
+    "SchemaRecoveryApproval",
+    "SchemaRecoveryProposal",
+    "TableStateIdentity",
     "can_execute_risky_action",
     "validate_contract",
 ]

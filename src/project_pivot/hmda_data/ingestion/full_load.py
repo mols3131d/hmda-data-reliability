@@ -7,7 +7,13 @@ from pathlib import Path
 
 import duckdb
 
-from project_pivot.data_platform.duckdb import ensure_schema, table_row_count
+from project_pivot.data_platform.duckdb import (
+    DuckDBMutationLockError,
+    current_database_path,
+    database_mutation_lock,
+    ensure_schema,
+    table_row_count,
+)
 from project_pivot.data_platform.sql import qualify_table_name
 from project_pivot.hmda_data.errors import HMDADataLoadError
 from project_pivot.hmda_data.ingestion._common import (
@@ -38,20 +44,25 @@ def load_hmda_loans(
 
     paths = validate_source_paths(source_paths)
     try:
-        _create_hmda_loans_table(connection, paths, table_name=table_name)
-        validate_required_columns(connection, table_name)
-        row_count = table_row_count(connection, table_name)
-        _LOGGER.debug(
-            "HMDA 원천 적재 완료",
-            extra={
-                "table_name": table_name,
-                "source_count": len(paths),
-                "row_count": row_count,
-            },
-        )
-        return row_count
+        with database_mutation_lock(current_database_path(connection)):
+            _create_hmda_loans_table(connection, paths, table_name=table_name)
+            validate_required_columns(connection, table_name)
+            row_count = table_row_count(connection, table_name)
+            _LOGGER.debug(
+                "HMDA 원천 적재 완료",
+                extra={
+                    "table_name": table_name,
+                    "source_count": len(paths),
+                    "row_count": row_count,
+                },
+            )
+            return row_count
     except HMDADataLoadError:
         raise
+    except DuckDBMutationLockError as exc:
+        context = {"table_name": table_name}
+        msg = f"HMDA 원천 데이터 mutation lock에 실패했습니다: table={table_name}"
+        raise HMDADataLoadError(msg, context=context) from exc
     except duckdb.Error as exc:
         context = {
             "table_name": table_name,

@@ -2,6 +2,7 @@
 
 import subprocess
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 from subprocess import CompletedProcess, TimeoutExpired
 
@@ -18,6 +19,7 @@ from project_pivot.data_platform.artifacts import (
     artifact_projection_id,
     artifact_projection_lock,
 )
+from project_pivot.data_platform.duckdb import DuckDBMutationLockError
 
 
 @pytest.mark.unit
@@ -217,6 +219,73 @@ def test_run_dbt_build_returns_verified_artifacts(
     assert (
         request.dbt_run_results_path.read_text(encoding="utf-8") == '{"run": "current"}'
     )
+
+
+@pytest.mark.component
+def test_run_dbt_build_holds_database_mutation_lock_during_process(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """dbt subprocess는 target database mutation lock 안에서 실행된다."""
+
+    request = _request(tmp_path)
+    lock_held = False
+
+    @contextmanager
+    def observe_lock(database_path: str | Path | None):
+        nonlocal lock_held
+        assert Path(database_path or "") == request.database_path
+        lock_held = True
+        try:
+            yield
+        finally:
+            lock_held = False
+
+    def write_artifacts(command: list[str], **kwargs: object) -> CompletedProcess[str]:
+        assert lock_held
+        run_target = Path(command[-1])
+        run_target.joinpath("manifest.json").write_text("manifest", encoding="utf-8")
+        run_target.joinpath("run_results.json").write_text("results", encoding="utf-8")
+        return CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(runner, "database_mutation_lock", observe_lock, raising=False)
+    monkeypatch.setattr(subprocess, "run", write_artifacts)
+
+    result = runner.run_dbt_build(request)
+
+    assert result.succeeded
+    assert not lock_held
+
+
+@pytest.mark.component
+def test_run_dbt_build_does_not_start_process_when_mutation_lock_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Mutation lock failure는 dbt process 시작 전에 domain error로 변환된다."""
+
+    request = _request(tmp_path)
+    process_started = False
+
+    @contextmanager
+    def fail_lock(database_path: str | Path | None):
+        del database_path
+        raise DuckDBMutationLockError("cannot acquire mutation lock")
+        yield
+
+    def fail_if_started(*args: object, **kwargs: object) -> CompletedProcess[str]:
+        nonlocal process_started
+        process_started = True
+        raise AssertionError("dbt process must not start")
+
+    monkeypatch.setattr(runner, "database_mutation_lock", fail_lock, raising=False)
+    monkeypatch.setattr(subprocess, "run", fail_if_started)
+
+    with pytest.raises(DataOperationError, match="mutation lock") as error:
+        runner.run_dbt_build(request)
+
+    assert not process_started
+    assert error.value.context["database_path"] == str(request.database_path)
 
 
 @pytest.mark.component

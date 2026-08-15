@@ -15,6 +15,42 @@ class ProfileSnapshotError(ReliabilityError):
     """Profile snapshot calculation failed."""
 
 
+class TableStateIdentityError(ReliabilityError):
+    """Complete table state identity calculation failed."""
+
+
+class SchemaRecoveryCandidateError(ReliabilityError):
+    """Schema recovery candidate preflight failed before target access."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.context = dict(context or {})
+
+
+class SchemaRecoveryValidationError(ReliabilityError):
+    """Schema recovery target reconciliation or validation failed."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        failure_stage: str,
+        mutation_state: str | None = None,
+        reconciliation_action: str | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.failure_stage = failure_stage
+        self.mutation_state = mutation_state
+        self.reconciliation_action = reconciliation_action
+        self.context = dict(context or {})
+
+
 class ApprovalGateError(ReliabilityError):
     """Approval gate rejected execution."""
 

@@ -8,7 +8,13 @@ from pathlib import Path
 
 import duckdb
 
-from project_pivot.data_platform.duckdb import ensure_schema, table_row_count
+from project_pivot.data_platform.duckdb import (
+    DuckDBMutationLockError,
+    current_database_path,
+    database_mutation_lock,
+    ensure_schema,
+    table_row_count,
+)
 from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 from project_pivot.hmda_data.ingestion._common import (
@@ -41,21 +47,46 @@ def load_hmda_loans_partition(
 ) -> int:
     """한 ``source_year``/optional file scope를 교체하고 최종 row count를 반환한다.
 
-    Target schema와 빈 table은 필요하면 staging validation 전에 생성된다. 기존 partition
-    row는 staging의 required columns와 non-empty 조건을 통과한 뒤에만 교체된다.
-    ``expected_identity``가 있으면 현재 identity 비교와 delete/insert를 같은 transaction에서
-    수행하며 mismatch 시 기존 partition row는 변경하지 않는다.
-    ``preserve_source_metadata=True``이면 input의 source tracking fields를 재계산하지 않는다.
+    Target schema와 빈 table은 필요하면 staging validation 전에 생성된다.
+    기존 partition row는 staging의 required columns와 non-empty 조건을
+    통과한 뒤에만 교체된다. ``expected_identity``가 있으면 현재 identity
+    비교와 delete/insert를 같은 transaction에서 수행하며 mismatch 시 기존
+    partition row는 변경하지 않는다. ``preserve_source_metadata=True``이면
+    input의 source tracking fields를 재계산하지 않는다.
     """
 
     paths = validate_source_paths(source_paths)
     try:
-        _ensure_hmda_loans_table(
-            connection,
-            paths,
-            table_name,
-            preserve_source_metadata=preserve_source_metadata,
-        )
+        with database_mutation_lock(current_database_path(connection)):
+            _ensure_hmda_loans_table(
+                connection,
+                paths,
+                table_name,
+                preserve_source_metadata=preserve_source_metadata,
+            )
+            _overwrite_hmda_loans_partition(
+                connection=connection,
+                source_paths=paths,
+                source_year=source_year,
+                source_file=source_file,
+                table_name=table_name,
+                expected_identity=expected_identity,
+                preserve_source_metadata=preserve_source_metadata,
+            )
+            row_count = _partition_row_count(
+                connection,
+                table_name=table_name,
+                source_year=source_year,
+                source_file=source_file,
+            )
+    except DuckDBMutationLockError as exc:
+        context = {
+            "table_name": table_name,
+            "source_year": source_year,
+            "source_file": source_file,
+        }
+        msg = "HMDA 파티션 mutation lock에 실패했습니다."
+        raise HMDADataLoadError(msg, context=context) from exc
     except duckdb.Error as exc:
         context = {
             "table_name": table_name,
@@ -65,21 +96,6 @@ def load_hmda_loans_partition(
         msg = "HMDA 파티션 테이블 초기화에 실패했습니다."
         raise HMDADataLoadError(msg, context=context) from exc
 
-    _overwrite_hmda_loans_partition(
-        connection=connection,
-        source_paths=paths,
-        source_year=source_year,
-        source_file=source_file,
-        table_name=table_name,
-        expected_identity=expected_identity,
-        preserve_source_metadata=preserve_source_metadata,
-    )
-    row_count = _partition_row_count(
-        connection,
-        table_name=table_name,
-        source_year=source_year,
-        source_file=source_file,
-    )
     _LOGGER.debug(
         "HMDA 파티션 적재 완료",
         extra={
@@ -246,7 +262,7 @@ def _replace_partition_in_transaction(
     source_file: str | None,
     expected_identity: PartitionContentIdentity | None,
 ) -> None:
-    """Expected identity 확인과 partition row delete/insert를 하나의 transaction으로 묶는다."""
+    """Expected identity 확인과 row 교체를 하나의 transaction으로 묶는다."""
 
     connection.execute("BEGIN TRANSACTION")
     try:
