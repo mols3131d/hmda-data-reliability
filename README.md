@@ -50,8 +50,6 @@ Agentic review는 human decision을 보조하지만 approval이나 recovery의 a
 
 ## Validate Locally
 
-Repository root에서 dependency를 동기화하고 CI와 같은 unit-test 범위를 실행할 수 있다.
-
 ```bash
 uv sync --locked
 uv run pytest -m "unit and not memory and not stress"
