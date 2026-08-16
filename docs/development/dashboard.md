@@ -12,20 +12,25 @@ Implementation progress는 `openspec/specs/**`의 17개 current capability에서
 
 | Domain | Implementation Status | Implementation Progress | Verification Status | Verification Progress |
 | --- | :---: | --- | :---: | --- |
-| HMDA Data | 🟡 In Progress | `█████████░ 18/19` | ⚪ Unverified | `░░░░░░░░░░ 0/3` |
+| HMDA Data | 🟡 In Progress | `████████░░ 17/19` | ⚪ Unverified | `░░░░░░░░░░ 0/3` |
 | Data Platform | 🟢 Implemented | `██████████ 11/11` | ⚪ Unverified | `░░░░░░░░░░ 0/2` |
 | Data Operations | 🟢 Implemented | `██████████ 9/9` | ⚪ Unverified | `░░░░░░░░░░ 0/2` |
-| Reliability | 🟢 Implemented | `██████████ 52/52` | ⚪ Unverified | `░░░░░░░░░░ 0/9` |
+| Reliability | 🟡 In Progress | `█████████░ 50/52` | ⚪ Unverified | `░░░░░░░░░░ 0/9` |
 | Orchestration | 🟢 Implemented | `██████████ 7/7` | ⚪ Unverified | `░░░░░░░░░░ 0/1` |
-| **Total** | **🟡 In Progress** | **`█████████░ 97/98`** | **⚪ Unverified** | **`░░░░░░░░░░ 0/17`** |
+| **Total** | **🟡 In Progress** | **`█████████░ 94/98`** | **⚪ Unverified** | **`░░░░░░░░░░ 0/17`** |
 
-`Implemented`는 current source에서 해당 canonical Requirement의 구현 evidence를 확인했다는 뜻이다. `Verification`은 별도이며, snapshot revision에서 실제 acceptance evidence가 확인되지 않으면 `Unverified`로 남긴다.
+`Implemented`는 current source에서 해당 canonical Requirement의 구현 evidence를 확인했다는 뜻이다. Source가 더 새로운 behavior를 구현했더라도 canonical Spec과 의미가 다르면 완료로 세지 않는다. `Verification`은 별도이며, snapshot revision에서 실제 acceptance evidence가 확인되지 않으면 `Unverified`로 남긴다.
 
 ## Implementation Gaps
 
 | Domain | # | Remaining Requirement |
 | --- | :---: | --- |
-| HMDA Data | 1 | `hmda-data-synthetic-defects`의 **Freshness delay case** — 원천 행을 보존하면서 지연된 observation timestamp를 포함하는 synthetic Parquet case가 current HMDA synthetic surface에 없다. |
+| HMDA Data | 1 | `hmda-data-synthetic-defects` **Null spike case** — canonical Scenario는 결과 `income` null 비율이 원본보다 증가할 것을 요구하지만 current source는 sampled rows에 target null floor를 적용하며 original-relative increase를 직접 보장하거나 검증하지 않는다. |
+| HMDA Data | 2 | `hmda-data-synthetic-defects` **Freshness delay case** — canonical Spec은 지연 observation timestamp를 포함하는 synthetic case를 요구하지만 current HMDA synthetic surface에서는 이 case가 제거되어 있다. |
+| Reliability | 1 | `reliability-profile-snapshots` **Freshness metric** — canonical Spec은 측정값이 없을 때 `observed_at`을 `freshness_at`으로 fallback하도록 요구하지만 current source는 `freshness_at=null`, `freshness_status=unavailable`을 반환한다. |
+| Reliability | 2 | `reliability-incident-detection` **Freshness delay detection** — canonical Spec은 baseline 대비 freshness delay를 요구하지만 current source는 `current.observed_at - current.freshness_at`의 current-age SLA로 판정한다. |
+
+마지막 세 freshness gap은 active `reliability-freshness-delay-semantics` Change가 의도한 delta와 방향이 일치한다. 그러나 `openspec/changes/**`는 non-canonical work artifact이므로, durable contract가 `openspec/specs/**`에 동기화되기 전에는 current canonical Requirement가 충족됐다고 계산하지 않는다.
 
 ## Verification Gaps
 
