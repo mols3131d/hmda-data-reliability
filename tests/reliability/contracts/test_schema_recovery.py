@@ -13,6 +13,7 @@ import project_pivot.reliability as reliability
 from project_pivot.hmda_data import PartitionContentIdentity
 from project_pivot.reliability import (
     ApprovalStatus,
+    FreshnessMeasurementStatus,
     ProfileSnapshot,
     TableStateIdentity,
 )
@@ -243,6 +244,7 @@ def _profile_snapshot() -> ProfileSnapshot:
         row_count=1,
         schema_hash="sha256:schema",
         freshness_at=observed_at,
+        freshness_status=FreshnessMeasurementStatus.MEASURED,
     )
 
 
