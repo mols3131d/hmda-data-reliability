@@ -3,7 +3,7 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Schema Drift Exact Table Restoration Tasks
 description: DuckDB writer serialization부터 approved table restoration과 schema-drift evaluation까지 test-first로 구현한다.
-tasks_completed: 28
+tasks_completed: 33
 tasks_total: 33
 ---
 
@@ -123,8 +123,8 @@ tasks_total: 33
 
 ## Self-Review
 
-- [ ] 모든 관련 Requirement와 Scenario가 구현 및 테스트에 반영되었는지 확인한다.
-- [ ] Design의 Decision과 Boundary를 지키면서 중복과 불필요한 복잡성을 제거한다.
-- [ ] 관련 테스트, 실패 경로와 정적 검사가 통과하는지 확인한다.
-- [ ] 필요한 문서, 설정과 운영 절차를 갱신한다.
-- [ ] 알려진 제약과 후속 작업을 명시한다.
+- [x] 모든 관련 Requirement와 Scenario가 구현 및 테스트에 반영되었는지 확인한다.
+- [x] Design의 Decision과 Boundary를 지키면서 중복과 불필요한 복잡성을 제거한다.
+- [x] 관련 테스트, 실패 경로와 정적 검사가 통과하는지 확인한다.
+- [x] 필요한 문서, 설정과 운영 절차를 갱신한다.
+- [x] 알려진 제약과 후속 작업을 명시한다.
