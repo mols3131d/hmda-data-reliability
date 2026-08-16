@@ -25,26 +25,29 @@ Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 
 현재 proof flow는 다음과 같다.
 
 ```mermaid
-flowchart LR
-    source["HMDA Source"] --> lake["Local Data Lake"]
+flowchart TB
+    source["HMDA Source"] --> lake
 
     subgraph reliability["Deterministic Reliability"]
-        lake --> evidence["Data + Execution Evidence"]
+        direction LR
+        lake["Local Data Lake"] --> evidence["Data + Execution Evidence"]
         evidence --> incident["Incident + RemediationDraft"]
         incident --> proposal["Validated RecoveryProposal"]
     end
 
     subgraph advisory["Bounded AI Advisory"]
-        incident -. evidence .-> agent["Agentic Review"]
-        agent --> guard["Deterministic Guard"]
+        direction LR
+        agent["Agentic Review"] --> guard["Deterministic Guard"]
     end
 
     subgraph recovery["Controlled Recovery"]
-        proposal --> approval{"Human Approval"}
-        approval --> action["Approved Recovery"]
+        direction LR
+        approval{"Human Approval"} --> action["Approved Recovery"]
         action --> verify["Re-validation"]
     end
 
+    incident -. evidence .-> agent
+    proposal --> approval
     guard -. advisory only .-> approval
 ```
 
