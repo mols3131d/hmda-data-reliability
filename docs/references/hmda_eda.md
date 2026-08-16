@@ -1,7 +1,7 @@
 # HMDA EDA Reference
 
 > [!WARNING]
-> 이 artifact는 controlled actual-source run으로 생성된다. 생성 전에는 EDA readiness를 `blocked`로 유지한다.
+> 이 artifact는 아래 source fingerprint, repository revision과 observation 시점에 한정된 actual-source evidence다. 현재 구현 상태, 최신 validation 결과 또는 일반적인 성능·안전성 보장을 대신하지 않는다.
 
 ## Observation
 

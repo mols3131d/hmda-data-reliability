@@ -1,6 +1,6 @@
 # Documentation Rules
 
-`docs/`는 durable guidance, active goal, development guide와 human-only projection을 구분한다. 이 파일은 **`docs/**`의 공통 작성·trust·lifecycle 규칙**을 소유하며, subject-specific workflow는 해당 owning guide가 소유한다.
+`docs/`는 장기 지침, 현재 목표, 개발 가이드와 human-only projection을 구분한다. 이 파일은 **`docs/**`의 공통 작성·trust·lifecycle 규칙**을 소유하며, subject-specific workflow는 해당 owning guide가 소유한다.
 
 ## Ownership
 
@@ -53,3 +53,5 @@ Phase 문서는 active phase 동안만 `main`에 둘 수 있다.
 - 목표, normative contract, historical work evidence와 human summary를 섞지 않는다.
 - 현재성을 자주 잃는 상태 정보는 durable guide나 normative contract에 복제하지 않는다.
 - 링크 대상의 역할을 과장하지 않는다. Guide는 guide로, contract는 contract로 표현한다.
+- Domain guide는 책임, 흐름, 공개 surface와 safety boundary를 요약한다. Exact Requirement/Scenario, 자주 바뀌는 threshold·default·serialization detail은 필요한 경우 owning Spec, source 또는 test로 연결하고 그대로 복제하지 않는다.
+- 문서 title, section heading, field와 label은 English를 기본으로 하고 설명 본문은 한국어를 기본으로 한다. Code identifier, API name, product name과 established technical term은 자연스러운 원문을 유지한다.

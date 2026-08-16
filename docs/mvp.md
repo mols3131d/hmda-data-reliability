@@ -1,11 +1,11 @@
-# Project Pivot MVP
+# MVP
 
 > **Active goal:** 로컬 HMDA 데이터로 최소 Data Lake를 end-to-end로 실행하고,
 > 그 위에서 evidence-first Reliability와 제한된 Agentic review가 안전하게 동작함을 증명한다.
 
 이 문서는 **현재 MVP의 목표, scope와 acceptance만 소유한다.** 현재 구현 상태, validation 결과와 blocker는 여기서 관리하지 않는다.
 
-Project Pivot MVP는 단순한 ETL 데모도, LLM을 붙인 anomaly demo도 아니다. **신뢰할 수 있는 데이터 상태를 만들고 → 문제를 결정론적으로 증명하고 → AI가 그 근거를 검토 가능한 형태로 해석하며 → 사람의 승인 뒤에만 복구하는 작은 완결 시스템**을 증명한다.
+MVP는 단순한 ETL 데모도, LLM을 붙인 anomaly demo도 아니다. **신뢰할 수 있는 데이터 상태를 만들고 → 문제를 결정론적으로 증명하고 → AI가 그 근거를 검토 가능한 형태로 해석하며 → 사람의 승인 뒤에만 복구하는 작은 완결 시스템**을 증명한다.
 
 ## MVP Value
 
@@ -19,7 +19,7 @@ HMDA Data가 local source를 검증해 DuckDB Bronze까지 적재하고, Data Pl
 
 Deterministic reliability layer를 먼저 만들고, 제한된 Agentic reviewer가 그 evidence와 기존 `RemediationDraft`를 설명·검토한다. AI 판단은 관찰·평가 가능해야 하며 실제 state change 권한은 갖지 않는다.
 
-**Data Lake만 있거나 Agentic demo만 있어서는 Project Pivot MVP가 아니다.**
+**Data Lake만 있거나 Agentic demo만 있어서는 이 MVP가 아니다.**
 
 ## System Proof
 
