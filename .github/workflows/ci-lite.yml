@@ -47,4 +47,11 @@ jobs:
         run: uv sync --locked
 
       - name: Run unit tests
-        run: uv run --no-sync pytest -q -m "unit and not memory and not stress"
+        run: >-
+          uv run --no-sync pytest
+          -q
+          -p no:sugar
+          --color=no
+          --tb=short
+          -ra
+          -m "unit and not memory and not stress"
