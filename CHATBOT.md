@@ -1,6 +1,6 @@
 # Chatbot Entry
 
-`CHATBOT.md`는 표준 agent instruction 파일이 아니라, GitHub integration을 통해 이 저장소를 다루는 AI chat service를 위한 **repository-specific entry point**다. Project rule을 새로 소유하거나 [`AGENTS.md`](AGENTS.md)를 대체하지 않으며, chat 환경에서 현재 repository-owned guidance로 진입하는 방법과 chat-specific boundary만 정의한다.
+`CHATBOT.md`는 표준 agent instruction 파일이 아니다. GitHub 연동을 통해 이 저장소를 다루는 AI chat service가 사용할 **저장소 전용 진입점**이다. Repository 규칙을 새로 소유하거나 [`AGENTS.md`](AGENTS.md)를 대체하지 않으며, chat 환경에서 현재 repository-owned guidance로 진입하는 방법과 chat-specific boundary만 정의한다.
 
 ## Start
 
