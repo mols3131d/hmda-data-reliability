@@ -9,15 +9,11 @@ Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 
 
 ## Problem
 
-이 프로젝트는 세 가지 간극을 다룬다.
-
 - **Pipeline success ≠ trusted data** — 실행 성공만으로 downstream data의 신뢰성을 증명할 수 없다.
 - **Anomaly detected ≠ recoverable incident** — 이상 신호만으로 원인, 영향과 안전한 복구를 설명할 수 없다.
 - **Plausible AI output ≠ safe delegation** — 자연스러운 AI 응답은 근거, 권한과 복구 가능성을 보장하지 않는다.
 
 ## Proof Model
-
-Project Pivot이 증명하려는 핵심은 다음 네 가지다.
 
 - **Trusted data state** — 어떤 데이터 상태를 채택했고 왜 신뢰했는지 다시 설명할 수 있다.
 - **Deterministic reliability** — incident detection과 핵심 safety 판단을 재현 가능한 evidence에 고정한다.
