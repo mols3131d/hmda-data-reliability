@@ -31,7 +31,7 @@ Owning source가 서로 다르면 문서에서 임의로 하나를 정답으로 
 
 ## Dashboard Policy
 
-- Agent는 사용자가 dashboard 자체를 묻거나 task가 명시적인 dashboard refresh일 때만 `development/dashboard.md`를 상태 판단에 사용한다.
+- 사용자가 dashboard 자체를 묻거나 task가 명시적인 dashboard refresh인 경우에만 `development/dashboard.md`를 읽는다. 그 외 orientation, planning, implementation, review 또는 validation에 사용하지 않는다.
 - Dashboard는 별도의 dashboard refresh 작업에서만 갱신한다. 일반 feature, fix, refactor, test, spec 또는 documentation 작업의 side effect로 수정하지 않는다.
 - Refresh는 installed `mols-markdown-dashboard` skill을 사용해 current canonical Spec, source, tests와 matching-revision execution evidence를 다시 조사한다.
 - Project dashboard 계약의 `Development Progress`, `Implementation Gaps`, `Verification Gaps`를 유지하고 Requirement와 Verification Target을 의미 단위로 집계한다.

@@ -6,6 +6,7 @@
 ## Common Rules
 
 - 요청한 목적과 직접 관련된 파일만 수정한다.
+- 작업 전 요청과 직접 관련된 owning guidance만 확인하고, 무관한 지침을 context에 추가하지 않는다.
 - 사실, 구현 상태와 검증 결과는 owning source와 확인 가능한 evidence에 근거하며, 실행하지 않은 validation을 성공으로 기록하지 않는다.
 - Owning source가 충돌하면 임의로 해소하지 말고 drift와 근거를 보고한다.
 - 기존 architecture와 domain ownership boundary를 존중하고 불필요하게 책임을 넘나들지 않는다.
@@ -18,7 +19,7 @@
 | --- | --- |
 | 개발 환경, active tool choice, package layout, code convention | [`DEVELOPMENT.md`](DEVELOPMENT.md) |
 | 시스템 흐름과 domain ownership guidance | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/domains/`](docs/domains/OVERVIEW.md) |
-| `docs/**` 문서 규칙과 dashboard policy | [`docs/AGENTS.md`](docs/AGENTS.md) |
+| docs-wide writing, trust, lifecycle과 dashboard policy | [`docs/AGENTS.md`](docs/AGENTS.md) |
 | Git과 GitHub workflow | [`docs/development/vcs-git/`](docs/development/vcs-git/README.md) |
 | `openspec/**` | [`openspec/AGENTS.md`](openspec/AGENTS.md) |
 | `tests/**` | [`tests/AGENTS.md`](tests/AGENTS.md) |
