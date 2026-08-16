@@ -31,7 +31,7 @@ Reliability domain에 외부 model availability와 독립적으로 반복 검증
 
 - structured review contract와 validation
 - deterministic evidence binding
-- approval/recovery authority를 만들지 않는 forbidden-action guardrail
+- `RecoveryProposal`/approval/recovery authority를 만들거나 변경하지 않는 forbidden-action guardrail
 - synthetic case 기반 deterministic evaluator
 - invalid output의 fail-closed behavior
 
@@ -41,10 +41,11 @@ Reliability domain에 외부 model availability와 독립적으로 반복 검증
 
 최소 evidence:
 
-- model/prompt identity
-- 사용한 deterministic evidence references
+- model과 주요 config
+- prompt identity/version과 project revision
+- 사용한 deterministic evidence references와 `RemediationDraft` identity
 - structured review result
-- invocation result
+- latency와 provider가 제공하는 usage(token/cost)
 - contract validator와 safety evaluator 결과
 
 이 proof는 configured provider/network를 요구할 수 있으며 deterministic CI regression과
@@ -58,10 +59,10 @@ Agentic gap을 구현한 뒤 같은 repository revision에서 전체 proof를 �
 HMDA source
 → Bronze
 → dbt analytical layer
-→ deterministic incident
-→ Agentic contract proof + live model proof
-→ human approval
-→ recovery
+→ deterministic incident + RemediationDraft
+├→ Agentic contract proof + live model proof ── advisory ─┐
+└→ validated RecoveryProposal → human approval ──────────┤
+                                                         └→ recovery
 → deterministic re-validation
 ```
 

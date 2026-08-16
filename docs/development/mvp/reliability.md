@@ -15,7 +15,7 @@ Deterministic truth와 safety contract를 먼저 만들고 그 위에 Agentic re
 - clean state와 대표 synthetic incident를 재현 가능하게 구분한다.
 - incident를 뒷받침하는 profile/evidence와 downstream impact를 만든다.
 - 기존 `RemediationDraft`를 결정론적으로 생성해 AI가 action space를 자유롭게 발명하지 않게 한다.
-- candidate, approval, recovery와 post-recovery verification에 필요한 state identity를 유지한다.
+- candidate validation, `RecoveryProposal`, approval, recovery와 post-recovery verification에 필요한 state identity를 유지한다.
 
 ### Bounded Agentic Review
 
@@ -28,13 +28,14 @@ Agentic reviewer는 기존 read-only lifecycle의 detection/impact/remediation n
 - uncertainty나 근거 부족은 숨기지 않고 review 결과에 표현한다.
 
 Agentic reviewer는 deterministic result를 **설명·검토·보강**한다. Detection rule,
-`RemediationDraft`, recovery proposal identity 또는 approval decision을 대체하지 않는다.
-Reviewer availability나 review 결과 자체는 기존 approval/recovery contract에 새로운 권한
-조건을 추가하지 않는다.
+`RemediationDraft`, `RecoveryProposal` identity 또는 approval decision을 대체하지 않는다.
+Reviewer availability나 review 결과 자체는 기존 proposal/approval/recovery contract에 새로운
+권한 조건을 추가하지 않는다.
 
 ### Human-Controlled Recovery
 
-- recovery proposal은 검증한 target/evidence state와 결합된다.
+- candidate validation 결과를 포함한 `RecoveryProposal`이 target/evidence state와 결합된다.
+- human approval은 exact `RecoveryProposal`에 결합된다.
 - incomplete approval, invalid candidate, stale/diverged target은 mutation 전에 차단된다.
 - 승인된 recovery만 expected state를 복원한다.
 - recovery 뒤 같은 deterministic lifecycle을 다시 실행해 incident 해소를 검증한다.
@@ -84,8 +85,9 @@ Agentic contract proof와 live model proof가 모두 확인되면 완료다.
 clean baseline
 → controlled incident
 → deterministic evidence + impact + RemediationDraft
-├→ bounded Agentic review → contract validation / safety evaluation
-└→ external human approval → approved recovery
+├→ bounded Agentic review → contract validation / safety evaluation ── advisory ─┐
+└→ candidate validation → validated RecoveryProposal → external human approval ├→ approved recovery
+                                                                               ┘
 → deterministic re-validation
 → replay/failure evidence
 ```
@@ -95,7 +97,8 @@ clean baseline
 - Agentic review 없이도 incident의 핵심 사실과 safety gate를 deterministic하게 판단할 수 있다.
 - deterministic contract proof가 외부 model 호출 없이 반복 가능하다.
 - 실제 model invocation이 evidence-bound structured review를 생성하고 observability evidence를 남긴다.
-- Agentic review가 기존 approval/recovery authority를 획득하거나 변경하지 않는다.
+- human approval이 검증된 `RecoveryProposal`에 결합된다.
+- Agentic review가 기존 proposal/approval/recovery authority를 획득하거나 변경하지 않는다.
 - Agentic output만으로 state mutation을 시작할 수 없다.
 - approved recovery 뒤 incident가 해소되고 downstream validation이 정상 state를 확인한다.
 - expected failure와 retry path가 검토 가능한 evidence로 남는다.
