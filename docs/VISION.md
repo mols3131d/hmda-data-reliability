@@ -49,31 +49,45 @@ AI 위임은 기능 자체가 아니라 **검증된 효용과 실패 특성**으
 
 위임 경계의 변경 자체도 통제 대상이다. 새로운 평가와 실패 근거는 경계를 재검토할 근거가 되지만 **AI가 자기 권한을 스스로 확대하지 않는다.** 경계 변경은 근거가 남는 명시적 정책 결정으로 다룬다.
 
-## Trust and Delegation Loop
+## Data Reliability Flow
+
+```mermaid
+flowchart LR
+    subgraph lake["Data Lake"]
+        source["Source"] --> bronze["Bronze"]
+        bronze --> analytical["Analytical Layer"]
+        analytical --> state["Trusted Data State"]
+    end
+
+    subgraph reliability["Deterministic Reliability"]
+        evidence["Profile + Metadata + Lineage"] --> detect["Detection + Impact"]
+        detect --> incident["Incident + Evidence"]
+        incident --> recovery["Validated Recovery"]
+        recovery --> verify["Re-validation"]
+    end
+
+    state --> evidence
+    verify -->|Pass| state
+    verify -->|Failure| reconcile["Contain / Reconcile / Retry"]
+    reconcile --> verify
+```
+
+데이터 신뢰성은 AI가 판단하기 전에 먼저 닫혀 있어야 한다. 데이터 상태, 사고 판단, 복구와 재검증은 AI 사용 여부와 독립적으로 설명하고 반복 검증할 수 있어야 한다.
+
+## Safe Delegation and LLMOps Loop
 
 ```mermaid
 flowchart TB
-    subgraph trust["Trust Path"]
-        direction LR
-        state["Trusted Data State"] --> reliability["Deterministic Reliability"]
-        reliability --> evidence["Incident + Evidence"]
-        evidence --> ai["Evidence-Bound AI"]
-    end
-
+    evidence["Incident + Evidence"] --> ai["Evidence-Bound AI"]
     ai --> boundary{"Delegation Boundary"}
 
-    subgraph action["Action Path"]
-        direction LR
-        delegated["Guarded Delegated Action"] --> verify["Re-validation"]
-        advisory["Advisory Output"] --> human["Human Decision"]
-        human --> controlled["Controlled Action"]
-        controlled --> verify
-    end
+    boundary -->|Within Boundary| delegated["Guarded Delegated Action"]
+    boundary -->|Outside Boundary| advisory["Advisory Output"]
+    advisory --> human["Human Decision"]
+    human --> controlled["Controlled Action"]
 
-    boundary -->|Within Boundary| delegated
-    boundary -->|Outside Boundary| advisory
-
-    verify -->|Pass| state
+    delegated --> verify["Re-validation"]
+    controlled --> verify
     verify -->|Failure| recovery["Contain / Rollback / Retry"]
     recovery --> verify
 
