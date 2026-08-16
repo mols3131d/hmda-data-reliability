@@ -9,13 +9,12 @@ description: >-
   or other Rulesync targets aligned. Do not use for a single-harness edit or when
   the target already consumes the same source without conversion.
 compatibility: >-
-  Requires the Rulesync CLI. Exact targets, discovery paths, and feature support
-  follow the installed Rulesync version.
+  Requires the Rulesync CLI and a Rulesync-supported source/target harness. Exact
+  targets, discovery paths, and feature support follow the installed Rulesync
+  version.
 metadata:
   author: mols3131d
   version: "0.1.0"
-  backend: rulesync
-  portability: cross-harness
 ---
 
 # Rulesync Agent Assets
