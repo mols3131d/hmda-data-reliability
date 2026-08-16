@@ -9,5 +9,8 @@
 - **Canonical Capability Specs:** [openspec/specs](openspec/specs)
 - **Active MVP Goal:** [docs/mvp.md](docs/mvp.md)
 - **Domain Guides:** [docs/domains/OVERVIEW.md](docs/domains/OVERVIEW.md)
-- **Development Dashboard:** [docs/development/dashboard.md](docs/development/dashboard.md) — 인간 편의용 snapshot이며 canonical evidence가 아니다.
 - **Development Guides:** [docs/development/README.md](docs/development/README.md)
+
+## Human Projection
+
+- **Development Dashboard:** [docs/development/dashboard.md](docs/development/dashboard.md) — 사람이 빠르게 보는 snapshot이며 canonical evidence가 아니다.
