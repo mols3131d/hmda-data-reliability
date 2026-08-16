@@ -59,17 +59,11 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 - Structure나 visual은 comprehension을 개선할 때만 사용한다.
 - Secret, full generated output, large log는 저장하지 않는다.
 
-## Human Index
+## Discovery
 
-`main:/inbox/README.md`는 사람이 최근 inbox artifact를 찾기 위한 human-only index다.
-
-- Index는 `inbox` branch artifact로 향하는 link와 식별 metadata만 제공한다.
-- Index와 실제 artifact가 다르면 실제 `inbox` branch artifact를 확인한다.
-- Index는 canonical context, implementation status, validation evidence 또는 normative contract가 아니다.
-- Agent는 orientation, planning, implementation, review 또는 validation의 source로 index를 사용하지 않는다.
-- Routine artifact 작성자는 index를 side effect로 수동 갱신하지 않는다.
-
-Index의 의미와 trust boundary는 이 문서가 소유한다. Automation direct-write mechanics는 [Inbox Branch](_guidelines/branch.md#main-inbox-index)를 따른다.
+- Routine artifact는 `inbox` branch에서 직접 찾는다. Date directory, filename/frontmatter metadata와 repository search를 필요한 만큼 사용한다.
+- `README.md`는 static human entrypoint이며 artifact index나 status projection이 아니다. Routine artifact 추가 시 갱신하지 않는다.
+- Artifact 내용이 판단에 필요하면 `inbox` branch의 원본을 직접 연다. Filename이나 directory listing만으로 상태를 추론하지 않는다.
 
 ## Lifecycle
 

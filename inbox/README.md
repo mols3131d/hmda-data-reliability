@@ -1,18 +1,7 @@
-# Inbox Index
+# Inbox
 
-> [!NOTE]
-> 이 문서는 사람이 최근 inbox artifact를 찾기 위한 **human-only index**다.
-> Project state, implementation status, validation evidence 또는 canonical contract의 source가 아니다.
+Routine non-canonical artifact는 dedicated [`inbox` branch](https://github.com/mols3131d/project-pivot/tree/inbox/inbox)에 저장한다.
 
-새 routine artifact의 원본은 dedicated [`inbox` branch](https://github.com/mols3131d/project-pivot/tree/inbox/inbox)에만 저장한다. 기존 `main:/inbox/YYYY-MM-DD/**`와 `main:/inbox/archive/**`는 이전 workflow가 남긴 legacy artifact이며 새 artifact를 추가하지 않는다.
+Artifact는 `YYYY-MM-DD/` directory와 filename/frontmatter metadata를 기준으로 직접 찾는다. 이 README는 artifact index나 status projection으로 갱신하지 않는다.
 
-## Latest
-
-- 2026-08-17 03:12 — [`review · project-pivot · portfolio-midterm`](https://github.com/mols3131d/project-pivot/blob/inbox/inbox/2026-08-17/03-12-review-project-pivot-portfolio-midterm.md)
-
-## Usage
-
-- 최근 조사, 리뷰, 토론, briefing을 찾을 때 이 index를 사용한다.
-- Artifact 내용이 필요하면 반드시 linked `inbox` branch file을 연다.
-- 장기 계약과 결정은 해당 canonical owner를 확인한다.
-- Inbox 운영 규칙은 [`AGENTS.md`](AGENTS.md)를 따른다.
+Inbox 운영 규칙은 [`AGENTS.md`](AGENTS.md)를 따른다.
