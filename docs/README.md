@@ -6,7 +6,7 @@ Project Pivot 문서는 **durable guidance**, **active goal**, **development gui
 
 | Document | Role |
 | --- | --- |
-| [Vision](VISION.md) | 장기 방향, 제품 철학과 non-negotiable principles |
+| [Vision](VISION.md) | 장기 방향, 제품 철학과 불변 원칙 |
 | [Architecture](ARCHITECTURE.md) | 시스템 흐름과 cross-domain boundary guidance |
 | [Domain Guides](domains/OVERVIEW.md) | domain별 책임·비책임과 reading path를 설명하는 human-readable guide |
 | [Canonical Capability Specs](../openspec/specs/) | 현재 capability의 normative OpenSpec contract |
