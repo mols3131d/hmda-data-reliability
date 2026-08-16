@@ -27,7 +27,7 @@ Agent asset은 적용되는 repository guidance나 아래 Authority를 대체하
 
 ### Installed Skills
 
-[`skills-lock.json`](skills-lock.json)에 `skills add`로 설치된 Skill 중 chat 작업에서 자주 필요한 항목이다.
+[`skills-lock.json`](skills-lock.json)에 `skills add`로 설치된 외부 Skill 중 chat 작업에서 자주 필요한 항목이다.
 
 | Skill | Trigger |
 | --- | --- |
