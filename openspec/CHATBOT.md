@@ -1,12 +1,14 @@
 # OpenSpec Chatbot Entry
 
-`openspec/CHATBOT.md`는 OpenSpec 작업을 수행하는 AI chat service를 위한 **OpenSpec 전용 진입점**이다. Root [`CHATBOT.md`](../CHATBOT.md)와 [`AGENTS.md`](AGENTS.md)를 대체하지 않으며, OpenSpec 작업에서 필요한 Skill discovery와 routing만 추가한다.
+`openspec/CHATBOT.md`는 `openspec/`를 다루는 AI chat service의 **directory context entry**다. 같은 directory의 `AGENTS.md`나 `README.md`를 fallback으로 함께 읽는다는 의미가 아니며, OpenSpec 작업에 필요한 Skill discovery와 routing만 추가한다.
+
+OpenSpec agent behavior와 workflow/schema 규칙은 이 파일이 새로 소유하지 않는다. 현재 task에 필요한 owning guidance는 [`AGENTS.md`](AGENTS.md), schema와 config에서 선택적으로 확인한다.
 
 ## Routing
 
 - OpenSpec Skill은 현재 task가 OpenSpec change, spec, artifact 또는 workflow를 직접 다룰 때만 사용한다.
 - 비슷한 목적의 일반 Skill과 선택이 겹치면 **현재 작업이 OpenSpec 작업인지**로 결정한다. OpenSpec 작업이면 OpenSpec Skill을 우선하고, 아니면 일반 Skill을 사용한다.
-- 적용되는 repository guidance와 path instruction은 Skill 선택과 별개로 계속 적용한다.
+- Skill 선택은 적용되는 repository guidance를 섞거나 대체하는 과정이 아니다. 필요한 owning guidance와 path instruction은 각각의 scope에 따라 적용한다.
 - 아래 표는 discovery projection이다. 실제 trigger와 동작은 linked `SKILL.md`가 source of truth다.
 
 ## Project OpenSpec Skill
