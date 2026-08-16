@@ -4,6 +4,17 @@
 
 Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 고정하고, 실패를 탐지·제한·복구할 수 있는 범위에서 AI에 유용한 작업을 위임하는 프로젝트다. 로컬 HMDA Data Lake를 첫 증명 환경으로 사용해 신뢰 가능한 데이터 상태부터 사고 대응과 재검증까지 하나의 완결된 흐름으로 증명한다.
 
+> [!NOTE]
+> **Status: Active MVP.** 현재 목표와 완료 기준은 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
+
+## Problem
+
+이 프로젝트는 세 가지 간극을 다룬다.
+
+- **Pipeline success ≠ trusted data** — 실행 성공만으로 downstream data의 신뢰성을 증명할 수 없다.
+- **Anomaly detected ≠ recoverable incident** — 이상 신호만으로 원인, 영향과 안전한 복구를 설명할 수 없다.
+- **Plausible AI output ≠ safe delegation** — 자연스러운 AI 응답은 근거, 권한과 복구 가능성을 보장하지 않는다.
+
 ## Proof Model
 
 Project Pivot이 증명하려는 핵심은 다음 네 가지다.
@@ -33,7 +44,24 @@ flowchart LR
     guard -. advisory .-> approval
 ```
 
-Agentic review는 human decision을 보조하지만 approval이나 recovery의 authority를 대체하지 않는다. 현재 MVP의 정확한 scope와 acceptance는 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
+Agentic review는 human decision을 보조하지만 approval이나 recovery의 authority를 대체하지 않는다.
+
+## Toolchain
+
+`Python 3.13` · `uv` · `DuckDB` · `dbt Core` · `Dagster` · `Polars` · `PyArrow` · `Pydantic` · `LangGraph`
+
+세부 layer별 tool choice와 책임은 [`DEVELOPMENT.md`](DEVELOPMENT.md)가 소유한다.
+
+## Validate Locally
+
+Repository root에서 dependency를 동기화하고 빠른 unit suite를 실행할 수 있다.
+
+```bash
+uv sync --locked
+uv run pytest -m unit
+```
+
+전체 test 선택법과 validation evidence는 [Testing Guide](docs/development/testing.md)를 따른다. 위 command의 성공 여부는 README가 아니라 실제 실행 결과로 판단한다.
 
 ## Documentation
 
