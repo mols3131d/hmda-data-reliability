@@ -1,10 +1,10 @@
 # project-pivot
 
-HMDA 데이터를 DuckDB와 dbt로 처리하고 data reliability lifecycle을 검증하는 로컬 파이프라인.
+근거 우선 데이터 신뢰성과 복구 가능성에 기반한 AI 위임을 결합하고, 로컬 HMDA 파이프라인을 첫 증명 환경으로 사용하는 프로젝트.
 
 ## Document Navigation
 
-- **Vision:** [docs/vision.md](docs/vision.md)
+- **Vision:** [docs/VISION.md](docs/VISION.md)
 - **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Canonical Capability Specs:** [openspec/specs](openspec/specs)
 - **Active MVP Goal:** [docs/mvp.md](docs/mvp.md)
