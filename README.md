@@ -4,7 +4,7 @@ HMDA 데이터를 DuckDB와 dbt로 처리하고 data reliability lifecycle을 �
 
 ## Document Navigation
 
-- **Vision:** [docs/vision.md](docs/vision.md)
+- **Vision:** [docs/VISION.md](docs/VISION.md)
 - **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Canonical Capability Specs:** [openspec/specs](openspec/specs)
 - **Active MVP Goal:** [docs/mvp.md](docs/mvp.md)

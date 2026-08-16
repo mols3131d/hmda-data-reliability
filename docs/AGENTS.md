@@ -6,7 +6,7 @@
 
 | Area | Owns |
 | --- | --- |
-| `vision.md` | 장기 방향과 제품 원칙 |
+| `VISION.md` | 장기 방향, 제품 철학과 non-negotiable principles |
 | `ARCHITECTURE.md` | 시스템 흐름과 cross-domain boundary guidance |
 | `domains/**` | 각 domain의 책임, 공개 surface와 비책임을 설명하는 guide |
 | `mvp.md` | 현재 active MVP의 목표, scope와 acceptance |
