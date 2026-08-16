@@ -87,13 +87,13 @@ Table-wide schema drift를 external approval과 검증된 complete-table state�
 
 ### Requirement: Transactional exact table restoration
 
-시스템은 approved before-state를 first mutation 직전에 다시 확인하고, local concurrent writer가 그 확인과 first mutation 사이에 끼어들 수 없는 serialization boundary 안에서 validated complete candidate로 target table을 exact restoration해야 한다(SHALL). Replacement와 in-transaction final table-state verification 중 하나라도 실패하면 transaction을 rollback하고 exact before-state를 보존해야 한다(SHALL).
+시스템은 approved before-state를 first mutation 직전에 다시 확인하고, local concurrent writer가 그 확인과 first mutation 사이에 끼어들 수 없는 serialization boundary 안에서 validated complete candidate로 target table을 exact restoration해야 한다(SHALL). Replacement, in-transaction final table-state verification 또는 aligned profile validation 중 하나라도 실패하면 transaction을 rollback하고 exact before-state를 보존해야 한다(SHALL).
 
 #### Scenario: Approved before-state restoration
 
 - **GIVEN** current target이 approved before-state와 같을 때
 - **WHEN** approved schema recovery를 실행할 때
-- **THEN** target을 validated candidate의 exact schema/content state로 교체하고 expected after-state와 같은지 검증한 뒤 commit해야 한다.
+- **THEN** target을 validated candidate의 exact schema/content state로 교체하고 expected after-state와 aligned profile을 검증한 뒤 commit해야 한다.
 
 #### Scenario: Stale target before mutation
 
@@ -104,9 +104,9 @@ Table-wide schema drift를 external approval과 검증된 complete-table state�
 #### Scenario: Replacement failure rollback
 
 - **GIVEN** current target이 approved before-state와 같을 때
-- **WHEN** table replacement 또는 in-transaction final verification이 실패할 때
+- **WHEN** table replacement, in-transaction final state 또는 aligned profile validation이 실패할 때
 - **THEN** transaction을 rollback하고 target의 exact before-state를 보존해야 한다.
-- **AND** result는 committed target mutation이 없고 같은 approval로 recovery를 다시 시도할 수 있음을 식별해야 한다.
+- **AND** committed target mutation이 없고 같은 approval로 recovery를 다시 시도할 수 있어야 한다.
 
 #### Scenario: Sentinel partition preservation
 
@@ -116,7 +116,7 @@ Table-wide schema drift를 external approval과 검증된 complete-table state�
 
 ### Requirement: Post-restoration validation result
 
-시스템은 restoration 이후 actual schema identity와 complete content state를 expected after-state와 비교하고 aligned profile snapshot을 포함한 mutation-aware result를 제공해야 한다(SHALL). Schema 또는 complete content가 다르면 recovery를 검증 성공으로 보고해서는 안 된다(MUST NOT). Post-mutation identity 또는 profile validation failure를 pre-mutation rejection이나 recovery 성공으로 보고해서는 안 된다(MUST NOT).
+시스템은 commit 전에 actual schema identity와 complete content state를 expected after-state와 비교하고 aligned profile snapshot을 생성해 mutation-aware result를 제공해야 한다(SHALL). Schema, complete content 또는 aligned profile validation이 실패하면 recovery를 commit하거나 검증 성공으로 보고해서는 안 된다(MUST NOT).
 
 #### Scenario: Verified restoration
 
@@ -126,14 +126,15 @@ Table-wide schema drift를 external approval과 검증된 complete-table state�
 #### Scenario: Schema-only restoration
 
 - **GIVEN** target schema identity는 expected after-state와 같지만 complete content state가 다를 때
-- **WHEN** post-restoration verification을 수행할 때
-- **THEN** recovery를 검증 성공으로 판정해서는 안 된다.
+- **WHEN** in-transaction restoration verification을 수행할 때
+- **THEN** recovery를 commit하거나 검증 성공으로 판정해서는 안 된다.
 
-#### Scenario: Post-restoration profile failure
+#### Scenario: In-transaction profile validation failure
 
-- **GIVEN** target table replacement와 schema/content verification은 완료됐을 때
-- **WHEN** aligned profile validation이 실패할 때
-- **THEN** result는 table이 변경된 post-mutation failure와 `resume_verification` reconciliation을 식별해야 한다.
+- **GIVEN** target table replacement와 schema/content verification은 transaction 안에서 완료됐을 때
+- **WHEN** commit 전에 aligned profile validation이 실패할 때
+- **THEN** transaction을 rollback해 exact before-state를 보존해야 한다.
+- **AND** 같은 approval로 recovery를 다시 시도할 수 있어야 한다.
 
 ### Requirement: Table-recovery reconciliation
 
