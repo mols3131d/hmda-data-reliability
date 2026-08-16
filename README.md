@@ -2,27 +2,26 @@
 
 **Evidence-first data reliability with bounded AI delegation.**
 
-Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 고정하고, 실패를 탐지·제한·복구할 수 있는 범위에서 AI에 유용한 작업을 위임하는 프로젝트다. 로컬 HMDA Data Lake를 첫 증명 환경으로 사용해 신뢰 가능한 데이터 상태부터 사고 대응과 재검증까지 하나의 완결된 흐름으로 증명한다.
+Project Pivot은 "파이프라인이 끝났으니 데이터도 믿을 만하다"는 전제를 의심하는 데서 시작했다. 로컬 HMDA Data Lake를 대상으로 데이터 상태를 근거로 설명하고, 문제가 생기면 incident evidence와 복구 제안을 남긴다. AI는 그 근거를 읽고 검토를 돕지만 직접 복구를 실행하지 않는다.
 
 > [!NOTE]
-> **Status: Active MVP.** 하나의 end-to-end reliability proof를 먼저 닫는 단계이며, 현재 목표와 완료 기준은 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
+> **Status: Active MVP.** 지금은 기능을 넓히기보다 HMDA 기반 reliability flow 하나를 끝까지 닫는 데 집중하고 있다. 정확한 scope와 acceptance는 [`docs/mvp.md`](docs/mvp.md)에서 관리한다.
 
 ## Problem
 
-- **Pipeline success ≠ trusted data** — 실행 성공만으로 downstream data의 신뢰성을 증명할 수 없다.
-- **Anomaly detected ≠ recoverable incident** — 이상 신호만으로 원인, 영향과 안전한 복구를 설명할 수 없다.
-- **Plausible AI output ≠ safe delegation** — 자연스러운 AI 응답은 근거, 권한과 복구 가능성을 보장하지 않는다.
+파이프라인이 정상 종료돼도 결과 데이터가 믿을 만하다는 뜻은 아니다. 이상 징후를 찾았다고 해서 영향 범위와 복구 방법까지 설명되는 것도 아니다. AI가 그럴듯한 답을 내놓더라도 그 판단에 곧바로 실행 권한을 줄 수는 없다.
+
+Project Pivot은 이 세 지점을 하나의 흐름으로 묶는다. 데이터 상태와 incident를 deterministic evidence로 남기고, AI review는 그 evidence 안에서만 움직이게 하며, 실제 recovery는 검증된 proposal과 human approval 뒤에 실행한다.
 
 ## Design Boundaries
 
-- **Trusted data state** — 어떤 데이터 상태를 채택했고 왜 신뢰했는지 다시 설명할 수 있다.
-- **Deterministic reliability** — incident detection과 핵심 safety 판단을 재현 가능한 evidence에 고정한다.
-- **Evidence-bound AI** — AI는 확인 가능한 incident evidence와 deterministic 결과를 해석·검토하며 스스로 recovery authority를 얻지 않는다.
-- **Controlled recovery** — state mutation은 검증된 proposal과 human approval 뒤에만 수행하고 같은 기준으로 다시 검증한다.
+핵심 reliability 판단은 다시 실행해도 같은 근거를 따라 설명할 수 있어야 한다. Incident detection과 safety 판단은 deterministic evidence에 고정하고, AI는 그 결과를 해석하거나 remediation을 검토하는 역할만 맡는다.
+
+State mutation은 validated proposal과 human approval 뒤에만 허용한다. Recovery가 끝나면 같은 기준으로 다시 검증한다. AI가 틀려도 reliability 판단과 recovery path 자체가 무너지지 않는 구조를 우선한다.
 
 ## Current MVP
 
-현재 proof flow는 다음과 같다.
+현재 MVP는 아래 흐름 하나를 실제로 닫는 데 집중한다.
 
 ```mermaid
 flowchart TB
@@ -51,37 +50,39 @@ flowchart TB
     guard -. advisory only .-> approval
 ```
 
-Agentic review는 human decision을 보조하지만 approval이나 recovery의 authority를 대체하지 않는다. AI 활용 범위를 넓히는 것보다 AI가 실패해도 신뢰성 판단과 recovery path를 다시 설명하고 검증할 수 있는 경계를 우선한다.
+점선은 AI가 evidence와 advisory를 제공하는 경로다. Approval이나 recovery의 authority를 갖는 경로는 아니다.
 
 ## Toolchain
 
-| Area | Choice | Role |
+| Area | Stack | Use |
 | --- | --- | --- |
-| Runtime | `Python 3.13`, `uv` | 재현 가능한 local development |
-| Data | `DuckDB`, `dbt Core`, `Polars`, `PyArrow` | local analytical pipeline과 data evidence |
-| Orchestration | `Dagster` | 명시적인 data-plane dependency 실행 |
-| Contracts | `Pydantic` | reliability와 AI boundary의 structured contract |
-| Agentic review | `LangGraph` | bounded remediation review path |
+| Runtime | `Python 3.13`, `uv` | local 환경과 dependency 관리 |
+| Data | `DuckDB`, `dbt Core`, `Polars`, `PyArrow` | ingestion, query, transform |
+| Orchestration | `Dagster` | data-plane asset과 job 실행 |
+| Contracts | `Pydantic` | reliability와 AI boundary의 structured model |
+| Agentic review | `LangGraph` | remediation review flow |
 
-세부 layer별 tool choice와 책임은 [`DEVELOPMENT.md`](DEVELOPMENT.md)가 소유한다.
+세부 tool choice와 layer별 책임은 [`DEVELOPMENT.md`](DEVELOPMENT.md)에 정리되어 있다.
 
 ## Validate Locally
+
+로컬에서 빠르게 확인하려면:
 
 ```bash
 uv sync --locked
 uv run pytest -m "unit and not memory and not stress"
 ```
 
-전체 test 선택법과 validation evidence는 [Testing Guide](docs/development/testing.md)를 따른다. 이 README는 command를 안내할 뿐 실행 성공을 보증하지 않는다.
+더 좁거나 넓은 test 선택법은 [Testing Guide](docs/development/testing.md)를 참고한다.
 
 ## Documentation
 
-| Need | Document |
+| 찾고 싶은 내용 | 문서 |
 | --- | --- |
-| 프로젝트의 장기 방향과 AI delegation boundary | [Vision](docs/VISION.md) |
-| 현재 증명할 MVP scope와 acceptance | [MVP](docs/mvp.md) |
+| 장기 방향과 AI delegation boundary | [Vision](docs/VISION.md) |
+| 현재 MVP scope와 acceptance | [MVP](docs/mvp.md) |
 | 시스템 구조와 execution boundary | [Architecture](docs/ARCHITECTURE.md) |
-| 구현된 capability의 canonical contract | [OpenSpec Specs](openspec/specs) |
+| capability의 canonical contract | [OpenSpec Specs](openspec/specs) |
 | domain별 책임과 공개 surface | [Domain Guides](docs/domains/OVERVIEW.md) |
 | 개발 환경과 workflow | [Development Guides](docs/development/README.md) |
-| 사람이 보는 현재 상태 snapshot — canonical evidence 아님 | [Development Dashboard](docs/development/dashboard.md) |
+| 사람이 보는 진행 상태 snapshot — canonical evidence 아님 | [Development Dashboard](docs/development/dashboard.md) |
