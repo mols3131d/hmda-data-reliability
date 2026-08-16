@@ -11,13 +11,11 @@ Project Pivot은 "파이프라인이 끝났으니 데이터도 믿을 만하다"
 
 파이프라인이 정상 종료돼도 결과 데이터가 믿을 만하다는 뜻은 아니다. 이상 징후를 찾았다고 해서 영향 범위와 복구 방법까지 설명되는 것도 아니다. AI가 그럴듯한 답을 내놓더라도 그 판단에 곧바로 실행 권한을 줄 수는 없다.
 
-Project Pivot은 이 세 지점을 하나의 흐름으로 묶는다. 데이터 상태와 incident를 deterministic evidence로 남기고, AI review는 그 evidence 안에서만 움직이게 하며, 실제 recovery는 검증된 proposal과 human approval 뒤에 실행한다.
-
 ## Design Boundaries
 
-핵심 reliability 판단은 다시 실행해도 같은 근거를 따라 설명할 수 있어야 한다. Incident detection과 safety 판단은 deterministic evidence에 고정하고, AI는 그 결과를 해석하거나 remediation을 검토하는 역할만 맡는다.
+Incident detection과 safety 판단은 deterministic evidence에 고정한다. AI는 그 결과를 읽고 remediation을 검토하지만 recovery를 실행할 권한은 없다. State mutation은 validated proposal과 human approval 뒤에만 허용하고, recovery가 끝나면 같은 기준으로 다시 검증한다.
 
-State mutation은 validated proposal과 human approval 뒤에만 허용한다. Recovery가 끝나면 같은 기준으로 다시 검증한다. AI가 틀려도 reliability 판단과 recovery path 자체가 무너지지 않는 구조를 우선한다.
+중요한 건 AI를 많이 쓰는 게 아니라, AI가 틀렸을 때도 판단 근거와 recovery path가 남는 것이다.
 
 ## Current MVP
 
@@ -50,7 +48,7 @@ flowchart TB
     guard -. advisory only .-> approval
 ```
 
-점선은 AI가 evidence와 advisory를 제공하는 경로다. Approval이나 recovery의 authority를 갖는 경로는 아니다.
+점선은 AI review의 보조 경로다. Approval이나 recovery 권한으로 이어지지 않는다.
 
 ## Toolchain
 
@@ -85,4 +83,4 @@ uv run pytest -m "unit and not memory and not stress"
 | capability의 canonical contract | [OpenSpec Specs](openspec/specs) |
 | domain별 책임과 공개 surface | [Domain Guides](docs/domains/OVERVIEW.md) |
 | 개발 환경과 workflow | [Development Guides](docs/development/README.md) |
-| 사람이 보는 진행 상태 snapshot — canonical evidence 아님 | [Development Dashboard](docs/development/dashboard.md) |
+| 사람이 보는 진행 상태 snapshot (canonical evidence 아님) | [Development Dashboard](docs/development/dashboard.md) |
