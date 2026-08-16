@@ -1,35 +1,18 @@
-# Inbox
+# Inbox Index
 
-채팅과 탐색 과정에서 생성된 비정규 artifact를 보관한다.
+> [!NOTE]
+> 이 문서는 사람이 최근 inbox artifact를 찾기 위한 **human-only index**다.
+> Project state, implementation status, validation evidence 또는 canonical contract의 source가 아니다.
 
-날짜 디렉터리와 `archive/`의 artifact는 branch와 관계없이 canonical project context가 아니다. Routine artifact는 전용 `inbox` branch에서 생성하고, 현재 또는 후속 작업에 계속 유용한 artifact는 일반 Pull Request를 통해 `main:/inbox/**`에 선택적으로 유지할 수 있다.
+Routine artifact의 원본은 dedicated [`inbox` branch](https://github.com/mols3131d/project-pivot/tree/inbox/inbox)에만 저장한다. `main`에는 artifact content를 복제하지 않는다.
 
-| Location | Role |
-| --- | --- |
-| `inbox` branch | artifact 생성·검토·숙성 공간 |
-| `main:/inbox/**` | 작업에 유지할 가치가 확인된 non-canonical 근거 |
-| owning artifact | canonical contract와 최종 결정 |
+## Latest
 
-```text
-inbox/
-├── AGENTS.md
-├── README.md
-├── _guidelines/
-│   ├── research.md
-│   └── review.md
-├── _templates/
-│   ├── research.md
-│   └── review.md
-└── YYYY-MM-DD/
-    └── HH-MM-<type>-<domain>-...-<short-title>
-```
+최근 artifact 목록은 repository-managed automation이 이 section을 갱신하도록 설계한다. Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우에는 위 `inbox` branch에서 직접 확인한다.
 
-`AGENTS.md`를 진입점으로 사용하고, 현재 작업에 필요한 guideline, template, skill만 선택적으로 읽는다.
+## Usage
 
-`AGENTS.md`, `_guidelines/`, `_templates/`는 `inbox/` 운영을 위한 내부 자산이다.
-
-전용 `inbox` branch의 direct push, `main` 동기화와 artifact 승격은 [`docs/development/vcs-git/branch.md`](../docs/development/vcs-git/branch.md#inbox-branch)를 따른다.
-
-모든 inbox artifact는 파일 이름과 frontmatter에 같은 `type`을 사용한다. `research`와 `review`는 자주 쓰이는 type일 뿐 제한된 목록이 아니며, 적절한 type이 없으면 긴 문서는 `report`, 짧은 문서는 `brief`를 사용한다.
-
-Promoted artifact도 non-canonical이다. Canonical contract나 결정으로 채택된 내용은 해당 owning artifact에 자족적으로 반영한다.
+- 최근 조사, 리뷰, 토론, briefing을 찾을 때 이 index를 사용한다.
+- Artifact 내용이 필요하면 반드시 linked `inbox` branch file을 연다.
+- 장기 계약과 결정은 해당 canonical owner를 확인한다.
+- Inbox 운영 규칙은 [`AGENTS.md`](AGENTS.md)를 따른다.
