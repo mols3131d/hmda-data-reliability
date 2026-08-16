@@ -5,7 +5,7 @@
 Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 고정하고, 실패를 탐지·제한·복구할 수 있는 범위에서 AI에 유용한 작업을 위임하는 프로젝트다. 로컬 HMDA Data Lake를 첫 증명 환경으로 사용해 신뢰 가능한 데이터 상태부터 사고 대응과 재검증까지 하나의 완결된 흐름으로 증명한다.
 
 > [!NOTE]
-> **Status: Active MVP.** 현재 목표와 완료 기준은 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
+> **Status: Active MVP.** 기능 폭을 넓히기보다 하나의 end-to-end reliability proof를 먼저 닫는 단계이며, 현재 목표와 완료 기준은 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
 
 ## Problem
 
@@ -40,11 +40,17 @@ flowchart LR
     guard -. advisory .-> approval
 ```
 
-Agentic review는 human decision을 보조하지만 approval이나 recovery의 authority를 대체하지 않는다.
+Agentic review는 human decision을 보조하지만 approval이나 recovery의 authority를 대체하지 않는다. AI 활용 범위를 넓히는 것보다 AI가 실패해도 신뢰성 판단과 recovery path를 다시 설명하고 검증할 수 있는 경계를 우선한다.
 
 ## Toolchain
 
-`Python 3.13` · `uv` · `DuckDB` · `dbt Core` · `Dagster` · `Polars` · `PyArrow` · `Pydantic` · `LangGraph`
+| Area | Choice | Role |
+| --- | --- | --- |
+| Runtime | `Python 3.13`, `uv` | 재현 가능한 local development |
+| Data | `DuckDB`, `dbt Core`, `Polars`, `PyArrow` | local analytical pipeline과 data evidence |
+| Orchestration | `Dagster` | 명시적인 data-plane dependency 실행 |
+| Contracts | `Pydantic` | reliability와 AI boundary의 structured contract |
+| Agentic review | `LangGraph` | bounded remediation review path |
 
 세부 layer별 tool choice와 책임은 [`DEVELOPMENT.md`](DEVELOPMENT.md)가 소유한다.
 
