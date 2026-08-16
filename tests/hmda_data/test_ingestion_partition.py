@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
-from threading import Event, Lock, Thread
 
 import pytest
 
-import project_pivot.hmda_data.ingestion.partition as partition_module
 from project_pivot.data_platform.duckdb import DuckDBConnectionManager
 from project_pivot.hmda_data import (
     load_hmda_loans_partition,
     partition_content_identity,
+    partition_max_ingested_at,
 )
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 
@@ -139,77 +138,111 @@ def test_partition_load_compares_expected_identity_before_replacement(
     assert after_stale == replaced
 
 
-def test_partition_load_rechecks_identity_after_waiting_for_writer(
+def test_partition_load_compares_expected_freshness_before_replacement(
     hmda_csv_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Content가 같아도 transaction 내부 temporal drift는 zero mutation이다."""
+
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        identity = partition_content_identity(connection, source_year=2025)
+        expected_freshness = partition_max_ingested_at(
+            connection,
+            source_year=2025,
+        )
+        assert expected_freshness is not None
+        connection.execute(
+            """
+            UPDATE raw.hmda_loans
+            SET ingested_at = TIMESTAMPTZ '2026-08-15 00:00:00+00'
+            WHERE source_year = 2025
+            """
+        )
+
+        with pytest.raises(HMDAStalePartitionError, match="stale"):
+            load_hmda_loans_partition(
+                connection,
+                [hmda_csv_path],
+                2025,
+                expected_identity=identity,
+                expected_max_ingested_at=expected_freshness,
+            )
+
+        after = partition_max_ingested_at(connection, source_year=2025)
+
+    assert after == datetime(2026, 8, 15, 0, 0, tzinfo=UTC)
+
+
+def test_partition_load_preserves_approved_bronze_metadata(
+    hmda_csv_path: Path,
     tmp_path: Path,
 ) -> None:
-    """대기 중 선행 writer가 commit하면 후행 request는 stale로 거부한다."""
+    candidate_path = tmp_path / "candidate.parquet"
+    approved_at = datetime(2026, 8, 15, 9, 0, tzinfo=UTC)
 
-    database_path = tmp_path / "project-pivot.duckdb"
-    first_source = tmp_path / "year_2025_first.csv"
-    second_source = tmp_path / "year_2025_second.csv"
-    source_text = hmda_csv_path.read_text(encoding="utf-8")
-    first_source.write_text(source_text.replace("120,CA", "121,CA"), encoding="utf-8")
-    second_source.write_text(source_text.replace("120,CA", "122,CA"), encoding="utf-8")
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        connection.execute(
+            "UPDATE raw.hmda_loans SET ingested_at = ? WHERE source_year = 2025",
+            [approved_at],
+        )
+        connection.execute(
+            "COPY raw.hmda_loans TO ? (FORMAT PARQUET)",
+            [candidate_path.as_posix()],
+        )
+        before = partition_content_identity(connection, source_year=2025)
+        before_freshness = partition_max_ingested_at(connection, source_year=2025)
+        assert before_freshness is not None
 
-    with DuckDBConnectionManager(database_path) as connection:
+        load_hmda_loans_partition(
+            connection,
+            [candidate_path],
+            2025,
+            expected_identity=before,
+            expected_max_ingested_at=before_freshness,
+            preserve_source_metadata=True,
+        )
+        metadata = connection.execute(
+            """
+            SELECT min(source_year), min(source_file_name), max(ingested_at)
+            FROM raw.hmda_loans
+            WHERE source_year = 2025
+            """
+        ).fetchone()
+
+    assert metadata == (2025, hmda_csv_path.name, approved_at)
+
+
+def test_partition_load_rejects_missing_preserved_provenance_before_mutation(
+    hmda_csv_path: Path,
+    tmp_path: Path,
+) -> None:
+    candidate_path = tmp_path / "candidate-without-ingested-at.parquet"
+
+    with DuckDBConnectionManager() as connection:
         load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
         before = partition_content_identity(connection, source_year=2025)
+        connection.execute(
+            """
+            COPY (
+                SELECT * EXCLUDE (ingested_at)
+                FROM raw.hmda_loans
+            ) TO ? (FORMAT PARQUET)
+            """,
+            [candidate_path.as_posix()],
+        )
 
-    writer_gate = Lock()
-    first_entered = Event()
-    release_first = Event()
-    second_attempted = Event()
-    invocation_guard = Lock()
-    invocation_count = 0
+        with pytest.raises(HMDADataLoadError, match="metadata|provenance"):
+            load_hmda_loans_partition(
+                connection,
+                [candidate_path],
+                2025,
+                expected_identity=before,
+                preserve_source_metadata=True,
+            )
+        after = partition_content_identity(connection, source_year=2025)
 
-    @contextmanager
-    def serialized_lock(database: str | Path | None):
-        del database
-        nonlocal invocation_count
-        with invocation_guard:
-            invocation_index = invocation_count
-            invocation_count += 1
-        if invocation_index == 1:
-            second_attempted.set()
-        with writer_gate:
-            if invocation_index == 0:
-                first_entered.set()
-                assert release_first.wait(timeout=1)
-            yield
-
-    monkeypatch.setattr(partition_module, "database_mutation_lock", serialized_lock)
-    failures: list[BaseException] = []
-
-    def replace_partition(source_path: Path) -> None:
-        try:
-            with DuckDBConnectionManager(database_path) as connection:
-                load_hmda_loans_partition(
-                    connection,
-                    [source_path],
-                    2025,
-                    expected_identity=before,
-                )
-        except BaseException as exc:
-            failures.append(exc)
-
-    first_writer = Thread(target=replace_partition, args=(first_source,), daemon=True)
-    second_writer = Thread(target=replace_partition, args=(second_source,), daemon=True)
-    first_writer.start()
-    assert first_entered.wait(timeout=1)
-    second_writer.start()
-    assert second_attempted.wait(timeout=1)
-    assert second_writer.is_alive()
-
-    release_first.set()
-    first_writer.join(timeout=2)
-    second_writer.join(timeout=2)
-
-    assert not first_writer.is_alive()
-    assert not second_writer.is_alive()
-    assert len(failures) == 1
-    assert isinstance(failures[0], HMDAStalePartitionError)
+    assert after == before
 
 
 def test_partition_load_creates_custom_target_schema(hmda_csv_path: Path) -> None:

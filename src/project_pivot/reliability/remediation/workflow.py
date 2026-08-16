@@ -128,8 +128,8 @@ def _rca_summary(*, incident_type: str, payload: dict[str, Any]) -> str:
         )
     if incident_type == "freshness_delay":
         return (
-            "현재 파티션 freshness가 baseline 대비 지연되었다. "
-            f"delay_minutes={payload.get('delay_minutes')}"
+            "현재 Bronze partition ingestion freshness age가 최대 허용치를 넘었다. "
+            f"freshness_age_minutes={payload.get('freshness_age_minutes')}"
         )
     return f"{incident_type} incident에 대한 evidence 검토가 필요하다."
 
@@ -139,7 +139,10 @@ def _required_actions(incident_type: str) -> list[str]:
         "volume_drop": ["validate_source_partition", "prepare_partition_backfill"],
         "null_spike": ["validate_source_partition", "add_dbt_not_null_test"],
         "schema_drift": ["compare_schema_contract", "validate_dbt_build"],
-        "freshness_delay": ["check_upstream_freshness", "prepare_partition_backfill"],
+        "freshness_delay": [
+            "check_bronze_ingestion_freshness",
+            "prepare_partition_backfill",
+        ],
     }.get(incident_type, ["validate_source_partition"])
 
 

@@ -25,6 +25,7 @@ from project_pivot.hmda_data import PartitionContentIdentity, partition_content_
 from project_pivot.reliability import (
     DetectionRequest,
     DetectionResult,
+    DetectionThresholds,
     ImpactAnalysisRequest,
     ImpactAnalysisResult,
     ProfileSnapshot,
@@ -49,6 +50,8 @@ type _IncidentAnalysis = tuple[
 def run_incident_lifecycle(
     request: DataOperationRequest,
     baseline: ProfileSnapshot,
+    *,
+    thresholds: DetectionThresholds | None = None,
 ) -> LifecycleResult:
     """Baseline과 실제 current를 비교해 incident 분석 요약을 반환한다.
 
@@ -80,7 +83,11 @@ def run_incident_lifecycle(
         current = create_profile_snapshot(connection, profile_request)
         _validate_profile_compatibility(baseline, current)
         detections = detect_basic_incidents(
-            DetectionRequest(baseline=baseline, current=current)
+            DetectionRequest(
+                baseline=baseline,
+                current=current,
+                thresholds=thresholds or DetectionThresholds(),
+            )
         )
         # Impact와 projection identity가 같은 current artifact projection을 보도록
         # shared lock을 유지한 채 detection 전체를 분석한다.

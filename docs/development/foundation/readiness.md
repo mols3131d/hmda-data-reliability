@@ -61,13 +61,13 @@ uv run python scripts/run_actual_source.py
 
 | Capability | Audit Status |
 | --- | --- |
-| Reliability freshness semantics | Risk — Foundation data contract는 `freshness_at` 존재만 요구하고 `reliability-profile-snapshots`는 미측정 시 `observed_at` fallback을 명시한다. 미측정 상태의 별도 표현은 후속 contract 개선 후보다. |
+| Reliability freshness semantics | Implemented, current execution unverified — Bronze `max(ingested_at)`을 measured/unavailable로 구분하고 current age detection, exact timestamp recovery/replay와 disposable evaluator를 제공한다. Upstream HMDA publication freshness는 범위 밖이다. |
 | Profile / incident / impact / remediation lifecycle | Implemented, current execution unverified |
 | Reliability recovery backfill | Implemented, current execution unverified — partition content identity와 recovery 경로가 `source_file` scope를 포함하며 source-file filtering과 file-scoped recovery test가 존재한다. Content identity가 correctness oracle이며 row-count는 auxiliary evidence로만 사용한다. |
 | Reliability evaluation report | Implemented, current execution unverified |
 | Orchestration pipeline | Blocked — standard pipeline에서 dbt skip materialization semantics 충돌 |
 | dbt last-known-good evidence retention | Implemented, current execution unverified — 고유한 run-scoped target에서 candidate artifact를 만들고 current pair를 보존하며, promotion 실패 시 pair rollback test가 존재한다. |
-| HMDA synthetic defects | Implemented, current execution unverified |
+| HMDA synthetic defects | Implemented, current execution unverified — source-file cases는 row drop, null spike와 schema drift만 소유하며 freshness defect는 isolated Bronze evaluator가 소유한다. |
 | Test quality observability | Implemented, current execution unverified — development/test tooling concern이며 canonical runtime Spec은 아니다. |
 
 ## Additional Drift

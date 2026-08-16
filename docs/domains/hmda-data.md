@@ -49,8 +49,9 @@
 | --- | --- | --- |
 | `discover_hmda_files(raw_dir)` | 지원 원천 파일 발견 | 정렬된 `list[Path]` |
 | `load_hmda_loans(connection, source_paths)` | raw 테이블 전체를 생성 또는 교체 | 전체 행 수 `int` |
-| `load_hmda_loans_partition(connection, source_paths, source_year, source_file=None, expected_identity=None)` | 연도, 선택 파일명 범위를 atomic compare-and-replace | 대상 파티션 행 수 `int` |
+| `load_hmda_loans_partition(..., expected_identity=None, expected_max_ingested_at=None, preserve_source_metadata=False)` | 연도, 선택 파일명 범위를 content/temporal expected state로 atomic compare-and-replace | 대상 파티션 행 수 `int` |
 | `partition_content_identity(connection, source_year=..., source_file=None, table_name=...)` | Partition logical row multiset의 stable identity 계산 | `PartitionContentIdentity` |
+| `partition_max_ingested_at(connection, source_year=..., source_file=None, table_name=...)` | Scoped Bronze ingestion timestamp 측정 | `datetime | None` |
 | `validate_required_columns(connection, table_name=...)` | 필수 컬럼 존재 확인 | `None` 또는 검증 오류 |
 
 ### Replacement Guarantees
@@ -60,12 +61,11 @@
 | 전체 적재 | `CREATE OR REPLACE TABLE`을 사용하므로 같은 입력을 다시 적재해도 중복되지 않는다. |
 | 파티션 적재 | 임시 테이블에서 필수 컬럼과 비어 있지 않은 행을 검증한 뒤, 기존 범위를 삭제하고 새 행을 하나의 transaction으로 삽입한다. |
 | Expected-state replacement | `expected_identity`가 있으면 같은 transaction 안에서 actual identity와 비교하고 다를 때 `HMDAStalePartitionError`로 zero mutation을 보장한다. |
-| Managed writer serialization | File database의 전체·파티션 적재는 공통 database mutation lock을 획득한 뒤 target을 확인·변경한다. 파티션 actual identity는 lock 획득 후 다시 계산한다. |
+| Temporal expected state | `expected_max_ingested_at`이 있으면 같은 transaction에서 actual `max(ingested_at)`을 비교하며 timestamp-only drift도 zero mutation으로 차단한다. |
+| Metadata-preserving candidate | 명시적으로 요청된 candidate는 `source_file`, `source_file_name`, `source_year`, `ingested_at`과 target-compatible schema를 mutation 전에 검증하고 값을 재계산하지 않는다. |
 | 빈 대상 파티션 | `source_file`가 빈 문자열이거나 대상 행이 없으면 기존 파티션을 변경하지 않고 오류로 끝난다. |
 
 `PartitionContentIdentity`는 `table + source_year + optional source_file` scope를 포함한다. Row order와 `ingested_at`은 identity에 영향을 주지 않지만 logical value와 duplicate multiplicity는 보존한다.
-
-Database-level lock은 서로 다른 partition을 다루는 Project Pivot managed writer도 직렬화한다. 전체 적재는 기존 validation-after-replacement failure semantics를 유지하고, 파티션 적재는 transaction commit 또는 rollback까지 lock을 유지한다. 같은 sidecar lock을 사용하지 않는 external writer는 이 freshness guarantee의 범위 밖이다.
 
 공개 API는 [`hmda_data/__init__.py`](../../src/project_pivot/hmda_data/__init__.py), 적재 동작은 [`tests/hmda_data`](../../tests/hmda_data)에서 확인한다.
 
@@ -84,9 +84,13 @@ EDA는 HMDA 원천을 변경하지 않고 six-core schema compatibility, volume,
 | `row_count_drop(...)` | `sample_fraction=0.1` | `activity_year`별 분포를 유지한 행 수 감소 |
 | `null_spike(...)` | `target_column="income"`, `null_fraction=0.2` | 대상 컬럼 Null 비율 급증 |
 | `schema_drift(...)` | `target_column="loan_amount"` | 대상 컬럼을 `VARCHAR`로 변환 |
-| `freshness_delay(...)` | `delay_days=30` | 오래된 `observed_at` 열 추가 |
 
 `sample_fraction`과 `null_fraction`은 $0 < value \leq 1$이어야 한다. 대상 컬럼이 없거나 출력 경로가 유효하지 않으면 `SyntheticCaseError`를 반환한다. 샘플은 연도별 최소 한 행을 유지하고 안정적인 컬럼 순서로 선택한다.
+
+Bronze freshness defect는 source schema에 `observed_at`을 추가하지 않는다.
+[`evaluate_freshness_delay_vertical_slice`](reliability.md)는 isolated database의 existing
+`ingested_at`만 변경해 측정, recovery와 replay를 검증한다. Upstream HMDA publication
+timestamp와 download cadence는 여전히 이 domain의 범위 밖이다.
 
 ## Ownership And Reading Path
 

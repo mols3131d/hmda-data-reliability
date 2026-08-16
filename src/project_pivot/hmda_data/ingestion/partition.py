@@ -4,17 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from contextlib import suppress
+from datetime import UTC, datetime
 from pathlib import Path
 
 import duckdb
 
-from project_pivot.data_platform.duckdb import (
-    DuckDBMutationLockError,
-    current_database_path,
-    database_mutation_lock,
-    ensure_schema,
-    table_row_count,
-)
+from project_pivot.data_platform.duckdb import ensure_schema, table_row_count
 from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
 from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 from project_pivot.hmda_data.ingestion._common import (
@@ -30,9 +25,13 @@ from project_pivot.hmda_data.ingestion._source_query import (
 from project_pivot.hmda_data.ingestion.identity import (
     PartitionContentIdentity,
     partition_content_identity,
+    partition_max_ingested_at,
 )
 
 _STAGING_TABLE = "__hmda_loans_partition_stage"
+_BRONZE_PROVENANCE_COLUMNS = frozenset(
+    {"source_file", "source_file_name", "source_year", "ingested_at"}
+)
 
 
 def load_hmda_loans_partition(
@@ -43,50 +42,27 @@ def load_hmda_loans_partition(
     source_file: str | None = None,
     table_name: str = HMDA_LOANS_TABLE,
     expected_identity: PartitionContentIdentity | None = None,
+    expected_max_ingested_at: datetime | None = None,
     preserve_source_metadata: bool = False,
 ) -> int:
     """한 ``source_year``/optional file scope를 교체하고 최종 row count를 반환한다.
 
-    Target schema와 빈 table은 필요하면 staging validation 전에 생성된다.
-    기존 partition row는 staging의 required columns와 non-empty 조건을
-    통과한 뒤에만 교체된다. ``expected_identity``가 있으면 현재 identity
-    비교와 delete/insert를 같은 transaction에서 수행하며 mismatch 시 기존
-    partition row는 변경하지 않는다. ``preserve_source_metadata=True``이면
-    input의 source tracking fields를 재계산하지 않는다.
+    Target schema와 빈 table은 필요하면 staging validation 전에 생성된다. 기존 partition
+    row는 staging의 required columns와 non-empty 조건을 통과한 뒤에만 교체된다.
+    Expected content identity 또는 max ingestion timestamp가 있으면 비교와
+    delete/insert를 같은 transaction에서 수행하며 mismatch 시 기존 partition row는
+    변경하지 않는다. ``preserve_source_metadata=True``이면 input의 source tracking
+    fields를 재계산하지 않는다.
     """
 
     paths = validate_source_paths(source_paths)
     try:
-        with database_mutation_lock(current_database_path(connection)):
-            _ensure_hmda_loans_table(
-                connection,
-                paths,
-                table_name,
-                preserve_source_metadata=preserve_source_metadata,
-            )
-            _overwrite_hmda_loans_partition(
-                connection=connection,
-                source_paths=paths,
-                source_year=source_year,
-                source_file=source_file,
-                table_name=table_name,
-                expected_identity=expected_identity,
-                preserve_source_metadata=preserve_source_metadata,
-            )
-            row_count = _partition_row_count(
-                connection,
-                table_name=table_name,
-                source_year=source_year,
-                source_file=source_file,
-            )
-    except DuckDBMutationLockError as exc:
-        context = {
-            "table_name": table_name,
-            "source_year": source_year,
-            "source_file": source_file,
-        }
-        msg = "HMDA 파티션 mutation lock에 실패했습니다."
-        raise HMDADataLoadError(msg, context=context) from exc
+        _ensure_hmda_loans_table(
+            connection,
+            paths,
+            table_name,
+            preserve_source_metadata=preserve_source_metadata,
+        )
     except duckdb.Error as exc:
         context = {
             "table_name": table_name,
@@ -96,6 +72,22 @@ def load_hmda_loans_partition(
         msg = "HMDA 파티션 테이블 초기화에 실패했습니다."
         raise HMDADataLoadError(msg, context=context) from exc
 
+    _overwrite_hmda_loans_partition(
+        connection=connection,
+        source_paths=paths,
+        source_year=source_year,
+        source_file=source_file,
+        table_name=table_name,
+        expected_identity=expected_identity,
+        expected_max_ingested_at=expected_max_ingested_at,
+        preserve_source_metadata=preserve_source_metadata,
+    )
+    row_count = _partition_row_count(
+        connection,
+        table_name=table_name,
+        source_year=source_year,
+        source_file=source_file,
+    )
     _LOGGER.debug(
         "HMDA 파티션 적재 완료",
         extra={
@@ -104,6 +96,11 @@ def load_hmda_loans_partition(
             "source_file": source_file,
             "expected_identity_digest": (
                 expected_identity.digest if expected_identity is not None else None
+            ),
+            "expected_max_ingested_at": (
+                expected_max_ingested_at.isoformat()
+                if expected_max_ingested_at is not None
+                else None
             ),
             "row_count": row_count,
         },
@@ -145,6 +142,7 @@ def _overwrite_hmda_loans_partition(
     source_file: str | None,
     table_name: str,
     expected_identity: PartitionContentIdentity | None,
+    expected_max_ingested_at: datetime | None,
     preserve_source_metadata: bool,
 ) -> None:
     """Source scope를 staging에서 검증한 뒤 target partition row를 교체한다."""
@@ -162,6 +160,7 @@ def _overwrite_hmda_loans_partition(
             table_name=table_name,
             source_year=source_year,
             source_file=source_file,
+            preserve_source_metadata=preserve_source_metadata,
         )
         _replace_partition_in_transaction(
             connection=connection,
@@ -169,6 +168,7 @@ def _overwrite_hmda_loans_partition(
             source_year=source_year,
             source_file=source_file,
             expected_identity=expected_identity,
+            expected_max_ingested_at=expected_max_ingested_at,
         )
     except HMDAStalePartitionError:
         raise
@@ -245,13 +245,53 @@ def _validate_staging_rows(
     table_name: str,
     source_year: int,
     source_file: str | None,
+    preserve_source_metadata: bool,
 ) -> None:
     validate_required_columns(connection, _STAGING_TABLE)
+    if preserve_source_metadata:
+        _validate_preserved_metadata(connection, table_name)
     source_row_count = table_row_count(connection, _STAGING_TABLE)
     if source_row_count == 0:
         context = _partition_context(table_name, source_year, source_file)
         msg = "HMDA 소스 파티션에 적재할 행이 없습니다."
         raise HMDADataLoadError(msg, context=context)
+
+
+def _validate_preserved_metadata(
+    connection: duckdb.DuckDBPyConnection,
+    table_name: str,
+) -> None:
+    staging_schema = _table_schema(connection, _STAGING_TABLE)
+    staging_columns = {name for name, _ in staging_schema}
+    missing_metadata = sorted(_BRONZE_PROVENANCE_COLUMNS - staging_columns)
+    if missing_metadata:
+        msg = "Metadata-preserving candidate에 Bronze provenance가 없습니다."
+        raise HMDADataLoadError(
+            msg,
+            context={"missing_metadata": missing_metadata},
+        )
+    target_schema = _table_schema(connection, table_name)
+    if staging_schema != target_schema:
+        msg = "Metadata-preserving candidate schema가 target과 호환되지 않습니다."
+        raise HMDADataLoadError(
+            msg,
+            context={
+                "staging_schema": staging_schema,
+                "target_schema": target_schema,
+            },
+        )
+
+
+def _table_schema(
+    connection: duckdb.DuckDBPyConnection,
+    table_name: str,
+) -> list[tuple[str, str]]:
+    return [
+        (str(row[0]), str(row[1]))
+        for row in connection.execute(
+            f"DESCRIBE {qualify_table_name(table_name)}"
+        ).fetchall()
+    ]
 
 
 def _replace_partition_in_transaction(
@@ -261,8 +301,9 @@ def _replace_partition_in_transaction(
     source_year: int,
     source_file: str | None,
     expected_identity: PartitionContentIdentity | None,
+    expected_max_ingested_at: datetime | None,
 ) -> None:
-    """Expected identity 확인과 row 교체를 하나의 transaction으로 묶는다."""
+    """Expected compound state와 partition replacement를 transaction으로 묶는다."""
 
     connection.execute("BEGIN TRANSACTION")
     try:
@@ -282,6 +323,28 @@ def _replace_partition_in_transaction(
                 raise HMDAStalePartitionError(
                     "HMDA target partition이 stale state입니다.", context=context
                 )
+        if expected_max_ingested_at is not None:
+            normalized_expected = _normalize_timestamp(expected_max_ingested_at)
+            actual_freshness = partition_max_ingested_at(
+                connection,
+                table_name=table_name,
+                source_year=source_year,
+                source_file=source_file,
+            )
+            if actual_freshness != normalized_expected:
+                context = {
+                    **_partition_context(table_name, source_year, source_file),
+                    "expected_max_ingested_at": normalized_expected.isoformat(),
+                    "actual_max_ingested_at": (
+                        actual_freshness.isoformat()
+                        if actual_freshness is not None
+                        else None
+                    ),
+                }
+                raise HMDAStalePartitionError(
+                    "HMDA target partition이 stale temporal state입니다.",
+                    context=context,
+                )
         _replace_partition_rows(
             connection=connection,
             table_name=table_name,
@@ -292,6 +355,12 @@ def _replace_partition_in_transaction(
     except (HMDAStalePartitionError, duckdb.Error):
         connection.execute("ROLLBACK")
         raise
+
+
+def _normalize_timestamp(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 def _replace_partition_rows(

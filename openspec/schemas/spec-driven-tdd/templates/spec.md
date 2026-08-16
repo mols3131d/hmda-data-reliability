@@ -3,23 +3,20 @@ type: openspec-spec-driven-tdd-spec
 category: spec
 title: <capability-name>
 description: <Capability가 보장하거나 변경하는 행동을 짧게 설명한다.>
-# OPTIONAL PARSABLE TAGS: Proposal의 domain/subdomain/free tags를 상속하고,
-# 정확히 하나의 capability 태그를 파일 경로와 일치시킨다.
-tags:
-  - "domain:domain-name"
-  - "subdomain:subdomain-name"
-  - "capability:capability-name"
-  - "tag-name"
+# OPTIONAL PARSABLE TAGS: 검색·분류에 필요할 때만 사용한다.
+# `capability:<name>`을 사용하면 파일 경로 `specs/<name>/spec.md`와 일치시킨다.
+# tags:
+#   - "capability:capability-name"
 ---
 
 <!--
 형식 규칙:
-- OpenSpec delta 헤더와 `### Requirement:`, `#### Scenario:` 형식은 파싱 계약으로 유지한다.
+- OpenSpec delta heading과 `### Requirement:`, `#### Scenario:` 형식은 파싱 계약으로 유지한다.
 - 하나의 파일은 하나의 Capability를 다룬다.
-- `capability:<name>` 태그는 파일 경로 `specs/<name>/spec.md`와 일치시킨다.
+- tags를 사용하면 Proposal 분류와 충돌하지 않게 하고 capability tag는 Spec 경로와 일치시킨다.
 - Requirement는 SHALL 또는 MUST를 사용한다.
 - 모든 Requirement에는 하나 이상의 Scenario가 있어야 한다.
-- WHEN과 THEN은 필수이며 GIVEN과 AND는 필요할 때만 사용한다.
+- WHEN과 THEN은 필수이며 GIVEN과 AND는 필요할 때만 추가한다.
 - New Capability는 50자 이상의 Purpose를 작성하고, 기존 Capability 변경에서는 Purpose를 삭제한다.
 - 사용하지 않는 변경 유형은 섹션 전체를 삭제한다.
 -->
@@ -42,10 +39,8 @@ Archive 시 새 main spec의 Purpose로 복사되므로 50자 이상의 완전�
 
 #### Scenario: <scenario name>
 
-- **GIVEN** - <중요한 사전 상태>
 - **WHEN** - <행동을 유발하는 조건 또는 입력>
 - **THEN** - <관찰되어야 하는 결과>
-- **AND** - <추가 조건 또는 결과>
 
 <!--
 OPTIONAL SECTION: 기존 Requirement의 행동이나 계약이 바뀔 때만 유지한다.
@@ -60,10 +55,8 @@ OPTIONAL SECTION: 기존 Requirement의 행동이나 계약이 바뀔 때만 유
 
 #### Scenario: <scenario name>
 
-- **GIVEN** - <중요한 사전 상태>
 - **WHEN** - <행동을 유발하는 조건 또는 입력>
 - **THEN** - <변경 후 관찰되어야 하는 결과>
-- **AND** - <추가 조건 또는 결과>
 
 <!-- OPTIONAL SECTION: 기존 Requirement를 제거할 때만 유지한다. -->
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import duckdb
@@ -59,9 +58,9 @@ def null_spike(
 ) -> Path:
     """연도별 sampled rows의 일부 ``target_column`` 값을 Null로 만든다.
 
-    각 연도에서 최소 ``null_fraction``에 해당하는 sampled row를 Null로 만들며 기존 Null은
-    그대로 남는다. 각 fraction은 ``0 < value <= 1``이어야 하고 target column이 없으면
-    ``SyntheticCaseError``를 발생시킨다. Source file은 수정하지 않는다.
+    각 연도에서 최소 ``null_fraction``에 해당하는 sampled row를 Null로 만들며 기존
+    Null은 그대로 남는다. 각 fraction은 ``0 < value <= 1``이어야 하고 target column이
+    없으면 ``SyntheticCaseError``를 발생시킨다. Source file은 수정하지 않는다.
     """
 
     _validate_fraction(null_fraction, "null_fraction")
@@ -151,46 +150,6 @@ def schema_drift(
     )
 
 
-def freshness_delay(
-    connection: duckdb.DuckDBPyConnection,
-    source_paths: Sequence[str | Path],
-    output_root: str | Path,
-    *,
-    observed_at: datetime | None = None,
-    delay_days: int = 30,
-    sample_fraction: float = 1.0,
-) -> Path:
-    """Sampled rows에 하나의 ``observed_at`` 값을 추가한 freshness case를 만든다.
-
-    ``observed_at``을 주면 그 값을 그대로 사용하고 ``delay_days``는 적용하지 않는다.
-    생략하면 현재 UTC 시각에서 ``delay_days``를 뺀 값을 사용한다. ``sample_fraction``은
-    ``0 < value <= 1``이어야 하며 source file은 수정하지 않는다.
-    """
-
-    _validate_fraction(sample_fraction, "sample_fraction")
-    delayed_observed_at = observed_at or datetime.now(UTC) - timedelta(days=delay_days)
-    ranked_query = _ranked_sample_query(connection, source_paths)
-    case_query = f"""
-        WITH ranked AS ({ranked_query})
-        SELECT
-            * EXCLUDE (__sample_rank, __partition_count),
-            ? AS observed_at
-        FROM ranked
-        WHERE {_sample_limit_sql()}
-    """
-    return write_case_file(
-        connection=connection,
-        case_name="freshness_delay",
-        output_root=output_root,
-        query=case_query,
-        params=[
-            *source_paths_parameter(source_paths),
-            delayed_observed_at,
-            sample_fraction,
-        ],
-    )
-
-
 def _validate_fraction(value: float, name: str) -> None:
     """비율 인자가 0보다 크고 1 이하인지 검증한다."""
 
@@ -218,7 +177,7 @@ def _ranked_sample_query(
 
     source_query = source_union_sql(source_paths)
     try:
-        # Canonical column order로 만든 row hash는 source column order에 영향받지 않는다.
+        # Canonical column order의 row hash는 source column order에 영향받지 않는다.
         columns = sorted(
             str(row[0])
             for row in connection.execute(

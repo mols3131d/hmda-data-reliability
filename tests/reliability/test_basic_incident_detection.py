@@ -9,6 +9,7 @@ import pytest
 from project_pivot.reliability import (
     DetectionRequest,
     DetectionThresholds,
+    FreshnessMeasurementStatus,
     ProfileSnapshot,
     detect_basic_incidents,
 )
@@ -28,7 +29,7 @@ def test_detector_returns_no_incident_for_normal_profile() -> None:
             thresholds=DetectionThresholds(
                 volume_drop_ratio=0.5,
                 null_spike_delta=0.1,
-                freshness_delay_minutes=60,
+                freshness_max_age_minutes=60,
             ),
         )
     )
@@ -83,28 +84,70 @@ def test_detector_creates_schema_drift_incident_and_evidence() -> None:
     assert result.evidence.payload["current_schema_hash"] == "sha256:current"
 
 
-def test_detector_creates_freshness_delay_incident_and_evidence() -> None:
-    """freshness delay incident와 지연 시간 payload를 검증한다."""
+def test_detector_creates_freshness_delay_at_exact_max_age() -> None:
+    """Current observation age가 exact boundary면 incident를 생성한다."""
+    observed_at = datetime(2026, 6, 10, 0, 0, tzinfo=UTC)
     baseline = _snapshot(
         row_count=100,
-        freshness_at=datetime(2024, 1, 2, 12, 0, tzinfo=UTC),
+        observed_at=observed_at,
+        freshness_at=datetime(2026, 6, 9, 23, 0, tzinfo=UTC),
     )
     current = _snapshot(
         row_count=100,
-        freshness_at=datetime(2024, 1, 2, 10, 0, tzinfo=UTC),
+        observed_at=observed_at,
+        freshness_at=datetime(2026, 6, 9, 23, 0, tzinfo=UTC),
     )
 
     result = detect_basic_incidents(
         DetectionRequest(
             baseline=baseline,
             current=current,
-            thresholds=DetectionThresholds(freshness_delay_minutes=60),
+            thresholds=DetectionThresholds(freshness_max_age_minutes=60),
         )
     )[0]
 
     assert result.incident.incident_type == "freshness_delay"
-    assert result.evidence.payload["delay_minutes"] == 120.0
-    assert result.evidence.payload["threshold_minutes"] == 60.0
+    assert result.evidence.payload == {
+        "rule": "freshness_delay",
+        "snapshot_id": current.snapshot_id,
+        "observed_at": "2026-06-10T00:00:00+00:00",
+        "freshness_at": "2026-06-09T23:00:00+00:00",
+        "freshness_status": "measured",
+        "freshness_age_minutes": 60.0,
+        "max_age_minutes": 60.0,
+    }
+
+
+def test_detector_ignores_freshness_below_max_age() -> None:
+    current = _snapshot(
+        row_count=100,
+        freshness_at=datetime(2026, 6, 9, 23, 1, tzinfo=UTC),
+    )
+
+    results = detect_basic_incidents(
+        DetectionRequest(
+            baseline=current,
+            current=current,
+            thresholds=DetectionThresholds(freshness_max_age_minutes=60),
+        )
+    )
+
+    assert results == []
+
+
+def test_detector_skips_unavailable_freshness_but_keeps_other_rules() -> None:
+    baseline = _snapshot(row_count=100)
+    current = _snapshot(
+        row_count=40,
+        freshness_at=None,
+        freshness_status=FreshnessMeasurementStatus.UNAVAILABLE,
+    )
+
+    results = detect_basic_incidents(
+        DetectionRequest(baseline=baseline, current=current)
+    )
+
+    assert [result.incident.incident_type for result in results] == ["volume_drop"]
 
 
 def test_detection_result_links_incident_to_evidence() -> None:
@@ -137,8 +180,15 @@ def _snapshot(
     null_rates: dict[str, float] | None = None,
     schema_hash: str = "sha256:stable",
     freshness_at: datetime | None = None,
+    freshness_status: FreshnessMeasurementStatus = FreshnessMeasurementStatus.MEASURED,
+    observed_at: datetime | None = None,
 ) -> ProfileSnapshot:
-    observed_at = datetime(2026, 6, 10, 0, 0, tzinfo=UTC)
+    observed_at = observed_at or datetime(2026, 6, 10, 0, 0, tzinfo=UTC)
+    resolved_freshness = (
+        None
+        if freshness_status is FreshnessMeasurementStatus.UNAVAILABLE
+        else freshness_at or datetime(2026, 6, 9, 23, 30, tzinfo=UTC)
+    )
     return ProfileSnapshot(
         snapshot_id="profile_raw_hmda_loans_2025",
         asset_name="raw.hmda_loans",
@@ -147,6 +197,7 @@ def _snapshot(
         row_count=row_count,
         null_rates=null_rates or {"loan_amount": 0.01},
         schema_hash=schema_hash,
-        freshness_at=freshness_at or datetime(2024, 1, 2, 12, 0, tzinfo=UTC),
+        freshness_at=resolved_freshness,
+        freshness_status=freshness_status,
         metric_values={"row_count": float(row_count)},
     )
