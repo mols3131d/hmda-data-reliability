@@ -92,7 +92,7 @@ Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우�
 
 ### Main Sync
 
-`inbox`가 최신 repository context를 필요로 할 때 `main`을 `inbox`에 merge한다. `main`에서 `inbox/**` 또는 Git/GitHub workflow guidance가 변경되면 다음 routine artifact 작업 전에 sync한다. 방향은 항상 **`main` → `inbox`**이며, sync를 이유로 `inbox` content를 `main`에 merge하지 않는다.
+`inbox`가 최신 repository context를 필요로 할 때 `main`을 `inbox`에 merge한다. `main`에서 Inbox Branch 또는 `inbox/**` 운영 guidance가 변경되면 다음 routine artifact 작업 전에 sync한다. 방향은 항상 **`main` → `inbox`**이며, sync를 이유로 `inbox` content를 `main`에 merge하지 않는다.
 
 - Sync commit에는 `main` 반영 외의 변경을 섞지 않는다.
 - Conflict나 예상하지 못한 path가 생기면 자동으로 의미를 결정하지 않고 중단한다.
