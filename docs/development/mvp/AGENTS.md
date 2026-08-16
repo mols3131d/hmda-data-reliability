@@ -1,53 +1,79 @@
 # MVP Documentation Instructions
 
-이 directory는 현재 MVP의 고수준 목표, proof milestone, domain별 목표와 개발 현황을 추적한다.
+이 directory는 Project Pivot MVP의 **목표, domain별 완료 gate, 현재 상태**를 관리한다.
+구현 세부를 복제하는 문서 집합이 아니라, 무엇을 증명해야 MVP라고 부를 수 있는지
+검토 가능한 수준으로 유지한다.
 
 ## Ownership
 
-- [`README.md`](README.md)는 MVP 전체 목표, scope, milestone 순서와 end-to-end proof를 소유한다.
-- `milestone-*.md`는 현재 MVP 완료에 필요한 각 proof milestone의 고수준 결과와 완료 경계를 소유한다.
-- Domain 문서는 해당 domain의 MVP 목표, 비목표와 완료 관점을 소유한다.
-- `status.yml`은 dashboard의 구조화된 current-state 정본이다.
-- `status.md`는 `status.yml`에서 렌더링한 사람이 읽는 dashboard다.
-- 세부 runtime behavior와 requirement는 OpenSpec Spec과 `docs/domains/**`가 소유한다.
+- [`README.md`](README.md)는 MVP의 가치 제안, system invariants, scope와 전체 완료 기준을 소유한다.
+- Domain 문서는 해당 domain이 MVP에 기여해야 하는 결과와 완료 경계를 소유한다.
+- `status.yml`은 domain state와 blocker의 구조화된 정본이다.
+- `status.md`는 `status.yml`을 사람이 판단하기 쉽게 설명한다.
+- 세부 runtime behavior, API와 requirement는 OpenSpec, `docs/domains/**`와 tests가 소유한다.
 
-## Milestones
+## Domain Gates
 
-- Milestone은 구현 task 묶음이 아니라 MVP 가치를 독립적으로 검토할 수 있는 proof gate다.
-- `milestone-*.md`는 현재 MVP의 end-to-end proof를 구성하는 단계만 다룬다.
-- MVP 이후 incident 또는 capability 확장은 MVP scope가 명시적으로 바뀌지 않는 한 이 directory의 milestone으로 추가하지 않는다.
-- 각 milestone은 `Goal`, observable `Proof`, `Done When`, `Boundary`만 고수준으로 기록한다.
-- API, class, package, fixture와 세부 test scenario는 milestone 문서에 복제하지 않는다.
-- 현재 상태와 progress는 milestone 문서에 반복하지 않고 dashboard에서 관리한다.
+현재 canonical domain인 HMDA Data, Data Platform, Data Operations, Reliability,
+Orchestration을 기준으로 문서 하나씩 둔다.
 
-## Dashboard Model
+Domain 문서는 구현 순서나 task 목록이 아니다. 다음 질문에만 답한다.
 
-- Project dashboard는 canonical domain 하나를 한 행으로 사용한다.
-- Implementation Requirement는 각 domain의 MVP `Outcomes`를 중복 없는 의미 단위로 정규화해 센다.
-- Verification Target은 Requirement를 확인하는 acceptance, invariant 또는 failure path를 의미 단위로 센다.
-- task 수와 test function 수를 progress 분모로 사용하지 않는다.
-- implementation과 verification의 status, progress와 gap은 서로 분리한다.
-- `status.yml`과 `status.md`가 충돌하면 current evidence를 확인해 YAML을 먼저 고치고 Markdown을 다시 렌더링한다.
+1. 이 domain이 MVP에 왜 필요한가?
+2. MVP에서 반드시 어떤 결과를 제공해야 하는가?
+3. 무엇을 관찰하면 완료라고 판단할 수 있는가?
+4. 어떤 책임은 의도적으로 소유하지 않는가?
+5. 완료 판단은 어디의 evidence로 확인하는가?
 
-## Status Evidence
+API, class, fixture, test function과 세부 algorithm은 domain 문서에 복제하지 않는다.
+Canonical domain ownership과 충돌하면 `docs/domains/**`를 우선하고 MVP 문서를 고친다.
 
-- dashboard에는 snapshot과 관찰한 repository revision, implementation evidence를 기록한다.
-- 구현 완료, 검증 완료와 현재 revision 재검증 여부를 구분한다.
-- 실행하지 않은 validation을 통과로 기록하지 않는다.
-- 구현, Spec 또는 MVP Outcome이 바뀌면 영향받는 Requirement와 Verification Target 분모를 다시 검토한다.
-- 완료된 Requirement와 Verification Target은 gap에 남기지 않는다.
-- repository lifecycle처럼 구현·검증 coverage와 다른 문제는 progress gap이 아니라 risk로 분류한다.
+## MVP Model
 
-## Structure
+MVP는 두 capability를 함께 증명한다.
 
-- MVP 책임 또는 명시적 비목표가 있는 canonical domain마다 domain 문서 하나를 둔다.
-- Subdomain 문서는 독립적으로 추적할 목표와 경계가 있고 parent 문서가 과도하게 커질 때만 추가한다.
-- Domain 문서는 구현 방법보다 목표, 관찰 가능한 완료 결과, 비목표와 canonical reference에 집중한다.
-- 현재 구현 상태는 domain 문서에 반복하지 않고 dashboard에서 관리한다.
+- **Minimal Data Lake** — HMDA Data가 Source→Bronze를 소유하고, Data Platform이 Bronze를
+  dbt analytical layer로 변환하며, Orchestration이 data plane을 반복 실행한다.
+- **Agentic Reliability** — deterministic reliability evidence와 기존 `RemediationDraft`를
+  제한된 Agentic reviewer가 설명·검토하고, 실제 state change는 human approval 뒤에만 일어난다.
+
+Reliability는 deterministic truth, Agentic review와 human-controlled recovery 사이의
+evidence와 safety boundary를 소유한다.
+
+## Agentic Boundary
+
+- deterministic detection, impact와 `RemediationDraft`가 LLM 판단보다 먼저 존재한다.
+- Agentic reviewer는 기존 deterministic lifecycle을 대체하지 않고 그 결과를 소비하는 별도 layer다.
+- Agentic output은 deterministic fact나 `RemediationDraft`를 대체하지 않고 설명·검토·보강한다.
+- human approval은 검증된 `RecoveryProposal`에 결합되며 `RemediationDraft`나 Agentic output 자체를 승인하는 것이 아니다.
+- Agentic output은 approval이나 recovery command가 아니다.
+- Agentic review는 MVP proof에는 필요하지만 기존 proposal/approval/recovery authority에 새로운 권한 조건을 추가하지 않는다.
+- **Contract proof**는 structured schema, evidence binding, forbidden-action guardrail과
+  deterministic evaluator를 외부 model 호출 없이 반복 검증한다.
+- **Live model proof**는 같은 current revision에서 실제 model invocation과 observability
+  evidence를 최소 한 번 확인한다.
+- Live evidence에는 model/config, prompt identity, project revision, evidence refs, structured
+  output, latency와 provider가 제공하는 usage(token/cost)를 포함한다.
+- Live model proof의 non-determinism을 deterministic regression이나 CI의 전제조건으로 만들지 않는다.
+- 특정 model provider나 LLMOps vendor는 MVP의 canonical dependency가 아니다.
+- autonomous recovery, 범용 autonomous RCA와 multi-agent orchestration은 MVP 밖이다.
+
+## Status Model
+
+- task 수, test 수 또는 임의의 `x/y`를 MVP 진행률로 사용하지 않는다.
+- canonical progress axis는 **domain state** 하나다.
+- domain implementation state는 `implemented`, `partial`, `blocked`로 기록한다.
+- implementation state와 current-revision validation을 분리한다.
+- system-level capability/proof 상태는 domain state와 blocker에서 파생하며 독립 progress 표로 중복 관리하지 않는다.
+- 실행하지 않은 validation을 `passing`으로 기록하지 않는다.
+- `status.yml`과 `status.md`가 충돌하면 current evidence를 확인해 YAML을 먼저 갱신한다.
+- MVP 전체는 모든 required domain gate가 구현되고 같은 current revision에서 system acceptance가 확인되어야 완료다.
 
 ## Writing
 
+- 목표 → 필요한 결과 → 완료 evidence → boundary 순서로 작성한다.
 - KISS와 DRY를 따른다.
-- 사실, 목표, 비목표와 미검증 상태를 구분한다.
-- 숫자나 상태는 재확인 가능한 evidence와 연결한다.
-- MVP 밖의 후속 확장을 현재 목표처럼 섞지 않는다.
+- 목표, 현재 사실, 비목표와 미검증 상태를 구분한다.
+- 외부 research는 판단에 참고할 수 있지만 이 directory의 canonical 목표는 자족적으로 설명한다.
+- 특정 tool이나 구현 선택은 그것이 MVP의 본질적 contract일 때만 명시한다.
+- 후속 roadmap을 현재 MVP 완료 조건에 섞지 않는다.
