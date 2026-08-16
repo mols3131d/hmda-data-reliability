@@ -1,16 +1,53 @@
-# project-pivot
+# Project Pivot
 
-근거 우선 데이터 신뢰성과 복구 가능성에 기반한 AI 위임을 결합하고, 로컬 HMDA 파이프라인을 첫 증명 환경으로 사용하는 프로젝트.
+**Evidence-first data reliability with recoverability-bounded AI delegation.**
 
-## Document Navigation
+Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 고정하고, 실패를 탐지·제한·복구할 수 있는 범위에서 AI에 유용한 작업을 위임하는 프로젝트다. 로컬 HMDA Data Lake를 첫 증명 환경으로 사용해 신뢰 가능한 데이터 상태부터 사고 대응과 재검증까지 하나의 완결된 흐름으로 증명한다.
 
-- **Vision:** [docs/VISION.md](docs/VISION.md)
-- **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Canonical Capability Specs:** [openspec/specs](openspec/specs)
-- **Active MVP Goal:** [docs/mvp.md](docs/mvp.md)
-- **Domain Guides:** [docs/domains/OVERVIEW.md](docs/domains/OVERVIEW.md)
-- **Development Guides:** [docs/development/README.md](docs/development/README.md)
+## What This Project Proves
+
+- **Trusted data state** — 어떤 데이터 상태를 채택했고 왜 신뢰했는지 다시 설명할 수 있다.
+- **Deterministic reliability** — incident detection과 핵심 safety 판단은 재현 가능한 evidence에 고정한다.
+- **Evidence-bound AI** — AI는 확인 가능한 incident evidence와 deterministic 결과를 해석·검토하며 스스로 recovery authority를 얻지 않는다.
+- **Controlled recovery** — state mutation은 검증된 proposal과 human approval 뒤에만 수행하고 같은 기준으로 다시 검증한다.
+
+## Current MVP
+
+현재 MVP는 기능 수를 늘리는 것이 아니라 다음 end-to-end proof를 닫는 데 집중한다.
+
+```mermaid
+flowchart LR
+    source["HMDA Source"] --> lake["Local Data Lake"]
+    lake --> evidence["Deterministic Evidence"]
+    evidence --> incident["Incident + RemediationDraft"]
+    incident --> agent["Bounded Agentic Review"]
+    incident --> proposal["Validated RecoveryProposal"]
+    agent -. advisory .-> approval["Human Approval"]
+    proposal --> approval
+    approval --> recovery["Approved Recovery"]
+    recovery --> verify["Re-validation"]
+```
+
+Agentic review는 human decision을 보조하지만 approval이나 recovery의 authority를 대체하지 않는다. 현재 MVP의 정확한 scope와 acceptance는 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
+
+## Principles
+
+- **Evidence before judgment** — 신뢰성 판단은 확인 가능한 data와 execution evidence에서 시작한다.
+- **Deterministic truth first** — anomaly detection과 핵심 safety contract를 LLM 판단에 의존시키지 않는다.
+- **Design for AI failure** — AI 오류를 전제로 detectability, blast radius, reversibility와 recoverability를 설계한다.
+- **Proof before scale** — cloud나 분산 복잡성보다 작은 환경에서 신뢰·위임·복구를 먼저 증명한다.
+
+## Documentation
+
+| Need | Document |
+| --- | --- |
+| 프로젝트의 장기 방향과 AI delegation boundary | [Vision](docs/VISION.md) |
+| 현재 증명할 MVP scope와 acceptance | [MVP](docs/mvp.md) |
+| 시스템 구조와 execution boundary | [Architecture](docs/ARCHITECTURE.md) |
+| 구현된 capability의 canonical contract | [OpenSpec Specs](openspec/specs) |
+| domain별 책임과 공개 surface | [Domain Guides](docs/domains/OVERVIEW.md) |
+| 개발 환경과 workflow | [Development Guides](docs/development/README.md) |
 
 ## Human Projection
 
-- **Development Dashboard:** [docs/development/dashboard.md](docs/development/dashboard.md) — 사람이 빠르게 보는 snapshot이며 canonical evidence가 아니다.
+[Development Dashboard](docs/development/dashboard.md)는 사람이 현재 상태를 빠르게 확인하기 위한 snapshot이다. canonical evidence나 agent의 신뢰 원천으로 사용하지 않는다.
