@@ -1,6 +1,6 @@
 # Inbox Branch
 
-이 문서는 dedicated `inbox` branch의 direct push, formatting, sync와 index write 예외를 소유한다. 일반 branch naming과 변경 단위는 [`docs/development/vcs-git/branch.md`](../../docs/development/vcs-git/branch.md), commit 형식은 [`commit.md`](../../docs/development/vcs-git/commit.md), Pull Request 규칙은 [`pull-request.md`](../../docs/development/vcs-git/pull-request.md)가 소유한다. Inbox artifact의 내용·경로·lifecycle contract는 [`../AGENTS.md`](../AGENTS.md)가 소유한다.
+이 문서는 dedicated `inbox` branch의 direct push, formatting, sync와 index write 예외를 소유한다. 일반 branch naming과 변경 단위는 [`docs/development/vcs-git/branch.md`](../../docs/development/vcs-git/branch.md), commit 구성과 형식은 [`commit.md`](../../docs/development/vcs-git/commit.md), Pull Request 규칙은 [`pull-request.md`](../../docs/development/vcs-git/pull-request.md)가 소유한다. Inbox artifact의 내용·경로·lifecycle contract는 [`../AGENTS.md`](../AGENTS.md)가 소유한다.
 
 ## Role
 
@@ -10,7 +10,6 @@
 
 [`../AGENTS.md`](../AGENTS.md)가 정의한 routine artifact만 `inbox`에 직접 commit하고 push할 수 있다. Artifact의 경로와 구조는 이 문서가 별도로 제한하지 않는다.
 
-- 하나의 commit에는 하나의 artifact 또는 함께 소비되는 하나의 bundle만 포함한다.
 - Routine artifact push에는 routine artifact 변경만 포함한다.
 - Merge base 기준 `inbox` 고유 content는 routine artifact만 포함해야 한다.
 - Inbox 운영 자산과 그 밖의 repository content는 direct push 예외에 포함하지 않으며 최신 `main`에서 일반 작업 branch와 Draft Pull Request로 변경한다.
