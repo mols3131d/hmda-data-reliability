@@ -1,99 +1,99 @@
 ---
 name: rulesync-agent-assets
 description: >-
-  Use when generating harness-native agent assets from one Rulesync source, or
-  porting one harness's native rules, agents, skills, commands, hooks,
-  permissions, checks, or MCP configuration to other harnesses through Rulesync.
-  Do not use for a single target-specific edit with no cross-harness sync need.
+  Use when synchronizing or porting agent customization assets across coding-agent
+  harnesses with Rulesync: either generate multiple harness-native outputs from a
+  `.rulesync/` canonical source, or translate one harness's native rules, agents,
+  skills, commands, hooks, permissions, checks, or MCP configuration into other
+  harnesses. Also use when keeping Copilot, Claude Code, Codex CLI, Antigravity,
+  or other Rulesync targets aligned. Do not use for a single-harness edit or when
+  the target already consumes the same source without conversion.
 compatibility: >-
-  Requires the Rulesync CLI. Exact targets and feature support follow the
-  installed Rulesync version.
+  Requires the Rulesync CLI. Exact targets, discovery paths, and feature support
+  follow the installed Rulesync version.
 ---
 
 # Rulesync Agent Assets
 
-Rulesync를 cross-harness 변환 backend로 사용한다. 이 Skill은 source, target,
-scope와 safety를 결정하고, parsing·normalization·serialization은 Rulesync에
-맡긴다.
+Preserve one clear source and do the least transformation needed. This Skill owns
+routing, scope, safety, and evidence. Rulesync owns format translation.
 
-## Modes
+## Route
 
-| Mode | Source | Backend operation |
+Choose the first route that satisfies the request.
+
+| Situation | Route | Backend |
 | --- | --- | --- |
-| Canonical fan-out | Rulesync canonical source (`.rulesync/`) | `generate` |
-| Native bridge | 한 harness의 native asset | `convert` |
+| Target already consumes the same source correctly | Reuse it | none |
+| `.rulesync/` is the source of truth | Canonical fan-out | `generate` |
+| One harness's native assets are the source of truth | Native bridge | `convert` |
 
-두 mode를 별도 구현으로 만들지 않는다. source model만 다르고 target 선택,
-preview, compatibility 확인과 validation 원칙은 공유한다.
+Do not introduce `.rulesync/` merely to perform a native-to-native port. Use
+`import -> generate` only when adopting or rebuilding a canonical Rulesync source
+is itself part of the request.
 
-## Workflow
+If multiple sources compete for authority and project policy does not resolve it,
+stop before mutation and report the ambiguity.
 
-1. project authority와 현재 asset ownership을 읽고 write boundary를 정한다.
-2. `rulesync --version`으로 backend availability를 확인한다. 설치나 upgrade는
-   명시적 허용 없이 수행하지 않는다.
-3. source mode를 결정한다.
-   - 사용자가 canonical source 또는 fan-out을 명시하면 Canonical fan-out을 쓴다.
-   - 사용자가 source harness를 명시하면 Native bridge를 쓴다.
-   - 명시가 없으면 project policy를 우선하고, 그 다음 명확한 existing source를
-     사용한다. 여러 source가 경쟁하면 추측하지 않는다.
-4. target과 feature를 최소 범위로 결정한다. source harness를 target에 포함하지
-   않고, 사용자나 project policy가 요구하지 않으면 `*`로 범위를 넓히지 않는다.
-5. exact command, target ID 또는 feature behavior가 필요할 때만
-   [Rulesync backend](references/rulesync.md)를 읽는다. deployed copy에
-   `references/project.md`가 있으면 project-specific default가 필요한 경우에만
-   읽는다.
-6. mutation 전에 항상 Rulesync preview를 실행한다.
-7. preview의 warning, 누락 feature, simulation 또는 표현력 차이를 compatibility
-   gap으로 취급한다. 확인되지 않은 semantic parity를 주장하지 않는다.
-8. preview가 요청 범위와 일치할 때만 실제 generation 또는 conversion을 실행한다.
-9. generated diff와 applicable project validation을 확인한다. Canonical fan-out은
-   가능한 경우 Rulesync `--check`도 사용한다.
-10. source, mode, targets, features, 생성된 asset, warning과 실제 수행한 validation을
-    보고한다.
+## Execute
 
-## Canonical Fan-out
+1. Read project authority and identify the current source owner. Keep the write
+   boundary limited to requested targets.
+2. Select the route above. If no transformation is required, verify discovery and
+   stop without generating duplicate assets.
+3. For a Rulesync route, confirm the CLI is available with `rulesync --version`.
+   Do not install or upgrade it implicitly.
+4. Resolve explicit targets and the smallest applicable feature set. Default to
+   project scope; do not broaden to `*` or `--global` without a reason.
+5. Read [Rulesync backend](references/rulesync.md) only when exact commands, target
+   IDs, feature support, or discovery behavior matter. If
+   `references/project.md` exists, read it only for project-specific defaults or
+   known gaps.
+6. Preview every write with the matching Rulesync dry-run.
+7. Inspect the preview for unexpected files, missing source assets, warnings,
+   simulated behavior, and semantics the target cannot express.
+8. Apply only when the preview matches the requested scope. Then inspect the
+   generated diff and run the strongest applicable validation.
 
-Rulesync canonical source가 source of truth일 때 사용한다.
+## Compatibility Contract
 
-```bash
-rulesync generate --dry-run --targets <targets> --features <features>
-rulesync generate --targets <targets> --features <features>
-rulesync generate --check --targets <targets> --features <features>
+- Preserve the selected source of truth. Generated targets are derived artifacts.
+- Do not silently rename, copy, relocate, or normalize source assets just to make
+  Rulesync discover them.
+- Treat `converted` as a file-generation result, not proof of semantic parity.
+- Report omitted, approximated, simulated, or undiscovered behavior as a
+  compatibility gap.
+- Prefer native target support over simulation. Enable simulation only when the
+  request explicitly accepts that tradeoff.
+- Do not add a wrapper script, custom adapter, or parallel schema until a concrete
+  Rulesync limitation requires one.
+- Do not perform install, upgrade, cleanup, deletion, or user-global mutation as a
+  side effect of asset conversion.
+
+## Validate
+
+For Canonical fan-out, use the same target and feature scope with Rulesync
+`generate --check` when available after generation.
+
+For Native bridge, use the dry-run, generated diff, target-native validation, and
+project-owned checks. Do not invent a `generate --check` equivalent for `convert`.
+
+For a no-transform route, verify that the target actually discovers the retained
+source; otherwise choose a transformation route.
+
+## Report
+
+Return only evidence needed to understand the result:
+
+```text
+mode: <reuse | canonical-fan-out | native-bridge>
+source: <owner>
+targets: <targets>
+features: <features>
+generated: <paths or none>
+gaps: <none or concise list>
+validation: <checks actually run>
 ```
 
-`generate` output은 derived asset으로 취급한다. target file을 직접 수정해서 source와
-drift를 만들지 않는다.
-
-## Native Bridge
-
-한 harness의 native asset을 유지하면서 다른 harness asset을 만들 때 사용한다.
-
-```bash
-rulesync convert --from <source> --to <targets> \
-  --features <features> --dry-run
-rulesync convert --from <source> --to <targets> \
-  --features <features>
-```
-
-단순 port를 위해 먼저 `.rulesync/`로 import하지 않는다. canonicalization 자체가
-요구사항일 때만 `import -> generate` 경로를 선택한다.
-
-## Boundaries
-
-- project가 선택한 source of truth를 이 Skill의 선호로 바꾸지 않는다.
-- generated target asset을 수동 편집하지 않는다. 수정은 source 또는 명시된
-  compatibility layer에서 한다.
-- Rulesync가 발견하지 못하는 custom path나 unsupported semantic을 지원한다고
-  가정하지 않는다.
-- backend warning이나 omitted feature를 조용히 무시하지 않는다.
-- simulation은 native support와 동일하게 취급하지 않으며 명시적으로 필요한
-  경우에만 사용한다.
-- `--global`, destructive cleanup, installation, upgrade는 요청 범위 밖에서 실행하지
-  않는다.
-- 실제 backend gap이 확인되기 전에는 custom adapter나 wrapper script를 추가하지
-  않는다.
-
-## Completion
-
-요청된 source에서 요청된 target만 생성했고, source는 보존되었으며, compatibility
-gap과 validation evidence를 정확히 보고하면 완료한다.
+Complete when the requested targets are available, the source remains authoritative,
+and every known compatibility gap or unrun validation is stated explicitly.
