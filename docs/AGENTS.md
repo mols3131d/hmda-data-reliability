@@ -1,6 +1,6 @@
 # Documentation Rules
 
-`docs/`는 durable guidance, active goal, development guide와 human-only projection을 구분한다. 이 파일은 **`docs/**`의 공통 작성·trust·lifecycle 규칙**을 소유하며, Git/GitHub 같은 subject-specific workflow는 해당 owning guide가 소유한다.
+`docs/`는 durable guidance, active goal, development guide와 human-only projection을 구분한다. 이 파일은 **`docs/**`의 공통 작성·trust·lifecycle 규칙**을 소유하며, subject-specific workflow는 해당 owning guide가 소유한다.
 
 ## Ownership
 
@@ -13,17 +13,16 @@
 | `development/**` | phase-independent 개발 가이드와 human-only development dashboard |
 | `references/**` | 외부 규격과 supporting reference |
 
-Current capability의 normative contract는 `docs/`가 아니라 [`../openspec/specs/`](../openspec/specs/)가 소유한다. OpenSpec workflow 규칙은 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)가 소유한다.
+Current capability의 normative contract는 `docs/`가 아니라 [`../openspec/specs/`](../openspec/specs/)가 소유한다. OpenSpec의 lifecycle과 workflow semantics는 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)가 소유한다.
 
 ## Trust Boundary
 
 문서 유형마다 답하는 질문이 다르다. 하나의 artifact가 다른 종류의 evidence를 대신하지 않는다.
 
 - **Implementation:** current source와 configuration을 직접 확인한다.
-- **Normative capability contract:** `openspec/specs/**`를 사용한다. `openspec/changes/**`는 current Spec을 대신하지 않는다.
-- **Architecture / domain ownership:** `ARCHITECTURE.md`와 `domains/**`는 구조와 책임 경계를 설명하는 durable guide다. Capability contract를 소유하지 않는다.
-- **Executable specification:** tests는 expected behavior와 regression boundary를 표현하지만 test 존재 자체는 passing evidence가 아니다.
-- **Validation result:** matching repository revision의 command, CI result 또는 보존된 runtime evidence만 사용한다.
+- **Normative capability contract:** `openspec/specs/**`를 사용한다.
+- **Architecture / domain ownership:** `ARCHITECTURE.md`와 `domains/**`는 구조와 책임 경계를 설명하는 durable guide다.
+- **Executable specification / validation:** tests는 expected behavior를 표현하지만 passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 - **Active goal:** `mvp.md`는 목표와 acceptance를 소유하지만 implementation status나 validation result를 소유하지 않는다.
 - **Human projection:** `development/dashboard.md`는 편의용 snapshot이며 current state나 validation evidence를 소유하지 않는다.
 
@@ -33,11 +32,8 @@ Owning source가 서로 다르면 문서에서 임의로 하나를 정답으로 
 
 - 사용자가 dashboard 자체를 묻거나 task가 명시적인 dashboard refresh인 경우에만 `development/dashboard.md`를 읽는다. 그 외 orientation, planning, implementation, review 또는 validation에 사용하지 않는다.
 - Dashboard는 별도의 dashboard refresh 작업에서만 갱신한다. 일반 feature, fix, refactor, test, spec 또는 documentation 작업의 side effect로 수정하지 않는다.
-- Refresh는 installed `mols-markdown-dashboard` skill을 사용해 current canonical Spec, source, tests와 matching-revision execution evidence를 다시 조사한다.
-- Project dashboard 계약의 `Development Progress`, `Implementation Gaps`, `Verification Gaps`를 유지하고 Requirement와 Verification Target을 의미 단위로 집계한다.
-- 근거 없는 status나 denominator를 추측하지 않는다.
-- Dashboard에 canonical contract, acceptance definition 또는 project-wide machine-readable SSOT를 새로 만들지 않는다.
-- Repository artifact는 Markdown을 기본으로 유지한다. Skill이 작업용 YAML을 사용하더라도 별도 요청 없이 dashboard SSOT로 저장하지 않는다.
+- Refresh는 installed `mols-markdown-dashboard` skill을 사용하고 current owning sources와 matching-revision evidence에서 사실을 다시 도출한다. Skill contract를 이 파일에 복제하지 않는다.
+- `development/dashboard.md`는 human-only non-canonical projection으로 유지한다. 별도 요청 없이 추가 dashboard SSOT를 만들지 않는다.
 
 ## Phase Lifecycle
 
