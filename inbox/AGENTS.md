@@ -11,7 +11,7 @@ Routine artifact의 owning location은 dedicated `inbox` branch다. `main`에는
 1. Artifact의 primary purpose와 type을 정한다.
 1. 필요한 경우 해당 type guideline만 읽는다.
 1. `inbox` branch의 현재 날짜 디렉터리에 artifact를 작성한다.
-1. Routine artifact direct push는 [Inbox Branch](../docs/development/vcs-git/branch.md#inbox-branch)를 따른다.
+1. Branch·push·formatting·sync 규칙은 [Inbox Branch](_guidelines/branch.md)를 따른다.
 
 ## Artifact Contract
 
@@ -59,12 +59,6 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 - Structure나 visual은 comprehension을 개선할 때만 사용한다.
 - Secret, full generated output, large log는 저장하지 않는다.
 
-## Formatting
-
-Routine artifact pipeline은 repository-managed automation으로 post-push `rumdl fmt` normalization을 제공한다. Formatting은 content validation이 아니며, transport와 write safety는 [Formatting](../docs/development/vcs-git/branch.md#formatting)이 소유한다.
-
-Routine artifact 작성자는 manual formatting 여부 때문에 별도 Pull Request를 만들지 않는다.
-
 ## Human Index
 
 `main:/inbox/README.md`는 사람이 최근 inbox artifact를 찾기 위한 human-only index다.
@@ -75,7 +69,7 @@ Routine artifact 작성자는 manual formatting 여부 때문에 별도 Pull Req
 - Agent는 orientation, planning, implementation, review 또는 validation의 source로 index를 사용하지 않는다.
 - Routine artifact 작성자는 index를 side effect로 수동 갱신하지 않는다.
 
-Index lifecycle과 direct-write boundary는 [Main Inbox Index](../docs/development/vcs-git/branch.md#main-inbox-index)가 소유한다.
+Index lifecycle과 direct-write boundary는 [Inbox Branch](_guidelines/branch.md#main-inbox-index)가 소유한다.
 
 ## Lifecycle
 
