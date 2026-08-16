@@ -8,7 +8,7 @@
 
 ## Latest
 
-최근 artifact 목록은 repository-managed automation이 이 section을 갱신하도록 설계한다. Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우에는 위 `inbox` branch에서 직접 확인한다.
+- 2026-08-17 03:12 — [`review · project-pivot · portfolio-midterm`](https://github.com/mols3131d/project-pivot/blob/inbox/inbox/2026-08-17/03-12-review-project-pivot-portfolio-midterm.md)
 
 ## Usage
 
