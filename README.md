@@ -1,6 +1,6 @@
 # project-pivot
 
-Evidence-first Data Reliability와 bounded, observable AI judgment를 결합하고, local HMDA pipeline을 initial proving ground로 사용하는 프로젝트.
+근거 우선 데이터 신뢰성과 제한적이고 관찰 가능한 AI 판단을 결합하고, 로컬 HMDA 파이프라인을 첫 증명 환경으로 사용하는 프로젝트.
 
 ## Document Navigation
 
