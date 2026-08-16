@@ -14,18 +14,18 @@ Deterministic truth와 safety contract를 먼저 만들고 그 위에 Agentic re
 
 - clean state와 대표 synthetic incident를 재현 가능하게 구분한다.
 - incident를 뒷받침하는 profile/evidence와 downstream impact를 만든다.
-- deterministic remediation baseline을 제공해 AI가 action space를 자유롭게 발명하지 않게 한다.
+- 기존 `RemediationDraft`를 결정론적으로 생성해 AI가 action space를 자유롭게 발명하지 않게 한다.
 - candidate, approval, recovery와 post-recovery verification에 필요한 state identity를 유지한다.
 
 ### Bounded Agentic Review
 
-- 실제 model invocation은 deterministic incident, evidence, impact와 remediation baseline을 입력으로 사용한다.
+- 실제 model invocation은 deterministic incident, evidence, impact와 `RemediationDraft`를 입력으로 사용한다.
 - 결과는 사람이 검토하고 코드로 평가할 수 있는 structured contract로 반환한다.
 - review가 사용한 evidence와 model/prompt 조건을 다시 식별할 수 있는 invocation evidence를 남긴다.
 - uncertainty나 근거 부족은 숨기지 않고 review 결과에 표현한다.
 
 Agentic reviewer는 deterministic result를 **설명·검토·보강**한다. Detection rule,
-recovery proposal identity 또는 approval decision을 대체하지 않는다.
+`RemediationDraft`, recovery proposal identity 또는 approval decision을 대체하지 않는다.
 
 ### Human-Controlled Recovery
 
@@ -57,7 +57,9 @@ Agentic MVP는 **deterministic contract proof**와 **live model proof**를 분�
 실제 Agentic capability가 단순 mock이나 deterministic rule wrapper가 아님을 확인한다.
 
 - current revision에서 실제 model invocation을 최소 한 번 수행한다.
-- model/prompt identity, evidence references, structured output과 invocation result를 남긴다.
+- model과 주요 config, prompt identity/version, project revision, evidence references와
+  structured output을 남긴다.
+- latency와 provider가 제공하는 usage(token/cost)를 invocation evidence에 포함한다.
 - contract proof가 정의한 validator와 safety evaluator를 통과한다.
 - exact prose나 token sequence의 재현성은 요구하지 않는다.
 
@@ -72,7 +74,7 @@ Agentic contract proof와 live model proof가 모두 확인되면 완료다.
 ```text
 clean baseline
 → controlled incident
-→ deterministic evidence + impact + remediation baseline
+→ deterministic evidence + impact + RemediationDraft
 → bounded Agentic review
 → contract validation / safety evaluation
 → external human approval
@@ -85,7 +87,7 @@ clean baseline
 
 - Agentic review 없이도 incident의 핵심 사실과 safety gate를 deterministic하게 판단할 수 있다.
 - deterministic contract proof가 외부 model 호출 없이 반복 가능하다.
-- 실제 model invocation이 evidence-bound structured review를 생성하고 invocation evidence를 남긴다.
+- 실제 model invocation이 evidence-bound structured review를 생성하고 observability evidence를 남긴다.
 - Agentic output만으로 state mutation을 시작할 수 없다.
 - approved recovery 뒤 incident가 해소되고 downstream validation이 정상 state를 확인한다.
 - expected failure와 retry path가 검토 가능한 evidence로 남는다.
@@ -95,7 +97,7 @@ clean baseline
 **Owns**
 
 - profiling, incident detection과 impact evidence
-- deterministic remediation baseline
+- deterministic `RemediationDraft`
 - bounded Agentic review contract, validation과 safety evaluation
 - recovery proposal/approval boundary를 사용하는 recovery execution
 - post-recovery evaluation과 replay evidence

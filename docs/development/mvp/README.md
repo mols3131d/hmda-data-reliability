@@ -21,8 +21,8 @@ dbt evidence를 남긴다.
 ### Agentic Reliability
 
 데이터 이상에 대한 deterministic truth layer를 먼저 만들고, 제한된 Agentic reviewer가
-그 evidence를 설명·검토한다. AI 판단은 관찰·평가 가능해야 하며 실제 state change
-권한은 갖지 않는다.
+그 evidence와 기존 `RemediationDraft`를 설명·검토한다. AI 판단은 관찰·평가 가능해야 하며
+실제 state change 권한은 갖지 않는다.
 
 **Data Lake만 있거나 Agentic demo만 있어서는 Project Pivot MVP가 아니다.**
 
@@ -34,7 +34,7 @@ flowchart LR
     bronze --> analytical["dbt staging / marts"]
     analytical --> evidence["Data + dbt evidence"]
     evidence --> reliability["Deterministic Reliability"]
-    reliability --> incident["Incident + Remediation Baseline"]
+    reliability --> incident["Incident + RemediationDraft"]
     incident --> agent["Bounded Agentic Review"]
     agent --> review["Review Evidence"]
     review --> human["Human Approval"]
@@ -54,12 +54,12 @@ review와 approval을 data plane에 암묵적으로 자동 결합하지 않는�
 
 1. **Deterministic truth first** — detection과 핵심 safety 판단을 LLM에 맡기지 않는다.
 2. **Evidence-bound AI** — Agentic 판단은 저장소가 제공한 evidence와 deterministic
-   remediation baseline을 근거로 한다.
+   `RemediationDraft`를 근거로 한다.
 3. **Human-controlled mutation** — AI output만으로 데이터 state를 변경할 수 없다.
 4. **Locally reproducible core** — Data Lake, Reliability와 safety contract는 외부 model
    호출 없이도 로컬에서 반복 검증할 수 있다.
-5. **Observable live judgment** — 실제 Agentic invocation은 입력 근거, model/prompt 조건과
-   결과를 비교·검토할 evidence를 남긴다.
+5. **Observable live judgment** — 실제 Agentic invocation은 입력 근거, model/prompt 조건,
+   결과와 실행 비용·성능을 비교·검토할 evidence를 남긴다.
 6. **Acceptance over feature count** — incident type이나 기능 수가 아니라 완결된 proof로
    MVP를 판단한다.
 
@@ -85,9 +85,11 @@ MVP는 하나의 current revision에서 다음 **system proof**가 모두 성립
   recovery 뒤 같은 기준으로 다시 검증한다.
 - **Agentic contract proof** — structured review contract, evidence binding, forbidden-action
   guardrail과 evaluation을 deterministic하게 반복 검증할 수 있다.
-- **Live Agentic proof** — 같은 revision에서 실제 model invocation이 deterministic evidence를
-  기반으로 structured review와 invocation evidence를 최소 한 번 남긴다. 이 proof는 외부
-  model availability를 요구할 수 있으며 deterministic regression과 동일하게 취급하지 않는다.
+- **Live Agentic proof** — 같은 revision에서 실제 model invocation이 evidence와
+  `RemediationDraft`를 기반으로 structured review를 최소 한 번 만들고, model/config,
+  prompt identity, evidence refs, output, latency와 제공 가능한 usage(token/cost)를 invocation
+  evidence로 남긴다. 이 proof는 외부 model availability를 요구할 수 있으며 deterministic
+  regression과 동일하게 취급하지 않는다.
 - **Safety proof** — Agentic output은 deterministic guardrail과 human approval을 우회해
   mutation을 일으킬 수 없다.
 - **Reproducibility proof** — 정상, incident, recovery와 주요 failure/retry의 deterministic
@@ -102,9 +104,9 @@ MVP는 하나의 current revision에서 다음 **system proof**가 모두 성립
 - 로컬 HMDA CSV/Parquet와 Source→DuckDB Bronze 적재
 - dbt staging/marts와 artifact evidence
 - Dagster local data plane
-- deterministic profiling, incident, impact, remediation, recovery와 evaluation
+- deterministic profiling, incident, impact, `RemediationDraft`, recovery와 evaluation
 - 대표 synthetic incident를 사용하는 최소 Agentic review
-- Agentic contract evaluation과 최소 한 번의 live model proof
+- Agentic contract evaluation과 최소 한 번의 observable live model proof
 - human approval 뒤의 recovery와 re-validation
 
 **Out of scope**

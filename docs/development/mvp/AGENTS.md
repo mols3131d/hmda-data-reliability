@@ -34,21 +34,23 @@ MVP는 두 capability를 함께 증명한다.
 
 - **Minimal Data Lake** — HMDA Data가 Source→Bronze를 소유하고, Data Platform이 Bronze를
   dbt analytical layer로 변환하며, Orchestration이 data plane을 반복 실행한다.
-- **Agentic Reliability** — deterministic reliability evidence 위에서 제한된 Agentic reviewer가
-  설명·검토를 수행하고, 실제 state change는 human approval 뒤에만 일어난다.
+- **Agentic Reliability** — deterministic reliability evidence와 기존 `RemediationDraft`를
+  제한된 Agentic reviewer가 설명·검토하고, 실제 state change는 human approval 뒤에만 일어난다.
 
 Reliability는 deterministic truth, Agentic review와 human-controlled recovery 사이의
 evidence와 safety boundary를 소유한다.
 
 ## Agentic Boundary
 
-- deterministic detection, impact와 remediation baseline이 LLM 판단보다 먼저 존재한다.
-- Agentic output은 deterministic fact를 대체하지 않고 evidence를 설명·검토·보강한다.
+- deterministic detection, impact와 `RemediationDraft`가 LLM 판단보다 먼저 존재한다.
+- Agentic output은 deterministic fact나 `RemediationDraft`를 대체하지 않고 설명·검토·보강한다.
 - Agentic output은 approval이나 recovery command가 아니다.
 - **Contract proof**는 structured schema, evidence binding, forbidden-action guardrail과
   deterministic evaluator를 외부 model 호출 없이 반복 검증한다.
-- **Live model proof**는 같은 current revision에서 실제 model invocation과 invocation evidence를
-  최소 한 번 확인한다.
+- **Live model proof**는 같은 current revision에서 실제 model invocation과 observability
+  evidence를 최소 한 번 확인한다.
+- Live evidence에는 model/config, prompt identity, project revision, evidence refs, structured
+  output, latency와 provider가 제공하는 usage(token/cost)를 포함한다.
 - Live model proof의 non-determinism을 deterministic regression이나 CI의 전제조건으로 만들지 않는다.
 - 특정 model provider나 LLMOps vendor는 MVP의 canonical dependency가 아니다.
 - autonomous recovery, 범용 autonomous RCA와 multi-agent orchestration은 MVP 밖이다.
