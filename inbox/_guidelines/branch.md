@@ -8,27 +8,18 @@
 
 ## Direct Push
 
-Routine artifact direct push를 허용하는 경로는 다음뿐이다.
+[`../AGENTS.md`](../AGENTS.md)가 정의한 routine artifact만 `inbox`에 직접 commit하고 push할 수 있다. Artifact의 경로와 구조는 이 문서가 별도로 제한하지 않는다.
 
-```text
-inbox/YYYY-MM-DD/**
-inbox/archive/**
-```
-
-이 allowlist는 branch transport boundary다. Artifact naming과 lifecycle contract는 [`../AGENTS.md`](../AGENTS.md)를 따른다.
-
-- Routine artifact는 `inbox`에 직접 commit하고 push하며 Pull Request를 만들지 않는다.
 - 하나의 commit에는 하나의 artifact 또는 함께 소비되는 하나의 bundle만 포함한다.
 - Routine artifact push에는 routine artifact 변경만 포함한다.
-- Merge base 기준 `inbox` 고유 content는 위 허용 경로에만 존재해야 한다.
-- `inbox/AGENTS.md`, `inbox/README.md`, `inbox/_guidelines/**`, `inbox/_templates/**`는 운영 자산이며 direct push 예외에 포함하지 않는다.
-- 운영 자산과 그 밖의 repository content는 최신 `main`에서 일반 작업 branch와 Draft Pull Request로 변경한다.
+- Merge base 기준 `inbox` 고유 content는 routine artifact만 포함해야 한다.
+- Inbox 운영 자산과 그 밖의 repository content는 direct push 예외에 포함하지 않으며 최신 `main`에서 일반 작업 branch와 Draft Pull Request로 변경한다.
 
 Push 전에는 다음만 확인한다.
 
 1. Local branch와 push destination이 모두 `inbox`다.
 1. Remote `inbox`를 갱신했고 push가 fast-forward다.
-1. Push에 포함된 변경이 허용 경로 안에만 있다.
+1. Push의 모든 변경이 [`../AGENTS.md`](../AGENTS.md)가 정의한 routine artifact에 해당한다.
 1. 예상하지 못한 변경이나 unresolved conflict가 없다.
 
 Remote가 앞서 있으면 먼저 반영한다. Force-push, remote history rewrite, 다른 작업자의 변경을 덮어쓰기 위한 reset 또는 branch replacement는 금지한다.
@@ -39,7 +30,7 @@ Repository-managed automation은 routine artifact push 뒤 변경된 Markdown ar
 
 - Formatting은 content validation gate가 아니라 mechanical normalization이다.
 - Formatter는 해당 push에서 변경된 routine artifact만 수정하고 repository의 current Markdown formatter configuration을 따른다.
-- 운영 자산이나 다른 repository path를 수정하지 않는다.
+- 운영 자산이나 다른 repository content를 수정하지 않는다.
 - Formatting commit에는 formatter가 만든 변경 외의 내용을 섞지 않는다.
 - 동시 update는 직렬화하거나 push 직전 remote `inbox`를 다시 읽어 stale ref를 덮어쓰지 않는다. Force-push는 사용하지 않는다.
 - Formatter 실패는 artifact의 의미를 승인하거나 거부하는 판단으로 해석하지 않는다.
@@ -48,7 +39,7 @@ Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우�
 
 ## Main Sync
 
-`inbox`가 최신 repository context를 필요로 할 때 `main`을 `inbox`에 merge한다. `main`에서 `inbox/AGENTS.md`, `inbox/_guidelines/**` 또는 `inbox/_templates/**`가 변경되면 다음 routine artifact 작업 전에 sync한다. 방향은 항상 **`main` → `inbox`**이며, sync를 이유로 `inbox` content를 `main`에 merge하지 않는다.
+`inbox`가 최신 repository context를 필요로 할 때 `main`을 `inbox`에 merge한다. Routine artifact 작성 또는 Inbox branch 운영에 적용되는 guidance가 `main`에서 변경되면 다음 routine artifact 작업 전에 sync한다. Human-only index의 내용 변경만으로는 sync를 요구하지 않는다. 방향은 항상 **`main` → `inbox`**이며, sync를 이유로 `inbox` content를 `main`에 merge하지 않는다.
 
 - Sync commit에는 `main` 반영 외의 변경을 섞지 않는다.
 - Conflict나 예상하지 못한 path가 생기면 자동으로 의미를 결정하지 않고 중단한다.
