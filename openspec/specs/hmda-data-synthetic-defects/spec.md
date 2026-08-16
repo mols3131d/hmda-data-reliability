@@ -52,12 +52,3 @@ HMDA reliability 동작을 검증할 수 있도록 원천을 수정하지 않고
 
 - **WHEN** `loan_amount`에 schema drift를 적용할 때
 - **THEN** 결과 파일에서 해당 column의 type은 원본과 달라져야 한다.
-
-### Requirement: Freshness delay case
-
-시스템은 원천 행을 보존하면서 지연된 observation time을 표현하는 freshness case를 생성할 수 있어야 한다(SHALL).
-
-#### Scenario: Delayed observation
-
-- **WHEN** delay가 지정된 freshness case를 생성할 때
-- **THEN** 결과는 설정된 지연을 검증할 수 있는 observation timestamp를 포함해야 한다.
