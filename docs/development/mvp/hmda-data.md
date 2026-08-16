@@ -1,31 +1,56 @@
-# MVP Domain Milestone: HMDA Data
+# MVP Domain: HMDA Data
 
-## Goal
+## Mission
 
-로컬 HMDA 원천을 안전하게 발견·검증하고 DuckDB Bronze가 사용할 수 있는 재현 가능한
-입력과 synthetic reliability case를 제공한다.
+Project Pivot이 검증할 수 있는 **신뢰 가능한 local input와 재현 가능한 failure case**를 제공한다.
 
-## Outcomes
+HMDA Data domain은 데이터의 의미를 추론하거나 incident를 판단하지 않는다. 원천을 안전하게
+다루고, downstream Data Lake와 Reliability가 같은 입력을 다시 관찰할 수 있게 하는 것이
+MVP에서의 책임이다.
 
-- CSV/Parquet 원천을 명시적인 file과 partition identity로 다룰 수 있다.
-- full 또는 partition ingestion에 필요한 source metadata를 안정적으로 제공한다.
-- 같은 입력의 재실행이 의도하지 않은 duplicate state를 만들지 않는다.
-- 원본 파일을 수정하지 않고 controlled synthetic defect를 만들 수 있다.
-- Reliability와 recovery가 비교할 수 있는 content evidence를 제공한다.
+## MVP Contribution
+
+- local HMDA source를 발견하고 입력 계약에 맞는지 검증한다.
+- 원천을 변경하지 않고 Bronze에 적재할 수 있는 안정적인 입력을 제공한다.
+- logical partition과 실제 content를 구분할 수 있는 identity를 유지한다.
+- 정상 상태와 대표 synthetic failure를 재현 가능한 데이터 case로 제공한다.
+- downstream에서 evidence로 연결할 수 있는 source/partition provenance를 보존한다.
 
 ## Done When
 
-대표 HMDA fixture를 반복 실행해 같은 logical source와 partition을 식별할 수 있고,
-Bronze ingestion과 synthetic case가 원천을 훼손하지 않음을 검증하면 완료한다.
+같은 source와 case definition에서 동일한 logical input을 다시 구성할 수 있고,
+정상 case와 synthetic failure가 원천 훼손 없이 Bronze와 Reliability에 전달된다.
 
-## Non-Goals
+완료 판단은 파일 수나 fixture 수가 아니라 다음 proof로 한다.
 
-- 원천 다운로드와 외부 catalog
-- 다수 dataset을 위한 범용 connector framework
-- dbt 변환, incident 판단, LLM 분석 또는 approval 결정
+- source validation이 잘못된 입력을 명시적으로 거부한다.
+- 반복 실행이 source를 mutation하지 않는다.
+- synthetic case의 identity와 기대 defect가 재현된다.
+- recovery 이후 target content를 원래 기대 상태와 비교할 기준을 제공한다.
+
+## Boundary
+
+**Owns**
+
+- HMDA source discovery와 validation
+- Bronze ingestion을 위한 source contract
+- source/partition identity
+- synthetic data case 생성
+
+**Does not own**
+
+- dbt transformation과 artifact lifecycle
+- stage execution/promotion policy
+- incident 판단과 remediation
+- Agentic reasoning, approval과 recovery policy
+
+## Acceptance Evidence
+
+- `src/project_pivot/hmda_data/`
+- `tests/hmda_data/`
+- 관련 HMDA ingestion / synthetic-case OpenSpec
 
 ## References
 
-- [HMDA Data Domain](../../domains/hmda-data.md)
 - [MVP](README.md)
-- `tests/hmda_data/`
+- [HMDA Data Domain](../../domains/hmda-data.md)

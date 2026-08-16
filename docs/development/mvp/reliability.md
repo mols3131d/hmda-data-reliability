@@ -1,58 +1,94 @@
-# MVP Domain Milestone: Reliability
+# MVP Domain: Reliability
 
-## Goal
+## Mission
 
-Data Lake의 실제 evidence로 incident를 결정론적으로 판단하고 안전하게 복구하며,
-그 결과를 **제한된 LLM reviewer가 설명·검토**할 수 있게 한다.
+데이터 문제를 **결정론적으로 증명하고, AI가 그 evidence를 제한된 범위에서 해석하며,
+사람이 승인한 recovery만 안전하게 실행되는 최소 Agentic Reliability lifecycle**을 제공한다.
 
-## Outcomes
+Reliability domain은 Project Pivot MVP의 차별화 지점이다. LLM을 truth source나 execution
+controller로 사용하지 않고, 검증 가능한 deterministic layer 위에 review capability로 배치한다.
 
-### Deterministic Reliability
+## MVP Capability Layers
 
-- clean state와 최소 한 개 controlled incident를 재현 가능하게 구분한다.
-- incident, impact와 `RemediationDraft`가 raw/dbt evidence를 참조한다.
-- candidate validation과 approval 이전 단계는 current state를 변경하지 않는다.
-- stale, diverged 또는 불완전한 approval은 mutation 전에 차단된다.
-- 승인된 recovery 뒤 incident 해소와 downstream validation을 다시 확인할 수 있다.
-- retry와 failure가 필요한 reconciliation action과 함께 evidence로 남는다.
+### Deterministic Truth
 
-### Minimal Agentic Review
+- clean state와 대표 synthetic incident를 재현 가능하게 구분한다.
+- incident를 뒷받침하는 profile/evidence와 downstream impact를 만든다.
+- deterministic `RemediationDraft`를 제공해 AI가 자유롭게 action space를 발명하지 않게 한다.
+- candidate, approval, recovery와 post-recovery verification에 필요한 state identity를 유지한다.
 
-- LLM reviewer는 `Incident`, evidence와 deterministic `RemediationDraft`를 입력으로 받는다.
-- 결과는 summary, evidence used, likely cause, draft review와 warning을 구조화해 반환한다.
-- 사용한 evidence는 실제 입력 evidence의 범위를 벗어나지 않는지 deterministic check가 가능하다.
-- LLM은 detection 결과를 덮어쓰거나 approval/recovery action을 직접 실행하지 않는다.
-- invocation은 incident/evidence identity, prompt/version, model과 structured output을
-  다시 연결할 수 있는 최소 trace를 남긴다.
+### Bounded Agentic Review
+
+- 실제 model invocation이 deterministic incident, evidence, impact와 `RemediationDraft`를 입력으로 사용한다.
+- 결과는 사람이 검토하고 코드로 평가할 수 있는 structured contract로 반환한다.
+- review가 사용한 evidence와 invocation 조건을 다시 식별할 수 있는 execution evidence를 남긴다.
+- deterministic safety evaluation이 최소한 output structure, evidence reference와 금지된 action boundary를 확인한다.
+- uncertainty나 근거 부족은 숨기지 않고 review 결과에 표현한다.
+
+Agentic reviewer는 deterministic result를 **설명·검토·보강**한다. Detection rule, recovery
+proposal identity 또는 approval decision을 대체하지 않는다.
+
+### Human-Controlled Recovery
+
+- recovery proposal은 검증한 target/evidence state와 결합된다.
+- incomplete approval, invalid candidate, stale/diverged target은 mutation 전에 차단된다.
+- 승인된 recovery만 expected state를 복원한다.
+- recovery 뒤 같은 deterministic lifecycle을 다시 실행해 incident 해소를 검증한다.
+- retry/replay는 duplicate mutation 없이 필요한 verification을 이어간다.
 
 ## Done When
 
-하나의 synthetic incident에서 다음 흐름을 current revision으로 재현하면 완료한다.
+대표 synthetic incident 하나가 다음 lifecycle을 **한 current revision에서** 재현하면 완료다.
 
 ```text
-deterministic detection
-→ evidence + RemediationDraft
-→ real LLM invocation
-→ structured review + safety checks
+clean baseline
+→ controlled incident
+→ deterministic evidence + impact + RemediationDraft
+→ bounded Agentic review
+→ deterministic review evaluation
 → external human approval
 → approved recovery
 → deterministic re-validation
+→ replay/failure evidence
 ```
 
-LLM review가 실패하거나 부적절한 action을 제안해도 mutation 권한을 얻지 못해야 한다.
+이 proof에서 다음이 동시에 확인되어야 한다.
 
-## Non-Goals
+- Agentic review 없이도 incident의 핵심 사실과 safety gate를 deterministic하게 판단할 수 있다.
+- 실제 Agentic invocation이 evidence-bound structured review를 생성한다.
+- 어떤 evidence와 invocation 조건이 결과를 만들었는지 추적할 수 있다.
+- Agentic output만으로 state mutation을 시작할 수 없다.
+- approved recovery 뒤 incident가 해소되고 downstream validation이 정상 state를 확인한다.
+- expected failure와 retry path가 검토 가능한 evidence로 남는다.
 
-- LLM 기반 incident detection
-- LLM이 처음부터 자유롭게 recovery plan을 생성하거나 직접 실행
-- 모든 incident type의 Agentic parity
-- autonomous multi-agent RCA와 approval
-- 특정 model provider 또는 LLMOps vendor를 MVP contract로 고정
-- production prompt management와 online evaluation platform
+## Boundary
+
+**Owns**
+
+- profiling, incident detection과 impact evidence
+- deterministic remediation baseline
+- bounded Agentic review contract와 safety evaluation
+- recovery proposal/approval boundary를 사용하는 recovery execution
+- post-recovery evaluation과 replay evidence
+
+**Does not own**
+
+- 외부 인간의 approval decision 자체
+- Dagster reliability control-plane
+- LLM 기반 anomaly detection
+- approval 없는 autonomous recovery
+- 범용 autonomous RCA와 multi-agent planning
+- 특정 model provider 또는 LLMOps vendor의 운영 방식
+
+## Acceptance Evidence
+
+- `src/project_pivot/reliability/`
+- `tests/reliability/`
+- incident lifecycle, recovery와 evaluation 관련 OpenSpec
+- Agentic review가 구현되면 해당 structured contract, trace/evaluation test evidence
 
 ## References
 
-- [Reliability Domain](../../domains/reliability.md)
 - [MVP](README.md)
-- `src/project_pivot/reliability/`
-- `tests/reliability/`
+- [Reliability Domain](../../domains/reliability.md)
+- [Architecture](../../ARCHITECTURE.md)

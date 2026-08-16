@@ -1,4 +1,4 @@
-version: 2
+version: 3
 
 snapshot:
   date: 2026-08-16
@@ -7,20 +7,43 @@ snapshot:
 
 mvp:
   state: partial
-  gap: "최소 LLM reviewer와 Agentic invocation trace가 아직 구현되지 않았다."
+  reason: >-
+    최소 Data Lake와 deterministic Reliability 기반은 존재하지만 실제 Agentic
+    review와 같은 current revision의 end-to-end acceptance가 아직 완료되지 않았다.
+
+capabilities:
+  - name: Minimal Data Lake
+    state: implemented
+    current_revision_validation: not_verified
+    gap: current revision의 전체 data-plane acceptance 미실행
+
+  - name: Deterministic Reliability
+    state: implemented
+    current_revision_validation: not_verified
+    gap: current revision의 전체 reliability regression 미실행
+
+  - name: Agentic Reliability
+    state: partial
+    current_revision_validation: not_verified
+    gap: >-
+      실제 model invocation, structured review evidence와 deterministic review
+      evaluation이 필요하다.
+
+  - name: Human-Controlled Recovery
+    state: implemented
+    current_revision_validation: not_verified
+    gap: current revision의 end-to-end recovery acceptance 미실행
 
 domains:
   - name: HMDA Data
-    implementation: implemented
-    current_revision_validation: not_verified
+    state: implemented
     evidence:
       - src/project_pivot/hmda_data/
       - tests/hmda_data/
     gaps: []
 
   - name: Data Platform
-    implementation: implemented
-    current_revision_validation: not_verified
+    state: implemented
     evidence:
       - dbt/
       - src/project_pivot/data_platform/
@@ -29,27 +52,28 @@ domains:
     gaps: []
 
   - name: Data Operations
-    implementation: implemented
-    current_revision_validation: not_verified
+    state: implemented
     evidence:
       - src/project_pivot/data_operations/
       - tests/data_operations/
     gaps: []
 
   - name: Reliability
-    implementation: partial
-    current_revision_validation: not_verified
+    state: partial
     evidence:
       - src/project_pivot/reliability/
       - tests/reliability/
     gaps:
-      - "deterministic remediation graph는 존재하지만 실제 LLM reviewer가 없다."
-      - "Agentic structured output과 invocation trace의 MVP acceptance가 아직 없다."
+      - bounded Agentic reviewer의 실제 model invocation이 없다.
+      - structured Agentic review evidence와 deterministic safety evaluation이 없다.
 
   - name: Orchestration
-    implementation: implemented
-    current_revision_validation: not_verified
+    state: implemented
     evidence:
       - src/project_pivot/orchestration/
       - tests/orchestration/
     gaps: []
+
+blockers:
+  - bounded_agentic_review
+  - current_revision_end_to_end_acceptance
