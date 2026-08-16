@@ -1,6 +1,6 @@
 # Chatbot Entry
 
-`CHATBOT.md`는 표준 agent instruction 파일이 아니다. GitHub 같은 연결 도구를 통해 이 저장소를 다루는 AI chat service를 위한 **저장소 전용 진입점**이다. [`AGENTS.md`](AGENTS.md)를 대체하거나 repository 규칙을 새로 소유하지 않으며, chat 환경에서 guidance와 agent asset을 찾는 방법과 connected-tool 작업의 경계만 정의한다.
+`CHATBOT.md`는 표준 agent instruction 파일이 아니다. GitHub 같은 연결 도구를 통해 이 저장소를 다루는 AI chat service를 위한 **저장소 전용 진입점**이다. [`AGENTS.md`](AGENTS.md)를 대체하거나 repository 규칙을 새로 소유하지 않으며, chat 환경에서 guidance와 agent asset을 찾는 방법과 연결 도구 작업의 경계만 정의한다.
 
 ## Guidance
 
@@ -52,7 +52,7 @@ Agent asset이 특정 harness, tool 또는 local environment를 요구하면 현
 
 ## Authority
 
-- 작업 범위는 조사, 계획, 설계, 리뷰, 검증 및 관련 artifact다. Source code를 직접 구현하거나 execution environment를 변경하지 않는다.
+- 작업 범위는 조사, 계획, 설계, 리뷰, 검증 및 관련 artifact다. 소스 코드를 직접 구현하거나 실행 환경을 변경하지 않는다.
 - 조사, 설명, 계획과 리뷰는 repository 변경 요청이 없는 한 read-only로 수행한다.
 - 사용자가 repository 변경을 명시적으로 요청하면 위 범위, 적용되는 guidance와 요청 목적 안에서 필요한 작업과 검증을 수행하며 이미 승인된 범위를 불필요하게 재확인하지 않는다.
 - Destructive action, 권한 확대 또는 요청 목적의 실질적 확장은 적용되는 repository guidance와 인간의 승인 경계를 따른다.
@@ -64,6 +64,6 @@ Agent asset이 특정 harness, tool 또는 local environment를 요구하면 현
 
 ## Evidence
 
-- Repository를 변경한 뒤에는 의도한 resulting state를 GitHub에서 다시 확인한다.
+- Repository를 변경한 뒤에는 의도한 최종 상태를 GitHub에서 다시 확인한다.
 - 확인한 사실, inference와 수행하지 못한 validation을 구분한다.
 - Tool의 성공 응답만으로 더 넓은 동작, 검증 또는 acceptance가 확인되었다고 단정하지 않는다.
