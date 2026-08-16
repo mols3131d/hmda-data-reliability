@@ -1,33 +1,33 @@
 # Chatbot Entry
 
-`CHATBOT.md`는 표준 agent instruction 파일이 아니다. GitHub 같은 연결 도구를 통해 이 저장소를 다루는 AI chat service를 위한 **저장소 전용 진입점**이다. Repository 규칙을 새로 소유하거나 [`AGENTS.md`](AGENTS.md)를 대체하지 않으며, chat 환경에서 repository-owned guidance와 agent asset을 찾는 방법, connected-tool 작업에 필요한 경계만 정의한다.
+`CHATBOT.md`는 표준 agent instruction 파일이 아니다. GitHub 같은 연결 도구를 통해 이 저장소를 다루는 AI chat service를 위한 **저장소 전용 진입점**이다. [`AGENTS.md`](AGENTS.md)를 대체하거나 repository 규칙을 새로 소유하지 않으며, chat 환경에서 guidance와 agent asset을 찾는 방법과 connected-tool 작업의 경계만 정의한다.
 
 ## Guidance
 
 1. [`AGENTS.md`](AGENTS.md)를 repository guidance의 기본 entry point로 사용한다.
 2. 작업 경로에 더 가까운 `AGENTS.md`가 있으면 해당 범위에서 우선한다.
-3. Root 또는 local guidance가 연결하는 owner 중 현재 task에 직접 필요한 것만 추가로 읽는다.
+3. 적용되는 guidance가 연결하는 owner 중 현재 task에 필요한 것만 추가로 읽는다.
 
 관련 없는 guidance를 예방적으로 모두 읽지 않는다.
 
 ## Agent Assets
 
-아래 표는 discovery를 위한 projection이다. 실제 trigger, 적용 범위와 동작은 각 asset의 현재 frontmatter와 본문이 source of truth다. 표에 없는 asset도 현재 task와 직접 일치하면 사용할 수 있으며, 관련 없는 asset을 예방적으로 모두 읽지 않는다.
+아래 표는 discovery를 위한 projection이다. 실제 trigger와 동작은 linked asset의 현재 frontmatter와 본문이 source of truth다. 표에 없더라도 현재 task와 직접 일치하는 asset은 사용할 수 있다.
 
 ### Skills
 
-| Skill | Source | Use when |
-| --- | --- | --- |
-| [`pivot-research-workspace`](.agents/skills/pivot-research-workspace/SKILL.md) | Project | 근거 기반 조사, 비교, dependency 확인 또는 failure investigation |
-| [`pivot-review-code`](.agents/skills/pivot-review-code/SKILL.md) | Project | diff, commit, Pull Request 또는 구현 변경 review |
-| [`pivot-load-context-testing`](.agents/skills/pivot-load-context-testing/SKILL.md) | Project | test, pytest, validation 또는 failure debugging |
-| [`pivot-spec-driven-tdd-rpi`](.agents/skills/pivot-spec-driven-tdd-rpi/SKILL.md) | Project | Research·Review 결과를 OpenSpec workflow에 연결 |
-| `mols-agent-asset-studio` | [`skills-lock.json`](skills-lock.json) | Skill, instruction, prompt 등 agent asset 작업 |
-| `mols-markdown-for-human` | [`skills-lock.json`](skills-lock.json) | 사람이 빠르게 읽을 Markdown 문서 작성·개선 |
-| `mols-mermaid-diagram` | [`skills-lock.json`](skills-lock.json) | architecture, flow, sequence, state, model 또는 dependency 시각화 |
-| `mols-mermaid-chart` | [`skills-lock.json`](skills-lock.json) | 수치 비교, 추세, 구성비 또는 quantified flow 시각화 |
+| Skill | Use when |
+| --- | --- |
+| [`pivot-research-workspace`](.agents/skills/pivot-research-workspace/SKILL.md) | 근거 기반 조사, 비교, dependency 확인 또는 failure investigation |
+| [`pivot-review-code`](.agents/skills/pivot-review-code/SKILL.md) | diff, commit, Pull Request 또는 구현 변경 review |
+| [`pivot-load-context-testing`](.agents/skills/pivot-load-context-testing/SKILL.md) | test, pytest, validation 또는 failure debugging |
+| [`pivot-spec-driven-tdd-rpi`](.agents/skills/pivot-spec-driven-tdd-rpi/SKILL.md) | Research·Review 결과를 OpenSpec workflow에 연결 |
+| [`mols-agent-asset-studio`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-agent-asset-studio/SKILL.md) | Skill, instruction, prompt 등 agent asset 작업 |
+| [`mols-markdown-for-human`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-markdown-for-human/SKILL.md) | 사람이 빠르게 읽을 Markdown 문서 작성·개선 |
+| [`mols-mermaid-diagram`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-mermaid-diagram/SKILL.md) | architecture, flow, sequence, state, model 또는 dependency 시각화 |
+| [`mols-mermaid-chart`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-mermaid-chart/SKILL.md) | 수치 비교, 추세, 구성비 또는 quantified flow 시각화 |
 
-[`skills-lock.json`](skills-lock.json)은 installed Skill inventory이며 activation contract가 아니다. Project Skill은 해당 `SKILL.md`의 frontmatter를, installed Skill은 lock이 가리키는 원본 Skill의 frontmatter를 확인한 뒤 적용한다.
+[`skills-lock.json`](skills-lock.json)은 installed Skill inventory다. Installed Skill도 linked 원본 `SKILL.md`의 current frontmatter를 확인한 뒤 적용한다.
 
 ### Path Instructions
 
@@ -35,16 +35,16 @@
 
 | Instruction | `applyTo` |
 | --- | --- |
-| `Project Pivot` | `src/project_pivot/**/*` |
-| `Development` | `src/**/*` |
-| `Python` | `src/**/*.py` |
-| `dbt` | `dbt/**` |
-| `Reliability` | `src/project_pivot/reliability/**,tests/reliability/**` |
-| `Orchestration` | `src/project_pivot/orchestration/**,tests/orchestration/**` |
-| `Markdown` | `**/*.md` |
-| `Local Mermaid Diagrams` | `**/*.md, **/*.mmd, **/*.mermaid` |
+| [`Project Pivot`](.github/instructions/project.instructions.md) | `src/project_pivot/**/*` |
+| [`Development`](.github/instructions/development.instructions.md) | `src/**/*` |
+| [`Python`](.github/instructions/python.instructions.md) | `src/**/*.py` |
+| [`dbt`](.github/instructions/dbt.instructions.md) | `dbt/**` |
+| [`Reliability`](.github/instructions/reliability.instructions.md) | `src/project_pivot/reliability/**,tests/reliability/**` |
+| [`Orchestration`](.github/instructions/orchestration.instructions.md) | `src/project_pivot/orchestration/**,tests/orchestration/**` |
+| [`Markdown`](.github/instructions/markdown.instructions.md) | `**/*.md` |
+| [`Local Mermaid Diagrams`](.github/instructions/mermaid.instructions.md) | `**/*.md, **/*.mmd, **/*.mermaid` |
 
-정확한 selector와 규칙은 각 instruction의 현재 frontmatter와 본문을 따른다.
+정확한 selector와 규칙은 linked instruction의 current frontmatter와 본문을 따른다. 특정 harness나 로컬 도구를 요구하는 instruction은 현재 chat 환경에서 해당 capability를 실제로 사용할 수 있을 때만 그 실행 절차를 적용한다.
 
 ## Repository State
 
