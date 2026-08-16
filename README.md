@@ -27,17 +27,25 @@ Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 
 ```mermaid
 flowchart LR
     source["HMDA Source"] --> lake["Local Data Lake"]
-    lake --> evidence["Data + Execution Evidence"]
-    evidence --> reliability["Deterministic Reliability"]
-    reliability --> incident["Incident + RemediationDraft"]
-    incident --> proposal["Validated RecoveryProposal"]
-    proposal --> approval["Human Approval"]
-    approval --> recovery["Approved Recovery"]
-    recovery --> verify["Re-validation"]
 
-    incident --> agent["Bounded Agentic Review"]
-    agent --> guard["Deterministic Guard"]
-    guard -. advisory .-> approval
+    subgraph reliability["Deterministic Reliability"]
+        lake --> evidence["Data + Execution Evidence"]
+        evidence --> incident["Incident + RemediationDraft"]
+        incident --> proposal["Validated RecoveryProposal"]
+    end
+
+    subgraph advisory["Bounded AI Advisory"]
+        incident -. evidence .-> agent["Agentic Review"]
+        agent --> guard["Deterministic Guard"]
+    end
+
+    subgraph recovery["Controlled Recovery"]
+        proposal --> approval{"Human Approval"}
+        approval --> action["Approved Recovery"]
+        action --> verify["Re-validation"]
+    end
+
+    guard -. advisory only .-> approval
 ```
 
 Agentic review는 human decision을 보조하지만 approval이나 recovery의 authority를 대체하지 않는다. AI 활용 범위를 넓히는 것보다 AI가 실패해도 신뢰성 판단과 recovery path를 다시 설명하고 검증할 수 있는 경계를 우선한다.
