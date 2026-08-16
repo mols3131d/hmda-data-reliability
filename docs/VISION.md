@@ -55,7 +55,8 @@ AI 위임은 기능 자체가 아니라 **검증된 효용과 실패 특성**으
 flowchart LR
     source["Source Data"] --> bronze["Bronze"]
     bronze --> analytical["Analytical Layer"]
-    analytical --> evidence["Profile / Metadata / Lineage"]
+    bronze --> evidence["Profile / Metadata / Lineage"]
+    analytical --> evidence
     evidence --> detect["Detect and Assess"]
     detect --> incident{"Incident?"}
 
