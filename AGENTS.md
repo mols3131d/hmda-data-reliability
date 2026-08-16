@@ -10,9 +10,10 @@
 
 ## Documentation Evidence
 
-- `docs/dashboard.md` is a human convenience snapshot, not an agent context or evidence source.
+- `docs/development/dashboard.md` is a human convenience snapshot, not an agent context or evidence source.
 - Ignore the dashboard during ordinary repository orientation, planning, implementation, review, and validation. Read it only when the user explicitly asks about the dashboard or the task is a dashboard refresh.
 - Do not update the dashboard as a side effect of ordinary feature, fix, refactor, test, spec, or documentation work. Update it only when the task explicitly targets dashboard refresh.
+- Detailed dashboard rules are owned by `docs/AGENTS.md`.
 - `openspec/changes/**` contains work plans and change artifacts. A Change may describe intended deltas, tasks, design decisions, and review evidence, but it is not the canonical contract for the current system.
 - `openspec/specs/**` is the canonical OpenSpec contract for current capabilities. A Change does not override the corresponding Spec until the durable result is synchronized into `openspec/specs/**`.
 - Resolve current facts from the owning source: source/configuration for implementation, `openspec/specs/**` for canonical capability contracts, `docs/ARCHITECTURE.md` / `docs/domains/**` for durable architecture and ownership boundaries, and matching-revision execution output for validation results.

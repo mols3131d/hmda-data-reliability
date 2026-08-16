@@ -1,26 +1,31 @@
-# Development Guides
+# Development
 
-이 directory는 **phase와 무관하게 유지되는 repository 개발 방법과 운영 규칙**을 관리한다. 제품 phase의 목표, 진행 상태와 historical readiness는 여기서 소유하지 않는다.
+이 directory는 repository의 **phase-independent development guides**와 사람이 빠르게 보는 **development dashboard**를 둔다. Dashboard는 위치상 development에 속하지만 개발 규칙이나 canonical state를 소유하지 않는 비권위 projection이다.
 
-## Guides
+## Documents
 
 | Document | Role | Use when |
 | --- | --- | --- |
+| [Development Dashboard](dashboard.md) | human-only development status snapshot | 사람이 개발 진행 상태와 gap을 빠르게 확인할 때 |
 | [Testing Guide](testing.md) | pytest command, marker, report, coverage, tracing | test를 실행하거나 결과를 확인할 때 |
 | [Test Design and Implementation](test-design-and-implementation.md) | requirement를 observable contract, scenario와 oracle로 변환하는 기준 | test를 설계하거나 requirement를 추적할 때 |
 | [Version Control and GitHub](vcs-git/README.md) | branch, commit, Pull Request와 review 운영 규칙 | Git/GitHub 작업을 수행할 때 |
 
 ## Boundary
 
-- 시스템 구조와 domain contract는 [`../ARCHITECTURE.md`](../ARCHITECTURE.md), [`../domains/**`](../domains/OVERVIEW.md)가 소유한다.
-- Active product goal, human dashboard와 historical phase 문서는 이 directory의 책임이 아니다.
-- 완료된 phase bundle은 이 directory에 보존하지 않는다. Durable knowledge를 canonical owner로 승격한 뒤 삭제한다.
+- Current capability의 normative contract는 [`../../openspec/specs/`](../../openspec/specs/)가 소유한다.
+- 시스템 구조와 domain ownership guidance는 [`../ARCHITECTURE.md`](../ARCHITECTURE.md), [`../domains/**`](../domains/OVERVIEW.md)가 설명한다.
+- Active product goal은 [`../mvp.md`](../mvp.md)가 소유한다.
+- [`dashboard.md`](dashboard.md)는 위 source들을 대체하지 않는 인간용 projection이다.
+- Dashboard의 읽기·갱신 규칙은 [`../AGENTS.md`](../AGENTS.md#dashboard-policy)가 소유한다.
+- 완료된 phase bundle이나 historical readiness는 이 directory에 보존하지 않는다.
 - [`../../DEVELOPMENT.md`](../../DEVELOPMENT.md)는 repository 전체 개발 환경과 active tool choices를 안내한다.
 
 ## Reading Order
 
 1. [`../../DEVELOPMENT.md`](../../DEVELOPMENT.md)에서 repository 개발 환경을 확인한다.
 2. test 또는 Git 작업이면 해당 guide를 읽는다.
-3. 제품 목표나 project document navigation이 필요하면 [`../README.md`](../README.md)에서 owning document를 찾는다.
+3. 사람이 현재 개발 dashboard를 확인하려는 경우에만 [`dashboard.md`](dashboard.md)를 읽는다.
+4. 제품 목표나 project document navigation이 필요하면 [`../README.md`](../README.md)에서 owning document를 찾는다.
 
-이 directory의 문서는 current phase가 바뀌어도 가능한 한 수정 없이 유지될 수 있어야 한다.
+Phase-independent guide는 current phase가 바뀌어도 가능한 한 수정 없이 유지한다. Dashboard는 별도 refresh lifecycle을 따른다.

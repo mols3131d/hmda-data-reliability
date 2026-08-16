@@ -10,8 +10,8 @@
 | `ARCHITECTURE.md` | 시스템 흐름과 cross-domain boundary |
 | `domains/**` | 각 domain의 책임, 공개 surface와 비책임 |
 | `mvp.md` | 현재 active MVP의 목표, scope와 acceptance |
-| `development/**` | phase와 무관하게 유지되는 개발 방법과 repository 운영 가이드 |
-| `dashboard.md` | 사람이 빠르게 보는 비권위 상태 snapshot |
+| `development/**` | phase와 무관한 개발 방법·운영 가이드와 human-only development dashboard |
+| `development/dashboard.md` | 사람이 빠르게 보는 비권위 개발 상태 snapshot |
 | `references/**` | 외부 규격과 supporting reference |
 
 OpenSpec의 capability contract ownership은 `docs/`가 아니라 `openspec/specs/**`에 있다.
@@ -27,7 +27,7 @@ OpenSpec의 capability contract ownership은 `docs/`가 아니라 `openspec/spec
 - **Durable architecture / ownership:** `ARCHITECTURE.md`와 `domains/**`가 시스템 흐름과 domain ownership boundary를 설명한다.
 - **Validation result:** matching repository revision에서 실제 실행된 command, CI result 또는 보존된 runtime evidence만 사용한다.
 - **Active goal:** `mvp.md`는 목표와 acceptance를 정의하지만 구현 완료 여부의 evidence가 아니다.
-- **Dashboard:** `dashboard.md`는 **사람을 위한 convenience projection**이다. Agent context, repository orientation, current state, validation result, blocker 또는 우선순위의 source로 사용하지 않는다.
+- **Dashboard:** `development/dashboard.md`는 **사람을 위한 convenience projection**이다. Agent context, repository orientation, current state, validation result, blocker 또는 우선순위의 source로 사용하지 않는다.
 
 Source와 canonical Spec이 다르면 implementation drift로, tests나 실행 결과가 canonical Spec과 다르면 contract/validation drift로 보고한다. Change나 dashboard를 사용해 그 충돌을 해소하지 않는다.
 
@@ -40,11 +40,14 @@ Source와 canonical Spec이 다르면 implementation drift로, tests나 실행 �
 
 ## Dashboard Policy
 
-- Agent는 사용자가 dashboard 자체를 묻거나 task가 dashboard refresh일 때만 `dashboard.md`를 읽는다.
+- Agent는 사용자가 dashboard 자체를 묻거나 task가 dashboard refresh일 때만 `development/dashboard.md`를 읽는다.
 - Dashboard는 별도의 명시적 dashboard refresh 작업에서만 갱신한다.
 - 일반 feature, fix, refactor, test, spec 또는 documentation 작업은 dashboard가 stale해질 수 있다는 이유만으로 함께 수정하지 않는다.
-- Dashboard refresh는 owning source를 다시 읽어 사람용 snapshot을 재구성하고 기준 revision과 미검증 상태를 명시한다.
+- Dashboard refresh는 installed `mols-markdown-dashboard` skill을 따라 current canonical Spec, source, tests와 matching-revision 실행 evidence를 다시 조사한다.
+- Skill의 project dashboard 계약에 따라 `Development Progress`, `Implementation Gaps`, `Verification Gaps`를 구성하고, Requirement와 Verification Target을 의미 단위로 집계한 정확한 `n/n`만 기록한다.
+- 근거가 없으면 상태나 denominator를 추측하지 않는다.
 - Dashboard에는 canonical contract, acceptance definition 또는 machine-readable SSOT를 새로 만들지 않는다. 필요한 정의는 owning document에 링크한다.
+- Repository에는 Markdown dashboard를 기본 artifact로 유지한다. Skill이 작업용 YAML을 사용하더라도 별도 요청 없이 dashboard SSOT로 저장하지 않는다.
 
 ## Phase Lifecycle
 
