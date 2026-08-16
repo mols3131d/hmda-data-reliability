@@ -1,12 +1,15 @@
 # DEVELOPMENT
 
+이 문서는 repository-wide **개발 환경, active tool choice, package layout과 code convention**을 소유한다. Test와 Git/GitHub처럼 별도 workflow가 있는 영역의 상세 규칙은 `docs/development/**`의 owning guide가 소유한다.
+
 ## Related Guides
 
 | Document | Description |
 | --- | --- |
-| [ARCHITECTURE](docs/ARCHITECTURE.md) | 시스템 경계, 실행 경계, 핵심 domain contract |
+| [ARCHITECTURE](docs/ARCHITECTURE.md) | 시스템 경계, 실행 경계, domain ownership guidance |
 | [Testing Guide](docs/development/testing.md) | pytest 실행 command, marker, report, coverage, tracing |
 | [Test Design and Implementation](docs/development/test-design-and-implementation.md) | test design, observable contract, scenario, oracle, validation 기준 |
+| [Version Control and GitHub](docs/development/vcs-git/README.md) | branch, commit, Pull Request와 review workflow |
 
 ## Quick Commands
 
@@ -53,6 +56,11 @@
 | `docs/` | 프로젝트 문서 |
 | `scripts/` | 설정·utility script |
 
+## Code Conventions
+
+- SRP는 실용적으로 적용한다. Helper 추출은 complexity나 duplication을 실제로 줄일 때만 한다.
+- One-class-per-file은 주요 type이나 model에만 적용하고 speculative file splitting을 피한다.
+
 ## Git Convention
 
-커밋 메시지는 한글 `Conventional Commits` 형식을 따른다. 형식과 타입을 포함한 상세 규칙은 [`.gitmessage`](.gitmessage)를 참고한다.
+Git/GitHub workflow는 [`docs/development/vcs-git/`](docs/development/vcs-git/README.md)가 소유한다. Commit message의 실제 형식과 type은 [`.gitmessage`](.gitmessage)를 따른다.

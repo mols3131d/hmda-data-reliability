@@ -32,9 +32,9 @@ flowchart LR
 - ingestion과 dbt는 재실행 가능해야 하며, 같은 partition의 중복 row를 만들지 않는다.
 - candidate dbt evidence와 current last-known-good artifact projection은 분리하며, current projection 변경은 검증된 target에 한정한다.
 
-## Canonical Domain Contracts
+## Domain Ownership Guides
 
-세부 계약의 canonical source는 [`docs/domains/OVERVIEW`](domains/OVERVIEW.md)와 연결된 도메인 문서다.
+Current capability의 normative contract는 [`../openspec/specs/`](../openspec/specs/)가 소유한다. 아래 domain 문서는 시스템 책임, 공개 surface와 비책임을 설명하는 durable guide이며 OpenSpec Spec을 대체하지 않는다.
 
 | Need | Document |
 | --- | --- |

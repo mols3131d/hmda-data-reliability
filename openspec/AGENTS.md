@@ -1,6 +1,6 @@
 # OpenSpec Agent Rules
 
-`openspec/` 아래 artifact를 생성, 수정, 리팩토링할 때 적용한다.
+`openspec/` 아래 artifact를 생성, 수정, 리팩토링할 때 적용한다. 이 파일은 **`openspec/**` 공통 agent 규칙과 Spec/Change lifecycle boundary**를 소유하며, 하위 `AGENTS.md`는 해당 subtree에만 필요한 추가 규칙을 소유한다.
 
 ## 먼저 확인
 
