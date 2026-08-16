@@ -99,7 +99,7 @@ flowchart LR
     evaluate --> replay["Failure Replay"]
     replay --> review["Boundary Review"]
     review --> policy["Delegation Policy"]
-    policy --> next["Next AI Run"]
+    policy -. Governs .-> run
 ```
 
 ## LLMOps: Control Loop for Safe Delegation
