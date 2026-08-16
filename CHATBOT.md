@@ -8,9 +8,9 @@ Repository의 directory context는 작업 대상 경로마다 다음 순서로 �
 
 1. 파일을 다루면 그 파일이 속한 directory를, directory를 다루면 그 directory를 target으로 한다. 특정 subtree를 직접 다루는 작업도 그 subtree를 target으로 간주한다.
 2. Target directory부터 repository root까지 각 directory를 확인한다.
-3. 각 directory에서는 `CHATBOT.md` → `AGENTS.md` → `README.md` 순으로 처음 존재하는 파일 하나를 그 directory의 context entry로 선택한다.
-4. 선택된 context entry를 root에서 target 방향으로 누적 적용한다. 같은 주제에서 충돌하면 target에 더 가까운 entry가 상위 entry를 override하며, 충돌하지 않는 상위 규칙은 계속 적용한다.
-5. Target directory와 같은 depth의 context entry를 포함해 선택된 모든 entry는 해당 경로를 다루기 전에 로드된 상태여야 한다.
+3. **각 directory에서는 하나의 context entry만 선택한다.** `CHATBOT.md`가 있으면 그것을 사용하고, 없으면 `AGENTS.md`, 그것도 없으면 `README.md`를 사용한다. 같은 directory의 세 파일을 모두 읽지 않는다.
+4. Target directory와 같은 depth의 entry를 포함해, root부터 target까지 선택된 ancestor entry는 해당 경로를 다루기 전에 로드된 상태여야 한다.
+5. 상위 entry는 넓은 범위의 기본 제약과 전제를 제공하고, 더 가까운 entry는 자신의 subtree에 필요한 예외, 조건 또는 구체화를 제공한다. **가까운 entry가 명시적으로 다르게 정한 부분만 override**하며, 서로 다른 문맥을 임의로 섞거나 평균내지 않는다.
 6. 현재 작업에서 같은 revision의 entry를 이미 로드했다면 다시 읽지 않는다. Branch, ref 또는 파일 내용이 바뀌었거나 현재성이 불확실하면 다시 확인한다.
 7. 선택된 entry가 다른 owning guidance나 agent asset을 연결하면 현재 task에 직접 필요한 것만 추가로 읽는다.
 
