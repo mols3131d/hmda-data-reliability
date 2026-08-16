@@ -15,6 +15,26 @@ mechanism that naturally owns the context.
 Create a Rule only when the same instruction must follow files selected by a
 `glob` and a single directory-scoped `AGENTS.md` is not a natural fit.
 
+## Compatibility model
+
+The files in this directory use a **project compatibility format**, not a
+vendor-defined common schema. Keep one instruction body and carry the minimum
+selector metadata needed by the harnesses that read the file directly.
+
+Current pilot targets:
+
+- Antigravity discovers workspace Rules from `.agents/rules` and uses
+  `trigger: glob` with string `globs`.
+- VS Code/Copilot discovers `*.instructions.md` from configured instruction
+  locations and uses `applyTo`.
+
+VS Code currently diagnoses Antigravity-only front-matter keys such as
+`trigger` and `globs` as unsupported hints. This does not make them part of the
+Copilot schema. Treat the direct shared-file approach as acceptable only while
+those non-blocking diagnostics are an acceptable trade-off. If clean native
+validation becomes a requirement, use harness-specific generated projections
+instead of adding more compatibility fields here.
+
 ## File shape
 
 Use:
@@ -29,14 +49,13 @@ Keep front matter small:
 ---
 name: SQL Migrations
 description: Constraints shared by SQL migration files.
-activation: glob
-globs:
-  - "**/migrations/**/*.sql"
+trigger: glob
+globs: "**/migrations/**/*.sql"
 applyTo: "**/migrations/**/*.sql"
 ---
 ```
 
-Then write the instruction as plain, vendor-neutral Markdown:
+Then write the instruction as plain Markdown without harness-specific behavior:
 
 ```markdown
 # SQL Migrations
@@ -48,15 +67,21 @@ Then write the instruction as plain, vendor-neutral Markdown:
 
 ## Contract
 
-- `activation` is `glob`. Add another mode only when a real Rule use case
-  cannot be expressed with `AGENTS.md` or a Skill.
-- `globs` is the canonical path selector.
+- `globs` is the project-semantic path selector and current Antigravity
+  projection. Encode multiple patterns as one comma-separated string.
 - `applyTo` is the VS Code/Copilot projection of `globs`; both MUST describe
   the same file set.
+- `trigger` is `glob` for this pilot. Add another activation mode only when a
+  real Rule use case cannot be expressed with `AGENTS.md` or a Skill.
+- `name` is Copilot-facing display metadata; `description` describes the Rule
+  without changing its semantics.
 - Keep the body short, imperative, and independent of a specific harness.
-- Do not repeat context already provided by an applicable `AGENTS.md` or
-  Skill.
+- Do not repeat context already provided by an applicable `AGENTS.md` or Skill.
 - Do not add metadata, aliases, or extensions until they are required.
+
+VS Code does not discover `.agents/rules` by default. Workspace configuration
+MUST include `.agents/rules` in `chat.instructionsFilesLocations` while these
+Rules are expected to serve VS Code/Copilot directly.
 
 ## Good Rule scopes
 
@@ -73,9 +98,8 @@ A Rule can also join otherwise unrelated trees when they intentionally share
 the same constraint:
 
 ```yaml
-globs:
-  - "apps/*/src/**/*.tsx"
-  - "packages/*/ui/**/*.tsx"
+globs: "apps/*/src/**/*.tsx,packages/*/ui/**/*.tsx"
+applyTo: "apps/*/src/**/*.tsx,packages/*/ui/**/*.tsx"
 ```
 
 ## Prefer another asset
@@ -95,17 +119,16 @@ src/payments/AGENTS.md
 Do not use a Rule for a reusable procedure such as testing, investigation, or
 review. Prefer a Skill.
 
-Do not use a Rule for repository-wide principles. Prefer the root
-`AGENTS.md`.
+Do not use a Rule for repository-wide principles. Prefer the root `AGENTS.md`.
 
 ## Future harnesses
 
-Treat `globs` as the semantic source of truth when adding another harness.
-Map its native path selector to `globs` before extending this format.
+Treat `globs` as the semantic source of truth when adding another harness. Map
+its native path selector to the same file set before extending this format.
 
-Add a new generic field only when multiple harnesses share the same semantic
-concept. Keep harness-specific data under a namespaced `extensions` field only
-when an actual integration requires it.
+Do not add another harness-specific field merely because a harness supports it.
+Add compatibility metadata only when a real Rule needs it and direct shared-file
+loading remains simpler than generated projections.
 
 ## Authoring check
 
