@@ -2,7 +2,7 @@
 
 **Evidence-first data reliability with bounded AI delegation.**
 
-Project Pivot은 "파이프라인이 끝났으니 데이터도 믿을 만하다"는 전제를 의심하는 데서 시작했다. 로컬 HMDA Data Lake를 대상으로 데이터 상태를 근거로 설명하고, 문제가 생기면 incident evidence와 복구 제안을 남긴다. AI는 그 근거를 읽고 검토를 돕지만 직접 복구를 실행하지 않는다.
+Project Pivot은 "파이프라인이 끝났으니 데이터도 믿을 만하다"는 전제를 의심하는 데서 시작했다. 로컬 HMDA Data Lake를 대상으로 데이터 상태를 근거로 설명하고, 문제가 생기면 incident evidence와 복구 제안을 남긴다. 현재 MVP에서 AI는 그 근거를 읽고 검토를 돕되 직접 복구를 실행하지 않는다.
 
 > [!NOTE]
 > **Status: Active MVP.** 지금은 기능을 넓히기보다 HMDA 기반 reliability flow 하나를 끝까지 닫는 데 집중하고 있다. 정확한 scope와 acceptance는 [`docs/mvp.md`](docs/mvp.md)에서 관리한다.
@@ -13,9 +13,9 @@ Project Pivot은 "파이프라인이 끝났으니 데이터도 믿을 만하다"
 
 ## Design Boundaries
 
-Incident detection과 safety 판단은 deterministic evidence에 고정한다. AI는 그 결과를 읽고 remediation을 검토하지만 recovery를 실행할 권한은 없다. State mutation은 validated proposal과 human approval 뒤에만 허용하고, recovery가 끝나면 같은 기준으로 다시 검증한다.
+Incident detection과 safety 판단은 deterministic evidence에 고정한다. 현재 MVP에서 AI는 그 결과를 읽고 remediation을 검토하지만 recovery를 실행할 권한은 없다. State mutation은 validated proposal과 human approval 뒤에만 허용하고, recovery가 끝나면 같은 기준으로 다시 검증한다.
 
-중요한 건 AI를 많이 쓰는 게 아니라, AI가 틀렸을 때도 판단 근거와 recovery path가 남는 것이다.
+AI에게 어디까지 맡길지는 "할 수 있느냐"보다 "틀렸을 때 감당할 수 있느냐"로 정한다. 현재 MVP에서는 그 선을 review까지로 잡았다.
 
 ## Current MVP
 
