@@ -1,8 +1,8 @@
-# Project Pivot Vision
+# Vision
 
 > **Vision:** 데이터 상태, Reliability 판단, AI judgment와 mutation authorization을 하나의 evidence chain으로 연결해, 중요한 결정을 설명·검증·재현할 수 있는 **Evidence-First Data Reliability system**을 만든다.
 
-## Why Project Pivot Exists
+## Why This Project Exists
 
 데이터 시스템의 신뢰는 pipeline이 성공했다는 사실만으로 증명되지 않는다.
 
@@ -11,15 +11,15 @@
 - **Plausible AI output ≠ reliable judgment.** 자연스러운 LLM 응답은 근거, 재현성 또는 안전성을 보장하지 않는다.
 - **Successful mutation ≠ justified recovery.** 데이터가 변경됐다는 사실만으로 그 변경이 정당하고 안전했다는 뜻은 아니다.
 
-Project Pivot은 신뢰를 하나의 status가 아니라 **data state → deterministic evidence → AI judgment → human authorization → controlled mutation → re-validation**으로 이어지는 evidence chain으로 다룬다.
+신뢰를 하나의 status가 아니라 **data state → deterministic evidence → AI judgment → human authorization → controlled mutation → re-validation**으로 이어지는 evidence chain으로 다룬다.
 
 ## Long-Term Direction
 
-Project Pivot은 **Data Reliability와 운영 가능한 AI judgment를 하나의 신뢰 모델 안에서 결합**한다.
+**Data Reliability와 운영 가능한 AI judgment를 하나의 신뢰 모델 안에서 결합**한다.
 
 Deterministic system이 데이터 상태와 핵심 safety boundary를 확립하고, AI는 그 evidence를 바탕으로 설명·검토·보강하는 bounded layer로 동작한다. AI judgment는 실행 조건과 함께 추적되고 반복 가능한 evaluation으로 비교되며, regression과 failure를 다시 조사할 수 있어야 한다. 위험한 mutation의 최종 authority는 사람과 deterministic control에 남는다.
 
-Project Pivot은 local HMDA pipeline을 이 비전의 **initial proving ground**로 시작한다. HMDA나 local execution 자체가 최종 정체성은 아니다. Reliability semantics와 evidence model을 작은 환경에서 먼저 증명하고, 규모와 infrastructure는 실제 요구가 생길 때 확장한다.
+Local HMDA pipeline은 이 비전의 **initial proving ground**다. HMDA나 local execution 자체가 최종 정체성은 아니다. Reliability semantics와 evidence model을 작은 환경에서 먼저 증명하고, 규모와 infrastructure는 실제 요구가 생길 때 확장한다.
 
 ## Product Thesis
 
@@ -51,7 +51,7 @@ AI가 추가되더라도 reliability truth와 mutation authority는 AI가 소유
 
 ## LLMOps As A Reliability Discipline
 
-Project Pivot에서 LLMOps는 특정 observability 제품을 도입하는 일이 아니라 **AI judgment를 운영 가능한 engineering artifact로 만드는 discipline**이다.
+LLMOps는 특정 observability 제품을 도입하는 일이 아니라 **AI judgment를 운영 가능한 engineering artifact로 만드는 discipline**이다.
 
 - **Trace and version** — 중요한 judgment를 입력 evidence와 prompt, model, configuration, application version에 연결한다.
 - **Evaluate and regress** — 재현 가능한 domain case와 expectation을 기준으로 품질을 평가하고 변경 전후를 비교한다.
@@ -70,7 +70,7 @@ Project Pivot에서 LLMOps는 특정 observability 제품을 도입하는 일이
 
 ## Strategic Boundaries
 
-Project Pivot은 다음을 장기 비전의 필수 조건으로 두지 않는다.
+다음은 장기 비전의 필수 조건이 아니다.
 
 - LLM 기반 anomaly detection을 reliability truth로 사용하는 것
 - human authorization 없는 autonomous recovery
@@ -79,11 +79,11 @@ Project Pivot은 다음을 장기 비전의 필수 조건으로 두지 않는다
 - cloud/distributed architecture 자체를 품질의 증거로 사용하는 것
 - production-grade authorization이나 대규모 운영 infrastructure를 신뢰 모델의 proof보다 먼저 구축하는 것
 
-이 capability들은 실제 필요가 생기고 기존 safety boundary를 훼손하지 않을 때 확장할 수 있다. **복잡성 자체는 Project Pivot의 목표가 아니다.**
+이 capability들은 실제 필요가 생기고 기존 safety boundary를 훼손하지 않을 때 확장할 수 있다. **복잡성 자체는 목표가 아니다.**
 
 ## What Success Looks Like
 
-Project Pivot은 중요한 실행과 변경에 대해 다음 질문에 답할 수 있는 system을 지향한다.
+중요한 실행과 변경에 대해 다음 질문에 답할 수 있어야 한다.
 
 1. **어떤 데이터 상태를 신뢰했고, 왜 신뢰했는가?**
 2. **어떤 incident를 어떤 deterministic evidence로 판단했는가?**
@@ -91,4 +91,4 @@ Project Pivot은 중요한 실행과 변경에 대해 다음 질문에 답할 �
 4. **누가 어떤 근거로 mutation을 허용했고, re-validation 결과는 무엇인가?**
 5. **같은 failure나 regression을 다시 재현하고 비교할 수 있는가?**
 
-이 질문에 답할 수 없다면 pipeline이나 AI demo가 동작하더라도 Project Pivot이 추구하는 신뢰는 완성되지 않은 것이다.
+이 질문에 답할 수 없다면 pipeline이나 AI demo가 동작하더라도 우리가 추구하는 신뢰는 완성되지 않은 것이다.
