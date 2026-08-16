@@ -57,7 +57,7 @@ uv sync --locked
 uv run pytest -m "unit and not memory and not stress"
 ```
 
-전체 test 선택법과 validation evidence는 [Testing Guide](docs/development/testing.md)를 따른다. 실행하지 않은 command의 성공을 README에서 전제하지 않는다.
+전체 test 선택법과 validation evidence는 [Testing Guide](docs/development/testing.md)를 따른다. 이 README는 command를 안내할 뿐 실행 성공을 보증하지 않는다.
 
 ## Documentation
 
