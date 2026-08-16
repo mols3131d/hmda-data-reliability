@@ -14,8 +14,9 @@ MVP는 두 capability가 함께 존재해야 한다.
 
 ### Minimal Data Lake
 
-HMDA 원천을 로컬에서 재현 가능하게 수집·적재·변환하고, downstream 판단이 신뢰할 수
-있는 데이터 state와 dbt evidence를 제공한다.
+HMDA Data가 local source를 검증해 DuckDB Bronze까지 적재하고, Data Platform이 그 Bronze를
+dbt staging/mart로 변환한다. 결과는 downstream Reliability가 다시 추적할 수 있는 data와
+dbt evidence를 남긴다.
 
 ### Agentic Reliability
 
@@ -29,8 +30,9 @@ HMDA 원천을 로컬에서 재현 가능하게 수집·적재·변환하고, do
 
 ```mermaid
 flowchart LR
-    source["HMDA source"] --> lake["Minimal Data Lake"]
-    lake --> evidence["Data + dbt evidence"]
+    source["HMDA source"] --> bronze["Bronze"]
+    bronze --> analytical["dbt staging / marts"]
+    analytical --> evidence["Data + dbt evidence"]
     evidence --> reliability["Deterministic Reliability"]
     reliability --> incident["Incident + Remediation Baseline"]
     incident --> agent["Bounded Agentic Review"]
@@ -39,7 +41,8 @@ flowchart LR
     human --> recovery["Approved Recovery"]
     recovery --> verify["Deterministic Re-validation"]
 
-    dagster["Dagster"] -. data plane .-> lake
+    dagster["Dagster"] -. data plane .-> bronze
+    dagster -. data plane .-> analytical
 ```
 
 Dagster는 최소 Data Lake의 data plane을 실행한다. Reliability control-plane, Agentic
@@ -53,9 +56,10 @@ review와 approval을 data plane에 암묵적으로 자동 결합하지 않는�
 2. **Evidence-bound AI** — Agentic 판단은 저장소가 제공한 evidence와 deterministic
    remediation baseline을 근거로 한다.
 3. **Human-controlled mutation** — AI output만으로 데이터 state를 변경할 수 없다.
-4. **Reproducible locally** — 핵심 proof는 cloud infrastructure 없이 다시 실행할 수 있다.
-5. **Observable judgment** — Agentic invocation은 입력 근거와 실행 조건, 결과를 비교·재현할
-   evidence를 남긴다.
+4. **Locally reproducible core** — Data Lake, Reliability와 safety contract는 외부 model
+   호출 없이도 로컬에서 반복 검증할 수 있다.
+5. **Observable live judgment** — 실제 Agentic invocation은 입력 근거, model/prompt 조건과
+   결과를 비교·검토할 evidence를 남긴다.
 6. **Acceptance over feature count** — incident type이나 기능 수가 아니라 완결된 proof로
    MVP를 판단한다.
 
@@ -66,8 +70,8 @@ Domain gate는 개발 순서가 아니다. 각 canonical domain이 MVP에서 제
 
 | Domain | MVP contribution | Completion signal |
 | --- | --- | --- |
-| [HMDA Data](hmda-data.md) | 신뢰할 수 있는 local source와 재현 가능한 synthetic case | 같은 입력에서 안정적인 Bronze-ready data와 case identity를 다시 만들 수 있다. |
-| [Data Platform](data-platform.md) | DuckDB + dbt 기반 최소 analytical lake와 artifact evidence | raw → staging → mart와 그 evidence를 다시 추적할 수 있다. |
+| [HMDA Data](hmda-data.md) | local source validation, Source→Bronze 적재와 재현 가능한 synthetic case | 같은 입력에서 동일한 logical Bronze state와 case identity를 다시 만들 수 있다. |
+| [Data Platform](data-platform.md) | DuckDB/dbt analytical layer와 artifact/lineage primitives | Bronze → staging → mart와 채택된 dbt evidence를 다시 추적할 수 있다. |
 | [Data Operations](data-operations.md) | ingestion, dbt와 reliability 사이의 안전한 execution boundary | 실패한 실행이 current state를 오염시키지 않고 성공 결과만 명시적으로 채택된다. |
 | [Reliability](reliability.md) | deterministic reliability, bounded Agentic review와 human-controlled recovery | 대표 incident가 evidence → review → approval → recovery → re-validation으로 닫힌다. |
 | [Orchestration](orchestration.md) | 최소 Data Lake data plane의 반복 실행 | Bronze와 dbt analytical layer를 Dagster dependency로 재실행할 수 있다. |
@@ -79,12 +83,15 @@ MVP는 하나의 current revision에서 다음 **system proof**가 모두 성립
 - **Data Lake proof** — HMDA source가 Bronze와 dbt analytical layer까지 재현 가능하게 흐른다.
 - **Reliability proof** — 대표 synthetic incident를 deterministic evidence로 탐지·설명하고
   recovery 뒤 같은 기준으로 다시 검증한다.
-- **Agentic proof** — 실제 Agentic invocation이 deterministic evidence를 기반으로 검토
-  가능한 structured result와 invocation evidence를 남긴다.
+- **Agentic contract proof** — structured review contract, evidence binding, forbidden-action
+  guardrail과 evaluation을 deterministic하게 반복 검증할 수 있다.
+- **Live Agentic proof** — 같은 revision에서 실제 model invocation이 deterministic evidence를
+  기반으로 structured review와 invocation evidence를 최소 한 번 남긴다. 이 proof는 외부
+  model availability를 요구할 수 있으며 deterministic regression과 동일하게 취급하지 않는다.
 - **Safety proof** — Agentic output은 deterministic guardrail과 human approval을 우회해
   mutation을 일으킬 수 없다.
-- **Reproducibility proof** — 정상, incident, recovery와 주요 failure/retry 결과를 같은
-  revision에서 다시 설명할 수 있다.
+- **Reproducibility proof** — 정상, incident, recovery와 주요 failure/retry의 deterministic
+  결과를 같은 revision에서 다시 설명할 수 있고 live invocation 결과는 evidence로 보존된다.
 
 각 proof의 세부 완료 조건은 owning domain 문서가 소유한다.
 
@@ -92,12 +99,12 @@ MVP는 하나의 current revision에서 다음 **system proof**가 모두 성립
 
 **In scope**
 
-- 로컬 HMDA CSV/Parquet
-- DuckDB Bronze와 dbt staging/marts
+- 로컬 HMDA CSV/Parquet와 Source→DuckDB Bronze 적재
+- dbt staging/marts와 artifact evidence
 - Dagster local data plane
 - deterministic profiling, incident, impact, remediation, recovery와 evaluation
 - 대표 synthetic incident를 사용하는 최소 Agentic review
-- Agentic invocation evidence와 deterministic safety evaluation
+- Agentic contract evaluation과 최소 한 번의 live model proof
 - human approval 뒤의 recovery와 re-validation
 
 **Out of scope**
@@ -112,8 +119,10 @@ MVP는 하나의 current revision에서 다음 **system proof**가 모두 성립
 
 ## Status
 
-현재 구현과 검증 gap은 [`status.md`](status.md)에서 관리한다. Domain 문서에는 일시적인
-진행 상태를 복제하지 않는다.
+현재 구현 상태의 canonical axis는 domain이다. [`status.yml`](status.yml)은 domain state와
+blocker를 소유하고, [`status.md`](status.md)는 이를 사람이 판단하기 쉽게 설명한다.
+System proof 상태는 domain state와 blocker에서 파생하며 별도의 독립 progress 축으로
+중복 관리하지 않는다.
 
 ## Reading Order
 

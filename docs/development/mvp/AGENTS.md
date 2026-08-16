@@ -8,7 +8,7 @@
 
 - [`README.md`](README.md)는 MVP의 가치 제안, system invariants, scope와 전체 완료 기준을 소유한다.
 - Domain 문서는 해당 domain이 MVP에 기여해야 하는 결과와 완료 경계를 소유한다.
-- `status.yml`은 현재 상태의 구조화된 정본이다.
+- `status.yml`은 domain state와 blocker의 구조화된 정본이다.
 - `status.md`는 `status.yml`을 사람이 판단하기 쉽게 설명한다.
 - 세부 runtime behavior, API와 requirement는 OpenSpec, `docs/domains/**`와 tests가 소유한다.
 
@@ -26,33 +26,43 @@ Domain 문서는 구현 순서나 task 목록이 아니다. 다음 질문에만 
 5. 완료 판단은 어디의 evidence로 확인하는가?
 
 API, class, fixture, test function과 세부 algorithm은 domain 문서에 복제하지 않는다.
+Canonical domain ownership과 충돌하면 `docs/domains/**`를 우선하고 MVP 문서를 고친다.
 
 ## MVP Model
 
 MVP는 두 capability를 함께 증명한다.
 
-- **Minimal Data Lake** — HMDA 원천을 Bronze와 dbt analytical layer까지 로컬에서 재현 가능하게 처리한다.
-- **Agentic Reliability** — deterministic reliability evidence 위에서 제한된 agentic reviewer가 설명·검토를 수행하고, 실제 state change는 human approval 뒤에만 일어난다.
+- **Minimal Data Lake** — HMDA Data가 Source→Bronze를 소유하고, Data Platform이 Bronze를
+  dbt analytical layer로 변환하며, Orchestration이 data plane을 반복 실행한다.
+- **Agentic Reliability** — deterministic reliability evidence 위에서 제한된 Agentic reviewer가
+  설명·검토를 수행하고, 실제 state change는 human approval 뒤에만 일어난다.
 
-Reliability는 두 capability를 연결하는 evidence와 safety boundary를 소유한다.
+Reliability는 deterministic truth, Agentic review와 human-controlled recovery 사이의
+evidence와 safety boundary를 소유한다.
 
 ## Agentic Boundary
 
-- deterministic detection, impact와 `RemediationDraft`가 LLM 판단보다 먼저 존재한다.
+- deterministic detection, impact와 remediation baseline이 LLM 판단보다 먼저 존재한다.
 - Agentic output은 deterministic fact를 대체하지 않고 evidence를 설명·검토·보강한다.
 - Agentic output은 approval이나 recovery command가 아니다.
-- 최소 Agentic completion에는 실제 model invocation, structured result, 재현 가능한 invocation evidence와 deterministic safety evaluation이 필요하다.
+- **Contract proof**는 structured schema, evidence binding, forbidden-action guardrail과
+  deterministic evaluator를 외부 model 호출 없이 반복 검증한다.
+- **Live model proof**는 같은 current revision에서 실제 model invocation과 invocation evidence를
+  최소 한 번 확인한다.
+- Live model proof의 non-determinism을 deterministic regression이나 CI의 전제조건으로 만들지 않는다.
 - 특정 model provider나 LLMOps vendor는 MVP의 canonical dependency가 아니다.
 - autonomous recovery, 범용 autonomous RCA와 multi-agent orchestration은 MVP 밖이다.
 
 ## Status Model
 
 - task 수, test 수 또는 임의의 `x/y`를 MVP 진행률로 사용하지 않는다.
-- implementation state는 `implemented`, `partial`, `blocked`로 기록한다.
+- canonical progress axis는 **domain state** 하나다.
+- domain implementation state는 `implemented`, `partial`, `blocked`로 기록한다.
 - implementation state와 current-revision validation을 분리한다.
+- system-level capability/proof 상태는 domain state와 blocker에서 파생하며 독립 progress 표로 중복 관리하지 않는다.
 - 실행하지 않은 validation을 `passing`으로 기록하지 않는다.
 - `status.yml`과 `status.md`가 충돌하면 current evidence를 확인해 YAML을 먼저 갱신한다.
-- MVP 전체는 모든 required capability가 구현되고 같은 current revision에서 acceptance가 확인되어야 완료다.
+- MVP 전체는 모든 required domain gate가 구현되고 같은 current revision에서 system acceptance가 확인되어야 완료다.
 
 ## Writing
 

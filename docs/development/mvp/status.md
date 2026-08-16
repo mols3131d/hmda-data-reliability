@@ -1,57 +1,65 @@
 # MVP Status
 
 > **Snapshot:** 2026-08-16 / evidence base `main@f7bd019`
-> **Overall:** 🟡 Partial — 최소 Data Lake와 deterministic Reliability 기반은 존재하지만,
-> MVP가 요구하는 실제 Agentic review와 current-revision acceptance가 아직 완료되지 않았다.
-
-## Capability Status
-
-| Capability | Implementation | Current revision validation | Gap |
-| --- | --- | --- | --- |
-| Minimal Data Lake | 🟢 Implemented | ⚪ Not Verified | 현재 revision에서 전체 data-plane acceptance를 다시 실행하지 않았다. |
-| Deterministic Reliability | 🟢 Implemented | ⚪ Not Verified | 기존 evidence는 있으나 현재 revision 전체 regression을 다시 확인하지 않았다. |
-| Agentic Reliability | 🟡 Partial | ⚪ Not Verified | 실제 model invocation, structured review evidence와 deterministic review evaluation이 필요하다. |
-| Human-Controlled Recovery | 🟢 Implemented | ⚪ Not Verified | 현재 revision에서 end-to-end recovery acceptance를 다시 실행하지 않았다. |
+> **Overall:** 🟡 Partial — 기존 Data Lake와 deterministic Reliability 기반은 구현되어 있지만,
+> Reliability domain의 bounded Agentic review와 current-revision end-to-end acceptance가 남아 있다.
 
 ## Domain Status
 
-| Domain | Implementation | Why |
-| --- | --- | --- |
-| [HMDA Data](hmda-data.md) | 🟢 Implemented | local source validation, Bronze input와 synthetic case 기반이 존재한다. |
-| [Data Platform](data-platform.md) | 🟢 Implemented | DuckDB/dbt analytical layer와 artifact evidence 기반이 존재한다. |
-| [Data Operations](data-operations.md) | 🟢 Implemented | stage execution, validation/promotion과 failure boundary가 존재한다. |
-| [Reliability](reliability.md) | 🟡 Partial | deterministic lifecycle/recovery는 존재하지만 bounded Agentic review gate가 미완료다. |
-| [Orchestration](orchestration.md) | 🟢 Implemented | Dagster local data-plane boundary가 존재한다. |
+| Domain | Implementation | Current revision validation | Gap |
+| --- | --- | --- | --- |
+| [HMDA Data](hmda-data.md) | 🟢 Implemented | ⚪ Not Verified | 현재 revision에서 Source→Bronze acceptance를 다시 실행하지 않았다. |
+| [Data Platform](data-platform.md) | 🟢 Implemented | ⚪ Not Verified | 현재 revision에서 Bronze→dbt analytical layer acceptance를 다시 실행하지 않았다. |
+| [Data Operations](data-operations.md) | 🟢 Implemented | ⚪ Not Verified | 현재 revision에서 execution/promotion failure boundary를 다시 검증하지 않았다. |
+| [Reliability](reliability.md) | 🟡 Partial | ⚪ Not Verified | bounded Agentic contract proof와 live model proof가 없다. |
+| [Orchestration](orchestration.md) | 🟢 Implemented | ⚪ Not Verified | 현재 revision에서 Dagster local data-plane acceptance를 다시 실행하지 않았다. |
 
-`Implemented`는 repository에 해당 capability의 구현 evidence가 존재한다는 뜻이다.
-현재 revision에서 필요한 acceptance를 실제 실행했다는 뜻은 아니며, 그 상태는 별도
+`Implemented`는 repository에 해당 domain capability의 구현 evidence가 존재한다는 뜻이다.
+현재 revision에서 acceptance를 통과했다는 뜻이 아니며, 그 상태는 별도
 `Current revision validation`으로 관리한다.
+
+System-level proof는 이 domain 상태와 아래 blocker에서 **파생**한다. 별도의 capability
+progress 표를 독립적으로 유지하지 않는다.
 
 ## MVP Blockers
 
-### 1. Bounded Agentic Review
+### 1. Bounded Agentic Contract
 
-MVP 완료에는 실제 model invocation이 deterministic incident evidence와
-`RemediationDraft`를 읽고 structured review를 반환해야 한다.
+Reliability domain에 외부 model availability와 독립적으로 반복 검증할 contract proof가 필요하다.
 
 최소 proof:
 
-- structured result contract
-- evidence-bound review
-- invocation identity/evidence
-- deterministic safety evaluation
-- AI output이 approval/recovery authority가 아님을 확인하는 guardrail
+- structured review contract와 validation
+- deterministic evidence binding
+- approval/recovery authority를 만들지 않는 forbidden-action guardrail
+- synthetic case 기반 deterministic evaluator
+- invalid output의 fail-closed behavior
 
-### 2. Current-Revision Acceptance
+### 2. Live Agentic Proof
 
-Agentic gap을 구현한 뒤 같은 repository revision에서 다음 end-to-end proof를 다시 확인해야 한다.
+같은 current revision에서 실제 model invocation이 최소 한 번 필요하다.
+
+최소 evidence:
+
+- model/prompt identity
+- 사용한 deterministic evidence references
+- structured review result
+- invocation result
+- contract validator와 safety evaluator 결과
+
+이 proof는 configured provider/network를 요구할 수 있으며 deterministic CI regression과
+같은 것으로 취급하지 않는다.
+
+### 3. Current-Revision End-to-End Acceptance
+
+Agentic gap을 구현한 뒤 같은 repository revision에서 전체 proof를 다시 확인해야 한다.
 
 ```text
 HMDA source
 → Bronze
 → dbt analytical layer
 → deterministic incident
-→ Agentic review
+→ Agentic contract proof + live model proof
 → human approval
 → recovery
 → deterministic re-validation
@@ -63,8 +71,8 @@ HMDA source
 
 현재 상태에서는 **MVP 완료를 선언하지 않는다.**
 
-최소 Data Lake와 deterministic Reliability는 MVP 기반으로 사용할 수 있지만, 프로젝트가
-목표로 하는 Data Lake + Agentic Reliability의 두 capability가 아직 같은 current revision에서
+최소 Data Lake와 deterministic Reliability는 기반으로 사용할 수 있지만, Project Pivot이
+목표로 하는 Data Lake + Agentic Reliability가 아직 같은 current revision에서 하나의
 완결된 proof로 연결되지 않았다.
 
 ## Evidence

@@ -1,4 +1,4 @@
-version: 3
+version: 4
 
 snapshot:
   date: 2026-08-16
@@ -8,35 +8,14 @@ snapshot:
 mvp:
   state: partial
   reason: >-
-    최소 Data Lake와 deterministic Reliability 기반은 존재하지만 실제 Agentic
-    review와 같은 current revision의 end-to-end acceptance가 아직 완료되지 않았다.
-
-capabilities:
-  - name: Minimal Data Lake
-    state: implemented
-    current_revision_validation: not_verified
-    gap: current revision의 전체 data-plane acceptance 미실행
-
-  - name: Deterministic Reliability
-    state: implemented
-    current_revision_validation: not_verified
-    gap: current revision의 전체 reliability regression 미실행
-
-  - name: Agentic Reliability
-    state: partial
-    current_revision_validation: not_verified
-    gap: >-
-      실제 model invocation, structured review evidence와 deterministic review
-      evaluation이 필요하다.
-
-  - name: Human-Controlled Recovery
-    state: implemented
-    current_revision_validation: not_verified
-    gap: current revision의 end-to-end recovery acceptance 미실행
+    HMDA Data, Data Platform, Data Operations, deterministic Reliability와 Orchestration의
+    implementation evidence는 존재하지만 Reliability domain의 bounded Agentic review와
+    같은 current revision의 end-to-end acceptance가 아직 완료되지 않았다.
 
 domains:
   - name: HMDA Data
     state: implemented
+    current_revision_validation: not_verified
     evidence:
       - src/project_pivot/hmda_data/
       - tests/hmda_data/
@@ -44,6 +23,7 @@ domains:
 
   - name: Data Platform
     state: implemented
+    current_revision_validation: not_verified
     evidence:
       - dbt/
       - src/project_pivot/data_platform/
@@ -53,6 +33,7 @@ domains:
 
   - name: Data Operations
     state: implemented
+    current_revision_validation: not_verified
     evidence:
       - src/project_pivot/data_operations/
       - tests/data_operations/
@@ -60,20 +41,31 @@ domains:
 
   - name: Reliability
     state: partial
+    current_revision_validation: not_verified
     evidence:
       - src/project_pivot/reliability/
       - tests/reliability/
     gaps:
-      - bounded Agentic reviewer의 실제 model invocation이 없다.
-      - structured Agentic review evidence와 deterministic safety evaluation이 없다.
+      - bounded Agentic review의 structured contract와 deterministic evaluator가 없다.
+      - current revision의 실제 model invocation과 invocation evidence가 없다.
 
   - name: Orchestration
     state: implemented
+    current_revision_validation: not_verified
     evidence:
       - src/project_pivot/orchestration/
       - tests/orchestration/
     gaps: []
 
 blockers:
-  - bounded_agentic_review
-  - current_revision_end_to_end_acceptance
+  - id: bounded_agentic_contract
+    domain: Reliability
+    reason: structured Agentic review contract와 deterministic safety evaluation이 필요하다.
+
+  - id: live_agentic_proof
+    domain: Reliability
+    reason: current revision에서 실제 model invocation evidence가 필요하다.
+
+  - id: current_revision_end_to_end_acceptance
+    domain: system
+    reason: 모든 domain completion gate를 같은 current revision에서 다시 검증해야 한다.
