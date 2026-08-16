@@ -35,7 +35,7 @@ tags:
 
 - **Add:** `raw.hmda_loans`의 schema identity와 complete partition content identity set을 하나의 table state로 표현하고 approval의 before/candidate/expected-after state에 결합한다.
 - **Add:** File-based DuckDB의 Project Pivot mutation API를 database identity별 cooperative exclusive lock으로 직렬화한다.
-- **Modify:** HMDA full-load와 partition replacement가 같은 database mutation lock을 사용하고 expected-state check부터 commit/rollback까지 lock을 유지한다.
+- **Modify:** HMDA full-load와 partition replacement가 같은 database mutation lock을 사용한다. Full-load는 call 종료까지, partition replacement는 expected-state check부터 transaction commit/rollback까지 lock을 유지한다.
 - **Modify:** `dbt build` stage가 같은 target DuckDB mutation lock을 subprocess 종료까지 유지한다.
 - **Add:** isolated complete-table candidate를 target mutation 전에 schema, content completeness와 downstream dbt evidence로 검증한다.
 - **Add:** approved before-state에서만 transactional exact table restoration을 수행하고 expected after-state replay와 diverged target을 구분한다.
@@ -72,7 +72,7 @@ tags:
 
 #### `hmda-data-ingestion`
 
-- Full-load와 partition replacement는 target database mutation 전에 공통 mutation lock을 획득하고 commit 또는 rollback까지 유지한다.
+- Full-load와 partition replacement는 target database mutation 전에 공통 mutation lock을 획득한다. Full-load는 call 종료까지, partition replacement는 transaction commit/rollback까지 lock을 유지한다.
 - Expected-state partition replacement는 lock 획득 후 actual identity를 다시 계산해 concurrent managed writer의 변경을 stale state로 식별한다.
 
 #### `reliability-evaluation-report`
