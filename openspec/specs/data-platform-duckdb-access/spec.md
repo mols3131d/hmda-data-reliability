@@ -65,7 +65,7 @@
 
 - **GIVEN** 두 managed writer가 같은 physical DuckDB file을 변경하려 할 때
 - **WHEN** 첫 writer가 mutation lock을 보유할 때
-- **THEN** 두 번째 writer는 첫 writer가 commit 또는 rollback하고 lock을 해제한 뒤에만 target state를 확인하고 mutation을 진행할 수 있어야 한다.
+- **THEN** 두 번째 writer는 첫 writer의 mutation boundary가 성공 또는 실패로 종료되고 lock이 해제된 뒤에만 target state를 확인하고 mutation을 진행할 수 있어야 한다.
 
 #### Scenario: Canonically equivalent database paths
 
