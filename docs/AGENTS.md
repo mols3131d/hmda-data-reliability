@@ -16,17 +16,21 @@
 
 ## Trust Model
 
-문서 유형마다 답하는 질문이 다르다.
+문서 유형마다 답하는 질문이 다르다. 하나의 artifact가 다른 종류의 evidence를 대신하지 않는다.
 
-- 현재 runtime behavior를 판단할 때는 code와 tests를 직접 확인한다.
-- active requirement와 변경 의도는 current OpenSpec을 확인한다.
-- 시스템과 domain의 durable boundary는 `ARCHITECTURE.md`와 `domains/**`를 확인한다.
-- `mvp.md`는 목표와 acceptance를 정의하지만 구현 완료 여부의 evidence가 아니다.
-- `dashboard.md`는 **사람을 위한 convenience projection**이다. Agent는 이를 current state, validation result, blocker 또는 우선순위의 근거로 사용하지 않는다.
-- 서로 충돌하면 dashboard를 갱신 근거로 삼지 말고 해당 owning source에서 현재 사실을 재확인한다.
+- **Implementation:** current source, configuration과 generated contract surface를 직접 확인한다.
+- **Executable specification:** tests는 기대 behavior와 regression boundary를 설명하지만, test 파일의 존재 자체는 passing evidence가 아니다.
+- **Active requirement:** current OpenSpec이 변경 요구사항과 acceptance intent를 소유한다.
+- **Durable boundary:** `ARCHITECTURE.md`와 `domains/**`가 시스템·domain ownership을 소유한다.
+- **Validation result:** matching repository revision에서 실제 실행된 command, CI result 또는 보존된 runtime evidence만 사용한다.
+- **Active goal:** `mvp.md`는 목표와 acceptance를 정의하지만 구현 완료 여부의 evidence가 아니다.
+- **Dashboard:** `dashboard.md`는 **사람을 위한 convenience projection**이다. Agent context, repository orientation, current state, validation result, blocker 또는 우선순위의 source로 사용하지 않는다.
+
+서로 충돌하면 dashboard나 오래된 summary로 해소하지 말고 해당 owning source와 current revision evidence를 다시 확인한다.
 
 ## Dashboard Policy
 
+- Agent는 사용자가 dashboard 자체를 묻거나 task가 dashboard refresh일 때만 `dashboard.md`를 읽는다.
 - Dashboard는 별도의 명시적 dashboard refresh 작업에서만 갱신한다.
 - 일반 feature, fix, refactor, test, spec 또는 documentation 작업은 dashboard가 stale해질 수 있다는 이유만으로 함께 수정하지 않는다.
 - Dashboard refresh는 owning source를 다시 읽어 snapshot을 재구성하고 기준 revision과 미검증 상태를 명시한다.

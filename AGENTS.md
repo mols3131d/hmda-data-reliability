@@ -10,10 +10,12 @@
 
 ## Documentation Evidence
 
-- `docs/dashboard.md` is a human convenience snapshot, not a source of truth.
-- Agents must not use the dashboard to establish current implementation state, validation state, blockers, or work priority.
-- Do not update the dashboard as a side effect of ordinary feature, fix, refactor, test, or documentation work. Update it only when the task explicitly targets dashboard refresh.
-- Resolve current facts from the owning source: code/tests for observed behavior, current OpenSpec for active requirements, and `docs/ARCHITECTURE.md` / `docs/domains/**` for durable system and domain boundaries.
+- `docs/dashboard.md` is a human convenience snapshot, not an agent context or evidence source.
+- Ignore the dashboard during ordinary repository orientation, planning, implementation, review, and validation. Read it only when the user explicitly asks about the dashboard or the task is a dashboard refresh.
+- Even when the dashboard is read, verify any claim against its owning source before reusing it as a factual statement.
+- Do not update the dashboard as a side effect of ordinary feature, fix, refactor, test, spec, or documentation work. Update it only when the task explicitly targets dashboard refresh.
+- Resolve current facts from the owning source: source/configuration for implementation, current OpenSpec for active requirements, `docs/ARCHITECTURE.md` / `docs/domains/**` for durable boundaries, and matching-revision execution output for validation results.
+- Test code is executable specification, not proof that a test has passed. Never infer validation success from test existence alone.
 
 ## Language
 
