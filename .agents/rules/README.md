@@ -23,15 +23,14 @@ Use:
 .agents/rules/<topic>.instructions.md
 ```
 
-Keep front matter small:
+Keep front matter small and carry both harness selectors:
 
 ```yaml
 ---
 name: SQL Migrations
 description: Constraints shared by SQL migration files.
-activation: glob
-globs:
-  - "**/migrations/**/*.sql"
+trigger: glob
+globs: "**/migrations/**/*.sql"
 applyTo: "**/migrations/**/*.sql"
 ---
 ```
@@ -48,15 +47,21 @@ Then write the instruction as plain, vendor-neutral Markdown:
 
 ## Contract
 
-- `activation` is `glob`. Add another mode only when a real Rule use case
-  cannot be expressed with `AGENTS.md` or a Skill.
-- `globs` is the canonical path selector.
+- `trigger` is `glob`. Add another activation mode only when a real Rule use
+  case cannot be expressed with `AGENTS.md` or a Skill.
+- `globs` is the canonical path selector and Antigravity projection. Encode
+  multiple patterns as one comma-separated string.
 - `applyTo` is the VS Code/Copilot projection of `globs`; both MUST describe
   the same file set.
+- `name` and `description` are shared descriptive metadata; keep them concise.
 - Keep the body short, imperative, and independent of a specific harness.
 - Do not repeat context already provided by an applicable `AGENTS.md` or
   Skill.
 - Do not add metadata, aliases, or extensions until they are required.
+
+VS Code does not discover `.agents/rules` by default. Workspace configuration
+MUST include `.agents/rules` in `chat.instructionsFilesLocations` while these
+Rules are expected to serve Copilot.
 
 ## Good Rule scopes
 
@@ -73,9 +78,8 @@ A Rule can also join otherwise unrelated trees when they intentionally share
 the same constraint:
 
 ```yaml
-globs:
-  - "apps/*/src/**/*.tsx"
-  - "packages/*/ui/**/*.tsx"
+globs: "apps/*/src/**/*.tsx,packages/*/ui/**/*.tsx"
+applyTo: "apps/*/src/**/*.tsx,packages/*/ui/**/*.tsx"
 ```
 
 ## Prefer another asset
@@ -103,9 +107,13 @@ Do not use a Rule for repository-wide principles. Prefer the root
 Treat `globs` as the semantic source of truth when adding another harness.
 Map its native path selector to `globs` before extending this format.
 
+A shared file may contain harness-specific selector keys when that is the
+smallest compatibility layer. If a harness starts rejecting the shared front
+matter, prefer a generated projection over adding semantics to the Rule body.
+
 Add a new generic field only when multiple harnesses share the same semantic
-concept. Keep harness-specific data under a namespaced `extensions` field only
-when an actual integration requires it.
+concept. Keep other harness-specific data under a namespaced `extensions`
+field only when an actual integration requires it.
 
 ## Authoring check
 

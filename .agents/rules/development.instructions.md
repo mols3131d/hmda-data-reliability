@@ -1,6 +1,8 @@
 ---
 name: Development
 description: "Common source-development rules under src. Covers ownership, boundaries, configuration, contracts, change scope, and code intent."
+trigger: glob
+globs: "src/**/*"
 applyTo: "src/**/*"
 ---
 

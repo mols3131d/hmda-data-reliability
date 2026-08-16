@@ -2,6 +2,10 @@
   "[markdown]": {
     "editor.defaultFormatter": "rvben.rumdl",
   },
+  "chat.instructionsFilesLocations": {
+    ".github/instructions": true,
+    ".agents/rules": true
+  },
   "python.testing.pytestArgs": [
     "tests"
   ],
