@@ -7,6 +7,7 @@
 1. [`AGENTS.md`](AGENTS.md)를 repository guidance의 기본 entry point로 사용한다.
 2. 작업 경로에 더 가까운 `AGENTS.md`가 있으면 해당 범위에서 우선한다.
 3. 적용되는 guidance가 연결하는 owner 중 현재 task에 필요한 것만 추가로 읽는다.
+4. OpenSpec change, spec, artifact 또는 workflow를 직접 다루면 [`openspec/CHATBOT.md`](openspec/CHATBOT.md)를 추가로 따른다.
 
 관련 없는 guidance를 예방적으로 모두 읽지 않는다.
 
@@ -23,21 +24,6 @@ Agent asset은 적용되는 repository guidance나 아래 Authority를 대체하
 | [`pivot-research-workspace`](.agents/skills/pivot-research-workspace/SKILL.md) | 요구사항·구현·기술 판단 전에 현재 동작, 범위, dependency, 선택지 또는 failure의 근거가 필요할 때. 구현·최종 요구사항 확정이나 독립 Review에는 사용하지 않음 |
 | [`pivot-review-code`](.agents/skills/pivot-review-code/SKILL.md) | diff, file, commit, Pull Request 또는 working-tree의 구현·테스트 변경을 correctness, regression, reachable failure path, maintainability risk와 validation evidence 관점에서 검토할 때 |
 | [`pivot-load-context-testing`](.agents/skills/pivot-load-context-testing/SKILL.md) | pytest 작업에서 test 작성·변경·선택·실행, failure debugging, behavior validation, coverage, marker, fixture, assertion, oracle 또는 test design context가 필요할 때 |
-| [`pivot-spec-driven-tdd-rpi`](.agents/skills/pivot-spec-driven-tdd-rpi/SKILL.md) | Research가 OpenSpec change를 결정·수정하거나 Review finding을 owning work로 되돌려야 할 때. 일반 schema-owned planning이나 Research·Review 입력 없는 Apply에는 사용하지 않음 |
-
-### OpenSpec Skills
-
-OpenSpec upstream이 제공하는 workflow Skill 중 chat 작업에서 사용하는 항목이다. **현재 task가 OpenSpec change, spec, artifact 또는 workflow를 직접 다룰 때만 사용한다.** 비슷한 목적의 일반 Skill이나 instruction과 선택이 겹치면 현재 작업이 OpenSpec 작업인지로 route를 결정한다. OpenSpec 작업이면 해당 OpenSpec Skill을 우선하고, 아니면 일반 asset을 사용한다. 적용되는 repository guidance와 path instruction은 이 선택과 별개로 계속 따른다.
-
-현재 repository에 같은 OpenSpec Skill이 설치되면 repository의 현재 copy와 적용되는 guidance를 우선한다.
-
-| Skill | Trigger |
-| --- | --- |
-| [`openspec-propose`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-propose/SKILL.md) | 새 change를 제안하고 proposal, design, specs와 tasks를 한 번에 생성해 implementation-ready planning을 준비할 때 |
-| [`openspec-update-change`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-update-change/SKILL.md) | 기존 change의 planning artifact를 수정하거나 새 결정을 반영하고 artifact 간 정합성을 맞출 때. 코드는 수정하지 않음 |
-| [`openspec-explore`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-explore/SKILL.md) | change 전이나 진행 중 아이디어를 탐색하고 문제를 조사하거나 요구사항을 명확히 할 때 |
-| [`openspec-sync-specs`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-sync-specs/SKILL.md) | change를 archive하지 않고 delta spec을 main spec에 동기화할 때 |
-| [`openspec-archive-change`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-archive-change/SKILL.md) | implementation이 완료된 change를 최종화하고 archive할 때 |
 
 ### Installed Skills
 
