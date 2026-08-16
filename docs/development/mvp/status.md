@@ -1,30 +1,55 @@
-# MVP Development Dashboard
+# MVP Status
 
-> **Snapshot:** 2026-08-13 / main@61aaba4 / implementation@736732b
-> **Current Focus:** 완료된 volume-drop MVP의 requirement/verification coverage와 archived Change evidence를 유지한다.
+> **Snapshot:** 2026-08-16 / `main@f7bd019`
+>
+> **Overall:** 🟡 Partial — 최소 Data Lake와 deterministic Reliability 기반은 존재하지만
+> MVP 완료에 필요한 bounded LLM reviewer가 아직 없다.
 
-## Development Progress
+## Domain Status
 
-| Domain | Implementation Status | Implementation Progress | Verification Status | Verification Progress |
-| --- | :---: | --- | :---: | --- |
-| HMDA Data | 🟢 Implemented | `██████████ 4/4` | 🟢 Passing | `██████████ 4/4` |
-| Data Platform | 🟢 Implemented | `██████████ 4/4` | 🟢 Passing | `██████████ 4/4` |
-| Data Operations | 🟢 Implemented | `██████████ 4/4` | 🟢 Passing | `██████████ 4/4` |
-| Reliability | 🟢 Implemented | `██████████ 9/9` | 🟢 Passing | `██████████ 9/9` |
-| Orchestration | 🟢 Implemented | `██████████ 3/3` | 🟢 Passing | `██████████ 3/3` |
-| **Total** | **🟢 Implemented** | **`██████████ 24/24`** | **🟢 Passing** | **`██████████ 24/24`** |
+| Domain | State | Current revision validation | Remaining gap |
+| --- | :---: | :---: | --- |
+| HMDA Data | 🟢 Done | ⚪ Not Verified | - |
+| Data Platform | 🟢 Done | ⚪ Not Verified | - |
+| Data Operations | 🟢 Done | ⚪ Not Verified | - |
+| Reliability | 🟡 Partial | ⚪ Not Verified | 실제 LLM reviewer, structured Agentic output와 invocation trace |
+| Orchestration | 🟢 Done | ⚪ Not Verified | - |
 
-## References
+`Done`은 현재 repository에 해당 MVP capability의 구현 evidence가 존재한다는 뜻이다.
+`Current revision validation`은 이 snapshot revision에서 acceptance를 다시 실행했는지
+별도로 표시한다. 이번 문서 재구성에서는 runtime validation을 실행하지 않았으므로
+모든 domain을 `Not Verified`로 기록한다.
 
-- docs/development/mvp/hmda-data.md
-- docs/development/mvp/data-platform.md
-- docs/development/mvp/data-operations.md
-- docs/development/mvp/reliability.md
-- docs/development/mvp/orchestration.md
-- Archived volume-drop completion evidence: [tasks](../../../openspec/changes/archive/2026-08-11-reliability-mvp-volume-drop-vertical-slice/tasks.md)
-- Current volume-drop contracts: [HMDA ingestion](../../../openspec/specs/hmda-data-ingestion/spec.md), [stage execution](../../../openspec/specs/data-operations-stage-execution/spec.md), [incident lifecycle](../../../openspec/specs/data-operations-incident-lifecycle/spec.md), [recovery](../../../openspec/specs/reliability-recovery-backfill/spec.md), [evaluation](../../../openspec/specs/reliability-evaluation-report/spec.md)
-- tests/hmda_data/
-- tests/data_platform/
-- tests/data_operations/
-- tests/reliability/
-- tests/orchestration/
+## MVP Completion Gap
+
+현재 가장 중요한 gap은 Reliability domain의 **Minimal Agentic Review**다.
+
+현재 remediation workflow는 LangGraph를 사용하지만 triage, RCA와 plan node가
+deterministic code로 동작한다. 이것은 좋은 safety baseline이지만 실제 LLM 판단을
+포함하지 않는다.
+
+MVP 완료를 위해서는 최소 한 개 synthetic incident에서 다음 acceptance가 필요하다.
+
+```text
+deterministic evidence + RemediationDraft
+→ real LLM reviewer
+→ structured review
+→ deterministic safety check
+→ external approval
+→ recovery
+→ re-validation
+```
+
+LLM reviewer는 recovery 권한을 갖지 않으며 기존 approval boundary를 그대로 유지한다.
+
+## Evidence
+
+| Domain | Primary evidence |
+| --- | --- |
+| HMDA Data | `src/project_pivot/hmda_data/`, `tests/hmda_data/` |
+| Data Platform | `dbt/`, `src/project_pivot/data_platform/`, `tests/data_platform/`, `tests/dbt/` |
+| Data Operations | `src/project_pivot/data_operations/`, `tests/data_operations/` |
+| Reliability | `src/project_pivot/reliability/`, `tests/reliability/` |
+| Orchestration | `src/project_pivot/orchestration/`, `tests/orchestration/` |
+
+세부 완료 기준은 각 domain MVP 문서를 따른다.
