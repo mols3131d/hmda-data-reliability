@@ -44,8 +44,8 @@ Draft PR → 변경 갱신 → 인간 검토 → merge 또는 명시적 close
 ## Agent Instructions
 
 - Repository content 변경은 Draft pull request로 전달한다.
-- [Inbox Branch](../../../inbox/_guidelines/branch.md#direct-push)의 routine artifact direct push는 예외다.
-- [Main Inbox Index](../../../inbox/_guidelines/branch.md#main-inbox-index)의 direct write는 repository-managed automation에만 허용되는 예외이며 agent 작업에는 적용하지 않는다.
+- [Inbox Branch](branch.md#inbox-branch)가 라우팅하는 routine artifact direct push는 예외다.
+- 같은 Inbox Branch 규칙이 라우팅하는 Main Inbox Index direct write는 repository-managed automation에만 허용되며 agent 작업에는 적용하지 않는다.
 - 인간의 명시적 요청 없이 Ready 전환, 승인, merge, close 또는 auto-merge를 수행하지 않는다.
 - 인간의 판단 없이 review thread를 해결 처리하지 않는다.
 - 실패하거나 수행하지 못한 validation을 숨기지 않으며, 불명확한 응답을 승인으로 해석하지 않는다.
@@ -55,5 +55,4 @@ Draft PR → 변경 갱신 → 인간 검토 → merge 또는 명시적 close
 - [Branches](branch.md): pull request가 소유하는 변경 목적과 branch 기준
 - [Commits](commit.md): pull request history를 구성하는 commit 기준
 - [Pull Request Reviews](pull-request-review.md): pull request review 기준과 기록 방식
-- [Inbox Branch Guide](../../../inbox/_guidelines/branch.md): dedicated `inbox` branch 예외
 - [GitHub Templates](../../../.github/templates/README.md): Pull Request와 review template metadata 규칙
