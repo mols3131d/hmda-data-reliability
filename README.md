@@ -20,14 +20,17 @@ Project Pivot이 증명하려는 핵심은 다음 네 가지다.
 ```mermaid
 flowchart LR
     source["HMDA Source"] --> lake["Local Data Lake"]
-    lake --> evidence["Deterministic Evidence"]
-    evidence --> incident["Incident + RemediationDraft"]
-    incident --> agent["Bounded Agentic Review"]
+    lake --> evidence["Data + Execution Evidence"]
+    evidence --> reliability["Deterministic Reliability"]
+    reliability --> incident["Incident + RemediationDraft"]
     incident --> proposal["Validated RecoveryProposal"]
-    agent -. advisory .-> approval["Human Approval"]
-    proposal --> approval
+    proposal --> approval["Human Approval"]
     approval --> recovery["Approved Recovery"]
     recovery --> verify["Re-validation"]
+
+    incident --> agent["Bounded Agentic Review"]
+    agent --> guard["Deterministic Guard"]
+    guard -. advisory .-> approval
 ```
 
 Agentic review는 human decision을 보조하지만 approval이나 recovery의 authority를 대체하지 않는다. 현재 MVP의 정확한 scope와 acceptance는 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
