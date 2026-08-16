@@ -27,7 +27,7 @@ Agent asset은 적용되는 repository guidance나 아래 Authority를 대체하
 
 ### OpenSpec Skills
 
-OpenSpec upstream이 제공하는 workflow Skill 중 chat 작업에서 사용하는 항목이다.
+OpenSpec upstream이 제공하는 workflow Skill 중 chat 작업에서 사용하는 항목이다. 현재 repository에 같은 Skill이 설치되면 repository의 현재 copy와 적용되는 guidance를 우선한다.
 
 | Skill | Trigger |
 | --- | --- |
