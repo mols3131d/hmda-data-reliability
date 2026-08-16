@@ -72,7 +72,7 @@ Domain gate는 개발 순서가 아니다. 각 canonical domain이 MVP에서 제
 | --- | --- | --- |
 | [HMDA Data](hmda-data.md) | local source validation, Source→Bronze 적재와 재현 가능한 synthetic case | 같은 입력에서 동일한 logical Bronze state와 case identity를 다시 만들 수 있다. |
 | [Data Platform](data-platform.md) | DuckDB/dbt analytical layer와 artifact/lineage primitives | Bronze → staging → mart와 채택된 dbt evidence를 다시 추적할 수 있다. |
-| [Data Operations](data-operations.md) | ingestion, dbt와 reliability 사이의 안전한 execution boundary | 실패한 실행이 current state를 오염시키지 않고 성공 결과만 명시적으로 채택된다. |
+| [Data Operations](data-operations.md) | ingestion/dbt/reliability의 실행·채택 boundary와 failure evidence | candidate/current artifact가 분리되고 mutation 가능 failure의 실제 결과와 reconciliation이 명시된다. |
 | [Reliability](reliability.md) | deterministic reliability, bounded Agentic review와 human-controlled recovery | 대표 incident가 evidence → review → approval → recovery → re-validation으로 닫힌다. |
 | [Orchestration](orchestration.md) | 최소 Data Lake data plane의 반복 실행 | Bronze와 dbt analytical layer를 Dagster dependency로 재실행할 수 있다. |
 
