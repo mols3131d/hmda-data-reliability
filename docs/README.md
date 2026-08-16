@@ -23,8 +23,7 @@ Project Pivot 문서는 **durable guidance**, **active goal**, **development gui
 
 ## Rules And Ownership
 
-- `docs/**` 공통 작성, trust boundary와 phase lifecycle은 [`AGENTS.md`](AGENTS.md)가 소유한다.
-- `docs/development/**`의 scoped 규칙과 dashboard policy는 [`development/AGENTS.md`](development/AGENTS.md)가 소유한다.
+- `docs/**`의 작성, trust boundary, dashboard policy와 phase lifecycle은 [`AGENTS.md`](AGENTS.md)가 소유한다.
 - OpenSpec의 canonical/change workflow는 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)가 소유한다.
 
 이 README는 문서 navigation을 설명하며 위 규칙을 복제하지 않는다.

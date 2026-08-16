@@ -21,11 +21,11 @@
 
 ## Rules
 
-`docs/development/**`의 agent 규칙은 [`AGENTS.md`](AGENTS.md)가 소유한다. Test와 Git/GitHub의 세부 workflow는 각각의 owning guide가 소유하며 이 README는 반복하지 않는다.
+`docs/**`의 agent 규칙과 dashboard policy는 [`../AGENTS.md`](../AGENTS.md)가 소유한다. Test와 Git/GitHub의 세부 workflow는 각각의 owning guide가 소유하며 이 README는 반복하지 않는다.
 
 ## Reading Order
 
 1. Repository 개발 환경이 필요하면 [`../../DEVELOPMENT.md`](../../DEVELOPMENT.md)를 확인한다.
 2. Test 또는 Git/GitHub 작업이면 해당 owning guide를 읽는다.
-3. Dashboard를 다루는 명시적 작업이면 [`AGENTS.md`](AGENTS.md)의 dashboard policy를 먼저 확인한다.
+3. Dashboard를 다루는 명시적 작업이면 [`../AGENTS.md`](../AGENTS.md#dashboard-policy)의 dashboard policy를 먼저 확인한다.
 4. 제품 목표나 project document navigation이 필요하면 [`../README.md`](../README.md)에서 owning document를 찾는다.

@@ -20,8 +20,7 @@
 | --- | --- |
 | 개발 환경, active tool choice, package layout, code convention | [`DEVELOPMENT.md`](DEVELOPMENT.md) |
 | 시스템 흐름과 domain ownership guidance | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/domains/`](docs/domains/OVERVIEW.md) |
-| `docs/**` 공통 문서 규칙 | [`docs/AGENTS.md`](docs/AGENTS.md) |
-| `docs/development/**` 개발 문서와 dashboard 규칙 | [`docs/development/AGENTS.md`](docs/development/AGENTS.md) |
+| `docs/**` 문서 규칙과 dashboard policy | [`docs/AGENTS.md`](docs/AGENTS.md) |
 | Git과 GitHub workflow | [`docs/development/vcs-git/`](docs/development/vcs-git/README.md) |
 | `openspec/**` | [`openspec/AGENTS.md`](openspec/AGENTS.md) |
 | `tests/**` | [`tests/AGENTS.md`](tests/AGENTS.md) |
