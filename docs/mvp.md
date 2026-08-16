@@ -59,7 +59,7 @@ Dagster는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 
 ## Domain Completion Gates
 
-Domain 책임과 runtime contract는 [`domains/OVERVIEW.md`](domains/OVERVIEW.md)와 각 domain 문서가 소유한다. 여기서는 MVP에서 필요한 proof만 정의한다.
+[`domains/OVERVIEW.md`](domains/OVERVIEW.md)와 각 domain 문서는 domain 구조와 ownership을 설명하는 human-readable guide다. Current capability의 normative contract는 [`../openspec/specs/`](../openspec/specs/)가 소유한다. 여기서는 MVP에서 필요한 proof만 정의한다.
 
 | Domain | MVP proof |
 | --- | --- |
@@ -104,4 +104,4 @@ Domain 책임과 runtime contract는 [`domains/OVERVIEW.md`](domains/OVERVIEW.md
 
 ## Lifecycle
 
-이 문서는 MVP가 active인 동안만 유지한다. MVP 종료 시 durable architecture/domain knowledge만 owning canonical document에 반영하고, 이 phase 문서는 `main`에서 삭제한다. Historical 보존을 위한 별도 docs archive는 만들지 않는다.
+이 문서는 MVP가 active인 동안만 유지한다. MVP 종료 시 durable architecture/domain guidance와 구현·검증된 capability contract를 각각 `docs/**`와 `openspec/specs/**`의 owning location에 반영한 뒤 이 phase 문서를 `main`에서 삭제한다. Historical 보존을 위한 별도 docs archive는 만들지 않는다.
