@@ -63,9 +63,12 @@
 | Expected-state replacement | `expected_identity`가 있으면 같은 transaction 안에서 actual identity와 비교하고 다를 때 `HMDAStalePartitionError`로 zero mutation을 보장한다. |
 | Temporal expected state | `expected_max_ingested_at`이 있으면 같은 transaction에서 actual `max(ingested_at)`을 비교하며 timestamp-only drift도 zero mutation으로 차단한다. |
 | Metadata-preserving candidate | 명시적으로 요청된 candidate는 `source_file`, `source_file_name`, `source_year`, `ingested_at`과 target-compatible schema를 mutation 전에 검증하고 값을 재계산하지 않는다. |
+| Managed writer serialization | File database의 전체·파티션 적재는 공통 database mutation lock을 획득한 뒤 target을 확인·변경한다. 파티션 actual identity와 temporal state는 lock 획득 후 transaction 안에서 다시 계산한다. |
 | 빈 대상 파티션 | `source_file`가 빈 문자열이거나 대상 행이 없으면 기존 파티션을 변경하지 않고 오류로 끝난다. |
 
 `PartitionContentIdentity`는 `table + source_year + optional source_file` scope를 포함한다. Row order와 `ingested_at`은 identity에 영향을 주지 않지만 logical value와 duplicate multiplicity는 보존한다.
+
+Database-level lock은 서로 다른 partition을 다루는 Project Pivot managed writer도 직렬화한다. 전체 적재는 기존 validation-after-replacement failure semantics를 유지하고, 파티션 적재는 transaction commit 또는 rollback까지 lock을 유지한다. 같은 sidecar lock을 사용하지 않는 external writer와 multi-host writer는 이 serialization contract 밖이다.
 
 공개 API는 [`hmda_data/__init__.py`](../../src/project_pivot/hmda_data/__init__.py), 적재 동작은 [`tests/hmda_data`](../../tests/hmda_data)에서 확인한다.
 
