@@ -1,22 +1,22 @@
 # MVP Status
 
-> **Snapshot:** 2026-08-16 / `main@f7bd019`
+> **Snapshot evidence:** 2026-08-16 / `main@f7bd019`
 >
 > **Overall:** 🟡 Partial — 최소 Data Lake와 deterministic Reliability 기반은 존재하지만
 > MVP 완료에 필요한 bounded LLM reviewer가 아직 없다.
 
 ## Domain Status
 
-| Domain | State | Current revision validation | Remaining gap |
+| Domain | Implementation | Current revision validation | Remaining gap |
 | --- | :---: | :---: | --- |
-| HMDA Data | 🟢 Done | ⚪ Not Verified | - |
-| Data Platform | 🟢 Done | ⚪ Not Verified | - |
-| Data Operations | 🟢 Done | ⚪ Not Verified | - |
+| HMDA Data | 🟢 Implemented | ⚪ Not Verified | - |
+| Data Platform | 🟢 Implemented | ⚪ Not Verified | - |
+| Data Operations | 🟢 Implemented | ⚪ Not Verified | - |
 | Reliability | 🟡 Partial | ⚪ Not Verified | 실제 LLM reviewer, structured Agentic output와 invocation trace |
-| Orchestration | 🟢 Done | ⚪ Not Verified | - |
+| Orchestration | 🟢 Implemented | ⚪ Not Verified | - |
 
-`Done`은 현재 repository에 해당 MVP capability의 구현 evidence가 존재한다는 뜻이다.
-`Current revision validation`은 이 snapshot revision에서 acceptance를 다시 실행했는지
+`Implemented`는 snapshot evidence에서 해당 MVP capability의 구현 surface가 존재한다는 뜻이다.
+`Current revision validation`은 현재 revision에서 domain acceptance를 다시 실행했는지
 별도로 표시한다. 이번 문서 재구성에서는 runtime validation을 실행하지 않았으므로
 모든 domain을 `Not Verified`로 기록한다.
 

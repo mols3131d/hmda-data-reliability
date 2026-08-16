@@ -2,7 +2,7 @@ version: 2
 
 snapshot:
   date: 2026-08-16
-  repository_revision: f7bd019c8769fd07b447a823a9518e54cdd3a0d9
+  evidence_revision: f7bd019c8769fd07b447a823a9518e54cdd3a0d9
   current_revision_validation: not_verified
 
 mvp:
@@ -11,7 +11,7 @@ mvp:
 
 domains:
   - name: HMDA Data
-    state: done
+    implementation: implemented
     current_revision_validation: not_verified
     evidence:
       - src/project_pivot/hmda_data/
@@ -19,7 +19,7 @@ domains:
     gaps: []
 
   - name: Data Platform
-    state: done
+    implementation: implemented
     current_revision_validation: not_verified
     evidence:
       - dbt/
@@ -29,7 +29,7 @@ domains:
     gaps: []
 
   - name: Data Operations
-    state: done
+    implementation: implemented
     current_revision_validation: not_verified
     evidence:
       - src/project_pivot/data_operations/
@@ -37,7 +37,7 @@ domains:
     gaps: []
 
   - name: Reliability
-    state: partial
+    implementation: partial
     current_revision_validation: not_verified
     evidence:
       - src/project_pivot/reliability/
@@ -47,7 +47,7 @@ domains:
       - "Agentic structured output과 invocation trace의 MVP acceptance가 아직 없다."
 
   - name: Orchestration
-    state: done
+    implementation: implemented
     current_revision_validation: not_verified
     evidence:
       - src/project_pivot/orchestration/

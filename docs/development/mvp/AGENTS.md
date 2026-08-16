@@ -31,10 +31,10 @@
 ## Status Model
 
 - task 수, test function 수 또는 임의의 `x/y` progress를 MVP 진행률로 사용하지 않는다.
-- 각 domain은 `done`, `partial`, `blocked` 중 하나의 state와 구체적인 gap으로 표시한다.
-- 구현 완료와 current revision 검증 여부를 분리한다.
+- 각 domain의 구현 state는 `implemented`, `partial`, `blocked`로 표시한다.
+- 구현 state와 current revision validation을 분리한다.
 - 실행하지 않은 validation을 통과로 기록하지 않는다.
-- MVP 전체는 모든 domain gate가 `done`이고 current revision acceptance가 확인되어야 완료다.
+- MVP 전체는 모든 domain이 `implemented`이고 current revision acceptance가 확인되어야 완료다.
 
 ## Writing
 
