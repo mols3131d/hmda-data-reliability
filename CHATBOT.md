@@ -31,11 +31,11 @@ OpenSpec upstream이 제공하는 workflow Skill 중 chat 작업에서 사용하
 
 | Skill | Trigger |
 | --- | --- |
-| [`openspec-propose`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-propose/SKILL.md) | 새 change를 제안하고 proposal, design, specs와 tasks까지 구현 준비 상태로 한 번에 생성할 때 |
+| [`openspec-propose`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-propose/SKILL.md) | 새 change를 제안하고 proposal, design, specs와 tasks를 한 번에 생성해 implementation-ready planning을 준비할 때 |
 | [`openspec-update-change`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-update-change/SKILL.md) | 기존 change의 planning artifact를 수정하거나 새 결정을 반영하고 artifact 간 정합성을 맞출 때. 코드는 수정하지 않음 |
 | [`openspec-explore`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-explore/SKILL.md) | change 전이나 진행 중 아이디어를 탐색하고 문제를 조사하거나 요구사항을 명확히 할 때 |
 | [`openspec-sync-specs`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-sync-specs/SKILL.md) | change를 archive하지 않고 delta spec을 main spec에 동기화할 때 |
-| [`openspec-archive-change`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-archive-change/SKILL.md) | 구현이 완료된 change를 최종화하고 archive할 때 |
+| [`openspec-archive-change`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-archive-change/SKILL.md) | implementation이 완료된 change를 최종화하고 archive할 때 |
 
 ### Installed Skills
 
