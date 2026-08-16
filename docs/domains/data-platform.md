@@ -7,6 +7,7 @@
 | In scope | Out of scope |
 | --- | --- |
 | DuckDB 연결·schema·table metadata 헬퍼 | HMDA 원천 파일 발견과 적재 |
+| File DuckDB의 canonical-path mutation lock | Managed lock을 우회하는 external writer 조정 |
 | DuckDB 식별자·문자열 literal quoting | `dbt build` subprocess 실행 |
 | `raw.hmda_loans` source 선언 | candidate 선택과 promotion 호출 결정 |
 | staging view와 mart table, schema tests | 실행 요청, 실행 결과 모델, orchestration |
@@ -21,11 +22,15 @@
 | API | Contract |
 | --- | --- |
 | `DuckDBConnectionManager(database_path=None, read_only=False, cleanup_on_close=False)` | context manager로 DuckDB 연결을 열고 항상 닫는다. 경로가 없으면 in-memory DB를 사용한다. |
+| `database_mutation_lock(database_path)` | Canonical file database path별 cooperative exclusive lock을 제공한다. In-memory database는 no-op이다. |
+| `current_database_path(connection)` | Current file database path를 반환하고 isolated in-memory database는 `None`을 반환한다. |
 | `ensure_schema(connection, schema_name="raw")` | schema가 없으면 생성한다. |
 | `table_row_count(connection, table_name)` | table 전체 행 수를 `int`로 반환한다. 결과가 없으면 `DuckDBMetadataError`다. |
 | `table_columns(connection, table_name)` | table 컬럼명을 `set[str]`로 반환한다. |
 
 파일 DB 연결은 상위 디렉터리를 생성한다. `cleanup_on_close=True`면 DB와 `.wal` 파일을 연결 종료 후 제거한다. `read_only=True`는 DuckDB 연결 옵션으로 그대로 전달된다.
+
+`database_mutation_lock()`은 `Path.resolve(strict=False)`로 정규화한 database 옆의 `.<database-name>.mutation.lock`을 `fcntl.flock`으로 잠근다. HMDA ingestion, `run_dbt_build()`와 schema recovery 같은 Project Pivot managed writer가 이 lock을 공유하며, connection manager나 read-only lifecycle 자체는 자동으로 잠기지 않는다. 이 single-host cooperative contract는 lock을 사용하지 않는 direct SQL/dbt process, hardlink alias와 multi-host writer를 직렬화하지 않는다.
 
 [`sql.py`](../../src/project_pivot/data_platform/sql.py)는 SQL 문자열을 구성할 때 사용한다.
 

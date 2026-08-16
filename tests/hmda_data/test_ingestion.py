@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+import project_pivot.hmda_data.ingestion.full_load as full_load_module
+from project_pivot.data_platform.duckdb import (
+    DuckDBConnectionManager,
+    DuckDBMutationLockError,
+)
 from project_pivot.hmda_data import (
     discover_hmda_files,
     load_hmda_loans,
@@ -158,14 +162,41 @@ def test_load_hmda_loans_validates_required_columns(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    with (
-        DuckDBConnectionManager() as connection,
-        pytest.raises(
-            HMDADataValidationError,
-            match="필수 컬럼",
-        ),
-    ):
-        load_hmda_loans(connection, [path])
+    with DuckDBConnectionManager() as connection:
+        with pytest.raises(HMDADataValidationError, match="필수 컬럼"):
+            load_hmda_loans(connection, [path])
+        columns = {
+            str(row[0])
+            for row in connection.execute("DESCRIBE raw.hmda_loans").fetchall()
+        }
+
+    assert "income" not in columns
+
+
+def test_load_hmda_loans_translates_mutation_lock_failure(
+    hmda_csv_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Full-load lock failure는 target mutation 전 domain error로 변환한다."""
+
+    def fail_lock(database_path: str | Path | None) -> None:
+        del database_path
+        raise DuckDBMutationLockError("cannot acquire mutation lock")
+
+    monkeypatch.setattr(full_load_module, "database_mutation_lock", fail_lock)
+
+    with DuckDBConnectionManager() as connection:
+        with pytest.raises(HMDADataLoadError, match="mutation lock"):
+            load_hmda_loans(connection, [hmda_csv_path])
+        table = connection.execute(
+            """
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'raw' AND table_name = 'hmda_loans'
+            """
+        ).fetchone()
+
+    assert table is None
 
 
 def test_load_hmda_loans_rejects_malformed_csv_rows(tmp_path: Path) -> None:

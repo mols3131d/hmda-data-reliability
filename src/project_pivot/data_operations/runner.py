@@ -27,7 +27,11 @@ from project_pivot.data_platform.artifacts import (
     artifact_projection_id,
     artifact_projection_lock,
 )
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+from project_pivot.data_platform.duckdb import (
+    DuckDBConnectionManager,
+    DuckDBMutationLockError,
+    database_mutation_lock,
+)
 from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans_partition
 
 _DBT_BUILD_TIMEOUT_SECONDS = 300
@@ -68,7 +72,17 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
 
     run_target_path = _create_run_target(request.dbt_run_target_path)
     command = _build_dbt_command(request, run_target_path)
-    result = _run_dbt_command(command, request, run_target_path)
+    try:
+        with database_mutation_lock(request.database_path):
+            result = _run_dbt_command(command, request, run_target_path)
+    except DuckDBMutationLockError as exc:
+        raise DataOperationError(
+            "dbt target database mutation lock을 획득할 수 없습니다.",
+            context={
+                "database_path": str(request.database_path),
+                "run_target_path": str(run_target_path),
+            },
+        ) from exc
     if result.returncode != 0:
         stderr_lines = result.stderr.strip().splitlines()
         stderr = stderr_lines[-1][:500] if stderr_lines else "출력 없음"

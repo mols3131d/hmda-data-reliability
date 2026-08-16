@@ -8,10 +8,14 @@ from project_pivot.reliability.profiling.profile_snapshot_builder import (
 from project_pivot.reliability.profiling.profile_snapshot_request import (
     ProfileSnapshotRequest,
 )
+from project_pivot.reliability.profiling.table_state_builder import (
+    create_table_state_identity,
+)
 
 __all__ = [
     "DuckDBProfileSnapshotBuilder",
     "ProfileSnapshotRequest",
     "calculate_schema_hash",
     "create_profile_snapshot",
+    "create_table_state_identity",
 ]

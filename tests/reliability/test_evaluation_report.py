@@ -12,6 +12,8 @@ from typing import cast
 import duckdb
 import pytest
 
+import project_pivot.reliability as reliability
+import project_pivot.reliability.evaluation as reliability_evaluation
 import project_pivot.reliability.evaluation.volume_drop as volume_drop
 import project_pivot.reliability.recovery.executor as recovery_executor
 from project_pivot.data_operations import (
@@ -37,6 +39,74 @@ from project_pivot.reliability import (
 )
 from project_pivot.reliability.errors import ProfileSnapshotError
 from project_pivot.reliability.profiling import ProfileSnapshotRequest
+
+
+@pytest.mark.unit
+def test_schema_recovery_public_api_is_exported() -> None:
+    """Schema recovery와 evaluator는 package public surface에서 import된다."""
+
+    expected_reliability_exports = {
+        "ApprovedSchemaRecoveryRequest",
+        "SchemaDriftVerticalSliceResult",
+        "SchemaRecoveryApproval",
+        "SchemaRecoveryCandidateEvidence",
+        "SchemaRecoveryProposal",
+        "SchemaRecoveryValidationResult",
+        "StagedSchemaRecoveryCandidate",
+        "TableStateIdentity",
+        "create_table_state_identity",
+        "evaluate_schema_drift_vertical_slice",
+        "execute_approved_schema_recovery",
+        "preflight_schema_recovery_candidate",
+        "stage_approved_schema_recovery_candidate",
+    }
+    expected_evaluation_exports = {
+        "SchemaDriftVerticalSliceResult",
+        "evaluate_schema_drift_vertical_slice",
+    }
+
+    assert all(hasattr(reliability, name) for name in expected_reliability_exports)
+    assert all(
+        hasattr(reliability_evaluation, name) for name in expected_evaluation_exports
+    )
+
+
+@pytest.mark.unit
+def test_schema_recovery_cases_use_generic_report_aggregation() -> None:
+    """Schema-specific mutation evidence는 generic case/report contract를 재사용한다."""
+
+    report = build_evaluation_report(
+        [
+            EvaluationCaseResult(
+                case_name="schema_drift",
+                expected_incident_types=["schema_drift"],
+                detected_incident_types=["schema_drift"],
+                required_actions=["compare_schema_contract"],
+                remediation_actions=["compare_schema_contract"],
+                evidence_refs=["schema:sha256:drifted"],
+            ),
+            EvaluationCaseResult(
+                case_name="schema_recovery",
+                expected_incident_types=[],
+                detected_incident_types=[],
+                target_mutated=True,
+                reconciliation_action="resume_verification",
+                evidence_refs=["schema:sha256:clean"],
+                artifact_projection_ids=["sha256:target-dbt"],
+            ),
+        ],
+        generated_at=datetime(2026, 8, 16, 0, 0, tzinfo=UTC),
+    )
+
+    rendered = render_evaluation_report_markdown(report)
+
+    assert report.total_cases == 2
+    assert report.detection_passed_cases == 2
+    assert report.action_passed_cases == 2
+    assert (
+        "| schema_recovery | - | - | PASS | PASS | YES | - | "
+        "resume_verification | schema:sha256:clean | sha256:target-dbt |"
+    ) in rendered
 
 
 @pytest.mark.unit
