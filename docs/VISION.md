@@ -53,58 +53,54 @@ AI 위임은 기능 자체가 아니라 **검증된 효용과 실패 특성**으
 
 ```mermaid
 flowchart LR
-    subgraph lake["Data Lake"]
-        source["Source"] --> bronze["Bronze"]
-        bronze --> analytical["Analytical Layer"]
-        analytical --> state["Trusted Data State"]
-    end
+    source["Source Data"] --> bronze["Bronze"]
+    bronze --> analytical["Staging / Marts"]
+    analytical --> evidence["Profile / Metadata / Lineage"]
+    evidence --> detect["Detect and Assess"]
+    detect --> incident{"Incident?"}
 
-    subgraph reliability["Deterministic Reliability"]
-        evidence["Profile + Metadata + Lineage"] --> detect["Detection + Impact"]
-        detect --> incident["Incident + Evidence"]
-        incident --> recovery["Validated Recovery"]
-        recovery --> verify["Re-validation"]
-    end
-
-    state --> evidence
-    verify -->|Pass| state
-    verify -->|Failure| reconcile["Contain / Reconcile / Retry"]
-    reconcile --> verify
+    incident -->|No| trusted["Trusted Data State"]
+    incident -->|Yes| recovery["Validated Recovery"]
+    recovery --> verify{"Re-validation"}
+    verify -->|Pass| trusted
+    verify -->|Fail| reconcile["Contain / Reconcile / Retry"]
+    reconcile --> recovery
 ```
 
 데이터 신뢰성은 AI가 판단하기 전에 먼저 닫혀 있어야 한다. 데이터 상태, 사고 판단, 복구와 재검증은 AI 사용 여부와 독립적으로 설명하고 반복 검증할 수 있어야 한다.
 
-## Safe Delegation and LLMOps Loop
+## Safe Delegation Flow
 
 ```mermaid
 flowchart TB
     evidence["Incident + Evidence"] --> ai["Evidence-Bound AI"]
-    ai --> boundary{"Delegation Boundary"}
+    ai --> boundary{"Within Delegation Boundary?"}
 
-    boundary -->|Within Boundary| delegated["Guarded Delegated Action"]
-    boundary -->|Outside Boundary| advisory["Advisory Output"]
+    boundary -->|Yes| delegated["Guarded Delegated Action"]
+    boundary -->|No| advisory["Advisory Output"]
     advisory --> human["Human Decision"]
     human --> controlled["Controlled Action"]
 
-    delegated --> verify["Re-validation"]
+    delegated --> verify{"Re-validation"}
     controlled --> verify
-    verify -->|Failure| recovery["Contain / Rollback / Retry"]
+    verify -->|Pass| outcome["Trusted Outcome"]
+    verify -->|Fail| recovery["Contain / Rollback / Retry"]
     recovery --> verify
-
-    subgraph llmops["LLMOps Control Loop"]
-        direction LR
-        trace["Trace + Version Context"] --> eval["Evaluation + Regression"]
-        eval --> replay["Failure Replay"]
-        replay --> review["Boundary Review"]
-    end
-
-    ai -. Execution Context .-> trace
-    verify -. Outcome Evidence .-> trace
-    recovery -. Failure Evidence .-> trace
-    review -. Policy Evidence .-> boundary
 ```
 
 AI의 역할이 커질수록 위임 경계를 보호하는 검증과 복구도 함께 강해져야 한다. 자율성은 신뢰 경계를 제거해서 얻는 것이 아니라 **유용한 AI 작업의 실패를 안전하게 다룰 수 있는 시스템을 만들어 얻는 것**이다.
+
+## LLMOps Feedback Loop
+
+```mermaid
+flowchart LR
+    run["AI Run + Outcome"] --> trace["Trace + Version"]
+    trace --> evaluate["Evaluate + Compare"]
+    evaluate --> replay["Failure Replay"]
+    replay --> review["Boundary Review"]
+    review --> policy["Delegation Policy"]
+    policy --> next["Next AI Run"]
+```
 
 ## LLMOps: Control Loop for Safe Delegation
 
