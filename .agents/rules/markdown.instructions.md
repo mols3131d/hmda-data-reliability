@@ -1,6 +1,6 @@
 ---
 name: Markdown
-description: "Use when writing or editing Markdown docs, README, notes, or AGENTS-style guidelines. Covers GFM callouts, tables, mermaid, language, and link-not-embed."
+description: "Use when writing or editing Markdown docs, README, notes, or AGENTS-style guidelines. Covers GFM callouts, tables, Mermaid, and language."
 trigger: glob
 globs: "**/*.md"
 applyTo: "**/*.md"
