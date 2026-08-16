@@ -43,8 +43,11 @@ evidence와 safety boundary를 소유한다.
 ## Agentic Boundary
 
 - deterministic detection, impact와 `RemediationDraft`가 LLM 판단보다 먼저 존재한다.
+- Agentic reviewer는 기존 deterministic lifecycle을 대체하지 않고 그 결과를 소비하는 별도 layer다.
 - Agentic output은 deterministic fact나 `RemediationDraft`를 대체하지 않고 설명·검토·보강한다.
 - Agentic output은 approval이나 recovery command가 아니다.
+- Agentic review는 MVP proof에는 필요하지만 기존 approval/recovery authority에 새로운 권한
+  조건을 추가하지 않는다.
 - **Contract proof**는 structured schema, evidence binding, forbidden-action guardrail과
   deterministic evaluator를 외부 model 호출 없이 반복 검증한다.
 - **Live model proof**는 같은 current revision에서 실제 model invocation과 observability

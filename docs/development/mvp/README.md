@@ -37,7 +37,9 @@ flowchart LR
     reliability --> incident["Incident + RemediationDraft"]
     incident --> agent["Bounded Agentic Review"]
     agent --> review["Review Evidence"]
-    review --> human["Human Approval"]
+    review --> guard["Deterministic Review Validation"]
+    incident --> human["Human Approval"]
+    guard -. advisory .-> human
     human --> recovery["Approved Recovery"]
     recovery --> verify["Deterministic Re-validation"]
 
@@ -46,7 +48,9 @@ flowchart LR
 ```
 
 Dagster는 최소 Data Lake의 data plane을 실행한다. Reliability control-plane, Agentic
-review와 approval을 data plane에 암묵적으로 자동 결합하지 않는다.
+review와 approval을 data plane에 암묵적으로 자동 결합하지 않는다. Agentic review는 MVP에서
+반드시 증명하지만 기존 deterministic approval/recovery contract의 권한 조건을 대체하거나
+새로운 authorization prerequisite를 만들지 않는다.
 
 ## System Invariants
 
@@ -55,12 +59,14 @@ review와 approval을 data plane에 암묵적으로 자동 결합하지 않는�
 1. **Deterministic truth first** — detection과 핵심 safety 판단을 LLM에 맡기지 않는다.
 2. **Evidence-bound AI** — Agentic 판단은 저장소가 제공한 evidence와 deterministic
    `RemediationDraft`를 근거로 한다.
-3. **Human-controlled mutation** — AI output만으로 데이터 state를 변경할 수 없다.
-4. **Locally reproducible core** — Data Lake, Reliability와 safety contract는 외부 model
+3. **Advisory, not authoritative** — Agentic review는 human decision을 보조하지만 기존
+   approval/recovery authority를 획득하거나 변경하지 않는다.
+4. **Human-controlled mutation** — AI output만으로 데이터 state를 변경할 수 없다.
+5. **Locally reproducible core** — Data Lake, Reliability와 safety contract는 외부 model
    호출 없이도 로컬에서 반복 검증할 수 있다.
-5. **Observable live judgment** — 실제 Agentic invocation은 입력 근거, model/prompt 조건,
+6. **Observable live judgment** — 실제 Agentic invocation은 입력 근거, model/prompt 조건,
    결과와 실행 비용·성능을 비교·검토할 evidence를 남긴다.
-6. **Acceptance over feature count** — incident type이나 기능 수가 아니라 완결된 proof로
+7. **Acceptance over feature count** — incident type이나 기능 수가 아니라 완결된 proof로
    MVP를 판단한다.
 
 ## Domain Completion Gates
@@ -73,7 +79,7 @@ Domain gate는 개발 순서가 아니다. 각 canonical domain이 MVP에서 제
 | [HMDA Data](hmda-data.md) | local source validation, Source→Bronze 적재와 재현 가능한 synthetic case | 같은 입력에서 동일한 logical Bronze state와 case identity를 다시 만들 수 있다. |
 | [Data Platform](data-platform.md) | DuckDB/dbt analytical layer와 artifact/lineage primitives | Bronze → staging → mart와 채택된 dbt evidence를 다시 추적할 수 있다. |
 | [Data Operations](data-operations.md) | ingestion/dbt/reliability의 실행·채택 boundary와 failure evidence | candidate/current artifact가 분리되고 mutation 가능 failure의 실제 결과와 reconciliation이 명시된다. |
-| [Reliability](reliability.md) | deterministic reliability, bounded Agentic review와 human-controlled recovery | 대표 incident가 evidence → review → approval → recovery → re-validation으로 닫힌다. |
+| [Reliability](reliability.md) | deterministic reliability, bounded Agentic review와 human-controlled recovery | 대표 incident가 evidence → advisory review + approval → recovery → re-validation으로 닫힌다. |
 | [Orchestration](orchestration.md) | 최소 Data Lake data plane의 반복 실행 | Bronze와 dbt analytical layer를 Dagster dependency로 재실행할 수 있다. |
 
 ## MVP Acceptance
@@ -91,7 +97,8 @@ MVP는 하나의 current revision에서 다음 **system proof**가 모두 성립
   evidence로 남긴다. 이 proof는 외부 model availability를 요구할 수 있으며 deterministic
   regression과 동일하게 취급하지 않는다.
 - **Safety proof** — Agentic output은 deterministic guardrail과 human approval을 우회해
-  mutation을 일으킬 수 없다.
+  mutation을 일으킬 수 없고, LLM availability 자체가 recovery authority를 부여하거나
+  변경하지 않는다.
 - **Reproducibility proof** — 정상, incident, recovery와 주요 failure/retry의 deterministic
   결과를 같은 revision에서 다시 설명할 수 있고 live invocation 결과는 evidence로 보존된다.
 

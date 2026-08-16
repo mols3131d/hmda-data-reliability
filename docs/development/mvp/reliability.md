@@ -6,7 +6,7 @@
 사람이 승인한 recovery만 안전하게 실행되는 최소 Agentic Reliability lifecycle**을 제공한다.
 
 Reliability domain은 LLM을 truth source나 execution controller로 사용하지 않는다.
-Deterministic truth와 safety contract를 먼저 만들고 그 위에 Agentic review를 배치한다.
+Deterministic truth와 safety contract를 먼저 만들고 그 위에 Agentic review를 별도 layer로 배치한다.
 
 ## MVP Capability Layers
 
@@ -19,6 +19,9 @@ Deterministic truth와 safety contract를 먼저 만들고 그 위에 Agentic re
 
 ### Bounded Agentic Review
 
+Agentic reviewer는 기존 read-only lifecycle의 detection/impact/remediation node를 LLM으로
+대체하지 않는다. Lifecycle이 만든 deterministic 결과를 **소비하는 별도 review layer**다.
+
 - 실제 model invocation은 deterministic incident, evidence, impact와 `RemediationDraft`를 입력으로 사용한다.
 - 결과는 사람이 검토하고 코드로 평가할 수 있는 structured contract로 반환한다.
 - review가 사용한 evidence와 model/prompt 조건을 다시 식별할 수 있는 invocation evidence를 남긴다.
@@ -26,6 +29,8 @@ Deterministic truth와 safety contract를 먼저 만들고 그 위에 Agentic re
 
 Agentic reviewer는 deterministic result를 **설명·검토·보강**한다. Detection rule,
 `RemediationDraft`, recovery proposal identity 또는 approval decision을 대체하지 않는다.
+Reviewer availability나 review 결과 자체는 기존 approval/recovery contract에 새로운 권한
+조건을 추가하지 않는다.
 
 ### Human-Controlled Recovery
 
@@ -34,6 +39,10 @@ Agentic reviewer는 deterministic result를 **설명·검토·보강**한다. De
 - 승인된 recovery만 expected state를 복원한다.
 - recovery 뒤 같은 deterministic lifecycle을 다시 실행해 incident 해소를 검증한다.
 - retry/replay는 duplicate mutation 없이 필요한 verification을 이어간다.
+
+Agentic review는 MVP end-to-end proof에 포함되지만 recovery authorization의 source는 아니다.
+Invalid/unavailable Agentic output은 review proof를 실패시키며 mutation permission을 만들거나
+완화하지 않는다.
 
 ## Agentic Proof Model
 
@@ -68,17 +77,15 @@ Live proof는 configured provider와 network를 요구할 수 있다. Provider �
 
 ## Done When
 
-대표 synthetic incident 하나가 다음 lifecycle을 **한 current revision에서** 닫고,
+대표 synthetic incident 하나가 다음 proof를 **한 current revision에서** 연결하고,
 Agentic contract proof와 live model proof가 모두 확인되면 완료다.
 
 ```text
 clean baseline
 → controlled incident
 → deterministic evidence + impact + RemediationDraft
-→ bounded Agentic review
-→ contract validation / safety evaluation
-→ external human approval
-→ approved recovery
+├→ bounded Agentic review → contract validation / safety evaluation
+└→ external human approval → approved recovery
 → deterministic re-validation
 → replay/failure evidence
 ```
@@ -88,6 +95,7 @@ clean baseline
 - Agentic review 없이도 incident의 핵심 사실과 safety gate를 deterministic하게 판단할 수 있다.
 - deterministic contract proof가 외부 model 호출 없이 반복 가능하다.
 - 실제 model invocation이 evidence-bound structured review를 생성하고 observability evidence를 남긴다.
+- Agentic review가 기존 approval/recovery authority를 획득하거나 변경하지 않는다.
 - Agentic output만으로 state mutation을 시작할 수 없다.
 - approved recovery 뒤 incident가 해소되고 downstream validation이 정상 state를 확인한다.
 - expected failure와 retry path가 검토 가능한 evidence로 남는다.
