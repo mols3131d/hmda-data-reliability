@@ -113,7 +113,7 @@ HMDA 원천 파일을 발견·검증하고 Bronze dataset으로 전체 또는 pa
 
 - **GIVEN** 두 full-load request가 같은 physical DuckDB file을 대상으로 할 때
 - **WHEN** 첫 request가 target replacement를 실행 중일 때
-- **THEN** 두 번째 request는 첫 request가 commit 또는 rollback할 때까지 target mutation을 시작해서는 안 된다.
+- **THEN** 두 번째 request는 첫 full-load call이 성공 또는 실패로 종료되고 mutation lock이 해제될 때까지 target mutation을 시작해서는 안 된다.
 
 #### Scenario: Concurrent expected-state partition replacement
 
