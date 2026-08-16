@@ -2,7 +2,7 @@
 
 **Evidence-first data reliability with bounded AI delegation.**
 
-Project Pivot은 로컬 HMDA Data Lake에서 데이터 신뢰성을 끝까지 추적하는 프로젝트다. 파이프라인 성공 여부만 보지 않고, 어떤 데이터 상태를 채택했는지와 문제가 생겼을 때 어떤 근거로 판단하고 복구했는지를 남긴다. AI는 이 evidence를 검토하는 데 쓰며, 현재 MVP에서는 복구 권한을 주지 않는다.
+Project Pivot은 로컬 HMDA Data Lake에서 데이터 신뢰성을 검증하고, 그 과정에서 AI에 맡길 수 있는 범위를 함께 다루는 프로젝트다. 데이터 상태부터 incident evidence, `RecoveryProposal`, re-validation까지 한 흐름에서 추적한다. AI는 evidence review에 쓰지만, 현재 MVP에서는 직접 복구하지 않는다.
 
 > [!NOTE]
 > **Status: Active MVP.** 지금은 기능을 넓히지 않고 HMDA reliability flow 하나를 end-to-end로 닫는 중이다. Scope와 acceptance는 [`docs/mvp.md`](docs/mvp.md)에서 관리한다.
@@ -13,7 +13,7 @@ Project Pivot은 로컬 HMDA Data Lake에서 데이터 신뢰성을 끝까지 �
 
 ## Design Boundaries
 
-Incident detection과 핵심 safety 판단은 deterministic evidence로 남긴다. AI는 incident evidence와 `RemediationDraft`를 읽고 검토하지만 MVP에서는 state mutation을 일으킬 수 없다. Recovery는 validated proposal과 human approval 뒤에만 실행하고, 끝나면 같은 기준으로 re-validation한다.
+Incident detection과 핵심 safety 판단은 deterministic code와 evidence로 처리한다. AI는 incident evidence와 `RemediationDraft`를 읽고 검토하지만 MVP에서는 state mutation을 일으킬 수 없다. Recovery는 검증된 `RecoveryProposal`과 human approval 뒤에만 실행하고, 끝나면 같은 기준으로 re-validation한다.
 
 장기적으로는 검증과 복구 능력이 쌓이는 만큼 AI에 맡길 수 있는 범위도 넓힌다. 지금은 review까지가 그 경계다.
 
@@ -57,8 +57,8 @@ flowchart TB
 | Runtime | `Python 3.13`, `uv` | local 환경과 dependency 관리 |
 | Data | `DuckDB`, `dbt Core`, `Polars`, `PyArrow` | ingestion, query, transform |
 | Orchestration | `Dagster` | data-plane asset과 job 실행 |
-| Contracts | `Pydantic` | reliability와 AI boundary의 structured model |
-| Agentic review | `LangGraph` | remediation review flow |
+| Contracts | `Pydantic` | reliability contract와 AI review model |
+| Agentic review | `LangGraph` | bounded remediation review |
 
 세부 tool choice와 layer별 책임은 [`DEVELOPMENT.md`](DEVELOPMENT.md)에 정리되어 있다.
 
