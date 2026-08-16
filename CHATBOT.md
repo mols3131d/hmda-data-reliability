@@ -1,6 +1,6 @@
 # Chatbot Entry
 
-`CHATBOT.md`는 표준 agent instruction 파일이 아니다. GitHub 같은 연결 도구를 통해 이 저장소를 다루는 AI chat service를 위한 **저장소 전용 진입점**이다. Repository 규칙을 새로 소유하거나 [`AGENTS.md`](AGENTS.md)를 대체하지 않으며, chat 환경에서 repository-owned guidance를 찾는 방법과 connected-tool 작업에 필요한 경계만 정의한다.
+`CHATBOT.md`는 표준 agent instruction 파일이 아니다. GitHub 같은 연결 도구를 통해 이 저장소를 다루는 AI chat service를 위한 **저장소 전용 진입점**이다. Repository 규칙을 새로 소유하거나 [`AGENTS.md`](AGENTS.md)를 대체하지 않으며, chat 환경에서 repository-owned guidance와 agent asset을 찾는 방법, connected-tool 작업에 필요한 경계만 정의한다.
 
 ## Guidance
 
@@ -9,6 +9,42 @@
 3. Root 또는 local guidance가 연결하는 owner 중 현재 task에 직접 필요한 것만 추가로 읽는다.
 
 관련 없는 guidance를 예방적으로 모두 읽지 않는다.
+
+## Agent Assets
+
+아래 표는 discovery를 위한 projection이다. 실제 trigger, 적용 범위와 동작은 각 asset의 현재 frontmatter와 본문이 source of truth다. 표에 없는 asset도 현재 task와 직접 일치하면 사용할 수 있으며, 관련 없는 asset을 예방적으로 모두 읽지 않는다.
+
+### Skills
+
+| Skill | Source | Use when |
+| --- | --- | --- |
+| [`pivot-research-workspace`](.agents/skills/pivot-research-workspace/SKILL.md) | Project | 근거 기반 조사, 비교, dependency 확인 또는 failure investigation |
+| [`pivot-review-code`](.agents/skills/pivot-review-code/SKILL.md) | Project | diff, commit, Pull Request 또는 구현 변경 review |
+| [`pivot-load-context-testing`](.agents/skills/pivot-load-context-testing/SKILL.md) | Project | test, pytest, validation 또는 failure debugging |
+| [`pivot-spec-driven-tdd-rpi`](.agents/skills/pivot-spec-driven-tdd-rpi/SKILL.md) | Project | Research·Review 결과를 OpenSpec workflow에 연결 |
+| `mols-agent-asset-studio` | [`skills-lock.json`](skills-lock.json) | Skill, instruction, prompt 등 agent asset 작업 |
+| `mols-markdown-for-human` | [`skills-lock.json`](skills-lock.json) | 사람이 빠르게 읽을 Markdown 문서 작성·개선 |
+| `mols-mermaid-diagram` | [`skills-lock.json`](skills-lock.json) | architecture, flow, sequence, state, model 또는 dependency 시각화 |
+| `mols-mermaid-chart` | [`skills-lock.json`](skills-lock.json) | 수치 비교, 추세, 구성비 또는 quantified flow 시각화 |
+
+Project Skill은 해당 `SKILL.md`의 frontmatter를, installed Skill은 `skills-lock.json`이 가리키는 원본 Skill의 frontmatter를 확인한 뒤 적용한다.
+
+### Path Instructions
+
+현재 path-scoped instruction은 [`.github/instructions/`](.github/instructions/)에 있다. 작업 대상과 `applyTo`가 일치하는 instruction을 확인하며, 여러 selector가 일치하면 모두 적용한다.
+
+| Instruction | `applyTo` |
+| --- | --- |
+| `Project Pivot` | `src/project_pivot/**/*` |
+| `Development` | `src/**/*` |
+| `Python` | `src/**/*.py` |
+| `dbt` | `dbt/**` |
+| `Reliability` | `src/project_pivot/reliability/**,tests/reliability/**` |
+| `Orchestration` | `src/project_pivot/orchestration/**,tests/orchestration/**` |
+| `Markdown` | `**/*.md` |
+| `Local Mermaid Diagrams` | `**/*.md, **/*.mmd, **/*.mermaid` |
+
+정확한 selector와 규칙은 각 instruction의 현재 frontmatter와 본문을 따른다.
 
 ## Repository State
 
