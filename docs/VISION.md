@@ -54,13 +54,14 @@ AI 위임은 기능 자체가 아니라 **검증된 효용과 실패 특성**으
 ```mermaid
 flowchart LR
     source["Source Data"] --> bronze["Bronze"]
-    bronze --> analytical["Staging / Marts"]
+    bronze --> analytical["Analytical Layer"]
     analytical --> evidence["Profile / Metadata / Lineage"]
     evidence --> detect["Detect and Assess"]
     detect --> incident{"Incident?"}
 
     incident -->|No| trusted["Trusted Data State"]
-    incident -->|Yes| recovery["Validated Recovery"]
+    incident -->|Yes| incident_evidence["Incident + Evidence"]
+    incident_evidence --> recovery["Controlled Recovery"]
     recovery --> verify{"Re-validation"}
     verify -->|Pass| trusted
     verify -->|Fail| reconcile["Contain / Reconcile / Retry"]
@@ -79,13 +80,14 @@ flowchart TB
     boundary -->|Yes| delegated["Guarded Delegated Action"]
     boundary -->|No| advisory["Advisory Output"]
     advisory --> human["Human Decision"]
-    human --> controlled["Controlled Action"]
+    human --> controlled["Human-Controlled Action"]
 
     delegated --> verify{"Re-validation"}
     controlled --> verify
     verify -->|Pass| outcome["Trusted Outcome"]
     verify -->|Fail| recovery["Contain / Rollback / Retry"]
-    recovery --> verify
+    recovery -->|Retry| verify
+    recovery -->|Escalate| human
 ```
 
 AI의 역할이 커질수록 위임 경계를 보호하는 검증과 복구도 함께 강해져야 한다. 자율성은 신뢰 경계를 제거해서 얻는 것이 아니라 **유용한 AI 작업의 실패를 안전하게 다룰 수 있는 시스템을 만들어 얻는 것**이다.
@@ -96,8 +98,9 @@ AI의 역할이 커질수록 위임 경계를 보호하는 검증과 복구도 �
 flowchart LR
     run["AI Run + Outcome"] --> trace["Trace + Version"]
     trace --> evaluate["Evaluate + Compare"]
-    evaluate --> replay["Failure Replay"]
-    replay --> review["Boundary Review"]
+    evaluate --> review["Boundary Review"]
+    evaluate -->|Failure / Regression| replay["Failure Replay"]
+    replay --> review
     review --> policy["Delegation Policy"]
     policy -. Governs .-> run
 ```
