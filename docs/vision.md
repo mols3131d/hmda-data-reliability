@@ -18,10 +18,10 @@ Project Pivot의 핵심 가치는 단순한 pipeline success가 아니라 **어�
 - **Deterministic core** — LLM availability나 표현 변화가 detection, approval authority와 recovery safety를 결정하지 않는다.
 - **Bounded automation** — automation은 owning domain contract와 human approval boundary를 우회하지 않는다.
 - **Reproducible** — 같은 입력·설정·revision의 결과를 다시 설명할 수 있어야 한다.
-- **Local-first** — portfolio MVP는 복잡한 cloud/distributed infrastructure보다 reliability contract와 검증 가능성을 우선한다.
+- **Local-first** — portfolio 범위에서는 복잡한 cloud/distributed infrastructure보다 reliability contract와 검증 가능성을 우선한다.
 
 ## Boundaries
 
-Project Pivot은 현재 local HMDA reliability system에 집중한다. 대규모 distributed lakehouse, 승인 없는 autonomous recovery, 범용 autonomous RCA, production-grade authorization/audit platform은 장기 비전의 필수 전제가 아니다.
+Project Pivot은 local HMDA reliability system에 집중한다. 대규모 distributed lakehouse, 승인 없는 autonomous recovery, 범용 autonomous RCA, production-grade authorization/audit platform은 이 비전의 필수 전제가 아니다.
 
-현재 active 목표와 완료 조건은 [`mvp.md`](mvp.md)에서 별도로 관리한다. 이 문서는 구현 상태나 진행률을 소유하지 않는다.
+이 문서는 장기 방향과 원칙만 소유하며 현재 phase, 구현 상태와 진행률을 기록하지 않는다.
