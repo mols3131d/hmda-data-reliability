@@ -1,6 +1,6 @@
 # Documentation Rules
 
-`docs/`는 durable guidance, active goal, development guide와 human-only projection을 구분한다. 이 파일은 **`docs/**`의 agent 규칙을 단일 소유**하며, 문서별 세부 내용은 각 owning document가 소유한다.
+`docs/`는 durable guidance, active goal, development guide와 human-only projection을 구분한다. 이 파일은 **`docs/**`의 공통 작성·trust·lifecycle 규칙**을 소유하며, Git/GitHub 같은 subject-specific workflow는 해당 owning guide가 소유한다.
 
 ## Ownership
 
