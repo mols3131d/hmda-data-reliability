@@ -1,73 +1,71 @@
-version: 1
+version: 4
 
-dashboard:
-  level: project
-  title: MVP Development Dashboard
-  snapshot: 2026-08-13 / main@61aaba4 / implementation@736732b
-  current_focus: 완료된 volume-drop MVP의 requirement/verification coverage와 archived Change evidence를 유지한다.
-  include_total: true
+snapshot:
+  date: 2026-08-16
+  evidence_revision: f7bd019c8769fd07b447a823a9518e54cdd3a0d9
+  current_revision_validation: not_verified
 
-items:
+mvp:
+  state: partial
+  reason: >-
+    HMDA Data, Data Platform, Data Operations, deterministic Reliability와 Orchestration의
+    implementation evidence는 존재하지만 Reliability domain의 bounded Agentic review와
+    같은 current revision의 end-to-end acceptance가 아직 완료되지 않았다.
+
+domains:
   - name: HMDA Data
-    implementation:
-      status: implemented
-      progress: 4/4
-      gaps: []
-    verification:
-      status: passing
-      progress: 4/4
-      gaps: []
+    state: implemented
+    current_revision_validation: not_verified
+    evidence:
+      - src/project_pivot/hmda_data/
+      - tests/hmda_data/
+    gaps: []
 
   - name: Data Platform
-    implementation:
-      status: implemented
-      progress: 4/4
-      gaps: []
-    verification:
-      status: passing
-      progress: 4/4
-      gaps: []
+    state: implemented
+    current_revision_validation: not_verified
+    evidence:
+      - dbt/
+      - src/project_pivot/data_platform/
+      - tests/data_platform/
+      - tests/dbt/
+    gaps: []
 
   - name: Data Operations
-    implementation:
-      status: implemented
-      progress: 4/4
-      gaps: []
-    verification:
-      status: passing
-      progress: 4/4
-      gaps: []
+    state: implemented
+    current_revision_validation: not_verified
+    evidence:
+      - src/project_pivot/data_operations/
+      - tests/data_operations/
+    gaps: []
 
   - name: Reliability
-    implementation:
-      status: implemented
-      progress: 9/9
-      gaps: []
-    verification:
-      status: passing
-      progress: 9/9
-      gaps: []
+    state: partial
+    current_revision_validation: not_verified
+    evidence:
+      - src/project_pivot/reliability/
+      - tests/reliability/
+    gaps:
+      - bounded Agentic review의 structured contract와 deterministic evaluator가 없다.
+      - current revision의 실제 model invocation과 invocation evidence가 없다.
 
   - name: Orchestration
-    implementation:
-      status: implemented
-      progress: 3/3
-      gaps: []
-    verification:
-      status: passing
-      progress: 3/3
-      gaps: []
+    state: implemented
+    current_revision_validation: not_verified
+    evidence:
+      - src/project_pivot/orchestration/
+      - tests/orchestration/
+    gaps: []
 
-references:
-  - docs/development/mvp/hmda-data.md
-  - docs/development/mvp/data-platform.md
-  - docs/development/mvp/data-operations.md
-  - docs/development/mvp/reliability.md
-  - docs/development/mvp/orchestration.md
-  - "Archived volume-drop completion evidence: [tasks](../../../openspec/changes/archive/2026-08-11-reliability-mvp-volume-drop-vertical-slice/tasks.md)"
-  - "Current volume-drop contracts: [HMDA ingestion](../../../openspec/specs/hmda-data-ingestion/spec.md), [stage execution](../../../openspec/specs/data-operations-stage-execution/spec.md), [incident lifecycle](../../../openspec/specs/data-operations-incident-lifecycle/spec.md), [recovery](../../../openspec/specs/reliability-recovery-backfill/spec.md), [evaluation](../../../openspec/specs/reliability-evaluation-report/spec.md)"
-  - tests/hmda_data/
-  - tests/data_platform/
-  - tests/data_operations/
-  - tests/reliability/
-  - tests/orchestration/
+blockers:
+  - id: bounded_agentic_contract
+    domain: Reliability
+    reason: structured Agentic review contract와 deterministic safety evaluation이 필요하다.
+
+  - id: live_agentic_proof
+    domain: Reliability
+    reason: current revision에서 실제 model invocation evidence가 필요하다.
+
+  - id: current_revision_end_to_end_acceptance
+    domain: system
+    reason: 모든 domain completion gate를 같은 current revision에서 다시 검증해야 한다.
