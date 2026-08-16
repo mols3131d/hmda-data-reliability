@@ -242,7 +242,7 @@ Read-only incident lifecycle은 synthetic evaluation이나 report write를 자�
 
 #### Scenario: Schema-drift safety failure evidence
 
-- **WHEN** candidate schema/content/dbt validation, approval, target freshness, replacement 또는 post-restoration verification 중 하나가 실패할 때
+- **WHEN** candidate schema/content/dbt validation, approval, stale/diverged target state, replacement 또는 post-restoration verification 중 하나가 실패할 때
 - **THEN** evaluation은 failure stage, committed target mutation 여부와 reconciliation action을 구조화해야 한다.
 - **AND** schema recovery failure를 partition-specific mutation state로 표현해서는 안 된다.
 
