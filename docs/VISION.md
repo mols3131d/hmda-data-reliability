@@ -47,6 +47,8 @@ AI 위임은 capability 자체가 아니라 **검증된 효용과 실패 특성*
 
 경계가 불명확하면 자율 위임을 낙관적으로 확대하지 않는다. 이 경우 AI는 분석, 제안과 의사결정 지원을 담당하고 최종 권한은 사람 또는 결정론적 control에 남긴다.
 
+위임 경계의 변경 자체도 통제 대상이다. 새로운 evaluation과 failure evidence는 경계를 재검토할 근거가 되지만 **AI가 자기 권한을 스스로 확대하지 않는다.** 경계 변경은 근거가 남는 명시적 policy decision으로 다룬다.
+
 ## Trust and Delegation Loop
 
 ```mermaid
@@ -68,29 +70,30 @@ flowchart LR
     ai -. Execution Context .-> trace["Trace + Version Context"]
     trace --> eval["Evaluation + Regression"]
     eval --> replay["Failure Replay"]
-    replay -. Strengthen Controls .-> boundary
+    replay -. Evidence .-> review["Boundary Review"]
+    review -. Policy .-> boundary
 ```
 
 AI의 역할이 커질수록 위임 경계를 보호하는 검증과 recovery도 함께 강해져야 한다. 자율성은 신뢰 경계를 제거해서 얻는 것이 아니라 **유용한 AI 작업의 실패를 안전하게 다룰 수 있는 시스템을 만들어 얻는 것**이다.
 
 ## LLMOps: Control Loop for Safe Delegation
 
-LLMOps는 특정 관찰 도구를 도입하는 일이 아니라 **AI 판단과 행동을 추적·평가하고, 그 근거로 안전한 위임 범위를 조정하는 운영 규율**이다.
+LLMOps는 특정 관찰 도구를 도입하는 일이 아니라 **AI 판단과 행동을 추적·평가하고, 그 근거로 안전한 위임 경계를 검토할 수 있게 만드는 운영 규율**이다.
 
 - **Trace and Version** — 중요한 판단과 행동을 입력 근거, 프롬프트, 모델, 설정, 애플리케이션 버전에 연결한다.
 - **Evaluate and Regress** — 재현 가능한 도메인 사례와 기대 결과를 기준으로 품질을 평가하고 변경 전후를 비교한다.
 - **Replay Failures** — 실패한 판단과 중요한 경계 사례를 다시 실행 가능한 회귀 검증 사례로 전환한다.
 - **Observe Operations** — 지연시간, 사용량과 비용 같은 운영 특성도 품질과 함께 관찰한다.
-- **Adjust Delegation** — 평가 품질, 실제 실패와 recovery evidence를 바탕으로 위임 경계를 넓히거나 좁힌다.
+- **Inform Delegation Policy** — 평가 품질, 실제 실패와 recovery evidence를 위임 경계 review의 근거로 제공한다.
 
-과거 모델 출력 자체를 자동으로 정답으로 취급하지 않는다. 객관적으로 검증 가능한 안전성과 계약은 결정론적 근거를 우선하며, LLMOps의 성공은 로그의 양이 아니라 **위임 범위를 근거 있게 조절할 수 있는가**로 판단한다.
+과거 모델 출력 자체를 자동으로 정답으로 취급하지 않는다. 객관적으로 검증 가능한 안전성과 계약은 결정론적 근거를 우선하며, LLMOps의 성공은 로그의 양이 아니라 **위임 경계를 근거 있게 검토하고 조정할 수 있는가**로 판단한다.
 
 ## Principles
 
 - **Delegate by Recoverability** — 필요한 품질을 충족하고 오류를 탐지·격리·복구할 수 있는 범위에서는 AI에 가능한 한 많이 위임한다.
 - **Design for AI Failure** — LLM 오류를 예외적인 사건으로 취급하지 않고, 오류가 큰 사고로 확산되지 않도록 시스템을 설계한다.
 - **Deterministic Where It Matters** — 신뢰성 판단의 기준, 핵심 안전 조건과 재검증처럼 확률적 오류의 비용이 큰 부분은 결정론적으로 유지한다.
-- **Authority Must Be Earned** — 비가역적이거나 영향이 큰 권한은 capability만으로 부여하지 않고 충분한 safety와 recovery evidence가 있을 때만 확대한다.
+- **Authority Must Be Earned** — 비가역적이거나 영향이 큰 권한은 capability만으로 부여하지 않고 충분한 safety와 recovery evidence가 있을 때만 확대한다. AI는 자신의 권한 확대를 스스로 승인하지 않는다.
 - **Proof Before Scale** — 모델 성능이나 자동화 범위를 자랑하기보다 작은 환경에서 위임, 실패, 복구와 재검증을 끝까지 증명한다.
 
 ## Strategic Boundaries
