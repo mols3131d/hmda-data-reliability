@@ -32,17 +32,17 @@
 
 ### Path Instructions
 
-작업 대상과 [`.github/instructions/`](.github/instructions/)의 `applyTo`가 일치하면 해당 instruction을 적용한다.
+작업 대상과 아래 path-scoped instruction의 `applyTo`가 일치하면 해당 instruction을 적용한다.
 
 | Instruction | `applyTo` |
 | --- | --- |
 | [`Project Pivot`](.github/instructions/project.instructions.md) | `src/project_pivot/**/*` |
-| [`Development`](.github/instructions/development.instructions.md) | `src/**/*` |
-| [`Python`](.github/instructions/python.instructions.md) | `src/**/*.py` |
+| [`Development`](.agents/rules/development.instructions.md) | `src/**/*` |
+| [`Python`](.agents/rules/python.instructions.md) | `src/**/*.py` |
 | [`dbt`](.github/instructions/dbt.instructions.md) | `dbt/**` |
 | [`Reliability`](.github/instructions/reliability.instructions.md) | `src/project_pivot/reliability/**,tests/reliability/**` |
 | [`Orchestration`](.github/instructions/orchestration.instructions.md) | `src/project_pivot/orchestration/**,tests/orchestration/**` |
-| [`Markdown`](.github/instructions/markdown.instructions.md) | `**/*.md` |
+| [`Markdown`](.agents/rules/markdown.instructions.md) | `**/*.md` |
 | [`Local Mermaid Diagrams`](.github/instructions/mermaid.instructions.md) | `**/*.md, **/*.mmd, **/*.mermaid` |
 
 현재 chat 환경에서 사용할 수 없는 tool이나 절차를 수행한 것처럼 주장하지 않는다.
