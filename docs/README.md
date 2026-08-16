@@ -7,7 +7,7 @@ Project Pivot 문서는 **durable guidance**, **active goal**, **development gui
 | Document | Role |
 | --- | --- |
 | [Vision](vision.md) | 장기 방향과 제품 원칙 |
-| [Architecture](ARCHITECTURE.md) | 시스템 흐름과 cross-domain boundary |
+| [Architecture](ARCHITECTURE.md) | 시스템 흐름과 cross-domain boundary guidance |
 | [Domain Guides](domains/OVERVIEW.md) | domain별 책임·비책임과 reading path를 설명하는 human-readable guide |
 | [Canonical Capability Specs](../openspec/specs/) | 현재 capability의 normative OpenSpec contract |
 | [Active MVP](mvp.md) | 현재 MVP 목표, scope와 acceptance |
@@ -21,13 +21,9 @@ Project Pivot 문서는 **durable guidance**, **active goal**, **development gui
 | [development](development) | 개발·테스트·VCS 가이드와 human-only development dashboard |
 | [references](references) | 외부 규격과 supporting reference |
 
-## Lifecycle
+## Rules And Ownership
 
-- Current capability의 normative contract는 `openspec/specs/**`에서 관리한다.
-- `docs/ARCHITECTURE.md`와 `docs/domains/**`는 구조와 ownership을 설명하지만 OpenSpec Spec을 대체하지 않는다.
-- Active phase 문서는 목표와 acceptance만 다루고 현재 구현 상태나 capability contract를 복제하지 않는다.
-- Phase가 완료되면 영구 가치가 있는 architecture/domain guidance와 canonical Spec을 owning location에 반영한 뒤 phase 문서를 삭제한다.
-- 완료된 phase를 보존하기 위한 `docs/archive/**`는 만들지 않는다. Git history와 Pull Request, OpenSpec archive가 history를 보존한다.
-- `development/dashboard.md`는 별도의 dashboard refresh 작업에서만 갱신한다. Agent는 dashboard를 current state나 validation evidence의 source로 사용하지 않는다.
+- `docs/**`의 작성, trust boundary, dashboard policy와 phase lifecycle은 [`AGENTS.md`](AGENTS.md)가 소유한다.
+- OpenSpec의 canonical/change workflow는 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)가 소유한다.
 
-세부 작성·신뢰 규칙은 [`AGENTS.md`](AGENTS.md)를 따른다.
+이 README는 문서 navigation을 설명하며 위 규칙을 복제하지 않는다.

@@ -1,6 +1,6 @@
 # Development
 
-이 directory는 repository의 **phase-independent development guides**와 사람이 빠르게 보는 **development dashboard**를 둔다. Dashboard는 위치상 development에 속하지만 개발 규칙이나 canonical state를 소유하지 않는 비권위 projection이다.
+이 directory는 repository의 **phase-independent development guides**와 사람이 빠르게 보는 **development dashboard**를 둔다. Dashboard는 위치상 development에 속하지만 개발 규칙이나 canonical state를 소유하지 않는 human-only projection이다.
 
 ## Documents
 
@@ -16,16 +16,16 @@
 - Current capability의 normative contract는 [`../../openspec/specs/`](../../openspec/specs/)가 소유한다.
 - 시스템 구조와 domain ownership guidance는 [`../ARCHITECTURE.md`](../ARCHITECTURE.md), [`../domains/**`](../domains/OVERVIEW.md)가 설명한다.
 - Active product goal은 [`../mvp.md`](../mvp.md)가 소유한다.
-- [`dashboard.md`](dashboard.md)는 위 source들을 대체하지 않는 인간용 projection이다.
-- Dashboard의 읽기·갱신 규칙은 [`../AGENTS.md`](../AGENTS.md#dashboard-policy)가 소유한다.
-- 완료된 phase bundle이나 historical readiness는 이 directory에 보존하지 않는다.
-- [`../../DEVELOPMENT.md`](../../DEVELOPMENT.md)는 repository 전체 개발 환경과 active tool choices를 안내한다.
+- [`dashboard.md`](dashboard.md)는 위 source들을 대체하지 않는 human-only projection이다.
+- [`../../DEVELOPMENT.md`](../../DEVELOPMENT.md)는 repository-wide 개발 환경과 active tool choice를 안내한다.
+
+## Rules
+
+`docs/**`의 agent 규칙과 dashboard policy는 [`../AGENTS.md`](../AGENTS.md)가 소유한다. Test와 Git/GitHub의 세부 workflow는 각각의 owning guide가 소유하며 이 README는 반복하지 않는다.
 
 ## Reading Order
 
-1. [`../../DEVELOPMENT.md`](../../DEVELOPMENT.md)에서 repository 개발 환경을 확인한다.
-2. test 또는 Git 작업이면 해당 guide를 읽는다.
-3. 사람이 현재 개발 dashboard를 확인하려는 경우에만 [`dashboard.md`](dashboard.md)를 읽는다.
+1. Repository 개발 환경이 필요하면 [`../../DEVELOPMENT.md`](../../DEVELOPMENT.md)를 확인한다.
+2. Test 또는 Git/GitHub 작업이면 해당 owning guide를 읽는다.
+3. Dashboard를 다루는 명시적 작업이면 [`../AGENTS.md`](../AGENTS.md#dashboard-policy)의 dashboard policy를 먼저 확인한다.
 4. 제품 목표나 project document navigation이 필요하면 [`../README.md`](../README.md)에서 owning document를 찾는다.
-
-Phase-independent guide는 current phase가 바뀌어도 가능한 한 수정 없이 유지한다. Dashboard는 별도 refresh lifecycle을 따른다.

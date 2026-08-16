@@ -1,6 +1,6 @@
 # OpenSpec Agent Rules
 
-`openspec/` 아래 artifact를 생성, 수정, 리팩토링할 때 적용한다.
+`openspec/` 아래 artifact를 생성, 수정, 리팩토링할 때 적용한다. 이 파일은 **`openspec/**` 공통 agent 행동 규칙**을 소유하며, 하위 `AGENTS.md`는 해당 subtree에만 필요한 추가 규칙을 소유한다. Workflow/schema/project-specific rule ownership은 [`README.md`](README.md)의 지침 소유권 map을 따른다.
 
 ## 먼저 확인
 
