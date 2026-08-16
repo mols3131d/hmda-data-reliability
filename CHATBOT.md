@@ -27,7 +27,7 @@
 | `mols-mermaid-diagram` | [`skills-lock.json`](skills-lock.json) | architecture, flow, sequence, state, model 또는 dependency 시각화 |
 | `mols-mermaid-chart` | [`skills-lock.json`](skills-lock.json) | 수치 비교, 추세, 구성비 또는 quantified flow 시각화 |
 
-Project Skill은 해당 `SKILL.md`의 frontmatter를, installed Skill은 `skills-lock.json`이 가리키는 원본 Skill의 frontmatter를 확인한 뒤 적용한다.
+[`skills-lock.json`](skills-lock.json)은 installed Skill inventory이며 activation contract가 아니다. Project Skill은 해당 `SKILL.md`의 frontmatter를, installed Skill은 lock이 가리키는 원본 Skill의 frontmatter를 확인한 뒤 적용한다.
 
 ### Path Instructions
 
