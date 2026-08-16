@@ -13,7 +13,7 @@
 | `development/**` | phase-independent 개발 가이드와 human-only development dashboard |
 | `references/**` | 외부 규격과 supporting reference |
 
-Current capability의 normative contract는 `docs/`가 아니라 [`../openspec/specs/`](../openspec/specs/)가 소유한다. OpenSpec의 lifecycle과 workflow semantics는 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)가 소유한다.
+Current capability의 normative contract는 `docs/`가 아니라 [`../openspec/specs/`](../openspec/specs/)가 소유한다. OpenSpec-specific agent와 workflow 규칙은 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)를 진입점으로 해당 owning file을 따른다.
 
 ## Trust Boundary
 
