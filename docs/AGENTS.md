@@ -51,8 +51,8 @@ Source와 canonical Spec이 다르면 implementation drift로, tests나 실행 �
 Phase 문서는 active phase 동안만 `main`에 둘 수 있다.
 
 1. Active phase는 목표, scope와 acceptance만 소유한다.
-2. Domain contract, architecture, 개발 규칙과 runtime behavior를 phase 문서에 복제하지 않는다.
-3. Phase가 끝나면 장기 가치가 있는 지식만 canonical owner에 반영한다.
+2. Canonical capability contract, architecture guidance, 개발 규칙과 runtime behavior를 phase 문서에 복제하지 않는다.
+3. Phase가 끝나면 장기 가치가 있는 지식을 해당 owning location에 반영한다. Capability contract는 `openspec/specs/**`, architecture/domain guidance는 `docs/**`에 반영한다.
 4. 필수 참조가 남지 않았는지 확인한 뒤 완료된 phase bundle을 `main`에서 삭제한다.
 5. 완료된 phase를 보존하기 위해 `docs/archive/**` 같은 별도 phase archive를 만들지 않는다. Git history, Pull Request, OpenSpec archive와 필요한 inbox artifact가 history를 보존한다.
 
@@ -61,6 +61,6 @@ Phase 문서는 active phase 동안만 `main`에 둘 수 있다.
 ## Writing
 
 - 한 사실에는 한 owning source를 둔다.
-- 목표, current contract, historical work evidence와 인간용 summary를 섞지 않는다.
-- 현재성을 자주 잃는 상태 정보는 durable contract 문서에 넣지 않는다.
+- 목표, canonical contract, historical work evidence와 인간용 summary를 섞지 않는다.
+- 현재성을 자주 잃는 상태 정보는 canonical Spec이나 durable guide에 넣지 않는다.
 - KISS, DRY, YAGNI를 우선한다.
