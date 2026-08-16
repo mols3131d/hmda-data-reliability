@@ -63,6 +63,7 @@ inbox/archive/**
 - Routine artifact는 `inbox`에 직접 commit하고 push하며 Pull Request를 만들지 않는다.
 - 하나의 commit에는 하나의 artifact 또는 함께 소비되는 하나의 bundle만 포함한다.
 - Routine artifact push에는 routine artifact 변경만 포함한다.
+- `inbox`의 `main` 대비 고유 content는 위 허용 경로에만 존재해야 한다.
 - Commit message는 [Commits](commit.md) 규칙을 따른다.
 - `inbox/AGENTS.md`, `inbox/README.md`, `inbox/_guidelines/**`, `inbox/_templates/**`는 운영 자산이며 direct push 예외에 포함하지 않는다.
 - 운영 자산과 그 밖의 repository content는 최신 `main`에서 일반 작업 branch와 Draft Pull Request로 변경한다.
@@ -91,7 +92,7 @@ Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우�
 
 ### Main Sync
 
-`inbox`가 최신 repository context를 필요로 할 때 `main`을 `inbox`에 merge한다. 방향은 항상 **`main` → `inbox`**이며, sync를 이유로 `inbox` content를 `main`에 merge하지 않는다.
+`inbox`가 최신 repository context를 필요로 할 때 `main`을 `inbox`에 merge한다. `main`에서 routine inbox 작업에 적용되는 guidance가 변경되면 다음 routine artifact 작업 전에 sync한다. 방향은 항상 **`main` → `inbox`**이며, sync를 이유로 `inbox` content를 `main`에 merge하지 않는다.
 
 - Sync commit에는 `main` 반영 외의 변경을 섞지 않는다.
 - Conflict나 예상하지 못한 path가 생기면 자동으로 의미를 결정하지 않고 중단한다.
