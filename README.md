@@ -54,14 +54,14 @@ Agentic review는 human decision을 보조하지만 approval이나 recovery의 a
 
 ## Validate Locally
 
-Repository root에서 dependency를 동기화하고 빠른 unit suite를 실행할 수 있다.
+Repository root에서 dependency를 동기화하고 CI와 같은 unit-test 범위를 실행할 수 있다.
 
 ```bash
 uv sync --locked
-uv run pytest -m unit
+uv run pytest -m "unit and not memory and not stress"
 ```
 
-전체 test 선택법과 validation evidence는 [Testing Guide](docs/development/testing.md)를 따른다. 위 command의 성공 여부는 README가 아니라 실제 실행 결과로 판단한다.
+전체 test 선택법과 validation evidence는 [Testing Guide](docs/development/testing.md)를 따른다. 실행하지 않은 command의 성공을 README에서 전제하지 않는다.
 
 ## Documentation
 
