@@ -1,12 +1,10 @@
 # Inbox Branch
 
-이 문서는 dedicated `inbox` branch의 예외 lifecycle을 소유한다. 일반 branch naming과 변경 단위는 [`docs/development/vcs-git/branch.md`](../../docs/development/vcs-git/branch.md), commit 형식은 [`commit.md`](../../docs/development/vcs-git/commit.md), Pull Request 규칙은 [`pull-request.md`](../../docs/development/vcs-git/pull-request.md)가 소유한다. Inbox artifact의 내용·경로·lifecycle contract는 [`../AGENTS.md`](../AGENTS.md)가 소유한다.
+이 문서는 dedicated `inbox` branch의 transport와 sync 예외를 소유한다. 일반 branch naming과 변경 단위는 [`docs/development/vcs-git/branch.md`](../../docs/development/vcs-git/branch.md), commit 형식은 [`commit.md`](../../docs/development/vcs-git/commit.md), Pull Request 규칙은 [`pull-request.md`](../../docs/development/vcs-git/pull-request.md)가 소유한다. Inbox artifact의 내용·경로·lifecycle contract는 [`../AGENTS.md`](../AGENTS.md)가 소유한다.
 
 ## Role
 
-`inbox`는 routine non-canonical artifact를 지속적으로 생성하고 보관하는 장기 유지 branch다. 날짜별 artifact와 archive의 owning location은 `inbox` branch이며, routine artifact는 `main`에 복제하지 않는다.
-
-`inbox` branch가 없으면 current remote `main`에서 한 번 생성한다.
+`inbox`는 [`../AGENTS.md`](../AGENTS.md)가 정의한 routine artifact를 위한 장기 유지 branch 예외다. Branch가 없으면 current remote `main`에서 한 번 생성한다.
 
 ## Direct Push
 
@@ -57,21 +55,14 @@ Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우�
 
 ## Main Inbox Index
 
-`main:/inbox/README.md`는 사람이 최근 inbox artifact를 찾기 위한 **human-only index**다. Artifact 자체를 저장하거나 canonical state를 나타내지 않는다.
+Index의 의미와 lifecycle은 [`../README.md`](../README.md)와 [`../AGENTS.md`](../AGENTS.md)가 소유한다. 이 section은 `main:/inbox/README.md`의 automation write 예외만 정의한다.
 
-Repository-managed automation은 index 갱신에 한해 `main:/inbox/README.md`를 직접 갱신할 수 있다. 이 예외는 다음 경계 안에서만 허용한다.
+Repository-managed automation은 index 갱신에 한해 `main:/inbox/README.md`를 직접 갱신할 수 있다.
 
 - 변경 대상은 `main:/inbox/README.md` 하나뿐이다.
-- Index는 `inbox` branch의 artifact에 대한 link와 식별 metadata만 투영한다.
 - Artifact content를 `main`에 복제하지 않는다.
-- Index는 current implementation, validation evidence, normative contract 또는 project status의 source로 사용하지 않는다.
 - Routine artifact writer는 artifact 작업의 side effect로 index를 수동 갱신하지 않는다.
-- Direct update 직전에 current `main`을 다시 읽고, branch가 이동했으면 최신 `main` 기준으로 index commit을 다시 만든다. Force-push는 사용하지 않는다.
+- Direct update 직전에 current `main`을 다시 읽고, branch가 이동했으면 최신 `main` 기준으로 index commit을 다시 만든다.
+- Force-push는 사용하지 않는다.
 
-Index automation이 아직 구성되지 않았거나 실패한 경우에도 routine artifact는 `inbox` branch에서 유효하다. Index automation 자체의 구현과 변경은 일반 Draft Pull Request workflow를 따른다.
-
-## Canonicalization And Legacy Promotion
-
-Inbox artifact에서 장기적으로 유지할 결정이나 계약이 채택되면 해당 canonical owner에 필요한 내용을 다시 작성하고 일반 Draft Pull Request로 전달한다. Inbox artifact 자체를 `main:/inbox/YYYY-MM-DD/**` 또는 `main:/inbox/archive/**`로 promotion하지 않는다.
-
-기존 `main:/inbox/YYYY-MM-DD/**`와 `main:/inbox/archive/**`는 이전 promotion workflow의 legacy artifact다. 새 artifact를 추가하지 않으며, 독립적인 작업·근거 가치가 사라진 legacy artifact는 별도 cleanup 작업에서 정리한다.
+Index automation이 아직 구성되지 않았거나 실패한 경우에도 routine artifact delivery는 `inbox` branch에서 완료된 것으로 본다. Automation 자체의 구현과 변경은 일반 Draft Pull Request workflow를 따른다.
