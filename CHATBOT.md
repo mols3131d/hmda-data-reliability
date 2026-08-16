@@ -20,10 +20,10 @@ Agent asset은 적용되는 repository guidance나 아래 Authority를 대체하
 
 | Skill | Trigger |
 | --- | --- |
-| [`pivot-research-workspace`](.agents/skills/pivot-research-workspace/SKILL.md) | 요구사항·구현·기술 판단 전에 현재 동작, 범위, dependency, 선택지 또는 failure의 근거가 필요할 때 |
-| [`pivot-review-code`](.agents/skills/pivot-review-code/SKILL.md) | diff, file, commit, Pull Request 또는 working-tree의 구현·테스트 변경을 correctness, regression, failure path와 validation evidence 관점에서 검토할 때 |
-| [`pivot-load-context-testing`](.agents/skills/pivot-load-context-testing/SKILL.md) | pytest 작업에서 test 작성·변경·선택·실행, failure debugging, validation, coverage, marker, fixture, assertion, oracle 또는 test design context가 필요할 때 |
-| [`pivot-spec-driven-tdd-rpi`](.agents/skills/pivot-spec-driven-tdd-rpi/SKILL.md) | Research가 OpenSpec change를 결정·수정하거나 Review finding을 owning work로 되돌려야 할 때. 일반 planning이나 Research·Review 입력 없는 Apply에는 사용하지 않음 |
+| [`pivot-research-workspace`](.agents/skills/pivot-research-workspace/SKILL.md) | 요구사항·구현·기술 판단 전에 현재 동작, 범위, dependency, 선택지 또는 failure의 근거가 필요할 때. 구현·최종 요구사항 확정이나 독립 Review에는 사용하지 않음 |
+| [`pivot-review-code`](.agents/skills/pivot-review-code/SKILL.md) | diff, file, commit, Pull Request 또는 working-tree의 구현·테스트 변경을 correctness, regression, reachable failure path, maintainability risk와 validation evidence 관점에서 검토할 때 |
+| [`pivot-load-context-testing`](.agents/skills/pivot-load-context-testing/SKILL.md) | pytest 작업에서 test 작성·변경·선택·실행, failure debugging, behavior validation, coverage, marker, fixture, assertion, oracle 또는 test design context가 필요할 때 |
+| [`pivot-spec-driven-tdd-rpi`](.agents/skills/pivot-spec-driven-tdd-rpi/SKILL.md) | Research가 OpenSpec change를 결정·수정하거나 Review finding을 owning work로 되돌려야 할 때. 일반 schema-owned planning이나 Research·Review 입력 없는 Apply에는 사용하지 않음 |
 
 ### Installed Skills
 
@@ -31,10 +31,10 @@ Agent asset은 적용되는 repository guidance나 아래 Authority를 대체하
 
 | Skill | Trigger |
 | --- | --- |
-| [`mols-agent-asset-studio`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-agent-asset-studio/SKILL.md) | Skill, agent, instruction, prompt, hook, MCP 등 agent asset을 설계·생성·개선·refactor·review·validate하거나 project에 맞게 tune할 때 |
-| [`mols-markdown-for-human`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-markdown-for-human/SKILL.md) | 사람이 빠르게 읽을 Markdown을 생성·개선하고 BLUF, section, list, table, callout 등 정보 구조에 맞는 표현을 선택할 때 |
-| [`mols-mermaid-diagram`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-mermaid-diagram/SKILL.md) | 관계, 절차, 분기, handoff, message order, lifecycle, architecture, model, dependency 또는 chronology를 Mermaid로 설명할 때. 수치 비교·추세가 중심이면 chart로 보냄 |
-| [`mols-mermaid-chart`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-mermaid-chart/SKILL.md) | 수치 category 비교, 추세, 구성비, quantified flow, weighted hierarchy, profile 또는 normalized axes를 Mermaid chart로 표현할 때. 관계·절차·상태가 중심이면 diagram으로 보냄 |
+| [`mols-agent-asset-studio`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-agent-asset-studio/SKILL.md) | Skill, agent, instruction, prompt, hook, MCP 등 agent asset을 설계·생성·개선·refactor·review·validate하거나 기존 Skill을 project에 맞게 tune할 때 |
+| [`mols-markdown-for-human`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-markdown-for-human/SKILL.md) | 사람이 빠르게 읽을 Markdown을 생성·개선하고 핵심 우선 구조와 section, list, table, callout 등 정보 구조에 맞는 표현을 선택할 때 |
+| [`mols-mermaid-diagram`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-mermaid-diagram/SKILL.md) | 관계, 절차, 분기, handoff, message order, lifecycle, chronology, dependency, boundary, model 또는 cardinality를 Mermaid로 설명할 때. 수치 크기·추세·비율이 중심이면 chart로 보냄 |
+| [`mols-mermaid-chart`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-mermaid-chart/SKILL.md) | 수치 category 비교, ordered/time-based trend, 구성비, quantified flow, weighted hierarchy, same-scale profile 또는 normalized axes를 Mermaid chart로 표현할 때. 관계·절차·상태·architecture가 중심이면 diagram으로 보냄 |
 
 ### Path Instructions
 
