@@ -61,12 +61,9 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 
 ## Formatting
 
-Routine artifact의 Markdown formatting은 repository-managed automation이 post-push `rumdl fmt`로 normalize할 수 있다.
+Routine artifact pipeline은 repository-managed automation으로 post-push `rumdl fmt` normalization을 제공한다. Formatting은 content validation이 아니며, transport와 write safety는 [Formatting](../docs/development/vcs-git/branch.md#formatting)이 소유한다.
 
-- Formatting은 content validation이 아니다.
-- Automation은 해당 push에서 변경된 routine artifact만 수정한다.
-- Routine artifact 작성자는 manual formatting 여부 때문에 별도 Pull Request를 만들지 않는다.
-- Formatting automation의 failure는 artifact의 의미적 승인·거절로 해석하지 않는다.
+Routine artifact 작성자는 manual formatting 여부 때문에 별도 Pull Request를 만들지 않는다.
 
 ## Human Index
 

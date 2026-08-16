@@ -81,9 +81,10 @@ Remote가 앞서 있으면 먼저 반영한다. Force-push, remote history rewri
 Repository-managed automation은 routine artifact push 뒤 변경된 Markdown artifact에 `rumdl fmt`를 적용하고 필요한 formatting change를 `inbox`에 별도 commit할 수 있다.
 
 - Formatting은 content validation gate가 아니라 mechanical normalization이다.
-- Formatter는 해당 push에서 변경된 routine artifact만 수정한다.
+- Formatter는 해당 push에서 변경된 routine artifact만 수정하고 repository의 current Markdown formatter configuration을 따른다.
 - 운영 자산이나 다른 repository path를 수정하지 않는다.
 - Formatting commit에는 formatter가 만든 변경 외의 내용을 섞지 않는다.
+- 동시 update는 직렬화하거나 push 직전 remote `inbox`를 다시 읽어 stale ref를 덮어쓰지 않는다. Force-push는 사용하지 않는다.
 - Formatter 실패는 artifact의 의미를 승인하거나 거부하는 판단으로 해석하지 않는다.
 
 Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우에도 routine artifact delivery 자체를 별도 Pull Request로 우회하지 않는다.
@@ -108,6 +109,7 @@ Repository-managed automation은 index 갱신에 한해 `main:/inbox/README.md`�
 - Artifact content를 `main`에 복제하지 않는다.
 - Index는 current implementation, validation evidence, normative contract 또는 project status의 source로 사용하지 않는다.
 - Routine artifact writer는 artifact 작업의 side effect로 index를 수동 갱신하지 않는다.
+- Direct update 직전에 current `main`을 다시 읽고, branch가 이동했으면 최신 `main` 기준으로 index commit을 다시 만든다. Force-push는 사용하지 않는다.
 
 Index automation이 아직 구성되지 않았거나 실패한 경우에도 routine artifact는 `inbox` branch에서 유효하다. Index automation 자체의 구현과 변경은 일반 Draft Pull Request workflow를 따른다.
 
