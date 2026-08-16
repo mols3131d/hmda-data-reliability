@@ -1,15 +1,20 @@
 # Chatbot Entry
 
-`CHATBOT.md`는 표준 agent instruction 파일이 아니다. GitHub 같은 연결 도구를 통해 이 저장소를 다루는 AI chat service를 위한 **저장소 전용 진입점**이다. [`AGENTS.md`](AGENTS.md)를 대체하거나 repository 규칙을 새로 소유하지 않으며, chat 환경에서 guidance와 agent asset을 찾는 방법과 연결 도구 작업의 경계만 정의한다.
+`CHATBOT.md`는 표준 agent instruction 형식이 아니라 GitHub 같은 연결 도구를 통해 이 저장소를 다루는 AI chat service를 위한 **directory context entry**다. Repository 규칙을 새로 소유하지 않으며, chat 환경에서 context와 agent asset을 찾는 방법과 연결 도구 작업의 경계만 정의한다.
 
-## Guidance
+## Context Resolution
 
-1. [`AGENTS.md`](AGENTS.md)를 repository guidance의 기본 entry point로 사용한다.
-2. 작업 경로에 더 가까운 `AGENTS.md`가 있으면 해당 범위에서 우선한다.
-3. 적용되는 guidance가 연결하는 owner 중 현재 task에 필요한 것만 추가로 읽는다.
-4. OpenSpec change, spec, artifact 또는 workflow를 직접 다루면 [`openspec/CHATBOT.md`](openspec/CHATBOT.md)를 추가로 따른다.
+Repository의 directory context는 작업 대상 경로마다 다음 순서로 해석한다.
 
-관련 없는 guidance를 예방적으로 모두 읽지 않는다.
+1. 파일을 다루면 그 파일이 속한 directory를, directory를 다루면 그 directory를 target으로 한다. 특정 subtree를 직접 다루는 작업도 그 subtree를 target으로 간주한다.
+2. Target directory부터 repository root까지 각 directory를 확인한다.
+3. 각 directory에서는 `CHATBOT.md` → `AGENTS.md` → `README.md` 순으로 처음 존재하는 파일 하나를 그 directory의 context entry로 선택한다.
+4. 선택된 context entry를 root에서 target 방향으로 누적 적용한다. 같은 주제에서 충돌하면 target에 더 가까운 entry가 상위 entry를 override하며, 충돌하지 않는 상위 규칙은 계속 적용한다.
+5. Target directory와 같은 depth의 context entry를 포함해 선택된 모든 entry는 해당 경로를 다루기 전에 로드된 상태여야 한다.
+6. 현재 작업에서 같은 revision의 entry를 이미 로드했다면 다시 읽지 않는다. Branch, ref 또는 파일 내용이 바뀌었거나 현재성이 불확실하면 다시 확인한다.
+7. 선택된 entry가 다른 owning guidance나 agent asset을 연결하면 현재 task에 직접 필요한 것만 추가로 읽는다.
+
+관련 없는 context를 예방적으로 모두 읽지 않는다.
 
 ## Agent Assets
 
