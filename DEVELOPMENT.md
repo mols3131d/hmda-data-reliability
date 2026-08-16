@@ -37,7 +37,7 @@
 | Remediation | `LangGraph` | remediation draft 경로만 |
 | Orchestration | `Dagster` | asset와 `pipeline_job` |
 
-`PyIceberg`는 dependency로 존재하지만 active table engine으로 사용하지 않는다. Spark, cloud warehouse, FastAPI 기반 통합 pipeline CLI, OpenTelemetry, 외부 catalog와 approval UI는 현재 Foundation의 도입 대상이 아니다.
+`PyIceberg`는 dependency로 존재하지만 active table engine으로 사용하지 않는다. Spark, cloud warehouse, FastAPI 기반 통합 pipeline CLI, OpenTelemetry, 외부 catalog와 approval UI는 현재 active toolchain에 포함하지 않는다.
 
 ## Package And Directory Layout
 

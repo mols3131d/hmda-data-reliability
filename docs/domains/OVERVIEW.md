@@ -1,6 +1,6 @@
-# Domain Contracts: Ownership And Reading Paths
+# Domain Guides: Ownership And Reading Paths
 
-**각 domain 문서는 책임과 비책임의 canonical source다.** 로컬 HMDA 데이터 파이프라인의 공개 API, 입력·출력, 비포함 범위를 domain별로 설명한다.
+이 directory는 각 domain의 책임, 비책임과 주요 reading path를 사람이 빠르게 이해하도록 설명한다. **Normative capability contract의 canonical source는 [`../../openspec/specs/`](../../openspec/specs/)다.** Domain guide는 OpenSpec Spec을 대체하거나 독립적으로 override하지 않는다.
 
 ## Ownership Map
 
@@ -11,6 +11,8 @@
 | [Data Platform](data-platform.md) | DuckDB helper, dbt source·model·test·lineage, artifact projection primitive | `raw.hmda_loans` → staging/mart, dbt artifact pair identity | 원천 적재, dbt subprocess 실행, promotion 결정, orchestration |
 | [Reliability](reliability.md) | profile, incident, 영향 분석, remediation, recovery, evaluation | raw table + dbt artifacts → lifecycle/recovery/evaluation result | 외부 approval 결정과 Dagster orchestration |
 | [Orchestration](orchestration.md) | Dagster asset graph와 config 변환 | `raw_hmda_loans` → `dbt_loan_analytics` | domain business logic, reliability control-plane |
+
+이 표는 architecture/domain ownership을 설명하는 guide다. Normative behavior나 capability requirement가 필요하면 대응 `openspec/specs/**`를 확인하고, 실제 구현 상태는 source/tests와 matching-revision evidence로 검증한다.
 
 ## Goal-Based Reading Paths
 

@@ -15,7 +15,6 @@ tags:
   - "capability:reliability-recovery-backfill"
   - "capability:reliability-evaluation-report"
   - "freshness-delay"
-  - "post-mvp"
 ---
 
 > [!NOTE]
@@ -31,7 +30,7 @@ tags:
 > 첫 vertical slice의 freshness clock은 대상 Bronze partition의 `max(ingested_at)`이다. Upstream HMDA publication freshness를 의미하지 않는다.
 
 > [!IMPORTANT]
-> 이 Change는 완료된 volume-drop MVP 이후의 capability extension이다. `docs/development/mvp`의 scope, milestone과 status를 변경하거나 다시 열지 않는다.
+> 이 Change는 freshness semantics 자체를 소유하는 독립 reliability capability다. Product phase, milestone, dashboard state 또는 active goal의 scope를 변경하거나 소유하지 않는다.
 
 > [!CAUTION]
 > `ProfileSnapshot` serialization, `DetectionThresholds`, `RecoveryProposal`과 HMDA synthetic public API에 호환되지 않는 변경이 포함된다.
@@ -53,7 +52,7 @@ HMDA Bronze의 `ingested_at`은 logical content identity에서 의도적으로 �
 
 | In Scope | Out of Scope |
 | --- | --- |
-| Post-MVP freshness capability extension | Current volume-drop MVP scope, milestone과 status 변경 |
+| Freshness capability extension | Product phase, milestone, dashboard와 active goal scope 변경 |
 | Bronze `max(ingested_at)` measurement와 unavailable 상태 | Upstream HMDA publication timestamp와 source download |
 | Age-based `freshness_delay` detection과 evidence | Dagster scheduling, polling, alerting과 production monitoring |
 | Content + freshness approval, atomic target gate와 replay | Generic temporal recovery framework와 schema-drift recovery |
