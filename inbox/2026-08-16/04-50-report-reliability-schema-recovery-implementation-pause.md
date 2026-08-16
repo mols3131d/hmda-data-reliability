@@ -12,13 +12,16 @@ tags:
 > [!IMPORTANT]
 > **중단 상태:** `reliability-schema-recovery-exact-table-restoration` 구현 task는 `28/33` 완료됐다. 실행 task `1.1~6.4`는 구현·검증됐고, 남은 5개는 전부 Self-Review다. 독립 review, 최종 task 마감, commit, PR과 OpenSpec archive는 수행하지 않았다.
 
+> [!NOTE]
+> 이 문서는 **2026-08-16 04:50 KST 시점의 historical pause snapshot**이다. 이후 Self-Review, Specs sync, PR 생성과 archive가 완료됐다. 현재 보존된 Change는 [`openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/`](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/)에 있다. 아래 Remaining Work/Resume Checklist는 당시 재개 절차의 기록이며 현재 작업 지시가 아니다.
+
 ## Status
 
 | Item | State |
 | --- | --- |
 | 중단 시각 | 2026-08-16 04:50 KST |
 | Branch | `main` |
-| OpenSpec change | [`reliability-schema-recovery-exact-table-restoration`](../../openspec/changes/reliability-schema-recovery-exact-table-restoration/proposal.md) |
+| OpenSpec change | [`reliability-schema-recovery-exact-table-restoration`](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/proposal.md) |
 | Schema | `spec-driven-tdd` |
 | Progress | `28/33` |
 | 실행 task | `1.1~6.4` 완료 |
@@ -26,7 +29,7 @@ tags:
 | Working tree | 구현·test·문서·OpenSpec 변경이 미commit 상태로 남아 있음 |
 | Commit / PR / Archive | 미수행 |
 
-이 문서는 중단 시점의 non-canonical snapshot이다. 요구사항과 설계의 source of truth는 OpenSpec [proposal](../../openspec/changes/reliability-schema-recovery-exact-table-restoration/proposal.md), [delta Specs](../../openspec/changes/reliability-schema-recovery-exact-table-restoration/specs), [design](../../openspec/changes/reliability-schema-recovery-exact-table-restoration/design.md), [tasks](../../openspec/changes/reliability-schema-recovery-exact-table-restoration/tasks.md)다.
+이 문서는 중단 시점의 non-canonical snapshot이다. 현재 보존된 planning artifact는 archived OpenSpec [proposal](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/proposal.md), [delta Specs](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/specs), [design](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/design.md), [tasks](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/tasks.md)에서 확인한다.
 
 ## Completed Work
 
@@ -101,7 +104,7 @@ tags:
 
 ## Remaining Work
 
-현재 [tasks](../../openspec/changes/reliability-schema-recovery-exact-table-restoration/tasks.md)의 미완료 항목은 다음 Self-Review 5개다.
+중단 시점 [tasks](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/tasks.md)의 미완료 항목은 다음 Self-Review 5개였다.
 
 - [ ] 모든 관련 Requirement와 Scenario가 구현 및 test에 반영됐는지 확인한다.
 - [ ] Design Decision과 Boundary를 지키면서 중복과 불필요한 복잡성을 제거한다.
@@ -109,11 +112,11 @@ tags:
 - [ ] 필요한 문서, 설정과 운영 절차가 모두 갱신됐는지 확인한다.
 - [ ] 알려진 제약과 후속 작업을 명시한다.
 
-실질적으로 남은 작업은 다음 순서다.
+실질적으로 남은 작업은 당시 다음 순서였다.
 
 1. Working tree diff에 대해 quality review와 adversarial review를 수행한다.
 1. Finding이 있으면 owning code, test 또는 OpenSpec artifact를 수정하고 focused/default validation을 다시 실행한다.
-1. Finding이 없거나 해결되면 Self-Review 5개를 [tasks](../../openspec/changes/reliability-schema-recovery-exact-table-restoration/tasks.md)에서 완료 처리한다.
+1. Finding이 없거나 해결되면 Self-Review 5개를 [tasks](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/tasks.md)에서 완료 처리한다.
 1. OpenSpec apply progress가 `33/33`인지 확인한다.
 1. 필요하면 delta Specs를 current Specs와 sync한다.
 1. 변경을 coherent commit 단위로 정리하고 PR을 생성한다.
@@ -148,10 +151,12 @@ Tracked diff summary는 보고서 작성 직전 `20 files changed, 713 insertion
 
 ## Resume Checklist
 
+아래 체크리스트는 중단 당시 재개 절차다. 현재 archived Change에 그대로 실행하는 지침이 아니다.
+
 1. `git status --short`로 위 working tree가 그대로인지 확인한다.
 1. `openspec instructions apply --change reliability-schema-recovery-exact-table-restoration --json`으로 progress와 context를 다시 읽는다.
-1. [tasks](../../openspec/changes/reliability-schema-recovery-exact-table-restoration/tasks.md)가 `28/33`인지 확인한다.
-1. OpenSpec proposal, Specs, design과 현재 diff를 quality/adversarial 관점으로 review한다.
+1. archived [tasks](../../openspec/changes/archive/2026-08-16-reliability-schema-recovery-exact-table-restoration/tasks.md)가 당시 `28/33`이었는지 확인한다.
+1. OpenSpec proposal, Specs, design과 당시 diff를 quality/adversarial 관점으로 review한다.
 1. Finding 수정 후 focused regression, Ruff, Markdown, OpenSpec validation과 default pytest를 다시 실행한다.
 1. Self-Review 5개를 evidence와 함께 완료 처리한다.
 1. Commit/PR/archive는 review와 `33/33` 확인 뒤 진행한다.
