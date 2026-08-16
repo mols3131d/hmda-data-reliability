@@ -52,26 +52,42 @@ AI 위임은 기능 자체가 아니라 **검증된 효용과 실패 특성**으
 ## Trust and Delegation Loop
 
 ```mermaid
-flowchart LR
-    state["Trusted Data State"] --> reliability["Deterministic Reliability"]
-    reliability --> evidence["Incident + Evidence"]
-    evidence --> ai["Evidence-Bound AI"]
+flowchart TB
+    subgraph trust["Trust Path"]
+        direction LR
+        state["Trusted Data State"] --> reliability["Deterministic Reliability"]
+        reliability --> evidence["Incident + Evidence"]
+        evidence --> ai["Evidence-Bound AI"]
+    end
+
     ai --> boundary{"Delegation Boundary"}
 
-    boundary -->|Within Boundary| delegated["Guarded Delegated Action"]
-    boundary -->|Outside Boundary| advisory["Advisory Output"]
-    advisory --> human["Human Decision"]
-    human --> controlled["Controlled Action"]
+    subgraph action["Action Path"]
+        direction LR
+        delegated["Guarded Delegated Action"] --> verify["Re-validation"]
+        advisory["Advisory Output"] --> human["Human Decision"]
+        human --> controlled["Controlled Action"]
+        controlled --> verify
+    end
 
-    delegated --> verify["Re-validation"]
-    controlled --> verify
-    verify --> state
+    boundary -->|Within Boundary| delegated
+    boundary -->|Outside Boundary| advisory
 
-    ai -. Execution Context .-> trace["Trace + Version Context"]
-    trace --> eval["Evaluation + Regression"]
-    eval --> replay["Failure Replay"]
-    replay -. Evidence .-> review["Boundary Review"]
-    review -. Policy .-> boundary
+    verify -->|Pass| state
+    verify -->|Failure| recovery["Contain / Rollback / Retry"]
+    recovery --> verify
+
+    subgraph llmops["LLMOps Control Loop"]
+        direction LR
+        trace["Trace + Version Context"] --> eval["Evaluation + Regression"]
+        eval --> replay["Failure Replay"]
+        replay --> review["Boundary Review"]
+    end
+
+    ai -. Execution Context .-> trace
+    verify -. Outcome Evidence .-> trace
+    recovery -. Failure Evidence .-> trace
+    review -. Policy Evidence .-> boundary
 ```
 
 AI의 역할이 커질수록 위임 경계를 보호하는 검증과 복구도 함께 강해져야 한다. 자율성은 신뢰 경계를 제거해서 얻는 것이 아니라 **유용한 AI 작업의 실패를 안전하게 다룰 수 있는 시스템을 만들어 얻는 것**이다.
