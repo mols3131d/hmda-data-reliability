@@ -1,6 +1,6 @@
 # project-pivot
 
-HMDA 데이터를 DuckDB와 dbt로 처리하고 data reliability lifecycle을 검증하는 로컬 파이프라인.
+Evidence-first Data Reliability와 bounded, observable AI judgment를 결합하고, local HMDA pipeline을 initial proving ground로 사용하는 프로젝트.
 
 ## Document Navigation
 
