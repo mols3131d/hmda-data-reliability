@@ -25,6 +25,18 @@ Agent asset은 적용되는 repository guidance나 아래 Authority를 대체하
 | [`pivot-load-context-testing`](.agents/skills/pivot-load-context-testing/SKILL.md) | pytest 작업에서 test 작성·변경·선택·실행, failure debugging, behavior validation, coverage, marker, fixture, assertion, oracle 또는 test design context가 필요할 때 |
 | [`pivot-spec-driven-tdd-rpi`](.agents/skills/pivot-spec-driven-tdd-rpi/SKILL.md) | Research가 OpenSpec change를 결정·수정하거나 Review finding을 owning work로 되돌려야 할 때. 일반 schema-owned planning이나 Research·Review 입력 없는 Apply에는 사용하지 않음 |
 
+### OpenSpec Skills
+
+OpenSpec upstream이 제공하는 workflow Skill 중 chat 작업에서 사용하는 항목이다.
+
+| Skill | Trigger |
+| --- | --- |
+| [`openspec-propose`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-propose/SKILL.md) | 만들고 싶은 변경을 설명하고 proposal, design, specs와 tasks까지 한 번에 준비할 때 |
+| [`openspec-update-change`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-update-change/SKILL.md) | 기존 OpenSpec change의 planning artifact를 수정하거나 새 결정을 반영하고 artifact 간 정합성을 맞출 때. 코드는 수정하지 않음 |
+| [`openspec-explore`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-explore/SKILL.md) | change 전이나 진행 중 아이디어를 탐색하고 문제를 조사하거나 요구사항을 명확히 할 때 |
+| [`openspec-sync-specs`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-sync-specs/SKILL.md) | change를 archive하지 않고 delta spec의 변경을 main spec에 반영할 때 |
+| [`openspec-archive-change`](https://github.com/Fission-AI/OpenSpec/blob/main/skills/openspec-archive-change/SKILL.md) | 구현이 완료된 OpenSpec change를 최종화하고 archive할 때 |
+
 ### Installed Skills
 
 [`skills-lock.json`](skills-lock.json)에 `skills add`로 설치된 외부 Skill 중 chat 작업에서 자주 필요한 항목이다.
