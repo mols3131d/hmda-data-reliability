@@ -1,0 +1,51 @@
+name: Markdown Autofix
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.md"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-slim
+    timeout-minutes: 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Fetch previous revision
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: git fetch --no-tags --depth=1 origin "$BEFORE"
+
+      - name: Set up rumdl
+        uses: rvben/rumdl@4997ff07b63c7a54d6a495ebcd3ce7f23ee1173f # v0
+        with:
+          install-only: true
+          version: "0.2.48"
+
+      - name: Format changed Markdown
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          git diff --name-only -z --diff-filter=ACMR \
+            "$BEFORE" "$GITHUB_SHA" -- '*.md' \
+            | xargs -0 -r rumdl fmt
+
+      - name: Commit fixes
+        run: |
+          git diff --quiet -- '*.md' && exit 0
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -u -- '*.md'
+          git commit -m "style: markdown 자동 정리"
+          git push origin HEAD:main
