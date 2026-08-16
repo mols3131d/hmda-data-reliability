@@ -1,11 +1,11 @@
 # Project Pivot
 
-**Evidence-first data reliability with recoverability-bounded AI delegation.**
+**Evidence-first data reliability with bounded AI delegation.**
 
 Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 고정하고, 실패를 탐지·제한·복구할 수 있는 범위에서 AI에 유용한 작업을 위임하는 프로젝트다. 로컬 HMDA Data Lake를 첫 증명 환경으로 사용해 신뢰 가능한 데이터 상태부터 사고 대응과 재검증까지 하나의 완결된 흐름으로 증명한다.
 
 > [!NOTE]
-> **Status: Active MVP.** 기능 폭을 넓히기보다 하나의 end-to-end reliability proof를 먼저 닫는 단계이며, 현재 목표와 완료 기준은 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
+> **Status: Active MVP.** 하나의 end-to-end reliability proof를 먼저 닫는 단계이며, 현재 목표와 완료 기준은 [`docs/mvp.md`](docs/mvp.md)가 소유한다.
 
 ## Problem
 
@@ -13,7 +13,7 @@ Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 
 - **Anomaly detected ≠ recoverable incident** — 이상 신호만으로 원인, 영향과 안전한 복구를 설명할 수 없다.
 - **Plausible AI output ≠ safe delegation** — 자연스러운 AI 응답은 근거, 권한과 복구 가능성을 보장하지 않는다.
 
-## Proof Model
+## Design Boundaries
 
 - **Trusted data state** — 어떤 데이터 상태를 채택했고 왜 신뢰했는지 다시 설명할 수 있다.
 - **Deterministic reliability** — incident detection과 핵심 safety 판단을 재현 가능한 evidence에 고정한다.
@@ -22,7 +22,7 @@ Project Pivot은 데이터 상태와 신뢰성 판단을 결정론적 근거에 
 
 ## Current MVP
 
-현재 MVP는 기능 수를 늘리는 것이 아니라 다음 end-to-end proof를 닫는 데 집중한다.
+현재 proof flow는 다음과 같다.
 
 ```mermaid
 flowchart LR
