@@ -1,6 +1,6 @@
 # Inbox Branch
 
-이 문서는 dedicated `inbox` branch의 transport와 sync 예외를 소유한다. 일반 branch naming과 변경 단위는 [`docs/development/vcs-git/branch.md`](../../docs/development/vcs-git/branch.md), commit 형식은 [`commit.md`](../../docs/development/vcs-git/commit.md), Pull Request 규칙은 [`pull-request.md`](../../docs/development/vcs-git/pull-request.md)가 소유한다. Inbox artifact의 내용·경로·lifecycle contract는 [`../AGENTS.md`](../AGENTS.md)가 소유한다.
+이 문서는 dedicated `inbox` branch의 direct push, formatting, sync와 index write 예외를 소유한다. 일반 branch naming과 변경 단위는 [`docs/development/vcs-git/branch.md`](../../docs/development/vcs-git/branch.md), commit 형식은 [`commit.md`](../../docs/development/vcs-git/commit.md), Pull Request 규칙은 [`pull-request.md`](../../docs/development/vcs-git/pull-request.md)가 소유한다. Inbox artifact의 내용·경로·lifecycle contract는 [`../AGENTS.md`](../AGENTS.md)가 소유한다.
 
 ## Role
 
@@ -14,6 +14,8 @@ Routine artifact direct push를 허용하는 경로는 다음뿐이다.
 inbox/YYYY-MM-DD/**
 inbox/archive/**
 ```
+
+이 allowlist는 branch transport boundary다. Artifact naming과 lifecycle contract는 [`../AGENTS.md`](../AGENTS.md)를 따른다.
 
 - Routine artifact는 `inbox`에 직접 commit하고 push하며 Pull Request를 만들지 않는다.
 - 하나의 commit에는 하나의 artifact 또는 함께 소비되는 하나의 bundle만 포함한다.
@@ -46,7 +48,7 @@ Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우�
 
 ## Main Sync
 
-`inbox`가 최신 repository context를 필요로 할 때 `main`을 `inbox`에 merge한다. `main`에서 이 guideline 또는 `inbox/**` 운영 자산이 변경되면 다음 routine artifact 작업 전에 sync한다. 방향은 항상 **`main` → `inbox`**이며, sync를 이유로 `inbox` content를 `main`에 merge하지 않는다.
+`inbox`가 최신 repository context를 필요로 할 때 `main`을 `inbox`에 merge한다. `main`에서 `inbox/AGENTS.md`, `inbox/_guidelines/**` 또는 `inbox/_templates/**`가 변경되면 다음 routine artifact 작업 전에 sync한다. 방향은 항상 **`main` → `inbox`**이며, sync를 이유로 `inbox` content를 `main`에 merge하지 않는다.
 
 - Sync commit에는 `main` 반영 외의 변경을 섞지 않는다.
 - Conflict나 예상하지 못한 path가 생기면 자동으로 의미를 결정하지 않고 중단한다.
@@ -55,13 +57,11 @@ Automation이 아직 구성되지 않았거나 일시적으로 실패한 경우�
 
 ## Main Inbox Index
 
-Index의 의미와 lifecycle은 [`../README.md`](../README.md)와 [`../AGENTS.md`](../AGENTS.md)가 소유한다. 이 section은 `main:/inbox/README.md`의 automation write 예외만 정의한다.
+Index의 의미와 trust boundary는 [`../AGENTS.md`](../AGENTS.md)가 소유한다. [`../README.md`](../README.md)는 human-only projection이다. 이 section은 `main:/inbox/README.md`의 automation write 예외만 정의한다.
 
 Repository-managed automation은 index 갱신에 한해 `main:/inbox/README.md`를 직접 갱신할 수 있다.
 
 - 변경 대상은 `main:/inbox/README.md` 하나뿐이다.
-- Artifact content를 `main`에 복제하지 않는다.
-- Routine artifact writer는 artifact 작업의 side effect로 index를 수동 갱신하지 않는다.
 - Direct update 직전에 current `main`을 다시 읽고, branch가 이동했으면 최신 `main` 기준으로 index commit을 다시 만든다.
 - Force-push는 사용하지 않는다.
 

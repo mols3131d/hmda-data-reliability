@@ -47,7 +47,7 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 ## Inbox Branch
 
-`inbox`의 direct push, formatting, `main` sync, human index와 lifecycle은 [Inbox Branch Guide](../../../inbox/_guidelines/branch.md)가 소유한다. 이 문서는 예외의 존재와 진입점만 제공하며 세부 규칙을 복제하지 않는다.
+`inbox`는 일반 branch lifecycle의 장기 유지 예외다. Direct push, formatting, `main` sync와 index write 예외는 [Inbox Branch Guide](../../../inbox/_guidelines/branch.md)가 소유한다. 이 문서는 예외의 존재와 진입점만 제공한다.
 
 ## Agent Instructions
 
@@ -61,4 +61,4 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 - [Commits](commit.md): 변경을 commit으로 구성하는 기준
 - [Pull Requests](pull-request.md): 변경을 검토와 채택 경계로 전달하는 기준
-- [Inbox Branch Guide](../../../inbox/_guidelines/branch.md): dedicated `inbox` branch의 예외 lifecycle
+- [Inbox Branch Guide](../../../inbox/_guidelines/branch.md): dedicated `inbox` branch의 예외 규칙

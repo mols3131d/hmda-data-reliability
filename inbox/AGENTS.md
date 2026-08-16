@@ -69,7 +69,7 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 - Agent는 orientation, planning, implementation, review 또는 validation의 source로 index를 사용하지 않는다.
 - Routine artifact 작성자는 index를 side effect로 수동 갱신하지 않는다.
 
-Index lifecycle과 direct-write boundary는 [Inbox Branch](_guidelines/branch.md#main-inbox-index)가 소유한다.
+Index의 의미와 trust boundary는 이 문서가 소유한다. Automation direct-write mechanics는 [Inbox Branch](_guidelines/branch.md#main-inbox-index)를 따른다.
 
 ## Lifecycle
 
