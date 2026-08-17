@@ -28,9 +28,9 @@ flowchart LR
         lock["Projection Lock<br/>shared read / exclusive write"] -.->|guards access| current
     end
 
-    current -.->|source metadata| bronze
-    current -.->|model lineage| staging
-    current -.->|model / test evidence| mart
+    current -.->|describes source metadata| bronze
+    current -.->|describes model lineage| staging
+    current -.->|carries model / test evidence| mart
 ```
 
 Bronze는 ingestion owner가 만들고, dbt는 분석용 staging/mart와 lineage/test artifact를 정의한다. 어떤 run artifact를 current로 채택할지는 `data_operations`가 결정한다.
