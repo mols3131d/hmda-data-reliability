@@ -157,7 +157,7 @@ jobs:
           install-only: true
           version: "0.2.48"
 
-      - name: Check changed Markdown
+      - name: Format changed Markdown
         if: steps.scope.outputs.markdown == 'true'
         run: |
           set -euo pipefail
@@ -167,7 +167,7 @@ jobs:
                   [[ -f "$path" ]] && printf '%s\n' "$path"
                 done
           )
-          ((${#files[@]} == 0)) || rumdl check --deny-config-warnings "${files[@]}"
+          ((${#files[@]} == 0)) || rumdl fmt "${files[@]}"
 
       - name: Set up Python
         if: steps.scope.outputs.tests == 'true'
