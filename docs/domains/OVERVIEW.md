@@ -13,7 +13,7 @@
 | [Orchestration](orchestration.md) | Dagster asset graph와 config 변환 | `raw_hmda_loans` → `dbt_loan_analytics` | domain business logic, reliability control-plane |
 
 ```mermaid
-flowchart LR
+flowchart TB
     orchestration["Orchestration<br/>Dagster graph + config"] -->|delegates data-plane execution| operations["Data Operations<br/>request + execution boundary"]
     operations -->|source discovery + Bronze load| hmda["HMDA Data<br/>source + Bronze + EDA"]
     operations -->|dbt execution + projection use| platform["Data Platform<br/>DuckDB + dbt + artifact primitives"]

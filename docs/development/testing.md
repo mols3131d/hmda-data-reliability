@@ -16,7 +16,7 @@
 | marker로 선택 | `uv run pytest -m unit` |
 
 ```mermaid
-flowchart LR
+flowchart TB
     focused["Focused test"] --> result{"Pass?"}
     result -->|no| diagnose["Diagnose failure"]
     diagnose --> focused
