@@ -20,7 +20,7 @@ flowchart TB
         scenario["Scenario"] --> oracle["Independent Oracle"] --> level["Test Level"]
     end
 
-    framing --> verification
+    framing -->|Risk to Scenario| verification
 ```
 
 | Element | Answer | Example |
