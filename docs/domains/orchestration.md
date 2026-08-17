@@ -34,8 +34,8 @@ flowchart LR
         build["run_dbt_build()"] -->|caller continues on successful candidate| promote["promote_dbt_artifacts()"]
     end
 
-    resource -.->|to_request()| raw
-    resource -.->|to_request()| dbt
+    resource -.->|to_request| raw
+    resource -.->|to_request| dbt
     raw -->|delegates| load
     dbt -->|run_dbt_build=true| build
 ```
@@ -83,5 +83,5 @@ resource는 config conversion만 담당한다. 파일 발견, 적재, dbt subpro
 1. [`definitions.py`](../../src/project_pivot/orchestration/definitions.py)
 1. [`assets.py`](../../src/project_pivot/orchestration/defs/assets.py)
 1. [`resource.py`](../../src/project_pivot/orchestration/defs/resource.py)
-1. [`tests/orchestration/test_dagster_definitions.py`](../../tests/orchestration/test_dagster_definitions.py)
+1. [`tests/orchestration/test_dagster_definitions.py`](../../tests/orchestration/defs/resource.py)
 1. [`tests/orchestration/test_pipeline_materialization.py`](../../tests/orchestration/test_pipeline_materialization.py)
