@@ -31,7 +31,7 @@ flowchart LR
 
     subgraph application ["Data Operations API"]
         load["load_raw_data()"]
-        build["run_dbt_build()"] -->|successful candidate| promote["promote_dbt_artifacts()"]
+        build["run_dbt_build()"] -->|caller continues on successful candidate| promote["promote_dbt_artifacts()"]
     end
 
     resource -.->|to_request()| raw
