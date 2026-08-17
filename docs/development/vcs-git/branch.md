@@ -47,7 +47,7 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 ## Inbox Branch
 
-`inbox`는 일반 branch lifecycle의 장기 유지 예외다. Direct push, formatting, `main` sync와 index write 예외는 [Inbox Branch Guide](../../../inbox/_guidelines/branch.md)가 소유한다. 이 문서는 예외의 존재와 진입점만 제공한다.
+`inbox`는 일반 branch lifecycle의 장기 유지 예외다. Direct push, formatting과 `main` sync 예외는 [Inbox Branch Guide](../../../inbox/_guidelines/branch.md)가 소유한다. 이 문서는 예외의 존재와 진입점만 제공한다.
 
 ## Agent Instructions
 
