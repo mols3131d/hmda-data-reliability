@@ -20,20 +20,16 @@ Normative behavior는 [`../../openspec/specs/`](../../openspec/specs/)의 Reliab
 
 ```mermaid
 flowchart LR
-    subgraph inputs["Evidence Inputs"]
-        direction TB
-        raw["Bronze State"]
-        baseline["Baseline"]
-        artifacts["dbt Artifacts"]
-    end
+    raw["Bronze State"]
+    baseline["Baseline Profile"]
+    artifacts["Current dbt Artifact Pair"]
 
-    subgraph lifecycle["Read-Only Lifecycle"]
-        direction LR
-        profile["Profile + Metadata"] --> detection["Detection"] --> impact["Impact Analysis"]
+    subgraph lifecycle ["Read-Only Lifecycle"]
+        evidence["Metadata Evidence + Current Profile"] --> detection["Detection"] --> impact["Impact Analysis"]
         impact -.->|advisory output| draft["RemediationDraft"]
     end
 
-    raw -->|profile source| profile
+    raw -->|read-only evidence| evidence
     baseline -->|comparison reference| detection
     artifacts -->|lineage / run evidence| impact
 ```
@@ -47,11 +43,12 @@ flowchart LR
     incident["Incident + Evidence"] -->|bind incident + target| proposal["Validated Recovery Proposal"]
     candidate["Validated Candidate"] -->|bind candidate + before / after state| proposal
     proposal -->|exact proposal| approval["External Approval"]
-    approval --> gate{"Current target state"}
+    approval -->|same approved proposal| recheck["Re-check Approved Candidate"]
+    recheck --> gate{"Current Target State"}
 
     gate -->|approved before-state| recovery["Apply Approved Mutation"]
-    gate -->|expected after-state| verify["Re-validation"]
-    gate -->|neither| stop(["Stop · new validation + approval required"])
+    gate -->|valid expected after-state| verify["Re-validation"]
+    gate -->|diverged / expired| stop(["Stop · new validation + approval required"])
 
     recovery --> verify --> replay["Replay / Reconciliation"]
 ```
