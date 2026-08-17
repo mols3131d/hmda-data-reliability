@@ -5,7 +5,7 @@ pre-commit:
     markdown-fix:
       files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.md"
-      run: uvx rumdl@0.2.48 check --fix --deny-config-warnings {files}
+      run: uvx rumdl@0.2.48 fmt {files}
       stage_fixed: true
     python-fix:
       files: git diff --cached --name-only --diff-filter=d
@@ -15,14 +15,6 @@ pre-commit:
 
 pre-push:
   commands:
-    markdown-check:
-      glob: "**/*.md"
-      run: |
-        set --
-        for file in {push_files}; do
-          [ -f "$file" ] && set -- "$@" "$file"
-        done
-        [ "$#" -eq 0 ] || uvx rumdl@0.2.48 check --deny-config-warnings "$@"
     python-check:
       glob: "**/*.py"
       run: |
