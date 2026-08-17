@@ -43,16 +43,36 @@ flowchart LR
 
 ## Git Hooks
 
-Lefthook은 빠른 commit feedback과 push 전 회귀 검증을 분리한다.
+Lefthook은 commit의 자동 수정과 push 전 검증을 분리한다. Commit hook은 변경 파일만 고치고, push hook은 이미 고쳐진 상태와 영향 범위 test를 확인한다.
 
-| Hook | Trigger | Command | Role |
-| --- | --- | --- | --- |
-| `pre-commit` | staged Python file | `uv run pytest --testmon --testmon-forceselect` | 변경 영향 test만 실행 |
-| `pre-push` | pushed Python, dependency 또는 dbt runtime file | `uv run pytest -n auto --testmon-noselect` | 기본 regression suite 전체 실행 및 testmon data 갱신 |
+| Hook | Trigger | Action |
+| --- | --- | --- |
+| `pre-commit` | staged Markdown | changed file에 `rumdl check --fix` 후 자동 stage |
+| `pre-commit` | staged Python | changed file에 Ruff fix + format 후 자동 stage |
+| `pre-push` | pushed Markdown | changed file `rumdl check` |
+| `pre-push` | pushed Python | changed file Ruff check + format check, project `ty check`, testmon affected tests |
+| `pre-push` | pushed dbt SQL/YAML | `tests/dbt` |
+| `pre-push` | Python/dependency runtime config | full `unit` fallback |
 
-`pre-commit`은 기본 marker selector와 testmon selection을 함께 유지하기 위해 `--testmon-forceselect`를 사용한다. `pre-push`는 넓은 회귀 실행에만 xdist를 적용하고 `--testmon-noselect`로 testmon 선택 결과에 의존하지 않는다.
+`pre-commit`에는 type check나 pytest를 넣지 않는다. 파일을 저장하고 commit하는 짧은 feedback loop에서는 deterministic auto-fix만 수행한다.
 
-`.testmondata`는 local selection cache이며 검증 evidence가 아니다. Cache가 없으면 첫 testmon 실행의 선택 이점이 작을 수 있고, 이후 `pre-push` 전체 실행이 dependency data를 갱신한다.
+Python push에서는 `--testmon --testmon-forceselect`로 local `.testmondata`가 알고 있는 실제 dependency를 기준으로 affected tests를 선택한다. `.testmondata`는 Git에서 제외된 local selection cache이며 validation evidence가 아니다. Cache가 없으면 첫 testmon 실행의 선택 이점이 작고, 실행하면서 dependency data가 생성·갱신된다.
+
+Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없다. Pull 안전성은 불완전한 local hook 조합을 추가하는 대신 merge 대상 branch가 CI를 통과한 clean state라는 invariant로 관리한다.
+
+## Pull Request CI
+
+`CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. 이렇게 하면 required check로 사용할 때 workflow 자체가 path filter 때문에 생성되지 않는 상태를 피할 수 있다.
+
+- Markdown 변경은 현재 존재하는 changed Markdown file만 `rumdl check`한다.
+- Domain source 변경은 해당 domain test와 직접 consumer test만 실행한다.
+- Domain test 변경은 해당 test directory만 실행한다.
+- dbt 변경은 `tests/dbt`를 실행한다.
+- shared package, 공통 package surface, Python/dependency runtime config 변경은 전체 `unit` suite로 fallback한다.
+- Lefthook 설정 변경은 `lefthook validate`로 configuration을 확인한다.
+- Python dependency setup은 Python/test validation이 필요할 때만 수행하고 uv cache를 재사용한다.
+
+CI는 Markdown을 자동 수정해 통과시키지 않는다. 수정이 필요한 Markdown은 PR에서 실패해야 하며, `main`에 들어간 뒤 bot commit으로 고치는 post-merge autofix workflow는 사용하지 않는다.
 
 ## Select Tests
 
