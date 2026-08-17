@@ -18,26 +18,21 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout PR head
+      - name: Checkout prospective merge
         uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 1
+          fetch-depth: 2
 
       - name: Classify changes
         id: scope
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          git fetch --no-tags --depth=1 origin "$BASE_SHA"
 
           markdown=false
           tests=false
           lefthook=false
-          full=false
+          full_unit=false
           targets=()
 
           add_target() {
@@ -47,6 +42,37 @@ jobs:
               [[ "$existing" == "$target" ]] && return
             done
             targets+=("$target")
+          }
+
+          add_domain_closure() {
+            local domain="$1"
+            local target
+            case "$domain" in
+              data_platform)
+                for target in \
+                  data_platform hmda_data reliability \
+                  data_operations orchestration dbt; do
+                  add_target "tests/$target"
+                done
+                ;;
+              hmda_data)
+                for target in \
+                  hmda_data reliability data_operations orchestration dbt; do
+                  add_target "tests/$target"
+                done
+                ;;
+              data_operations|reliability)
+                for target in reliability data_operations orchestration; do
+                  add_target "tests/$target"
+                done
+                ;;
+              orchestration)
+                add_target tests/orchestration
+                ;;
+              *)
+                full_unit=true
+                ;;
+            esac
           }
 
           while IFS= read -r path; do
@@ -61,43 +87,28 @@ jobs:
                 ;;
               .python-version|pyproject.toml|uv.lock|.github/workflows/ci-lite.yml)
                 tests=true
-                full=true
+                full_unit=true
                 ;;
               dbt/*.sql|dbt/*.yml|dbt/*.yaml)
                 tests=true
-                add_target tests/dbt
+                for target in dbt data_operations reliability orchestration; do
+                  add_target "tests/$target"
+                done
                 ;;
               src/project_pivot/logger.py)
                 tests=true
                 add_target tests/test_log_agent_event.py
                 ;;
               src/project_pivot/*/*)
+                tests=true
                 domain="${path#src/project_pivot/}"
                 domain="${domain%%/*}"
                 case "$domain" in
                   shared|configs|utils)
-                    tests=true
-                    full=true
-                    ;;
-                  data_operations|data_platform|hmda_data|orchestration|reliability)
-                    tests=true
-                    add_target "tests/$domain"
-                    case "$domain" in
-                      data_operations)
-                        add_target tests/orchestration
-                        ;;
-                      data_platform|hmda_data)
-                        add_target tests/data_operations
-                        add_target tests/dbt
-                        ;;
-                      reliability)
-                        add_target tests/data_operations
-                        ;;
-                    esac
+                    full_unit=true
                     ;;
                   *)
-                    tests=true
-                    full=true
+                    add_domain_closure "$domain"
                     ;;
                 esac
                 ;;
@@ -110,27 +121,26 @@ jobs:
                 add_target tests/test_pytest_opentelemetry.py
                 ;;
               tests/*/*)
+                tests=true
                 domain="${path#tests/}"
                 domain="${domain%%/*}"
                 case "$domain" in
                   data_operations|data_platform|dbt|hmda_data|orchestration|reliability)
-                    tests=true
                     add_target "tests/$domain"
                     ;;
                   *)
-                    tests=true
-                    full=true
+                    full_unit=true
                     ;;
                 esac
                 ;;
               src/project_pivot/*|tests/*|*.py)
                 tests=true
-                full=true
+                full_unit=true
                 ;;
             esac
-          done < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          done < <(git diff --name-only HEAD^1 HEAD)
 
-          if [[ "$full" == true ]]; then
+          if [[ "$full_unit" == true ]]; then
             targets=()
           fi
 
@@ -138,7 +148,7 @@ jobs:
             echo "markdown=$markdown"
             echo "tests=$tests"
             echo "lefthook=$lefthook"
-            echo "full=$full"
+            echo "full_unit=$full_unit"
             printf 'targets='
             printf '%s ' "${targets[@]}"
             echo
@@ -153,16 +163,12 @@ jobs:
 
       - name: Check changed Markdown
         if: steps.scope.outputs.markdown == 'true'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           mapfile -t files < <(
-            git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- '*.md' \
+            git diff --name-only HEAD^1 HEAD -- '*.md' \
               | while IFS= read -r path; do
-                  [[ ! -f "$path" ]] && continue
-                  printf '%s\n' "$path"
+                  [[ -f "$path" ]] && printf '%s\n' "$path"
                 done
           )
           ((${#files[@]} == 0)) || rumdl check --deny-config-warnings "${files[@]}"
@@ -191,10 +197,10 @@ jobs:
         if: steps.scope.outputs.lefthook == 'true'
         run: uv run --no-sync lefthook validate
 
-      - name: Run scoped unit tests
+      - name: Run scoped tests
         if: steps.scope.outputs.tests == 'true'
         env:
-          FULL: ${{ steps.scope.outputs.full }}
+          FULL_UNIT: ${{ steps.scope.outputs.full_unit }}
           TARGETS: ${{ steps.scope.outputs.targets }}
         run: |
           set -euo pipefail
@@ -205,12 +211,16 @@ jobs:
             --color=no
             --tb=short
             -ra
-            -m "unit and not memory and not stress"
           )
 
-          if [[ "$FULL" == true ]]; then
-            "${common[@]}" -n auto
+          if [[ "$FULL_UNIT" == true ]]; then
+            "${common[@]}" -n auto -m "unit and not memory and not stress"
+            exit
+          fi
+
+          read -r -a targets <<< "$TARGETS"
+          if ((${#targets[@]} >= 3)); then
+            "${common[@]}" -n auto -m "not memory and not stress" "${targets[@]}"
           else
-            read -r -a targets <<< "$TARGETS"
-            "${common[@]}" "${targets[@]}"
+            "${common[@]}" -m "not memory and not stress" "${targets[@]}"
           fi
