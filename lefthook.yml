@@ -1,40 +1,48 @@
 glob_matcher: doublestar
 
 pre-commit:
+  parallel: true
   exclude:
     - "**/archive/**"
-    - "**/*cache*/**"
-    - "**/*tmp*/**"
 
   commands:
-    rumdl-fmt:
+    markdown-fix:
       glob: "**/*.md"
-      run: uv run rumdl fmt {staged_files}
+      run: uv run rumdl check --fix --deny-config-warnings {staged_files}
       stage_fixed: true
-    ruff-fix:
+    python-fix:
       glob: "**/*.py"
-      run: uv run ruff check --fix {staged_files}
+      run: uv run ruff check --fix {staged_files} && uv run ruff format {staged_files}
       stage_fixed: true
-    ruff-format:
+
+pre-push:
+  exclude:
+    - "**/archive/**"
+
+  commands:
+    markdown-check:
+      glob: "**/*.md"
+      run: uv run rumdl check --deny-config-warnings {push_files}
+    python-check:
       glob: "**/*.py"
-      run: uv run ruff format {staged_files}
-      stage_fixed: true
+      run: uv run ruff check {push_files} && uv run ruff format --check {push_files}
     ty-check:
-      glob: "**/*.py"
+      glob:
+        - "**/*.py"
+        - "pyproject.toml"
       run: uv run ty check
     pytest-affected:
       glob: "**/*.py"
       run: uv run pytest --testmon --testmon-forceselect
-
-pre-push:
-  commands:
-    pytest-regression:
+    pytest-dbt:
       glob:
-        - "**/*.py"
-        - ".python-version"
-        - "pyproject.toml"
-        - "uv.lock"
         - "dbt/**/*.sql"
         - "dbt/**/*.yml"
         - "dbt/**/*.yaml"
-      run: uv run pytest -n auto --testmon-noselect
+      run: uv run pytest tests/dbt
+    pytest-global:
+      glob:
+        - ".python-version"
+        - "pyproject.toml"
+        - "uv.lock"
+      run: uv run pytest -n auto -m "unit and not memory and not stress"
