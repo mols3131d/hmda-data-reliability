@@ -174,7 +174,7 @@ jobs:
           ((${#files[@]} == 0)) || rumdl check --deny-config-warnings "${files[@]}"
 
       - name: Set up Python
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.lefthook == 'true'
+        if: steps.scope.outputs.tests == 'true'
         uses: actions/setup-python@v6.2.0
         with:
           python-version-file: ".python-version"
@@ -190,12 +190,12 @@ jobs:
             uv.lock
 
       - name: Sync dependencies
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.lefthook == 'true'
+        if: steps.scope.outputs.tests == 'true'
         run: uv sync --locked
 
       - name: Validate Lefthook config
         if: steps.scope.outputs.lefthook == 'true'
-        run: uv run --no-sync lefthook validate
+        run: uvx lefthook@2.1.10 validate
 
       - name: Run scoped tests
         if: steps.scope.outputs.tests == 'true'
