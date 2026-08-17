@@ -9,12 +9,18 @@ Test command와 marker 선택은 [Testing Guide](testing.md)를 따른다. `test
 좋은 test는 “이 내부 함수가 호출되었다”보다 “이 입력에서 이 결과가 관찰된다”를 증명한다. 따라서 test를 쓰기 전에 다음 연결을 먼저 만든다.
 
 ```mermaid
-flowchart LR
-    requirement["Requirement"] --> contract["Observable Contract"]
-    contract --> risk["Risk"]
-    risk --> scenario["Scenario"]
-    scenario --> oracle["Independent Oracle"]
-    oracle --> level["Test Level"]
+flowchart TB
+    subgraph framing ["Frame Behavior"]
+        direction LR
+        requirement["Requirement"] --> contract["Observable Contract"] --> risk["Risk"]
+    end
+
+    subgraph verification ["Design Verification"]
+        direction LR
+        scenario["Scenario"] --> oracle["Independent Oracle"] --> level["Test Level"]
+    end
+
+    framing --> verification
 ```
 
 | Element | Answer | Example |
