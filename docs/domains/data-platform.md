@@ -19,12 +19,10 @@ Normative behavior는 [`../../openspec/specs/data-platform-duckdb-access/spec.md
 ```mermaid
 flowchart TB
     subgraph analytical_state ["dbt Analytical Objects"]
-        direction LR
         bronze[("raw.hmda_loans · Bronze")] --> staging["staging · View"] --> mart[("marts · Table")]
     end
 
     subgraph projection ["Artifact Projection Primitives"]
-        direction TB
         candidate["Run-Scoped Candidate Pair<br/>manifest.json + run_results.json"] -->|sha256| identity["Projection Identity"]
         candidate -.->|adoption decided by data_operations| current["Current Projection Pair<br/>manifest.json + run_results.json"]
         lock["Projection Lock<br/>shared read / exclusive write"] -.->|guards access| current
