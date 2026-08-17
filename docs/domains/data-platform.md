@@ -23,15 +23,14 @@ flowchart LR
     end
 
     subgraph projection ["Artifact Projection Primitives"]
-        manifest["manifest.json"] -->|paired with| pair["Run-Scoped Artifact Pair"]
-        results["run_results.json"] -->|paired with| pair
-        pair -->|sha256 identity| identity["Projection Identity"]
-        lock["Projection Lock<br/>shared read / exclusive write"] -.->|guards current projection access| pair
+        candidate["Run-Scoped Candidate Pair<br/>manifest.json + run_results.json"] -->|sha256| identity["Projection Identity"]
+        candidate -.->|adoption decided by data_operations| current["Current Projection Pair<br/>manifest.json + run_results.json"]
+        lock["Projection Lock<br/>shared read / exclusive write"] -.->|guards access| current
     end
 
-    pair -.->|source metadata| bronze
-    pair -.->|model lineage| staging
-    pair -.->|model / test evidence| mart
+    current -.->|source metadata| bronze
+    current -.->|model lineage| staging
+    current -.->|model / test evidence| mart
 ```
 
 Bronze는 ingestion owner가 만들고, dbt는 분석용 staging/mart와 lineage/test artifact를 정의한다. 어떤 run artifact를 current로 채택할지는 `data_operations`가 결정한다.
