@@ -61,7 +61,8 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 
 ## Discovery
 
-- Routine artifact는 `inbox` branch에서 직접 찾는다. Date directory, filename/frontmatter metadata와 repository search를 필요한 만큼 사용한다.
+- Routine artifact는 `inbox` branch의 date directory와 filename으로 후보를 찾고, 필요한 파일의 frontmatter/content를 직접 확인한다.
+- Repository search는 `inbox` branch를 대상으로 검색할 수 있을 때만 보조적으로 사용하며, 그렇지 않은 search miss를 artifact 부재로 해석하지 않는다.
 - `README.md`는 static human entrypoint이며 artifact index나 status projection이 아니다. Routine artifact 추가 시 갱신하지 않는다.
 - Artifact 내용이 판단에 필요하면 `inbox` branch의 원본을 직접 연다. Filename이나 directory listing만으로 상태를 추론하지 않는다.
 
