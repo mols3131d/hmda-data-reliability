@@ -2,8 +2,6 @@ glob_matcher: doublestar
 
 pre-commit:
   parallel: true
-  exclude:
-    - "**/archive/**"
 
   commands:
     markdown-fix:
@@ -16,9 +14,6 @@ pre-commit:
       stage_fixed: true
 
 pre-push:
-  exclude:
-    - "**/archive/**"
-
   commands:
     markdown-check:
       glob: "**/*.md"
