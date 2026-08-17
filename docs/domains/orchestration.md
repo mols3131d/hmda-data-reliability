@@ -25,13 +25,11 @@ flowchart TB
     config["Dagster Config"] --> resource["DataOperationsResource"]
 
     subgraph dagster ["Dagster · pipeline_job"]
-        direction LR
         raw["raw_hmda_loans<br/>Bronze asset"] -->|asset dependency| dbt["dbt_loan_analytics<br/>Silver / Gold asset"]
         dbt -->|run_dbt_build=false| skipped(["Skipped metadata"])
     end
 
     subgraph application ["Data Operations API"]
-        direction LR
         load["load_raw_data()"]
         build["run_dbt_build()"] -->|caller continues on successful candidate| promote["promote_dbt_artifacts()"]
     end
