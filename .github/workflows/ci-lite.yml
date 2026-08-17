@@ -50,8 +50,9 @@ jobs:
           }
 
           while IFS= read -r path; do
-            if [[ "$path" == *.md && -f "$path" ]]; then
-              markdown=true
+            if [[ "$path" == *.md ]]; then
+              [[ -f "$path" ]] && markdown=true
+              continue
             fi
 
             case "$path" in
@@ -62,61 +63,45 @@ jobs:
                 tests=true
                 full=true
                 ;;
-              dbt/*)
+              dbt/*.sql|dbt/*.yml|dbt/*.yaml)
                 tests=true
                 add_target tests/dbt
                 ;;
-              src/project_pivot/data_operations/*)
+              src/project_pivot/logger.py)
                 tests=true
-                add_target tests/data_operations
-                add_target tests/orchestration
+                add_target tests/test_log_agent_event.py
                 ;;
-              src/project_pivot/data_platform/*)
-                tests=true
-                add_target tests/data_platform
-                add_target tests/data_operations
-                add_target tests/dbt
+              src/project_pivot/*/*)
+                domain="${path#src/project_pivot/}"
+                domain="${domain%%/*}"
+                case "$domain" in
+                  shared|configs|utils)
+                    tests=true
+                    full=true
+                    ;;
+                  data_operations|data_platform|hmda_data|orchestration|reliability)
+                    tests=true
+                    add_target "tests/$domain"
+                    case "$domain" in
+                      data_operations)
+                        add_target tests/orchestration
+                        ;;
+                      data_platform|hmda_data)
+                        add_target tests/data_operations
+                        add_target tests/dbt
+                        ;;
+                      reliability)
+                        add_target tests/data_operations
+                        ;;
+                    esac
+                    ;;
+                  *)
+                    tests=true
+                    full=true
+                    ;;
+                esac
                 ;;
-              src/project_pivot/hmda_data/*)
-                tests=true
-                add_target tests/hmda_data
-                add_target tests/data_operations
-                add_target tests/dbt
-                ;;
-              src/project_pivot/reliability/*)
-                tests=true
-                add_target tests/reliability
-                add_target tests/data_operations
-                ;;
-              src/project_pivot/orchestration/*)
-                tests=true
-                add_target tests/orchestration
-                ;;
-              tests/data_operations/*)
-                tests=true
-                add_target tests/data_operations
-                ;;
-              tests/data_platform/*)
-                tests=true
-                add_target tests/data_platform
-                ;;
-              tests/dbt/*)
-                tests=true
-                add_target tests/dbt
-                ;;
-              tests/hmda_data/*)
-                tests=true
-                add_target tests/hmda_data
-                ;;
-              tests/orchestration/*)
-                tests=true
-                add_target tests/orchestration
-                ;;
-              tests/reliability/*)
-                tests=true
-                add_target tests/reliability
-                ;;
-              src/project_pivot/logger.py|tests/test_log_agent_event.py)
+              tests/test_log_agent_event.py)
                 tests=true
                 add_target tests/test_log_agent_event.py
                 ;;
@@ -124,11 +109,21 @@ jobs:
                 tests=true
                 add_target tests/test_pytest_opentelemetry.py
                 ;;
-              src/project_pivot/shared/*|src/project_pivot/configs/*|src/project_pivot/utils/*|src/project_pivot/__init__.py)
-                tests=true
-                full=true
+              tests/*/*)
+                domain="${path#tests/}"
+                domain="${domain%%/*}"
+                case "$domain" in
+                  data_operations|data_platform|dbt|hmda_data|orchestration|reliability)
+                    tests=true
+                    add_target "tests/$domain"
+                    ;;
+                  *)
+                    tests=true
+                    full=true
+                    ;;
+                esac
                 ;;
-              src/project_pivot/*|tests/*)
+              src/project_pivot/*|tests/*|*.py)
                 tests=true
                 full=true
                 ;;
@@ -196,7 +191,7 @@ jobs:
         if: steps.scope.outputs.lefthook == 'true'
         run: uv run --no-sync lefthook validate
 
-      - name: Run scoped tests
+      - name: Run scoped unit tests
         if: steps.scope.outputs.tests == 'true'
         env:
           FULL: ${{ steps.scope.outputs.full }}
@@ -210,10 +205,11 @@ jobs:
             --color=no
             --tb=short
             -ra
+            -m "unit and not memory and not stress"
           )
 
           if [[ "$FULL" == true ]]; then
-            "${common[@]}" -n auto -m "unit and not memory and not stress"
+            "${common[@]}" -n auto
           else
             read -r -a targets <<< "$TARGETS"
             "${common[@]}" "${targets[@]}"
