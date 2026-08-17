@@ -12,7 +12,17 @@
 | [Reliability](reliability.md) | profile, incident, 영향 분석, remediation, recovery, evaluation | raw table + dbt artifacts → lifecycle/recovery/evaluation result | 외부 approval 결정과 Dagster orchestration |
 | [Orchestration](orchestration.md) | Dagster asset graph와 config 변환 | `raw_hmda_loans` → `dbt_loan_analytics` | domain business logic, reliability control-plane |
 
-이 표는 architecture/domain ownership을 설명하는 guide다. Normative behavior나 capability requirement가 필요하면 대응 `openspec/specs/**`를 확인하고, 실제 구현 상태는 source/tests와 matching-revision evidence로 검증한다.
+```mermaid
+flowchart LR
+    orchestration["Orchestration<br/>Dagster graph + config"] -->|delegates data-plane execution| operations["Data Operations<br/>request + execution boundary"]
+    operations -->|source discovery + Bronze load| hmda["HMDA Data<br/>source + Bronze + EDA"]
+    operations -->|dbt execution + projection use| platform["Data Platform<br/>DuckDB + dbt + artifact primitives"]
+    operations -->|read-only lifecycle only| reliability["Reliability<br/>incident + recovery + evaluation"]
+    hmda -.->|Bronze state| reliability
+    platform -.->|dbt artifacts + lineage| reliability
+```
+
+이 표와 그림은 architecture/domain ownership을 설명하는 guide다. 실선은 application-level delegation/use를, 점선은 Reliability가 읽는 state/evidence 관계를 나타낸다. Normative behavior나 capability requirement가 필요하면 대응 `openspec/specs/**`를 확인하고, 실제 구현 상태는 source/tests와 matching-revision evidence로 검증한다.
 
 ## Goal-Based Reading Paths
 

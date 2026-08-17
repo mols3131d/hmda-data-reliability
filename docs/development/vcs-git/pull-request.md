@@ -35,8 +35,14 @@ Pull Request review의 기록 형식과 finding 기준은 [Pull Request Reviews]
 
 ## Lifecycle
 
-```text
-Draft PR → 변경 갱신 → 인간 검토 → merge 또는 명시적 close
+```mermaid
+flowchart LR
+    draft["Draft PR"] --> current["Changes + validation current"]
+    current --> review["Human Review"]
+    review --> outcome{"Review outcome"}
+    outcome -->|changes requested| current
+    outcome -->|accepted + checks complete| merge(["Merge"])
+    outcome -->|explicit close| close(["Close"])
 ```
 
 수정 요청이 있으면 변경 갱신과 인간 검토를 반복한다. 동일한 변경 목적은 기존 Draft PR을 이어가며, 목적이나 접근 방식이 달라지면 새 branch와 pull request를 사용한다.
