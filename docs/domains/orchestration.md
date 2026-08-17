@@ -22,7 +22,15 @@
 
 ```mermaid
 flowchart LR
-    raw[raw_hmda_loans<br/>bronze] --> dbt[dbt_loan_analytics<br/>silver_gold]
+    config["Dagster Config"] --> resource["DataOperationsResource"] --> request["DataOperationRequest"]
+
+    subgraph job["pipeline_job · data plane only"]
+        direction LR
+        raw["raw_hmda_loans<br/>Bronze"] --> dbt["dbt_loan_analytics<br/>Silver / Gold"]
+    end
+
+    request -->|load request| raw
+    request -->|dbt settings| dbt
 ```
 
 `pipeline_job`의 asset selection은 `raw_hmda_loans`, `dbt_loan_analytics`뿐이다. Dagster가 전체 pipeline의 유일한 orchestrator이며, 독립 pipeline runner와 CLI는 제공하지 않는다.
