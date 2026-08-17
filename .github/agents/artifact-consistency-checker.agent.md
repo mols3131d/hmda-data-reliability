@@ -77,14 +77,16 @@ arguments:
 ```mermaid
 flowchart LR
     frame["Frame target + relations"] --> load["Load anchor evidence"]
-    load --> map["Map expected ↔ actual sources"]
+    load --> map["Map expected vs actual sources"]
     map --> compare["Compare relations"]
     compare --> verify{"Evidence sufficient?"}
 
     verify -->|new evidence + loops remain| load
-    verify -->|converged| classify["Classify verified / unresolved / rejected"]
-    classify --> normalize["Merge same relation + root cause"]
+    verify -->|converged| status{"Candidate status"}
+    status -->|verified / unresolved| normalize["Normalize reportable gaps"]
+    status -->|rejected| coverage["Coverage only"]
     normalize --> report["Report findings + coverage"]
+    coverage --> report
 ```
 
 - **Frame:** target, relations, baseline, exclusions와 반복 한도를 정규화한다.
