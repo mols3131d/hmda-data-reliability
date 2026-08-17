@@ -1,26 +1,38 @@
 glob_matcher: doublestar
 
 pre-commit:
-  parallel: true
-
   commands:
     markdown-fix:
+      files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.md"
-      run: uv run rumdl check --fix --deny-config-warnings {staged_files}
+      run: uv run rumdl check --fix --deny-config-warnings {files}
       stage_fixed: true
     python-fix:
+      files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.py"
-      run: uv run ruff check --fix {staged_files} && uv run ruff format {staged_files}
+      run: uv run ruff check --fix {files} && uv run ruff format {files}
       stage_fixed: true
 
 pre-push:
   commands:
     markdown-check:
       glob: "**/*.md"
-      run: uv run rumdl check --deny-config-warnings {push_files}
+      run: |
+        set --
+        for file in {push_files}; do
+          [ -f "$file" ] && set -- "$@" "$file"
+        done
+        [ "$#" -eq 0 ] || uv run rumdl check --deny-config-warnings "$@"
     python-check:
       glob: "**/*.py"
-      run: uv run ruff check {push_files} && uv run ruff format --check {push_files}
+      run: |
+        set --
+        for file in {push_files}; do
+          [ -f "$file" ] && set -- "$@" "$file"
+        done
+        [ "$#" -eq 0 ] || {
+          uv run ruff check "$@" && uv run ruff format --check "$@"
+        }
     ty-check:
       glob:
         - "**/*.py"
