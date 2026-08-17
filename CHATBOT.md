@@ -19,6 +19,7 @@
 | --- | --- |
 | [`pivot-research-workspace`](.agents/skills/pivot-research-workspace/SKILL.md) | 판단 전에 현재 동작, 범위, dependency, 선택지 또는 failure 근거가 필요할 때 |
 | [`pivot-review-code`](.agents/skills/pivot-review-code/SKILL.md) | diff, file, commit 또는 Pull Request의 구현·테스트 변경을 review할 때 |
+| [`pivot-clarify-code`](.agents/skills/pivot-clarify-code/SKILL.md) | 기능·동작을 바꾸지 않고 기존 code의 의미, contract, 이름, 구조 또는 rationale를 명확하게 할 때 |
 | [`pivot-load-context-testing`](.agents/skills/pivot-load-context-testing/SKILL.md) | pytest, test design, validation 또는 failure debugging context가 필요할 때 |
 
 ### Installed Skills
@@ -26,6 +27,7 @@
 | Skill | Trigger |
 | --- | --- |
 | [`mols-agent-asset-studio`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-agent-asset-studio/SKILL.md) | agent asset을 설계·생성·개선·review할 때 |
+| [`mols-markdown-dashboard`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-markdown-dashboard/SKILL.md) | development dashboard 자체의 생성·갱신·review가 명시적으로 요청됐을 때 |
 | [`mols-markdown-for-human`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-markdown-for-human/SKILL.md) | 사람이 빠르게 읽을 Markdown을 작성·개선할 때 |
 | [`mols-mermaid-diagram`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-mermaid-diagram/SKILL.md) | 관계, 절차, 상태, dependency 등을 Mermaid로 설명할 때 |
 | [`mols-mermaid-chart`](https://github.com/mols3131d/mols-agent-assets/blob/main/src/skills/mols-mermaid-chart/SKILL.md) | 수치 비교, 추세, 구성비 등을 Mermaid chart로 표현할 때 |
