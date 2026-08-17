@@ -25,14 +25,8 @@ flowchart TB
     artifacts["Current dbt Artifact Pair"]
 
     subgraph lifecycle ["Read-Only Lifecycle"]
-        direction TB
-
-        subgraph assessment ["Detection And Impact"]
-            direction LR
-            evidence["Metadata Evidence + Current Profile"] --> detection["Deterministic Detection"]
-            detection -->|0..n| incident["Incident + Evidence"] --> impact["Impact Analysis"]
-        end
-
+        evidence["Metadata Evidence + Current Profile"] --> detection["Deterministic Detection"]
+        detection -->|0..n| incident["Incident + Evidence"] --> impact["Impact Analysis"]
         impact -.->|advisory only| draft["RemediationDraft"]
     end
 
@@ -47,23 +41,20 @@ Detection은 volume, null, schema와 freshness 같은 deterministic rule을 다�
 
 ```mermaid
 flowchart TB
-    subgraph authorization ["Validation And Approval"]
-        direction LR
-        incident["Incident + Evidence"] -->|bind incident + target| proposal["Validated Recovery Proposal"] -->|exact proposal| approval["External Approval"]
-        candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
-    end
-
+    incident["Incident + Evidence"] -->|bind incident + target| proposal["Validated Recovery Proposal"]
+    candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
+    proposal -->|exact proposal| approval["External Approval"]
     approval -->|same approved proposal| recheck{"Approved candidate still valid?"}
+
     recheck -->|no| stop(["Stop · new validation + approval required"])
-    recheck -->|yes| gate
+    recheck -->|yes| gate{"Current Target State"}
 
-    subgraph execution ["Apply Or Verify"]
-        direction LR
-        gate{"Current Target State"} -->|approved before-state| recovery["Apply Approved Mutation"] --> verify["Re-validation"] -->|passed| done(["Validated"])
-    end
-
-    gate -->|expected after-state| verify
+    gate -->|approved before-state| recovery["Apply Approved Mutation"]
+    gate -->|expected after-state| verify["Re-validation"]
     gate -->|other / expired| stop
+
+    recovery --> verify
+    verify -->|passed| done(["Validated"])
     verify -.->|retry / replay needed| replay["Replay / Reconciliation"]
     replay -->|re-check same approval| recheck
 ```
