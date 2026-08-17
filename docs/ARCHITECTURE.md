@@ -6,20 +6,29 @@
 
 ```mermaid
 flowchart LR
-    files["HMDA CSV / Parquet"] --> raw["Bronze"]
-    raw --> dbt["Silver / Gold"]
-    dbt --> artifacts["dbt Artifacts"]
+    subgraph data_plane["Data Plane"]
+        direction LR
+        files["HMDA CSV / Parquet"] --> bronze["Bronze"] --> analytics["Silver / Gold"] --> artifacts["dbt Artifacts"]
+    end
 
-    raw --> lifecycle["Read-Only Reliability"]
-    artifacts --> lifecycle
-    lifecycle --> incident["Incident + Evidence"]
-    lifecycle --> draft["RemediationDraft"]
+    subgraph analysis_plane["Read-Only Reliability"]
+        direction TB
+        lifecycle["Incident Lifecycle"] --> incident["Incident + Evidence"]
+        lifecycle -.->|advisory only| draft["RemediationDraft"]
+    end
 
-    incident --> proposal["Validated Recovery Proposal"]
-    candidate["Validated Candidate"] --> proposal
-    proposal --> approval["External Approval"]
-    approval --> recovery["Approved Recovery"]
-    recovery --> verify["Re-validation"]
+    subgraph recovery_plane["Recovery Control Plane"]
+        direction LR
+        proposal["Validated Recovery Proposal"]
+        recovery["Recovery API"] --> verify["Re-validation"]
+    end
+
+    bronze -->|read state| lifecycle
+    artifacts -->|read lineage / run evidence| lifecycle
+    incident -->|bind incident evidence| proposal
+    candidate["Validated Candidate"] -->|bind candidate + target state| proposal
+    proposal -->|exact proposal| approval["External Approval"]
+    approval -->|authorize same target / action / state| recovery
 ```
 
 `RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다. Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
