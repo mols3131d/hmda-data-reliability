@@ -19,7 +19,7 @@ Normative behavior는 [`../../openspec/specs/`](../../openspec/specs/)의 Reliab
 ## Read-Only Lifecycle
 
 ```mermaid
-flowchart LR
+flowchart TB
     raw[("Bronze State")]
     baseline["Baseline Profile"]
     artifacts["Current dbt Artifact Pair"]
@@ -40,7 +40,7 @@ Detection은 volume, null, schema와 freshness 같은 deterministic rule을 다�
 ## Recovery Path
 
 ```mermaid
-flowchart LR
+flowchart TB
     incident["Incident + Evidence"] -->|bind incident + target| proposal["Validated Recovery Proposal"]
     candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
     proposal -->|exact proposal| approval["External Approval"]

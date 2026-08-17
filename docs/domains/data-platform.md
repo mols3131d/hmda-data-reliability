@@ -17,7 +17,7 @@ Normative behavior는 [`../../openspec/specs/data-platform-duckdb-access/spec.md
 ## Data Flow
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph analytical_state ["dbt Analytical Objects"]
         bronze[("raw.hmda_loans · Bronze")] --> staging["staging · View"] --> mart[("marts · Table")]
     end

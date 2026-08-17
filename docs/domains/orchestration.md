@@ -21,7 +21,7 @@
 [`definitions.py`](../../src/project_pivot/orchestration/definitions.py)가 package entry point다. `defs`에는 두 asset, `pipeline_job`, `data_operations` resource가 등록된다.
 
 ```mermaid
-flowchart LR
+flowchart TB
     config["Dagster Config"] --> resource["DataOperationsResource"]
 
     subgraph dagster ["Dagster · pipeline_job"]

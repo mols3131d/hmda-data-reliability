@@ -5,7 +5,7 @@
 ## System Flow
 
 ```mermaid
-flowchart LR
+flowchart TB
     files["HMDA CSV / Parquet"]
 
     subgraph data_plane ["Data Plane · Dagster"]

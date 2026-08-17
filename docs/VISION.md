@@ -52,7 +52,7 @@ AI 위임은 기능 자체가 아니라 **검증된 효용과 실패 특성**으
 ## Data Reliability Flow
 
 ```mermaid
-flowchart LR
+flowchart TB
     source["Source Data"] --> bronze["Bronze"]
     bronze --> analytical["Analytical Layer"]
     bronze --> evidence["Profile / Metadata / Lineage"]
@@ -96,7 +96,7 @@ AI의 역할이 커질수록 위임 경계를 보호하는 검증과 복구도 �
 ## LLMOps Feedback Loop
 
 ```mermaid
-flowchart LR
+flowchart TB
     run["AI Run + Outcome"] --> trace["Trace + Version"]
     trace --> evaluate["Evaluate + Compare"]
     evaluate --> review["Boundary Review"]

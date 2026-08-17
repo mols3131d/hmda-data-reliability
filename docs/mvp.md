@@ -24,7 +24,7 @@ Deterministic reliability layer를 먼저 만들고, 제한된 Agentic reviewer�
 ## System Proof
 
 ```mermaid
-flowchart LR
+flowchart TB
     source["HMDA source"] --> bronze["Bronze"]
     bronze --> analytical["dbt staging / marts"]
     analytical --> evidence["Data + dbt evidence"]
