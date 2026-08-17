@@ -25,26 +25,20 @@ Deterministic reliability layer를 먼저 만들고, 제한된 Agentic reviewer�
 
 ```mermaid
 flowchart TB
-    subgraph data_lake ["Minimal Data Lake"]
-        direction LR
-        source["HMDA source"] --> bronze["Bronze"] --> analytical["dbt staging / marts"] --> evidence["Data + dbt evidence"]
-    end
+    source["HMDA source"] --> bronze["Bronze"]
+    bronze --> analytical["dbt staging / marts"]
+    analytical --> evidence["Data + dbt evidence"]
+    evidence --> reliability["Deterministic Reliability"]
+    reliability --> incident["Incident + RemediationDraft"]
 
-    evidence --> reliability["Deterministic Reliability"] --> incident["Incident + RemediationDraft"]
+    incident --> agent["Bounded Agentic Review"]
+    agent --> guard["Deterministic Review Validation"]
 
-    subgraph agentic_review ["Bounded Agentic Review"]
-        direction LR
-        agent["Bounded Agentic Review"] --> guard["Deterministic Review Validation"]
-    end
-
-    subgraph recovery_path ["Approval-Bound Recovery"]
-        direction LR
-        proposal["Validated RecoveryProposal"] --> human["Human Approval"] --> recovery["Approved Recovery"] --> verify["Deterministic Re-validation"]
-    end
-
-    incident --> agent
-    incident --> proposal
+    incident --> proposal["Validated RecoveryProposal"]
+    proposal --> human["Human Approval"]
     guard -. advisory .-> human
+    human --> recovery["Approved Recovery"]
+    recovery --> verify["Deterministic Re-validation"]
 
     dagster["Dagster"] -. data plane .-> bronze
     dagster -. data plane .-> analytical
