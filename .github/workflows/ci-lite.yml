@@ -50,7 +50,7 @@ jobs:
           }
 
           while IFS= read -r path; do
-            if [[ "$path" == *.md && "$path" != */archive/* && -f "$path" ]]; then
+            if [[ "$path" == *.md && -f "$path" ]]; then
               markdown=true
             fi
 
@@ -166,7 +166,7 @@ jobs:
           mapfile -t files < <(
             git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- '*.md' \
               | while IFS= read -r path; do
-                  [[ "$path" == */archive/* || ! -f "$path" ]] && continue
+                  [[ ! -f "$path" ]] && continue
                   printf '%s\n' "$path"
                 done
           )
