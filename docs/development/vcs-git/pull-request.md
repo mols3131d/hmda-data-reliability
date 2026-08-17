@@ -36,7 +36,7 @@ Pull Request review의 기록 형식과 finding 기준은 [Pull Request Reviews]
 ## Lifecycle
 
 ```mermaid
-flowchart LR
+flowchart TB
     draft["Draft PR"] --> current["Changes + validation current"]
     current --> review["Human Review"]
     review --> outcome{"Review outcome"}
