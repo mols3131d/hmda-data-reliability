@@ -11,7 +11,8 @@ flowchart LR
     subgraph data_plane ["Data Plane · Dagster"]
         ingest["Bronze Ingestion"] --> bronze[("Bronze")]
         bronze --> dbt["dbt build"] --> analytics["Silver / Gold"]
-        dbt -.->|run-scoped evidence| artifacts["dbt Artifact Pair"]
+        dbt -.->|run-scoped evidence| candidate_artifacts["Candidate dbt Artifact Pair"]
+        candidate_artifacts -->|validated promotion| current_artifacts["Current Artifact Projection"]
     end
 
     subgraph analysis_plane ["Read-Only Reliability"]
@@ -25,9 +26,9 @@ flowchart LR
 
     files --> ingest
     bronze -.->|read state| lifecycle
-    artifacts -.->|read lineage / run evidence| lifecycle
+    current_artifacts -.->|read lineage / run evidence| lifecycle
     incident -->|bind evidence + target| proposal
-    candidate["Validated Candidate"] -->|bind candidate + before / after state| proposal
+    recovery_candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
     proposal -->|exact proposal| approval["External Approval"]
     approval -->|authorize same proposal| recovery
 ```
