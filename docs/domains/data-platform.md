@@ -65,6 +65,6 @@ Bronze는 ingestion owner가 만들고, dbt는 분석용 staging/mart와 lineage
 ## Reading Order
 
 1. [`data_platform/__init__.py`](../../src/project_pivot/data_platform/__init__.py)에서 public surface를 확인한다.
-2. DuckDB primitive가 필요하면 [`duckdb.py`](../../src/project_pivot/data_platform/duckdb.py)와 [`sql.py`](../../src/project_pivot/data_platform/sql.py)를 읽는다.
-3. Artifact adoption boundary를 이해하려면 [`artifacts.py`](../../src/project_pivot/data_platform/artifacts.py) 뒤 [`data-operations.md`](data-operations.md)로 이동한다.
-4. 분석 layer는 [`dbt/models`](../../dbt/models)와 corresponding canonical Spec을 확인한다.
+1. DuckDB primitive가 필요하면 [`duckdb.py`](../../src/project_pivot/data_platform/duckdb.py)와 [`sql.py`](../../src/project_pivot/data_platform/sql.py)를 읽는다.
+1. Artifact adoption boundary를 이해하려면 [`artifacts.py`](../../src/project_pivot/data_platform/artifacts.py) 뒤 [`data-operations.md`](data-operations.md)로 이동한다.
+1. 분석 layer는 [`dbt/models`](../../dbt/models)와 corresponding canonical Spec을 확인한다.

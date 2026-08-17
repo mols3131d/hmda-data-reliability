@@ -100,6 +100,6 @@ Partition content와 freshness recovery는 `RecoveryProposal`과 `Approval`을 �
 ## Reading Order
 
 1. [`reliability/__init__.py`](../../src/project_pivot/reliability/__init__.py)에서 public surface를 확인한다.
-2. Read-only composition은 [`data_operations/incident_lifecycle.py`](../../src/project_pivot/data_operations/incident_lifecycle.py)를 읽는다.
-3. 필요한 capability의 canonical Spec으로 이동해 exact requirement를 확인한다.
-4. Safety boundary와 regression oracle은 [`tests/reliability`](../../tests/reliability)에서 확인한다.
+1. Read-only composition은 [`data_operations/incident_lifecycle.py`](../../src/project_pivot/data_operations/incident_lifecycle.py)를 읽는다.
+1. 필요한 capability의 canonical Spec으로 이동해 exact requirement를 확인한다.
+1. Safety boundary와 regression oracle은 [`tests/reliability`](../../tests/reliability)에서 확인한다.
