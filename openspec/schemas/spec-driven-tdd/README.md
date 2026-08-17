@@ -4,10 +4,13 @@ OpenSpec의 artifact dependency를 사용해 필요한 계획만 만들고 TDD-c
 
 ```mermaid
 flowchart LR
-    P[Proposal] --> S[Specs]
-    S --> D[Design]
-    D --> T[Tasks]
-    T --> A[Apply]
+    subgraph planning ["Planning Artifacts"]
+        proposal["Proposal<br/>why + scope"] --> specs["Specs<br/>observable behavior"]
+        specs --> design["Design<br/>minimal technical approach"]
+        design --> tasks["Tasks<br/>verifiable outcomes"]
+    end
+
+    tasks --> apply["Apply<br/>test-first implementation"]
 ```
 
 | Path | Responsibility |
