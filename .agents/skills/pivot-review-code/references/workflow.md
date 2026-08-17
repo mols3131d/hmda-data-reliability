@@ -14,18 +14,20 @@ flowchart LR
     subgraph inspect ["Inspect Behavior"]
         scope --> map["Map changed behavior"]
         map --> code["Inspect implementation + tests"]
-        code --> validation["Run focused validation"]
+        code --> validation["Focused validation<br/>or existing evidence"]
     end
 
     validation --> candidate["Candidate finding"]
     candidate --> verify{"Evidence survives checks?"}
     verify -->|yes| finding["Verified finding"]
     verify -->|uncertain| uncertainty["Uncertainty / limitation"]
-    verify -->|no| reject["Reject candidate"]
+    verify -->|no| rejected["Rejected candidate"]
 
-    finding --> report["Report"]
+    rejected --> more{"More candidates?"}
+    more -->|yes| candidate
+    more -->|no| report["Report"]
+    finding --> report
     uncertainty --> report
-    reject -.->|other candidates| candidate
 ```
 
 ## Resolve Target
