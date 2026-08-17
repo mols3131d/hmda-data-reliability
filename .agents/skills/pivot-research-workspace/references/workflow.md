@@ -6,8 +6,8 @@
 
 ```mermaid
 flowchart LR
-    question["Core question"] --> template["Resolve nearby template<br/>+ local instructions"]
-    template --> scope["Frame scope + subquestions"]
+    question["Core question"] --> context["Resolve nearby template if any<br/>+ local instructions"]
+    context --> scope["Frame scope + subquestions"]
     scope --> evidence["Inspect strongest existing evidence"]
     evidence --> enough{"Enough to answer?"}
 
