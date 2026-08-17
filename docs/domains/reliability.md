@@ -19,14 +19,20 @@ Normative behavior는 [`../../openspec/specs/`](../../openspec/specs/)의 Reliab
 ## Read-Only Lifecycle
 
 ```mermaid
-flowchart LR
+flowchart TB
     raw[("Bronze State")]
     baseline["Baseline Profile"]
     artifacts["Current dbt Artifact Pair"]
 
     subgraph lifecycle ["Read-Only Lifecycle"]
-        evidence["Metadata Evidence + Current Profile"] --> detection["Deterministic Detection"]
-        detection -->|0..n| incident["Incident + Evidence"] --> impact["Impact Analysis"]
+        direction TB
+
+        subgraph assessment ["Detection And Impact"]
+            direction LR
+            evidence["Metadata Evidence + Current Profile"] --> detection["Deterministic Detection"]
+            detection -->|0..n| incident["Incident + Evidence"] --> impact["Impact Analysis"]
+        end
+
         impact -.->|advisory only| draft["RemediationDraft"]
     end
 
@@ -40,21 +46,24 @@ Detection은 volume, null, schema와 freshness 같은 deterministic rule을 다�
 ## Recovery Path
 
 ```mermaid
-flowchart LR
-    incident["Incident + Evidence"] -->|bind incident + target| proposal["Validated Recovery Proposal"]
-    candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
-    proposal -->|exact proposal| approval["External Approval"]
+flowchart TB
+    subgraph authorization ["Validation And Approval"]
+        direction LR
+        incident["Incident + Evidence"] -->|bind incident + target| proposal["Validated Recovery Proposal"] -->|exact proposal| approval["External Approval"]
+        candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
+    end
+
     approval -->|same approved proposal| recheck{"Approved candidate still valid?"}
-
     recheck -->|no| stop(["Stop · new validation + approval required"])
-    recheck -->|yes| gate{"Current Target State"}
+    recheck -->|yes| gate
 
-    gate -->|approved before-state| recovery["Apply Approved Mutation"]
-    gate -->|expected after-state| verify["Re-validation"]
+    subgraph execution ["Apply Or Verify"]
+        direction LR
+        gate{"Current Target State"} -->|approved before-state| recovery["Apply Approved Mutation"] --> verify["Re-validation"] -->|passed| done(["Validated"])
+    end
+
+    gate -->|expected after-state| verify
     gate -->|other / expired| stop
-
-    recovery --> verify
-    verify -->|passed| done(["Validated"])
     verify -.->|retry / replay needed| replay["Replay / Reconciliation"]
     replay -->|re-check same approval| recheck
 ```
