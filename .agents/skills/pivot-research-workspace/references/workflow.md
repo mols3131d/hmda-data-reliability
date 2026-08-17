@@ -6,15 +6,18 @@
 
 ```mermaid
 flowchart LR
-    A[핵심 질문 설정] --> B[Research 템플릿 탐색]
-    B --> C[템플릿과 주변 지침 해석]
-    C --> D[범위와 하위 질문 설정]
-    D --> E[기존 근거 확인]
-    E --> F{답에 충분한가?}
-    F -- Yes --> G[검증과 종합]
-    F -- No --> H[부족한 근거 조사]
-    H --> F
-    G --> I[Chat 또는 Artifact]
+    question["Core question"] --> template["Resolve nearby template<br/>+ local instructions"]
+    template --> scope["Frame scope + subquestions"]
+    scope --> evidence["Inspect strongest existing evidence"]
+    evidence --> enough{"Enough to answer?"}
+
+    enough -->|no| gaps["Close decision-changing gaps"]
+    gaps --> evidence
+
+    enough -->|yes| synthesize["Verify + synthesize"]
+    synthesize --> output{"Output"}
+    output --> chat["Chat"]
+    output --> artifact["Artifact"]
 ```
 
 ## Question
