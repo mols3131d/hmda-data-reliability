@@ -20,18 +20,19 @@ Normative behavior는 [`../../openspec/specs/`](../../openspec/specs/)의 Reliab
 
 ```mermaid
 flowchart LR
-    raw["Bronze State"]
+    raw[("Bronze State")]
     baseline["Baseline Profile"]
     artifacts["Current dbt Artifact Pair"]
 
     subgraph lifecycle ["Read-Only Lifecycle"]
-        evidence["Metadata Evidence + Current Profile"] --> detection["Detection"] --> impact["Impact Analysis"]
-        impact -.->|advisory output| draft["RemediationDraft"]
+        evidence["Metadata Evidence + Current Profile"] --> detection["Deterministic Detection"]
+        detection -->|0..n| incident["Incident + Evidence"] --> impact["Impact Analysis"]
+        impact -.->|advisory only| draft["RemediationDraft"]
     end
 
-    raw -->|read-only evidence| evidence
+    raw -.->|read-only evidence| evidence
     baseline -->|comparison reference| detection
-    artifacts -->|lineage / run evidence| impact
+    artifacts -.->|lineage / run evidence| impact
 ```
 
 Detection은 volume, null, schema와 freshness 같은 deterministic rule을 다룬다. Freshness는 Bronze에서 실제로 측정 가능한 timestamp를 사용하며 측정 불가능한 상태를 fresh로 간주하지 않는다. Exact threshold와 evidence payload는 canonical Spec을 따른다.
@@ -43,14 +44,19 @@ flowchart LR
     incident["Incident + Evidence"] -->|bind incident + target| proposal["Validated Recovery Proposal"]
     candidate["Validated Candidate"] -->|bind candidate + before / after state| proposal
     proposal -->|exact proposal| approval["External Approval"]
-    approval -->|same approved proposal| recheck["Re-check Approved Candidate"]
-    recheck --> gate{"Current Target State"}
+    approval -->|same approved proposal| recheck{"Approved candidate still valid?"}
+
+    recheck -->|no| stop(["Stop · new validation + approval required"])
+    recheck -->|yes| gate{"Current Target State"}
 
     gate -->|approved before-state| recovery["Apply Approved Mutation"]
-    gate -->|valid expected after-state| verify["Re-validation"]
-    gate -->|diverged / expired| stop(["Stop · new validation + approval required"])
+    gate -->|expected after-state| verify["Re-validation"]
+    gate -->|other / expired| stop
 
-    recovery --> verify --> replay["Replay / Reconciliation"]
+    recovery --> verify
+    verify -->|passed| done(["Validated"])
+    verify -.->|retry / replay needed| replay["Replay / Reconciliation"]
+    replay -->|re-check same approval| recheck
 ```
 
 Partition content recovery, freshness-bound recovery와 schema/table restoration은 대상 state가 다르지만 같은 원칙을 공유한다. **승인된 before/after state와 실제 target이 일치할 때만 mutation하고, 이미 expected state라면 mutation을 반복하지 않으며, 어느 쪽도 아니면 새 validation과 approval을 요구한다.**
