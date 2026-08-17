@@ -53,26 +53,18 @@ AI 위임은 기능 자체가 아니라 **검증된 효용과 실패 특성**으
 
 ```mermaid
 flowchart TB
-    subgraph data_state ["Data State"]
-        direction LR
-        source["Source Data"] --> bronze["Bronze"] --> analytical["Analytical Layer"]
-    end
-
-    subgraph assessment ["Reliability Assessment"]
-        direction LR
-        evidence["Profile / Metadata / Lineage"] --> detect["Detect and Assess"] --> incident{"Incident?"}
-    end
-
-    bronze --> evidence
+    source["Source Data"] --> bronze["Bronze"]
+    bronze --> analytical["Analytical Layer"]
+    bronze --> evidence["Profile / Metadata / Lineage"]
     analytical --> evidence
+    evidence --> detect["Detect and Assess"]
+    detect --> incident{"Incident?"}
 
-    subgraph recovery_loop ["Recovery Loop"]
-        direction LR
-        incident_evidence["Incident + Evidence"] --> recovery["Controlled Recovery"] --> verify{"Re-validation"} -->|Pass| trusted["Trusted Data State"]
-    end
-
-    incident -->|No| trusted
-    incident -->|Yes| incident_evidence
+    incident -->|No| trusted["Trusted Data State"]
+    incident -->|Yes| incident_evidence["Incident + Evidence"]
+    incident_evidence --> recovery["Controlled Recovery"]
+    recovery --> verify{"Re-validation"}
+    verify -->|Pass| trusted
     verify -->|Fail| reconcile["Contain / Reconcile / Retry"]
     reconcile --> recovery
 ```
@@ -105,18 +97,12 @@ AI의 역할이 커질수록 위임 경계를 보호하는 검증과 복구도 �
 
 ```mermaid
 flowchart TB
-    subgraph observation ["Observe And Evaluate"]
-        direction LR
-        run["AI Run + Outcome"] --> trace["Trace + Version"] --> evaluate["Evaluate + Compare"]
-    end
-
-    subgraph governance ["Learn And Govern"]
-        direction LR
-        replay["Failure Replay"] --> review["Boundary Review"] --> policy["Delegation Policy"]
-    end
-
-    evaluate --> review
-    evaluate -->|Failure / Regression| replay
+    run["AI Run + Outcome"] --> trace["Trace + Version"]
+    trace --> evaluate["Evaluate + Compare"]
+    evaluate --> review["Boundary Review"]
+    evaluate -->|Failure / Regression| replay["Failure Replay"]
+    replay --> review
+    review --> policy["Delegation Policy"]
     policy -. Governs .-> run
 ```
 
