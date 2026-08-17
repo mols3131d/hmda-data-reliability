@@ -6,12 +6,28 @@
 
 ```mermaid
 flowchart LR
-    A[Resolve target] --> B[Resolve baseline and contract]
-    B --> C[Map changed behavior]
-    C --> D[Inspect implementation and tests]
-    D --> E[Run focused validation]
-    E --> F[Verify candidates]
-    F --> G[Report findings and uncertainty]
+    subgraph frame ["Frame Review"]
+        target["Resolve target"] --> contract["Resolve baseline + contract"]
+        contract --> scope["Select scope + focus"]
+    end
+
+    subgraph inspect ["Inspect Behavior"]
+        scope --> map["Map changed behavior"]
+        map --> code["Inspect implementation + tests"]
+        code --> validation["Focused validation<br/>or existing evidence"]
+    end
+
+    validation --> candidate["Candidate finding"]
+    candidate --> verify{"Evidence survives checks?"}
+    verify -->|yes| finding["Verified finding"]
+    verify -->|uncertain| uncertainty["Uncertainty / limitation"]
+    verify -->|no| rejected["Rejected candidate"]
+
+    rejected --> more{"More candidates?"}
+    more -->|yes| candidate
+    more -->|no| report["Report"]
+    finding --> report
+    uncertainty --> report
 ```
 
 ## Resolve Target
