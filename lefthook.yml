@@ -1,40 +1,55 @@
 glob_matcher: doublestar
 
 pre-commit:
-  exclude:
-    - "**/archive/**"
-    - "**/*cache*/**"
-    - "**/*tmp*/**"
-
   commands:
-    rumdl-fmt:
+    markdown-fix:
+      files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.md"
-      run: uv run rumdl fmt {staged_files}
+      run: uvx rumdl@0.2.48 check --fix --deny-config-warnings {files}
       stage_fixed: true
-    ruff-fix:
+    python-fix:
+      files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.py"
-      run: uv run ruff check --fix {staged_files}
+      run: uvx ruff@0.16.1 check --fix {files} && uvx ruff@0.16.1 format {files}
       stage_fixed: true
-    ruff-format:
+
+pre-push:
+  commands:
+    markdown-check:
+      glob: "**/*.md"
+      run: |
+        set --
+        for file in {push_files}; do
+          [ -f "$file" ] && set -- "$@" "$file"
+        done
+        [ "$#" -eq 0 ] || uvx rumdl@0.2.48 check --deny-config-warnings "$@"
+    python-check:
       glob: "**/*.py"
-      run: uv run ruff format {staged_files}
-      stage_fixed: true
+      run: |
+        set --
+        for file in {push_files}; do
+          [ -f "$file" ] && set -- "$@" "$file"
+        done
+        [ "$#" -eq 0 ] || {
+          uvx ruff@0.16.1 check "$@" && uvx ruff@0.16.1 format --check "$@"
+        }
     ty-check:
-      glob: "**/*.py"
+      glob:
+        - "**/*.py"
+        - "pyproject.toml"
       run: uv run ty check
     pytest-affected:
       glob: "**/*.py"
       run: uv run pytest --testmon --testmon-forceselect
-
-pre-push:
-  commands:
-    pytest-regression:
+    pytest-dbt:
       glob:
-        - "**/*.py"
-        - ".python-version"
-        - "pyproject.toml"
-        - "uv.lock"
         - "dbt/**/*.sql"
         - "dbt/**/*.yml"
         - "dbt/**/*.yaml"
-      run: uv run pytest -n auto --testmon-noselect
+      run: uv run pytest tests/dbt
+    pytest-global:
+      glob:
+        - ".python-version"
+        - "pyproject.toml"
+        - "uv.lock"
+      run: uv run pytest -n auto -m "unit and not memory and not stress"

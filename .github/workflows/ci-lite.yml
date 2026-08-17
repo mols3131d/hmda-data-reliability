@@ -4,15 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - ".github/workflows/ci-lite.yml"
-      - ".python-version"
-      - "pyproject.toml"
-      - "uv.lock"
-      - "src/**"
-      - "tests/**"
-      - "!src/**.md"
-      - "!tests/**.md"
 
 permissions:
   contents: read
@@ -27,31 +18,206 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout
+      - name: Checkout prospective merge
         uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
+          fetch-depth: 2
+
+      - name: Classify changes
+        id: scope
+        run: |
+          set -euo pipefail
+
+          markdown=false
+          tests=false
+          lefthook=false
+          full_unit=false
+          targets=()
+
+          add_target() {
+            local target="$1"
+            local existing
+            for existing in "${targets[@]}"; do
+              [[ "$existing" == "$target" ]] && return
+            done
+            targets+=("$target")
+          }
+
+          add_domain_closure() {
+            local domain="$1"
+            local target
+            case "$domain" in
+              data_platform)
+                for target in \
+                  data_platform hmda_data reliability \
+                  data_operations orchestration dbt; do
+                  add_target "tests/$target"
+                done
+                ;;
+              hmda_data)
+                for target in \
+                  hmda_data reliability data_operations orchestration dbt; do
+                  add_target "tests/$target"
+                done
+                ;;
+              data_operations|reliability)
+                for target in reliability data_operations orchestration; do
+                  add_target "tests/$target"
+                done
+                ;;
+              orchestration)
+                add_target tests/orchestration
+                ;;
+              *)
+                full_unit=true
+                ;;
+            esac
+          }
+
+          while IFS= read -r path; do
+            if [[ "$path" == *.md ]]; then
+              [[ -f "$path" ]] && markdown=true
+              continue
+            fi
+
+            case "$path" in
+              lefthook.yml)
+                lefthook=true
+                ;;
+              .python-version|pyproject.toml|uv.lock|.github/workflows/ci-lite.yml)
+                tests=true
+                full_unit=true
+                ;;
+              dbt/*.sql|dbt/*.yml|dbt/*.yaml)
+                tests=true
+                for target in dbt data_operations reliability orchestration; do
+                  add_target "tests/$target"
+                done
+                ;;
+              src/project_pivot/logger.py)
+                tests=true
+                add_target tests/test_log_agent_event.py
+                ;;
+              src/project_pivot/*/*)
+                tests=true
+                domain="${path#src/project_pivot/}"
+                domain="${domain%%/*}"
+                case "$domain" in
+                  shared|configs|utils)
+                    full_unit=true
+                    ;;
+                  *)
+                    add_domain_closure "$domain"
+                    ;;
+                esac
+                ;;
+              tests/test_log_agent_event.py)
+                tests=true
+                add_target tests/test_log_agent_event.py
+                ;;
+              tests/test_pytest_opentelemetry.py)
+                tests=true
+                add_target tests/test_pytest_opentelemetry.py
+                ;;
+              tests/*/*)
+                tests=true
+                domain="${path#tests/}"
+                domain="${domain%%/*}"
+                case "$domain" in
+                  data_operations|data_platform|dbt|hmda_data|orchestration|reliability)
+                    add_target "tests/$domain"
+                    ;;
+                  *)
+                    full_unit=true
+                    ;;
+                esac
+                ;;
+              src/project_pivot/*|tests/*|*.py)
+                tests=true
+                full_unit=true
+                ;;
+            esac
+          done < <(git diff --name-only HEAD^1 HEAD)
+
+          {
+            echo "markdown=$markdown"
+            echo "tests=$tests"
+            echo "lefthook=$lefthook"
+            echo "full_unit=$full_unit"
+            printf 'targets='
+            printf '%s ' "${targets[@]}"
+            echo
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up rumdl
+        if: steps.scope.outputs.markdown == 'true'
+        uses: rvben/rumdl@4997ff07b63c7a54d6a495ebcd3ce7f23ee1173f # v0
+        with:
+          install-only: true
+          version: "0.2.48"
+
+      - name: Check changed Markdown
+        if: steps.scope.outputs.markdown == 'true'
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(
+            git diff --name-only HEAD^1 HEAD -- '*.md' \
+              | while IFS= read -r path; do
+                  [[ -f "$path" ]] && printf '%s\n' "$path"
+                done
+          )
+          ((${#files[@]} == 0)) || rumdl check --deny-config-warnings "${files[@]}"
 
       - name: Set up Python
+        if: steps.scope.outputs.tests == 'true'
         uses: actions/setup-python@v6.2.0
         with:
           python-version-file: ".python-version"
 
       - name: Set up uv
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.lefthook == 'true'
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.11.32"
-          enable-cache: false
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
 
       - name: Sync dependencies
+        if: steps.scope.outputs.tests == 'true'
         run: uv sync --locked
 
-      - name: Run unit tests
-        run: >-
-          uv run --no-sync pytest
-          -q
-          -p no:sugar
-          --color=no
-          --tb=short
-          -ra
-          -m "unit and not memory and not stress"
+      - name: Validate Lefthook config
+        if: steps.scope.outputs.lefthook == 'true'
+        run: uvx lefthook@2.1.10 validate
+
+      - name: Run selected tests
+        if: steps.scope.outputs.tests == 'true'
+        env:
+          FULL_UNIT: ${{ steps.scope.outputs.full_unit }}
+          TARGETS: ${{ steps.scope.outputs.targets }}
+        run: |
+          set -euo pipefail
+          common=(
+            uv run --no-sync pytest
+            -q
+            -p no:sugar
+            --color=no
+            --tb=short
+            -ra
+          )
+
+          if [[ "$FULL_UNIT" == true ]]; then
+            "${common[@]}" -n auto -m "unit and not memory and not stress"
+          fi
+
+          read -r -a targets <<< "$TARGETS"
+          if ((${#targets[@]} == 0)); then
+            exit
+          elif ((${#targets[@]} >= 3)); then
+            "${common[@]}" -n auto -m "not memory and not stress" "${targets[@]}"
+          else
+            "${common[@]}" -m "not memory and not stress" "${targets[@]}"
+          fi
