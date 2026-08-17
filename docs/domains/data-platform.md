@@ -18,16 +18,17 @@ Normative behavior는 [`../../openspec/specs/data-platform-duckdb-access/spec.md
 
 ```mermaid
 flowchart LR
-    subgraph analytical_state["DuckDB Analytical State"]
-        direction LR
+    subgraph analytical_state ["DuckDB Analytical State"]
         bronze["raw.hmda_loans<br/>Bronze"] --> staging["staging<br/>View"] --> mart["marts<br/>Table"]
     end
 
-    artifacts["dbt Artifact Pair<br/>manifest.json + run_results.json"]
+    artifacts["Run-Scoped dbt Artifact Pair<br/>manifest.json + run_results.json"]
+    identity["Artifact Projection Identity"]
 
-    bronze -.->|described by| artifacts
-    staging -.->|described by| artifacts
-    mart -.->|described by| artifacts
+    bronze -.->|source metadata| artifacts
+    staging -.->|model metadata| artifacts
+    mart -.->|model / test evidence| artifacts
+    artifacts -->|pair identity| identity
 ```
 
 Bronze는 ingestion owner가 만들고, dbt는 분석용 staging/mart와 lineage/test artifact를 정의한다. 어떤 run artifact를 current로 채택할지는 `data_operations`가 결정한다.
