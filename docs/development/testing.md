@@ -15,6 +15,18 @@
 | 이름으로 선택 | `uv run pytest -k "keyword"` |
 | marker로 선택 | `uv run pytest -m unit` |
 
+```mermaid
+flowchart LR
+    focused["Focused test"] --> result{"Pass?"}
+    result -->|no| diagnose["Diagnose failure"]
+    diagnose --> focused
+    result -->|yes| related["Related package suite"]
+    related --> broader{"Shared fixture, import, or config changed<br/>or impact uncertain?"}
+    broader -->|yes| full["Full suite"]
+    broader -->|no| scoped(["Validation scoped"])
+    full --> scoped
+```
+
 변경한 test가 통과하면 관련 package suite를 실행한다. 전체 suite는 shared fixture, import 또는 configuration을 바꿨거나 영향 범위를 확신할 수 없을 때 실행한다.
 
 ## Default Behavior

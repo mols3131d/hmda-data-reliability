@@ -77,10 +77,17 @@ Python 객체, Arrow buffer, Polars, native library와 일부 DuckDB operation�
 
 fixture 생성까지 같은 제한 안에서 실행하면 pipeline이 아닌 데이터 생성기의 메모리가 결과에 섞인다.
 
-```text
-준비 단계: fixture 생성
-측정 단계: fixture 읽기 → pipeline 실행 → 결과 저장
-검증 단계: 결과 계약 확인
+```mermaid
+flowchart LR
+    prepare["Prepare<br/>Generate fixture"]
+
+    subgraph measured ["Hard-Limited Measurement"]
+        run["Read fixture → Run pipeline → Write result"]
+    end
+
+    verify["Verify<br/>Result contract"]
+
+    prepare --> run --> verify
 ```
 
 fixture 생성 자체가 실제 pipeline에 포함되는 경우에만 측정 대상에 넣는다.
