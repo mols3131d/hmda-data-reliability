@@ -8,10 +8,12 @@
 
 ```mermaid
 flowchart LR
-    P[Proposal] --> S[Specs]
-    S --> D[Design]
-    D --> T[Tasks]
-    T --> A[Apply]
+    proposal["Proposal"] -->|scope| specs["Specs"]
+    proposal -.->|scope context| design["Design"]
+    specs -->|behavior contract| design
+    specs -.->|requirements| tasks["Tasks"]
+    design -->|technical decisions| tasks
+    tasks -->|ordered outcomes| apply["Apply"]
 ```
 
 ## Artifact Responsibilities
