@@ -6,42 +6,31 @@
 
 ```mermaid
 flowchart TB
-    files["HMDA CSV / Parquet"] --> ingest
+    files["HMDA CSV / Parquet"]
 
     subgraph data_plane ["Data Plane · Dagster"]
-        direction TB
-
-        subgraph transform ["Data Flow"]
-            direction LR
-            ingest["Bronze Ingestion"] --> bronze[("Bronze")] --> dbt["dbt build"] --> analytics["Silver / Gold"]
-        end
-
-        subgraph artifact_state ["dbt Artifact State"]
-            direction LR
-            candidate_artifacts["Candidate dbt Artifact Pair"] -->|validated promotion| current_artifacts["Current Artifact Projection"]
-        end
-
-        dbt -.->|run-scoped evidence| candidate_artifacts
+        ingest["Bronze Ingestion"] --> bronze[("Bronze")]
+        bronze --> dbt["dbt build"] --> analytics["Silver / Gold"]
+        dbt -.->|run-scoped evidence| candidate_artifacts["Candidate dbt Artifact Pair"]
+        candidate_artifacts -->|validated promotion| current_artifacts["Current Artifact Projection"]
     end
 
     subgraph analysis_plane ["Read-Only Reliability"]
-        direction LR
         lifecycle["Incident Lifecycle"] --> incident["Incident + Evidence"]
         lifecycle -.->|advisory only| draft["RemediationDraft"]
     end
 
+    subgraph recovery_plane ["Approval-Bound Recovery"]
+        proposal["Validated Recovery Proposal"] --> recovery["Recovery API"] --> verify["Re-validation"]
+    end
+
+    files --> ingest
     bronze -.->|read state| lifecycle
     current_artifacts -.->|read lineage / run evidence| lifecycle
-
-    incident -->|bind evidence + target| proposal["Validated Recovery Proposal"]
+    incident -->|bind evidence + target| proposal
     recovery_candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
     proposal -->|exact proposal| approval["External Approval"]
     approval -->|authorize same proposal| recovery
-
-    subgraph recovery_plane ["Approval-Bound Recovery"]
-        direction LR
-        recovery["Recovery API"] --> verify["Re-validation"]
-    end
 ```
 
 `RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다. Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
