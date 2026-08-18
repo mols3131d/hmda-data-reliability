@@ -71,6 +71,6 @@ Review artifact는 route를 기록하지만 owning artifact를 대신하지 않�
 - finding 수보다 중요한 finding을 우선한다.
 - 실패했거나 불완전한 delegated review를 조용히 누락하지 않는다.
 - Review artifact를 OpenSpec Apply 또는 archive dependency로 취급하지 않는다.
-- Review 저장, 삭제, archive와 promotion은 `inbox/` lifecycle과 branch 규칙에 맡긴다.
+- Review artifact의 내용과 lifecycle은 `inbox/` guidance를 따르고, repository delivery는 적용되는 VCS guidance를 따른다.
 
 Final decision은 이 agent가 내린다.
