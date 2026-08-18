@@ -13,7 +13,7 @@ Session end: <absolute-timestamp-with-timezone>
 Participant interval: <duration, default 60 minutes>
 B offset: <duration, default 30 minutes>
 
-먼저 repository의 현재 지침과 상태를 확인한다. 특히 `inbox/AGENTS.md`, `inbox/_guidelines/discuss.md`, `inbox/_guidelines/discuss-openai-chatgpt-scheduled.md`와 작업 경로에 적용되는 관련 프로젝트 지침을 따른다.
+먼저 repository의 현재 지침과 상태를 확인한다. 특히 `inbox/CHATBOT.md`, `inbox/_guidelines/discuss.md`, `inbox/_guidelines/discuss-openai-chatgpt-scheduled.md`와 작업 경로에 적용되는 관련 프로젝트 지침을 따른다.
 
 저장소의 persisted discussion artifact를 turn order, topic state, shared state, `Session start`와 `Session end`의 source of truth로 사용한다. `Participant interval`과 `B offset`은 Scheduled Task runtime configuration으로 사용하고 common discussion state로 저장하지 않는다.
 
