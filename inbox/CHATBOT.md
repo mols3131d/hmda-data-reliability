@@ -7,6 +7,7 @@
 ## Delivery
 
 - 사용자가 standalone working artifact를 repository `inbox/`에 저장하라고 요청했고 기존 작업 branch나 Pull Request가 그 artifact를 소유하지 않으면 dedicated `inbox` branch에 저장한다.
+- 이 경우에만 일반 [Draft Pull Request delivery](../docs/development/vcs-git/pull-request.md)에 대한 path-scoped exception으로 direct push할 수 있다.
 - 이미 진행 중인 repository 변경, branch 또는 Pull Request와 직접 연결된 artifact는 명시적 요청이 없는 한 그 작업 branch에 함께 둔다.
 - Inbox artifact를 저장하기 위해 다른 agent의 branch로 전환하거나 그 branch를 갱신하지 않는다.
 - Dedicated `inbox` branch 사용은 chatbot의 standalone artifact delivery에만 허용되는 예외다. Local agent의 일반 작업이나 repository 변경 workflow로 확장하지 않는다.
