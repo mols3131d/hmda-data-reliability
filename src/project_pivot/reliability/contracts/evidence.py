@@ -13,7 +13,7 @@ class EvidenceSource(StrEnum):
     TABLE_METADATA = "table_metadata"
     DBT_ARTIFACT = "dbt_artifact"
     CATALOG = "catalog"
-    DAGSTER = "dagster"
+    ORCHESTRATION = "orchestration"
 
 
 class Evidence(ReliabilityContract):

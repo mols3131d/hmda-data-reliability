@@ -1,1 +1,1 @@
-"""Dagster data plane orchestration adapter package."""
+"""Data-plane orchestration adapter package."""

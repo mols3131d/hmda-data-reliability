@@ -56,7 +56,7 @@ flowchart TB
 | --- | --- | --- |
 | Runtime | `Python 3.13`, `uv` | local 환경과 dependency 관리 |
 | Data | `DuckDB`, `dbt Core`, `Polars`, `PyArrow` | ingestion, query, transform |
-| Orchestration | `Dagster` | data-plane asset과 job 실행 |
+| Orchestration | `Apache Airflow 3.3.0` | data-plane DAG 실행 |
 | Contracts | `Pydantic` | reliability contract와 AI review model |
 | Agentic review | `LangGraph` | bounded remediation review |
 

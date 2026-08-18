@@ -10,7 +10,7 @@
 | In scope | Out of scope |
 | --- | --- |
 | metadata/profile evidence와 incident detection | source acquisition과 dbt model 작성 |
-| dbt lineage impact와 deterministic remediation draft | Dagster orchestration |
+| dbt lineage impact와 deterministic remediation draft | Airflow data-plane orchestration |
 | validated recovery proposal과 approved recovery | automatic approval |
 | deterministic recovery/replay evaluation | human approval UI와 production monitoring |
 

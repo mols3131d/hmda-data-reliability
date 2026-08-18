@@ -43,7 +43,7 @@ runtime evidence는 목적이 아니라 **복원 질문에 답하기 위한 surf
 | --- | --- |
 | result가 필요한 상태 전이와 최종 action을 이미 충분히 노출한다 | 추가 log 없이 result를 owner로 유지한다. |
 | 같은 failure를 하위·중간·상위 layer가 모두 기록한다 | failure를 소유하거나 처리하는 boundary를 남기고 반복 evidence를 제거한다. |
-| Dagster asset이 durable 결과를 `MaterializeResult.metadata`에 남기고 같은 값을 completion log에도 반복한다 | durable result는 metadata가 소유하고, log는 별도 operator-visible 사건이 필요할 때만 남긴다. |
+| Airflow task가 durable 결과를 Asset event metadata에 남기고 같은 값을 completion log에도 반복한다 | durable result는 Asset event metadata가 소유하고, log는 별도 operator-visible 사건이 필요할 때만 남긴다. |
 | dbt build 결과나 실패를 이해해야 한다 | [dbt Runtime Evidence](dbt-evidence.md)의 artifact-first 기준을 따른다. |
 
 이 예시는 해법을 고정하지 않는다. 실제 reconstruction question과 기존 consumer contract가 우선한다.

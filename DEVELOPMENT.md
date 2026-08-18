@@ -26,7 +26,7 @@
 | Runtime | `Python>=3.13` |
 | Package manager | `uv` |
 | Data platform | `DuckDB`, `dbt` |
-| Orchestration | `Dagster` |
+| Orchestration | `Apache Airflow 3.3.0` |
 | Analysis | `Polars` |
 
 ## Layer Tool Choices
@@ -38,7 +38,7 @@
 | Contracts | `Pydantic` | reliability structured models |
 | Control quality | custom profiler/detector | profile snapshot과 detection rules |
 | Remediation | `LangGraph` | remediation draft 경로만 |
-| Orchestration | `Dagster` | asset와 `pipeline_job` |
+| Orchestration | `Apache Airflow` | DAG dependency와 task/data-update evidence |
 
 `PyIceberg`는 dependency로 존재하지만 active table engine으로 사용하지 않는다. Spark, cloud warehouse, FastAPI 기반 통합 pipeline CLI, OpenTelemetry, 외부 catalog와 approval UI는 현재 active toolchain에 포함하지 않는다.
 

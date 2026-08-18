@@ -40,22 +40,22 @@ flowchart TB
     human --> recovery["Approved Recovery"]
     recovery --> verify["Deterministic Re-validation"]
 
-    dagster["Dagster"] -. data plane .-> bronze
-    dagster -. data plane .-> analytical
+    airflow["Apache Airflow"] -. data plane .-> bronze
+    airflow -. data plane .-> analytical
 ```
 
-Dagster는 최소 Data Lake의 data plane을 실행한다. Reliability control-plane, Agentic review와 approval을 data plane에 암묵적으로 자동 결합하지 않는다. Agentic review는 MVP proof에는 필요하지만 기존 deterministic `RecoveryProposal` / approval / recovery contract의 authority를 대체하거나 새로운 authorization prerequisite를 만들지 않는다.
+Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-plane, Agentic review와 approval을 data plane에 암묵적으로 자동 결합하지 않는다. Agentic review는 MVP proof에는 필요하지만 기존 deterministic `RecoveryProposal` / approval / recovery contract의 authority를 대체하거나 새로운 authorization prerequisite를 만들지 않는다.
 
 ## System Invariants
 
 1. **Deterministic truth first** — detection과 핵심 safety 판단을 LLM에 맡기지 않는다.
-2. **Evidence-bound AI** — Agentic 판단은 저장소가 제공한 evidence와 deterministic `RemediationDraft`를 근거로 한다.
-3. **Proposal-bound approval** — human approval은 검증된 `RecoveryProposal`에 결합된다.
-4. **Advisory, not authoritative** — Agentic review는 human decision을 보조하지만 approval/recovery authority를 획득하거나 변경하지 않는다.
-5. **Human-controlled mutation** — AI output만으로 데이터 state를 변경할 수 없다.
-6. **Locally reproducible core** — Data Lake, Reliability와 safety contract는 외부 model 호출 없이 반복 검증할 수 있다.
-7. **Observable live judgment** — 실제 Agentic invocation은 입력 근거, model/prompt 조건, 결과와 실행 비용·성능을 검토할 evidence를 남긴다.
-8. **Acceptance over feature count** — 기능 수보다 하나의 완결된 proof로 MVP를 판단한다.
+1. **Evidence-bound AI** — Agentic 판단은 저장소가 제공한 evidence와 deterministic `RemediationDraft`를 근거로 한다.
+1. **Proposal-bound approval** — human approval은 검증된 `RecoveryProposal`에 결합된다.
+1. **Advisory, not authoritative** — Agentic review는 human decision을 보조하지만 approval/recovery authority를 획득하거나 변경하지 않는다.
+1. **Human-controlled mutation** — AI output만으로 데이터 state를 변경할 수 없다.
+1. **Locally reproducible core** — Data Lake, Reliability와 safety contract는 외부 model 호출 없이 반복 검증할 수 있다.
+1. **Observable live judgment** — 실제 Agentic invocation은 입력 근거, model/prompt 조건, 결과와 실행 비용·성능을 검토할 evidence를 남긴다.
+1. **Acceptance over feature count** — 기능 수보다 하나의 완결된 proof로 MVP를 판단한다.
 
 ## Domain Completion Gates
 
@@ -67,7 +67,7 @@ Dagster는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 | [Data Platform](domains/data-platform.md) | Bronze → staging → mart와 채택된 dbt artifact/lineage evidence를 추적할 수 있다. |
 | [Data Operations](domains/data-operations.md) | ingestion/dbt/reliability execution과 candidate/current adoption boundary, failure evidence가 명확하다. |
 | [Reliability](domains/reliability.md) | deterministic incident → bounded Agentic review + validated proposal/approval → recovery → re-validation을 닫는다. |
-| [Orchestration](domains/orchestration.md) | Bronze와 dbt analytical layer의 local data plane을 Dagster dependency로 반복 실행한다. |
+| [Orchestration](domains/orchestration.md) | Bronze와 dbt analytical layer의 local data plane을 Airflow dependency로 반복 실행한다. |
 
 ## MVP Acceptance
 
@@ -86,7 +86,7 @@ Dagster는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 
 - local HMDA CSV/Parquet와 Source → DuckDB Bronze 적재
 - dbt staging/marts와 artifact evidence
-- Dagster local data plane
+- Airflow local data plane
 - deterministic profiling, incident, impact, `RemediationDraft`, recovery와 evaluation
 - 대표 synthetic incident를 사용하는 최소 Agentic review
 - Agentic contract evaluation과 최소 한 번의 observable live model proof

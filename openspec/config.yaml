@@ -2,7 +2,7 @@ schema: spec-driven-tdd
 
 context: |
   로컬 HMDA 데이터의 수집, 변환과 reliability lifecycle을 다루는 데이터 엔지니어링 프로젝트다.
-  주요 기술은 Python, DuckDB, dbt, Dagster, pytest, uv다.
+  주요 기술은 Python, DuckDB, dbt, Apache Airflow, pytest, uv다.
 
   Domain ownership은 docs/domains/OVERVIEW.md를 따른다.
 
