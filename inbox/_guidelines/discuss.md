@@ -73,7 +73,7 @@ Research → Plan → Implement → Review → publish
 1. **Plan** — choose the smallest claim, challenge, correction, or transition this turn must resolve.
 1. **Implement** — author only the participant-owned contribution. In this workflow, Implement means writing the discussion artifact, not modifying source code. A may also update A-owned shared state or synthesis when allowed.
 1. **Review** — self-review correctness, evidence, strongest counterargument, repetition, and scope. If a material finding remains, repeat the full workflow from Research.
-1. **Publish** — persist the completed turn, prefer one turn per commit, push, then exit.
+1. **Publish** — persist the completed turn using the current environment's applicable repository workflow, then exit. This protocol does not choose or change branch, commit, push, merge, or Pull Request behavior.
 
 Default refinement bounds:
 
@@ -144,7 +144,7 @@ The **6–12 hour window is a timebox, not a quota**. Stop early when resolved. 
 ### One Invocation = One Turn
 
 ```text
-read → check eligibility → run Turn Workflow → commit/push → exit
+read → check eligibility → run Turn Workflow → persist → exit
 ```
 
 Each invocation handles at most one participant turn or A synthesis. Do not sleep, wait for another participant, or attempt delayed turns inside one invocation. Time budgets are soft ceilings for useful work.
