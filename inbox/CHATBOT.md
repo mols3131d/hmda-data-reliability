@@ -2,7 +2,7 @@
 
 이 entry는 GitHub 같은 연결 도구로 `inbox/**`를 다루는 AI chat service에만 적용한다.
 
-Inbox의 의미, artifact contract와 lifecycle은 [`AGENTS.md`](AGENTS.md)를 따른다. 이 파일은 **chatbot의 artifact delivery 방식만** 추가한다.
+작업 전에 [`AGENTS.md`](AGENTS.md)를 읽고 Inbox의 의미, artifact contract와 lifecycle을 따른다. 이 파일은 **chatbot의 artifact delivery 방식만** 추가한다.
 
 ## Delivery
 
