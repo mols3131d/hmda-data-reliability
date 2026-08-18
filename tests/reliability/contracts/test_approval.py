@@ -28,8 +28,8 @@ def test_approved_approval_requires_approver_and_time() -> None:
         )
 
 
-def test_only_approved_approval_allows_execution() -> None:
-    """승인된 Approval만 위험 작업 실행을 허용하는지 검증한다."""
+def test_only_approved_status_allows_execution_gate_to_continue() -> None:
+    """승인 상태만 action-specific execution gate 진행을 허용하는지 검증한다."""
     requested_at = datetime(2026, 6, 6, 0, 0, tzinfo=UTC)
     approved = Approval(
         approval_id="approval_approved",

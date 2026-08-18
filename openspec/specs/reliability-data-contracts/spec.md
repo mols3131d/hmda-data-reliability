@@ -64,14 +64,15 @@
 
 ### Requirement: Approval contract
 
-시스템은 위험 작업 실행 여부를 `Approval` contract로 표현해야 한다(SHALL).
+시스템은 위험 작업에 대한 외부 review 상태를 `Approval` contract로 표현해야 한다(SHALL). `approved` 상태만으로 target mutation authority를 부여해서는 안 되며(MUST NOT), 실제 위험 작업 실행은 해당 owning recovery capability가 요구하는 exact proposal, target state와 action binding을 추가로 검증해야 한다(MUST).
 
-#### Scenario: 승인된 작업만 실행 가능
+#### Scenario: 승인 상태 기록
 
-- **GIVEN** incident remediation plan이 생성됨
+- **GIVEN** 검토 대상 incident와 recovery proposal이 존재함
 - **WHEN** `Approval.status`가 `approved`임
 - **THEN** approval은 `approved_by`와 `approved_at`을 포함해야 함
-- **AND** partition overwrite, backfill, validation workflow 실행 대상으로 사용할 수 있어야 함
+- **AND** 해당 상태는 action-specific execution gate를 평가할 수 있게 해야 함
+- **AND** approval status만으로 partition overwrite, backfill 또는 다른 target mutation을 실행해서는 안 됨
 
 #### Scenario: 미승인 작업 차단
 
