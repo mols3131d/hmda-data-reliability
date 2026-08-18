@@ -1,5 +1,7 @@
 """Airflow data-plane DAG structure tests."""
 
+from typing import Any, cast
+
 import pytest
 from airflow.sdk import Asset
 
@@ -23,8 +25,11 @@ def test_airflow_dag_owns_the_ordered_data_plane() -> None:
         "build_dbt_loan_analytics",
     }
 
-    raw_task = project_pivot_data_plane.get_task("load_raw_hmda_loans")
-    analytics_task = project_pivot_data_plane.get_task("build_dbt_loan_analytics")
+    raw_task = cast(Any, project_pivot_data_plane.get_task("load_raw_hmda_loans"))
+    analytics_task = cast(
+        Any,
+        project_pivot_data_plane.get_task("build_dbt_loan_analytics"),
+    )
 
     assert raw_task.upstream_task_ids == set()
     assert raw_task.downstream_task_ids == {"build_dbt_loan_analytics"}
@@ -37,8 +42,11 @@ def test_airflow_dag_owns_the_ordered_data_plane() -> None:
 def test_airflow_tasks_expose_stable_assets_without_domain_payloads() -> None:
     """Assets identify updates while domain objects stay out of task transport."""
 
-    raw_task = project_pivot_data_plane.get_task("load_raw_hmda_loans")
-    analytics_task = project_pivot_data_plane.get_task("build_dbt_loan_analytics")
+    raw_task = cast(Any, project_pivot_data_plane.get_task("load_raw_hmda_loans"))
+    analytics_task = cast(
+        Any,
+        project_pivot_data_plane.get_task("build_dbt_loan_analytics"),
+    )
 
     assert raw_task.outlets == [RAW_HMDA_LOANS_ASSET]
     assert analytics_task.outlets == [ANALYTICS_LOAN_ASSET]

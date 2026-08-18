@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Final
 
 from airflow.sdk import Asset, Param, dag, get_current_context, task
 from airflow.sdk.exceptions import AirflowSkipException
+from pydantic.types import JsonValue
 
 from project_pivot.data_operations import (
     load_raw_data,
@@ -42,7 +44,7 @@ def _runtime_overrides() -> dict[str, object]:
     }
 
 
-def _set_asset_evidence(asset: Asset, evidence: dict[str, object]) -> None:
+def _set_asset_evidence(asset: Asset, evidence: Mapping[str, JsonValue]) -> None:
     """Attach execution-independent data-update evidence to a successful outlet."""
 
     context = get_current_context()
