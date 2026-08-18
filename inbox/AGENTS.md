@@ -15,13 +15,13 @@
 
 ## Use
 
-Inbox는 다음처럼 **유용하지만 아직 canonical ownership이 필요하지 않은 작업물**에 사용한다.
+Inbox는 다음처럼 **유용하지만 canonical ownership을 요구하지 않는 작업물**에 사용한다.
 
 - research, review, report, brief, discussion, plan
 - 현재 작업 상태, checkpoint, next action
 - agent-to-agent handoff 또는 coordination note
 - 판단 근거, 실험 결과, 재현 정보와 기타 evidence
-- 이후 삭제하거나 canonical owner로 옮겨도 되는 임시 작업 기록
+- 필요하면 폐기하거나 핵심 내용만 canonical owner에 반영할 수 있는 임시 작업 기록
 
 Artifact type은 open-ended다. 목적을 가장 잘 설명하는 lowercase kebab-case type을 사용하고, 적절한 이름이 없으면 긴 문서는 `report`, 짧은 문서는 `brief`를 사용한다.
 
@@ -38,6 +38,8 @@ tags: [] # Optional
 ---
 ```
 
+`type`, `title`, `description`은 required이며 filename과 frontmatter의 type은 같아야 한다.
+
 기본 경로는 다음과 같다.
 
 ```text
@@ -47,6 +49,7 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 
 - Date와 time은 `Asia/Seoul` 기준이다.
 - Lowercase kebab-case를 사용한다.
+- `type`, `domain`, `short-title`은 required다.
 - Optional component는 identification이나 retrieval에 실제 도움이 될 때만 추가한다.
 - 같은 작업의 status나 handoff를 이어서 기록할 수 있으면 새 artifact를 남발하지 않고 기존 artifact를 갱신한다.
 
