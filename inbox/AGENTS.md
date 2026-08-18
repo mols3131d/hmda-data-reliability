@@ -1,6 +1,6 @@
 # Inbox
 
-`inbox/`는 canonical repository state가 되기 전의 **non-canonical working artifact workspace**다.
+`inbox/`는 canonical repository state와 분리된 **non-canonical working artifact workspace**다.
 
 조사, 리뷰, 토론, 브리핑, 계획, 작업 상태와 checkpoint, handoff, agent 간 communication, evidence, 임시 메모처럼 중간 맥락을 남길 가치가 있는 작업 산출물을 둘 수 있다.
 
