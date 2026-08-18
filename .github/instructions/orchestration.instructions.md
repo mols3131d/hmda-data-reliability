@@ -1,11 +1,12 @@
 ---
 name: Orchestration
-description: "Use when editing Dagster assets, resources, jobs, or definitions under src/project_pivot/orchestration or tests/orchestration. Covers pipeline_job scope and graph boundaries."
+description: "Use when editing the Apache Airflow data-plane DAG, runtime adapter, or orchestration tests under src/project_pivot/orchestration or tests/orchestration. Covers the single DAG scope and domain boundaries."
 applyTo: "src/project_pivot/orchestration/**,tests/orchestration/**"
 ---
 
-- Entry: `project_pivot.orchestration.definitions` (`defs`, `pipeline_job`). Codegen: `tool.dg` in `pyproject.toml`.
-- Graph only: `raw_hmda_loans` (Bronze) → `dbt_loan_analytics` (Silver/Gold). Keep `pipeline_job` to that sequence.
-- Resources map config → domain request; business logic stays in domain packages, not asset bodies.
-- Out of graph: schedules, sensors, asset checks, reliability lifecycle, approval, backfill, evaluation, report file writes.
-- Do not wire lifecycle into `pipeline_job`.
+- Entry: `project_pivot.orchestration.dags.project_pivot_data_plane` (`project_pivot_data_plane`). Use the `airflow.sdk` public authoring surface.
+- Graph only: `load_raw_hmda_loans` (Bronze) → `build_dbt_loan_analytics` (Silver/Gold). Keep one DAG, `schedule=None`, `catchup=False`, `max_active_runs=1` and task `retries=0`.
+- Runtime config maps only supported trigger values to `DataOperationRequest`; business logic stays in Data Operations and Reliability packages.
+- Use logical `Asset` outlets for update evidence. Do not transport domain requests/results, DataFrames or Arrow tables through task payloads.
+- Out of graph: schedules, automatic retry, sensors, dynamic mapping, distributed executor, custom operator/plugin, reliability lifecycle, approval, backfill, evaluation, LLMOps and report file writes.
+- Do not wire lifecycle or recovery into `project_pivot_data_plane`.

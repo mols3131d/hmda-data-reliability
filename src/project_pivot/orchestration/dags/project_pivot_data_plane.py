@@ -1,0 +1,136 @@
+"""Airflow adapter for the Project Pivot raw-to-analytics data plane."""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import Mapping
+from datetime import datetime
+from typing import Final
+
+from airflow.sdk import Asset, Param, dag, get_current_context, task
+from airflow.sdk.exceptions import AirflowSkipException
+from pydantic.types import JsonValue
+
+from project_pivot.data_operations import (
+    load_raw_data,
+    promote_dbt_artifacts,
+    run_dbt_build,
+)
+from project_pivot.orchestration.config import data_operation_request_from_runtime
+
+log = logging.getLogger(__name__)
+
+RAW_HMDA_LOANS_ASSET: Final = Asset("project_pivot/raw/hmda_loans")
+ANALYTICS_LOAN_ASSET: Final = Asset("project_pivot/analytics/loan_analytics")
+
+_RUNTIME_OVERRIDE_FIELDS: Final = (
+    "database_path",
+    "source_root",
+    "source_year",
+    "source_file",
+    "run_dbt_build",
+)
+
+
+def _runtime_overrides() -> dict[str, object]:
+    """Read only the runtime fields exposed by the Airflow trigger form."""
+
+    context = get_current_context()
+    params = context.get("params", {})
+    return {
+        field: params[field]
+        for field in _RUNTIME_OVERRIDE_FIELDS
+        if field in params and params[field] is not None
+    }
+
+
+def _set_asset_evidence(asset: Asset, evidence: Mapping[str, JsonValue]) -> None:
+    """Attach execution-independent data-update evidence to a successful outlet."""
+
+    context = get_current_context()
+    context["outlet_events"][asset].extra.update(evidence)
+
+
+@task(
+    task_id="load_raw_hmda_loans",
+    outlets=[RAW_HMDA_LOANS_ASSET],
+    retries=0,
+    do_xcom_push=False,
+)
+def load_raw_hmda_loans() -> None:
+    """Delegate raw ingestion to Data Operations."""
+
+    request = data_operation_request_from_runtime(_runtime_overrides())
+    result = load_raw_data(request)
+    _set_asset_evidence(
+        RAW_HMDA_LOANS_ASSET,
+        {
+            "execution_stage": "raw_load",
+            "data_update": True,
+            "database_path": str(result.database_path),
+            "source_root": str(result.source_root),
+            "source_file_count": result.source_file_count,
+            "source_year": result.source_year,
+            "hmda_loans_row_count": result.hmda_loans_row_count,
+        },
+    )
+    log.info(
+        "raw HMDA loans 적재 완료: source_year=%s row_count=%s",
+        result.source_year,
+        result.hmda_loans_row_count,
+    )
+
+
+@task(
+    task_id="build_dbt_loan_analytics",
+    outlets=[ANALYTICS_LOAN_ASSET],
+    retries=0,
+    do_xcom_push=False,
+)
+def build_dbt_loan_analytics() -> None:
+    """Delegate dbt build and candidate promotion to Data Operations."""
+
+    request = data_operation_request_from_runtime(_runtime_overrides())
+    if not request.run_dbt_build:
+        log.info("dbt build 건너뜀: run_dbt_build=false")
+        raise AirflowSkipException("run_dbt_build=false")
+
+    result = run_dbt_build(request)
+    promote_dbt_artifacts(result, request)
+    _set_asset_evidence(
+        ANALYTICS_LOAN_ASSET,
+        {
+            "execution_stage": "analytics_build",
+            "data_update": True,
+            "return_code": result.return_code,
+            "manifest_path": str(result.manifest_path),
+            "run_results_path": str(result.run_results_path),
+            "projection_id": result.projection_id,
+        },
+    )
+    log.info("dbt loan analytics 완료: projection_id=%s", result.projection_id)
+
+
+@dag(
+    dag_id="project_pivot_data_plane",
+    schedule=None,
+    start_date=datetime(2026, 1, 1),
+    catchup=False,
+    max_active_runs=1,
+    params={
+        "database_path": Param(None, type=["null", "string"]),
+        "source_root": Param(None, type=["null", "string"]),
+        "source_year": Param(None, type=["null", "integer"]),
+        "source_file": Param(None, type=["null", "string"]),
+        "run_dbt_build": Param(None, type=["null", "boolean"]),
+    },
+)
+def _project_pivot_data_plane() -> None:
+    """Define the single manual, non-retrying raw-to-analytics workflow."""
+
+    raw_task = load_raw_hmda_loans()
+    analytics_task = build_dbt_loan_analytics()
+    raw_task >> analytics_task
+
+
+project_pivot_data_plane = _project_pivot_data_plane()
