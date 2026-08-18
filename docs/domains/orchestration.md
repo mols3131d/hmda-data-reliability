@@ -3,7 +3,7 @@
 **`orchestration`은 Bronze 적재와 dbt 분석만 연결한다.** Domain business logic은 공개 API로 위임하며, reliability lifecycle과 recovery/evaluation은 Airflow DAG에 넣지 않는다.
 
 > [!IMPORTANT]
-> **`project_pivot_data_plane`은 수동 data-plane 실행 전용이다.** `schedule=None`, `catchup=False`, `max_active_runs=1`, task `retries=0`이며 approval이나 승인된 side effect를 암묵적으로 실행하지 않는다.
+> **`project_pivot_data_plane`은 수동 data-plane 실행 전용이다.** Schedule과 automatic retry를 사용하지 않으며 approval이나 승인된 side effect를 암묵적으로 실행하지 않는다.
 
 ## Scope
 
@@ -51,21 +51,21 @@ Airflow가 전체 data-plane 순서를 유일하게 소유한다. `DataOperation
 
 Task execution state와 data update evidence는 별개다. 성공한 raw task는 raw logical asset event를 기록하고, analytics task는 dbt candidate가 promotion된 뒤에만 analytics asset event를 기록한다. 실패하거나 skip된 analytics task는 성공 update evidence를 남기지 않는다.
 
-`run_dbt_build=False`이면 analytics task는 `AirflowSkipException`으로 `SKIPPED`가 된다. raw task 성공은 보존되고 candidate promotion은 실행되지 않는다.
+`run_dbt_build=False`이면 analytics task는 명시적으로 `SKIPPED`가 된다. raw task 성공은 보존되고 candidate promotion은 실행되지 않는다.
 
 ## Runtime Configuration
 
-[`config.py`](../../src/project_pivot/orchestration/config.py)의 `data_operation_request_from_runtime()`이 지원된 override를 최종 [`DataOperationRequest`](../../src/project_pivot/data_operations/request.py)로 변환한다. precedence는 explicit runtime value > supported environment value > request default이며, 최종 validation은 Data Operations model이 소유한다.
+[`config.py`](../../src/project_pivot/orchestration/config.py)의 `data_operation_request_from_runtime()`이 지원된 override를 최종 [`DataOperationRequest`](../../src/project_pivot/data_operations/request.py)로 변환한다. Precedence는 explicit runtime value > supported environment value > request default이며, 최종 validation은 Data Operations model이 소유한다.
 
-Airflow trigger surface에는 다음 field만 노출한다.
+Airflow trigger surface는 다음 runtime override만 노출한다.
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `database_path` | `data/project_pivot.duckdb` | DuckDB 파일 경로 |
-| `source_root` | `data/raw/hmda` | HMDA 원천 디렉터리 |
-| `source_year` | `2025` | 적재 partition |
-| `source_file` | `None` | 선택 원천 파일명 |
-| `run_dbt_build` | `None` → request default `true` | dbt build 실행 여부 |
+- `database_path`
+- `source_root`
+- `source_year`
+- `source_file`
+- `run_dbt_build`
+
+Exact default와 validation rule은 `DataOperationRequest`가 소유하며 Airflow adapter는 이를 복제하지 않는다.
 
 Airflow adapter는 file discovery, ingestion, dbt subprocess, artifact validation/promotion, 오류 변환을 직접 구현하지 않는다.
 
