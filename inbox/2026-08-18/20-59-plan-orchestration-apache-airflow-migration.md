@@ -1,7 +1,7 @@
 ---
 type: plan
 title: Apache Airflow 마이그레이션 실행 계획
-description: Dagster data plane을 Airflow로 교체하기 위한 dependency, contract, implementation, validation, cutover 순서를 정의한다.
+description: data-plane orchestration을 Airflow로 교체하기 위한 dependency, contract, implementation, validation, cutover 순서를 정의한다.
 tags:
   - orchestration
   - airflow
@@ -24,7 +24,7 @@ flowchart LR
     contract --> adapter["Config Adapter"]
     adapter --> dag["Airflow DAG"]
     dag --> runtime["Runtime Validation"]
-    runtime --> cutover["Dagster Cutover"]
+    runtime --> cutover["Cutover"]
     cutover --> cleanup["Docs + Final Scan"]
 ```
 
@@ -36,7 +36,7 @@ flowchart LR
 4. reliability lifecycle, approval, recovery, evaluation은 DAG 밖에 둔다.
 5. migration 중 scheduling, retry, distributed executor 같은 새 기능을 추가하지 않는다.
 6. 최종 configuration validation은 `DataOperationRequest`가 담당한다.
-7. historical Dagster artifacts는 보존한다.
+7. archive와 historical artifact는 active cleanup scope와 분리한다.
 
 # Phase 0. Baseline capture
 
@@ -69,7 +69,7 @@ flowchart LR
 ## Exit gate
 
 - 보존 behavior와 의도적 semantic delta가 분리되어 있다.
-- Dagster-specific active surface inventory가 확정되어 있다.
+- orchestration vendor-specific active surface inventory가 확정되어 있다.
 
 # Phase 1. Dependency feasibility gate
 
@@ -127,7 +127,7 @@ orchestration-pipeline-migrate-airflow
 
 다음만 합의한다.
 
-- Dagster → Airflow runtime 교체
+- active data-plane runtime을 Airflow로 교체
 - existing data-plane behavior 유지
 - vendor-specific orchestration evidence 제거
 - non-goal 명시
@@ -167,13 +167,13 @@ orchestration-pipeline-migrate-airflow
 
 ## Exit gate
 
-구현자가 기존 Dagster code를 읽지 않아도 target behavior와 failure semantics를 이해할 수 있어야 한다.
+구현자가 기존 orchestration implementation을 역추적하지 않아도 target behavior와 failure semantics를 이해할 수 있어야 한다.
 
 # Phase 3. Runtime configuration adapter
 
 ## 목표
 
-Dagster `ConfigurableResource`에 섞인 generic precedence logic을 framework-independent adapter로 분리한다.
+현재 orchestration resource에 섞인 generic precedence logic을 framework-independent adapter로 분리한다.
 
 권장 위치:
 
@@ -342,7 +342,7 @@ analytics asset event = 없음
 DAG = SUCCESS
 ```
 
-기존 Dagster처럼 실행하지 않은 analytics materialization을 만들지 않는다.
+실행하지 않은 analytics stage를 asset update로 기록하지 않는다.
 
 이 semantic delta는 Spec과 test에서 명시적으로 고정한다.
 
@@ -419,7 +419,7 @@ Validation ladder:
 
 # Phase 11. Cutover
 
-Airflow behavior가 acceptance를 충족한 뒤에만 Dagster를 제거한다.
+Airflow behavior가 acceptance를 충족한 뒤에만 기존 orchestrator runtime을 제거한다.
 
 ## Removal
 
@@ -464,7 +464,7 @@ Dagster direct dependency뿐 아니라 stale transitive dependency가 `uv.lock`�
 
 # Phase 13. Final active-surface scan
 
-다음 scope에서 stale active Dagster reference를 찾는다.
+다음 scope에서 stale active vendor reference를 찾는다.
 
 - `src/**`
 - `tests/**`
@@ -473,38 +473,21 @@ Dagster direct dependency뿐 아니라 stale transitive dependency가 `uv.lock`�
 - `pyproject.toml`
 - current agent/rule configuration
 
-다음은 제외한다.
+Archive, 과거 inbox artifact와 Git history는 active-surface failure로 간주하지 않는다.
 
-- `openspec/changes/archive/**`
-- 과거 inbox artifacts
-- Git history
+# Delivery boundary
 
-# PR / commit 전략
+기본 delivery unit은 현재 migration branch 하나와 coherent Draft PR 하나다.
 
-기본은 현재 migration branch 하나와 coherent Draft PR 하나다.
-
-내부 commit은 논리적 단계로 분리한다.
-
-```text
-docs: define airflow migration contracts
-chore: resolve airflow runtime dependency
-refactor: extract orchestration config adapter
-feat: add airflow data plane dag
-test: migrate orchestration coverage
-refactor: decouple reliability evidence source
-chore: remove dagster runtime
-docs: align airflow architecture
-```
-
-별도 PR은 dependency feasibility가 독립적인 위험으로 확인될 때만 고려한다.
+Implementation 과정의 commit 구조는 이 계획에서 규정하지 않는다. dependency feasibility가 독립적인 위험으로 분리되어야 할 때만 별도 PR을 고려한다.
 
 # Rollback
 
 production dual-run infrastructure는 만들지 않는다.
 
-rollback unit은 Git commit이다.
+rollback unit은 migration branch의 검증된 commit이다.
 
-다음이 발생하면 Dagster removal 전에 중단한다.
+다음이 발생하면 기존 orchestrator removal 전에 중단한다.
 
 - dependency incompatibility
 - 기존 domain behavior regression
@@ -514,9 +497,7 @@ rollback unit은 Git commit이다.
 
 # 완료 정의
 
-Migration은 Airflow UI가 뜬 것으로 끝나지 않는다.
-
-다음이 모두 사실일 때 완료다.
+다음이 모두 사실일 때 migration이 완료된다.
 
 1. Airflow가 유일한 data-plane orchestration owner다.
 2. raw → dbt → promotion contract가 유지된다.
@@ -524,5 +505,5 @@ Migration은 Airflow UI가 뜬 것으로 끝나지 않는다.
 4. domain logic duplication이 없다.
 5. failure/skip semantics가 테스트로 고정되어 있다.
 6. reliability contract가 orchestrator vendor에 종속되지 않는다.
-7. Dagster active runtime/dependency/configuration이 제거됐다.
+7. active Dagster runtime/dependency/configuration이 제거됐다.
 8. active docs와 canonical Specs가 Airflow 상태와 일치한다.
