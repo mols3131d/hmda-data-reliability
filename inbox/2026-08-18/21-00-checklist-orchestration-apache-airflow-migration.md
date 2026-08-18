@@ -1,7 +1,7 @@
 ---
 type: checklist
 title: Apache Airflow 마이그레이션 체크리스트
-description: Dagster에서 Apache Airflow로의 cutover를 단계별로 검증하기 위한 실행 및 acceptance checklist다.
+description: Airflow data-plane cutover의 실행 조건과 acceptance를 단계별로 검증한다.
 tags:
   - orchestration
   - airflow
@@ -23,8 +23,8 @@ tags:
 - [ ] `tests/orchestration/**` current behavior 확인
 - [ ] `orchestration-pipeline` canonical Spec 확인
 - [ ] `reliability-data-contracts` canonical Spec 확인
-- [ ] Dagster-specific active reference inventory 작성
-- [ ] historical/archive reference는 cleanup scope에서 제외
+- [ ] orchestrator-specific active reference inventory 작성
+- [ ] archive와 historical artifact는 active cleanup scope에서 제외
 
 ## 1. Dependency gate
 
@@ -52,13 +52,13 @@ tags:
 - [ ] affected capability에 `reliability-data-contracts` 포함
 - [ ] scheduling/retry/cloud/LLMOps를 non-goal로 명시
 - [ ] orchestration Spec을 observable behavior 중심으로 갱신
-- [ ] `EvidenceSource.DAGSTER` vendor coupling 제거를 Spec에 반영
+- [ ] vendor-specific reliability evidence coupling 제거를 Spec에 반영
 - [ ] Design에 Airflow-specific implementation decision 기록
 - [ ] Tasks가 독립적으로 검증 가능한 결과 단위로 구성됨
 
 ## 3. Config adapter
 
-- [ ] Dagster `ConfigurableResource`에서 generic precedence logic 분리
+- [ ] orchestration resource에서 generic precedence logic 분리
 - [ ] plain mapping 기반 adapter 작성
 - [ ] 최종 validation authority가 `DataOperationRequest`임을 유지
 - [ ] `database_path` override 지원
@@ -147,10 +147,10 @@ tags:
 
 - [ ] `EvidenceSource.DAGSTER` 제거
 - [ ] `EvidenceSource.ORCHESTRATION` 도입
-- [ ] `EvidenceSource.AIRFLOW` 같은 새 vendor coupling을 만들지 않음
+- [ ] 새 orchestrator vendor coupling을 만들지 않음
 - [ ] serialization/test 갱신
 - [ ] `reliability-data-contracts` Spec 갱신
-- [ ] active reliability guide의 Dagster-specific 문구 갱신
+- [ ] active reliability guide의 vendor-specific 문구 갱신
 - [ ] reliability behavior 자체는 변경하지 않음
 
 ## 11. Test migration
@@ -210,7 +210,7 @@ tags:
 
 ## 14. Cutover
 
-Airflow acceptance가 모두 닫히기 전에는 아래를 수행하지 않는다.
+Airflow acceptance가 모두 닫히기 전에는 기존 orchestrator runtime을 제거하지 않는다.
 
 - [ ] Airflow runtime behavior parity 확인
 - [ ] E2E 성공 확인
@@ -254,11 +254,7 @@ Airflow acceptance가 모두 닫히기 전에는 아래를 수행하지 않는�
 - [ ] `pyproject.toml`
 - [ ] current agent/rule configuration
 
-다음은 scan failure로 간주하지 않는다.
-
-- [ ] `openspec/changes/archive/**`의 역사 기록
-- [ ] 과거 inbox artifact
-- [ ] Git history
+Archive, 과거 inbox artifact와 Git history의 Dagster reference는 active-surface failure로 간주하지 않는다.
 
 ## 17. Repository validation
 
@@ -273,7 +269,7 @@ Airflow acceptance가 모두 닫히기 전에는 아래를 수행하지 않는�
 
 ## 18. Definition of Done
 
-다음 문장을 하나라도 거짓으로 만들면 migration은 완료가 아니다.
+다음이 모두 사실이어야 한다.
 
 - [ ] Airflow가 유일한 full data-plane orchestrator다.
 - [ ] Airflow task는 thin adapter다.
@@ -282,6 +278,6 @@ Airflow acceptance가 모두 닫히기 전에는 아래를 수행하지 않는�
 - [ ] control plane은 DAG 밖에 있다.
 - [ ] disabled dbt는 `SKIPPED`로 관찰된다.
 - [ ] 실패한 analytics는 asset update로 기록되지 않는다.
-- [ ] Reliability contract가 Airflow 또는 Dagster vendor에 종속되지 않는다.
+- [ ] Reliability contract가 orchestrator vendor에 종속되지 않는다.
 - [ ] active Dagster dependency/import/configuration이 없다.
 - [ ] canonical Specs, runtime, tests, durable docs가 서로 일치한다.
