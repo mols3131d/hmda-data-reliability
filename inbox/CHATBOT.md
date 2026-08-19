@@ -13,6 +13,14 @@ Dedicated `inbox` branch는 standalone artifact의 delivery/storage ref일 뿐 g
 - Guidance가 변경되어도 이를 반영하기 위해 `main`을 `inbox`에 sync하거나 운영 자산을 direct push하지 않는다.
 - Repository state가 필요하면 해당 작업의 owning source와 current branch를 직접 읽어 evidence로 사용한다.
 
+### Legacy Bootstrap
+
+이 정책이 기존 dedicated `inbox` branch에 처음 적용될 때는 **1회 migration**이 필요하다.
+
+- Merge된 default-branch state에서 이 `inbox/CHATBOT.md`가 dedicated `inbox` branch에도 존재하도록 한 번 반영한 뒤 standalone chatbot delivery를 활성화한다.
+- 이 migration은 legacy branch-local guidance가 새 entry보다 먼저 선택되는 bootstrap 문제를 제거하기 위한 전환 작업이다.
+- Migration 완료 뒤에는 guidance 갱신을 위해 `main`을 `inbox`에 반복 sync하지 않는다. 이후 guidance는 항상 default branch에서 읽는다.
+
 ## Delivery
 
 - 사용자가 standalone working artifact를 repository `inbox/`에 저장하라고 요청했고 기존 작업 branch나 Pull Request가 그 artifact를 소유하지 않으면 dedicated `inbox` branch에 저장한다.
