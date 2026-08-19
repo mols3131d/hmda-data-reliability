@@ -1,9 +1,7 @@
 # Inbox
 
-Routine non-canonical artifact는 dedicated [`inbox` branch](https://github.com/mols3131d/project-pivot/tree/inbox/inbox)에 저장한다.
+`inbox/`는 보고서, 조사, 리뷰뿐 아니라 작업 상태, checkpoint, handoff, agent 간 communication 등 **non-canonical working artifact**를 두는 공간이다.
 
-Artifact는 `inbox` branch의 `YYYY-MM-DD/` directory와 filename/frontmatter metadata를 기준으로 직접 찾는다. 이 README는 artifact index나 status projection으로 갱신하지 않는다.
+내용은 필요할 때 직접 찾고 확인한다. 이 README는 artifact index나 project status projection으로 갱신하지 않는다.
 
-기존 `main:/inbox/YYYY-MM-DD/**`와 `main:/inbox/archive/**`는 legacy artifact이며 새 routine artifact를 추가하지 않는다.
-
-Inbox 운영 규칙은 [`AGENTS.md`](AGENTS.md)를 따른다.
+Inbox를 사용한다고 branch나 Pull Request workflow가 바뀌지는 않는다. 공통 운영 규칙은 [`AGENTS.md`](AGENTS.md), connected chatbot 전용 delivery 규칙은 [`CHATBOT.md`](CHATBOT.md)를 따른다.

@@ -43,15 +43,11 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 작업 branch는 원칙적으로 원격 저장소의 현재 `main` head에서 생성한다. 별도의 기준 branch가 지정되면 해당 branch를 사용한다.
 
-기존 branch는 동일 작업의 후속 수정일 때만 재사용한다. `inbox`는 반복되는 routine artifact 생성을 위한 장기 유지 예외다.
-
-## Inbox Branch
-
-`inbox`는 일반 branch lifecycle의 장기 유지 예외다. Direct push, formatting과 `main` sync 예외는 [Inbox Branch Guide](../../../inbox/_guidelines/branch.md)가 소유한다. 이 문서는 예외의 존재와 진입점만 제공한다.
+기존 branch는 동일 작업의 후속 수정일 때만 재사용한다.
 
 ## Agent Instructions
 
-- `agent` actor namespace와 자신의 작업 branch를 사용한다. Routine inbox artifact는 [Inbox Branch Guide](../../../inbox/_guidelines/branch.md)의 예외를 따른다.
+- `agent` actor namespace와 자신의 작업 branch를 사용한다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
 - 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.
@@ -61,4 +57,3 @@ Type은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사
 
 - [Commits](commit.md): 변경을 commit으로 구성하는 기준
 - [Pull Requests](pull-request.md): 변경을 검토와 채택 경계로 전달하는 기준
-- [Inbox Branch Guide](../../../inbox/_guidelines/branch.md): dedicated `inbox` branch의 예외 규칙
