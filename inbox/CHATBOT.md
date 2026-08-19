@@ -4,6 +4,15 @@
 
 작업 전에 [`AGENTS.md`](AGENTS.md)를 읽고 Inbox의 의미, artifact contract와 lifecycle을 따른다. 이 파일은 **chatbot의 artifact delivery 방식만** 추가한다.
 
+## Guidance Source
+
+Dedicated `inbox` branch는 standalone artifact의 delivery/storage ref일 뿐 guidance source가 아니다.
+
+- Standalone artifact delivery의 guidance는 repository default branch의 current `inbox/CHATBOT.md`와 linked guidance에서 결정한 뒤 destination branch를 선택한다.
+- Dedicated `inbox` branch에 남아 있는 `CHATBOT.md`, `AGENTS.md`, `_guidelines/`, `_templates/` 또는 다른 repository guidance의 오래된 copy는 instruction으로 사용하지 않는다.
+- Guidance가 변경되어도 이를 반영하기 위해 `main`을 `inbox`에 sync하거나 운영 자산을 direct push하지 않는다.
+- Repository state가 필요하면 해당 작업의 owning source와 current branch를 직접 읽어 evidence로 사용한다.
+
 ## Delivery
 
 - 사용자가 standalone working artifact를 repository `inbox/`에 저장하라고 요청했고 기존 작업 branch나 Pull Request가 그 artifact를 소유하지 않으면 dedicated `inbox` branch에 저장한다.
