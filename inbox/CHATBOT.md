@@ -26,6 +26,7 @@ Dedicated `inbox` branch는 standalone artifact의 delivery/storage ref일 뿐 g
 Dedicated `inbox` branch에 direct push할 때는 해당 standalone artifact만 변경한다.
 
 - `inbox/YYYY-MM-DD/**`의 요청된 artifact 외 repository content를 수정하지 않는다.
+- Direct push 직전에 remote `inbox` state를 다시 확인한다. Branch가 이동했거나 write conflict가 발생하면 최신 state에서 요청된 artifact 변경만 다시 적용하며 force-update나 다른 변경의 overwrite로 해결하지 않는다.
 - `AGENTS.md`, `CHATBOT.md`, `README.md`, `_guidelines/`, `_templates/` 같은 운영 자산은 direct-push 예외에 포함하지 않는다.
 - `inbox` branch를 `main`이나 다른 작업 branch로 merge, rebase, cherry-pick 또는 promotion하지 않는다.
 - Artifact delivery를 위해 `main`이나 다른 작업 branch를 수정·reset·force-push하지 않는다.
