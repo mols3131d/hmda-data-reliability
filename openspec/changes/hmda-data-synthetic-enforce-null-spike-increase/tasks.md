@@ -3,8 +3,8 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Enforce HMDA null-spike increase tasks
 description: Implement and verify deterministic null-spike generation that always creates a real, original-relative null increase.
-tasks_completed: 2
-tasks_total: 2
+tasks_completed: 4
+tasks_total: 4
 tags:
   - "domain:hmda-data"
   - "capability:synthetic-defects"
@@ -20,3 +20,13 @@ tags:
 
 - [x] Enforce eligible deterministic null-spike mutation in the HMDA synthetic generator.
   - **Done when:** `null_spike` selects non-null target values from the deterministic sample, emits a null rate strictly above the original source rate, raises `SyntheticCaseError` for an impossible all-null target before output creation, and preserves its public signature and source isolation.
+
+- [x] Restore per-year `null_fraction` mutation semantics (review P2).
+  - **Covers:** Multi-year clean fixture proving each year receives its requested fraction of mutations, not concentrated in one year.
+  - **Test first:** Multi-year all-non-null fixture detects mutation concentration in a single year.
+  - **Done when:** Mutation count is computed and applied per `activity_year` partition, the per-year requested fraction behavior is preserved, and the global strict-increase invariant still holds.
+
+- [x] Add `null_fraction` magnitude oracle (review P3).
+  - **Covers:** Clean all-non-null fixture verifying that the requested `null_fraction` is reflected in observable output null counts.
+  - **Test first:** Oracle asserts each year's null count matches `ceil(year_count * null_fraction)` on a clean input.
+  - **Done when:** The magnitude oracle and original-relative oracle coexist, and a hypothetical regression that ignores `null_fraction` would fail the magnitude test.

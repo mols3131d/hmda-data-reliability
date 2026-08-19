@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from math import ceil
 from pathlib import Path
 
 import duckdb
@@ -88,22 +87,23 @@ def null_spike(
         params=[*source_params, sample_fraction],
         quoted_target=quoted_target,
     )
-    mutation_count = _null_spike_mutation_count(
-        source_count=source_count,
-        source_non_null_count=source_non_null_count,
-        sample_count=sample_count,
-        sample_non_null_count=sample_non_null_count,
-        null_fraction=null_fraction,
-    )
+    if sample_non_null_count == 0:
+        msg = "null_spike target_column에 non-null 값이 없어 증가를 만들 수 없습니다."
+        raise SyntheticCaseError(msg)
+    source_null_rate = 1 - source_non_null_count / source_count
     case_query = f"""
         WITH sampled AS ({sampled_query}),
-        null_ranked AS (
+        year_stats AS (
             SELECT
                 *,
+                count(*) OVER (PARTITION BY activity_year)
+                    AS __year_count,
+                count({quoted_target}) OVER (PARTITION BY activity_year)
+                    AS __year_non_null,
                 row_number() OVER (
+                    PARTITION BY activity_year
                     ORDER BY
                         CASE WHEN {quoted_target} IS NULL THEN 1 ELSE 0 END,
-                        activity_year,
                         __sample_rank
                 ) AS __non_null_rank
             FROM sampled
@@ -113,24 +113,33 @@ def null_spike(
                 __sample_rank,
                 __partition_count,
                 __null_sample_rank,
-                __non_null_rank
+                __non_null_rank,
+                __year_count,
+                __year_non_null
             )
             REPLACE (
                 CASE
                     WHEN {quoted_target} IS NOT NULL
-                    AND __non_null_rank <= ?
+                    AND __non_null_rank <= least(
+                        __year_non_null,
+                        greatest(
+                            CAST(ceil(__year_count * ?) AS BIGINT),
+                            CAST(floor(__year_count * ?) AS BIGINT) + 1
+                                - (__year_count - __year_non_null)
+                        )
+                    )
                     THEN NULL
                     ELSE {quoted_target}
                 END AS {quoted_target}
             )
-        FROM null_ranked
+        FROM year_stats
     """
     return write_case_file(
         connection=connection,
         case_name="null_spike",
         output_root=output_root,
         query=case_query,
-        params=[*source_params, sample_fraction, mutation_count],
+        params=[*source_params, sample_fraction, null_fraction, source_null_rate],
     )
 
 
@@ -200,27 +209,6 @@ def _target_value_counts(
     if row is None:
         raise SyntheticCaseError("HMDA 합성 null_spike 통계가 없습니다.")
     return int(row[0]), int(row[1])
-
-
-def _null_spike_mutation_count(
-    *,
-    source_count: int,
-    source_non_null_count: int,
-    sample_count: int,
-    sample_non_null_count: int,
-    null_fraction: float,
-) -> int:
-    """Return enough eligible mutations for a strict source-relative increase."""
-
-    source_null_count = source_count - source_non_null_count
-    sample_null_count = sample_count - sample_non_null_count
-    minimum_output_null_count = source_null_count * sample_count // source_count + 1
-    requested_mutation_count = max(1, ceil(sample_count * null_fraction))
-    required_mutation_count = max(
-        requested_mutation_count,
-        minimum_output_null_count - sample_null_count,
-    )
-    return min(sample_non_null_count, required_mutation_count)
 
 
 def _null_spike_sample_query(ranked_query: str, quoted_target: str) -> str:

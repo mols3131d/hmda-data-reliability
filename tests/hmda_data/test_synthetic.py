@@ -147,6 +147,87 @@ def test_null_spike_rejects_all_null_target_without_output(tmp_path: Path) -> No
     assert not (case_root / "null_spike").exists()
 
 
+def test_null_spike_distributes_mutations_across_years(tmp_path: Path) -> None:
+    """Each year receives its requested fraction of mutations, not concentrated."""
+
+    source_path = tmp_path / "multi-year-clean.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                *[f"2024,{i},{100 + i}" for i in range(10)],
+                *[f"2025,{i},{200 + i}" for i in range(10)],
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager() as connection:
+        null_path = null_spike(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            null_fraction=0.5,
+        )
+        year_nulls = connection.execute(
+            """
+            SELECT activity_year, count(*) - count(income) AS null_count
+            FROM read_parquet(?)
+            GROUP BY activity_year
+            ORDER BY activity_year
+            """,
+            [str(null_path)],
+        ).fetchall()
+
+    assert len(year_nulls) == 2
+    for _year, null_count in year_nulls:
+        assert null_count >= 5, f"year {_year}: expected >= 5 nulls, got {null_count}"
+
+
+def test_null_spike_requested_fraction_magnitude(tmp_path: Path) -> None:
+    """The requested null_fraction is reflected in observable per-year null counts."""
+
+    source_path = tmp_path / "clean-multi-year.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                *[f"2024,{i},{100 + i}" for i in range(10)],
+                *[f"2025,{i},{200 + i}" for i in range(20)],
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager() as connection:
+        null_path = null_spike(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            null_fraction=0.3,
+        )
+        year_stats = connection.execute(
+            """
+            SELECT
+                activity_year,
+                count(*) AS total,
+                count(*) - count(income) AS null_count
+            FROM read_parquet(?)
+            GROUP BY activity_year
+            ORDER BY activity_year
+            """,
+            [str(null_path)],
+        ).fetchall()
+
+    from math import ceil
+
+    for year, total, null_count in year_stats:
+        expected = ceil(total * 0.3)
+        assert null_count >= expected, (
+            f"year {year}: expected >= {expected} nulls, got {null_count}"
+        )
+
+
 def test_synthetic_case_rejects_missing_columns(
     tmp_path: Path,
     hmda_csv_path: Path,
