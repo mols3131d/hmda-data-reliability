@@ -122,6 +122,66 @@ def test_null_spike_partial_sample_exceeds_original_null_rate(tmp_path: Path) ->
     assert generated_null_ratio > source_null_ratio
 
 
+def test_null_spike_partial_sample_strict_increase_with_non_binary_exact_ratio(
+    tmp_path: Path,
+) -> None:
+    """Non-binary-exact source ratio with partial sample strictly increases null.
+
+    Verifies integer arithmetic strictly increases the null rate without
+    floating-point ambiguity.
+    """
+
+    source_path = tmp_path / "imprecise-ratio.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                *[f"2025,{index}," for index in range(70)],
+                *[f"2025,{index},{index + 1}" for index in range(70, 100)],
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager() as connection:
+        source_null_ratio = _csv_null_ratio(connection, source_path, "income")
+        null_path = null_spike(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            null_fraction=0.01,
+            sample_fraction=0.9,
+        )
+        generated_null_ratio = _null_ratio(connection, null_path, "income")
+        generated_row_count = _row_count(connection, null_path)
+        source_counts = connection.execute(
+            """
+            SELECT
+                count(*) AS source_total,
+                count(*) - count(income) AS source_nulls
+            FROM read_csv_auto(?, header = true, nullstr = ['NA', ''])
+            """,
+            [str(source_path)],
+        ).fetchone()
+        output_counts = connection.execute(
+            """
+            SELECT
+                count(*) AS output_total,
+                count(*) - count(income) AS output_nulls
+            FROM read_parquet(?)
+            """,
+            [str(null_path)],
+        ).fetchone()
+
+    assert source_null_ratio == 0.7
+    assert generated_row_count == 90
+    assert generated_null_ratio > source_null_ratio
+    assert source_counts is not None and output_counts is not None
+    source_total, source_nulls = source_counts
+    output_total, output_nulls = output_counts
+    assert output_nulls * source_total > source_nulls * output_total
+
+
 def test_null_spike_rejects_all_null_target_without_output(tmp_path: Path) -> None:
     """An all-null target cannot produce a contract-compliant synthetic defect."""
 

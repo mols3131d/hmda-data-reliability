@@ -90,7 +90,7 @@ def null_spike(
     if sample_non_null_count == 0:
         msg = "null_spike target_column에 non-null 값이 없어 증가를 만들 수 없습니다."
         raise SyntheticCaseError(msg)
-    source_null_rate = 1 - source_non_null_count / source_count
+    source_null_count = source_count - source_non_null_count
     case_query = f"""
         WITH sampled AS ({sampled_query}),
         year_stats AS (
@@ -124,8 +124,10 @@ def null_spike(
                         __year_non_null,
                         greatest(
                             CAST(ceil(__year_count * ?) AS BIGINT),
-                            CAST(floor(__year_count * ?) AS BIGINT) + 1
-                                - (__year_count - __year_non_null)
+                            CAST(
+                                (__year_count * CAST(? AS BIGINT))
+                                // CAST(? AS BIGINT) AS BIGINT
+                            ) + 1 - (__year_count - __year_non_null)
                         )
                     )
                     THEN NULL
@@ -139,7 +141,13 @@ def null_spike(
         case_name="null_spike",
         output_root=output_root,
         query=case_query,
-        params=[*source_params, sample_fraction, null_fraction, source_null_rate],
+        params=[
+            *source_params,
+            sample_fraction,
+            null_fraction,
+            source_null_count,
+            source_count,
+        ],
     )
 
 

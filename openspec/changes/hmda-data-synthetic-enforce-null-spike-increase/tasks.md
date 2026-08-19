@@ -3,8 +3,8 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Enforce HMDA null-spike increase tasks
 description: Implement and verify deterministic null-spike generation that always creates a real, original-relative null increase.
-tasks_completed: 4
-tasks_total: 4
+tasks_completed: 5
+tasks_total: 5
 tags:
   - "domain:hmda-data"
   - "capability:synthetic-defects"
@@ -30,3 +30,8 @@ tags:
   - **Covers:** Clean all-non-null fixture verifying that the requested `null_fraction` is reflected in observable output null counts.
   - **Test first:** Oracle asserts each year's null count matches `ceil(year_count * null_fraction)` on a clean input.
   - **Done when:** The magnitude oracle and original-relative oracle coexist, and a hypothetical regression that ignores `null_fraction` would fail the magnitude test.
+
+- [x] Eliminate floating-point threshold dependency with integer arithmetic (review P2 follow-up).
+  - **Covers:** Non-binary-exact source ratio with partial sampling boundary.
+  - **Test first:** A 70% null source with 90% sample and 1% null fraction fails strict inequality when using float math.
+  - **Done when:** Threshold calculation uses exact integer arithmetic (`source_null_count * year_count // source_count + 1`), and test verifies strict inequality using integer products (`output_null_count * source_total > source_nulls * output_total`).
