@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from math import ceil
 from pathlib import Path
 
 import duckdb
@@ -56,50 +57,68 @@ def null_spike(
     null_fraction: float = 0.2,
     sample_fraction: float = 1.0,
 ) -> Path:
-    """연도별 sampled rows의 일부 ``target_column`` 값을 Null로 만든다.
+    """Sampled non-null ``target_column`` 값을 결정적으로 Null로 만든다.
 
-    각 연도에서 최소 ``null_fraction``에 해당하는 sampled row를 Null로 만들며 기존
-    Null은 그대로 남는다. 각 fraction은 ``0 < value <= 1``이어야 하고 target column이
-    없으면 ``SyntheticCaseError``를 발생시킨다. Source file은 수정하지 않는다.
+    결과 null rate는 source보다 항상 커야 한다. 각 fraction은 ``0 < value <= 1``이어야
+    하고 target column이 없거나 모든 값이 이미 Null이면 ``SyntheticCaseError``를
+    발생시킨다. Source file은 수정하지 않는다.
     """
 
     _validate_fraction(null_fraction, "null_fraction")
     _validate_fraction(sample_fraction, "sample_fraction")
     require_columns(connection, source_paths, {target_column})
     quoted_target = quote_identifier(target_column)
+    source_query = source_union_sql(source_paths)
+    source_params = source_paths_parameter(source_paths)
+    source_count, source_non_null_count = _target_value_counts(
+        connection,
+        query=source_query,
+        params=source_params,
+        quoted_target=quoted_target,
+    )
+    if source_non_null_count == 0:
+        msg = "null_spike target_column에 non-null 값이 없어 증가를 만들 수 없습니다."
+        raise SyntheticCaseError(msg)
+
     ranked_query = _ranked_sample_query(connection, source_paths)
+    sampled_query = _null_spike_sample_query(ranked_query, quoted_target)
+    sample_count, sample_non_null_count = _target_value_counts(
+        connection,
+        query=sampled_query,
+        params=[*source_params, sample_fraction],
+        quoted_target=quoted_target,
+    )
+    mutation_count = _null_spike_mutation_count(
+        source_count=source_count,
+        source_non_null_count=source_non_null_count,
+        sample_count=sample_count,
+        sample_non_null_count=sample_non_null_count,
+        null_fraction=null_fraction,
+    )
     case_query = f"""
-        WITH ranked AS ({ranked_query}),
-        sampled AS (
-            SELECT *
-            FROM ranked
-            WHERE {_sample_limit_sql()}
-        ),
+        WITH sampled AS ({sampled_query}),
         null_ranked AS (
             SELECT
                 *,
                 row_number() OVER (
-                    PARTITION BY activity_year
-                    ORDER BY __sample_rank
-                ) AS __null_rank,
-                count(*) OVER (
-                    PARTITION BY activity_year
-                ) AS __sample_count
+                    ORDER BY
+                        CASE WHEN {quoted_target} IS NULL THEN 1 ELSE 0 END,
+                        activity_year,
+                        __sample_rank
+                ) AS __non_null_rank
             FROM sampled
         )
         SELECT
             * EXCLUDE (
                 __sample_rank,
                 __partition_count,
-                __null_rank,
-                __sample_count
+                __null_sample_rank,
+                __non_null_rank
             )
             REPLACE (
                 CASE
-                    WHEN __null_rank <= greatest(
-                        1,
-                        CAST(ceil(__sample_count * ?) AS BIGINT)
-                    )
+                    WHEN {quoted_target} IS NOT NULL
+                    AND __non_null_rank <= ?
                     THEN NULL
                     ELSE {quoted_target}
                 END AS {quoted_target}
@@ -111,7 +130,7 @@ def null_spike(
         case_name="null_spike",
         output_root=output_root,
         query=case_query,
-        params=[*source_paths_parameter(source_paths), sample_fraction, null_fraction],
+        params=[*source_params, sample_fraction, mutation_count],
     )
 
 
@@ -158,11 +177,77 @@ def _validate_fraction(value: float, name: str) -> None:
         raise SyntheticCaseError(msg)
 
 
-def _sample_limit_sql() -> str:
+def _target_value_counts(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    query: str,
+    params: Sequence[object],
+    quoted_target: str,
+) -> tuple[int, int]:
+    """Query row and non-null target counts for a synthetic input relation."""
+
+    try:
+        row = connection.execute(
+            f"""
+            SELECT count(*), count({quoted_target})
+            FROM ({query})
+            """,
+            params,
+        ).fetchone()
+    except duckdb.Error as exc:
+        msg = "HMDA 합성 null_spike 통계 조회에 실패했습니다."
+        raise SyntheticCaseError(msg) from exc
+    if row is None:
+        raise SyntheticCaseError("HMDA 합성 null_spike 통계가 없습니다.")
+    return int(row[0]), int(row[1])
+
+
+def _null_spike_mutation_count(
+    *,
+    source_count: int,
+    source_non_null_count: int,
+    sample_count: int,
+    sample_non_null_count: int,
+    null_fraction: float,
+) -> int:
+    """Return enough eligible mutations for a strict source-relative increase."""
+
+    source_null_count = source_count - source_non_null_count
+    sample_null_count = sample_count - sample_non_null_count
+    minimum_output_null_count = source_null_count * sample_count // source_count + 1
+    requested_mutation_count = max(1, ceil(sample_count * null_fraction))
+    required_mutation_count = max(
+        requested_mutation_count,
+        minimum_output_null_count - sample_null_count,
+    )
+    return min(sample_non_null_count, required_mutation_count)
+
+
+def _null_spike_sample_query(ranked_query: str, quoted_target: str) -> str:
+    """Keep per-year sample cardinality while retaining eligible target values."""
+
+    return f"""
+        SELECT *
+        FROM (
+            SELECT
+                *,
+                row_number() OVER (
+                    PARTITION BY activity_year
+                    ORDER BY
+                        CASE WHEN {quoted_target} IS NULL THEN 1 ELSE 0 END,
+                        __sample_rank
+                ) AS __null_sample_rank
+            FROM ({ranked_query})
+        )
+        WHERE {_sample_limit_sql("__null_sample_rank")}
+    """
+
+
+def _sample_limit_sql(rank_column: str = "__sample_rank") -> str:
     """각 연도 partition에 최소 한 row를 남기는 sample limit을 만든다."""
 
-    return """
-        __sample_rank <= greatest(
+    return f"""
+        {rank_column} <= greatest(
             1,
             CAST(ceil(__partition_count * ?) AS BIGINT)
         )

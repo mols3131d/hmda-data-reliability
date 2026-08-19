@@ -47,12 +47,104 @@ def test_synthetic_cases_expose_expected_defect_statistics(
             sample_fraction=1,
         )
         row_drop_count = _row_count(connection, row_drop_path)
+        source_null_ratio = _csv_null_ratio(connection, hmda_csv_path, "income")
         null_ratio = _null_ratio(connection, null_path, "income")
         drift_type = _column_type(connection, drift_path, "loan_amount")
 
     assert row_drop_count == 1
-    assert null_ratio >= 0.5
+    assert null_ratio > source_null_ratio
     assert drift_type == "VARCHAR"
+
+
+def test_null_spike_increases_high_baseline_null_rate(tmp_path: Path) -> None:
+    """A high existing null rate cannot turn a requested spike into a no-op."""
+
+    source_path = tmp_path / "high-null.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                *[f"2025,{index}," for index in range(9)],
+                "2025,9,1",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager() as connection:
+        source_null_ratio = _csv_null_ratio(connection, source_path, "income")
+        null_path = null_spike(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            null_fraction=0.2,
+        )
+        generated_null_ratio = _null_ratio(connection, null_path, "income")
+        generated_non_null_count = connection.execute(
+            "SELECT count(income) FROM read_parquet(?)",
+            [str(null_path)],
+        ).fetchone()
+
+    assert source_null_ratio == 0.9
+    assert generated_null_ratio > source_null_ratio
+    assert generated_non_null_count == (0,)
+
+
+def test_null_spike_partial_sample_exceeds_original_null_rate(tmp_path: Path) -> None:
+    """A partial output remains a real spike relative to the full source."""
+
+    source_path = tmp_path / "mixed-null.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                *[f"2025,{index}," for index in range(5)],
+                *[f"2025,{index},{index + 2}" for index in range(5, 10)],
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager() as connection:
+        source_null_ratio = _csv_null_ratio(connection, source_path, "income")
+        null_path = null_spike(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            null_fraction=0.2,
+            sample_fraction=0.2,
+        )
+        generated_null_ratio = _null_ratio(connection, null_path, "income")
+        generated_row_count = _row_count(connection, null_path)
+
+    assert source_null_ratio == 0.5
+    assert generated_row_count == 2
+    assert generated_null_ratio > source_null_ratio
+
+
+def test_null_spike_rejects_all_null_target_without_output(tmp_path: Path) -> None:
+    """An all-null target cannot produce a contract-compliant synthetic defect."""
+
+    source_path = tmp_path / "all-null.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                "2025,1,",
+                "2025,2,",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    case_root = tmp_path / "cases"
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="non-null"),
+    ):
+        null_spike(connection, [source_path], case_root)
+
+    assert not (case_root / "null_spike").exists()
 
 
 def test_synthetic_case_rejects_missing_columns(
@@ -185,6 +277,22 @@ def _null_ratio(
         FROM read_parquet(?)
         """,
         [str(case_path)],
+    ).fetchone()
+    assert row is not None
+    return float(row[0])
+
+
+def _csv_null_ratio(
+    connection: duckdb.DuckDBPyConnection,
+    source_path: Path,
+    column_name: str,
+) -> float:
+    row = connection.execute(
+        f"""
+        SELECT avg(CASE WHEN "{column_name}" IS NULL THEN 1.0 ELSE 0.0 END)
+        FROM read_csv_auto(?, header = true, nullstr = ['NA', ''])
+        """,
+        [str(source_path)],
     ).fetchone()
     assert row is not None
     return float(row[0])
