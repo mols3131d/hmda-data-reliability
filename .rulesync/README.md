@@ -34,18 +34,20 @@ Active development 동안 Rulesync는 latest를 우선한다. 특정 버전을 r
 
 ## Commands
 
-`scripts/rulesync.py`가 Rulesync execution entrypoint다. Script는 `rulesync.jsonc`의 target/features 설정을 재정의하지 않고 `npx --yes rulesync@latest`를 호출한다.
+`scripts/rulesync.py`가 repository execution entrypoint다. Script는 `rulesync.jsonc`의 target/features 설정을 재정의하지 않고 `npx --yes rulesync@latest`를 호출한다.
 
 ```bash
+uv run python scripts/rulesync.py preview
 uv run python scripts/rulesync.py generate
 uv run python scripts/rulesync.py check
 uv run python scripts/rulesync.py doctor
 uv run python scripts/rulesync.py validate
 ```
 
+- `preview`: write 없이 generation 결과를 확인한다.
 - `generate`: canonical Rules에서 runtime projection을 갱신한다.
 - `check`: generated projection drift를 검사한다.
 - `doctor`: strict Rulesync diagnostics를 실행한다.
 - `validate`: `doctor` 후 `check`를 순서대로 실행한다.
 
-같은 command는 VS Code의 `Rulesync: *` tasks에서도 사용할 수 있다.
+Agent-driven mutation은 `preview`로 예상 변경을 확인한 뒤 `generate`한다. VS Code의 `Rulesync: *` tasks는 같은 script를 호출하는 optional convenience launcher이며 별도 authority나 공식 entrypoint가 아니다.
