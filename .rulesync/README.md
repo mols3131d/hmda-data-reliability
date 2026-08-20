@@ -14,7 +14,7 @@ Skills, subagents, hooks, MCP, permissions는 이번 workspace에서 Rulesync가
 
 ## Version Policy
 
-Active development 동안 Rulesync는 latest를 우선한다. 특정 버전을 repository contract로 고정하지 않고, Rulesync 변경 후 current latest로 `doctor --strict`와 `generate --check`를 실행해 compatibility를 확인한다.
+Active development 동안 Rulesync는 latest를 우선한다. 특정 버전을 repository contract로 고정하지 않고, Rulesync 변경 후 current latest로 validation을 실행해 compatibility를 확인한다.
 
 프로젝트가 안정화되어 reproducible snapshot이 필요해질 때 검증된 버전 고정을 별도로 결정한다.
 
@@ -34,9 +34,13 @@ Active development 동안 Rulesync는 latest를 우선한다. 특정 버전을 r
 
 ## Commands
 
+`scripts/rulesync.py`가 Rulesync execution entrypoint다. Script는 `rulesync.jsonc`의 target/features 설정을 재정의하지 않고 `npx --yes rulesync@latest`를 호출한다.
+
 ```bash
-npx --yes rulesync@latest doctor --strict
-npx --yes rulesync@latest generate --dry-run --targets antigravity-ide,copilot,codexcli --features rules
-npx --yes rulesync@latest generate --targets antigravity-ide,copilot,codexcli --features rules
-npx --yes rulesync@latest generate --check --targets antigravity-ide,copilot,codexcli --features rules
+uv run python scripts/rulesync.py generate
+uv run python scripts/rulesync.py check
+uv run python scripts/rulesync.py doctor
+uv run python scripts/rulesync.py validate
 ```
+
+`validate`는 `doctor --strict` 후 `generate --check`를 순서대로 실행한다. 같은 command는 VS Code의 `Rulesync: *` tasks에서도 사용할 수 있다.
