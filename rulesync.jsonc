@@ -1,0 +1,10 @@
+{
+  "$schema": "https://github.com/dyoshikawa/rulesync/releases/latest/download/config-schema.json",
+  "targets": {
+    "antigravity-ide": ["rules"],
+    "copilot": ["rules"],
+    "codexcli": ["rules"]
+  },
+  "outputRoots": ["."],
+  "delete": false
+}
