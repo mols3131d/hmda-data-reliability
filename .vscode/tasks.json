@@ -46,6 +46,17 @@
             "detail": "Runs npx skills update with flags."
         },
         {
+            "label": "Rulesync: Preview",
+            "type": "shell",
+            "command": "uv run python scripts/rulesync.py preview",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Previews Rule projection changes without writing files."
+        },
+        {
             "label": "Rulesync: Generate",
             "type": "shell",
             "command": "uv run python scripts/rulesync.py generate",
