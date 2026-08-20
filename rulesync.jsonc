@@ -6,5 +6,5 @@
     "codexcli": ["rules"]
   },
   "outputRoots": ["."],
-  "delete": false
+  "delete": true
 }
