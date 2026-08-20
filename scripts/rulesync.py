@@ -11,6 +11,7 @@ import sys
 from collections.abc import Sequence
 
 _ACTIONS: dict[str, tuple[str, ...]] = {
+    "preview": ("generate", "--dry-run"),
     "generate": ("generate",),
     "check": ("generate", "--check"),
     "doctor": ("doctor", "--strict"),
@@ -53,7 +54,7 @@ def main() -> int:
         "action",
         choices=(*_ACTIONS, "validate"),
         help=(
-            "generate projections, check drift, run doctor, "
+            "preview or generate projections, check drift, run doctor, "
             "or run doctor + check"
         ),
     )
