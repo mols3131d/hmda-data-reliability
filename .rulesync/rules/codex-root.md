@@ -1,8 +1,9 @@
 ---
 root: true
 targets:
+  - antigravity-ide
   - codexcli
-description: "Project-wide Codex instructions and routing to path-scoped canonical Rulesync rules."
+description: "Project-wide AGENTS instructions with Codex routing to path-scoped canonical Rulesync rules."
 ---
 
 <!-- Canonical source: `.rulesync/rules/codex-root.md`. -->
