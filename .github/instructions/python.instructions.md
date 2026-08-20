@@ -1,9 +1,7 @@
 ---
-name: Python
 description: "Python-specific source rules under src. Covers imports, typing, resource handling, exceptions, mutable state, and docstrings."
-trigger: glob
-globs: "src/**/*.py"
 applyTo: "src/**/*.py"
+name: "Python"
 ---
 
 # Python
