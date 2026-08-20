@@ -18,8 +18,9 @@ _ACTIONS: dict[str, tuple[str, ...]] = {
 
 
 def _npx_command(args: Sequence[str]) -> list[str]:
-    candidates = ("npx.cmd", "npx") if os.name == "nt" else ("npx",)
-    executable = next((path for name in candidates if (path := shutil.which(name))), None)
+    executable = shutil.which("npx.cmd") if os.name == "nt" else shutil.which("npx")
+    if executable is None:
+        executable = shutil.which("npx")
     if executable is None:
         raise RuntimeError("npx is required to run Rulesync.")
     return [executable, "--yes", "rulesync@latest", *args]
