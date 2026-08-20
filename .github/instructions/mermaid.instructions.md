@@ -1,7 +1,7 @@
 ---
 name: "Local Mermaid Diagrams"
 description: "Create, edit, validate, and preview Mermaid diagrams locally in VS Code using the Mermaid extension and GitHub Copilot. Do not use Mermaid Chart cloud, account, sync, credits, or paid services."
-applyTo: "**/*.md, **/*.mmd, **/*.mermaid"
+applyTo: "**/*.md,**/*.mmd,**/*.mermaid"
 ---
 
 # Mermaid AI Skills
