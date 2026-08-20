@@ -43,4 +43,9 @@ uv run python scripts/rulesync.py doctor
 uv run python scripts/rulesync.py validate
 ```
 
-`validate`는 `doctor --strict` 후 `generate --check`를 순서대로 실행한다. 같은 command는 VS Code의 `Rulesync: *` tasks에서도 사용할 수 있다.
+- `generate`: canonical Rules에서 runtime projection을 갱신한다.
+- `check`: generated projection drift를 검사한다.
+- `doctor`: strict Rulesync diagnostics를 실행한다.
+- `validate`: `doctor` 후 `check`를 순서대로 실행한다.
+
+같은 command는 VS Code의 `Rulesync: *` tasks에서도 사용할 수 있다.
