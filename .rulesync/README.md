@@ -11,7 +11,7 @@ Rulesync는 **repository-owned agent asset의 기본 canonical authoring source*
 
 ## Targets
 
-Project Pivot의 Rulesync target set은 다음 세 개다.
+Project Pivot의 Rulesync target은 다음 세 개로 한정한다.
 
 - `copilot`
 - `codexcli`
