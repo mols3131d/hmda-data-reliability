@@ -1,9 +1,13 @@
 ---
-name: Markdown
+root: false
+targets:
+  - antigravity-ide
+  - copilot
 description: "Use when writing or editing Markdown docs, README, notes, or AGENTS-style guidelines. Covers GFM callouts, tables, Mermaid, and language."
-trigger: glob
-globs: "**/*.md"
-applyTo: "**/*.md"
+globs:
+  - "**/*.md"
+copilot:
+  name: "Markdown"
 ---
 
 # Markdown

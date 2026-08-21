@@ -1,9 +1,6 @@
 ---
-name: Development
-description: "Common source-development rules under src. Covers dependencies, boundaries, configuration, contracts, and code intent."
 trigger: glob
 globs: "src/**/*"
-applyTo: "src/**/*"
 ---
 
 # Development

@@ -44,6 +44,39 @@
                 "isDefault": false
             },
             "detail": "Runs npx skills update with flags."
+        },
+        {
+            "label": "Rulesync: Preview",
+            "type": "shell",
+            "command": "uv run python scripts/rulesync.py preview",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Previews Rule projection changes without writing files."
+        },
+        {
+            "label": "Rulesync: Generate",
+            "type": "shell",
+            "command": "uv run python scripts/rulesync.py generate",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Generates agent Rule projections with the latest Rulesync."
+        },
+        {
+            "label": "Rulesync: Validate",
+            "type": "shell",
+            "command": "uv run python scripts/rulesync.py validate",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Runs strict diagnostics followed by projection drift checks."
         }
     ]
 }

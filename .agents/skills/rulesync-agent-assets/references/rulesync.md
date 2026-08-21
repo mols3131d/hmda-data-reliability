@@ -1,8 +1,8 @@
 # Rulesync Backend
 
-이 reference는 exact CLI surface나 target identifier가 필요할 때만 읽는다. installed
-Rulesync가 최종 authority다. 먼저 `rulesync --version`과 해당 command의 `--help`를
-확인한다.
+이 reference는 exact CLI surface나 target identifier가 필요할 때만 읽는다. Project가
+Rulesync execution entrypoint나 version policy를 정의하면 그것을 우선한다. 그렇지 않은
+경우 installed Rulesync와 해당 command의 `--help`를 최종 authority로 사용한다.
 
 ## Core Commands
 
@@ -30,6 +30,8 @@ Rulesync canonical source를 점검할 때는 필요에 따라 다음을 사용�
 rulesync doctor
 rulesync doctor --strict
 ```
+
+Project-owned wrapper가 있으면 위 direct command보다 wrapper를 우선한다.
 
 ## Features
 
@@ -92,8 +94,8 @@ semantic parity를 구분해서 보고한다.
 
 ## Safety
 
-- `--dry-run`을 write 전에 실행한다.
+- mutation 전에 `--dry-run` 또는 project-owned preview entrypoint를 실행한다.
 - source harness를 `--to`에 포함하지 않는다.
 - `--global`은 user-scope mutation이 명시된 경우에만 사용한다.
 - plugin packaging target은 ordinary `convert` 대상으로 가정하지 않는다.
-- install, update, cleanup은 asset conversion과 별도 mutation으로 취급한다.
+- install, update, cleanup은 project policy나 사용자 요청 없이 수행하지 않는다.

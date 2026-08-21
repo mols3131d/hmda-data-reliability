@@ -1,9 +1,13 @@
 ---
-name: Python
+root: false
+targets:
+  - antigravity-ide
+  - copilot
 description: "Python-specific source rules under src. Covers imports, typing, resource handling, exceptions, mutable state, and docstrings."
-trigger: glob
-globs: "src/**/*.py"
-applyTo: "src/**/*.py"
+globs:
+  - "src/**/*.py"
+copilot:
+  name: "Python"
 ---
 
 # Python
