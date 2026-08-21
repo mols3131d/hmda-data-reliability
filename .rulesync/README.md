@@ -9,13 +9,17 @@ Rulesync는 **repository-owned agent asset의 기본 canonical authoring source*
 - Rulesync는 external tool-owned asset을 필요한 agent context로 route할 수 있지만 그 semantics, generation과 lifecycle을 재정의하지 않는다.
 - 아직 Rulesync로 명시적으로 migration하지 않은 기존 non-Rule asset은 현재 owner를 유지한다. Migration은 source semantics와 target compatibility를 확인하는 별도 변경으로 수행한다.
 
-## Current Scope
+## Targets
 
-현재 `rulesync.jsonc`는 Rules만 다음 target으로 생성한다.
+Project Pivot의 Rulesync target set은 다음 세 개다.
 
-- `antigravity-ide`
 - `copilot`
 - `codexcli`
+- `antigravity-ide`
+
+새 Rulesync-managed asset이나 explicit migration은 이 target set을 기준으로 compatibility를 검토한다. Feature별 실제 projection은 current Rulesync 지원 범위와 `rulesync.jsonc` configuration을 따른다.
+
+현재 `rulesync.jsonc`는 이 세 target에 `rules` feature만 생성한다.
 
 `.rulesync/rules/`가 repository-local Rule의 canonical source다. Skills, subagents, hooks, MCP와 permissions는 현재 generation scope가 아니며, 존재한다는 이유만으로 vendor-native copy를 Rulesync source로 재해석하지 않는다.
 
