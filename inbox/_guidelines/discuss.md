@@ -86,13 +86,11 @@ stop_condition: review_has_no_findings
 - Later loops start from unresolved findings or new evidence; repeated wording does not count.
 - Stop early when Review has no material findings.
 - At loop 10, publish only if the result is still useful and record unresolved findings in `Next`; otherwise block instead of pretending completion.
-- When an `rpi-loop` capability is available, use it for this refinement contract. Otherwise follow the same contract locally.
+- When a `mols-rpi` capability is available, use it for this refinement contract. Otherwise follow the same contract locally.
 
 ## Scheduled Discussion
 
-Scheduled discussion is a long-running asynchronous sequence of **A/B invocations** during a session window. It supports ChatGPT-style scheduled chats while remaining portable to other chat applications and agent runners.
-
-Provider-specific runtime behavior belongs in extensions. For OpenAI ChatGPT scheduled chats, use [OpenAI ChatGPT Scheduled Discussion](discuss-openai-chatgpt-scheduled.md).
+Scheduled discussion is a long-running asynchronous sequence of **A/B invocations** during a session window. The surrounding scheduler, host, or external runner owns invocation timing and provider-specific bootstrap. This protocol does not define provider-specific task configuration, model choice, recurrence syntax, or prompt templates.
 
 ### Defaults
 

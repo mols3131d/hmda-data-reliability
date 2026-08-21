@@ -4,4 +4,4 @@
 
 내용은 필요할 때 직접 찾고 확인한다. 이 README는 artifact index나 project status projection으로 갱신하지 않는다.
 
-Inbox를 사용한다고 branch나 Pull Request workflow가 바뀌지는 않는다. 공통 운영 규칙은 [`AGENTS.md`](AGENTS.md), connected chatbot 전용 delivery 규칙은 [`CHATBOT.md`](CHATBOT.md)를 따른다.
+Artifact의 내용·구조·lifecycle은 [`AGENTS.md`](AGENTS.md)를 따른다. Branch와 Pull Request delivery는 [`docs/development/vcs-git/`](../docs/development/vcs-git/README.md)가 소유하며 이 README는 별도 workflow 예외를 만들지 않는다.
