@@ -23,7 +23,7 @@ Agent의 작업 과정, 상세 reasoning, RPI 단계별 진행 기록, 시행착
 
 GitHub UI나 CI가 이미 충분히 제공하는 정보도 판단에 필요한 추가 맥락이 없다면 반복하지 않는다. 관련 OpenSpec change, inbox artifact 또는 canonical document가 있으면 `References`에서 연결하며, 요구사항이나 acceptance criteria의 source를 PR 본문에 다시 복제하지 않는다.
 
-Optional `author`와 `revision` metadata는 [GitHub Templates](../../../.github/templates/README.md)를 따른다. `revision`을 사용하면 본문이 기준으로 삼은 exact base/head commit pair를 기록하고, 변경된 비교 상태를 기준으로 본문을 갱신할 때 함께 갱신한다.
+Optional `author`와 `revision` metadata는 [GitHub Templates](../../../.github/templates/README.md)을 따른다. `revision`을 사용하면 본문이 기준으로 삼은 exact base/head commit pair를 기록하고, 변경된 비교 상태를 기준으로 본문을 갱신할 때 함께 갱신한다.
 
 ## Review And Validation
 
@@ -49,7 +49,7 @@ flowchart TB
 
 ## Agent Instructions
 
-- Repository content 변경은 Draft pull request로 전달한다.
+- Repository content 변경은 Draft pull request로 전달한다. [Branches](branch.md)의 `Standalone Inbox Delivery` 조건을 충족하는 standalone artifact delivery만 direct-push 예외다.
 - 인간의 명시적 요청 없이 Ready 전환, 승인, merge, close 또는 auto-merge를 수행하지 않는다.
 - 인간의 판단 없이 review thread를 해결 처리하지 않는다.
 - 실패하거나 수행하지 못한 validation을 숨기지 않으며, 불명확한 응답을 승인으로 해석하지 않는다.
