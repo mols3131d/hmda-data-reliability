@@ -1,18 +1,43 @@
 # Project Pivot Defaults
 
-Project Pivot의 Rules는 `.rulesync/rules/`가 canonical source다. `.github/instructions/`,
-`.agents/rules/`, root `AGENTS.md`는 generated projection이며 Native bridge source로
-재해석하지 않는다.
+Project Pivot는 **Rulesync-first authority**를 사용한다. Repository가 직접 소유하는 agent asset은 Rulesync canonical source를 기본으로 하고, 다른 tool 또는 framework가 자체 CLI와 lifecycle로 관리하는 asset은 그 tool의 canonical source를 유지한다.
 
-Rules 이외 feature에서 source가 명시되지 않은 cross-harness port는 **GitHub Copilot
-native assets를 source**로 해석한다.
+## Authority
 
-## Default Route
+| Case | Canonical source | Rulesync role |
+| --- | --- | --- |
+| Rulesync-managed repository asset | `.rulesync/**` | author and generate |
+| Repository asset not yet migrated | current declared owner | explicit migration candidate |
+| Tool/framework-owned asset | owning tool's canonical source | route only |
+| Generated vendor/runtime projection | upstream canonical source | consume only |
 
-| Feature | Mode | Source |
+- Copilot, Antigravity, Codex 같은 target-native asset이 존재한다는 이유만으로 그것을 기본 source로 선택하지 않는다.
+- OpenSpec처럼 다른 tool이 생성·관리하는 artifact를 source centralization을 위해 `.rulesync/`에 import, mirror 또는 재정의하지 않는다.
+- 기존 non-Rule asset은 명시적인 migration 전까지 현재 owner를 유지한다. Migration은 selector, behavior와 target compatibility를 보존하는 별도 변경으로 수행한다.
+
+## Targets
+
+Project Pivot의 Rulesync target set은 다음 세 개다.
+
+- `copilot`
+- `codexcli`
+- `antigravity-ide`
+
+새 Rulesync-managed asset과 explicit migration은 이 세 target을 기준으로 compatibility를 검토한다. Feature별 실제 projection은 current Rulesync 지원 범위와 `rulesync.jsonc` configuration을 따른다.
+
+## Current Route
+
+현재 `rulesync.jsonc`는 세 target 모두에 `rules` feature만 projection한다.
+
+| Feature | Default mode | Source |
 | --- | --- | --- |
 | `rules` | Canonical fan-out | `.rulesync/rules/` |
-| other supported features | Native bridge | Copilot native asset |
+| repository-owned non-Rule feature | Canonical fan-out after explicit migration | appropriate `.rulesync/` source |
+| tool/framework-owned feature | Outside Rulesync ownership | owning tool source |
+
+Native bridge는 사용자가 one-off compatibility conversion을 명시적으로 요청한 경우에만 사용한다. Project의 기본 source strategy로 사용하지 않는다.
+
+## Commands
 
 Rules fan-out은 repository entrypoint를 사용한다.
 
@@ -24,79 +49,11 @@ uv run python scripts/rulesync.py validate
 
 Active development 동안 이 entrypoint는 `rulesync@latest`를 사용한다.
 
-Native bridge처럼 wrapper가 소유하지 않는 Rulesync command가 필요하면 같은 latest-first
-정책에 맞춰 `npx --yes rulesync@latest`를 사용한다.
-
-## Copilot Source Inventory
-
-현재 project에서 Rulesync `copilot` native source와 자연스럽게 대응하는 주요 asset은
-다음과 같다.
-
-| Feature | Project source |
-| --- | --- |
-| `subagents` | `.github/agents/*.agent.md` |
-
-`.github/instructions/*.instructions.md`는 Rules의 generated projection이므로 source
-inventory에 포함하지 않는다.
-
-추가 Copilot-native asset이 생기면 Rulesync의 current source discovery contract를 먼저
-확인한 뒤 feature 범위에 포함한다.
-
-## Known Discovery Gaps
-
-### Hooks
-
-현재 project hook은 다음 파일에 있다.
-
-```text
-.github/hooks/dogfooding-observability.json
-```
-
-현재 Rulesync의 `copilot` hook adapter는 project hook source로 다음 파일을 읽는다.
-
-```text
-.github/hooks/copilot-hooks.json
-```
-
-따라서 `dogfooding-observability.json`을 `convert --from copilot --features hooks`가
-자동으로 읽는다고 가정하지 않는다. hook 변환이 요청되면 preview에서 discovery를
-확인하고, 필요하면 source normalization을 별도 변경으로 제안하거나 limitation으로
-보고한다. 파일을 몰래 rename 또는 copy하지 않는다.
-
-### Skills
-
-Project-local Skills는 현재 다음 위치에 있다.
-
-```text
-.agents/skills/
-```
-
-Rulesync의 `copilot` project skill location은 `.github/skills/`이므로 `.agents/skills/`를
-Copilot native source로 간주하지 않는다. portable Skill 배포 또는 별도 canonical
-workflow가 필요하면 그 범위를 명시적으로 다룬다.
-
-## Typical Conversion
-
-예를 들어 Copilot subagents를 Claude Code, Codex CLI와 Antigravity IDE로 port할 때:
-
-```bash
-npx --yes rulesync@latest convert \
-  --from copilot \
-  --to claudecode,codexcli,antigravity-ide \
-  --features subagents \
-  --dry-run
-```
-
-preview가 source inventory와 requested target에 맞으면 같은 command에서 `--dry-run`만
-제거해 실행한다.
-
-Rules는 이 Native bridge에 섞지 않고 canonical fan-out으로 별도 처리한다.
-
 ## Project Boundary
 
-- `.rulesync/rules/`만 Rule source로 수정한다.
-- generated target은 source가 아니다. target-specific fix가 필요하면 먼저 source 또는
-  backend compatibility gap인지 판단한다.
-- `.github/`의 Copilot-native non-Rule source asset을 conversion side effect로 수정하지 않는다.
-- `.agents/skills/`의 기존 project Skill은 이 workflow가 자동으로 재배치하지 않는다.
-- broad `--features "*"`보다 실제 source가 있는 feature를 우선한다.
+- Rulesync-managed asset은 canonical `.rulesync/**` source에서 수정한다.
+- Generated target asset을 source로 재해석하거나 직접 수정하지 않는다.
+- 다른 tool 또는 framework가 소유하는 asset은 그 tool의 generation과 lifecycle contract를 따른다.
+- Rulesync migration은 기존 owner를 암묵적으로 바꾸지 않는다. Migration 자체가 요청되고 preview와 validation으로 semantics를 확인한 경우에만 authority를 이동한다.
+- Rulesync-managed asset은 `copilot`, `codexcli`, `antigravity-ide` target set을 기준으로 관리한다.
+- broad `--features "*"`보다 실제 source와 migration scope가 확정된 feature만 다룬다.

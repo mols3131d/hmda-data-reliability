@@ -29,6 +29,12 @@
 
 각 owner는 더 좁은 경로의 guide나 `AGENTS.md`에 세부 규칙을 위임할 수 있다. Root에는 그 세부 규칙을 반복하지 않는다.
 
+### Agent Asset Authority
+
+- Repository-owned agent asset은 Rulesync를 기본 canonical authoring source로 사용한다.
+- 다른 tool 또는 framework가 CLI나 자체 lifecycle로 생성·관리하는 asset은 해당 tool의 canonical source가 계속 소유한다. 예를 들어 OpenSpec artifact를 Rulesync에 복제하거나 재정의하지 않고 owning OpenSpec surface로 route한다.
+- 아직 Rulesync로 명시적으로 migration하지 않은 기존 non-Rule asset은 현재 owner를 유지한다. Generated target projection은 독립적인 authority가 아니다.
+
 ## Path Rules
 
 Codex CLI는 glob-scoped Rule을 별도 파일로 자동 적용하지 않는다. 작업 대상이 아래 `Match`에 해당하면 **작업 전에** 연결된 canonical Rule을 읽고 적용한다. 여러 행이 일치하면 모두 적용한다.
