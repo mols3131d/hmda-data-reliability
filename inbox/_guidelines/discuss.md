@@ -86,7 +86,7 @@ stop_condition: review_has_no_findings
 - Later loops start from unresolved findings or new evidence; repeated wording does not count.
 - Stop early when Review has no material findings.
 - At loop 10, publish only if the result is still useful and record unresolved findings in `Next`; otherwise block instead of pretending completion.
-- When an `rpi-loop` capability is available, use it for this refinement contract. Otherwise follow the same contract locally.
+- When a `mols-rpi` capability is available, use it for this refinement contract. Otherwise follow the same contract locally.
 
 ## Scheduled Discussion
 
