@@ -1,16 +1,23 @@
 # Rulesync
 
-`.rulesync/rules/`는 repository-local Rule의 canonical source다. Generated vendor files는 runtime surface이며 직접 편집하지 않는다.
+Rulesync는 **repository-owned agent asset의 기본 canonical authoring source**다. Rulesync가 생성한 vendor/runtime file은 derived projection이며 직접 편집하거나 독립적인 authority로 재해석하지 않는다.
 
-## Targets
+## Authority Boundary
 
-`rulesync.jsonc`는 Rules만 다음 target으로 생성한다.
+- Repository가 직접 소유하는 agent asset은 새로 작성하거나 migration할 때 Rulesync canonical source를 기본으로 사용한다.
+- 다른 tool 또는 framework가 CLI나 자체 lifecycle로 생성·관리하는 asset은 그 tool의 canonical source가 계속 소유한다. OpenSpec처럼 별도 source model을 가진 asset을 Rulesync에 복제하거나 mirror하지 않는다.
+- Rulesync는 external tool-owned asset을 필요한 agent context로 route할 수 있지만 그 semantics, generation과 lifecycle을 재정의하지 않는다.
+- 아직 Rulesync로 명시적으로 migration하지 않은 기존 non-Rule asset은 현재 owner를 유지한다. Migration은 source semantics와 target compatibility를 확인하는 별도 변경으로 수행한다.
+
+## Current Scope
+
+현재 `rulesync.jsonc`는 Rules만 다음 target으로 생성한다.
 
 - `antigravity-ide`
 - `copilot`
 - `codexcli`
 
-Skills, subagents, hooks, MCP, permissions는 이번 workspace에서 Rulesync가 소유하지 않는다.
+`.rulesync/rules/`가 repository-local Rule의 canonical source다. Skills, subagents, hooks, MCP와 permissions는 현재 generation scope가 아니며, 존재한다는 이유만으로 vendor-native copy를 Rulesync source로 재해석하지 않는다.
 
 ## Version Policy
 
