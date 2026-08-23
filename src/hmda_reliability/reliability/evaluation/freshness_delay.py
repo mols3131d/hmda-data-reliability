@@ -10,45 +10,45 @@ from typing import TYPE_CHECKING
 import duckdb
 from pydantic import BaseModel, ConfigDict
 
-from project_pivot.data_platform.artifacts import ArtifactProjectionLockError
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.data_platform.sql import qualify_table_name, quote_string_literal
-from project_pivot.hmda_data import (
+from hmda_reliability.data_platform.artifacts import ArtifactProjectionLockError
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.data_platform.sql import qualify_table_name, quote_string_literal
+from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
     load_hmda_loans_partition,
     partition_content_identity,
     partition_max_ingested_at,
 )
-from project_pivot.reliability.contracts import (
+from hmda_reliability.reliability.contracts import (
     Approval,
     FreshnessMeasurementStatus,
     FreshnessObservation,
     RecoveryProposal,
 )
-from project_pivot.reliability.detection import DetectionThresholds
-from project_pivot.reliability.errors import (
+from hmda_reliability.reliability.detection import DetectionThresholds
+from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     BackfillValidationError,
     ReliabilityError,
 )
-from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
-from project_pivot.reliability.evaluation.recovery_case import (
+from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
+from hmda_reliability.reliability.evaluation.recovery_case import (
     build_recovery_evaluation_case,
 )
-from project_pivot.reliability.profiling import (
+from hmda_reliability.reliability.profiling import (
     ProfileSnapshotRequest,
     create_profile_snapshot,
 )
-from project_pivot.reliability.recovery import (
+from hmda_reliability.reliability.recovery import (
     ApprovedBackfillRequest,
     BackfillValidationResult,
     execute_approved_backfill,
 )
 
 if TYPE_CHECKING:
-    from project_pivot.data_operations import DataOperationRequest
-    from project_pivot.data_operations.lifecycle_result import LifecycleResult
-    from project_pivot.reliability.contracts import ProfileSnapshot
+    from hmda_reliability.data_operations import DataOperationRequest
+    from hmda_reliability.data_operations.lifecycle_result import LifecycleResult
+    from hmda_reliability.reliability.contracts import ProfileSnapshot
 
 type ApprovalCallback = Callable[[RecoveryProposal], Approval]
 type DbtValidationCallback = Callable[[DataOperationRequest], str]
@@ -90,8 +90,8 @@ def evaluate_freshness_delay_vertical_slice(
 ) -> FreshnessDelayVerticalSliceResult:
     """Evaluate a controlled Bronze ingestion delay and approved recovery."""
 
-    from project_pivot.data_operations import run_incident_lifecycle
-    from project_pivot.data_operations.errors import DataOperationError
+    from hmda_reliability.data_operations import run_incident_lifecycle
+    from hmda_reliability.data_operations.errors import DataOperationError
 
     if request.observed_at is None:
         raise ValueError("freshness evaluation에는 observed_at이 필요합니다.")
@@ -177,7 +177,6 @@ def evaluate_freshness_delay_vertical_slice(
         baseline,
         thresholds=thresholds,
     )
-
     with DuckDBConnectionManager(candidate_request.database_path) as connection:
         load_hmda_loans_partition(
             connection,
