@@ -1,6 +1,6 @@
-# HMDA Data Reliability Documentation
+# Documentation
 
-`docs/`는 HMDA Data Reliability의 장기 지침, 현재 목표, 개발 가이드와 인간 편의용 projection을 구분한다. 현재 capability의 normative contract는 [`../openspec/specs/`](../openspec/specs/)가 소유한다.
+`docs/`는 장기 지침, 현재 목표, 개발 가이드와 인간 편의용 projection을 구분한다. 현재 capability의 normative contract는 [`../openspec/specs/`](../openspec/specs/)가 소유한다.
 
 ## Core Documents
 
