@@ -32,6 +32,7 @@ jobs:
           markdown=false
           tests=false
           lefthook=false
+          rulesync=false
           full_unit=false
           targets=()
 
@@ -76,6 +77,12 @@ jobs:
           }
 
           while IFS= read -r path; do
+            case "$path" in
+              .rulesync/*|rulesync.jsonc|scripts/rulesync.py|AGENTS.md|.agents/rules/*|.github/instructions/*.instructions.md)
+                rulesync=true
+                ;;
+            esac
+
             if [[ "$path" == *.md ]]; then
               [[ -f "$path" ]] && markdown=true
               continue
@@ -95,13 +102,13 @@ jobs:
                   add_target "tests/$target"
                 done
                 ;;
-              src/project_pivot/logger.py)
+              src/hmda_reliability/logger.py)
                 tests=true
                 add_target tests/test_log_agent_event.py
                 ;;
-              src/project_pivot/*/*)
+              src/hmda_reliability/*/*)
                 tests=true
-                domain="${path#src/project_pivot/}"
+                domain="${path#src/hmda_reliability/}"
                 domain="${domain%%/*}"
                 case "$domain" in
                   shared|configs|utils)
@@ -133,7 +140,7 @@ jobs:
                     ;;
                 esac
                 ;;
-              src/project_pivot/*|tests/*|*.py)
+              src/hmda_reliability/*|tests/*|*.py)
                 tests=true
                 full_unit=true
                 ;;
@@ -144,6 +151,7 @@ jobs:
             echo "markdown=$markdown"
             echo "tests=$tests"
             echo "lefthook=$lefthook"
+            echo "rulesync=$rulesync"
             echo "full_unit=$full_unit"
             printf 'targets='
             printf '%s ' "${targets[@]}"
@@ -170,7 +178,7 @@ jobs:
           ((${#files[@]} == 0)) || rumdl fmt "${files[@]}"
 
       - name: Set up Python
-        if: steps.scope.outputs.tests == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.rulesync == 'true'
         uses: actions/setup-python@v6.2.0
         with:
           python-version-file: ".python-version"
@@ -188,6 +196,10 @@ jobs:
       - name: Sync dependencies
         if: steps.scope.outputs.tests == 'true'
         run: uv sync --locked
+
+      - name: Validate Rulesync projections
+        if: steps.scope.outputs.rulesync == 'true'
+        run: python scripts/rulesync.py validate
 
       - name: Validate Lefthook config
         if: steps.scope.outputs.lefthook == 'true'
