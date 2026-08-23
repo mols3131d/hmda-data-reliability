@@ -13,7 +13,7 @@
 - Owning source가 충돌하면 임의로 해소하지 말고 drift와 근거를 보고한다.
 - 기존 architecture와 domain ownership boundary를 존중하고 불필요하게 책임을 넘나들지 않는다.
 - KISS, DRY, YAGNI를 우선하고 필요하지 않은 abstraction과 중복을 만들지 않는다.
-- 한국어를 기본으로 사용하되 code identifier, API name과 established technical term은 자연스러운 원문을 유지한다.
+- 문서와 repository text의 언어 선택은 [`docs/language.md`](docs/language.md)를 따른다.
 
 ## Guidance Ownership
 
