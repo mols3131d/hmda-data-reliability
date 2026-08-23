@@ -4,12 +4,12 @@ from pathlib import Path
 
 from pydantic import model_validator
 
-from project_pivot.reliability.contracts import (
+from hmda_reliability.reliability.contracts import (
     ReliabilityContract,
     SchemaRecoveryApproval,
     SchemaRecoveryProposal,
 )
-from project_pivot.reliability.profiling import ProfileSnapshotRequest
+from hmda_reliability.reliability.profiling import ProfileSnapshotRequest
 
 
 class ApprovedSchemaRecoveryRequest(ReliabilityContract):
