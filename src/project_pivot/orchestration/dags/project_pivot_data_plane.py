@@ -1,4 +1,4 @@
-"""Airflow adapter for the Project Pivot raw-to-analytics data plane."""
+"""Airflow adapter for the raw-to-analytics data plane."""
 
 from __future__ import annotations
 
