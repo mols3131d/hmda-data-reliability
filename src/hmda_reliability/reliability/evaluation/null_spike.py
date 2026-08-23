@@ -9,44 +9,44 @@ from typing import TYPE_CHECKING
 import duckdb
 from pydantic import BaseModel, ConfigDict
 
-from project_pivot.data_platform.artifacts import (
+from hmda_reliability.data_platform.artifacts import (
     ArtifactProjectionLockError,
     ArtifactProjectionReadError,
     artifact_projection_id,
     artifact_projection_lock,
 )
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.data_platform.sql import quote_string_literal
-from project_pivot.hmda_data import (
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.data_platform.sql import quote_string_literal
+from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
     load_hmda_loans_partition,
     null_spike,
     partition_content_identity,
 )
-from project_pivot.reliability.contracts import Approval, RecoveryProposal
-from project_pivot.reliability.detection import DetectionThresholds
-from project_pivot.reliability.errors import (
+from hmda_reliability.reliability.contracts import Approval, RecoveryProposal
+from hmda_reliability.reliability.detection import DetectionThresholds
+from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     BackfillValidationError,
     ReliabilityError,
 )
-from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
-from project_pivot.reliability.evaluation.recovery_case import (
+from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
+from hmda_reliability.reliability.evaluation.recovery_case import (
     build_recovery_evaluation_case,
 )
-from project_pivot.reliability.profiling import (
+from hmda_reliability.reliability.profiling import (
     ProfileSnapshotRequest,
     create_profile_snapshot,
 )
-from project_pivot.reliability.recovery import (
+from hmda_reliability.reliability.recovery import (
     ApprovedBackfillRequest,
     BackfillValidationResult,
     execute_approved_backfill,
 )
 
 if TYPE_CHECKING:
-    from project_pivot.data_operations import DataOperationRequest
-    from project_pivot.data_operations.lifecycle_result import LifecycleResult
+    from hmda_reliability.data_operations import DataOperationRequest
+    from hmda_reliability.data_operations.lifecycle_result import LifecycleResult
 
 type ApprovalCallback = Callable[[RecoveryProposal], Approval]
 type DbtValidationCallback = Callable[[DataOperationRequest], str]
@@ -83,8 +83,8 @@ def evaluate_null_spike_vertical_slice(
 ) -> NullSpikeVerticalSliceResult:
     """Evaluate a controlled single-column null spike before recovery execution."""
 
-    from project_pivot.data_operations import run_incident_lifecycle
-    from project_pivot.data_operations.errors import DataOperationError
+    from hmda_reliability.data_operations import run_incident_lifecycle
+    from hmda_reliability.data_operations.errors import DataOperationError
 
     if target_column not in request.profile_columns:
         raise ValueError("target_column은 profile_columns에 포함되어야 합니다.")
