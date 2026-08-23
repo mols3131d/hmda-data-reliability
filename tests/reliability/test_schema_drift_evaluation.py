@@ -9,18 +9,18 @@ from typing import Any
 import duckdb
 import pytest
 
-import project_pivot.reliability as reliability
-import project_pivot.reliability.evaluation.schema_drift as schema_drift_evaluation
-from project_pivot.data_operations import DataOperationRequest, DbtBuildResult
-from project_pivot.data_operations.errors import DataOperationError
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.reliability import (
+import hmda_reliability.reliability as reliability
+import hmda_reliability.reliability.evaluation.schema_drift as schema_drift_evaluation
+from hmda_reliability.data_operations import DataOperationRequest, DbtBuildResult
+from hmda_reliability.data_operations.errors import DataOperationError
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.reliability import (
     ApprovalGateError,
     ApprovalStatus,
     SchemaRecoveryApproval,
     SchemaRecoveryProposal,
 )
-from project_pivot.reliability.errors import SchemaRecoveryValidationError
+from hmda_reliability.reliability.errors import SchemaRecoveryValidationError
 
 
 def _evaluation_api() -> tuple[Any, type[Any]]:
