@@ -11,18 +11,18 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import cast
 
-from project_pivot.data_operations.errors import DataOperationError
-from project_pivot.data_operations.lifecycle_result import LifecycleResult
-from project_pivot.data_operations.request import DataOperationRequest
-from project_pivot.data_platform.artifacts import (
+from hmda_reliability.data_operations.errors import DataOperationError
+from hmda_reliability.data_operations.lifecycle_result import LifecycleResult
+from hmda_reliability.data_operations.request import DataOperationRequest
+from hmda_reliability.data_platform.artifacts import (
     ArtifactProjectionLockError,
     ArtifactProjectionReadError,
     artifact_projection_id,
     artifact_projection_lock,
 )
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.hmda_data import PartitionContentIdentity, partition_content_identity
-from project_pivot.reliability import (
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.hmda_data import PartitionContentIdentity, partition_content_identity
+from hmda_reliability.reliability import (
     DetectionRequest,
     DetectionResult,
     DetectionThresholds,
