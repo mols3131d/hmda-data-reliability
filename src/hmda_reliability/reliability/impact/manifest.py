@@ -7,7 +7,7 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any
 
-from project_pivot.reliability.errors import ImpactAnalysisError
+from hmda_reliability.reliability.errors import ImpactAnalysisError
 
 
 class DbtManifestGraph:
