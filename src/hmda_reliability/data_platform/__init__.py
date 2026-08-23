@@ -1,6 +1,6 @@
 """도메인 공통 데이터 플랫폼 유틸리티."""
 
-from project_pivot.data_platform.duckdb import (
+from hmda_reliability.data_platform.duckdb import (
     DuckDBMutationLockError,
     current_database_path,
     database_mutation_lock,
