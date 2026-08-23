@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
-from project_pivot.reliability.contracts import Incident
+from hmda_reliability.reliability.contracts import Incident
 
 
 class ImpactAnalysisRequest(BaseModel):
