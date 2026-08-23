@@ -2,8 +2,8 @@
 
 from pydantic import Field, model_validator
 
-from project_pivot.hmda_data import PartitionContentIdentity
-from project_pivot.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.hmda_data import PartitionContentIdentity
+from hmda_reliability.reliability.contracts.base import ReliabilityContract
 
 
 class TableStateIdentity(ReliabilityContract):
