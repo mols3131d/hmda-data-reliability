@@ -14,7 +14,7 @@ user-invocable: false
 - OpenSpec custom schema `spec-driven-tdd`에서 test design부터 test implementation까지 담당
   - workflow contract: `openspec/schemas/spec-driven-tdd/`
 
-작업 시작 시 [`pivot-load-context-testing`](../../.agents/skills/pivot-load-context-testing/SKILL.md)을 읽고 현재 task에 필요한 testing context만 로드한다. Test 설계와 실행의 세부 기준은 해당 skill이 연결하는 canonical 문서가 소유한다.
+작업 시작 시 [`prj-load-context-testing`](../../.agents/skills/prj-load-context-testing/SKILL.md)을 읽고 현재 task에 필요한 testing context만 로드한다. Test 설계와 실행의 세부 기준은 해당 skill이 연결하는 canonical 문서가 소유한다.
 
 ## Workflow
 

@@ -1,5 +1,5 @@
 ---
-name: pivot-clarify-runtime
+name: prj-clarify-runtime
 description: Use this skill to reduce runtime understanding debt in Project Pivot when important execution paths, decisions, state transitions, external actions, or failure causes are hard to reconstruct, or when existing runtime evidence is duplicated, noisy, disconnected, or owned at the wrong boundary. Preserve domain behavior and existing caller/consumer contracts. Clarify one reconstruction question at a time by reusing, moving, reducing, removing, or adding the smallest evidence needed. Do not use for defect debugging, correctness review, test design, monitoring, telemetry-platform design, performance profiling, or feature implementation.
 ---
 
@@ -7,7 +7,7 @@ description: Use this skill to reduce runtime understanding debt in Project Pivo
 
 기능을 추가하지 않고 runtime 이해 부채를 줄인다. **실행 후 답하기 어려운 가장 중요한 질문 하나를, 가장 작은 runtime evidence 변경으로 답할 수 있게 만든다.**
 
-코드를 읽기 쉽게 만드는 일은 `pivot-clarify-code`, defect 판단은 review/debugging 책임이다. 이 스킬은 실행 경로·결정·상태 변화·실패 원인을 복원하는 데 집중한다.
+코드를 읽기 쉽게 만드는 일은 `prj-clarify-code`, defect 판단은 review/debugging 책임이다. 이 스킬은 실행 경로·결정·상태 변화·실패 원인을 복원하는 데 집중한다.
 
 ## Arguments
 

@@ -4,10 +4,10 @@
 
 ## Current State
 
-`pivot-research-workspace`는 명세, 구현 또는 기술 판단 전에 근거를 수집하고 정리하는 Research 스킬이다.
+`prj-research-workspace`는 명세, 구현 또는 기술 판단 전에 근거를 수집하고 정리하는 Research 스킬이다.
 
 ```text
-pivot-research-workspace/
+prj-research-workspace/
 ├── README.md
 ├── SKILL.md
 ├── docs/

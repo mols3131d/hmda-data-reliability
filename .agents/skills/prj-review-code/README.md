@@ -1,6 +1,6 @@
-# Pivot Code Review
+# Code Review
 
-`pivot-review-code`는 구현 코드와 테스트 코드의 correctness, regression, failure path와 validation evidence를 검토하는 범용 Review 스킬입니다.
+`prj-review-code`는 구현 코드와 테스트 코드의 correctness, regression, failure path와 validation evidence를 검토하는 범용 Review 스킬입니다.
 
 특정 Agent, Review workflow, Git host 또는 artifact 형식에 의존하지 않습니다. 파일, diff, commit, pull request나 현재 작업 내용을 대상으로 사용할 수 있습니다.
 

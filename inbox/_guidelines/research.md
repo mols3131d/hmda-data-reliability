@@ -14,7 +14,7 @@ Use `research` when the artifact's primary purpose is to answer a question by ga
 ## Resources
 
 - Template: [`inbox/_templates/research.md`](../_templates/research.md)
-- Skill: `pivot-research-workspace` when evidence-backed investigation of current behavior, scope, dependencies, alternatives, or failures is useful.
+- Skill: `prj-research-workspace` when evidence-backed investigation of current behavior, scope, dependencies, alternatives, or failures is useful.
 
 Use only the resources that help answer the research question. Adapt or omit template sections that do not serve it.
 
