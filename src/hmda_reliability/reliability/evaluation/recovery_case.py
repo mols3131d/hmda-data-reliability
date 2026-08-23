@@ -2,8 +2,8 @@
 
 from collections.abc import Sequence
 
-from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
-from project_pivot.reliability.recovery import BackfillValidationResult
+from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
+from hmda_reliability.reliability.recovery import BackfillValidationResult
 
 
 def build_recovery_evaluation_case(
