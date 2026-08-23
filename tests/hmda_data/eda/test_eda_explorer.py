@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from project_pivot.hmda_data.eda import (
+from hmda_reliability.hmda_data.eda import (
     analyze_hmda_csv,
     export_eda_evidence_yaml,
     render_eda_static_charts,
