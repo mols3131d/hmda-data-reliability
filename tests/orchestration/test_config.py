@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from project_pivot.data_operations import DataOperationRequest
-from project_pivot.orchestration.config import data_operation_request_from_runtime
+from hmda_reliability.data_operations import DataOperationRequest
+from hmda_reliability.orchestration.config import data_operation_request_from_runtime
 
 pytestmark = pytest.mark.unit
 
