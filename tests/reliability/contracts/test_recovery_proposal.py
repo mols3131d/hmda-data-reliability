@@ -5,8 +5,8 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from project_pivot.hmda_data import PartitionContentIdentity
-from project_pivot.reliability import RecoveryProposal
+from hmda_reliability.hmda_data import PartitionContentIdentity
+from hmda_reliability.reliability import RecoveryProposal
 
 pytestmark = pytest.mark.unit
 
