@@ -1,5 +1,5 @@
 ---
-name: pivot-review-code
+name: prj-review-code
 description: Review implementation and test changes for intended behavior, correctness, regressions, reachable failure paths, maintainability risks, and validation evidence. Use for diffs, files, commits, pull requests, or working-tree changes. Works independently of any reviewer, workflow, VCS host, or review artifact.
 ---
 

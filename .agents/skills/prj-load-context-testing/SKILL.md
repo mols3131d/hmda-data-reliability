@@ -1,5 +1,5 @@
 ---
-name: pivot-load-context-testing
+name: prj-load-context-testing
 description: >-
   Load Project Pivot testing context for pytest work: writing or changing tests,
   selecting or running tests, debugging failures, validating behavior, checking

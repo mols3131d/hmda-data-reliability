@@ -4,10 +4,10 @@
 
 ## Current State
 
-`pivot-review-code`는 구현 코드와 테스트 코드를 근거 중심으로 검토하는 범용 Code Review 엔진이다.
+`prj-review-code`는 구현 코드와 테스트 코드를 근거 중심으로 검토하는 범용 Code Review 엔진이다.
 
 ```text
-pivot-review-code/
+prj-review-code/
 ├── README.md
 ├── SKILL.md
 ├── docs/
@@ -58,7 +58,7 @@ Target
 | 분리 비용 | 공통 규칙 중복과 두 스킬의 판단 불일치 위험이 크다. |
 | 독립 필요성 | 테스트 Review만의 별도 lifecycle과 출력 계약이 아직 없다. |
 
-다음 조건이 실제로 생길 때만 `pivot-review-tests` 같은 독립 스킬을 검토한다.
+다음 조건이 실제로 생길 때만 `prj-review-tests` 같은 독립 스킬을 검토한다.
 
 - 테스트 설계와 구현이 Code Review와 별개의 반복 workflow가 됨
 - test artifact만을 위한 독립 입력, 완료 상태와 저장 계약이 생김

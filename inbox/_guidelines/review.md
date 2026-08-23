@@ -20,7 +20,7 @@ If another workflow defines an owning review artifact, such as an OpenSpec `plan
 ## Resources
 
 - Template: [`inbox/_templates/review.md`](../_templates/review.md)
-- Skill: `pivot-review-code` only for implementation or test review; broader targets use this guideline without forcing that skill.
+- Skill: `prj-review-code` only for implementation or test review; broader targets use this guideline without forcing that skill.
 
 Use only resources that serve the review target. Adapt or omit template sections that do not.
 

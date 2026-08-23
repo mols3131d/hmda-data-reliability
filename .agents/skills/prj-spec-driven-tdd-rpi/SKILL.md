@@ -1,5 +1,5 @@
 ---
-name: pivot-spec-driven-tdd-rpi
+name: prj-spec-driven-tdd-rpi
 description: >-
   Route Research evidence and Review feedback into OpenSpec's custom
   `spec-driven-tdd` workflow. Use when Research may determine or revise an
