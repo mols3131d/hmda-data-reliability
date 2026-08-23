@@ -1,28 +1,28 @@
 """Synthetic case evaluation report."""
 
-from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
-from project_pivot.reliability.evaluation.freshness_delay import (
+from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
+from hmda_reliability.reliability.evaluation.freshness_delay import (
     FreshnessDelayVerticalSliceResult,
     evaluate_freshness_delay_vertical_slice,
 )
-from project_pivot.reliability.evaluation.null_spike import (
+from hmda_reliability.reliability.evaluation.null_spike import (
     NullSpikeVerticalSliceResult,
     evaluate_null_spike_vertical_slice,
 )
-from project_pivot.reliability.evaluation.recovery_case import (
+from hmda_reliability.reliability.evaluation.recovery_case import (
     build_recovery_evaluation_case,
 )
-from project_pivot.reliability.evaluation.report import EvaluationReport
-from project_pivot.reliability.evaluation.reporter import (
+from hmda_reliability.reliability.evaluation.report import EvaluationReport
+from hmda_reliability.reliability.evaluation.reporter import (
     build_evaluation_report,
     render_evaluation_report_markdown,
     write_evaluation_report,
 )
-from project_pivot.reliability.evaluation.schema_drift import (
+from hmda_reliability.reliability.evaluation.schema_drift import (
     SchemaDriftVerticalSliceResult,
     evaluate_schema_drift_vertical_slice,
 )
-from project_pivot.reliability.evaluation.volume_drop import (
+from hmda_reliability.reliability.evaluation.volume_drop import (
     VolumeDropVerticalSliceResult,
     evaluate_volume_drop_vertical_slice,
 )
