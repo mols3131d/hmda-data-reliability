@@ -1,14 +1,14 @@
 """Analyze dbt manifest lineage under a shared artifact reader lock."""
 
-from project_pivot.data_platform.artifacts import (
+from hmda_reliability.data_platform.artifacts import (
     ArtifactProjectionLockError,
     artifact_projection_lock,
 )
-from project_pivot.reliability.contracts import LineageEvidence
-from project_pivot.reliability.errors import ImpactAnalysisError
-from project_pivot.reliability.impact.manifest import DbtManifestGraph
-from project_pivot.reliability.impact.request import ImpactAnalysisRequest
-from project_pivot.reliability.impact.result import ImpactAnalysisResult
+from hmda_reliability.reliability.contracts import LineageEvidence
+from hmda_reliability.reliability.errors import ImpactAnalysisError
+from hmda_reliability.reliability.impact.manifest import DbtManifestGraph
+from hmda_reliability.reliability.impact.request import ImpactAnalysisRequest
+from hmda_reliability.reliability.impact.result import ImpactAnalysisResult
 
 
 class DbtImpactAnalyzer:
