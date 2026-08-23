@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from project_pivot.hmda_data import PartitionContentIdentity
+from hmda_reliability.hmda_data import PartitionContentIdentity
 
 
 class LifecycleResult(BaseModel):
