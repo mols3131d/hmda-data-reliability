@@ -44,7 +44,7 @@
 
 ## Package And Directory Layout
 
-- 애플리케이션 package root는 `src/project_pivot/`다.
+- 애플리케이션 package root는 `src/hmda_reliability/`다.
 - 새 package를 만들기 전에 `data_operations`, `data_platform`, `hmda_data`, `orchestration`, `reliability`, `shared`, `configs` 중 기존 domain을 우선 사용한다.
 
 | Directory | Purpose |
