@@ -1,1 +1,1 @@
-"""Project Pivot package."""
+"""HMDA data reliability package."""
