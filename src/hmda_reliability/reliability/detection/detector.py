@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from project_pivot.reliability.contracts import (
+from hmda_reliability.reliability.contracts import (
     Evidence,
     EvidenceSource,
     FreshnessMeasurementStatus,
@@ -13,8 +13,8 @@ from project_pivot.reliability.contracts import (
     IncidentStatus,
     ProfileSnapshot,
 )
-from project_pivot.reliability.detection.request import DetectionRequest
-from project_pivot.reliability.detection.result import DetectionResult
+from hmda_reliability.reliability.detection.request import DetectionRequest
+from hmda_reliability.reliability.detection.result import DetectionResult
 
 
 class BasicIncidentDetector:
