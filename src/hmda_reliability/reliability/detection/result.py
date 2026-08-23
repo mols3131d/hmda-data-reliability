@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from project_pivot.reliability.contracts import Evidence, Incident
+from hmda_reliability.reliability.contracts import Evidence, Incident
 
 
 class DetectionResult(BaseModel):
