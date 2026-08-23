@@ -6,9 +6,9 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from project_pivot.hmda_data.ingestion import HMDA_LOANS_TABLE
-from project_pivot.reliability.contracts import Approval, RecoveryProposal
-from project_pivot.reliability.profiling import ProfileSnapshotRequest
+from hmda_reliability.hmda_data.ingestion import HMDA_LOANS_TABLE
+from hmda_reliability.reliability.contracts import Approval, RecoveryProposal
+from hmda_reliability.reliability.profiling import ProfileSnapshotRequest
 
 
 class ApprovedBackfillRequest(BaseModel):
