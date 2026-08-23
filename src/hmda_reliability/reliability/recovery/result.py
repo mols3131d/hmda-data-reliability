@@ -4,8 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from project_pivot.hmda_data import PartitionContentIdentity
-from project_pivot.reliability.contracts import FreshnessObservation, ProfileSnapshot
+from hmda_reliability.hmda_data import PartitionContentIdentity
+from hmda_reliability.reliability.contracts import FreshnessObservation, ProfileSnapshot
 
 
 class BackfillValidationResult(BaseModel):
