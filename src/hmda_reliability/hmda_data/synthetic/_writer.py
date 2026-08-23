@@ -7,9 +7,9 @@ from pathlib import Path
 
 import duckdb
 
-from project_pivot.data_platform.sql import quote_string_literal
-from project_pivot.hmda_data.errors import SyntheticCaseError
-from project_pivot.logger import get_logger
+from hmda_reliability.data_platform.sql import quote_string_literal
+from hmda_reliability.hmda_data.errors import SyntheticCaseError
+from hmda_reliability.logger import get_logger
 
 _LOGGER = get_logger(__name__)
 
