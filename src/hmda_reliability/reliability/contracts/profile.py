@@ -5,7 +5,7 @@ from enum import StrEnum
 
 from pydantic import Field, field_validator, model_validator
 
-from project_pivot.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.reliability.contracts.base import ReliabilityContract
 
 
 class FreshnessMeasurementStatus(StrEnum):
