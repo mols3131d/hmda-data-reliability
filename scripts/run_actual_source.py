@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from project_pivot.hmda_data.eda import analyze_hmda_csv
+from hmda_reliability.hmda_data.eda import analyze_hmda_csv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_PATH = PROJECT_ROOT / "data/raw/hmda/year_2025.csv"
