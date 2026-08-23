@@ -7,21 +7,21 @@ from pathlib import Path
 
 import duckdb
 
-from project_pivot.data_platform.duckdb import (
+from hmda_reliability.data_platform.duckdb import (
     DuckDBMutationLockError,
     current_database_path,
     database_mutation_lock,
     ensure_schema,
     table_row_count,
 )
-from project_pivot.data_platform.sql import qualify_table_name
-from project_pivot.hmda_data.errors import HMDADataLoadError
-from project_pivot.hmda_data.ingestion._common import (
+from hmda_reliability.data_platform.sql import qualify_table_name
+from hmda_reliability.hmda_data.errors import HMDADataLoadError
+from hmda_reliability.hmda_data.ingestion._common import (
     _LOGGER,
     HMDA_LOANS_TABLE,
     validate_required_columns,
 )
-from project_pivot.hmda_data.ingestion._source_query import (
+from hmda_reliability.hmda_data.ingestion._source_query import (
     source_union_sql,
     table_schema_name,
     validate_source_paths,
