@@ -5,8 +5,8 @@ from enum import StrEnum
 
 from pydantic import Field, model_validator
 
-from project_pivot.reliability.contracts.base import ReliabilityContract
-from project_pivot.reliability.contracts.recovery_proposal import RecoveryProposal
+from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.reliability.contracts.recovery_proposal import RecoveryProposal
 
 
 class ApprovalStatus(StrEnum):
