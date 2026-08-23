@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import model_validator
 
-from project_pivot.reliability.contracts import (
+from hmda_reliability.reliability.contracts import (
     ProfileSnapshot,
     ReliabilityContract,
     TableStateIdentity,
