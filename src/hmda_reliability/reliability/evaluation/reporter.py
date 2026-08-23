@@ -6,8 +6,8 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
-from project_pivot.reliability.evaluation.report import EvaluationReport
+from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
+from hmda_reliability.reliability.evaluation.report import EvaluationReport
 
 
 def build_evaluation_report(
