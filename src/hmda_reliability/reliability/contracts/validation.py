@@ -2,8 +2,8 @@
 
 from pydantic import ValidationError
 
-from project_pivot.reliability.contracts.base import ReliabilityContract
-from project_pivot.reliability.errors import ContractValidationError
+from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.reliability.errors import ContractValidationError
 
 
 def validate_contract[ContractT: ReliabilityContract](
