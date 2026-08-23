@@ -10,9 +10,9 @@ from typing import cast
 import duckdb
 import pytest
 
-import project_pivot.reliability.recovery.executor as recovery_executor
-from project_pivot.hmda_data.errors import HMDADataLoadError
-from project_pivot.reliability import ApprovedBackfillRequest, BackfillValidationError
+import hmda_reliability.reliability.recovery.executor as recovery_executor
+from hmda_reliability.hmda_data.errors import HMDADataLoadError
+from hmda_reliability.reliability import ApprovedBackfillRequest, BackfillValidationError
 
 
 @pytest.mark.unit
