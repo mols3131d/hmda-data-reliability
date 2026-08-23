@@ -6,8 +6,8 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from project_pivot.reliability.contracts import ProfileSnapshot
-from project_pivot.reliability.detection.thresholds import DetectionThresholds
+from hmda_reliability.reliability.contracts import ProfileSnapshot
+from hmda_reliability.reliability.detection.thresholds import DetectionThresholds
 
 
 class DetectionRequest(BaseModel):
