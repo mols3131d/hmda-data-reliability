@@ -6,17 +6,17 @@ from pathlib import Path
 
 import pytest
 
-import project_pivot.hmda_data.ingestion.full_load as full_load_module
-from project_pivot.data_platform.duckdb import (
+import hmda_reliability.hmda_data.ingestion.full_load as full_load_module
+from hmda_reliability.data_platform.duckdb import (
     DuckDBConnectionManager,
     DuckDBMutationLockError,
 )
-from project_pivot.hmda_data import (
+from hmda_reliability.hmda_data import (
     discover_hmda_files,
     load_hmda_loans,
     load_hmda_loans_partition,
 )
-from project_pivot.hmda_data.errors import HMDADataLoadError, HMDADataValidationError
+from hmda_reliability.hmda_data.errors import HMDADataLoadError, HMDADataValidationError
 
 pytestmark = pytest.mark.component
 
