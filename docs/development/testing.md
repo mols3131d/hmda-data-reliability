@@ -133,7 +133,7 @@ uv run pytest -n auto \
 ```
 
 ```bash
-uv run pytest --cov=src/project_pivot
+uv run pytest --cov=src/hmda_reliability
 ```
 
 Test별 trace가 필요하면 `--trace-per-test`를 사용한다. OTLP collector로 export할 때는 endpoint와 export option을 함께 지정한다.
