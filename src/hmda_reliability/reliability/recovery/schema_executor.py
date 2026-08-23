@@ -8,29 +8,29 @@ from tempfile import TemporaryDirectory
 import duckdb
 from pydantic import ValidationError
 
-from project_pivot.data_platform.duckdb import (
+from hmda_reliability.data_platform.duckdb import (
     DuckDBConnectionManager,
     DuckDBMutationLockError,
     database_mutation_lock,
 )
-from project_pivot.data_platform.sql import qualify_table_name, quote_string_literal
-from project_pivot.reliability.errors import (
+from hmda_reliability.data_platform.sql import qualify_table_name, quote_string_literal
+from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     ProfileSnapshotError,
     SchemaRecoveryValidationError,
     TableStateIdentityError,
 )
-from project_pivot.reliability.profiling import (
+from hmda_reliability.reliability.profiling import (
     create_profile_snapshot,
     create_table_state_identity,
 )
-from project_pivot.reliability.recovery.schema_candidate import (
+from hmda_reliability.reliability.recovery.schema_candidate import (
     stage_approved_schema_recovery_candidate,
 )
-from project_pivot.reliability.recovery.schema_request import (
+from hmda_reliability.reliability.recovery.schema_request import (
     ApprovedSchemaRecoveryRequest,
 )
-from project_pivot.reliability.recovery.schema_result import (
+from hmda_reliability.reliability.recovery.schema_result import (
     SchemaRecoveryValidationResult,
 )
 
