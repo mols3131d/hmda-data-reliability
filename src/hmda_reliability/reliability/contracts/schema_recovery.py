@@ -4,9 +4,9 @@ from datetime import datetime
 
 from pydantic import Field, model_validator
 
-from project_pivot.reliability.contracts.approval import ApprovalStatus
-from project_pivot.reliability.contracts.base import ReliabilityContract
-from project_pivot.reliability.contracts.table_state import TableStateIdentity
+from hmda_reliability.reliability.contracts.approval import ApprovalStatus
+from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.reliability.contracts.table_state import TableStateIdentity
 
 _SCHEMA_RECOVERY_ACTIONS = ("replace_table", "rerun_profile_snapshot")
 
