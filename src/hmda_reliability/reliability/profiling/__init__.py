@@ -1,14 +1,14 @@
 """Profile snapshot 계산 유틸리티."""
 
-from project_pivot.reliability.profiling.profile_snapshot_builder import (
+from hmda_reliability.reliability.profiling.profile_snapshot_builder import (
     DuckDBProfileSnapshotBuilder,
     calculate_schema_hash,
     create_profile_snapshot,
 )
-from project_pivot.reliability.profiling.profile_snapshot_request import (
+from hmda_reliability.reliability.profiling.profile_snapshot_request import (
     ProfileSnapshotRequest,
 )
-from project_pivot.reliability.profiling.table_state_builder import (
+from hmda_reliability.reliability.profiling.table_state_builder import (
     create_table_state_identity,
 )
 
