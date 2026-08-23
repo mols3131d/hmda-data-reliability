@@ -10,7 +10,7 @@ tags:
 
 ## Why
 
-Project Pivot currently exposes the full data-plane workflow through Dagster. The repository has verified that Apache Airflow 3.3.0 can coexist with the current Python 3.13 project dependency graph when Airflow official constraints are used for the Airflow-first installation only and the final project resolution is performed without applying those constraints globally. The orchestration vendor can therefore be changed without redesigning ingestion, dbt execution, artifact promotion or Reliability safety boundaries.
+The repository currently exposes the full data-plane workflow through Dagster. The repository has verified that Apache Airflow 3.3.0 can coexist with the current Python 3.13 project dependency graph when Airflow official constraints are used for the Airflow-first installation only and the final project resolution is performed without applying those constraints globally. The orchestration vendor can therefore be changed without redesigning ingestion, dbt execution, artifact promotion or Reliability safety boundaries.
 
 ## What Changes
 
