@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
+from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
 
 
 class EvaluationReport(BaseModel):
