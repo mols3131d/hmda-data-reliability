@@ -8,8 +8,8 @@ import duckdb
 import pytest
 from pydantic import ValidationError
 
-import project_pivot.reliability as reliability
-from project_pivot.hmda_data import PartitionContentIdentity
+import hmda_reliability.reliability as reliability
+from hmda_reliability.hmda_data import PartitionContentIdentity
 
 
 def _table_state_api() -> tuple[type[Any], Any, type[Exception]]:
