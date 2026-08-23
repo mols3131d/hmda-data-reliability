@@ -6,31 +6,31 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from project_pivot.data_platform.duckdb import (
+from hmda_reliability.data_platform.duckdb import (
     DuckDBConnectionManager,
     database_mutation_lock,
 )
-from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
-from project_pivot.hmda_data import load_hmda_loans
-from project_pivot.reliability.contracts import (
+from hmda_reliability.data_platform.sql import qualify_table_name, quote_identifier
+from hmda_reliability.hmda_data import load_hmda_loans
+from hmda_reliability.reliability.contracts import (
     ReliabilityContract,
     SchemaRecoveryApproval,
     SchemaRecoveryProposal,
     TableStateIdentity,
 )
-from project_pivot.reliability.errors import (
+from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     ReliabilityError,
     SchemaRecoveryCandidateError,
     SchemaRecoveryValidationError,
 )
-from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
-from project_pivot.reliability.profiling import (
+from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
+from hmda_reliability.reliability.profiling import (
     ProfileSnapshotRequest,
     create_profile_snapshot,
     create_table_state_identity,
 )
-from project_pivot.reliability.recovery import (
+from hmda_reliability.reliability.recovery import (
     ApprovedSchemaRecoveryRequest,
     SchemaRecoveryValidationResult,
     execute_approved_schema_recovery,
@@ -38,7 +38,7 @@ from project_pivot.reliability.recovery import (
 )
 
 if TYPE_CHECKING:
-    from project_pivot.data_operations import (
+    from hmda_reliability.data_operations import (
         DataOperationRequest,
         DbtBuildResult,
         LifecycleResult,
@@ -78,8 +78,8 @@ def evaluate_schema_drift_vertical_slice(
 ) -> SchemaDriftVerticalSliceResult:
     """Build clean and drifted complete tables before approved restoration."""
 
-    from project_pivot.data_operations import run_incident_lifecycle
-    from project_pivot.data_operations.errors import DataOperationError
+    from hmda_reliability.data_operations import run_incident_lifecycle
+    from hmda_reliability.data_operations.errors import DataOperationError
 
     root = Path(workspace)
     clean_database_path = root / "clean.duckdb"
