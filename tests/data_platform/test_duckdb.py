@@ -10,9 +10,9 @@ from typing import cast
 
 import pytest
 
-import project_pivot.data_platform as data_platform
-import project_pivot.data_platform.duckdb as duckdb_module
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
+import hmda_reliability.data_platform as data_platform
+import hmda_reliability.data_platform.duckdb as duckdb_module
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
 
 pytestmark = pytest.mark.component
 
