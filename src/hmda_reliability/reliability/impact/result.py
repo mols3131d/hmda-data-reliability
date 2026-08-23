@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict
 
-from project_pivot.reliability.contracts import Incident, LineageEvidence
+from hmda_reliability.reliability.contracts import Incident, LineageEvidence
 
 
 class ImpactAnalysisResult(BaseModel):
