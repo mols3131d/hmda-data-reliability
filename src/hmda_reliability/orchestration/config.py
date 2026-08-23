@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 
-from project_pivot.data_operations import (
+from hmda_reliability.data_operations import (
     DataOperationRequest,
     data_operation_request_from_environment,
 )
