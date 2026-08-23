@@ -7,7 +7,7 @@ from pathlib import Path
 
 import duckdb
 
-from project_pivot.hmda_data.errors import SyntheticCaseError
+from hmda_reliability.hmda_data.errors import SyntheticCaseError
 
 
 def source_paths_parameter(source_paths: Sequence[str | Path]) -> list[str]:
