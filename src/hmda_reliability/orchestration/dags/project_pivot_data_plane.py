@@ -1,4 +1,4 @@
-"""Airflow adapter for the Project Pivot raw-to-analytics data plane."""
+"""Airflow adapter for the raw-to-analytics data plane."""
 
 from __future__ import annotations
 
@@ -11,12 +11,12 @@ from airflow.sdk import Asset, Param, dag, get_current_context, task
 from airflow.sdk.exceptions import AirflowSkipException
 from pydantic.types import JsonValue
 
-from project_pivot.data_operations import (
+from hmda_reliability.data_operations import (
     load_raw_data,
     promote_dbt_artifacts,
     run_dbt_build,
 )
-from project_pivot.orchestration.config import data_operation_request_from_runtime
+from hmda_reliability.orchestration.config import data_operation_request_from_runtime
 
 log = logging.getLogger(__name__)
 

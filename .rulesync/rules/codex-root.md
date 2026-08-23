@@ -51,9 +51,9 @@ Codex CLI는 glob-scoped Rule을 별도 파일로 자동 적용하지 않는다.
 | --- | --- |
 | [Development](.rulesync/rules/development.md) | `src/**/*` |
 | [Python](.rulesync/rules/python.md) | `src/**/*.py` |
-| [Project Pivot](.rulesync/rules/project.md) | `src/project_pivot/**/*` |
+| [Project](.rulesync/rules/project.md) | `src/hmda_reliability/**/*` |
 | [dbt](.rulesync/rules/dbt.md) | `dbt/**` |
-| [Reliability](.rulesync/rules/reliability.md) | `src/project_pivot/reliability/**`, `tests/reliability/**` |
-| [Orchestration](.rulesync/rules/orchestration.md) | `src/project_pivot/orchestration/**`, `tests/orchestration/**` |
+| [Reliability](.rulesync/rules/reliability.md) | `src/hmda_reliability/reliability/**`, `tests/reliability/**` |
+| [Orchestration](.rulesync/rules/orchestration.md) | `src/hmda_reliability/orchestration/**`, `tests/orchestration/**` |
 | [Markdown](.rulesync/rules/markdown.md) | `**/*.md` |
 | [Local Mermaid Diagrams](.rulesync/rules/mermaid.md) | `**/*.md`, `**/*.mmd`, `**/*.mermaid` |

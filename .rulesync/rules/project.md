@@ -2,14 +2,14 @@
 root: false
 targets:
   - copilot
-description: "Project-specific source rules for Project Pivot. Covers package ownership, data-layer boundaries, project contracts, and local-first constraints."
+description: "Project-specific source rules for this repository. Covers package ownership, data-layer boundaries, project contracts, and local-first constraints."
 globs:
-  - "src/project_pivot/**/*"
+  - "src/hmda_reliability/**/*"
 copilot:
-  name: "Project Pivot"
+  name: "Project"
 ---
 
-# Project Pivot
+# Project
 
 - Use the package and domain ownership defined in `DEVELOPMENT.md` and `docs/domains/OVERVIEW.md`; do not add a new top-level package when an existing owner fits.
 - Keep the data-layer boundary: HMDA source and Bronze ingestion are Python responsibilities; Silver and Gold transformations belong to dbt. Do not build a parallel Python transformation path for dbt-owned models.
