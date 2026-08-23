@@ -8,8 +8,8 @@ from typing import Any
 
 import duckdb
 
-from project_pivot.hmda_data.errors import HMDADataValidationError
-from project_pivot.hmda_data.ingestion._source_query import (
+from hmda_reliability.hmda_data.errors import HMDADataValidationError
+from hmda_reliability.hmda_data.ingestion._source_query import (
     HMDA_CSV_OPTIONS,
     csv_reader_sql,
 )
