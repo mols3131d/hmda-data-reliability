@@ -1,7 +1,7 @@
 ---
 name: prj-load-context-testing
 description: >-
-  Load Project Pivot testing context for pytest work: writing or changing tests,
+  Load repository testing context for pytest work: writing or changing tests,
   selecting or running tests, debugging failures, validating behavior, checking
   coverage, or working with markers, fixtures, assertions, test plans,
   scenarios, oracles, and test design.
@@ -9,7 +9,7 @@ description: >-
 
 # Testing Context
 
-Load the smallest Project Pivot testing context needed for the task. Canonical testing documents own the detailed rules; this skill selects and anchors the context needed to apply them consistently.
+Load the smallest repository testing context needed for the task. Canonical testing documents own the detailed rules; this skill selects and anchors the context needed to apply them consistently.
 
 ## Load Context
 

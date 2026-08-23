@@ -1,1 +1,1 @@
-"""Project Pivot package."""
+"""Data reliability package."""

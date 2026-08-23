@@ -19,7 +19,7 @@ Archive된 Change도 historical work artifact이며 current capability의 source
 | 파일 | 소유하는 지침 |
 | --- | --- |
 | [`schemas/spec-driven-tdd/schema.yaml`](schemas/spec-driven-tdd/schema.yaml) | 범용 workflow, artifact 목적·의존성·완료 조건과 gate |
-| [`config.yaml`](config.yaml) | 사용할 schema와 Project Pivot 전용 context, naming, 추가 규칙 |
+| [`config.yaml`](config.yaml) | 사용할 schema와 repository-specific context, naming, 추가 규칙 |
 | [`AGENTS.md`](AGENTS.md) | OpenSpec workflow 사용 여부와 무관하게 `openspec/`에서 지켜야 할 agent 행동 규칙 |
 | `README.md` | 구조, canonical boundary와 지침 소유권을 설명하는 인간용 안내 |
 | `schemas/spec-driven-tdd/templates/*` | artifact 구조·필드·parser contract와 그 구조에 종속된 작성 안내 |
