@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from project_pivot.reliability import (
+from hmda_reliability.reliability import (
     ImpactAnalysisError,
     ImpactAnalysisRequest,
     Incident,
