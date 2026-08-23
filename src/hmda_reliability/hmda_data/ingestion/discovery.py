@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from project_pivot.hmda_data.errors import HMDADataLoadError
-from project_pivot.hmda_data.ingestion._common import _LOGGER
+from hmda_reliability.hmda_data.errors import HMDADataLoadError
+from hmda_reliability.hmda_data.ingestion._common import _LOGGER
 
 _SUPPORTED_HMDA_EXTENSIONS = frozenset({".csv", ".parquet"})
 
