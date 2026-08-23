@@ -1,1 +1,1 @@
-"""HMDA data reliability package."""
+"""Data reliability package."""
