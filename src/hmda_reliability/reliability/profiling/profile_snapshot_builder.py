@@ -9,13 +9,13 @@ from typing import Any
 
 import duckdb
 
-from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
-from project_pivot.reliability.contracts import (
+from hmda_reliability.data_platform.sql import qualify_table_name, quote_identifier
+from hmda_reliability.reliability.contracts import (
     FreshnessMeasurementStatus,
     ProfileSnapshot,
 )
-from project_pivot.reliability.errors import ProfileSnapshotError
-from project_pivot.reliability.profiling.profile_snapshot_request import (
+from hmda_reliability.reliability.errors import ProfileSnapshotError
+from hmda_reliability.reliability.profiling.profile_snapshot_request import (
     ProfileSnapshotRequest,
 )
 
