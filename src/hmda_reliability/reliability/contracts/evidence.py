@@ -5,7 +5,7 @@ from enum import StrEnum
 
 from pydantic import Field
 
-from project_pivot.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.reliability.contracts.base import ReliabilityContract
 
 
 class EvidenceSource(StrEnum):
