@@ -1,12 +1,12 @@
 """기본 incident detection 유틸리티."""
 
-from project_pivot.reliability.detection.detector import (
+from hmda_reliability.reliability.detection.detector import (
     BasicIncidentDetector,
     detect_basic_incidents,
 )
-from project_pivot.reliability.detection.request import DetectionRequest
-from project_pivot.reliability.detection.result import DetectionResult
-from project_pivot.reliability.detection.thresholds import DetectionThresholds
+from hmda_reliability.reliability.detection.request import DetectionRequest
+from hmda_reliability.reliability.detection.result import DetectionResult
+from hmda_reliability.reliability.detection.thresholds import DetectionThresholds
 
 __all__ = [
     "BasicIncidentDetector",
