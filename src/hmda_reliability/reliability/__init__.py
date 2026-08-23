@@ -1,6 +1,6 @@
 """Public reliability APIs for read-only analysis, approved recovery, and evaluation."""
 
-from project_pivot.reliability.contracts import (
+from hmda_reliability.reliability.contracts import (
     Approval,
     ApprovalStatus,
     Evidence,
@@ -21,14 +21,14 @@ from project_pivot.reliability.contracts import (
     can_execute_risky_action,
     validate_contract,
 )
-from project_pivot.reliability.detection import (
+from hmda_reliability.reliability.detection import (
     BasicIncidentDetector,
     DetectionRequest,
     DetectionResult,
     DetectionThresholds,
     detect_basic_incidents,
 )
-from project_pivot.reliability.errors import (
+from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     BackfillValidationError,
     ContractValidationError,
@@ -40,7 +40,7 @@ from project_pivot.reliability.errors import (
     TableMetadataEvidenceError,
     TableStateIdentityError,
 )
-from project_pivot.reliability.evaluation import (
+from hmda_reliability.reliability.evaluation import (
     EvaluationCaseResult,
     EvaluationReport,
     FreshnessDelayVerticalSliceResult,
@@ -56,25 +56,25 @@ from project_pivot.reliability.evaluation import (
     render_evaluation_report_markdown,
     write_evaluation_report,
 )
-from project_pivot.reliability.impact import (
+from hmda_reliability.reliability.impact import (
     DbtImpactAnalyzer,
     ImpactAnalysisRequest,
     ImpactAnalysisResult,
     analyze_dbt_impact,
 )
-from project_pivot.reliability.metadata import (
+from hmda_reliability.reliability.metadata import (
     DuckDBTableMetadataEvidenceBuilder,
     TableMetadataEvidenceRequest,
     create_table_metadata_evidence,
 )
-from project_pivot.reliability.profiling import (
+from hmda_reliability.reliability.profiling import (
     DuckDBProfileSnapshotBuilder,
     ProfileSnapshotRequest,
     calculate_schema_hash,
     create_profile_snapshot,
     create_table_state_identity,
 )
-from project_pivot.reliability.recovery import (
+from hmda_reliability.reliability.recovery import (
     ApprovalBackfillValidator,
     ApprovedBackfillRequest,
     ApprovedSchemaRecoveryRequest,
@@ -87,7 +87,7 @@ from project_pivot.reliability.recovery import (
     preflight_schema_recovery_candidate,
     stage_approved_schema_recovery_candidate,
 )
-from project_pivot.reliability.remediation import (
+from hmda_reliability.reliability.remediation import (
     RemediationDraft,
     RemediationDraftRequest,
     RemediationState,
