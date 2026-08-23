@@ -4,9 +4,9 @@ from datetime import UTC, datetime, timedelta
 
 from pydantic import Field, field_validator, model_validator
 
-from project_pivot.hmda_data import PartitionContentIdentity
-from project_pivot.reliability.contracts.base import ReliabilityContract
-from project_pivot.reliability.contracts.profile import FreshnessMeasurementStatus
+from hmda_reliability.hmda_data import PartitionContentIdentity
+from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.reliability.contracts.profile import FreshnessMeasurementStatus
 
 
 class FreshnessObservation(ReliabilityContract):
