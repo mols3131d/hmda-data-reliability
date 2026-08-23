@@ -14,25 +14,25 @@ import tempfile
 from pathlib import Path
 from subprocess import CompletedProcess
 
-from project_pivot.data_operations.dbt_result import DbtBuildResult
-from project_pivot.data_operations.errors import DataOperationError
-from project_pivot.data_operations.incident_lifecycle import (
+from hmda_reliability.data_operations.dbt_result import DbtBuildResult
+from hmda_reliability.data_operations.errors import DataOperationError
+from hmda_reliability.data_operations.incident_lifecycle import (
     run_incident_lifecycle as run_incident_lifecycle,
 )
-from project_pivot.data_operations.raw_result import RawLoadResult
-from project_pivot.data_operations.request import DataOperationRequest
-from project_pivot.data_platform.artifacts import (
+from hmda_reliability.data_operations.raw_result import RawLoadResult
+from hmda_reliability.data_operations.request import DataOperationRequest
+from hmda_reliability.data_platform.artifacts import (
     ArtifactProjectionLockError,
     ArtifactProjectionReadError,
     artifact_projection_id,
     artifact_projection_lock,
 )
-from project_pivot.data_platform.duckdb import (
+from hmda_reliability.data_platform.duckdb import (
     DuckDBConnectionManager,
     DuckDBMutationLockError,
     database_mutation_lock,
 )
-from project_pivot.hmda_data import discover_hmda_files, load_hmda_loans_partition
+from hmda_reliability.hmda_data import discover_hmda_files, load_hmda_loans_partition
 
 _DBT_BUILD_TIMEOUT_SECONDS = 300
 
