@@ -37,7 +37,7 @@ Bronze는 원천의 null, code와 outlier를 reliability 판단으로 정제하�
 | Descriptive EDA | `hmda_data.eda` public exports |
 | Synthetic fixtures | `row_count_drop`, `null_spike`, `schema_drift` |
 
-정확한 signature, required field, default와 failure scenario는 public code와 canonical Spec을 확인한다. 공개 import surface는 [`hmda_data/__init__.py`](../../src/project_pivot/hmda_data/__init__.py)다.
+정확한 signature, required field, default와 failure scenario는 public code와 canonical Spec을 확인한다. 공개 import surface는 [`hmda_data/__init__.py`](../../src/hmda_reliability/hmda_data/__init__.py)다.
 
 ## Safety Boundaries
 
@@ -57,7 +57,7 @@ Bronze는 원천의 null, code와 outlier를 reliability 판단으로 정제하�
 
 ## Reading Order
 
-1. [`hmda_data/__init__.py`](../../src/project_pivot/hmda_data/__init__.py)에서 public surface를 확인한다.
-2. 원천 적재는 [`ingestion`](../../src/project_pivot/hmda_data/ingestion/), descriptive evidence는 [`eda`](../../src/project_pivot/hmda_data/eda/), defect fixture는 [`synthetic`](../../src/project_pivot/hmda_data/synthetic/)으로 이동한다.
+1. [`hmda_data/__init__.py`](../../src/hmda_reliability/hmda_data/__init__.py)에서 public surface를 확인한다.
+2. 원천 적재는 [`ingestion`](../../src/hmda_reliability/hmda_data/ingestion/), descriptive evidence는 [`eda`](../../src/hmda_reliability/hmda_data/eda/), defect fixture는 [`synthetic`](../../src/hmda_reliability/hmda_data/synthetic/)으로 이동한다.
 3. Normative behavior가 필요하면 corresponding OpenSpec Spec을 읽는다.
 4. Boundary와 regression oracle은 [`tests/hmda_data`](../../tests/hmda_data)에서 확인한다.
