@@ -8,8 +8,8 @@ from typing import cast
 import duckdb
 from pydantic import BaseModel, ConfigDict, Field
 
-from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
-from project_pivot.hmda_data.ingestion._common import HMDA_LOANS_TABLE
+from hmda_reliability.data_platform.sql import qualify_table_name, quote_identifier
+from hmda_reliability.hmda_data.ingestion._common import HMDA_LOANS_TABLE
 
 _IDENTITY_VERSION = "sha256-v1"
 # 동일 logical content를 재적재한 시각 차이로 stale 처리하지 않도록 제외한다.
