@@ -9,16 +9,16 @@ from tempfile import TemporaryDirectory
 import duckdb
 from pydantic import ValidationError
 
-from project_pivot.data_platform.sql import quote_string_literal
-from project_pivot.hmda_data import (
+from hmda_reliability.data_platform.sql import quote_string_literal
+from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
     load_hmda_loans_partition,
     partition_content_identity,
     partition_max_ingested_at,
 )
-from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
-from project_pivot.logger import get_logger
-from project_pivot.reliability.contracts import (
+from hmda_reliability.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
+from hmda_reliability.logger import get_logger
+from hmda_reliability.reliability.contracts import (
     Approval,
     FreshnessMeasurementStatus,
     FreshnessObservation,
@@ -27,14 +27,14 @@ from project_pivot.reliability.contracts import (
     RecoveryProposal,
     can_execute_risky_action,
 )
-from project_pivot.reliability.errors import (
+from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     BackfillValidationError,
     ProfileSnapshotError,
 )
-from project_pivot.reliability.profiling import create_profile_snapshot
-from project_pivot.reliability.recovery.request import ApprovedBackfillRequest
-from project_pivot.reliability.recovery.result import BackfillValidationResult
+from hmda_reliability.reliability.profiling import create_profile_snapshot
+from hmda_reliability.reliability.recovery.request import ApprovedBackfillRequest
+from hmda_reliability.reliability.recovery.result import BackfillValidationResult
 
 _LOGGER = get_logger(__name__)
 _REQUIRED_APPROVAL_ACTIONS = frozenset(
