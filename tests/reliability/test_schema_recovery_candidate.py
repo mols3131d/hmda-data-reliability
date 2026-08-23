@@ -10,11 +10,11 @@ import duckdb
 import pytest
 from pydantic import ValidationError
 
-import project_pivot.reliability as reliability
-import project_pivot.reliability.recovery.schema_candidate as schema_candidate
-from project_pivot.data_operations import DbtBuildResult
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.reliability import SchemaRecoveryCandidateError
+import hmda_reliability.reliability as reliability
+import hmda_reliability.reliability.recovery.schema_candidate as schema_candidate
+from hmda_reliability.data_operations import DbtBuildResult
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.reliability import SchemaRecoveryCandidateError
 
 
 def _preflight_api() -> tuple[Any, type[SchemaRecoveryCandidateError], type[Any]]:
