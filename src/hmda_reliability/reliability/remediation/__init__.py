@@ -1,8 +1,8 @@
 """Remediation draft workflow."""
 
-from project_pivot.reliability.remediation.draft import RemediationDraft
-from project_pivot.reliability.remediation.request import RemediationDraftRequest
-from project_pivot.reliability.remediation.workflow import (
+from hmda_reliability.reliability.remediation.draft import RemediationDraft
+from hmda_reliability.reliability.remediation.request import RemediationDraftRequest
+from hmda_reliability.reliability.remediation.workflow import (
     RemediationState,
     create_remediation_draft,
 )

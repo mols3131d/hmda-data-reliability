@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from project_pivot.reliability.contracts import Evidence, Incident, LineageEvidence
+from hmda_reliability.reliability.contracts import Evidence, Incident, LineageEvidence
 
 
 class RemediationDraftRequest(BaseModel):
