@@ -9,14 +9,14 @@ from threading import Event, Lock, Thread
 
 import pytest
 
-import project_pivot.hmda_data.ingestion.partition as partition_module
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.hmda_data import (
+import hmda_reliability.hmda_data.ingestion.partition as partition_module
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.hmda_data import (
     load_hmda_loans_partition,
     partition_content_identity,
     partition_max_ingested_at,
 )
-from project_pivot.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
+from hmda_reliability.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 
 pytestmark = pytest.mark.component
 
