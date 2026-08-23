@@ -8,6 +8,7 @@
 | --- | --- |
 | `VISION.md` | 장기 방향, 제품 철학과 불변 원칙 |
 | `ARCHITECTURE.md` | 시스템 흐름과 cross-domain boundary guidance |
+| `language.md` | repository text의 언어 선택과 English-required surface |
 | `domains/**` | 각 domain의 책임, 공개 surface와 비책임을 설명하는 guide |
 | `mvp.md` | 현재 active MVP의 목표, scope와 acceptance |
 | `development/**` | phase-independent 개발 가이드와 human-only development dashboard |
@@ -54,4 +55,4 @@ Phase 문서는 active phase 동안만 `main`에 둘 수 있다.
 - 현재성을 자주 잃는 상태 정보는 durable guide나 normative contract에 복제하지 않는다.
 - 링크 대상의 역할을 과장하지 않는다. Guide는 guide로, contract는 contract로 표현한다.
 - Domain guide는 책임, 흐름, 공개 surface와 safety boundary를 요약한다. Exact Requirement/Scenario, 자주 바뀌는 threshold·default·serialization detail은 필요한 경우 owning Spec, source 또는 test로 연결하고 그대로 복제하지 않는다.
-- 문서 title, section heading, field와 label은 English를 기본으로 하고 설명 본문은 한국어를 기본으로 한다. Code identifier, API name, product name과 established technical term은 자연스러운 원문을 유지한다.
+- 언어 선택과 English-required surface는 [`language.md`](language.md)를 따른다.
