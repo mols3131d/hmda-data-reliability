@@ -6,9 +6,9 @@ from collections.abc import Iterable
 
 import duckdb
 
-from project_pivot.data_platform.duckdb import table_columns
-from project_pivot.hmda_data.errors import HMDADataValidationError
-from project_pivot.logger import get_logger
+from hmda_reliability.data_platform.duckdb import table_columns
+from hmda_reliability.hmda_data.errors import HMDADataValidationError
+from hmda_reliability.logger import get_logger
 
 HMDA_LOANS_TABLE = "raw.hmda_loans"
 REQUIRED_HMDA_COLUMNS = frozenset(
@@ -22,7 +22,7 @@ REQUIRED_HMDA_COLUMNS = frozenset(
         "county_code",
     }
 )
-_LOGGER = get_logger("project_pivot.hmda_data.ingestion")
+_LOGGER = get_logger("hmda_reliability.hmda_data.ingestion")
 
 
 def validate_required_columns(
