@@ -9,39 +9,39 @@ from typing import TYPE_CHECKING
 import duckdb
 from pydantic import BaseModel, ConfigDict
 
-from project_pivot.data_platform.artifacts import (
+from hmda_reliability.data_platform.artifacts import (
     ArtifactProjectionLockError,
     ArtifactProjectionReadError,
     artifact_projection_id,
     artifact_projection_lock,
 )
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.data_platform.sql import quote_string_literal
-from project_pivot.hmda_data import (
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.data_platform.sql import quote_string_literal
+from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
     load_hmda_loans_partition,
     partition_content_identity,
     row_count_drop,
 )
-from project_pivot.reliability.contracts import Approval, RecoveryProposal
-from project_pivot.reliability.errors import ApprovalGateError, BackfillValidationError
-from project_pivot.reliability.evaluation.case_result import EvaluationCaseResult
-from project_pivot.reliability.evaluation.recovery_case import (
+from hmda_reliability.reliability.contracts import Approval, RecoveryProposal
+from hmda_reliability.reliability.errors import ApprovalGateError, BackfillValidationError
+from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
+from hmda_reliability.reliability.evaluation.recovery_case import (
     build_recovery_evaluation_case,
 )
-from project_pivot.reliability.profiling import (
+from hmda_reliability.reliability.profiling import (
     ProfileSnapshotRequest,
     create_profile_snapshot,
 )
-from project_pivot.reliability.recovery import (
+from hmda_reliability.reliability.recovery import (
     ApprovedBackfillRequest,
     BackfillValidationResult,
     execute_approved_backfill,
 )
 
 if TYPE_CHECKING:
-    from project_pivot.data_operations import DataOperationRequest
-    from project_pivot.data_operations.lifecycle_result import LifecycleResult
+    from hmda_reliability.data_operations import DataOperationRequest
+    from hmda_reliability.data_operations.lifecycle_result import LifecycleResult
 
 type ApprovalCallback = Callable[[RecoveryProposal], Approval]
 type DbtValidationCallback = Callable[[DataOperationRequest], str]
@@ -83,8 +83,8 @@ def evaluate_volume_drop_vertical_slice(
     approved request is replayed to verify reconciliation.
     """
 
-    from project_pivot.data_operations import run_incident_lifecycle
-    from project_pivot.data_operations.errors import DataOperationError
+    from hmda_reliability.data_operations import run_incident_lifecycle
+    from hmda_reliability.data_operations.errors import DataOperationError
 
     root = Path(workspace)
     root.mkdir(parents=True, exist_ok=True)
