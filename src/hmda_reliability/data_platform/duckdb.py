@@ -10,8 +10,8 @@ from types import TracebackType
 
 import duckdb
 
-from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
-from project_pivot.logger import get_logger
+from hmda_reliability.data_platform.sql import qualify_table_name, quote_identifier
+from hmda_reliability.logger import get_logger
 
 _LOGGER = get_logger(__name__)
 
