@@ -8,14 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from project_pivot.data_operations import (
+from hmda_reliability.data_operations import (
     DataOperationError,
     DataOperationRequest,
     run_incident_lifecycle,
     runner,
 )
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.reliability import (
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.reliability import (
     DetectionThresholds,
     ProfileSnapshot,
     ProfileSnapshotRequest,
@@ -97,7 +97,7 @@ def test_lifecycle_skips_impact_when_no_incident(
         pytest.fail("incident가 없을 때 impact analysis를 실행하면 안 됩니다.")
 
     monkeypatch.setattr(
-        "project_pivot.data_operations.incident_lifecycle.analyze_dbt_impact",
+        "hmda_reliability.data_operations.incident_lifecycle.analyze_dbt_impact",
         fail_on_impact,
     )
 
