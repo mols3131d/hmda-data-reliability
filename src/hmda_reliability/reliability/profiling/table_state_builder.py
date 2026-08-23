@@ -5,12 +5,12 @@ from __future__ import annotations
 import duckdb
 from pydantic import ValidationError
 
-from project_pivot.data_platform.duckdb import DuckDBMetadataError, table_row_count
-from project_pivot.data_platform.sql import qualify_table_name, quote_identifier
-from project_pivot.hmda_data import partition_content_identity
-from project_pivot.reliability.contracts import TableStateIdentity
-from project_pivot.reliability.errors import TableStateIdentityError
-from project_pivot.reliability.profiling.profile_snapshot_builder import (
+from hmda_reliability.data_platform.duckdb import DuckDBMetadataError, table_row_count
+from hmda_reliability.data_platform.sql import qualify_table_name, quote_identifier
+from hmda_reliability.hmda_data import partition_content_identity
+from hmda_reliability.reliability.contracts import TableStateIdentity
+from hmda_reliability.reliability.errors import TableStateIdentityError
+from hmda_reliability.reliability.profiling.profile_snapshot_builder import (
     calculate_schema_hash,
 )
 
