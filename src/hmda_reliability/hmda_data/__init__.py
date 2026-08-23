@@ -3,8 +3,8 @@
 실행 조합, dbt 변환, reliability 판정은 이 domain이 소유하지 않는다.
 """
 
-from project_pivot.hmda_data.eda import analyze_hmda_csv
-from project_pivot.hmda_data.ingestion import (
+from hmda_reliability.hmda_data.eda import analyze_hmda_csv
+from hmda_reliability.hmda_data.ingestion import (
     HMDA_LOANS_TABLE,
     REQUIRED_HMDA_COLUMNS,
     PartitionContentIdentity,
@@ -15,7 +15,7 @@ from project_pivot.hmda_data.ingestion import (
     partition_max_ingested_at,
     validate_required_columns,
 )
-from project_pivot.hmda_data.synthetic import (
+from hmda_reliability.hmda_data.synthetic import (
     null_spike,
     row_count_drop,
     schema_drift,
