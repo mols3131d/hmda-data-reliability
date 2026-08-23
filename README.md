@@ -1,8 +1,8 @@
-# Project Pivot
+# HMDA Data Reliability
 
 **Evidence-first data reliability with bounded AI delegation.**
 
-Project Pivot은 로컬 HMDA Data Lake에서 데이터 신뢰성을 검증하고, 그 과정에서 AI에 맡길 수 있는 범위를 함께 다루는 프로젝트다. 데이터 상태부터 incident evidence, `RecoveryProposal`, re-validation까지 한 흐름에서 추적한다. AI는 evidence review에 쓰지만, 현재 MVP에서는 직접 복구하지 않는다.
+HMDA Data Reliability는 로컬 HMDA Data Lake에서 데이터 신뢰성을 검증하고, 그 과정에서 AI에 맡길 수 있는 범위를 함께 다루는 프로젝트다. 데이터 상태부터 incident evidence, `RecoveryProposal`, re-validation까지 한 흐름에서 추적한다. AI는 evidence review에 쓰지만, 현재 MVP에서는 직접 복구하지 않는다.
 
 > [!NOTE]
 > **Status: Active MVP.** 지금은 기능을 넓히지 않고 HMDA reliability flow 하나를 end-to-end로 닫는 중이다. Scope와 acceptance는 [`docs/mvp.md`](docs/mvp.md)에서 관리한다.
