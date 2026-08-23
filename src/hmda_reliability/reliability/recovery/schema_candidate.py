@@ -8,28 +8,28 @@ from typing import TYPE_CHECKING
 import duckdb
 from pydantic import Field, model_validator
 
-from project_pivot.data_platform.duckdb import (
+from hmda_reliability.data_platform.duckdb import (
     DuckDBConnectionManager,
     DuckDBMutationLockError,
     database_mutation_lock,
 )
-from project_pivot.data_platform.sql import (
+from hmda_reliability.data_platform.sql import (
     qualify_table_name,
     quote_identifier,
     quote_string_literal,
 )
-from project_pivot.reliability.contracts import (
+from hmda_reliability.reliability.contracts import (
     ReliabilityContract,
     TableStateIdentity,
 )
-from project_pivot.reliability.errors import (
+from hmda_reliability.reliability.errors import (
     SchemaRecoveryCandidateError,
     TableStateIdentityError,
 )
-from project_pivot.reliability.profiling import create_table_state_identity
+from hmda_reliability.reliability.profiling import create_table_state_identity
 
 if TYPE_CHECKING:
-    from project_pivot.data_operations.dbt_result import DbtBuildResult
+    from hmda_reliability.data_operations.dbt_result import DbtBuildResult
 
 
 class SchemaRecoveryCandidateEvidence(ReliabilityContract):
