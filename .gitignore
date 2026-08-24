@@ -11,7 +11,12 @@ tempCodeRunnerFile.py
 # Agent runtime, local overlays, and external Skill installs
 rulesync.local.jsonc
 .rulesync/rules/.curated/
+.rulesync/rules/*.local.md
 .rulesync/skills/.curated/
+**/AGENTS.local.md
+**/CLAUDE.local.md
+**/.claude/*.lock
+**/.claude/memories/
 .agents/brain/
 .agents/reports/
 .agents/skills/*
