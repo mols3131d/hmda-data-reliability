@@ -1,6 +1,6 @@
-# Project Pivot Defaults
+# Project Defaults
 
-Project Pivot는 **Rulesync-first authority**를 사용한다. Repository가 직접 소유하는 agent asset은 Rulesync canonical source를 기본으로 하고, 다른 tool 또는 framework가 자체 CLI와 lifecycle로 관리하는 asset은 그 tool의 canonical source를 유지한다.
+이 repository는 **Rulesync-first authority**를 사용한다. Repository가 직접 소유하는 agent asset은 Rulesync canonical source를 기본으로 하고, 다른 tool 또는 framework가 자체 CLI와 lifecycle로 관리하는 asset은 그 tool의 canonical source를 유지한다.
 
 ## Authority
 
@@ -17,7 +17,7 @@ Project Pivot는 **Rulesync-first authority**를 사용한다. Repository가 직
 
 ## Targets
 
-Project Pivot의 Rulesync target set은 다음 세 개다.
+이 repository의 Rulesync target set은 다음 세 개다.
 
 - `copilot`
 - `codexcli`
@@ -35,7 +35,7 @@ Project Pivot의 Rulesync target set은 다음 세 개다.
 | repository-owned non-Rule feature | Canonical fan-out after explicit migration | appropriate `.rulesync/` source |
 | tool/framework-owned feature | Outside Rulesync ownership | owning tool source |
 
-Native bridge는 사용자가 one-off compatibility conversion을 명시적으로 요청한 경우에만 사용한다. Project의 기본 source strategy로 사용하지 않는다.
+Native bridge는 사용자가 one-off compatibility conversion을 명시적으로 요청한 경우에만 사용한다. Repository의 기본 source strategy로 사용하지 않는다.
 
 ## Commands
 

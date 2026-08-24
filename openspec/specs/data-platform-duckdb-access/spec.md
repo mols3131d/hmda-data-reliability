@@ -59,7 +59,7 @@
 
 ### Requirement: Local database mutation lock
 
-시스템은 file-based DuckDB의 canonical resolved database path별 cooperative exclusive mutation lock을 제공해야 한다(SHALL). Project Pivot의 managed writer는 target state 확인과 first mutation 사이에 다른 managed writer가 끼어들지 못하도록 같은 lock을 사용해야 한다(SHALL). Lock I/O failure는 caller가 식별할 수 있는 typed Data Platform failure로 노출해야 하며(SHALL), lock release failure가 body의 원래 exception을 가려서는 안 된다(MUST NOT).
+시스템은 file-based DuckDB의 canonical resolved database path별 cooperative exclusive mutation lock을 제공해야 한다(SHALL). 시스템의 managed writer는 target state 확인과 first mutation 사이에 다른 managed writer가 끼어들지 못하도록 같은 lock을 사용해야 한다(SHALL). Lock I/O failure는 caller가 식별할 수 있는 typed Data Platform failure로 노출해야 하며(SHALL), lock release failure가 body의 원래 exception을 가려서는 안 된다(MUST NOT).
 
 #### Scenario: Serialized file-database writers
 

@@ -6,4 +6,4 @@ Change는 proposal, design, tasks, review와 intended delta를 다루는 **비�
 
 구현·검증된 durable contract는 OpenSpec workflow에 따라 `specs/**`에 반영하고, 완료된 Change는 필요에 따라 archive한다. Archive된 Change도 historical work evidence이지 current contract가 아니다.
 
-이름과 Project Pivot 전용 작성 규칙은 [`../config.yaml`](../config.yaml)을 따른다.
+이름과 repository-specific 작성 규칙은 [`../config.yaml`](../config.yaml)을 따른다.
