@@ -15,11 +15,11 @@ class DataOperationRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    database_path: Path = Path("data/project_pivot.duckdb")
+    database_path: Path = Path("data/hmda_reliability.duckdb")
     source_root: Path = Path("data/raw/hmda")
     source_year: int = Field(default=2025, ge=2000, le=2100)
     source_file: str | None = None
-    asset_name: str = "source.project_pivot.raw.hmda_loans"
+    asset_name: str = "source.hmda_reliability.raw.hmda_loans"
     raw_table_name: str = "raw.hmda_loans"
     partition_column: str = "activity_year"
     profile_columns: tuple[str, ...] = ("loan_amount", "income")
@@ -90,9 +90,9 @@ def data_operation_request_from_environment(
     overrides = {
         field: values[key]
         for key, field in (
-            ("PROJECT_PIVOT_DUCKDB_PATH", "database_path"),
-            ("PROJECT_PIVOT_SOURCE_ROOT", "source_root"),
-            ("PROJECT_PIVOT_SOURCE_YEAR", "source_year"),
+            ("HMDA_RELIABILITY_DUCKDB_PATH", "database_path"),
+            ("HMDA_RELIABILITY_SOURCE_ROOT", "source_root"),
+            ("HMDA_RELIABILITY_SOURCE_YEAR", "source_year"),
         )
         if key in values
     }

@@ -178,7 +178,7 @@ def _run_dbt_command(
 ) -> CompletedProcess[str]:
     """dbt build를 실행하고 결과 CompletedProcess를 반환합니다."""
     env = os.environ.copy()
-    env["PROJECT_PIVOT_DUCKDB_PATH"] = str(request.database_path)
+    env["HMDA_RELIABILITY_DUCKDB_PATH"] = str(request.database_path)
     env["DBT_SEND_ANONYMOUS_USAGE_STATS"] = "false"
     try:
         return subprocess.run(

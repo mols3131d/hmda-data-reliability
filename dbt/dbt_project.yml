@@ -1,23 +1,20 @@
-name: project_pivot
+name: hmda_reliability
 version: "1.0.0"
 config-version: 2
 
-profile: project_pivot
+profile: hmda_reliability
 
-model-paths:
-  - models
-test-paths:
-  - tests
-macro-paths:
-  - macros
-
-target-path: target
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
 clean-targets:
-  - target
-  - dbt_packages
+  - "target"
+  - "dbt_packages"
 
 models:
-  project_pivot:
+  hmda_reliability:
     staging:
       +schema: staging
       +materialized: view

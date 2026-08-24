@@ -20,8 +20,8 @@ from hmda_reliability.orchestration.config import data_operation_request_from_ru
 
 log = logging.getLogger(__name__)
 
-RAW_HMDA_LOANS_ASSET: Final = Asset("project_pivot/raw/hmda_loans")
-ANALYTICS_LOAN_ASSET: Final = Asset("project_pivot/analytics/loan_analytics")
+RAW_HMDA_LOANS_ASSET: Final = Asset("hmda/raw/hmda_loans")
+ANALYTICS_LOAN_ASSET: Final = Asset("hmda/analytics/loan_analytics")
 
 _RUNTIME_OVERRIDE_FIELDS: Final = (
     "database_path",
@@ -112,7 +112,7 @@ def build_dbt_loan_analytics() -> None:
 
 
 @dag(
-    dag_id="project_pivot_data_plane",
+    dag_id="hmda_data_plane",
     schedule=None,
     start_date=datetime(2026, 1, 1),
     catchup=False,
@@ -125,7 +125,7 @@ def build_dbt_loan_analytics() -> None:
         "run_dbt_build": Param(None, type=["null", "boolean"]),
     },
 )
-def _project_pivot_data_plane() -> None:
+def _hmda_data_plane() -> None:
     """Define the single manual, non-retrying raw-to-analytics workflow."""
 
     raw_task = load_raw_hmda_loans()
@@ -133,4 +133,4 @@ def _project_pivot_data_plane() -> None:
     raw_task >> analytics_task
 
 
-project_pivot_data_plane = _project_pivot_data_plane()
+hmda_data_plane = _hmda_data_plane()
