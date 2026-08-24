@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
-from project_pivot.hmda_data.errors import HMDADataLoadError
+from hmda_reliability.hmda_data.errors import HMDADataLoadError
 
 HMDA_CSV_OPTIONS = {
     "header": True,
