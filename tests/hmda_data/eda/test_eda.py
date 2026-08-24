@@ -10,9 +10,9 @@ from unittest.mock import patch
 import duckdb
 import pytest
 
-from project_pivot.hmda_data import analyze_hmda_csv
-from project_pivot.hmda_data.errors import HMDADataValidationError
-from project_pivot.hmda_data.ingestion._source_query import (
+from hmda_reliability.hmda_data import analyze_hmda_csv
+from hmda_reliability.hmda_data.errors import HMDADataValidationError
+from hmda_reliability.hmda_data.ingestion._source_query import (
     HMDA_CSV_OPTIONS,
     csv_reader_sql,
 )
@@ -289,7 +289,7 @@ def test_analyze_hmda_csv_rejects_missing_descriptive_column_without_partial_evi
 
 def test_eda_public_api_compatibility() -> None:
     """EDA namespace의 public API 구성을 검증한다."""
-    import project_pivot.hmda_data.eda as eda
+    import hmda_reliability.hmda_data.eda as eda
 
     assert hasattr(eda, "analyze_hmda_csv")
     assert hasattr(eda, "export_eda_evidence_yaml")
@@ -300,7 +300,7 @@ def test_eda_public_api_compatibility() -> None:
 
 def test_supports_expanded_type_families() -> None:
     """EXPECTED_TYPE_FAMILIES에 FLOAT/REAL 및 무부호 정수가 지원되는지 검증한다."""
-    from project_pivot.hmda_data.eda.analysis import EXPECTED_TYPE_FAMILIES
+    from hmda_reliability.hmda_data.eda.analysis import EXPECTED_TYPE_FAMILIES
 
     for col in ("activity_year", "action_taken", "loan_purpose"):
         for uint_type in ("UTINYINT", "USMALLINT", "UINTEGER", "UBIGINT"):
@@ -539,7 +539,7 @@ def test_analyze_hmda_csv_fails_without_partial_evidence_and_closes_connection(
         return TrackingConnection(real_connect(*args, **kwargs))
 
     monkeypatch.setattr(
-        "project_pivot.hmda_data.eda.analysis.duckdb.connect", tracking_connect
+        "hmda_reliability.hmda_data.eda.analysis.duckdb.connect", tracking_connect
     )
 
     with pytest.raises(duckdb.Error):
@@ -588,7 +588,7 @@ def test_analyze_hmda_csv_closes_connection_without_changing_source(
         return TrackingConnection(real_connect(*args, **kwargs))
 
     monkeypatch.setattr(
-        "project_pivot.hmda_data.eda.analysis.duckdb.connect", tracking_connect
+        "hmda_reliability.hmda_data.eda.analysis.duckdb.connect", tracking_connect
     )
 
     evidence = analyze_hmda_csv(
@@ -639,7 +639,7 @@ def test_analyze_hmda_csv_closes_connection_after_query_failure(
         return FailingConnection(real_connect(*args, **kwargs))
 
     monkeypatch.setattr(
-        "project_pivot.hmda_data.eda.analysis.duckdb.connect", failing_connect
+        "hmda_reliability.hmda_data.eda.analysis.duckdb.connect", failing_connect
     )
 
     with pytest.raises(duckdb.Error, match="aggregate query failed"):

@@ -7,14 +7,14 @@ from pathlib import Path
 import duckdb
 import pytest
 
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.hmda_data import (
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.hmda_data import (
     null_spike,
     row_count_drop,
     schema_drift,
 )
-from project_pivot.hmda_data.errors import SyntheticCaseError
-from project_pivot.hmda_data.synthetic._writer import write_case_file
+from hmda_reliability.hmda_data.errors import SyntheticCaseError
+from hmda_reliability.hmda_data.synthetic._writer import write_case_file
 
 pytestmark = pytest.mark.component
 

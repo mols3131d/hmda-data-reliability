@@ -8,13 +8,13 @@ from pathlib import Path
 import duckdb
 import pytest
 
-import project_pivot.data_operations as data_operations
-import project_pivot.reliability.evaluation.freshness_delay as freshness_evaluation
-from project_pivot.data_operations import DataOperationRequest, LifecycleResult
-from project_pivot.data_operations.errors import DataOperationError
-from project_pivot.data_platform.artifacts import ArtifactProjectionLockError
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.reliability import (
+import hmda_reliability.data_operations as data_operations
+import hmda_reliability.reliability.evaluation.freshness_delay as freshness_evaluation
+from hmda_reliability.data_operations import DataOperationRequest, LifecycleResult
+from hmda_reliability.data_operations.errors import DataOperationError
+from hmda_reliability.data_platform.artifacts import ArtifactProjectionLockError
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.reliability import (
     Approval,
     ApprovalStatus,
     ApprovedBackfillRequest,

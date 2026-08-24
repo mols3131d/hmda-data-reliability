@@ -58,13 +58,13 @@ Bronze는 ingestion owner가 만들고, dbt는 분석용 staging/mart와 lineage
 
 - DuckDB access: [`data-platform-duckdb-access`](../../openspec/specs/data-platform-duckdb-access/spec.md)
 - dbt analytics: [`data-platform-dbt-analytics`](../../openspec/specs/data-platform-dbt-analytics/spec.md)
-- Implementation: [`src/project_pivot/data_platform`](../../src/project_pivot/data_platform)
+- Implementation: [`src/hmda_reliability/data_platform`](../../src/hmda_reliability/data_platform)
 - dbt project: [`dbt/`](../../dbt)
 - Executable specification: [`tests/data_platform`](../../tests/data_platform), [`tests/dbt`](../../tests/dbt)
 
 ## Reading Order
 
-1. [`data_platform/__init__.py`](../../src/project_pivot/data_platform/__init__.py)에서 public surface를 확인한다.
-1. DuckDB primitive가 필요하면 [`duckdb.py`](../../src/project_pivot/data_platform/duckdb.py)와 [`sql.py`](../../src/project_pivot/data_platform/sql.py)를 읽는다.
-1. Artifact adoption boundary를 이해하려면 [`artifacts.py`](../../src/project_pivot/data_platform/artifacts.py) 뒤 [`data-operations.md`](data-operations.md)로 이동한다.
+1. [`data_platform/__init__.py`](../../src/hmda_reliability/data_platform/__init__.py)에서 public surface를 확인한다.
+1. DuckDB primitive가 필요하면 [`duckdb.py`](../../src/hmda_reliability/data_platform/duckdb.py)와 [`sql.py`](../../src/hmda_reliability/data_platform/sql.py)를 읽는다.
+1. Artifact adoption boundary를 이해하려면 [`artifacts.py`](../../src/hmda_reliability/data_platform/artifacts.py) 뒤 [`data-operations.md`](data-operations.md)로 이동한다.
 1. 분석 layer는 [`dbt/models`](../../dbt/models)와 corresponding canonical Spec을 확인한다.

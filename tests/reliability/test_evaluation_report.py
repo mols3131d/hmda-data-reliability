@@ -12,21 +12,21 @@ from typing import cast
 import duckdb
 import pytest
 
-import project_pivot.reliability as reliability
-import project_pivot.reliability.evaluation as reliability_evaluation
-import project_pivot.reliability.evaluation.volume_drop as volume_drop
-import project_pivot.reliability.recovery.executor as recovery_executor
-from project_pivot.data_operations import (
+import hmda_reliability.reliability as reliability
+import hmda_reliability.reliability.evaluation as reliability_evaluation
+import hmda_reliability.reliability.evaluation.volume_drop as volume_drop
+import hmda_reliability.reliability.recovery.executor as recovery_executor
+from hmda_reliability.data_operations import (
     DataOperationRequest,
     DbtBuildResult,
     promote_dbt_artifacts,
     run_dbt_build,
 )
-from project_pivot.data_operations.errors import DataOperationError
-from project_pivot.data_platform.artifacts import artifact_projection_id
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.hmda_data.errors import HMDAStalePartitionError
-from project_pivot.reliability import (
+from hmda_reliability.data_operations.errors import DataOperationError
+from hmda_reliability.data_platform.artifacts import artifact_projection_id
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.hmda_data.errors import HMDAStalePartitionError
+from hmda_reliability.reliability import (
     Approval,
     ApprovalStatus,
     EvaluationCaseResult,
@@ -37,8 +37,8 @@ from project_pivot.reliability import (
     render_evaluation_report_markdown,
     write_evaluation_report,
 )
-from project_pivot.reliability.errors import ProfileSnapshotError
-from project_pivot.reliability.profiling import ProfileSnapshotRequest
+from hmda_reliability.reliability.errors import ProfileSnapshotError
+from hmda_reliability.reliability.profiling import ProfileSnapshotRequest
 
 
 @pytest.mark.unit

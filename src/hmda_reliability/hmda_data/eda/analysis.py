@@ -1,0 +1,423 @@
+"""HMDA source CSV를 변경하지 않고 descriptive evidence를 계산한다."""
+
+from __future__ import annotations
+
+import time
+from pathlib import Path
+from typing import Any
+
+import duckdb
+
+from hmda_reliability.hmda_data.errors import HMDADataValidationError
+from hmda_reliability.hmda_data.ingestion._source_query import (
+    HMDA_CSV_OPTIONS,
+    csv_reader_sql,
+)
+
+REQUIRED_EDA_COLUMNS = (
+    "activity_year",
+    "state_code",
+    "loan_purpose",
+    "action_taken",
+    "loan_amount",
+    "income",
+)
+EXPECTED_TYPE_FAMILIES = {
+    "activity_year": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
+    "state_code": frozenset({"VARCHAR"}),
+    "loan_purpose": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
+    "action_taken": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+        }
+    ),
+    "loan_amount": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+            "DECIMAL",
+            "DOUBLE",
+            "FLOAT",
+            "REAL",
+        }
+    ),
+    "income": frozenset(
+        {
+            "TINYINT",
+            "SMALLINT",
+            "INTEGER",
+            "BIGINT",
+            "HUGEINT",
+            "UTINYINT",
+            "USMALLINT",
+            "UINTEGER",
+            "UBIGINT",
+            "DECIMAL",
+            "DOUBLE",
+            "FLOAT",
+            "REAL",
+        }
+    ),
+}
+CSV_OPTIONS = HMDA_CSV_OPTIONS
+
+
+def _quote_identifier(identifier: str) -> str:
+    return f'"{identifier.replace(chr(34), chr(34) * 2)}"'
+
+
+def _type_family(inferred_type: str) -> str:
+    return inferred_type.partition("(")[0]
+
+
+def _collect_code_distributions(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+    row_count: int,
+) -> dict[str, list[dict[str, Any]]]:
+    distributions: dict[str, list[dict[str, Any]]] = {}
+    target_code_cols = [
+        col
+        for col in ("action_taken", "loan_purpose", "state_code")
+        if col in inferred_types
+    ]
+    for col in target_code_cols:
+        quoted_col = _quote_identifier(col)
+        dist_rows = connection.execute(
+            f"""
+            SELECT {quoted_col} AS val, count(*) AS val_count
+            FROM hmda_eda_source
+            WHERE {quoted_col} IS NOT NULL
+            GROUP BY {quoted_col}
+            ORDER BY val_count DESC, val ASC
+            """
+        ).fetchall()
+        distributions[col] = [
+            {
+                "value": str(row[0]) if row[0] is not None else None,
+                "count": row[1],
+                "share": row[1] / row_count if row_count else 0.0,
+            }
+            for row in dist_rows
+        ]
+    return distributions
+
+
+def _collect_numeric_summaries(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+) -> dict[str, dict[str, Any]]:
+    numeric_summaries: dict[str, dict[str, Any]] = {}
+    target_numeric_cols = [
+        col for col in ("loan_amount", "income") if col in inferred_types
+    ]
+    for col in target_numeric_cols:
+        quoted_col = _quote_identifier(col)
+        row = connection.execute(
+            f"""
+            SELECT
+                count({quoted_col}) AS non_null_count,
+                min({quoted_col}) AS min_val,
+                quantile_cont({quoted_col}, 0.25) AS p25_val,
+                median({quoted_col}) AS median_val,
+                quantile_cont({quoted_col}, 0.75) AS p75_val,
+                max({quoted_col}) AS max_val
+            FROM hmda_eda_source
+            """
+        ).fetchone()
+        if row and row[0] > 0:
+            numeric_summaries[col] = {
+                "non_null_count": row[0],
+                "min": float(row[1]) if row[1] is not None else None,
+                "p25": float(row[2]) if row[2] is not None else None,
+                "median": float(row[3]) if row[3] is not None else None,
+                "p75": float(row[4]) if row[4] is not None else None,
+                "max": float(row[5]) if row[5] is not None else None,
+            }
+        else:
+            numeric_summaries[col] = {
+                "non_null_count": 0,
+                "min": None,
+                "p25": None,
+                "median": None,
+                "p75": None,
+                "max": None,
+            }
+    return numeric_summaries
+
+
+def _calculate_grain_alignment(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+    row_count: int,
+) -> dict[str, Any]:
+    grain_cols = ["activity_year", "state_code", "loan_purpose"]
+    has_all_grain_cols = all(col in inferred_types for col in grain_cols)
+    if has_all_grain_cols:
+        grain_result = connection.execute(
+            """
+            SELECT
+                count(
+                    DISTINCT (activity_year, state_code, loan_purpose)
+                ) FILTER (
+                    WHERE activity_year IS NOT NULL
+                      AND state_code IS NOT NULL
+                      AND loan_purpose IS NOT NULL
+                ) AS distinct_groups,
+                count(*) FILTER (
+                    WHERE activity_year IS NULL
+                       OR state_code IS NULL
+                       OR loan_purpose IS NULL
+                ) AS null_key_rows
+            FROM hmda_eda_source
+            """
+        ).fetchone()
+        distinct_groups = grain_result[0] if grain_result else 0
+        null_key_rows = grain_result[1] if grain_result else 0
+        return {
+            "columns": grain_cols,
+            "distinct_group_count": distinct_groups,
+            "null_key_rows": null_key_rows,
+            "coverage_rate": (row_count - null_key_rows) / row_count
+            if row_count
+            else 0.0,
+        }
+    return {
+        "columns": [col for col in grain_cols if col in inferred_types],
+        "distinct_group_count": 0,
+        "null_key_rows": 0,
+        "coverage_rate": 0.0,
+    }
+
+
+def _inspect_and_validate_schema(
+    source_relation: duckdb.DuckDBPyRelation,
+) -> tuple[list[dict[str, str]], dict[str, str], list[dict[str, Any]], list[str]]:
+    """Six-core column의 presence와 type-family compatibility를 검증한다."""
+
+    schema_rows = [
+        {"name": name, "type": str(column_type)}
+        for name, column_type in zip(
+            source_relation.columns, source_relation.types, strict=True
+        )
+    ]
+    inferred_types = {row["name"]: row["type"] for row in schema_rows}
+    required_schema = [
+        {
+            "column": column,
+            "inferred_type": inferred_types.get(column),
+            "status": (
+                "valid"
+                if column in inferred_types
+                and _type_family(inferred_types[column])
+                in EXPECTED_TYPE_FAMILIES[column]
+                else "missing"
+                if column not in inferred_types
+                else "type mismatch"
+            ),
+        }
+        for column in REQUIRED_EDA_COLUMNS
+    ]
+    missing_required = [
+        item["column"] for item in required_schema if item["status"] != "valid"
+    ]
+    if missing_required:
+        raise HMDADataValidationError(
+            f"Required EDA column validation failed: {missing_required}"
+        )
+
+    profile_columns = [
+        column for column in REQUIRED_EDA_COLUMNS if column in inferred_types
+    ]
+    return schema_rows, inferred_types, required_schema, profile_columns
+
+
+def _collect_volume_and_null_metrics(
+    connection: duckdb.DuckDBPyConnection,
+    inferred_types: dict[str, str],
+    profile_columns: list[str],
+    max_activity_years: int,
+) -> tuple[int, dict[str, int], list[tuple[Any, ...]], int]:
+    """Total/null/year counts를 수집하고 activity_year cardinality 상한을 검증한다."""
+
+    metric_select = ["count(*) AS row_count"] + [
+        f"count(*) FILTER (WHERE {_quote_identifier(column)} IS NULL) "
+        f"AS {_quote_identifier(column)}"
+        for column in profile_columns
+    ]
+
+    has_activity_year = "activity_year" in inferred_types
+    grouping_select = (
+        "activity_year, grouping(activity_year) AS is_total, "
+        if has_activity_year
+        else ""
+    )
+    grouping_clause = (
+        "GROUP BY GROUPING SETS ((), (activity_year)) "
+        "ORDER BY is_total DESC, activity_year ASC "
+        f"LIMIT {max_activity_years + 2}"
+        if has_activity_year
+        else ""
+    )
+    metric_rows = connection.execute(
+        f"SELECT {grouping_select}{', '.join(metric_select)} "
+        f"FROM hmda_eda_source {grouping_clause}"
+    ).fetchall()
+
+    total_row = next(row for row in metric_rows if not has_activity_year or row[1] == 1)
+    metric_offset = 2 if has_activity_year else 0
+    row_count = total_row[metric_offset]
+    null_counts = dict(
+        zip(
+            profile_columns,
+            total_row[metric_offset + 1 : metric_offset + 1 + len(profile_columns)],
+            strict=True,
+        )
+    )
+    activity_year_rows = (
+        sorted(
+            (row for row in metric_rows if row[1] == 0),
+            key=lambda row: (row[0] is None, row[0]),
+        )
+        if has_activity_year
+        else []
+    )
+    if len(activity_year_rows) > max_activity_years:
+        msg = (
+            "activity_year cardinality exceeds "
+            f"the configured bound of {max_activity_years}"
+        )
+        raise HMDADataValidationError(msg)
+
+    return row_count, null_counts, activity_year_rows, metric_offset
+
+
+def analyze_hmda_csv(
+    source_path: str | Path,
+    *,
+    memory_limit: str = "2GB",
+    threads: int = 2,
+    temp_directory: str | Path,
+    max_activity_years: int = 32,
+) -> dict[str, Any]:
+    """HMDA CSV 전체에서 source-preserving descriptive evidence를 계산한다.
+
+    Six-core schema compatibility를 검증하고 volume, null, categorical distribution,
+    numeric summary와 complete-key grain coverage를 JSON-serializable structure로
+    반환한다. Source data를 정제하거나 quality/incident verdict를 내리지 않지만
+    ``temp_directory``는 필요하면 생성해 DuckDB temporary storage로 사용한다.
+
+    Missing input은 ``FileNotFoundError``, ``max_activity_years < 1``은 ``ValueError``,
+    schema 또는 year-cardinality 위반은 ``HMDADataValidationError``로 노출한다.
+    """
+
+    input_path = Path(source_path).expanduser().resolve()
+    if not input_path.is_file():
+        raise FileNotFoundError(f"HMDA EDA input file does not exist: {input_path}")
+    if max_activity_years < 1:
+        raise ValueError("max_activity_years must be at least 1")
+
+    resolved_temp_directory = Path(temp_directory).expanduser().resolve()
+    resolved_temp_directory.mkdir(parents=True, exist_ok=True)
+    duckdb_config: dict[str, str | bool | int | float | list[str]] = {
+        "memory_limit": memory_limit,
+        "threads": threads,
+        "temp_directory": str(resolved_temp_directory),
+    }
+    connection = duckdb.connect(config=duckdb_config)
+    try:
+        source_relation = connection.sql(
+            f"""
+            SELECT * FROM {csv_reader_sql("$input_path", include_filename=False)}
+            """,
+            params={"input_path": str(input_path)},
+        )
+        source_relation.create_view("hmda_eda_source", replace=True)
+
+        schema_rows, inferred_types, required_schema, profile_columns = (
+            _inspect_and_validate_schema(source_relation)
+        )
+
+        started_at = time.monotonic()
+        row_count, null_counts, activity_year_rows, metric_offset = (
+            _collect_volume_and_null_metrics(
+                connection, inferred_types, profile_columns, max_activity_years
+            )
+        )
+        distributions = _collect_code_distributions(
+            connection, inferred_types, row_count
+        )
+        numeric_summaries = _collect_numeric_summaries(connection, inferred_types)
+        grain = _calculate_grain_alignment(connection, inferred_types, row_count)
+        duration_seconds = time.monotonic() - started_at
+
+        return {
+            "source": {
+                "path": str(input_path),
+                "scope": "full_file",
+                "csv_options": {
+                    key: value.copy() if isinstance(value, list) else value
+                    for key, value in CSV_OPTIONS.items()
+                },
+                "duckdb_config": duckdb_config,
+            },
+            "duration_seconds": duration_seconds,
+            "row_count": row_count,
+            "activity_year_counts": [
+                {"activity_year": row[0], "row_count": row[metric_offset]}
+                for row in activity_year_rows
+            ],
+            "null_counts": null_counts,
+            "null_rates": {
+                column: null_count / row_count if row_count else 0.0
+                for column, null_count in null_counts.items()
+            },
+            "schema": {
+                "columns": schema_rows,
+                "required_columns": required_schema,
+            },
+            "distributions": distributions,
+            "numeric_summaries": numeric_summaries,
+            "grain": grain,
+        }
+    finally:
+        connection.close()

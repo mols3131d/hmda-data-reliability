@@ -62,12 +62,12 @@ Data plane과 reliability analysis는 서로 다른 side-effect 경계를 가진
 
 - Stage execution: [`data-operations-stage-execution`](../../openspec/specs/data-operations-stage-execution/spec.md)
 - Incident lifecycle: [`data-operations-incident-lifecycle`](../../openspec/specs/data-operations-incident-lifecycle/spec.md)
-- Public source: [`src/project_pivot/data_operations`](../../src/project_pivot/data_operations)
+- Public source: [`src/hmda_reliability/data_operations`](../../src/hmda_reliability/data_operations)
 - Executable specification: [`tests/data_operations`](../../tests/data_operations)
 
 ## Reading Order
 
-1. [`data_operations/__init__.py`](../../src/project_pivot/data_operations/__init__.py)에서 public surface를 확인한다.
-2. [`request.py`](../../src/project_pivot/data_operations/request.py)에서 한 실행의 입력을 읽는다.
-3. Data plane은 [`runner.py`](../../src/project_pivot/data_operations/runner.py), reliability analysis는 [`incident_lifecycle.py`](../../src/project_pivot/data_operations/incident_lifecycle.py)를 읽는다.
-4. 세부 domain rule이 필요하면 HMDA Data, Data Platform 또는 Reliability guide와 canonical Spec으로 이동한다.
+1. [`data_operations/__init__.py`](../../src/hmda_reliability/data_operations/__init__.py)에서 public surface를 확인한다.
+1. [`request.py`](../../src/hmda_reliability/data_operations/request.py)에서 한 실행의 입력을 읽는다.
+1. Data plane은 [`runner.py`](../../src/hmda_reliability/data_operations/runner.py), reliability analysis는 [`incident_lifecycle.py`](../../src/hmda_reliability/data_operations/incident_lifecycle.py)를 읽는다.
+1. 세부 domain rule이 필요하면 HMDA Data, Data Platform 또는 Reliability guide와 canonical Spec으로 이동한다.

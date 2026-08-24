@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from project_pivot.data_platform.sql import (
+from hmda_reliability.data_platform.sql import (
     qualify_table_name,
     quote_identifier,
     quote_string_literal,

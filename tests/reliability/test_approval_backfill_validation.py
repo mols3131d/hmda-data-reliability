@@ -11,17 +11,17 @@ import duckdb
 import pytest
 from pydantic import ValidationError
 
-import project_pivot.reliability.recovery.executor as recovery_executor
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.hmda_data import (
+import hmda_reliability.reliability.recovery.executor as recovery_executor
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.hmda_data import (
     HMDA_LOANS_TABLE,
     PartitionContentIdentity,
     load_hmda_loans_partition,
     partition_content_identity,
     partition_max_ingested_at,
 )
-from project_pivot.hmda_data.errors import HMDAStalePartitionError
-from project_pivot.reliability import (
+from hmda_reliability.hmda_data.errors import HMDAStalePartitionError
+from hmda_reliability.reliability import (
     Approval,
     ApprovalGateError,
     ApprovalStatus,

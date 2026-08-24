@@ -13,23 +13,23 @@ from typing import Any
 import duckdb
 import pytest
 
-import project_pivot.data_operations.runner as data_runner
-import project_pivot.hmda_data.ingestion.partition as partition_module
-import project_pivot.reliability as reliability
-import project_pivot.reliability.recovery.schema_executor as schema_executor
-from project_pivot.data_operations import DataOperationRequest
-from project_pivot.data_platform.duckdb import (
+import hmda_reliability.data_operations.runner as data_runner
+import hmda_reliability.hmda_data.ingestion.partition as partition_module
+import hmda_reliability.reliability as reliability
+import hmda_reliability.reliability.recovery.schema_executor as schema_executor
+from hmda_reliability.data_operations import DataOperationRequest
+from hmda_reliability.data_platform.duckdb import (
     DuckDBConnectionManager,
     database_mutation_lock,
 )
-from project_pivot.hmda_data import (
+from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
     load_hmda_loans,
     load_hmda_loans_partition,
     partition_content_identity,
 )
-from project_pivot.hmda_data.errors import HMDAStalePartitionError
-from project_pivot.reliability import (
+from hmda_reliability.hmda_data.errors import HMDAStalePartitionError
+from hmda_reliability.reliability import (
     ApprovalGateError,
     ApprovalStatus,
     ApprovedSchemaRecoveryRequest,
@@ -40,7 +40,7 @@ from project_pivot.reliability import (
     StagedSchemaRecoveryCandidate,
     TableStateIdentity,
 )
-from project_pivot.reliability.errors import (
+from hmda_reliability.reliability.errors import (
     ProfileSnapshotError,
     TableStateIdentityError,
 )

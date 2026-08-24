@@ -109,13 +109,13 @@ jobs:
                   add_target "tests/$target"
                 done
                 ;;
-              src/project_pivot/logger.py)
+              src/hmda_reliability/logger.py)
                 tests=true
                 add_target tests/test_log_agent_event.py
                 ;;
-              src/project_pivot/*/*)
+              src/hmda_reliability/*/*)
                 tests=true
-                domain="${path#src/project_pivot/}"
+                domain="${path#src/hmda_reliability/}"
                 domain="${domain%%/*}"
                 case "$domain" in
                   shared|configs|utils)
@@ -147,7 +147,7 @@ jobs:
                     ;;
                 esac
                 ;;
-              src/project_pivot/*|tests/*|*.py)
+              src/hmda_reliability/*|tests/*|*.py)
                 tests=true
                 full_unit=true
                 ;;

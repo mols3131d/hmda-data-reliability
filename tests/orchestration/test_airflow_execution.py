@@ -5,10 +5,10 @@ from pathlib import Path
 import pytest
 from airflow.sdk.exceptions import AirflowSkipException
 
-from project_pivot.data_operations import DataOperationError, DataOperationRequest
-from project_pivot.data_operations.dbt_result import DbtBuildResult
-from project_pivot.data_operations.raw_result import RawLoadResult
-from project_pivot.orchestration.dags import project_pivot_data_plane as airflow_dag
+from hmda_reliability.data_operations import DataOperationError, DataOperationRequest
+from hmda_reliability.data_operations.dbt_result import DbtBuildResult
+from hmda_reliability.data_operations.raw_result import RawLoadResult
+from hmda_reliability.orchestration.dags import project_pivot_data_plane as airflow_dag
 
 pytestmark = pytest.mark.integration
 

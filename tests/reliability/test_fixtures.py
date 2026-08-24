@@ -5,7 +5,7 @@ from math import nan
 import pytest
 from pydantic import ValidationError
 
-from project_pivot.reliability.contracts import (
+from hmda_reliability.reliability.contracts import (
     HumanReviewStatus,
     ProfileSnapshot,
     can_execute_risky_action,

@@ -1,6 +1,6 @@
 ---
 trigger: glob
-globs: "src/project_pivot/**/*"
+globs: src/hmda_reliability/**/*
 ---
 
 # Project

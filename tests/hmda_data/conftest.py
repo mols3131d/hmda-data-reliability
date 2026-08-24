@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.data_platform.sql import quote_string_literal
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.data_platform.sql import quote_string_literal
 
 
 @pytest.fixture

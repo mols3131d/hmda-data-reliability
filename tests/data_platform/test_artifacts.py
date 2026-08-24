@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-import project_pivot.data_platform.artifacts as artifacts
-from project_pivot.data_platform.artifacts import (
+import hmda_reliability.data_platform.artifacts as artifacts
+from hmda_reliability.data_platform.artifacts import (
     ArtifactProjectionLockError,
     artifact_projection_lock,
 )

@@ -5,11 +5,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
 import yaml
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILLS_ROOT = REPO_ROOT / ".agents" / "skills"
@@ -19,18 +19,20 @@ ROUTE_ROOT = REPO_ROOT / ".agents" / "route"
 SKILLS_META = {
     "kind": "skills",
     "instructions": (
-        "name과 description으로 현재 task에 관련된 Skill을 모두 선택하고 선택한 source만 읽는다. "
-        "일치하는 Skill이 없으면 읽지 않는다. Task intent가 materially 바뀌면 다시 선택한다. "
+        "name과 description으로 현재 task에 관련된 Skill을 모두 선택하고 "
+        "선택한 source만 읽는다. 일치하는 Skill이 없으면 읽지 않는다. "
+        "Task intent가 materially 바뀌면 다시 선택한다. "
         "이 파일은 derived discovery metadata이며 각 SKILL.md가 authoritative source다."
     ),
 }
 RULES_META = {
     "kind": "rules",
     "instructions": (
-        "Known target path와 globs로 후보를 좁히고 description으로 현재 task에 관련된 Rule만 선택해 읽는다. "
-        "Target path가 없으면 Rule source를 선로드하지 않는다. "
+        "Known target path와 globs로 후보를 좁히고 description으로 현재 task에 관련된 "
+        "Rule만 선택해 읽는다. Target path가 없으면 Rule source를 선로드하지 않는다. "
         "Task intent나 target path가 materially 바뀌면 다시 선택한다. "
-        "이 파일은 derived discovery metadata이며 각 canonical Rule이 authoritative source다."
+        "이 파일은 derived discovery metadata이며 "
+        "각 canonical Rule이 authoritative source다."
     ),
 }
 
@@ -61,9 +63,30 @@ def normalized_text(value: object, *, field: str, path: Path) -> str:
     return " ".join(value.split())
 
 
+def find_skill_files() -> list[Path]:
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", ".agents/skills/*/SKILL.md"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        paths = [
+            REPO_ROOT / line.strip()
+            for line in proc.stdout.splitlines()
+            if line.strip()
+        ]
+        if paths:
+            return sorted(paths)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    return sorted(SKILLS_ROOT.glob("*/SKILL.md"))
+
+
 def skill_entries() -> list[dict[str, object]]:
     entries: list[dict[str, object]] = []
-    for path in sorted(SKILLS_ROOT.glob("*/SKILL.md")):
+    for path in find_skill_files():
         meta = load_frontmatter(path)
         entries.append(
             {
@@ -89,8 +112,10 @@ def rule_entries() -> list[dict[str, object]]:
             continue
         if isinstance(globs, str):
             globs = [globs]
-        if not isinstance(globs, list) or not globs or not all(
-            isinstance(item, str) and item for item in globs
+        if (
+            not isinstance(globs, list)
+            or not globs
+            or not all(isinstance(item, str) and item for item in globs)
         ):
             raise SystemExit(f"invalid globs: {path}")
 
@@ -108,9 +133,12 @@ def rule_entries() -> list[dict[str, object]]:
 
 def render(meta: dict[str, str], entries: list[dict[str, object]]) -> str:
     rows: list[dict[str, object]] = [{"_meta": meta}, *entries]
-    return "\n".join(
-        json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in rows
-    ) + "\n"
+    return (
+        "\n".join(
+            json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in rows
+        )
+        + "\n"
+    )
 
 
 def generated_routes() -> dict[Path, str]:

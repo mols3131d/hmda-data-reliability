@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from project_pivot.reliability import (
+from hmda_reliability.reliability import (
     Evidence,
     EvidenceSource,
     Incident,

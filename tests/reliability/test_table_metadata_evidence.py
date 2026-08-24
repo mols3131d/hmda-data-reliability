@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.reliability import (
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.reliability import (
     TableMetadataEvidenceError,
     TableMetadataEvidenceRequest,
     create_table_metadata_evidence,

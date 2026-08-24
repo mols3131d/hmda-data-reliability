@@ -18,7 +18,7 @@
 
 ## Entry Point And Workflow Graph
 
-[`project_pivot_data_plane.py`](../../src/project_pivot/orchestration/dags/project_pivot_data_plane.py)가 유일한 active Airflow DAG entry point다. DAG에는 raw load와 analytics build 두 task만 등록된다.
+[`project_pivot_data_plane.py`](../../src/hmda_reliability/orchestration/dags/project_pivot_data_plane.py)가 유일한 active Airflow DAG entry point다. DAG에는 raw load와 analytics build 두 task만 등록된다.
 
 ```mermaid
 flowchart TB
@@ -55,7 +55,7 @@ Task execution state와 data update evidence는 별개다. 성공한 raw task는
 
 ## Runtime Configuration
 
-[`config.py`](../../src/project_pivot/orchestration/config.py)의 `data_operation_request_from_runtime()`이 지원된 override를 최종 [`DataOperationRequest`](../../src/project_pivot/data_operations/request.py)로 변환한다. Precedence는 explicit runtime value > supported environment value > request default이며, 최종 validation은 Data Operations model이 소유한다.
+[`config.py`](../../src/hmda_reliability/orchestration/config.py)의 `data_operation_request_from_runtime()`이 지원된 override를 최종 [`DataOperationRequest`](../../src/hmda_reliability/data_operations/request.py)로 변환한다. Precedence는 explicit runtime value > supported environment value > request default이며, 최종 validation은 Data Operations model이 소유한다.
 
 Airflow trigger surface는 다음 runtime override만 노출한다.
 
@@ -82,7 +82,7 @@ Data-plane DAG 밖에 다음 항목을 둔다.
 
 ## Reading Order
 
-1. [`project_pivot_data_plane.py`](../../src/project_pivot/orchestration/dags/project_pivot_data_plane.py)
-1. [`config.py`](../../src/project_pivot/orchestration/config.py)
+1. [`project_pivot_data_plane.py`](../../src/hmda_reliability/orchestration/dags/project_pivot_data_plane.py)
+1. [`config.py`](../../src/hmda_reliability/orchestration/config.py)
 1. [`tests/orchestration/test_airflow_dag.py`](../../tests/orchestration/test_airflow_dag.py)
 1. [`tests/orchestration/test_airflow_execution.py`](../../tests/orchestration/test_airflow_execution.py)

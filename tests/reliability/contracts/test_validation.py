@@ -2,8 +2,8 @@
 
 import pytest
 
-from project_pivot.reliability.contracts import Incident, validate_contract
-from project_pivot.reliability.errors import ContractValidationError
+from hmda_reliability.reliability.contracts import Incident, validate_contract
+from hmda_reliability.reliability.errors import ContractValidationError
 
 pytestmark = pytest.mark.unit
 

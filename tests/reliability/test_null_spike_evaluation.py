@@ -17,36 +17,36 @@ from typing import Never
 import duckdb
 import pytest
 
-import project_pivot.data_operations as data_operations
-import project_pivot.reliability.evaluation.null_spike as null_spike_evaluation
-import project_pivot.reliability.recovery.executor as recovery_executor
-from project_pivot.data_operations import (
+import hmda_reliability.data_operations as data_operations
+import hmda_reliability.reliability.evaluation.null_spike as null_spike_evaluation
+import hmda_reliability.reliability.recovery.executor as recovery_executor
+from hmda_reliability.data_operations import (
     DataOperationRequest,
     DbtBuildResult,
     LifecycleResult,
     promote_dbt_artifacts,
 )
-from project_pivot.data_operations.errors import DataOperationError
-from project_pivot.data_platform.artifacts import (
+from hmda_reliability.data_operations.errors import DataOperationError
+from hmda_reliability.data_platform.artifacts import (
     ArtifactProjectionLockError,
     artifact_projection_id,
 )
-from project_pivot.data_platform.duckdb import DuckDBConnectionManager
-from project_pivot.hmda_data import PartitionContentIdentity, partition_content_identity
-from project_pivot.hmda_data.errors import HMDAStalePartitionError
-from project_pivot.reliability import (
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.hmda_data import PartitionContentIdentity, partition_content_identity
+from hmda_reliability.hmda_data.errors import HMDAStalePartitionError
+from hmda_reliability.reliability import (
     Approval,
     ApprovalStatus,
     BackfillValidationResult,
     ProfileSnapshot,
     RecoveryProposal,
 )
-from project_pivot.reliability.errors import (
+from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     BackfillValidationError,
     ProfileSnapshotError,
 )
-from project_pivot.reliability.profiling import ProfileSnapshotRequest
+from hmda_reliability.reliability.profiling import ProfileSnapshotRequest
 
 
 @pytest.mark.integration

@@ -7,7 +7,7 @@ targets:
   - antigravity-ide
 description: "Project-specific source rules for this repository. Covers package ownership, data-layer boundaries, project contracts, and local-first constraints."
 globs:
-  - "src/project_pivot/**/*"
+  - "src/hmda_reliability/**/*"
 copilot:
   name: "Project"
 ---

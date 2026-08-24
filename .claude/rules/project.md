@@ -1,6 +1,6 @@
 ---
 paths:
-  - src/project_pivot/**/*
+  - src/hmda_reliability/**/*
 ---
 
 # Project

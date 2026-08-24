@@ -8,18 +8,18 @@ from subprocess import CompletedProcess, TimeoutExpired
 
 import pytest
 
-import project_pivot.data_platform.artifacts as artifacts
-from project_pivot.data_operations import (
+import hmda_reliability.data_platform.artifacts as artifacts
+from hmda_reliability.data_operations import (
     data_operation_request_from_environment,
     runner,
 )
-from project_pivot.data_operations.errors import DataOperationError
-from project_pivot.data_operations.request import DataOperationRequest
-from project_pivot.data_platform.artifacts import (
+from hmda_reliability.data_operations.errors import DataOperationError
+from hmda_reliability.data_operations.request import DataOperationRequest
+from hmda_reliability.data_platform.artifacts import (
     artifact_projection_id,
     artifact_projection_lock,
 )
-from project_pivot.data_platform.duckdb import DuckDBMutationLockError
+from hmda_reliability.data_platform.duckdb import DuckDBMutationLockError
 
 
 @pytest.mark.unit

@@ -5,7 +5,7 @@ from typing import Any, cast
 import pytest
 from airflow.sdk import Asset
 
-from project_pivot.orchestration.dags.project_pivot_data_plane import (
+from hmda_reliability.orchestration.dags.project_pivot_data_plane import (
     ANALYTICS_LOAN_ASSET,
     RAW_HMDA_LOANS_ASSET,
     project_pivot_data_plane,

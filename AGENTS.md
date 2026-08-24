@@ -45,8 +45,8 @@ Codex CLI는 glob-scoped Rule을 별도 path-scoped file로 자동 적용하지 
 | --- | --- |
 | `.rulesync/rules/development.md` | `src/**/*` |
 | `.rulesync/rules/python.md` | `src/**/*.py` |
-| `.rulesync/rules/project.md` | `src/project_pivot/**/*` |
+| `.rulesync/rules/project.md` | `src/hmda_reliability/**/*` |
 | `.rulesync/rules/dbt.md` | `dbt/**` |
-| `.rulesync/rules/reliability.md` | `src/project_pivot/reliability/**`, `tests/reliability/**` |
-| `.rulesync/rules/orchestration.md` | `src/project_pivot/orchestration/**`, `tests/orchestration/**` |
+| `.rulesync/rules/reliability.md` | `src/hmda_reliability/reliability/**`, `tests/reliability/**` |
+| `.rulesync/rules/orchestration.md` | `src/hmda_reliability/orchestration/**`, `tests/orchestration/**` |
 | `.rulesync/rules/markdown.md` | `**/*.md` |

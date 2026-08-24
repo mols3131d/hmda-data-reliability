@@ -1,7 +1,7 @@
 ---
 name: Project
 description: "Project-specific source rules for this repository. Covers package ownership, data-layer boundaries, project contracts, and local-first constraints."
-applyTo: "src/project_pivot/**/*"
+applyTo: "src/hmda_reliability/**/*"
 ---
 
 # Project

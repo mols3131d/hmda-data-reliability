@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from project_pivot.reliability.contracts import Evidence, EvidenceSource
+from hmda_reliability.reliability.contracts import Evidence, EvidenceSource
 
 pytestmark = pytest.mark.unit
 
