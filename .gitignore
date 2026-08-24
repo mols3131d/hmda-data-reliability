@@ -25,6 +25,9 @@ rulesync.local.jsonc
 .gemini/commands/
 .caveman-compress/
 
+# Editor-local databases
+.frontmatter/database/pinnedItemsDb.json
+
 # Local environment and secrets
 .env
 .env.*
