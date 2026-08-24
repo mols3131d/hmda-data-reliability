@@ -33,6 +33,7 @@ jobs:
           tests=false
           lefthook=false
           rulesync=false
+          routes=false
           full_unit=false
           targets=()
 
@@ -80,6 +81,12 @@ jobs:
             case "$path" in
               .rulesync/*|rulesync.jsonc|scripts/rulesync.py|AGENTS.md|.agents/rules/*|.github/instructions/*.instructions.md)
                 rulesync=true
+                ;;
+            esac
+
+            case "$path" in
+              .rulesync/rules/*|.agents/skills/*/SKILL.md|.agents/route/*|scripts/generate_agent_routes.py)
+                routes=true
                 ;;
             esac
 
@@ -152,6 +159,7 @@ jobs:
             echo "tests=$tests"
             echo "lefthook=$lefthook"
             echo "rulesync=$rulesync"
+            echo "routes=$routes"
             echo "full_unit=$full_unit"
             printf 'targets='
             printf '%s ' "${targets[@]}"
@@ -178,13 +186,13 @@ jobs:
           ((${#files[@]} == 0)) || rumdl fmt "${files[@]}"
 
       - name: Set up Python
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.rulesync == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.rulesync == 'true' || steps.scope.outputs.routes == 'true'
         uses: actions/setup-python@v6.2.0
         with:
           python-version-file: ".python-version"
 
       - name: Set up uv
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.lefthook == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true'
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.11.32"
@@ -200,6 +208,10 @@ jobs:
       - name: Validate Rulesync projections
         if: steps.scope.outputs.rulesync == 'true'
         run: python scripts/rulesync.py validate
+
+      - name: Validate chatbot routes
+        if: steps.scope.outputs.routes == 'true'
+        run: uv run --with PyYAML==6.0.3 python scripts/generate_agent_routes.py --check
 
       - name: Validate Lefthook config
         if: steps.scope.outputs.lefthook == 'true'
