@@ -79,8 +79,8 @@ Native bridge는 Rulesync가 source harness의 native locations에서 발견한 
 필요하면 다음 중 하나를 명시적으로 선택한다.
 
 1. native location으로 normalize한다.
-2. canonical Rulesync source로 import한다.
-3. backend limitation으로 보고한다.
+1. canonical Rulesync source로 import한다.
+1. backend limitation으로 보고한다.
 
 ## Validation
 

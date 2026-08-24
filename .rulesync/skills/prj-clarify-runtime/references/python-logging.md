@@ -94,6 +94,6 @@ except OperationError:
 
 ## References
 
-- Python 3.13 `logging` API: https://docs.python.org/3.13/library/logging.html
-- Python 3.13 Logging HOWTO: https://docs.python.org/3.13/howto/logging.html
-- Python 3.13 Logging Cookbook: https://docs.python.org/3.13/howto/logging-cookbook.html
+- Python 3.13 `logging` API: <https://docs.python.org/3.13/library/logging.html>
+- Python 3.13 Logging HOWTO: <https://docs.python.org/3.13/howto/logging.html>
+- Python 3.13 Logging Cookbook: <https://docs.python.org/3.13/howto/logging-cookbook.html>

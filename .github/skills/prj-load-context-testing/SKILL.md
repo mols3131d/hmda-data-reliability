@@ -17,7 +17,7 @@ Load the smallest repository testing context needed for the task. Canonical test
 - When designing, changing, or reviewing behavior, scenarios, oracles, assertions, or test level, read [`docs/development/test-design-and-implementation.md`](../../../docs/development/test-design-and-implementation.md).
 - When selecting, running, or debugging pytest commands, markers, reports, coverage, or traces, read [`docs/development/testing.md`](../../../docs/development/testing.md).
 - When exact configured pytest defaults or plugin availability matters, inspect [`pyproject.toml`](../../../pyproject.toml). When Git hook behavior matters, inspect [`lefthook.yml`](../../../lefthook.yml).
-- When pull-request CI selection, CI-only filters, or CI execution scope matters, inspect [`.github/workflows/ci-lite.yml`](../../../.github/workflows/ci-lite.yml).
+- When pull-request CI selection, CI-only filters, or CI execution scope matters, inspect `.github/workflows/ci-lite.yml`.
 
 Read only the context relevant to the current task. Do not duplicate detailed rules or invent a conflicting convention.
 
