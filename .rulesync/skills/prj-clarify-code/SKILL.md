@@ -1,6 +1,7 @@
 ---
 name: prj-clarify-code
 description: Use this skill to make existing repository code easier to understand and maintain without changing behavior. Trigger for requests to clarify confusing code, names, caller contracts, public APIs or package/module structure, domain semantics, rationale, responsibilities, control flow, or unnecessary indirection. Do not use for feature implementation, correctness review, performance optimization, architecture redesign, or user-facing documentation.
+targets: [claudecode, codexcli, antigravity-ide, antigravity-cli]
 ---
 
 # Clarify Code
