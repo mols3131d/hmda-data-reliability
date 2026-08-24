@@ -36,10 +36,12 @@ Reusable Agent Asset 관리 repository의 Rulesync support ceiling과 같은 tar
 
 | Feature | Default mode | Source |
 | --- | --- | --- |
-| `rules` | Canonical fan-out | `.rulesync/rules/` |
+| `rules` | Canonical fan-out or documented CLI routing | `.rulesync/rules/` |
 | `skills` | Canonical fan-out | `.rulesync/skills/` |
 | repository-owned non-Rule feature | Canonical fan-out after explicit migration | appropriate `.rulesync/` source |
 | tool/framework-owned feature | Outside Rulesync ownership | owning tool source |
+
+Generic path Rule은 Claude Code, Copilot, Copilot CLI와 Antigravity IDE에 native projection한다. Codex CLI는 native scoped Rule이 없고, Antigravity CLI는 Antigravity IDE와 같은 `.agents/rules/` path에 다른 serialization을 사용하므로 두 CLI는 root `AGENTS.md`에서 applicable canonical Rule을 route한다. Vendor-specific Rule은 이 shared routing에 넣지 않는다.
 
 Generated Skill projection은 canonical source가 아니며 직접 authoring하지 않는다. 각 target의 native Skill path는 current Rulesync adapter가 결정한다.
 
@@ -64,4 +66,6 @@ Active development 동안 이 entrypoint는 `rulesync@latest`를 사용한다.
 - 다른 tool 또는 framework가 소유하는 asset은 그 tool의 generation과 lifecycle contract를 따른다.
 - Rulesync migration은 기존 owner를 암묵적으로 바꾸지 않는다. Migration 자체가 요청되고 preview와 validation으로 semantics를 확인한 경우에만 authority를 이동한다.
 - Project-level Rulesync support target은 `claudecode`, `codexcli`, `copilot`, `copilotcli`, `antigravity-ide`, `antigravity-cli`다.
+- Shared output path에 target별 serialization이나 semantics 차이가 있으면 target 수를 맞추기 위해 같은 file을 강제로 fan-out하지 않는다.
+- `delete: true`는 shared output target 간 orphan 판정 충돌이 해소되었다는 근거 없이 다시 활성화하지 않는다.
 - broad `--features "*"`보다 실제 source와 migration scope가 확정된 feature만 활성화한다.
