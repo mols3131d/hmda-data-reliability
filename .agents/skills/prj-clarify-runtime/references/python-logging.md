@@ -14,7 +14,7 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 ```
 
-기존 `hmda_reliability.logger.get_logger()`를 사용하는 영역에서는 동일한 hierarchy를 유지하며 재사용한다.
+기존 `project_pivot.logger.get_logger()`를 사용하는 영역에서는 동일한 hierarchy를 유지하며 재사용한다.
 
 - `Logger`를 직접 생성하지 않는다.
 - root logger에 직접 기록하는 module code를 만들지 않는다.

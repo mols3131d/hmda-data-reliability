@@ -1,7 +1,10 @@
 ---
 root: false
 targets:
+  - claudecode
   - copilot
+  - copilotcli
+  - antigravity-ide
 description: "Use when editing the Apache Airflow data-plane DAG, runtime adapter, or orchestration tests under src/hmda_reliability/orchestration or tests/orchestration. Covers the single DAG scope and domain boundaries."
 globs:
   - "src/hmda_reliability/orchestration/**"

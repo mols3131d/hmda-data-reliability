@@ -61,7 +61,7 @@ validation: auto
 특정 구현 경로를 이전 revision과 비교합니다.
 
 ```text
---target src/hmda_reliability/reliability/ --baseline main --focus implementation
+--target src/project_pivot/reliability/ --baseline main --focus implementation
 ```
 
 테스트의 설계와 false green 위험만 검토합니다.

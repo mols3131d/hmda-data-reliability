@@ -2,8 +2,9 @@
 root: true
 targets:
   - antigravity-ide
+  - antigravity-cli
   - codexcli
-description: "Project-wide AGENTS instructions with Codex routing to path-scoped canonical Rulesync rules."
+description: "Project-wide AGENTS instructions with CLI routing to path-scoped canonical Rulesync rules."
 ---
 
 <!-- Canonical source: `.rulesync/rules/codex-root.md`. -->
@@ -21,19 +22,19 @@ description: "Project-wide AGENTS instructions with Codex routing to path-scoped
 - Owning source가 충돌하면 임의로 해소하지 말고 drift와 근거를 보고한다.
 - 기존 architecture와 domain ownership boundary를 존중하고 불필요하게 책임을 넘나들지 않는다.
 - KISS, DRY, YAGNI를 우선하고 필요하지 않은 abstraction과 중복을 만들지 않는다.
-- 문서와 repository text의 언어 선택은 [`docs/language.md`](docs/language.md)를 따른다.
+- 문서와 repository text의 언어 선택은 `docs/language.md`를 따른다.
 
 ## Guidance Ownership
 
 | Area | Owner |
 | --- | --- |
-| 개발 환경, active tool choice, package layout, code convention | [`DEVELOPMENT.md`](DEVELOPMENT.md) |
-| 시스템 흐름과 domain ownership guidance | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/domains/`](docs/domains/OVERVIEW.md) |
-| docs-wide writing, trust, lifecycle과 dashboard policy | [`docs/AGENTS.md`](docs/AGENTS.md) |
-| Git과 GitHub workflow | [`docs/development/vcs-git/`](docs/development/vcs-git/README.md) |
-| `openspec/**` | [`openspec/AGENTS.md`](openspec/AGENTS.md) |
-| `tests/**` | [`tests/AGENTS.md`](tests/AGENTS.md) |
-| `inbox/**` | [`inbox/AGENTS.md`](inbox/AGENTS.md) |
+| 개발 환경, active tool choice, package layout, code convention | `DEVELOPMENT.md` |
+| 시스템 흐름과 domain ownership guidance | `docs/ARCHITECTURE.md`, `docs/domains/OVERVIEW.md` |
+| docs-wide writing, trust, lifecycle과 dashboard policy | `docs/AGENTS.md` |
+| Git과 GitHub workflow | `docs/development/vcs-git/README.md` |
+| `openspec/**` | `openspec/AGENTS.md` |
+| `tests/**` | `tests/AGENTS.md` |
+| `inbox/**` | `inbox/AGENTS.md` |
 
 각 owner는 더 좁은 경로의 guide나 `AGENTS.md`에 세부 규칙을 위임할 수 있다. Root에는 그 세부 규칙을 반복하지 않는다.
 
@@ -45,15 +46,16 @@ description: "Project-wide AGENTS instructions with Codex routing to path-scoped
 
 ## Path Rules
 
-Codex CLI는 glob-scoped Rule을 별도 파일로 자동 적용하지 않는다. 작업 대상이 아래 `Match`에 해당하면 **작업 전에** 연결된 canonical Rule을 읽고 적용한다. 여러 행이 일치하면 모두 적용한다.
+Codex CLI는 glob-scoped Rule을 별도 path-scoped file로 자동 적용하지 않는다. Antigravity CLI는 `.agents/rules/`를 Antigravity IDE와 공유하지만 current Rulesync adapter의 non-root serialization이 다르므로 이 repository에서는 CLI-owned copy를 같은 path에 덮어쓰지 않는다.
+
+두 CLI 모두 작업 대상이 아래 `Match`에 해당하면 **작업 전에** 연결된 canonical Rule을 읽고 적용한다. 여러 행이 일치하면 모두 적용한다. Target-specific Rule은 이 table에 넣지 않는다.
 
 | Rule | Match |
 | --- | --- |
-| [Development](.rulesync/rules/development.md) | `src/**/*` |
-| [Python](.rulesync/rules/python.md) | `src/**/*.py` |
-| [Project](.rulesync/rules/project.md) | `src/hmda_reliability/**/*` |
-| [dbt](.rulesync/rules/dbt.md) | `dbt/**` |
-| [Reliability](.rulesync/rules/reliability.md) | `src/hmda_reliability/reliability/**`, `tests/reliability/**` |
-| [Orchestration](.rulesync/rules/orchestration.md) | `src/hmda_reliability/orchestration/**`, `tests/orchestration/**` |
-| [Markdown](.rulesync/rules/markdown.md) | `**/*.md` |
-| [Local Mermaid Diagrams](.rulesync/rules/mermaid.md) | `**/*.md`, `**/*.mmd`, `**/*.mermaid` |
+| `.rulesync/rules/development.md` | `src/**/*` |
+| `.rulesync/rules/python.md` | `src/**/*.py` |
+| `.rulesync/rules/project.md` | `src/hmda_reliability/**/*` |
+| `.rulesync/rules/dbt.md` | `dbt/**` |
+| `.rulesync/rules/reliability.md` | `src/hmda_reliability/reliability/**`, `tests/reliability/**` |
+| `.rulesync/rules/orchestration.md` | `src/hmda_reliability/orchestration/**`, `tests/orchestration/**` |
+| `.rulesync/rules/markdown.md` | `**/*.md` |

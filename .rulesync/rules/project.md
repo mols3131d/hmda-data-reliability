@@ -1,7 +1,10 @@
 ---
 root: false
 targets:
+  - claudecode
   - copilot
+  - copilotcli
+  - antigravity-ide
 description: "Project-specific source rules for this repository. Covers package ownership, data-layer boundaries, project contracts, and local-first constraints."
 globs:
   - "src/hmda_reliability/**/*"
