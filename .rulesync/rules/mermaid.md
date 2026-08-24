@@ -1,5 +1,6 @@
 ---
 root: false
+route: false
 targets:
   - copilot
 description: "Create, edit, validate, and preview Mermaid diagrams locally in VS Code using the Mermaid extension and GitHub Copilot. Do not use Mermaid Chart cloud, account, sync, credits, or paid services."

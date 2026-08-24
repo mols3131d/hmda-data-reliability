@@ -7,10 +7,7 @@
 .agents/brain/
 .agents/reports/
 .agents/skills/*
-!.agents/skills/pivot-*/
-!.agents/skills/prj-*
-!.agents/skills/clarify-code/
-!.agents/skills/sandbox-editor/
+!.agents/skills/prj-*/
 .codex/skills/
 .gemini/skills/
 .gemini/commands/

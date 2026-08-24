@@ -37,13 +37,13 @@
         {
             "label": "Update Agent Skills",
             "type": "shell",
-            "command": "npx skills update -p -g -y",
+            "command": "npx skills update -p -y",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": false
             },
-            "detail": "Runs npx skills update with flags."
+            "detail": "Updates project-scoped Agent Skills from skills-lock.json."
         },
         {
             "label": "Rulesync: Preview",

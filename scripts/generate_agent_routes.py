@@ -63,6 +63,13 @@ def normalized_text(value: object, *, field: str, path: Path) -> str:
     return " ".join(value.split())
 
 
+def route_enabled(meta: dict[str, Any], *, path: Path) -> bool:
+    value = meta.get("route", True)
+    if not isinstance(value, bool):
+        raise SystemExit(f"route must be boolean: {path}")
+    return value
+
+
 def find_skill_files() -> list[Path]:
     try:
         proc = subprocess.run(
@@ -104,7 +111,7 @@ def rule_entries() -> list[dict[str, object]]:
     entries: list[dict[str, object]] = []
     for path in sorted(RULES_ROOT.glob("*.md")):
         meta = load_frontmatter(path)
-        if meta.get("root") is True:
+        if meta.get("root") is True or not route_enabled(meta, path=path):
             continue
 
         globs = meta.get("globs")
