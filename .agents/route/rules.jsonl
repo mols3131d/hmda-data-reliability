@@ -1,9 +1,9 @@
 {"_meta":{"kind":"rules","instructions":"Known target path마다 globs를 비교해 일치하는 Rule source를 모두 읽는다. Target path가 없으면 Rule source를 선로드하지 않는다. Target path가 materially 바뀌면 다시 계산한다. 이 파일은 derived discovery metadata이며 각 canonical Rule이 authoritative source다."}}
-{"source":".rulesync/rules/dbt.md","globs":["dbt/**"]}
 {"source":".rulesync/rules/development.md","globs":["src/**/*"]}
+{"source":".rulesync/rules/python.md","globs":["src/**/*.py"]}
+{"source":".rulesync/rules/project.md","globs":["src/project_pivot/**/*"]}
+{"source":".rulesync/rules/dbt.md","globs":["dbt/**"]}
+{"source":".rulesync/rules/reliability.md","globs":["src/project_pivot/reliability/**","tests/reliability/**"]}
+{"source":".rulesync/rules/orchestration.md","globs":["src/project_pivot/orchestration/**","tests/orchestration/**"]}
 {"source":".rulesync/rules/markdown.md","globs":["**/*.md"]}
 {"source":".rulesync/rules/mermaid.md","globs":["**/*.md","**/*.mmd","**/*.mermaid"]}
-{"source":".rulesync/rules/orchestration.md","globs":["src/project_pivot/orchestration/**","tests/orchestration/**"]}
-{"source":".rulesync/rules/project.md","globs":["src/project_pivot/**/*"]}
-{"source":".rulesync/rules/python.md","globs":["src/**/*.py"]}
-{"source":".rulesync/rules/reliability.md","globs":["src/project_pivot/reliability/**","tests/reliability/**"]}
