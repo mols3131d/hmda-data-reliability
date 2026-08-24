@@ -24,6 +24,7 @@
 | docs-wide writing, trust, lifecycle과 dashboard policy | `docs/AGENTS.md` |
 | Git과 GitHub workflow | `docs/development/vcs-git/README.md` |
 | Rulesync Agent Asset authoring, projection과 validation | `docs/tooling/rulesync.md` |
+| 외부 non-Rulesync Agent Asset 관리 | `docs/tooling/skills-cli.md` |
 | `openspec/**` | `openspec/AGENTS.md` |
 | `tests/**` | `tests/AGENTS.md` |
 | `inbox/**` | `inbox/AGENTS.md` |
@@ -34,6 +35,7 @@
 
 - Repository-owned agent asset은 Rulesync를 기본 canonical authoring source로 사용한다.
 - 다른 tool 또는 framework가 CLI나 자체 lifecycle로 생성·관리하는 asset은 해당 tool의 canonical source가 계속 소유한다. 예를 들어 OpenSpec artifact를 Rulesync에 복제하거나 재정의하지 않고 owning OpenSpec surface로 route한다.
+- 외부 non-Rulesync Agent Asset은 Rulesync로 직접 관리하는 것보다 Skills CLI가 더 효율적인 경우에만 Skills CLI로 관리한다.
 - 아직 Rulesync로 명시적으로 migration하지 않은 기존 non-Rule asset은 현재 owner를 유지한다. Generated target projection은 독립적인 authority가 아니다.
 
 ## Path Rules
