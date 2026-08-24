@@ -22,7 +22,7 @@ HMDA raw load와 dbt build를 orchestration과 분리된 application stage로 �
 
 #### Scenario: Environment-backed execution request
 
-- **GIVEN** `PROJECT_PIVOT_DUCKDB_PATH` 또는 `PROJECT_PIVOT_SOURCE_ROOT`가 설정되어 있을 때
+- **GIVEN** `HMDA_RELIABILITY_DUCKDB_PATH` 또는 `HMDA_RELIABILITY_SOURCE_ROOT`가 설정되어 있을 때
 - **WHEN** caller가 환경 기반 Data Operations request를 생성할 때
 - **THEN** request는 설정된 값을 database path와 source root에 사용해야 한다.
 
@@ -30,11 +30,11 @@ HMDA raw load와 dbt build를 orchestration과 분리된 application stage로 �
 
 - **GIVEN** 지원되는 pipeline environment key가 설정되지 않았을 때
 - **WHEN** caller가 환경 기반 Data Operations request를 생성할 때
-- **THEN** request는 기존 로컬 기본값을 사용해야 한다.
+- **THEN** request는 HMDA Data Reliability local default를 사용해야 한다.
 
 #### Scenario: Invalid source year setting
 
-- **GIVEN** `PROJECT_PIVOT_SOURCE_YEAR`가 정수가 아닐 때
+- **GIVEN** `HMDA_RELIABILITY_SOURCE_YEAR`가 정수가 아닐 때
 - **WHEN** caller가 환경 기반 Data Operations request를 생성할 때
 - **THEN** 시스템은 invalid environment setting을 식별하는 validation error를 발생시켜야 한다.
 

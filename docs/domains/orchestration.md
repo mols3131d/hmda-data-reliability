@@ -3,7 +3,7 @@
 **`orchestration`은 Bronze 적재와 dbt 분석만 연결한다.** Domain business logic은 공개 API로 위임하며, reliability lifecycle과 recovery/evaluation은 Airflow DAG에 넣지 않는다.
 
 > [!IMPORTANT]
-> **`project_pivot_data_plane`은 수동 data-plane 실행 전용이다.** Schedule과 automatic retry를 사용하지 않으며 approval이나 승인된 side effect를 암묵적으로 실행하지 않는다.
+> **`hmda_data_plane`은 수동 data-plane 실행 전용이다.** Schedule과 automatic retry를 사용하지 않으며 approval이나 승인된 side effect를 암묵적으로 실행하지 않는다.
 
 ## Scope
 
@@ -18,13 +18,13 @@
 
 ## Entry Point And Workflow Graph
 
-[`project_pivot_data_plane.py`](../../src/hmda_reliability/orchestration/dags/project_pivot_data_plane.py)가 유일한 active Airflow DAG entry point다. DAG에는 raw load와 analytics build 두 task만 등록된다.
+[`hmda_data_plane.py`](../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py)가 유일한 active Airflow DAG entry point다. DAG에는 raw load와 analytics build 두 task만 등록된다.
 
 ```mermaid
 flowchart TB
     config["Airflow Params / environment"] --> request["DataOperationRequest"]
 
-    subgraph airflow ["Apache Airflow · project_pivot_data_plane"]
+    subgraph airflow ["Apache Airflow · hmda_data_plane"]
         raw["load_raw_hmda_loans"] --> analytics["build_dbt_loan_analytics"]
         analytics -->|run_dbt_build=false| skipped(["SKIPPED"])
     end
@@ -82,7 +82,7 @@ Data-plane DAG 밖에 다음 항목을 둔다.
 
 ## Reading Order
 
-1. [`project_pivot_data_plane.py`](../../src/hmda_reliability/orchestration/dags/project_pivot_data_plane.py)
+1. [`hmda_data_plane.py`](../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py)
 1. [`config.py`](../../src/hmda_reliability/orchestration/config.py)
 1. [`tests/orchestration/test_airflow_dag.py`](../../tests/orchestration/test_airflow_dag.py)
 1. [`tests/orchestration/test_airflow_execution.py`](../../tests/orchestration/test_airflow_execution.py)
