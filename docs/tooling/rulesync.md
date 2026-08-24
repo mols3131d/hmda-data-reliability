@@ -36,12 +36,12 @@ Generated projection은 독립적인 authority가 아니며 직접 authoring하�
 Rulesync 변경은 다음 순서를 기본으로 한다.
 
 1. `.rulesync/**`의 owning source를 수정한다.
-2. `preview`로 예상 projection을 확인한다.
-3. 요청 범위가 맞으면 `generate`한다.
-4. Asset을 삭제하거나 retarget했다면 예상 결과를 확인한 뒤 stale generated projection을 명시적으로 정리한다.
-5. Skill projection이 바뀌면 chatbot route index를 다시 생성한다.
-6. `validate`로 Rulesync diagnostics와 projection drift를 확인한다.
-7. Route index도 `--check`로 검증한다.
+1. `preview`로 예상 projection을 확인한다.
+1. 요청 범위가 맞으면 `generate`한다.
+1. Asset을 삭제하거나 retarget했다면 예상 결과를 확인한 뒤 stale generated projection을 명시적으로 정리한다.
+1. Skill projection이 바뀌면 chatbot route index를 다시 생성한다.
+1. `validate`로 Rulesync diagnostics와 projection drift를 확인한다.
+1. Route index도 `--check`로 검증한다.
 
 ```bash
 uv run python scripts/rulesync.py preview
