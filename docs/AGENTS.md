@@ -12,6 +12,7 @@
 | `domains/**` | 각 domain의 책임, 공개 surface와 비책임을 설명하는 guide |
 | `mvp.md` | 현재 active MVP의 목표, scope와 acceptance |
 | `development/**` | phase-independent 개발 가이드와 human-only development dashboard |
+| `tooling/**` | repository tooling의 사용·운영 guide |
 | `references/**` | 외부 규격과 supporting reference |
 
 Current capability의 normative contract는 `docs/`가 아니라 [`../openspec/specs/`](../openspec/specs/)가 소유한다. OpenSpec-specific agent와 workflow 규칙은 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)를 진입점으로 해당 owning file을 따른다.

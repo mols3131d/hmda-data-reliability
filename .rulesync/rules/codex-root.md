@@ -32,6 +32,7 @@ description: "Project-wide AGENTS instructions with CLI routing to path-scoped c
 | 시스템 흐름과 domain ownership guidance | `docs/ARCHITECTURE.md`, `docs/domains/OVERVIEW.md` |
 | docs-wide writing, trust, lifecycle과 dashboard policy | `docs/AGENTS.md` |
 | Git과 GitHub workflow | `docs/development/vcs-git/README.md` |
+| Rulesync Agent Asset authoring, projection과 validation | `docs/tooling/rulesync.md` |
 | `openspec/**` | `openspec/AGENTS.md` |
 | `tests/**` | `tests/AGENTS.md` |
 | `inbox/**` | `inbox/AGENTS.md` |
