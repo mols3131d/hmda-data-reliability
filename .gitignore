@@ -69,6 +69,7 @@ dist/
 /data/metadata/dbt_lineage.json
 /notes/
 /.local/
+/.tmp/
 /artifacts/
 dbt/.user.yml
 dbt/target/
