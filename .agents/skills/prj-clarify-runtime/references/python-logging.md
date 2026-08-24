@@ -2,7 +2,7 @@
 
 Python 표준 `logging`으로 선택한 log event를 구현하는 기준이다. **무엇을 log할지는 [Logging](logging.md)이 소유하고, 이 문서는 Python 표현만 다룬다.**
 
-HMDA Data Reliability는 Python 3.13을 기준으로 한다. 기존 logger hierarchy와 application-owned configuration을 우선하고 clarification만을 위해 wrapper, handler 또는 logging framework를 만들지 않는다.
+이 repository는 Python 3.13을 기준으로 한다. 기존 logger hierarchy와 application-owned configuration을 우선하고 clarification만을 위해 wrapper, handler 또는 logging framework를 만들지 않는다.
 
 ## Logger
 
@@ -14,7 +14,7 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 ```
 
-기존 `hmda_reliability.logger.get_logger()`를 사용하는 영역에서는 동일한 hierarchy를 유지하며 재사용한다.
+기존 logging helper를 사용하는 영역에서는 동일한 hierarchy를 유지하며 재사용한다.
 
 - `Logger`를 직접 생성하지 않는다.
 - root logger에 직접 기록하는 module code를 만들지 않는다.
@@ -39,16 +39,16 @@ _LOGGER.setLevel(...)
 동적 값을 message에 넣어야 하면 logging argument formatting을 우선한다.
 
 ```python
-_LOGGER.info("dbt build 완료: return_code=%s", result.return_code)
+_LOGGER.info("작업 완료: return_code=%s", result.return_code)
 ```
 
 검색·비교해야 하는 값은 message 문자열에만 숨기지 않고 `extra` 같은 기존 structured context convention을 사용한다.
 
 ```python
 _LOGGER.info(
-    "HMDA 원천 적재 완료",
+    "데이터 적재 완료",
     extra={
-        "table_name": table_name,
+        "table_name": "raw.records",
         "source_count": len(paths),
         "row_count": row_count,
     },

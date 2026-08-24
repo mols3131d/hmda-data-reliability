@@ -2,7 +2,7 @@
 
 dbt 실행을 이해할 때는 log부터 늘리지 않는다. **실행 후 사실은 artifact를 우선하고, 시간적 흐름이나 artifact가 남기지 못한 실패 맥락만 dbt event/log로 보완한다.**
 
-HMDA Data Reliability는 `dbt Core`를 사용한다. dbt의 event와 log 형식은 engine/version에 따라 달라질 수 있으므로 구조를 가정하기 전에 실제 사용 version과 공식 문서를 확인한다.
+이 repository는 `dbt Core`를 사용한다. dbt의 event와 log 형식은 engine/version에 따라 달라질 수 있으므로 구조를 가정하기 전에 실제 사용 version과 공식 문서를 확인한다.
 
 ## Evidence Order
 
@@ -11,7 +11,7 @@ HMDA Data Reliability는 `dbt Core`를 사용한다. dbt의 event와 log 형식�
 | `run_results.json` | 실행된 node의 결과, status, timing 등 완료된 invocation 결과를 복원한다 |
 | `manifest.json` | node identity, config, dependency/lineage 같은 project context를 복원한다 |
 | dbt event / log | 실행 순서, node-level 진행, artifact가 남기지 못한 실패 맥락을 복원한다 |
-| HMDA Data Reliability wrapper result / exception | subprocess boundary의 성공·실패와 caller가 알아야 할 최소 context를 전달한다 |
+| wrapper result / exception | subprocess boundary의 성공·실패와 caller가 알아야 할 최소 context를 전달한다 |
 
 artifact가 존재하고 질문에 답할 수 있으면 같은 사실을 wrapper log에 다시 복제하지 않는다.
 
@@ -36,7 +36,7 @@ dbt는 console과 log file에 event를 출력하며 structured format을 지원�
 
 ## Failure Boundary
 
-HMDA Data Reliability wrapper는 dbt의 모든 output을 다시 logging하지 않는다.
+wrapper는 dbt의 모든 output을 다시 logging하지 않는다.
 
 실패 시 caller가 필요한 최소 boundary context만 projection한다.
 
@@ -50,9 +50,9 @@ node-level 원인과 상세 실행 흐름은 dbt artifact/log가 이미 소유�
 
 artifact가 생성되기 전에 process가 실패했거나 artifact만으로 원인을 복원할 수 없을 때 log가 더 중요한 evidence가 될 수 있다.
 
-## HMDA Data Reliability Check
+## Repository Check
 
-현재 `run_dbt_build()`처럼 invocation별 target path를 사용하는 경계에서는 다음을 우선 확인한다.
+현재처럼 invocation별 target path를 사용하는 dbt wrapper 경계에서는 다음을 우선 확인한다.
 
 1. 해당 run의 artifact가 독립된 target path에 남았는가?
 1. `run_results.json`과 `manifest.json`으로 복원 질문에 답할 수 있는가?
