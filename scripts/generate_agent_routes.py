@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -62,9 +63,30 @@ def normalized_text(value: object, *, field: str, path: Path) -> str:
     return " ".join(value.split())
 
 
+def find_skill_files() -> list[Path]:
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", ".agents/skills/*/SKILL.md"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        paths = [
+            REPO_ROOT / line.strip()
+            for line in proc.stdout.splitlines()
+            if line.strip()
+        ]
+        if paths:
+            return sorted(paths)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    return sorted(SKILLS_ROOT.glob("*/SKILL.md"))
+
+
 def skill_entries() -> list[dict[str, object]]:
     entries: list[dict[str, object]] = []
-    for path in sorted(SKILLS_ROOT.glob("*/SKILL.md")):
+    for path in find_skill_files():
         meta = load_frontmatter(path)
         entries.append(
             {
