@@ -1,0 +1,9 @@
+{"_meta":{"kind":"rules","instructions":"When target paths are known, match every target path against globs and load every matching Rule source. If no target path is known, do not preload Rule sources. Re-evaluate matches when target paths materially change. This file is derived discovery metadata; each referenced canonical Rule remains authoritative."}}
+{"source":".rulesync/rules/development.md","globs":["src/**/*"]}
+{"source":".rulesync/rules/python.md","globs":["src/**/*.py"]}
+{"source":".rulesync/rules/project.md","globs":["src/project_pivot/**/*"]}
+{"source":".rulesync/rules/dbt.md","globs":["dbt/**"]}
+{"source":".rulesync/rules/reliability.md","globs":["src/project_pivot/reliability/**","tests/reliability/**"]}
+{"source":".rulesync/rules/orchestration.md","globs":["src/project_pivot/orchestration/**","tests/orchestration/**"]}
+{"source":".rulesync/rules/markdown.md","globs":["**/*.md"]}
+{"source":".rulesync/rules/mermaid.md","globs":["**/*.md","**/*.mmd","**/*.mermaid"]}
