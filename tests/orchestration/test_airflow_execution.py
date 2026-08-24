@@ -8,7 +8,7 @@ from airflow.sdk.exceptions import AirflowSkipException
 from hmda_reliability.data_operations import DataOperationError, DataOperationRequest
 from hmda_reliability.data_operations.dbt_result import DbtBuildResult
 from hmda_reliability.data_operations.raw_result import RawLoadResult
-from hmda_reliability.orchestration.dags import project_pivot_data_plane as airflow_dag
+from hmda_reliability.orchestration.dags import hmda_data_plane as airflow_dag
 
 pytestmark = pytest.mark.integration
 
@@ -45,7 +45,7 @@ def _runtime_context(
 
 def _raw_result(tmp_path: Path) -> RawLoadResult:
     return RawLoadResult(
-        database_path=tmp_path / "project_pivot.duckdb",
+        database_path=tmp_path / "hmda_reliability.duckdb",
         source_root=tmp_path / "raw",
         source_file_count=2,
         source_year=2025,
@@ -98,7 +98,7 @@ def test_tasks_delegate_in_order_and_record_separate_update_evidence(
     assert outlet_events.event_for(airflow_dag.RAW_HMDA_LOANS_ASSET).extra == {
         "execution_stage": "raw_load",
         "data_update": True,
-        "database_path": str(tmp_path / "project_pivot.duckdb"),
+        "database_path": str(tmp_path / "hmda_reliability.duckdb"),
         "source_root": str(tmp_path / "raw"),
         "source_file_count": 2,
         "source_year": 2025,
@@ -138,9 +138,7 @@ def test_raw_failure_prevents_downstream_execution(
 
     assert calls == ["raw"]
     assert (
-        airflow_dag.project_pivot_data_plane.get_task(
-            "build_dbt_loan_analytics"
-        ).trigger_rule
+        airflow_dag.hmda_data_plane.get_task("build_dbt_loan_analytics").trigger_rule
         == "all_success"
     )
 

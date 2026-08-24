@@ -20,9 +20,9 @@ def test_runtime_adapter_applies_environment_values() -> None:
     request = data_operation_request_from_runtime(
         {},
         environment={
-            "PROJECT_PIVOT_DUCKDB_PATH": "scratch/environment.duckdb",
-            "PROJECT_PIVOT_SOURCE_ROOT": "scratch/environment-hmda",
-            "PROJECT_PIVOT_SOURCE_YEAR": "2024",
+            "HMDA_RELIABILITY_DUCKDB_PATH": "scratch/environment.duckdb",
+            "HMDA_RELIABILITY_SOURCE_ROOT": "scratch/environment-hmda",
+            "HMDA_RELIABILITY_SOURCE_YEAR": "2024",
         },
     )
 
@@ -54,7 +54,7 @@ def test_runtime_adapter_prefers_explicit_values_over_environment() -> None:
     request = data_operation_request_from_runtime(
         {"database_path": "scratch/configured.duckdb"},
         environment={
-            "PROJECT_PIVOT_DUCKDB_PATH": "scratch/environment.duckdb",
+            "HMDA_RELIABILITY_DUCKDB_PATH": "scratch/environment.duckdb",
         },
     )
 
@@ -64,7 +64,7 @@ def test_runtime_adapter_prefers_explicit_values_over_environment() -> None:
 def test_valid_explicit_value_masks_invalid_environment_value() -> None:
     request = data_operation_request_from_runtime(
         {"source_year": 2025},
-        environment={"PROJECT_PIVOT_SOURCE_YEAR": "not-a-year"},
+        environment={"HMDA_RELIABILITY_SOURCE_YEAR": "not-a-year"},
     )
 
     assert request.source_year == 2025

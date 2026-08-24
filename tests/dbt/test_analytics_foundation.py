@@ -23,7 +23,7 @@ def test_dbt_profile_requires_caller_database_path() -> None:
 
     profile = (DBT_PROJECT_DIR / "profiles.yml").read_text(encoding="utf-8")
 
-    assert "path: \"{{ env_var('PROJECT_PIVOT_DUCKDB_PATH') }}\"" in profile
+    assert "path: \"{{ env_var('HMDA_RELIABILITY_DUCKDB_PATH') }}\"" in profile
 
 
 @pytest.mark.integration
@@ -32,7 +32,7 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
 ) -> None:
     """임시 DuckDB raw fixture로 dbt build 계약을 검증한다."""
 
-    database_path = tmp_path / "project_pivot.duckdb"
+    database_path = tmp_path / "hmda_reliability.duckdb"
     hmda_csv_path = _write_hmda_csv(tmp_path)
 
     with DuckDBConnectionManager(database_path) as connection:
@@ -56,11 +56,11 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
     assert run_results_path.exists()
     assert _node_id(manifest, "model", "stg_hmda_loans") is not None
     assert _node_id(manifest, "model", "mart_hmda_loan_outcomes") is not None
-    assert "source.project_pivot.raw.hmda_loans" in manifest["sources"]
+    assert "source.hmda_reliability.raw.hmda_loans" in manifest["sources"]
     assert _depends_on(
         manifest,
         model_name="stg_hmda_loans",
-        dependency="source.project_pivot.raw.hmda_loans",
+        dependency="source.hmda_reliability.raw.hmda_loans",
     )
     assert _depends_on(
         manifest,
@@ -82,7 +82,7 @@ def _run_dbt(database_path: Path, command: str) -> None:
     env = os.environ.copy()
     env["DBT_PROFILES_DIR"] = str(DBT_PROJECT_DIR)
     env["DBT_SEND_ANONYMOUS_USAGE_STATS"] = "false"
-    env["PROJECT_PIVOT_DUCKDB_PATH"] = str(database_path)
+    env["HMDA_RELIABILITY_DUCKDB_PATH"] = str(database_path)
     result = subprocess.run(
         ["dbt", command, "--project-dir", str(DBT_PROJECT_DIR)],
         check=False,
