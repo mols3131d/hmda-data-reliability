@@ -1,8 +1,10 @@
 ---
 root: false
 targets:
-  - antigravity-ide
+  - claudecode
   - copilot
+  - copilotcli
+  - antigravity-ide
 description: "Common source-development rules under src. Covers dependencies, boundaries, configuration, contracts, and code intent."
 globs:
   - "src/**/*"
