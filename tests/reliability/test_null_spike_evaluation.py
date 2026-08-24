@@ -1715,7 +1715,7 @@ def _null_spike_fixture(
     target = tmp_path / "dbt" / "target"
     target.mkdir(parents=True)
     (target / "manifest.json").write_text(
-        '{"sources":{"source.project_pivot.raw.hmda_loans":{"name":"hmda_loans","schema":"raw","resource_type":"source","depends_on":{"nodes":[]}}},"nodes":{}}',
+        '{"sources":{"source.hmda_reliability.raw.hmda_loans":{"name":"hmda_loans","schema":"raw","resource_type":"source","depends_on":{"nodes":[]}}},"nodes":{}}',
         encoding="utf-8",
     )
     (target / "run_results.json").write_text("{}", encoding="utf-8")
