@@ -2,6 +2,7 @@
 root: true
 targets:
   - antigravity-ide
+  - antigravity-cli
   - codexcli
 description: "Project-wide AGENTS instructions with Codex routing to path-scoped canonical Rulesync rules."
 ---
