@@ -1,6 +1,6 @@
 # Project Defaults
 
-이 repository는 **Rulesync-first authority**를 사용한다. Repository가 직접 소유하는 agent asset은 Rulesync canonical source를 기본으로 하고, 다른 tool 또는 framework가 자체 CLI와 lifecycle로 관리하는 asset은 그 tool의 canonical source를 유지한다.
+이 repository는 **Rulesync-first authority**를 사용한다. Repository가 직접 소유하고 Rulesync가 필요한 semantics를 표현할 수 있는 agent asset은 Rulesync canonical source를 기본으로 한다. 다른 tool 또는 framework가 자체 CLI와 lifecycle로 관리하는 asset은 그 tool의 canonical source를 유지한다.
 
 ## Authority
 
@@ -17,29 +17,34 @@
 
 ## Targets
 
-이 repository의 Rulesync target set은 다음 세 개다.
+이 repository의 Rulesync target set은 실제 project consumer인 다음 세 개다.
 
 - `copilot`
 - `codexcli`
 - `antigravity-ide`
 
+Reusable asset library가 더 넓은 target set을 지원하더라도 project target으로 자동 승격하지 않는다. 새 target은 이 repository에서 실제 consumer가 확인될 때 추가한다.
+
 새 Rulesync-managed asset과 explicit migration은 이 세 target을 기준으로 compatibility를 검토한다. Feature별 실제 projection은 current Rulesync 지원 범위와 `rulesync.jsonc` configuration을 따른다.
 
 ## Current Route
 
-현재 `rulesync.jsonc`는 세 target 모두에 `rules` feature만 projection한다.
+현재 `rulesync.jsonc`는 세 target 모두에 `rules`와 `skills`를 projection한다.
 
 | Feature | Default mode | Source |
 | --- | --- | --- |
 | `rules` | Canonical fan-out | `.rulesync/rules/` |
+| `skills` | Canonical fan-out | `.rulesync/skills/` |
 | repository-owned non-Rule feature | Canonical fan-out after explicit migration | appropriate `.rulesync/` source |
 | tool/framework-owned feature | Outside Rulesync ownership | owning tool source |
+
+Generated Skill projection인 `.agents/skills/`와 `.github/skills/`는 canonical source가 아니며 직접 authoring하지 않는다.
 
 Native bridge는 사용자가 one-off compatibility conversion을 명시적으로 요청한 경우에만 사용한다. Repository의 기본 source strategy로 사용하지 않는다.
 
 ## Commands
 
-Rules fan-out은 repository entrypoint를 사용한다.
+Rulesync fan-out은 repository entrypoint를 사용한다.
 
 ```bash
 uv run python scripts/rulesync.py preview
@@ -56,4 +61,4 @@ Active development 동안 이 entrypoint는 `rulesync@latest`를 사용한다.
 - 다른 tool 또는 framework가 소유하는 asset은 그 tool의 generation과 lifecycle contract를 따른다.
 - Rulesync migration은 기존 owner를 암묵적으로 바꾸지 않는다. Migration 자체가 요청되고 preview와 validation으로 semantics를 확인한 경우에만 authority를 이동한다.
 - Rulesync-managed asset은 `copilot`, `codexcli`, `antigravity-ide` target set을 기준으로 관리한다.
-- broad `--features "*"`보다 실제 source와 migration scope가 확정된 feature만 다룬다.
+- broad `--features "*"`보다 실제 source와 migration scope가 확정된 feature만 활성화한다.

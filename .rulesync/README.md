@@ -1,27 +1,34 @@
 # Rulesync
 
-Rulesync는 **repository-owned agent asset의 기본 canonical authoring source**다. Rulesync가 생성한 vendor/runtime file은 derived projection이며 직접 편집하거나 독립적인 authority로 재해석하지 않는다.
+Rulesync는 **repository-owned Agent Asset의 기본 canonical authoring source**다. Rulesync가 생성한 vendor/runtime file은 derived projection이며 직접 편집하거나 독립적인 authority로 재해석하지 않는다.
 
 ## Authority Boundary
 
-- Repository가 직접 소유하는 agent asset은 새로 작성하거나 migration할 때 Rulesync canonical source를 기본으로 사용한다.
+- Repository가 직접 소유하고 Rulesync가 필요한 semantics를 표현할 수 있는 Agent Asset은 `.rulesync/`를 canonical source로 사용한다.
 - 다른 tool 또는 framework가 CLI나 자체 lifecycle로 생성·관리하는 asset은 그 tool의 canonical source가 계속 소유한다. OpenSpec처럼 별도 source model을 가진 asset을 Rulesync에 복제하거나 mirror하지 않는다.
 - Rulesync는 external tool-owned asset을 필요한 agent context로 route할 수 있지만 그 semantics, generation과 lifecycle을 재정의하지 않는다.
-- 아직 Rulesync로 명시적으로 migration하지 않은 기존 non-Rule asset은 현재 owner를 유지한다. Migration은 source semantics와 target compatibility를 확인하는 별도 변경으로 수행한다.
+- 아직 Rulesync로 명시적으로 migration하지 않은 repository-owned asset은 현재 owner를 유지하되 migration candidate로 취급한다.
 
 ## Targets
 
-이 repository의 Rulesync target은 다음 세 개로 한정한다.
+이 repository의 실제 Rulesync consumer target은 다음 세 개다.
 
 - `copilot`
 - `codexcli`
 - `antigravity-ide`
 
-새 Rulesync-managed asset이나 explicit migration은 이 target set을 기준으로 compatibility를 검토한다. Feature별 실제 projection은 current Rulesync 지원 범위와 `rulesync.jsonc` configuration을 따른다.
+Reusable library나 upstream Rulesync가 더 많은 target을 지원하더라도 project target으로 자동 추가하지 않는다. 이 repository에서 실제 consumer가 확인될 때만 target set을 확장한다.
 
-현재 `rulesync.jsonc`는 이 세 target에 `rules` feature만 생성한다.
+## Features
 
-`.rulesync/rules/`가 repository-local Rule의 canonical source다. Skills, subagents, hooks, MCP와 permissions는 현재 generation scope가 아니며, 존재한다는 이유만으로 vendor-native copy를 Rulesync source로 재해석하지 않는다.
+현재 `rulesync.jsonc`는 세 target에 다음 feature를 생성한다.
+
+| Feature | Canonical source | Generated projection |
+| --- | --- | --- |
+| `rules` | `.rulesync/rules/` | root `AGENTS.md`, `.agents/rules/`, `.github/instructions/` |
+| `skills` | `.rulesync/skills/` | `.agents/skills/`, `.github/skills/` |
+
+Subagents, hooks, MCP, permissions와 commands는 Rulesync 지원 여부만으로 활성화하지 않는다. 기존 repository-owned 자산의 semantics와 target compatibility를 확인해 explicit migration할 때 feature를 추가한다.
 
 ## Version Policy
 
@@ -31,7 +38,9 @@ Active development 동안 Rulesync는 latest를 우선한다. 특정 버전을 r
 
 ## Projection Ownership
 
-`delete: true`로 generation 대상 directory의 orphan projection을 제거한다. Canonical Rule을 삭제하거나 target에서 제외한 뒤 예전 generated Rule이 runtime에 남는 drift를 허용하지 않는다.
+`delete: true`로 generation 대상 directory의 orphan projection을 제거한다. Canonical asset을 삭제하거나 target에서 제외한 뒤 예전 generated asset이 runtime에 남는 drift를 허용하지 않는다.
+
+Generated projection은 직접 수정하지 않는다. Rule은 `.rulesync/rules/`, Skill은 `.rulesync/skills/`에서 수정한 뒤 generation한다.
 
 Root `AGENTS.md`는 Antigravity IDE와 Codex CLI가 공유하는 runtime surface다. `.rulesync/rules/codex-root.md`가 두 target 모두에 같은 root body를 생성해 target order에 따라 orphan cleanup 결과가 달라지지 않게 한다.
 
@@ -58,7 +67,7 @@ uv run python scripts/rulesync.py validate
 ```
 
 - `preview`: write 없이 generation 결과를 확인한다.
-- `generate`: canonical Rules에서 runtime projection을 갱신한다.
+- `generate`: canonical source에서 runtime projection을 갱신한다.
 - `check`: generated projection drift를 검사한다.
 - `doctor`: strict Rulesync diagnostics를 실행한다.
 - `validate`: `doctor` 후 `check`를 순서대로 실행한다.
