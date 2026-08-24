@@ -1,13 +1,17 @@
-# Temporary and editor-local files
-**/.tmp_*
-**/tmp/
-**/logs/
-**/*.tmp*
+# OS and editor-local files
+.DS_Store
+Thumbs.db
+Desktop.ini
 *.code-workspace
+*.swp
+*~
 tempCodeRunnerFile.py
 .idea/
 
-# Agent runtime and external Skill installs
+# Agent runtime, local overlays, and external Skill installs
+rulesync.local.jsonc
+.rulesync/rules/.curated/
+.rulesync/skills/.curated/
 .agents/brain/
 .agents/reports/
 .agents/skills/*
@@ -60,7 +64,7 @@ dist/
 /data/metadata/dbt_lineage.json
 /notes/
 /.local/
-artifacts/
+/artifacts/
 dbt/.user.yml
 dbt/target/
 
