@@ -22,19 +22,19 @@ description: "Project-wide AGENTS instructions with CLI routing to path-scoped c
 - Owning source가 충돌하면 임의로 해소하지 말고 drift와 근거를 보고한다.
 - 기존 architecture와 domain ownership boundary를 존중하고 불필요하게 책임을 넘나들지 않는다.
 - KISS, DRY, YAGNI를 우선하고 필요하지 않은 abstraction과 중복을 만들지 않는다.
-- 문서와 repository text의 언어 선택은 [`docs/language.md`](docs/language.md)를 따른다.
+- 문서와 repository text의 언어 선택은 `docs/language.md`를 따른다.
 
 ## Guidance Ownership
 
 | Area | Owner |
 | --- | --- |
-| 개발 환경, active tool choice, package layout, code convention | [`DEVELOPMENT.md`](DEVELOPMENT.md) |
-| 시스템 흐름과 domain ownership guidance | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/domains/`](docs/domains/OVERVIEW.md) |
-| docs-wide writing, trust, lifecycle과 dashboard policy | [`docs/AGENTS.md`](docs/AGENTS.md) |
-| Git과 GitHub workflow | [`docs/development/vcs-git/`](docs/development/vcs-git/README.md) |
-| `openspec/**` | [`openspec/AGENTS.md`](openspec/AGENTS.md) |
-| `tests/**` | [`tests/AGENTS.md`](tests/AGENTS.md) |
-| `inbox/**` | [`inbox/AGENTS.md`](inbox/AGENTS.md) |
+| 개발 환경, active tool choice, package layout, code convention | `DEVELOPMENT.md` |
+| 시스템 흐름과 domain ownership guidance | `docs/ARCHITECTURE.md`, `docs/domains/OVERVIEW.md` |
+| docs-wide writing, trust, lifecycle과 dashboard policy | `docs/AGENTS.md` |
+| Git과 GitHub workflow | `docs/development/vcs-git/README.md` |
+| `openspec/**` | `openspec/AGENTS.md` |
+| `tests/**` | `tests/AGENTS.md` |
+| `inbox/**` | `inbox/AGENTS.md` |
 
 각 owner는 더 좁은 경로의 guide나 `AGENTS.md`에 세부 규칙을 위임할 수 있다. Root에는 그 세부 규칙을 반복하지 않는다.
 
@@ -52,10 +52,10 @@ Codex CLI는 glob-scoped Rule을 별도 path-scoped file로 자동 적용하지 
 
 | Rule | Match |
 | --- | --- |
-| [Development](.rulesync/rules/development.md) | `src/**/*` |
-| [Python](.rulesync/rules/python.md) | `src/**/*.py` |
-| [Project](.rulesync/rules/project.md) | `src/project_pivot/**/*` |
-| [dbt](.rulesync/rules/dbt.md) | `dbt/**` |
-| [Reliability](.rulesync/rules/reliability.md) | `src/project_pivot/reliability/**`, `tests/reliability/**` |
-| [Orchestration](.rulesync/rules/orchestration.md) | `src/project_pivot/orchestration/**`, `tests/orchestration/**` |
-| [Markdown](.rulesync/rules/markdown.md) | `**/*.md` |
+| `.rulesync/rules/development.md` | `src/**/*` |
+| `.rulesync/rules/python.md` | `src/**/*.py` |
+| `.rulesync/rules/project.md` | `src/project_pivot/**/*` |
+| `.rulesync/rules/dbt.md` | `dbt/**` |
+| `.rulesync/rules/reliability.md` | `src/project_pivot/reliability/**`, `tests/reliability/**` |
+| `.rulesync/rules/orchestration.md` | `src/project_pivot/orchestration/**`, `tests/orchestration/**` |
+| `.rulesync/rules/markdown.md` | `**/*.md` |
