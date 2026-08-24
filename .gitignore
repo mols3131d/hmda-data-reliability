@@ -17,11 +17,11 @@ rulesync.local.jsonc
 **/CLAUDE.local.md
 **/.claude/*.lock
 **/.claude/memories/
+**/.claude/settings.local.json
 .agents/brain/
 .agents/reports/
 .agents/skills/*
 !.agents/skills/prj-*/
-.claude/settings.local.json
 .claude/skills/*
 !.claude/skills/prj-*/
 .github/skills/
@@ -50,10 +50,7 @@ __pycache__/
 .hypothesis/
 .ruff_cache/
 .mypy_cache/
-.pyre/
-.pytype/
-.tox/
-.nox/
+.testmondata*
 .coverage
 .coverage.*
 coverage.xml
@@ -61,7 +58,6 @@ htmlcov/
 build/
 dist/
 *.egg-info/
-.ipynb_checkpoints/
 
 # Local databases and generated project data
 *.duckdb
