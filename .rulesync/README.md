@@ -1,13 +1,21 @@
 # Rulesync
 
-Rulesync는 **repository-owned Agent Asset의 기본 canonical authoring source**다. Rulesync가 생성한 vendor/runtime file은 derived projection이며 직접 편집하거나 독립적인 authority로 재해석하지 않는다.
+Rulesync는 repository-owned **cross-cutting Rule과 Skill**의 canonical authoring source다. 하나의 자연스러운 directory subtree가 소유할 수 있는 context는 가장 가까운 `AGENTS.md`가 직접 소유하며 Rulesync로 옮기지 않는다.
 
 ## Authority Boundary
 
-- Repository가 직접 소유하고 Rulesync가 필요한 semantics를 표현할 수 있는 Agent Asset은 `.rulesync/`를 canonical source로 사용한다.
-- 다른 tool 또는 framework가 CLI나 자체 lifecycle로 생성·관리하는 asset은 그 tool의 canonical source가 계속 소유한다. OpenSpec처럼 별도 source model을 가진 asset을 Rulesync에 복제하거나 mirror하지 않는다.
-- Rulesync는 external tool-owned asset을 필요한 agent context로 route할 수 있지만 그 semantics, generation과 lifecycle을 재정의하지 않는다.
-- 아직 Rulesync로 명시적으로 migration하지 않은 repository-owned asset은 현재 owner를 유지하되 migration candidate로 취급한다.
+| Context | Canonical source | Rulesync role |
+| --- | --- | --- |
+| Repository-wide root instruction | `.rulesync/rules/codex-root.md` | root `AGENTS.md` projection |
+| Natural directory/subtree context | nearest `AGENTS.md` | none |
+| Cross-cutting path/file Rule | `.rulesync/rules/` | author and project |
+| Repository-owned Skill | `.rulesync/skills/` | author and project |
+| Tool/framework-owned asset | owning tool source | route only |
+| Generated vendor/runtime projection | upstream canonical source | consume only |
+
+Rule을 만들기 전에 scope를 먼저 판단한다. `src/foo/**`처럼 한 directory가 자연스럽게 소유하는 규칙은 `src/foo/AGENTS.md`를 사용한다. `**/*.md`, `src/**/*.py`, 여러 독립 tree에 걸친 동일 제약처럼 directory hierarchy만으로 표현하기 어려운 규칙만 Rulesync Rule로 둔다.
+
+다른 tool 또는 framework가 CLI나 자체 lifecycle로 생성·관리하는 asset은 그 tool의 canonical source를 계속 사용한다. OpenSpec처럼 별도 source model을 가진 asset을 Rulesync에 복제하거나 mirror하지 않는다.
 
 ## Targets
 
@@ -20,7 +28,7 @@ Rulesync는 **repository-owned Agent Asset의 기본 canonical authoring source*
 - `antigravity-ide`
 - `antigravity-cli`
 
-이 target set은 reusable Agent Asset 관리 repository의 Rulesync support ceiling과 맞춘다. 개별 asset의 실제 projection은 해당 canonical asset의 `targets`와 current Rulesync feature compatibility가 결정한다.
+개별 asset의 실제 projection은 canonical asset의 `targets`와 current Rulesync feature compatibility가 결정한다.
 
 ## Features
 
@@ -28,41 +36,31 @@ Rulesync는 **repository-owned Agent Asset의 기본 canonical authoring source*
 
 | Feature | Canonical source | Generated projection |
 | --- | --- | --- |
-| `rules` | `.rulesync/rules/` | target-native instruction surfaces 또는 documented canonical routing |
+| cross-cutting `rules` | `.rulesync/rules/` | target-native instruction surfaces 또는 documented CLI routing |
 | `skills` | `.rulesync/skills/` | target-native Skill directories |
+| directory context | nearest `AGENTS.md` | no Rulesync projection |
 
 Subagents, hooks, MCP, permissions와 commands는 Rulesync 지원 여부만으로 활성화하지 않는다. 기존 repository-owned 자산의 semantics와 target compatibility를 확인해 explicit migration할 때 feature를 추가한다.
 
-## Version Policy
-
-Active development 동안 Rulesync는 latest를 우선한다. 특정 버전을 repository contract로 고정하지 않고, Rulesync 변경 후 current latest로 validation을 실행해 compatibility를 확인한다.
-
-프로젝트가 안정화되어 reproducible snapshot이 필요해질 때 검증된 버전 고정을 별도로 결정한다.
-
 ## Projection Ownership
 
-Generated projection은 직접 수정하지 않는다. Rule은 `.rulesync/rules/`, Skill은 `.rulesync/skills/`에서 수정한 뒤 generation한다.
+Generated projection은 직접 authoring하지 않는다. Rule은 `.rulesync/rules/`, Skill은 `.rulesync/skills/`에서 수정한 뒤 generation한다. Canonical Rule을 제거하거나 target을 변경한 뒤 남은 orphan projection은 해당 source 변경을 확인한 후 명시적으로 정리한다.
 
-`delete: true`는 사용하지 않는다. Copilot과 Copilot CLI처럼 같은 output surface를 공유하는 target에서 한 target 전용 asset을 다른 target generation이 orphan으로 해석할 수 있기 때문이다. Projection drift는 `generate --check`로 검증하고, 실제 orphan cleanup은 canonical target 변경을 확인한 뒤 명시적으로 수행한다.
-
-Shared surface에 존재한다는 이유만으로 asset applicability를 다른 target까지 넓히지 않는다. 같은 path를 공유하면서 serialization이나 semantics가 다른 경우에는 direct fan-out 대신 아래처럼 canonical routing을 사용한다.
+Shared output surface에 존재한다는 이유만으로 asset applicability를 다른 target까지 넓히지 않는다. 같은 path를 공유하면서 serialization이나 semantics가 다른 경우에는 direct fan-out 대신 canonical routing을 사용한다.
 
 ## CLI Path Rule Boundary
 
-Path-scoped generic Rule은 target capability에 따라 두 방식으로 적용한다.
+- Claude Code, Copilot, Copilot CLI와 Antigravity IDE는 Rulesync에 남아 있는 cross-cutting Rule의 native scoped projection을 사용한다.
+- Codex CLI는 non-root glob Rule을 별도 path-scoped file로 적용하지 않으므로 root `AGENTS.md`의 `Cross-cutting Rule Routing`에서 canonical Rule을 route한다.
+- Antigravity CLI는 `.agents/rules/` path를 Antigravity IDE와 공유하지만 current adapter serialization이 다르므로 같은 root routing을 사용한다.
+- Directory-scoped `AGENTS.md`는 이 compatibility table에 넣지 않는다.
+- Vendor-specific Rule은 해당 target에만 남기며 shared CLI routing에 넣지 않는다.
 
-- Claude Code, Copilot, Copilot CLI와 Antigravity IDE는 current adapter가 제공하는 native scoped Rule projection을 사용한다.
-- Codex CLI는 non-root glob Rule을 별도 path-scoped file로 적용하지 않으므로 root `AGENTS.md`의 `Path Rules` table에서 canonical Rule을 route한다.
-- Antigravity CLI는 `.agents/rules/` path를 Antigravity IDE와 공유하지만 current Rulesync adapters의 non-root serialization이 다르다. 같은 file을 서로 다른 형식으로 덮어쓰지 않도록 root `AGENTS.md`의 동일한 `Path Rules` routing을 사용한다.
-- Vendor-specific Rule은 해당 target에만 남기며 shared CLI routing table에 넣지 않는다. 예를 들어 VS Code Mermaid integration Rule은 Copilot-only다.
-
-`.rulesync/rules/codex-root.md`가 Codex CLI와 Antigravity CLI의 canonical path routing, 그리고 Antigravity IDE와 공유하는 root `AGENTS.md` body를 소유한다.
-
-Rulesync는 root Rule이 없는 enabled target에 advisory를 출력할 수 있다. Claude Code와 Copilot 계열은 현재 scoped Rule과 Skill projection만 사용하므로 root Rule 부재 자체를 validation failure로 간주하지 않는다. Root-wide behavior가 실제로 필요해지면 별도 canonical root Rule을 추가한다.
+`.rulesync/rules/codex-root.md`가 shared root `AGENTS.md` body와 필요한 CLI fallback routing을 소유한다.
 
 ## Commands
 
-`scripts/rulesync.py`가 repository execution entrypoint다. Script는 `rulesync.jsonc`의 target/features 설정을 재정의하지 않고 `npx --yes rulesync@latest`를 호출한다.
+`scripts/rulesync.py`가 repository execution entrypoint다.
 
 ```bash
 uv run python scripts/rulesync.py preview

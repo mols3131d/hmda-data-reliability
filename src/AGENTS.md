@@ -1,9 +1,6 @@
----
-trigger: glob
-globs: "src/**/*"
----
+# Source Development
 
-# Development
+`src/` 아래 source code에 공통으로 적용되는 개발 규칙이다. 더 가까운 `AGENTS.md`가 있으면 해당 subtree의 규칙을 함께 적용한다.
 
 - Keep dependencies directional; do not bypass an established interface to reach another module's internals.
 - Separate domain logic from I/O, framework glue, and environment configuration where practical.
