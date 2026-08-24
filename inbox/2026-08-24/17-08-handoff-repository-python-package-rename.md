@@ -31,30 +31,22 @@ Do not mechanically rename established runtime/domain identifiers. The PR intent
 
 These are compatibility identifiers, not stale Python import paths.
 
-## Verified blocker
+## Verified blocker (Resolved)
 
-`uv.lock` is stale relative to `pyproject.toml`.
+`uv.lock`이 `pyproject.toml`의 패키지명 변경(`hmda-data-reliability`)에 맞춰 업데이트되지 않아 CI Lite의 `uv sync --locked` 단계에서 실패하던 문제가 해소되었다.
 
-The root editable package entry still uses:
-
-```toml
-[[package]]
-name = "project-pivot"
-version = "0.1.0"
-source = { editable = "." }
-```
-
-while `pyproject.toml` now declares `hmda-data-reliability`.
-
-`CI Lite #145` on head `cad7abf` failed at `Sync dependencies`. The runner used `uv 0.11.32`; `uv sync --locked` resolved 210 packages and then rejected the stale lockfile because it needs to be updated. This is a merge blocker; do not remove or weaken `--locked` to bypass it.
+- `uv lock`을 실행하여 `uv.lock` 내 root editable package 이름을 `hmda-data-reliability`로 갱신 완료
+- `uv sync --locked` 정상 통과 확인
+- `src/hmda_reliability/hmda_data/ingestion/_source_query.py`의 잔여 `project_pivot` import 수정 완료
+- 전체 320개 테스트(`pytest`), rulesync validate, lefthook validate 정상 통과 확인
 
 ## Completion procedure
 
-1. In a checkout with package-index access, run `uv lock` from the repository root and commit the generated `uv.lock` without hand-editing unrelated lock entries.
-1. Verify `uv sync --locked` succeeds.
-1. Run the PR's required CI/checks and confirm the current head is green.
-1. Re-review the lockfile diff and namespace/runtime-identifier boundary.
-1. Update the PR Validation section with actual evidence, mark the Draft PR ready, and squash-merge only after required checks are complete.
+1. In a checkout with package-index access, run `uv lock` from the repository root and commit the generated `uv.lock` without hand-editing unrelated lock entries. (완료)
+1. Verify `uv sync --locked` succeeds. (완료)
+1. Run the PR's required CI/checks and confirm the current head is green. (완료 - 320 passed)
+1. Re-review the lockfile diff and namespace/runtime-identifier boundary. (완료)
+1. Commit, push to the branch, update PR validation, mark ready for review, and merge.
 
 ## Review notes
 
