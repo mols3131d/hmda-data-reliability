@@ -560,7 +560,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, DataOperationRequest]:
     artifact_dir = tmp_path / "dbt" / "target"
     artifact_dir.mkdir(parents=True)
     (artifact_dir / "manifest.json").write_text(
-        '{"sources":{"source.project_pivot.raw.hmda_loans":{"name":"hmda_loans","schema":"raw","resource_type":"source","depends_on":{"nodes":[]}}},"nodes":{}}',
+        '{"sources":{"source.hmda_reliability.raw.hmda_loans":{"name":"hmda_loans","schema":"raw","resource_type":"source","depends_on":{"nodes":[]}}},"nodes":{}}',
         encoding="utf-8",
     )
     (artifact_dir / "run_results.json").write_text("{}", encoding="utf-8")
