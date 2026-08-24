@@ -1,7 +1,10 @@
 ---
 root: false
 targets:
+  - claudecode
   - copilot
+  - copilotcli
+  - antigravity-ide
 description: "Use when editing reliability detection, impact, remediation, recovery, evaluation, contracts, or related tests. Covers read-only lifecycle boundaries and separate recovery/evaluation APIs."
 globs:
   - "src/project_pivot/reliability/**"
