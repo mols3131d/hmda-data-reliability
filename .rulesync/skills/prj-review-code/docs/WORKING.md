@@ -89,9 +89,9 @@ Target
 
 세 가지 변경 형태에 스킬을 정적으로 적용했다. 실제 command 실행으로 일반화하지 않는다.
 
-- **Implementation-only — PR #75:** source-only logging 변경에서 target, PR base, HMDA partition contract와 reachable success path를 구분해 해석했다. `expected_identity`가 transaction 안에서 일치한 경우에만 completion event에 도달함을 확인했고 material finding은 없었다.
-- **Test-only — PR #46:** marker-only 변경을 test behavior 자체가 아니라 collection/selection과 validation 신뢰성 변경으로 분류했다. Marker taxonomy와 diff는 정적으로 일치했으며 실제 pytest collection은 실행하지 않았으므로 uncertainty로 남겼다.
-- **Implementation + tests — PR #74:** overwrite 진입 event와 storage-failure test를 같은 behavior contract로 교차 검증했다. Test oracle이 event 위치와 context를 직접 확인하며 두 lens에서 같은 root cause의 중복 finding은 만들지 않았다.
+- **Implementation-only:** source-only logging 변경에서 target, baseline, caller contract와 reachable success path를 구분해 해석했다. completion event가 검증된 상태 이후에만 도달하는지 확인했고 material finding은 없었다.
+- **Test-only:** marker-only 변경을 test behavior 자체가 아니라 collection/selection과 validation 신뢰성 변경으로 분류했다. Marker taxonomy와 diff는 정적으로 일치했으며 실제 collection은 실행하지 않았으므로 uncertainty로 남겼다.
+- **Implementation + tests:** event 변경과 failure-path test를 같은 behavior contract로 교차 검증했다. Test oracle이 event 위치와 context를 직접 확인하는지 검토하고 두 lens에서 같은 root cause의 중복 finding은 만들지 않았다.
 
 ## Remaining Validation
 
