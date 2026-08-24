@@ -5,10 +5,6 @@ description: >-
   porting one harness's native rules, agents, skills, commands, hooks,
   permissions, checks, or MCP configuration to other harnesses through Rulesync.
   Do not use for a single target-specific edit with no cross-harness sync need.
-compatibility: >-
-  Requires a Rulesync runtime. Exact targets and feature support follow the
-  effective Rulesync version selected by project policy, or the installed CLI
-  when the project does not define one.
 ---
 
 # Rulesync Agent Assets
@@ -30,26 +26,26 @@ preview, compatibility 확인과 validation 원칙은 공유한다.
 ## Workflow
 
 1. project authority와 현재 asset ownership을 읽고 write boundary를 정한다.
-2. project가 Rulesync execution entrypoint나 version policy를 정의하면 그것을 우선한다.
+1. project가 Rulesync execution entrypoint나 version policy를 정의하면 그것을 우선한다.
    없으면 `rulesync --version`으로 backend availability를 확인하고 명시적 허용 없이
    install 또는 upgrade하지 않는다.
-3. source mode를 결정한다.
+1. source mode를 결정한다.
    - project가 canonical source를 지정했거나 사용자가 fan-out을 요청하면 Canonical fan-out을 쓴다.
    - 사용자가 source harness를 명시하면 Native bridge를 쓴다.
    - 명시가 없으면 project policy를 우선하고, 그 다음 명확한 existing source를 사용한다.
      여러 source가 경쟁하면 추측하지 않는다.
-4. target과 feature를 최소 범위로 결정한다. source harness를 target에 포함하지 않고,
+1. target과 feature를 최소 범위로 결정한다. source harness를 target에 포함하지 않고,
    사용자나 project policy가 요구하지 않으면 `*`로 범위를 넓히지 않는다.
-5. exact command, target ID 또는 feature behavior가 필요할 때만
+1. exact command, target ID 또는 feature behavior가 필요할 때만
    [Rulesync backend](references/rulesync.md)를 읽는다. deployed copy에
    `references/project.md`가 있으면 project-specific default가 필요한 경우에만 읽는다.
-6. mutation 전에 project entrypoint 또는 Rulesync `--dry-run`으로 preview를 실행한다.
-7. preview의 warning, 누락 feature, simulation 또는 표현력 차이를 compatibility gap으로
+1. mutation 전에 project entrypoint 또는 Rulesync `--dry-run`으로 preview를 실행한다.
+1. preview의 warning, 누락 feature, simulation 또는 표현력 차이를 compatibility gap으로
    취급한다. 확인되지 않은 semantic parity를 주장하지 않는다.
-8. preview가 요청 범위와 일치할 때만 실제 generation 또는 conversion을 실행한다.
-9. generated diff와 applicable project validation을 확인한다. Canonical fan-out은 가능한
+1. preview가 요청 범위와 일치할 때만 실제 generation 또는 conversion을 실행한다.
+1. generated diff와 applicable project validation을 확인한다. Canonical fan-out은 가능한
    경우 Rulesync `--check`도 사용한다.
-10. source, mode, targets, features, 생성된 asset, warning과 실제 수행한 validation을 보고한다.
+1. source, mode, targets, features, 생성된 asset, warning과 실제 수행한 validation을 보고한다.
 
 ## Canonical Fan-out
 

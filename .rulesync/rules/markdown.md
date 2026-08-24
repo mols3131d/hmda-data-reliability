@@ -1,8 +1,10 @@
 ---
 root: false
 targets:
-  - antigravity-ide
+  - claudecode
   - copilot
+  - copilotcli
+  - antigravity-ide
 description: "Use when writing or editing Markdown docs, README, notes, or AGENTS-style guidelines. Covers GFM callouts, tables, Mermaid, and language."
 globs:
   - "**/*.md"

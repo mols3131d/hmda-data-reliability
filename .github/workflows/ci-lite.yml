@@ -79,13 +79,13 @@ jobs:
 
           while IFS= read -r path; do
             case "$path" in
-              .rulesync/*|rulesync.jsonc|scripts/rulesync.py|AGENTS.md|.agents/rules/*|.github/instructions/*.instructions.md)
+              .rulesync/*|rulesync.jsonc|scripts/rulesync.py|AGENTS.md|CLAUDE.md|.agents/rules/*|.agents/skills/*|.github/copilot-instructions.md|.github/instructions/*.instructions.md|.github/skills/*|.claude/rules/*|.claude/skills/*)
                 rulesync=true
                 ;;
             esac
 
             case "$path" in
-              .rulesync/rules/*|.agents/skills/*/SKILL.md|.agents/route/*|scripts/generate_agent_routes.py)
+              .rulesync/rules/*|.rulesync/skills/*/SKILL.md|.agents/skills/*/SKILL.md|.agents/route/*|scripts/generate_agent_routes.py)
                 routes=true
                 ;;
             esac
@@ -173,7 +173,7 @@ jobs:
           install-only: true
           version: "0.2.48"
 
-      - name: Format changed Markdown
+      - name: Validate changed Markdown
         if: steps.scope.outputs.markdown == 'true'
         run: |
           set -euo pipefail
@@ -183,7 +183,15 @@ jobs:
                   [[ -f "$path" ]] && printf '%s\n' "$path"
                 done
           )
-          ((${#files[@]} == 0)) || rumdl fmt "${files[@]}"
+          if ((${#files[@]})); then
+            rumdl fmt "${files[@]}"
+            if ! git diff --quiet -- "${files[@]}"; then
+              echo "Markdown formatting changed files; run rumdl fmt locally."
+              git diff -- "${files[@]}"
+              exit 1
+            fi
+            rumdl check "${files[@]}"
+          fi
 
       - name: Set up Python
         if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.rulesync == 'true' || steps.scope.outputs.routes == 'true'

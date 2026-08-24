@@ -61,6 +61,6 @@ artifact가 생성되기 전에 process가 실패했거나 artifact만으로 원
 
 ## References
 
-- dbt events and logs: https://docs.getdbt.com/reference/events-logging
-- dbt log configuration: https://docs.getdbt.com/reference/global-configs/logs
-- dbt artifacts: https://docs.getdbt.com/reference/artifacts/dbt-artifacts
+- dbt events and logs: <https://docs.getdbt.com/reference/events-logging>
+- dbt log configuration: <https://docs.getdbt.com/reference/global-configs/logs>
+- dbt artifacts: <https://docs.getdbt.com/reference/artifacts/dbt-artifacts>
