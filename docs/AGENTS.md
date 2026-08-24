@@ -41,10 +41,10 @@ Owning source가 서로 다르면 문서에서 임의로 하나를 정답으로 
 Phase 문서는 active phase 동안만 `main`에 둘 수 있다.
 
 1. Active phase는 목표, scope와 acceptance만 소유한다.
-2. Normative capability contract, architecture guidance, 개발 규칙과 runtime behavior를 phase 문서에 복제하지 않는다.
-3. Phase가 끝나면 장기 가치가 있는 지식을 해당 owning location에 반영한다.
-4. 필수 참조가 남지 않았는지 확인한 뒤 완료된 phase bundle을 `main`에서 삭제한다.
-5. 완료된 phase만을 보존하기 위한 `docs/archive/**`는 만들지 않는다. Git history, Pull Request, OpenSpec archive와 필요한 inbox artifact가 history를 보존한다.
+1. Normative capability contract, architecture guidance, 개발 규칙과 runtime behavior를 phase 문서에 복제하지 않는다.
+1. Phase가 끝나면 장기 가치가 있는 지식을 해당 owning location에 반영한다.
+1. 필수 참조가 남지 않았는지 확인한 뒤 완료된 phase bundle을 `main`에서 삭제한다.
+1. 완료된 phase만을 보존하기 위한 `docs/archive/**`는 만들지 않는다. Git history, Pull Request, OpenSpec archive와 필요한 inbox artifact가 history를 보존한다.
 
 현재 active phase가 끝나면 `mvp.md`도 같은 lifecycle을 따른다.
 
