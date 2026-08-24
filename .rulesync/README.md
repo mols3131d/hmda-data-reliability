@@ -28,7 +28,7 @@ Rulesync는 **repository-owned Agent Asset의 기본 canonical authoring source*
 
 | Feature | Canonical source | Generated projection |
 | --- | --- | --- |
-| `rules` | `.rulesync/rules/` | target-native instruction surfaces |
+| `rules` | `.rulesync/rules/` | target-native instruction surfaces 또는 documented canonical routing |
 | `skills` | `.rulesync/skills/` | target-native Skill directories |
 
 Subagents, hooks, MCP, permissions와 commands는 Rulesync 지원 여부만으로 활성화하지 않는다. 기존 repository-owned 자산의 semantics와 target compatibility를 확인해 explicit migration할 때 feature를 추가한다.
@@ -43,19 +43,22 @@ Active development 동안 Rulesync는 latest를 우선한다. 특정 버전을 r
 
 Generated projection은 직접 수정하지 않는다. Rule은 `.rulesync/rules/`, Skill은 `.rulesync/skills/`에서 수정한 뒤 generation한다.
 
-`delete: true`는 사용하지 않는다. Copilot과 Copilot CLI, Antigravity IDE와 CLI처럼 같은 output surface를 공유하는 target에서 한 target 전용 asset을 다른 target generation이 orphan으로 해석할 수 있기 때문이다. Projection drift는 `generate --check`로 검증하고, 실제 orphan cleanup은 canonical target 변경을 확인한 뒤 명시적으로 수행한다.
+`delete: true`는 사용하지 않는다. Copilot과 Copilot CLI처럼 같은 output surface를 공유하는 target에서 한 target 전용 asset을 다른 target generation이 orphan으로 해석할 수 있기 때문이다. Projection drift는 `generate --check`로 검증하고, 실제 orphan cleanup은 canonical target 변경을 확인한 뒤 명시적으로 수행한다.
 
-Root `AGENTS.md`와 일부 target directory는 여러 runtime이 공유할 수 있다. Shared surface에 존재한다는 이유만으로 asset applicability를 다른 target까지 넓히지 않고 canonical `targets`의 의미를 유지한다.
+Shared surface에 존재한다는 이유만으로 asset applicability를 다른 target까지 넓히지 않는다. 같은 path를 공유하면서 serialization이나 semantics가 다른 경우에는 direct fan-out 대신 아래처럼 canonical routing을 사용한다.
 
-## Codex Boundary
+## CLI Path Rule Boundary
 
-현재 Rulesync의 `codexcli` Rules adapter는 non-root glob Rule을 별도 path-scoped 파일로 적용하지 않고 root `AGENTS.md`로 fold한다. 이 저장소는 path scope 손실을 피하기 위해 다음 구조를 사용한다.
+Path-scoped generic Rule은 target capability에 따라 두 방식으로 적용한다.
 
-- `.rulesync/rules/codex-root.md`가 Codex CLI의 root `AGENTS.md`와 canonical path routing을 소유한다.
-- path-scoped canonical Rule은 각 target의 native capability와 asset `targets`를 따른다.
-- generated `AGENTS.md`의 `Path Rules` table은 Codex CLI에서 matching canonical Rule을 읽도록 지시한다. Native path-scoped Rule을 지원하는 target은 generated target surface를 사용한다.
+- Claude Code, Copilot, Copilot CLI와 Antigravity IDE는 current adapter가 제공하는 native scoped Rule projection을 사용한다.
+- Codex CLI는 non-root glob Rule을 별도 path-scoped file로 적용하지 않으므로 root `AGENTS.md`의 `Path Rules` table에서 canonical Rule을 route한다.
+- Antigravity CLI는 `.agents/rules/` path를 Antigravity IDE와 공유하지만 current Rulesync adapters의 non-root serialization이 다르다. 같은 file을 서로 다른 형식으로 덮어쓰지 않도록 root `AGENTS.md`의 동일한 `Path Rules` routing을 사용한다.
+- Vendor-specific Rule은 해당 target에만 남기며 shared CLI routing table에 넣지 않는다. 예를 들어 VS Code Mermaid integration Rule은 Copilot-only다.
 
-따라서 path-scoped Rule의 `targets`는 target capability와 필요한 behavior를 기준으로 관리한다. Upstream adapter behavior가 바뀌면 이 boundary를 다시 검토한다.
+`.rulesync/rules/codex-root.md`가 Codex CLI와 Antigravity CLI의 canonical path routing, 그리고 Antigravity IDE와 공유하는 root `AGENTS.md` body를 소유한다.
+
+Rulesync는 root Rule이 없는 enabled target에 advisory를 출력할 수 있다. Claude Code와 Copilot 계열은 현재 scoped Rule과 Skill projection만 사용하므로 root Rule 부재 자체를 validation failure로 간주하지 않는다. Root-wide behavior가 실제로 필요해지면 별도 canonical root Rule을 추가한다.
 
 ## Commands
 
