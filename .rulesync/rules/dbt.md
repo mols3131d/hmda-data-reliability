@@ -1,7 +1,10 @@
 ---
 root: false
 targets:
+  - claudecode
   - copilot
+  - copilotcli
+  - antigravity-ide
 description: "Use when writing or editing dbt models, sources, macros, schema.yml, or tests under dbt/. Covers staging/marts materialization, HMDA grain, and source contracts."
 globs:
   - "dbt/**"
