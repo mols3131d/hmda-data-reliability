@@ -11,8 +11,9 @@ tags: [python, packaging, pull-request]
 
 - PR: `#140 refactor: rename python package`
 - Branch: `agent/refactor/rename-python-package`
+- Current head before this handoff update: `cad7abf400fb3ae2e7f22a5bcb4677243eb12b54`
 - `main` synchronization commit: `47f0ffe00f480aa43383a0e958df7d0f0446cc55`
-- GitHub currently reports the PR as mergeable and no longer behind `main`.
+- GitHub reports the PR as mergeable and no longer behind `main`.
 - Python distribution/import namespace migration is broadly complete:
   - distribution: `hmda-data-reliability`
   - import namespace: `hmda_reliability`
@@ -45,15 +46,15 @@ source = { editable = "." }
 
 while `pyproject.toml` now declares `hmda-data-reliability`.
 
-`CI Lite #136` on head `47f0ffe` failed at the locked sync step. `uv 0.11.32` successfully resolved the dependency set and then rejected the stale lockfile because `--locked` was provided. This is a merge blocker; do not remove or weaken `--locked` to bypass it.
+`CI Lite #145` on head `cad7abf` failed at `Sync dependencies`. The runner used `uv 0.11.32`; `uv sync --locked` resolved 210 packages and then rejected the stale lockfile because it needs to be updated. This is a merge blocker; do not remove or weaken `--locked` to bypass it.
 
 ## Completion procedure
 
 1. In a checkout with package-index access, run `uv lock` from the repository root and commit the generated `uv.lock` without hand-editing unrelated lock entries.
-2. Verify `uv sync --locked` succeeds.
-3. Run the PR's required CI/checks and confirm the current head is green.
-4. Re-review the lockfile diff and namespace/runtime-identifier boundary.
-5. Update the PR Validation section with actual evidence, mark the Draft PR ready, and squash-merge only after required checks are complete.
+1. Verify `uv sync --locked` succeeds.
+1. Run the PR's required CI/checks and confirm the current head is green.
+1. Re-review the lockfile diff and namespace/runtime-identifier boundary.
+1. Update the PR Validation section with actual evidence, mark the Draft PR ready, and squash-merge only after required checks are complete.
 
 ## Review notes
 
