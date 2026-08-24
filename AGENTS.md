@@ -1,5 +1,3 @@
-<!-- Canonical source: `.rulesync/rules/codex-root.md`. -->
-
 # Project Rules
 
 Root `AGENTS.md`는 repository-wide **전역 지침이자 agent 전용 entrypoint**다.
@@ -24,7 +22,7 @@ Harness가 native로 지원하는 instruction loading이나 discovery는 root에
 | 개발 환경, active tool choice, package layout, code convention | `DEVELOPMENT.md` |
 | 시스템 흐름과 domain ownership guidance | `docs/ARCHITECTURE.md`, `docs/domains/OVERVIEW.md` |
 | docs-wide writing, trust, lifecycle과 dashboard policy | `docs/AGENTS.md` |
-| Agent instruction surface와 asset 관리 기준 | `docs/development/agent-instructions.md` |
+| Agent instruction ownership과 중복 최소화 | `docs/development/agent-instructions.md` |
 | Git과 GitHub workflow | `docs/development/vcs-git/README.md` |
 | `openspec/**` | `openspec/AGENTS.md` |
 | `tests/**` | `tests/AGENTS.md` |
@@ -32,18 +30,11 @@ Harness가 native로 지원하는 instruction loading이나 discovery는 root에
 
 각 owner는 더 좁은 경로의 guide나 `AGENTS.md`에 세부 규칙을 위임할 수 있다. Root에는 그 세부 규칙을 반복하지 않는다.
 
-## Path Rules
+## Rule Routing
 
-Codex CLI는 glob-scoped Rule을 별도 path-scoped file로 자동 적용하지 않는다. Antigravity CLI는 `.agents/rules/`를 Antigravity IDE와 공유하지만 current Rulesync adapter의 non-root serialization이 다르므로 이 repository에서는 CLI-owned copy를 같은 path에 덮어쓰지 않는다.
-
-이 compatibility gap 때문에 두 CLI에서는 작업 대상이 아래 `Match`에 해당하면 **작업 전에** 연결된 canonical Rule을 읽고 적용한다. 여러 행이 일치하면 모두 적용한다. Target-specific Rule은 이 table에 넣지 않는다.
+Codex CLI와 Antigravity CLI에서는 아래 cross-cutting Rulesync Rule만 root fallback으로 route한다. Directory/subtree 지침은 가장 가까운 `AGENTS.md`가 소유하며 이 table에 넣지 않는다.
 
 | Rule | Match |
 | --- | --- |
-| `.rulesync/rules/development.md` | `src/**/*` |
 | `.rulesync/rules/python.md` | `src/**/*.py` |
-| `.rulesync/rules/project.md` | `src/hmda_reliability/**/*` |
-| `.rulesync/rules/dbt.md` | `dbt/**` |
-| `.rulesync/rules/reliability.md` | `src/hmda_reliability/reliability/**`, `tests/reliability/**` |
-| `.rulesync/rules/orchestration.md` | `src/hmda_reliability/orchestration/**`, `tests/orchestration/**` |
 | `.rulesync/rules/markdown.md` | `**/*.md` |
