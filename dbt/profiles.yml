@@ -4,4 +4,5 @@ hmda_reliability:
     dev:
       type: duckdb
       path: "{{ env_var('HMDA_RELIABILITY_DUCKDB_PATH') }}"
-      threads: 1
+      schema: main
+      threads: 4
