@@ -15,8 +15,7 @@ tempCodeRunnerFile.py
 .claude/settings.local.json
 .claude/skills/*
 !.claude/skills/prj-*/
-.github/skills/*
-!.github/skills/prj-*/
+.github/skills/
 .codex/skills/
 .gemini/skills/
 .gemini/commands/
