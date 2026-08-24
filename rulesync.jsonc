@@ -3,7 +3,7 @@
   "targets": {
     "claudecode": ["rules", "skills"],
     "codexcli": ["rules", "skills"],
-    "copilot": ["rules"],
+    "copilot": ["rules", "skills"],
     "copilotcli": ["rules"],
     "antigravity-ide": ["rules", "skills"],
     "antigravity-cli": ["rules", "skills"]

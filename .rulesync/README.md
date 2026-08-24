@@ -4,7 +4,7 @@ Repository Agent instruction policy는 [`docs/development/agent-instructions.md`
 
 ## Skill projection
 
-Project Skill은 Codex CLI와 Antigravity용 `.agents/skills` projection을 Copilot과 Copilot CLI도 함께 사용한다. Claude Code만 `.claude/skills` projection을 별도로 유지하므로 `rulesync.jsonc`의 Copilot targets에는 `rules`만 활성화한다.
+일반 Project Skill은 `.agents/skills` projection을 Copilot/Copilot CLI, Codex CLI와 Antigravity가 공유하고 Claude Code는 `.claude/skills` projection을 사용한다. GitHub.com Copilot code review가 `.github/skills`를 명시적으로 사용하므로 review workflow를 소유하는 `prj-review-code`만 Copilot Skill projection을 추가로 유지한다.
 
 ## Chatbot route
 

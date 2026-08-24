@@ -24,7 +24,8 @@ rulesync.local.jsonc
 !.agents/skills/prj-*/
 .claude/skills/*
 !.claude/skills/prj-*/
-.github/skills/
+.github/skills/*
+!.github/skills/prj-review-code/
 .codex/skills/
 .gemini/skills/
 .gemini/commands/
@@ -71,6 +72,8 @@ dist/
 /artifacts/
 dbt/.user.yml
 dbt/target/
+dbt/logs/
+dbt/dbt_packages/
 
 # OpenSpec research is temporary except explicit tracked surfaces
 /openspec/research/*

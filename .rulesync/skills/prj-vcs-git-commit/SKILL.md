@@ -1,6 +1,7 @@
 ---
 name: prj-vcs-git-commit
 description: Analyze local Git changes, split them into coherent commit units, stage only the intended hunks, generate an accurate commit message from the staged diff, validate the staged result, and create commits safely. Use when the user asks to stage, organize, or commit local changes.
+targets: [claudecode, codexcli, antigravity-ide, antigravity-cli]
 ---
 
 1. Inspect status and diffs.
