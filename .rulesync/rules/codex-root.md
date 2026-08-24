@@ -4,7 +4,7 @@ targets:
   - antigravity-ide
   - antigravity-cli
   - codexcli
-description: "Project-wide AGENTS instructions with Codex routing to path-scoped canonical Rulesync rules."
+description: "Project-wide AGENTS instructions with CLI routing to path-scoped canonical Rulesync rules."
 ---
 
 <!-- Canonical source: `.rulesync/rules/codex-root.md`. -->
@@ -46,7 +46,9 @@ description: "Project-wide AGENTS instructions with Codex routing to path-scoped
 
 ## Path Rules
 
-Codex CLI는 glob-scoped Rule을 별도 파일로 자동 적용하지 않는다. 작업 대상이 아래 `Match`에 해당하면 **작업 전에** 연결된 canonical Rule을 읽고 적용한다. 여러 행이 일치하면 모두 적용한다.
+Codex CLI는 glob-scoped Rule을 별도 path-scoped file로 자동 적용하지 않는다. Antigravity CLI는 `.agents/rules/`를 Antigravity IDE와 공유하지만 current Rulesync adapter의 non-root serialization이 다르므로 이 repository에서는 CLI-owned copy를 같은 path에 덮어쓰지 않는다.
+
+두 CLI 모두 작업 대상이 아래 `Match`에 해당하면 **작업 전에** 연결된 canonical Rule을 읽고 적용한다. 여러 행이 일치하면 모두 적용한다. Target-specific Rule은 이 table에 넣지 않는다.
 
 | Rule | Match |
 | --- | --- |
@@ -57,4 +59,3 @@ Codex CLI는 glob-scoped Rule을 별도 파일로 자동 적용하지 않는다.
 | [Reliability](.rulesync/rules/reliability.md) | `src/project_pivot/reliability/**`, `tests/reliability/**` |
 | [Orchestration](.rulesync/rules/orchestration.md) | `src/project_pivot/orchestration/**`, `tests/orchestration/**` |
 | [Markdown](.rulesync/rules/markdown.md) | `**/*.md` |
-| [Local Mermaid Diagrams](.rulesync/rules/mermaid.md) | `**/*.md`, `**/*.mmd`, `**/*.mermaid` |
