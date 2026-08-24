@@ -5,10 +5,6 @@ description: >-
   porting one harness's native rules, agents, skills, commands, hooks,
   permissions, checks, or MCP configuration to other harnesses through Rulesync.
   Do not use for a single target-specific edit with no cross-harness sync need.
-compatibility: >-
-  Requires a Rulesync runtime. Exact targets and feature support follow the
-  effective Rulesync version selected by project policy, or the installed CLI
-  when the project does not define one.
 ---
 
 # Rulesync Agent Assets
