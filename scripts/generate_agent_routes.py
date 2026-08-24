@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Generate chatbot routing indexes from repository-owned routing metadata."""
+"""Generate chatbot routing indexes from repository-owned Agent Asset metadata."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +13,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILLS_ROOT = REPO_ROOT / ".agents" / "skills"
-RULE_ROUTE_SOURCE = REPO_ROOT / ".rulesync" / "rules" / "codex-root.md"
+RULES_ROOT = REPO_ROOT / ".rulesync" / "rules"
 ROUTE_ROOT = REPO_ROOT / ".agents" / "route"
 
 SKILLS_META = {
@@ -28,14 +27,12 @@ SKILLS_META = {
 RULES_META = {
     "kind": "rules",
     "instructions": (
-        "Known target path마다 globs를 비교해 일치하는 Rule source를 모두 읽는다. "
+        "Known target path와 globs로 후보를 좁히고 description으로 현재 task에 관련된 Rule만 선택해 읽는다. "
         "Target path가 없으면 Rule source를 선로드하지 않는다. "
-        "Target path가 materially 바뀌면 다시 계산한다. "
+        "Task intent나 target path가 materially 바뀌면 다시 선택한다. "
         "이 파일은 derived discovery metadata이며 각 canonical Rule이 authoritative source다."
     ),
 }
-PATH_RULE_ROW = re.compile(r"^\|\s*\[[^]]+\]\(([^)]+)\)\s*\|\s*(.*?)\s*\|$")
-BACKTICK_VALUE = re.compile(r"`([^`]+)`")
 
 
 def load_frontmatter(path: Path) -> dict[str, Any]:
@@ -81,36 +78,31 @@ def skill_entries() -> list[dict[str, object]]:
 
 
 def rule_entries() -> list[dict[str, object]]:
-    text = RULE_ROUTE_SOURCE.read_text(encoding="utf-8")
-    try:
-        section = text.split("## Path Rules", 1)[1]
-    except IndexError as exc:
-        raise SystemExit(f"Path Rules section not found: {RULE_ROUTE_SOURCE}") from exc
-    section = section.split("\n## ", 1)[0]
-
     entries: list[dict[str, object]] = []
-    seen: set[str] = set()
-    for line in section.splitlines():
-        match = PATH_RULE_ROW.match(line.strip())
-        if not match:
+    for path in sorted(RULES_ROOT.glob("*.md")):
+        meta = load_frontmatter(path)
+        if meta.get("root") is True:
             continue
 
-        source = match.group(1)
-        globs = BACKTICK_VALUE.findall(match.group(2))
-        if not globs:
-            raise SystemExit(f"missing Path Rule selector: {line}")
-        if source in seen:
-            raise SystemExit(f"duplicate Path Rule source: {source}")
+        globs = meta.get("globs")
+        if globs is None:
+            continue
+        if isinstance(globs, str):
+            globs = [globs]
+        if not isinstance(globs, list) or not globs or not all(
+            isinstance(item, str) and item for item in globs
+        ):
+            raise SystemExit(f"invalid globs: {path}")
 
-        source_path = REPO_ROOT / source
-        if not source_path.is_file():
-            raise SystemExit(f"Path Rule source not found: {source}")
-
-        seen.add(source)
-        entries.append({"source": source, "globs": globs})
-
-    if not entries:
-        raise SystemExit(f"no Path Rules found: {RULE_ROUTE_SOURCE}")
+        entries.append(
+            {
+                "description": normalized_text(
+                    meta.get("description"), field="description", path=path
+                ),
+                "globs": globs,
+                "source": relative(path),
+            }
+        )
     return entries
 
 
