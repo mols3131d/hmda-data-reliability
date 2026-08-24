@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Generate chatbot routing indexes from repository-owned Agent Asset metadata."""
+"""Generate chatbot routing indexes from repository-owned routing metadata."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILLS_ROOT = REPO_ROOT / ".agents" / "skills"
-RULES_ROOT = REPO_ROOT / ".rulesync" / "rules"
+RULE_ROUTE_SOURCE = REPO_ROOT / ".rulesync" / "rules" / "codex-root.md"
 ROUTE_ROOT = REPO_ROOT / ".agents" / "route"
 
 SKILLS_META = {
@@ -33,6 +34,8 @@ RULES_META = {
         "이 파일은 derived discovery metadata이며 각 canonical Rule이 authoritative source다."
     ),
 }
+PATH_RULE_ROW = re.compile(r"^\|\s*\[[^]]+\]\(([^)]+)\)\s*\|\s*(.*?)\s*\|$")
+BACKTICK_VALUE = re.compile(r"`([^`]+)`")
 
 
 def load_frontmatter(path: Path) -> dict[str, Any]:
@@ -78,19 +81,36 @@ def skill_entries() -> list[dict[str, object]]:
 
 
 def rule_entries() -> list[dict[str, object]]:
+    text = RULE_ROUTE_SOURCE.read_text(encoding="utf-8")
+    try:
+        section = text.split("## Path Rules", 1)[1]
+    except IndexError as exc:
+        raise SystemExit(f"Path Rules section not found: {RULE_ROUTE_SOURCE}") from exc
+    section = section.split("\n## ", 1)[0]
+
     entries: list[dict[str, object]] = []
-    for path in sorted(RULES_ROOT.glob("*.md")):
-        meta = load_frontmatter(path)
-        globs = meta.get("globs")
-        if globs is None:
+    seen: set[str] = set()
+    for line in section.splitlines():
+        match = PATH_RULE_ROW.match(line.strip())
+        if not match:
             continue
-        if isinstance(globs, str):
-            globs = [globs]
-        if not isinstance(globs, list) or not globs or not all(
-            isinstance(item, str) and item for item in globs
-        ):
-            raise SystemExit(f"invalid globs: {path}")
-        entries.append({"source": relative(path), "globs": globs})
+
+        source = match.group(1)
+        globs = BACKTICK_VALUE.findall(match.group(2))
+        if not globs:
+            raise SystemExit(f"missing Path Rule selector: {line}")
+        if source in seen:
+            raise SystemExit(f"duplicate Path Rule source: {source}")
+
+        source_path = REPO_ROOT / source
+        if not source_path.is_file():
+            raise SystemExit(f"Path Rule source not found: {source}")
+
+        seen.add(source)
+        entries.append({"source": source, "globs": globs})
+
+    if not entries:
+        raise SystemExit(f"no Path Rules found: {RULE_ROUTE_SOURCE}")
     return entries
 
 
