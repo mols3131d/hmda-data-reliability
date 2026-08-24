@@ -18,6 +18,7 @@
 | --- | --- |
 | [Development Guides](development/README.md) | 개발·테스트·VCS 작업의 진입점 |
 | [Rulesync](tooling/rulesync.md) | repository-owned Agent Asset의 authoring, projection과 validation guide |
+| [Skills CLI](tooling/skills-cli.md) | 외부 non-Rulesync Agent Asset을 관리할 때의 선택 기준 |
 | [References](references) | 외부 규격과 supporting reference |
 
 ## Human Projection
