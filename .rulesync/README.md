@@ -41,11 +41,11 @@ Active development 동안 Rulesync는 latest를 우선한다. 특정 버전을 r
 
 ## Projection Ownership
 
-`delete: true`로 generation 대상 directory의 orphan projection을 제거한다. Canonical asset을 삭제하거나 target에서 제외한 뒤 예전 generated asset이 runtime에 남는 drift를 허용하지 않는다.
-
 Generated projection은 직접 수정하지 않는다. Rule은 `.rulesync/rules/`, Skill은 `.rulesync/skills/`에서 수정한 뒤 generation한다.
 
-Root `AGENTS.md`는 Antigravity IDE/CLI와 Codex CLI가 공유하는 runtime surface다. `.rulesync/rules/codex-root.md`의 target applicability와 generated output이 같은 root body를 공유하는 경우 target order에 따라 orphan cleanup 결과가 달라지지 않게 유지한다.
+`delete: true`는 사용하지 않는다. Copilot과 Copilot CLI, Antigravity IDE와 CLI처럼 같은 output surface를 공유하는 target에서 한 target 전용 asset을 다른 target generation이 orphan으로 해석할 수 있기 때문이다. Projection drift는 `generate --check`로 검증하고, 실제 orphan cleanup은 canonical target 변경을 확인한 뒤 명시적으로 수행한다.
+
+Root `AGENTS.md`와 일부 target directory는 여러 runtime이 공유할 수 있다. Shared surface에 존재한다는 이유만으로 asset applicability를 다른 target까지 넓히지 않고 canonical `targets`의 의미를 유지한다.
 
 ## Codex Boundary
 
