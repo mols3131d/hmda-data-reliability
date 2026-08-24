@@ -1,53 +1,53 @@
 {
   "version": 1,
   "skills": {
-    "mols-agent-asset-studio": {
+    "mols-agent-asset": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "src/skills/mols-agent-asset-studio/SKILL.md",
+      "skillPath": "src/rulesync/.rulesync/skills/mols-agent-asset/SKILL.md",
       "computedHash": "48a1a0069c23d5964ae0a641efb2f2920592a2edf27fd2da4cc9ec889fc8365b"
     },
-    "mols-agent-asset-tuner": {
+    "mols-agent-asset-validator": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "src/skills/mols-agent-asset-tuner/SKILL.md",
+      "skillPath": "src/rulesync/.rulesync/skills/mols-agent-asset-validator/SKILL.md",
       "computedHash": "9c9eab499a767d659988e029b82a4542acb58c75a6e0efd8cc45e73bbbc3e1f2"
     },
     "mols-markdown-dashboard": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "src/skills/mols-markdown-dashboard/SKILL.md",
+      "skillPath": "src/rulesync/.rulesync/skills/mols-markdown-dashboard/SKILL.md",
       "computedHash": "1f9c0990d28139c955cc845ac5dfbdbfb4a9c3350d0052d22c5836944e03229f"
     },
     "mols-markdown-for-human": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "src/skills/mols-markdown-for-human/SKILL.md",
+      "skillPath": "src/rulesync/.rulesync/skills/mols-markdown-for-human/SKILL.md",
       "computedHash": "e74f1054fed6efcd1329434e0bfc5d3770c0d1857aa91e0a0d023616f5087a8b"
     },
-    "mols-markdown-scripts": {
+    "mols-markdown-maintenance": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "src/skills/mols-markdown-scripts/SKILL.md",
+      "skillPath": "src/rulesync/.rulesync/skills/mols-markdown-maintenance/SKILL.md",
       "computedHash": "402ec9750ba77cdc87242f7efd572df958996d67ebdc17cefa87bced4ae395b3"
     },
     "mols-mermaid-chart": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "src/skills/mols-mermaid-chart/SKILL.md",
+      "skillPath": "src/rulesync/.rulesync/skills/mols-mermaid-chart/SKILL.md",
       "computedHash": "03f25bd658fc85931f9a62ab570aeb9578c4e8c975999b4989c1990cd469917a"
     },
     "mols-mermaid-diagram": {
       "source": "mols3131d/mols-agent-assets",
       "ref": "main",
       "sourceType": "github",
-      "skillPath": "src/skills/mols-mermaid-diagram/SKILL.md",
+      "skillPath": "src/rulesync/.rulesync/skills/mols-mermaid-diagram/SKILL.md",
       "computedHash": "3ab9a5a712cbf1a049e6c06e63f6530264069b9814acb7fa0a706f1d5a35cf5d"
     }
   }
