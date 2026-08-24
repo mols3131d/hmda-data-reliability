@@ -42,46 +42,16 @@ The earlier package-lock and residual-import blockers are resolved.
 - Agent skill references reviewed in the latest commits use the renamed package path.
 - `CI Lite #166` completed successfully on PR head `d1fc52c` using prospective merge commit `22a3dc92746a53ba5ccbc8fc8056a01fdf92e24e`.
 - That CI run successfully completed locked dependency sync, Rulesync validation, and selected tests. The log shows 75 unit tests and 317 selected tests passing in its two pytest invocations.
-
-## Current blocker: generated chatbot Rule routing is stale
-
-`main@3053863` introduced the repository chatbot entrypoint and generated routing indexes:
-
-```text
-CHATBOT.md
-  -> .agents/route/ROUTE.md
-     -> .agents/route/skills.jsonl
-     -> .agents/route/rules.jsonl
-```
-
-The PR correctly changes the canonical Rulesync Path Rules to the renamed source tree:
-
-```text
-src/hmda_reliability/**/*
-src/hmda_reliability/reliability/**
-src/hmda_reliability/orchestration/**
-```
-
-However, the prospective merge commit `22a3dc9` still contains stale generated entries in `.agents/route/rules.jsonl`:
-
-```text
-src/project_pivot/**/*
-src/project_pivot/reliability/**
-src/project_pivot/orchestration/**
-```
-
-This is a merge blocker. After merge, chatbot routing would fail to select the Project, Reliability, and Orchestration scoped Rules for the renamed source paths.
-
-`CI Lite #166` being green does not invalidate this finding. `scripts/generate_agent_routes.py` provides `--check`, but the observed CI run did not validate generated route freshness.
+- Generated chatbot route indexes (`.agents/route/rules.jsonl`, `.agents/route/skills.jsonl`) were regenerated via `scripts/generate_agent_routes.py` and validated with `scripts/generate_agent_routes.py --check`. All active rules now correctly target `src/hmda_reliability/**`.
 
 ## Completion procedure
 
-1. Integrate current `main@3053863` into `agent/refactor/rename-python-package` without rewriting public history.
-1. Run `python scripts/generate_agent_routes.py`.
-1. Run `python scripts/generate_agent_routes.py --check` and confirm it exits successfully.
-1. Verify `.agents/route/rules.jsonl` contains the `src/hmda_reliability/**` selectors and no active `src/project_pivot/**` selectors for Project, Reliability, or Orchestration routing.
-1. Re-run the PR CI on the new head and verify locked sync, Rulesync validation, and tests remain green.
-1. Re-review the compatibility boundary and generated routing diff.
+1. Integrate current `main` into `agent/refactor/rename-python-package` without rewriting public history. (완료)
+1. Run `python scripts/generate_agent_routes.py`. (완료)
+1. Run `python scripts/generate_agent_routes.py --check` and confirm it exits successfully. (완료)
+1. Verify `.agents/route/rules.jsonl` contains the `src/hmda_reliability/**` selectors and no active `src/project_pivot/**` selectors for Project, Reliability, or Orchestration routing. (완료)
+1. Re-run the PR CI on the new head and verify locked sync, Rulesync validation, and tests remain green. (진행 중)
+1. Re-review the compatibility boundary and generated routing diff. (완료)
 1. Update the PR validation text with current evidence and squash-merge only after the routing blocker is resolved.
 
 ## Review notes
