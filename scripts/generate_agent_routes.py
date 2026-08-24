@@ -19,7 +19,7 @@ ROUTE_ROOT = REPO_ROOT / ".agents" / "route"
 SKILLS_META = {
     "kind": "skills",
     "instructions": (
-        "Task intent에 맞는 Skill을 name과 description으로 선택하고, 선택한 source를 모두 읽는다. "
+        "name과 description으로 현재 task에 관련된 Skill을 모두 선택하고 선택한 source만 읽는다. "
         "일치하는 Skill이 없으면 읽지 않는다. Task intent가 materially 바뀌면 다시 선택한다. "
         "이 파일은 derived discovery metadata이며 각 SKILL.md가 authoritative source다."
     ),
