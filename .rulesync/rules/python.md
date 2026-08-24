@@ -1,8 +1,10 @@
 ---
 root: false
 targets:
-  - antigravity-ide
+  - claudecode
   - copilot
+  - copilotcli
+  - antigravity-ide
 description: "Python-specific source rules under src. Covers imports, typing, resource handling, exceptions, mutable state, and docstrings."
 globs:
   - "src/**/*.py"
