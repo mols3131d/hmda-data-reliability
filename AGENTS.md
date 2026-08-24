@@ -1,5 +1,3 @@
-<!-- Canonical source: `.rulesync/rules/codex-root.md`. -->
-
 # Project Rules
 
 Root `AGENTS.md`는 repository-wide **전역 지침이자 agent 전용 entrypoint**다.
@@ -34,7 +32,7 @@ Harness가 native로 지원하는 instruction loading이나 discovery는 root에
 
 ## Rule Routing
 
-현재 Codex CLI와 Antigravity CLI의 Rulesync projection에서는 아래 cross-cutting Rule만 root fallback으로 route한다. Directory/subtree 지침은 가장 가까운 `AGENTS.md`가 소유하며 이 table에 넣지 않는다.
+Codex CLI와 Antigravity CLI에서는 아래 cross-cutting Rulesync Rule만 root fallback으로 route한다. Directory/subtree 지침은 가장 가까운 `AGENTS.md`가 소유하며 이 table에 넣지 않는다.
 
 | Rule | Match |
 | --- | --- |
