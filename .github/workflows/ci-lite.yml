@@ -219,10 +219,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python scripts/rulesync.py validate
 
-      - name: Show generated Rulesync lock
-        if: steps.scope.outputs.rulesync == 'true'
-        run: cat rulesync.lock
-
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
         run: uv run --with PyYAML==6.0.3 python scripts/generate_agent_routes.py --check
