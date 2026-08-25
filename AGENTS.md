@@ -22,7 +22,7 @@ Harness가 native로 지원하는 instruction loading이나 discovery는 root에
 | 개발 환경, active tool choice, package layout, code convention | `DEVELOPMENT.md` |
 | 시스템 흐름과 domain ownership guidance | `docs/ARCHITECTURE.md`, `docs/domains/OVERVIEW.md` |
 | docs-wide writing, trust, lifecycle과 dashboard policy | `docs/AGENTS.md` |
-| Agent instruction ownership과 중복 최소화 | `docs/development/agent-instructions.md` |
+| Agent instruction ownership과 중복 최소화 | `docs/development/ai-agent/README.md` |
 | Git과 GitHub workflow | `docs/development/vcs-git/README.md` |
 | `openspec/**` | `openspec/AGENTS.md` |
 | `tests/**` | `tests/AGENTS.md` |
