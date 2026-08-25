@@ -1,40 +1,37 @@
 # AI Agent Instructions
 
-이 directory는 repository에서 AI agent instruction surface와 asset 관리 방식을 선택하는 기준을 소유한다. Instruction surface의 구분 기준은 **내용의 종류가 아니라 적용 범위와 loading 방식**이다.
+이 directory는 repository에서 **instruction surface 선택과 agent asset 관리 정책**을 소유한다. 세부 Rule/Skill 작성법은 각 문서가 소유한다.
 
 ## Surface Selection
 
-| Scope | Owner | Use when |
-| --- | --- | --- |
-| repository-wide | `/AGENTS.md` | 전역 지침과 agent entrypoint |
-| directory | nearest `AGENTS.md` | 하나의 directory subtree에 공통으로 적용할 지침 |
-| shared path / extension | [Rulesync Rule](rule.md) | 여러 경로에서 반복되는 directory pattern, file type, extension처럼 glob selector가 필요한 지침 |
-| task-selected | [Skill](skill.md) | 모델이 task intent와 relevance에 따라 선택적으로 load할 지침, workflow 또는 reusable capability |
+| Applicability | Surface |
+| --- | --- |
+| repository 전체 | root `/AGENTS.md` |
+| 하나의 directory subtree | nearest `AGENTS.md` |
+| path, glob, file type, extension 같은 구조적 scope | [Rule](rule.md) |
+| task intent와 semantic relevance | [Skill](skill.md) |
 
-같은 지침을 여러 owner에 복제하지 않는다. 하나의 directory subtree가 자연스럽게 소유할 수 있으면 nearest `AGENTS.md`를 사용하고, directory hierarchy로 표현하기 어려운 cross-cutting path scope는 Rule을 사용한다. Task 의미에 따라 선택해야 하는 context는 Skill을 사용한다.
+Rule과 Skill은 내용이 아니라 **적용 방식**으로 구분한다. Skill도 정책, 제약, 판단 기준 같은 instruction을 담을 수 있다.
 
-Rule과 Skill은 내용으로 구분하지 않는다. Skill도 정책, 제약, 판단 기준처럼 Rule과 유사한 **instruction-oriented content**를 가질 수 있다. Path나 glob이 applicability를 결정하면 Rule이고, task intent가 applicability를 결정하면 Skill이다.
+같은 지침을 여러 surface에 복제하지 않는다. 하나의 subtree가 자연스럽게 소유할 수 있으면 `AGENTS.md`를 사용하고, cross-cutting structural scope는 Rule, task-selected context는 Skill을 사용한다.
 
 ## Asset Management
 
-이 repository의 AI agent asset은 **Rulesync 중심으로 관리한다.** Repository에서 직접 작성·관리하는 Rule과 Skill은 Rulesync source를 canonical source로 사용한다.
+AI agent asset 관리는 **Rulesync-first**다.
 
-외부 asset은 원래 자산 형식에 따라 관리 경로를 나눈다.
-
-| External asset | Management |
+| Asset | Management |
 | --- | --- |
-| Rulesync Rule 또는 Rulesync Skill | **Rulesync로 관리** |
-| 표준 Agent Skill | **Skills CLI로 설치·업데이트하고 `skills-lock.json`으로 dependency state 관리** |
+| repository에서 직접 작성·관리하는 Rule 또는 Skill | Rulesync source |
+| external Rulesync Rule 또는 Skill | Rulesync |
+| external standard Agent Skill | Skills CLI + `skills-lock.json` |
 
-즉, 외부 Rulesync 자산은 Rulesync 생태계 안에서 관리하고, Rulesync 자산이 아닌 표준 Agent Skill은 Skills CLI 경로를 사용한다. 표준 Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다.
-
-Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
+External standard Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
 
 ## Documents
 
-- [Rule](rule.md): path, glob, extension 기반 instruction scope와 Rulesync 관리 기준
-- [Skill](skill.md): task-selected instruction과 reusable Skill의 source·dependency 기준
+- [Rule](rule.md): structural scope에 Rule을 사용하는 기준
+- [Skill](skill.md): task-selected Skill의 selection과 loading 기준
 
 ## Boundary
 
-이 directory는 instruction owner, loading 기준과 repository의 agent asset 관리 정책만 소유한다. Rulesync generation과 projection, Skills CLI 동작, target별 runtime semantics는 해당 tool과 runtime의 owning source를 따른다.
+이 문서는 **surface 선택과 asset management policy**만 소유한다. Rulesync generation/projection, Skills CLI 동작과 target별 runtime semantics는 해당 tool 또는 runtime의 owning source를 따른다.
