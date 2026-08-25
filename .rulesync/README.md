@@ -1,6 +1,6 @@
 # Rulesync
 
-Repository Agent instruction policy는 [`docs/development/agent-instructions.md`](../docs/development/agent-instructions.md)를 따른다.
+Repository Agent asset policy는 [`docs/development/ai-agent/README.md`](../docs/development/ai-agent/README.md)를 따른다.
 
 ## Skill projection
 
