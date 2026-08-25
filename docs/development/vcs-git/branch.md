@@ -53,7 +53,7 @@ Dedicated `inbox` branch는 다음 조건을 **모두** 만족할 때만 사용�
 2. 기존 작업 branch나 Pull Request가 그 artifact를 소유하지 않는다.
 3. 현재 runtime이 일반 작업 branch 없이 remote artifact delivery를 수행한다.
 
-그 외에는 다음 규칙을 따른다.
+Delivery에는 다음 규칙을 적용한다.
 
 - Local working agent처럼 자신의 일반 작업 branch를 사용할 수 있는 runtime은 artifact 저장만을 이유로 dedicated `inbox` branch를 만들거나 전환하지 않는다. 정상 branch/Pull Request workflow를 사용한다.
 - Dedicated `inbox` branch를 사용하는 경우에만 요청된 `inbox/YYYY-MM-DD/**` artifact를 Pull Request 없이 direct push할 수 있다. `AGENTS.md`, `README.md`, `_guidelines/`, `_templates/` 같은 운영 자산은 이 예외에 포함하지 않는다.
