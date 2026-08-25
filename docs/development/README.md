@@ -7,7 +7,7 @@
 | Document | Role | Use when |
 | --- | --- | --- |
 | [Development Dashboard](dashboard.md) | human-only development status snapshot | 사람이 개발 진행 상태와 gap을 빠르게 확인할 때 |
-| [Agent Instructions](agent-instructions.md) | `AGENTS.md`, Rulesync Rule, `SKILL.md`의 scope와 관리 기준 | Agent instruction을 추가·변경하거나 asset 관리 방식을 선택할 때 |
+| [AI Agent Instructions](ai-agent/README.md) | `AGENTS.md`, Rulesync Rule, Skill의 scope와 loading 기준 | Agent instruction을 추가·변경하거나 instruction surface를 선택할 때 |
 | [Testing Guide](testing.md) | pytest command, marker, report, coverage, tracing | test를 실행하거나 결과를 확인할 때 |
 | [Test Design and Implementation](test-design-and-implementation.md) | requirement를 observable contract, scenario와 oracle로 변환하는 기준 | test를 설계하거나 requirement를 추적할 때 |
 | [Version Control and GitHub](vcs-git/README.md) | branch, commit, Pull Request와 review 운영 규칙 | Git/GitHub 작업을 수행할 때 |
