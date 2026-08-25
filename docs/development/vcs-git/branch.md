@@ -43,31 +43,16 @@ agent/feat/review-engine
 
 `type`은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사용한다. `topic`은 변경 목적을 소문자 kebab-case로 표현한다.
 
-## Standalone Inbox Delivery
+## Inbox Delivery
 
-Standalone `inbox/` artifact delivery는 actor 이름이 아니라 **delivery context와 artifact ownership**으로 결정하는 제한된 branch workflow 예외다.
-
-Dedicated `inbox` branch는 다음 조건을 **모두** 만족할 때만 사용할 수 있다.
-
-1. 사용자가 standalone working artifact를 `inbox/`에 저장하라고 명시했다.
-1. 기존 작업 branch나 Pull Request가 그 artifact를 소유하지 않는다.
-1. 현재 runtime이 일반 작업 branch 없이 remote artifact delivery를 수행한다.
-
-Delivery에는 다음 규칙을 적용한다.
-
-- Local working agent처럼 자신의 일반 작업 branch를 사용할 수 있는 runtime은 artifact 저장만을 이유로 dedicated `inbox` branch를 만들거나 전환하지 않는다. 정상 branch/Pull Request workflow를 사용한다.
-- Dedicated `inbox` branch를 사용하는 경우에만 요청된 `inbox/YYYY-MM-DD/**` artifact를 Pull Request 없이 direct push할 수 있다. `AGENTS.md`, `README.md`, `_guidelines/`, `_templates/` 같은 운영 자산은 이 예외에 포함하지 않는다.
-- 현재 작업 branch나 Pull Request가 artifact를 소유하면 명시적 요청이 없는 한 그 branch에 함께 둔다. 다른 branch나 Pull Request를 조사·리뷰했다는 사실만으로 그 branch가 artifact owner가 되지는 않는다.
-- Delivery guidance는 항상 current default branch의 owning guidance에서 결정한다. Dedicated `inbox` branch는 storage ref이며 그 안의 오래된 guidance copy를 authority로 사용하지 않는다.
-- Direct push 직전에 remote `inbox` state를 다시 확인하고 기존 output을 보존한다. Conflict는 최신 state에서 요청된 artifact만 다시 적용해 해결하며 force-update나 history rewrite를 사용하지 않는다.
-- Dedicated `inbox` branch가 없을 때만 current remote `main`에서 생성할 수 있다. `main`을 `inbox`에 sync하거나 `inbox`를 `main`이나 다른 작업 branch로 merge, rebase, cherry-pick하지 않는다.
+`inbox/` 전용 dedicated branch delivery 예외는 [Inbox Branch Delivery](../../../inbox/_guidelines/branch.md)를 따른다. 그 밖의 branch 작업에는 이 문서의 일반 기준을 적용한다.
 
 ## Agent Instructions
 
 - `agent` actor namespace와 자신의 작업 branch를 사용한다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
-- `Standalone Inbox Delivery`의 remote delivery 조건을 충족하는 경우에만 dedicated `inbox` branch direct push 예외를 사용한다.
+- [Inbox Branch Delivery](../../../inbox/_guidelines/branch.md)의 조건을 충족하는 경우에만 dedicated `inbox` branch direct push 예외를 사용한다.
 - 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.
 - 규칙이나 권한이 충돌하면 우회하지 않고 보고한다.
 
@@ -75,3 +60,4 @@ Delivery에는 다음 규칙을 적용한다.
 
 - [Commits](commit.md): 변경을 commit으로 구성하는 기준
 - [Pull Requests](pull-request.md): 변경을 검토와 채택 경계로 전달하는 기준
+- [Inbox Branch Delivery](../../../inbox/_guidelines/branch.md): `inbox/` 전용 branch delivery 예외
