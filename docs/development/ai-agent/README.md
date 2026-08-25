@@ -17,16 +17,18 @@ Rule과 Skill은 내용으로 구분하지 않는다. Skill도 정책, 제약, �
 
 ## Asset Management
 
-이 repository의 AI agent asset 관리는 **Rulesync를 중심으로 한다.** 직접 작성·관리하는 Rule과 Skill은 Rulesync source를 canonical source로 사용한다.
+이 repository의 AI agent asset은 **Rulesync 중심으로 관리한다.** Repository에서 직접 작성·관리하는 Rule과 Skill은 Rulesync source를 canonical source로 사용한다.
 
-외부 asset은 원래 형식에 맞는 관리 경로를 유지한다.
+외부 asset은 원래 자산 형식에 따라 관리 경로를 나눈다.
 
 | External asset | Management |
 | --- | --- |
-| Rulesync asset | Rulesync source/dependency로 관리 |
-| 표준 Agent Skill | Skills CLI로 설치하고 `skills-lock.json`으로 dependency state 관리 |
+| Rulesync Rule 또는 Rulesync Skill | **Rulesync로 관리** |
+| 표준 Agent Skill | **Skills CLI로 설치·업데이트하고 `skills-lock.json`으로 dependency state 관리** |
 
-외부 표준 Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. 반대로 Rulesync 형식으로 제공되는 외부 Rule·Skill은 Rulesync 경로를 우선 사용한다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
+즉, 외부 Rulesync 자산은 Rulesync 생태계 안에서 관리하고, Rulesync 자산이 아닌 표준 Agent Skill은 Skills CLI 경로를 사용한다. 표준 Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다.
+
+Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
 
 ## Documents
 
