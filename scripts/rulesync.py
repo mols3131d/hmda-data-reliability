@@ -49,6 +49,19 @@ def _run(args: Sequence[str], *, cwd: Path = REPO_ROOT) -> int:
     return subprocess.run(command, cwd=cwd, check=False).returncode
 
 
+def _tracked_diff() -> str:
+    result = subprocess.run(
+        ["git", "diff", "--no-ext-diff", "--binary"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError("git diff failed while validating generated projections.")
+    return result.stdout
+
+
 def _repository_paths() -> list[Path]:
     result = subprocess.run(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
@@ -158,6 +171,17 @@ def _sync_sources(args: Sequence[str]) -> int:
 
 
 def _validate() -> int:
+    before = _tracked_diff()
+    returncode = _sync_sources(_SOURCE_ACTIONS["install"])
+    if returncode != 0:
+        return returncode
+    if _tracked_diff() != before:
+        print(
+            "Rulesync source installation changed tracked projections; regenerate and commit them.",
+            file=sys.stderr,
+        )
+        return 1
+
     returncode = _run(_ACTIONS["doctor"])
     if returncode != 0:
         return returncode
@@ -176,7 +200,7 @@ def main() -> int:
         choices=(*_SOURCE_ACTIONS, *_ACTIONS, "validate"),
         help=(
             "install or update external sources, preview or generate projections, "
-            "check drift, run doctor, or run doctor + projection checks"
+            "check drift, run doctor, or run source install + projection validation"
         ),
     )
     args = parser.parse_args()
