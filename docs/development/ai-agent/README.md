@@ -1,6 +1,6 @@
 # AI Agent Instructions
 
-이 directory는 repository에서 AI agent instruction surface를 선택하는 기준을 소유한다. 구분 기준은 **내용의 종류가 아니라 적용 범위와 loading 방식**이다.
+이 directory는 repository에서 AI agent instruction surface와 asset 관리 방식을 선택하는 기준을 소유한다. Instruction surface의 구분 기준은 **내용의 종류가 아니라 적용 범위와 loading 방식**이다.
 
 ## Surface Selection
 
@@ -15,6 +15,19 @@
 
 Rule과 Skill은 내용으로 구분하지 않는다. Skill도 정책, 제약, 판단 기준처럼 Rule과 유사한 **instruction-oriented content**를 가질 수 있다. Path나 glob이 applicability를 결정하면 Rule이고, task intent가 applicability를 결정하면 Skill이다.
 
+## Asset Management
+
+이 repository의 AI agent asset 관리는 **Rulesync를 중심으로 한다.** 직접 작성·관리하는 Rule과 Skill은 Rulesync source를 canonical source로 사용한다.
+
+외부 asset은 원래 형식에 맞는 관리 경로를 유지한다.
+
+| External asset | Management |
+| --- | --- |
+| Rulesync asset | Rulesync source/dependency로 관리 |
+| 표준 Agent Skill | Skills CLI로 설치하고 `skills-lock.json`으로 dependency state 관리 |
+
+외부 표준 Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. 반대로 Rulesync 형식으로 제공되는 외부 Rule·Skill은 Rulesync 경로를 우선 사용한다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
+
 ## Documents
 
 - [Rule](rule.md): path, glob, extension 기반 instruction scope와 Rulesync 관리 기준
@@ -22,4 +35,4 @@ Rule과 Skill은 내용으로 구분하지 않는다. Skill도 정책, 제약, �
 
 ## Boundary
 
-이 directory는 instruction owner와 loading 기준만 소유한다. Rulesync generation과 projection, Skills CLI 동작, target별 runtime semantics는 해당 tool과 runtime의 owning source를 따른다.
+이 directory는 instruction owner, loading 기준과 repository의 agent asset 관리 정책만 소유한다. Rulesync generation과 projection, Skills CLI 동작, target별 runtime semantics는 해당 tool과 runtime의 owning source를 따른다.
