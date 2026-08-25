@@ -1,4 +1,4 @@
-# AI Agent Instructions
+# AI Agent
 
 이 directory는 repository에서 **instruction surface 선택과 agent asset 관리 정책**을 소유한다. 세부 Rule/Skill 작성법은 각 문서가 소유한다.
 
@@ -27,11 +27,6 @@ AI agent asset 관리는 **Rulesync-first**다.
 
 External standard Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
 
-## Documents
-
-- [Rule](rule.md): structural scope에 Rule을 사용하는 기준
-- [Skill](skill.md): task-selected Skill의 selection과 loading 기준
-
 ## Boundary
 
-이 문서는 **surface 선택과 asset management policy**만 소유한다. Rulesync generation/projection, Skills CLI 동작과 target별 runtime semantics는 해당 tool 또는 runtime의 owning source를 따른다.
+이 문서는 **surface 선택과 asset management policy**만 소유한다. Rule-specific 기준은 [Rule](rule.md), Skill-specific 기준은 [Skill](skill.md)이 소유한다. Rulesync generation/projection, Skills CLI 동작과 target별 runtime semantics는 해당 tool 또는 runtime의 owning source를 따른다.
