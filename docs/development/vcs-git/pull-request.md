@@ -14,7 +14,7 @@ Pull Request는 branch의 변경을 검토하고 repository에 반영할지 결�
 
 - `Summary`는 변경 이유와 기대 결과를 먼저 설명한다.
 - `Changes`는 시행착오나 파일 목록이 아니라 최종 동작, 계약 또는 구조의 변화를 기록한다.
-- `Validation`은 실제 수행한 검증과 evidence를 기록하고, 실패하거나 확인하지 못한 결과를 숨기지 않는다.
+- `Validation`은 실제 수행한 검증과 evidence를 연결하고, 실패하거나 확인하지 못한 결과를 숨기지 않는다.
 
 다음 정보는 PR description에 복제하지 않는다.
 
