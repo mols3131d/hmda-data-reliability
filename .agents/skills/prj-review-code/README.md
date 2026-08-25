@@ -61,13 +61,13 @@ validation: auto
 특정 구현 경로를 이전 revision과 비교합니다.
 
 ```text
---target src/project_pivot/reliability/ --baseline main --focus implementation
+--target src/app/core/ --baseline main --focus implementation
 ```
 
 테스트의 설계와 false green 위험만 검토합니다.
 
 ```text
---target tests/reliability/ --focus tests --validation "uv run pytest tests/reliability -q"
+--target tests/core/ --focus tests --validation "uv run pytest tests/core -q"
 ```
 
 ## Output

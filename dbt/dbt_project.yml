@@ -1,8 +1,8 @@
-name: project_pivot
+name: hmda_reliability
 version: "1.0.0"
 config-version: 2
 
-profile: project_pivot
+profile: hmda_reliability
 
 model-paths:
   - models
@@ -17,7 +17,7 @@ clean-targets:
   - dbt_packages
 
 models:
-  project_pivot:
+  hmda_reliability:
     staging:
       +schema: staging
       +materialized: view

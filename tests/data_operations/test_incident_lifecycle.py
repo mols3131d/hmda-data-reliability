@@ -60,9 +60,9 @@ def test_lifecycle_analyzes_all_detections_in_order(tmp_path: Path) -> None:
 
     assert result.detected_incident_types == ["volume_drop", "null_spike"]
     assert result.evidence_refs == [
-        "ev_volume_drop_source_project_pivot_raw_hmda_loans_2025",
-        "lineage_source_project_pivot_raw_hmda_loans_2025",
-        "ev_null_spike_source_project_pivot_raw_hmda_loans_2025_loan_amount",
+        "ev_volume_drop_source_hmda_reliability_raw_hmda_loans_2025",
+        "lineage_source_hmda_reliability_raw_hmda_loans_2025",
+        "ev_null_spike_source_hmda_reliability_raw_hmda_loans_2025_loan_amount",
     ]
     assert result.affected_assets == [
         "stg_hmda_loans",
@@ -187,7 +187,7 @@ def test_lifecycle_has_no_recovery_or_evaluation_side_effects(
 
 
 def _prepare_request(tmp_path: Path) -> DataOperationRequest:
-    database_path = tmp_path / "project_pivot.duckdb"
+    database_path = tmp_path / "hmda_reliability.duckdb"
     with DuckDBConnectionManager(database_path) as connection:
         connection.execute("CREATE SCHEMA raw")
         connection.execute(
@@ -216,7 +216,7 @@ def _prepare_request(tmp_path: Path) -> DataOperationRequest:
     target.mkdir(parents=True)
     manifest = {
         "sources": {
-            "source.project_pivot.raw.hmda_loans": {
+            "source.hmda_reliability.raw.hmda_loans": {
                 "name": "hmda_loans",
                 "schema": "raw",
                 "resource_type": "source",
@@ -224,15 +224,15 @@ def _prepare_request(tmp_path: Path) -> DataOperationRequest:
             }
         },
         "nodes": {
-            "model.project_pivot.stg_hmda_loans": {
+            "model.hmda_reliability.stg_hmda_loans": {
                 "name": "stg_hmda_loans",
                 "resource_type": "model",
-                "depends_on": {"nodes": ["source.project_pivot.raw.hmda_loans"]},
+                "depends_on": {"nodes": ["source.hmda_reliability.raw.hmda_loans"]},
             },
-            "model.project_pivot.mart_hmda_loan_outcomes": {
+            "model.hmda_reliability.mart_hmda_loan_outcomes": {
                 "name": "mart_hmda_loan_outcomes",
                 "resource_type": "model",
-                "depends_on": {"nodes": ["model.project_pivot.stg_hmda_loans"]},
+                "depends_on": {"nodes": ["model.hmda_reliability.stg_hmda_loans"]},
             },
         },
     }

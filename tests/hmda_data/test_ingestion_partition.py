@@ -148,7 +148,7 @@ def test_partition_load_rechecks_identity_after_waiting_for_writer(
 ) -> None:
     """대기 중 선행 writer가 commit하면 후행 request는 stale로 거부한다."""
 
-    database_path = tmp_path / "project-pivot.duckdb"
+    database_path = tmp_path / "hmda-reliability.duckdb"
     first_source = tmp_path / "year_2025_first.csv"
     second_source = tmp_path / "year_2025_second.csv"
     source_text = hmda_csv_path.read_text(encoding="utf-8")

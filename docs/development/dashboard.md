@@ -1,4 +1,4 @@
-# Project Pivot Development Dashboard
+# HMDA Data Reliability Development Dashboard
 
 > **Snapshot:** 2026-08-16 / `main@e9a8d2a`
 > **Current Focus:** bounded Agentic review와 current-revision acceptance를 닫는다.
@@ -49,13 +49,13 @@
 
 | Area | Risk / Blocker | Impact |
 | --- | --- | --- |
-| Reliability / MVP | `docs/mvp.md`가 요구하는 bounded Agentic review, deterministic review validation과 live model proof가 current canonical Spec inventory와 runtime source에 아직 없다. | Deterministic capability 구현률과 별개로 Project Pivot MVP 완료를 선언할 수 없다. |
+| Reliability / MVP | `docs/mvp.md`가 요구하는 bounded Agentic review, deterministic review validation과 live model proof가 current canonical Spec inventory와 runtime source에 아직 없다. | Deterministic capability 구현률과 별개로 HMDA Data Reliability MVP 완료를 선언할 수 없다. |
 
 ## References
 
 - Current MVP scope: [`../mvp.md`](../mvp.md)
 - Canonical capability contracts: [`../../openspec/specs/`](../../openspec/specs/)
-- Implementation evidence: `src/project_pivot/`, `dbt/`
+- Implementation evidence: `src/hmda_reliability/`, `dbt/`
 - Executable specification surfaces: `tests/`
 - Counting rule: Implementation은 canonical Requirement 98개, Verification은 canonical capability별 matching-revision acceptance target 17개를 의미 단위로 집계한다.
 - Current-revision validation: `main@e9a8d2a`에 연결된 GitHub Actions workflow run을 확인하지 못했으며 과거 revision 결과는 재사용하지 않았다.

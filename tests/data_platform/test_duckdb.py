@@ -32,7 +32,7 @@ def test_duckdb_connection_manager_removes_database_file(tmp_path: Path) -> None
     """cleanup_on_close가 연결 종료 후 DB 파일을 제거하는지 검증한다."""
 
     manager = DuckDBConnectionManager(
-        tmp_path / "project_pivot_test.duckdb",
+        tmp_path / "hmda_reliability_test.duckdb",
         cleanup_on_close=True,
     )
     database_path = manager.database_path
@@ -54,13 +54,13 @@ def test_database_mutation_lock_serializes_canonical_aliases(
     """같은 canonical database의 alias는 하나의 exclusive lock을 사용한다."""
 
     _, mutation_lock = _mutation_lock_api()
-    database_path = tmp_path / "project-pivot.duckdb"
+    database_path = tmp_path / "hmda-reliability.duckdb"
     database_path.touch()
     if alias_kind == "relative":
         monkeypatch.chdir(tmp_path)
         alias_path = Path(database_path.name)
     else:
-        alias_path = tmp_path / "project-pivot-alias.duckdb"
+        alias_path = tmp_path / "hmda-reliability-alias.duckdb"
         alias_path.symlink_to(database_path)
 
     attempted = Event()
@@ -116,7 +116,7 @@ def test_database_mutation_lock_setup_failure_is_typed(
 
     with (
         pytest.raises(error_type, match="lock"),
-        mutation_lock(tmp_path / "nested" / "project-pivot.duckdb"),
+        mutation_lock(tmp_path / "nested" / "hmda-reliability.duckdb"),
     ):
         pass
 
@@ -139,7 +139,7 @@ def test_database_mutation_lock_release_failure_is_typed(
 
     with (
         pytest.raises(error_type, match="lock"),
-        mutation_lock(tmp_path / "project-pivot.duckdb"),
+        mutation_lock(tmp_path / "hmda-reliability.duckdb"),
     ):
         pass
 
@@ -165,6 +165,6 @@ def test_database_mutation_lock_preserves_body_failure(
 
     with (
         pytest.raises(MutationBodyError),
-        mutation_lock(tmp_path / "project-pivot.duckdb"),
+        mutation_lock(tmp_path / "hmda-reliability.duckdb"),
     ):
         raise MutationBodyError

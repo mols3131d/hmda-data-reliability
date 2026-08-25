@@ -11,9 +11,9 @@ from hmda_reliability.data_operations import (
 )
 
 _ENVIRONMENT_KEYS = {
-    "database_path": "PROJECT_PIVOT_DUCKDB_PATH",
-    "source_root": "PROJECT_PIVOT_SOURCE_ROOT",
-    "source_year": "PROJECT_PIVOT_SOURCE_YEAR",
+    "database_path": "HMDA_RELIABILITY_DUCKDB_PATH",
+    "source_root": "HMDA_RELIABILITY_SOURCE_ROOT",
+    "source_year": "HMDA_RELIABILITY_SOURCE_YEAR",
 }
 _SUPPORTED_OVERRIDES = frozenset(
     {

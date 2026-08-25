@@ -34,7 +34,7 @@ The canonical synthetic-defects contract requires a `null_spike` output to have 
 
 ## Impact
 
-- `src/project_pivot/hmda_data/synthetic/cases.py`
+- `src/hmda_reliability/hmda_data/synthetic/cases.py`
 - `tests/hmda_data/test_synthetic.py`
 - `openspec/specs/hmda-data-synthetic-defects/spec.md`
 - Focused Reliability null-spike evaluation validation only; no public API or Reliability implementation change is intended.

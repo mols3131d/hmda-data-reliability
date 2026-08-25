@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 type Scalar = str | int | float | bool
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS_DIR_ENV = "PROJECT_PIVOT_ARTIFACTS_DIR"
+ARTIFACTS_DIR_ENV = "HMDA_RELIABILITY_ARTIFACTS_DIR"
 DEFAULT_ARTIFACTS_DIR = ".local/artifacts"
 EVENT_LOG_NAME = "agent-events.jsonl"
 

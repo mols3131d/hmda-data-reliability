@@ -199,7 +199,7 @@ def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
     target = tmp_path / "dbt" / "target"
     target.mkdir(parents=True)
     (target / "manifest.json").write_text(
-        '{"sources":{"source.project_pivot.raw.hmda_loans":{"name":"hmda_loans","schema":"raw","resource_type":"source","depends_on":{"nodes":[]}}},"nodes":{}}',
+        '{"sources":{"source.hmda_reliability.raw.hmda_loans":{"name":"hmda_loans","schema":"raw","resource_type":"source","depends_on":{"nodes":[]}}},"nodes":{}}',
         encoding="utf-8",
     )
     (target / "run_results.json").write_text("{}", encoding="utf-8")
@@ -224,7 +224,7 @@ def test_volume_drop_vertical_slice_is_deterministic_and_replay_safe(
         target_path.mkdir(parents=True, exist_ok=True)
         environment = kwargs.get("env")
         assert isinstance(environment, dict)
-        duckdb_path = environment.get("PROJECT_PIVOT_DUCKDB_PATH")
+        duckdb_path = environment.get("HMDA_RELIABILITY_DUCKDB_PATH")
         assert isinstance(duckdb_path, str | Path)
         database_path = Path(duckdb_path)
         run_kind = "candidate" if database_path.name == "candidate.duckdb" else "target"

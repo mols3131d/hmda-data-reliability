@@ -1,8 +1,8 @@
-project_pivot:
+hmda_reliability:
   target: dev
   outputs:
     dev:
       type: duckdb
-      path: "{{ env_var('PROJECT_PIVOT_DUCKDB_PATH') }}"
+      path: "{{ env_var('HMDA_RELIABILITY_DUCKDB_PATH') }}"
       schema: main
       threads: 4

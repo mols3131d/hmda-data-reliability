@@ -23,7 +23,7 @@ def test_impact_analysis_finds_downstream_from_source(tmp_path: Path) -> None:
     """source asset에서 staging/mart downstream을 계산한다."""
     manifest_path = _write_manifest(tmp_path)
     run_results_path = _write_run_results(tmp_path)
-    incident = _incident("source.project_pivot.raw.hmda_loans")
+    incident = _incident("source.hmda_reliability.raw.hmda_loans")
 
     result = analyze_dbt_impact(
         ImpactAnalysisRequest(
@@ -57,7 +57,7 @@ def test_impact_analysis_resolves_model_name_and_node_id(tmp_path: Path) -> None
     )
     by_node_id = analyze_dbt_impact(
         ImpactAnalysisRequest(
-            incident=_incident("model.project_pivot.stg_hmda_loans"),
+            incident=_incident("model.hmda_reliability.stg_hmda_loans"),
             dbt_manifest_path=manifest_path,
             dbt_run_results_path=run_results_path,
         )
@@ -71,7 +71,7 @@ def test_impact_analysis_builds_lineage_evidence_paths(tmp_path: Path) -> None:
     """LineageEvidence path와 incident 연결을 검증한다."""
     manifest_path = _write_manifest(tmp_path)
     run_results_path = _write_run_results(tmp_path)
-    incident = _incident("source.project_pivot.raw.hmda_loans")
+    incident = _incident("source.hmda_reliability.raw.hmda_loans")
 
     result = analyze_dbt_impact(
         ImpactAnalysisRequest(
@@ -133,7 +133,7 @@ def _write_manifest(tmp_path: Path) -> Path:
     manifest_path = tmp_path / "manifest.json"
     manifest = {
         "sources": {
-            "source.project_pivot.raw.hmda_loans": {
+            "source.hmda_reliability.raw.hmda_loans": {
                 "name": "hmda_loans",
                 "schema": "raw",
                 "resource_type": "source",
@@ -141,19 +141,19 @@ def _write_manifest(tmp_path: Path) -> Path:
             }
         },
         "nodes": {
-            "model.project_pivot.stg_hmda_loans": {
+            "model.hmda_reliability.stg_hmda_loans": {
                 "name": "stg_hmda_loans",
                 "alias": "stg_hmda_loans",
                 "schema": "staging",
                 "resource_type": "model",
-                "depends_on": {"nodes": ["source.project_pivot.raw.hmda_loans"]},
+                "depends_on": {"nodes": ["source.hmda_reliability.raw.hmda_loans"]},
             },
-            "model.project_pivot.mart_hmda_loan_outcomes": {
+            "model.hmda_reliability.mart_hmda_loan_outcomes": {
                 "name": "mart_hmda_loan_outcomes",
                 "alias": "mart_hmda_loan_outcomes",
                 "schema": "marts",
                 "resource_type": "model",
-                "depends_on": {"nodes": ["model.project_pivot.stg_hmda_loans"]},
+                "depends_on": {"nodes": ["model.hmda_reliability.stg_hmda_loans"]},
             },
         },
     }

@@ -33,7 +33,7 @@ def test_evidence_contract_accepts_vendor_neutral_orchestration_source() -> None
     evidence = Evidence(
         evidence_id="ev_orchestration_hmda_2026_06_05",
         source=EvidenceSource.ORCHESTRATION,
-        asset_name="project_pivot/raw/hmda_loans",
+        asset_name="hmda/raw/hmda_loans",
         partition="2026",
         observed_at=datetime(2026, 6, 6, 0, 0, tzinfo=UTC),
         summary="raw load task completed",
@@ -53,7 +53,7 @@ def test_evidence_contract_rejects_vendor_specific_sources(
         Evidence(
             evidence_id="ev_vendor_specific",
             source=vendor_source,
-            asset_name="project_pivot/raw/hmda_loans",
+            asset_name="hmda/raw/hmda_loans",
             partition="2026",
             observed_at=datetime(2026, 6, 6, 0, 0, tzinfo=UTC),
             summary="vendor-specific source must not be accepted",

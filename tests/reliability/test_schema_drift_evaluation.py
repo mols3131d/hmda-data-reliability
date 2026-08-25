@@ -535,7 +535,7 @@ def _request(tmp_path: Path, *, workspace: Path) -> DataOperationRequest:
     artifact_root = tmp_path / "dbt" / "target"
     artifact_root.mkdir(parents=True, exist_ok=True)
     artifact_root.joinpath("manifest.json").write_text(
-        '{"sources":{"source.project_pivot.raw.hmda_loans":{"name":"hmda_loans","schema":"raw","resource_type":"source","depends_on":{"nodes":[]}}},"nodes":{}}',
+        '{"sources":{"source.hmda_reliability.raw.hmda_loans":{"name":"hmda_loans","schema":"raw","resource_type":"source","depends_on":{"nodes":[]}}},"nodes":{}}',
         encoding="utf-8",
     )
     artifact_root.joinpath("run_results.json").write_text("{}", encoding="utf-8")
@@ -543,7 +543,7 @@ def _request(tmp_path: Path, *, workspace: Path) -> DataOperationRequest:
         database_path=workspace / "target.duckdb",
         source_root=tmp_path,
         source_year=2025,
-        asset_name="source.project_pivot.raw.hmda_loans",
+        asset_name="source.hmda_reliability.raw.hmda_loans",
         raw_table_name="raw.hmda_loans",
         partition_column="activity_year",
         profile_columns=("loan_amount", "income"),

@@ -18,10 +18,10 @@ Logging은 runtime clarification의 기본값이 아니다. **기존 durable evi
 의미가 생기는 사건을 기록한다.
 
 ```text
-HMDA 원천 적재 완료
+데이터 적재 완료
 artifact projection 승격 완료
-recovery target 상태 불일치
-승인되지 않은 backfill 거부
+target 상태 불일치
+승인되지 않은 변경 거부
 ```
 
 코드 진행을 중계하지 않는다.
@@ -52,9 +52,9 @@ recovery target 상태 불일치
 Message는 **사건 종류**를 짧고 안정적으로 표현한다. 실행마다 달라지는 값은 structured context로 둔다.
 
 ```text
-message: "HMDA 원천 적재 완료"
+message: "데이터 적재 완료"
 context:
-  table_name: raw.hmda_loans
+  table_name: raw.records
   source_count: 3
   row_count: 120000
 ```

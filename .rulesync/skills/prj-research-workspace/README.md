@@ -1,4 +1,4 @@
-# Pivot Research
+# Research Workspace
 
 질문에 답할 근거를 조사하고, 다음 판단에 사용할 수 있는 형태로 정리하는 Research 스킬입니다.
 
@@ -58,13 +58,13 @@ output: auto
 템플릿을 직접 지정합니다.
 
 ```text
---question "복구 절차의 위험은 무엇인가?" --template docs/templates/research.md --rigor strict --output artifact
+--question "변경 절차의 위험은 무엇인가?" --template docs/templates/research.md --rigor strict --output artifact
 ```
 
 자동으로 가까운 템플릿을 찾습니다.
 
 ```text
---question "EDA 실행 경계와 실패 전파 경로는 무엇인가?" --template auto --scope src/,tests/
+--question "실행 경계와 실패 전파 경로는 무엇인가?" --template auto --scope src/,tests/
 ```
 
 ## Output

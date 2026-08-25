@@ -39,7 +39,7 @@ flowchart TB
 
 | Area | Rule |
 | --- | --- |
-| Pipeline | Airflow `project_pivot_data_plane` DAG은 Bronze 적재 후 dbt 분석만 실행한다. |
+| Pipeline | Airflow `hmda_data_plane` DAG은 Bronze 적재 후 dbt 분석만 실행한다. |
 | Reliability lifecycle | Read-only다. approval, recovery, evaluation 또는 report write를 수행하지 않는다. |
 | Recovery proposal | Incident evidence, 검증된 candidate와 target state를 mutation 전에 immutable contract로 묶는다. Concrete contract는 recovery scope에 따라 달라진다. |
 | Approval | Lifecycle 밖에서 결정하며 exact validated proposal에 결합된다. |
