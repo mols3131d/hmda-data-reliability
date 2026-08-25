@@ -10,22 +10,11 @@ Pull Request는 branch의 변경을 검토하고 repository에 반영할지 결�
 
 ## Description
 
-기본 형식은 [Pull Request Template](../../../.github/templates/pull-request.md)을 따른다. 본문에는 **현재 변경을 판단하는 데 필요한 정보만** 남긴다.
+본문에는 **현재 변경을 판단하는 데 필요한 정보만** 남긴다. 실제 section 구성과 작성 형식은 [Pull Request Template](../../../.github/templates/pull-request.md)을 따른다.
 
-| Section | What to Write |
-| --- | --- |
-| `Summary` | 변경 이유와 기대 결과 |
-| `Changes` | 시행착오나 파일 목록이 아니라 최종 동작, 계약 또는 구조의 변화 |
-| `Validation` | 실제 수행한 검증, 결과와 evidence |
-
-다음 section은 검토자의 판단 비용을 줄일 때만 추가한다.
-
-- `Boundaries`: 범위를 오해하기 쉬울 때
-- `Review Focus`: 중요한 결정, trade-off 또는 가정을 집중 검토해야 할 때
-- `Risks`: validation과 별개로 병합 후에도 위험이나 제한이 남을 때
-- `References`: 요구사항이나 판단 근거를 다른 artifact가 소유할 때
-
-Validation 항목이 적으면 list를 사용한다. 비교 가능한 check가 많아 `Check / Result / Evidence`를 반복해야 하면 table을 사용할 수 있다. 상태는 실제 결과에 맞게 `✅ Pass`, `❌ Fail`, `⚪ Not Verified` 중 하나를 사용하며, 실패하거나 확인하지 못한 결과도 숨기지 않는다.
+- `Summary`는 변경 이유와 기대 결과를 먼저 설명한다.
+- `Changes`는 시행착오나 파일 목록이 아니라 최종 동작, 계약 또는 구조의 변화를 기록한다.
+- `Validation`은 실제 수행한 검증과 evidence를 기록하고, 실패하거나 확인하지 못한 결과를 숨기지 않는다.
 
 다음 정보는 PR description에 복제하지 않는다.
 
@@ -34,9 +23,9 @@ Validation 항목이 적으면 list를 사용한다. 비교 가능한 check가 �
 - 판단에 필요한 추가 맥락 없이 GitHub UI나 CI가 이미 충분히 제공하는 정보
 - OpenSpec change, inbox artifact 또는 canonical document가 소유하는 요구사항과 acceptance criteria
 
-관련 OpenSpec change, inbox artifact 또는 canonical document가 있으면 `References`에서 연결한다. 과정 자체를 보존할 가치가 있으면 owning artifact에 기록하고 PR에서는 최종 결과나 필요한 reference만 남긴다.
+관련 OpenSpec change, inbox artifact 또는 canonical document가 있으면 template의 `References`를 사용해 연결한다. 과정 자체를 보존할 가치가 있으면 owning artifact에 기록하고 PR에서는 최종 결과나 필요한 reference만 남긴다.
 
-Optional `author`와 `revision` metadata는 [GitHub Templates](../../../.github/templates/README.md)를 따른다. `revision`을 사용하면 본문이 기준으로 삼은 exact base/head commit pair를 기록하고, 비교 기준이 바뀐 상태에서 본문을 갱신할 때 함께 갱신한다.
+Optional section과 metadata의 사용 조건·형식은 [Pull Request Template](../../../.github/templates/pull-request.md)과 [GitHub Templates](../../../.github/templates/README.md)에 위임한다.
 
 ## Review And Validation
 
@@ -72,4 +61,5 @@ flowchart TB
 - [Branches](branch.md): Pull Request가 소유하는 변경 목적과 branch 기준
 - [Commits](commit.md): Pull Request history를 구성하는 commit 기준
 - [Pull Request Reviews](pull-request-review.md): Pull Request review 기준과 기록 방식
-- [GitHub Templates](../../../.github/templates/README.md): Pull Request와 review template metadata 규칙
+- [Pull Request Template](../../../.github/templates/pull-request.md): PR body의 section 구성과 작성 형식
+- [GitHub Templates](../../../.github/templates/README.md): 공통 metadata 규칙
