@@ -24,6 +24,8 @@ Review는 Pull Request diff를 중심으로 변경 목적, owning contract, 관�
 
 Finding은 root cause별로 독립적인 ID를 부여하고 location, evidence, impact와 required change를 연결한다. 근거 없이 가능성만 제시하거나 변경 범위를 벗어난 선호를 blocker로 만들지 않는다.
 
+중요도는 impact와 urgency를 기준으로 표시한다. 색상만으로 의미를 전달하지 않고 text label을 함께 사용한다.
+
 | Importance | Meaning |
 | --- | --- |
 | `🔴 Critical` | merge 또는 운영을 중단해야 할 수준의 치명적 영향 |
@@ -37,7 +39,7 @@ Heading은 다음 형식을 사용한다.
 ### 🟠 High — F1 · <finding title>
 ```
 
-중요도는 impact와 urgency를 나타내며 확신도를 의미하지 않는다. 확인되지 않은 전제나 validation 한계가 finding의 확실성에 영향을 주면 `Uncertainty`로 별도 기록한다.
+중요도는 확신도를 의미하지 않는다. 확인되지 않은 전제나 validation 한계가 finding의 확실성에 영향을 주면 `Uncertainty`로 별도 기록한다.
 
 발견 사항이 없으면 `Findings`의 `<finding 결과>`를 `✅ No findings`로 교체한다. 문제가 있으면 placeholder를 제거하고 root cause별 finding을 작성한다.
 
