@@ -50,8 +50,8 @@ Standalone `inbox/` artifact delivery는 actor 이름이 아니라 **delivery co
 Dedicated `inbox` branch는 다음 조건을 **모두** 만족할 때만 사용할 수 있다.
 
 1. 사용자가 standalone working artifact를 `inbox/`에 저장하라고 명시했다.
-2. 기존 작업 branch나 Pull Request가 그 artifact를 소유하지 않는다.
-3. 현재 runtime이 일반 작업 branch 없이 remote artifact delivery를 수행한다.
+1. 기존 작업 branch나 Pull Request가 그 artifact를 소유하지 않는다.
+1. 현재 runtime이 일반 작업 branch 없이 remote artifact delivery를 수행한다.
 
 Delivery에는 다음 규칙을 적용한다.
 
