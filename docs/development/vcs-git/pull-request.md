@@ -34,7 +34,7 @@ Validation 항목이 적으면 list를 사용한다. 비교 가능한 check가 �
 - 판단에 필요한 추가 맥락 없이 GitHub UI나 CI가 이미 충분히 제공하는 정보
 - OpenSpec change, inbox artifact 또는 canonical document가 소유하는 요구사항과 acceptance criteria
 
-과정 자체를 보존할 가치가 있으면 owning artifact에 기록하고 PR에서는 최종 결과나 필요한 reference만 남긴다.
+관련 OpenSpec change, inbox artifact 또는 canonical document가 있으면 `References`에서 연결한다. 과정 자체를 보존할 가치가 있으면 owning artifact에 기록하고 PR에서는 최종 결과나 필요한 reference만 남긴다.
 
 Optional `author`와 `revision` metadata는 [GitHub Templates](../../../.github/templates/README.md)를 따른다. `revision`을 사용하면 본문이 기준으로 삼은 exact base/head commit pair를 기록하고, 비교 기준이 바뀐 상태에서 본문을 갱신할 때 함께 갱신한다.
 
