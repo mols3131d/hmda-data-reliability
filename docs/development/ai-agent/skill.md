@@ -28,4 +28,4 @@ Generated target projection과 `.agents/route/skills.jsonl`은 derived surface�
 - surface 선택과 asset management: [AI Agent](README.md)
 - structural instruction: [Rule](rule.md)
 - Rulesync integration detail: [`.rulesync/README.md`](../../../.rulesync/README.md)
-- external standard Skill dependency state: [`skills-lock.json`](../../../skills-lock.json)
+- external standard Skill dependency state: Skills CLI가 생성·관리하는 lock state
