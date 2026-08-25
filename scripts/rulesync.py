@@ -172,7 +172,7 @@ def _sync_sources(args: Sequence[str]) -> int:
 
 def _validate() -> int:
     before = _tracked_diff()
-    returncode = _sync_sources(_SOURCE_ACTIONS["install"])
+    returncode = _sync_sources(("install", "--frozen"))
     if returncode != 0:
         return returncode
     if _tracked_diff() != before:
