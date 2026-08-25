@@ -30,10 +30,12 @@ Rule을 우선 사용하는 경우:
 
 이 repository에서 직접 작성·관리하는 cross-cutting Rule은 `.rulesync/rules/**`의 **Rulesync Rule**을 canonical source로 사용한다.
 
+외부에서 도입하는 Rule 또는 Skill이 **Rulesync asset으로 제공된다면 Rulesync 경로로 관리한다.** Rulesync-native asset을 다른 형식으로 다시 포장해 별도 source를 만들지 않는다.
+
 Generated projection과 `.agents/route/rules.jsonl`은 runtime 또는 discovery를 위한 derived surface이며 독립적인 policy owner가 아니다. Selector와 target별 projection semantics는 Rulesync와 실제 target runtime의 current contract를 따른다.
 
 ## Boundary
 
-- repository-wide / directory instruction ownership: [AI Agent Instructions](README.md)
-- task-selected instruction: [Skill](skill.md)
+- repository-wide / directory instruction ownership과 asset management: [AI Agent Instructions](README.md)
+- task-selected instruction과 표준 Skill dependency: [Skill](skill.md)
 - Rulesync integration detail: [`.rulesync/README.md`](../../../.rulesync/README.md)
