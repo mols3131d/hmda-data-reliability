@@ -79,7 +79,7 @@ jobs:
 
           while IFS= read -r path; do
             case "$path" in
-              .rulesync/*|rulesync.jsonc|scripts/rulesync.py|AGENTS.md|*/AGENTS.md|CLAUDE.md|*/CLAUDE.md|.agents/rules/*|.agents/skills/*|.github/copilot-instructions.md|.github/instructions/*.instructions.md|.github/skills/*|.claude/rules/*|.claude/skills/*)
+              .rulesync/*|rulesync.jsonc|rulesync.lock|scripts/rulesync.py|AGENTS.md|*/AGENTS.md|CLAUDE.md|*/CLAUDE.md|.agents/rules/*|.agents/skills/*|.github/copilot-instructions.md|.github/instructions/*.instructions.md|.github/skills/*|.claude/rules/*|.claude/skills/*)
                 rulesync=true
                 ;;
             esac
@@ -215,6 +215,8 @@ jobs:
 
       - name: Validate Rulesync projections
         if: steps.scope.outputs.rulesync == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: python scripts/rulesync.py validate
 
       - name: Validate chatbot routes

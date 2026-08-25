@@ -6,6 +6,7 @@ description: >-
   OpenSpec change, or Review findings must be routed back to their owning work.
   Do not use for ordinary schema-owned planning or Apply execution without
   Research or Review input.
+targets: [claudecode, codexcli, antigravity-ide, antigravity-cli]
 compatibility: >-
   Requires OpenSpec with the custom `spec-driven-tdd` schema. No additional
   skill, project document, repository convention, or standalone template is a
