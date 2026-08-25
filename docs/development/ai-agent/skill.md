@@ -4,16 +4,19 @@ Skill은 **task intent와 semantic relevance에 따라 선택적으로 load하�
 
 ## Source Policy
 
-이 repository의 Skill은 source에 따라 구분한다.
+이 repository의 Skill 관리는 **Rulesync-first**다. Project에서 직접 작성·관리하는 Skill은 `.rulesync/skills/**`의 Rulesync Skill을 canonical source로 사용한다.
+
+외부 Skill은 source 형식에 따라 관리 경로를 나눈다.
 
 | Source | Policy |
 | --- | --- |
-| 이 repository에서 직접 작성·관리 | `.rulesync/skills/**`의 **Rulesync Skill**을 canonical source로 사용 |
-| 외부 reusable Skill dependency | 필요하면 **Skills CLI**로 설치하고 `skills-lock.json`으로 dependency state를 관리 |
+| repository-authored Skill | `.rulesync/skills/**`의 **Rulesync Skill**을 canonical source로 사용 |
+| external Rulesync Skill | Rulesync source/dependency로 관리 |
+| external standard Agent Skill | **Skills CLI**로 설치하고 `skills-lock.json`으로 dependency state 관리 |
 
-직접 관리하는 Skill은 Rulesync source를 수정한다. Generated target projection과 `.agents/route/skills.jsonl`은 derived surface이며 canonical Skill body를 대체하지 않는다.
+외부 표준 Skill을 Rulesync 형식으로 다시 작성하거나 포장해 중복 source를 만들지 않는다. 외부 Rulesync Skill은 Rulesync 경로를 유지하고, 표준 Agent Skill은 Skills CLI와 lock state를 통해 upstream dependency로 사용한다.
 
-외부 Skill을 설치했다는 이유만으로 이 repository가 그 Skill의 작성 권한을 인수하지 않는다. 외부 dependency는 upstream source와 lock state를 기준으로 사용하며, 필요하지 않은 local fork나 Rulesync 재작성으로 복제하지 않는다.
+Generated target projection과 `.agents/route/skills.jsonl`은 derived surface이며 canonical Skill body를 대체하지 않는다. 외부 Skill을 설치했다는 이유만으로 이 repository가 해당 Skill의 작성 권한을 인수하지 않는다.
 
 ## Selection
 
@@ -34,7 +37,7 @@ Skill catalog 전체를 선로드하지 않는다. Routing metadata의 `name`과
 
 ## Boundary
 
-- repository-wide / directory / Rule과 Skill 선택 기준: [AI Agent Instructions](README.md)
-- structure-selected instruction: [Rule](rule.md)
+- repository-wide / directory / Rule과 Skill 선택 및 asset management: [AI Agent Instructions](README.md)
+- structure-selected instruction과 external Rulesync asset: [Rule](rule.md)
 - Rulesync integration detail: [`.rulesync/README.md`](../../../.rulesync/README.md)
-- external Skill dependency state: [`skills-lock.json`](../../../skills-lock.json)
+- external standard Skill dependency state: [`skills-lock.json`](../../../skills-lock.json)
