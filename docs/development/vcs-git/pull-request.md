@@ -25,7 +25,7 @@ Pull Request는 branch의 변경을 검토하고 repository에 반영할지 결�
 - `Risks`: validation과 별개로 병합 후에도 위험이나 제한이 남을 때
 - `References`: 요구사항이나 판단 근거를 다른 artifact가 소유할 때
 
-Validation 항목이 적으면 list를 사용한다. 비교 가능한 check가 많아 `Check / Result / Evidence`를 반복해야 하면 table을 사용할 수 있다. 상태는 실제 결과에 맞게 `✅ Pass`, `❌ Fail`, `⚪ Not Verified` 중 하나를 사용한다.
+Validation 항목이 적으면 list를 사용한다. 비교 가능한 check가 많아 `Check / Result / Evidence`를 반복해야 하면 table을 사용할 수 있다. 상태는 실제 결과에 맞게 `✅ Pass`, `❌ Fail`, `⚪ Not Verified` 중 하나를 사용하며, 실패하거나 확인하지 못한 결과도 숨기지 않는다.
 
 다음 정보는 PR description에 복제하지 않는다.
 
