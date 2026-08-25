@@ -35,15 +35,15 @@
             "detail": "Runs both ruff and rumdl to format the workspace."
         },
         {
-            "label": "Update Agent Skills",
+            "label": "Rulesync: Update Skills",
             "type": "shell",
-            "command": "npx skills update -p -y",
+            "command": "uv run python scripts/rulesync.py update",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": false
             },
-            "detail": "Updates project-scoped Agent Skills from skills-lock.json."
+            "detail": "Updates declarative Agent Skill sources and rulesync.lock with Rulesync."
         },
         {
             "label": "Rulesync: Preview",
