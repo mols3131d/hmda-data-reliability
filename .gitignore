@@ -20,12 +20,7 @@ rulesync.local.jsonc
 **/.claude/settings.local.json
 .agents/brain/
 .agents/reports/
-.agents/workflows/opsx-apply.md
-.agents/workflows/opsx-archive.md
-.agents/workflows/opsx-explore.md
-.agents/workflows/opsx-propose.md
-.agents/workflows/opsx-sync.md
-.agents/workflows/opsx-update.md
+.agents/workflows/opsx-*
 .agents/skills/*
 !.agents/skills/prj-*/
 .claude/skills/*
