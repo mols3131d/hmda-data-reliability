@@ -10,7 +10,7 @@ Review는 Pull Request diff를 중심으로 변경 목적, owning contract, 관�
 
 ## Review Body
 
-Review의 결론과 가장 중요한 근거를 먼저 요약한다. 실제 section 구성과 작성 형식은 [Pull Request Review Template](../../../.github/templates/pull-request-review.md)을 따른다.
+Review의 결론과 가장 중요한 근거를 먼저 요약한다. Section 구성, finding heading과 no-finding 표기, validation 표시 형식은 [Pull Request Review Template](../../../.github/templates/pull-request-review.md)을 따른다.
 
 GitHub가 소유하는 review decision(`Approve`, `Comment`, `Request Changes`)은 review body에 반복하지 않는다.
 
@@ -29,8 +29,6 @@ Finding은 root cause별로 독립적인 ID를 부여하고 location, evidence, 
 
 중요도는 확신도를 의미하지 않는다. 확인되지 않은 전제나 validation 한계가 finding의 확실성에 영향을 주면 `Uncertainty`로 별도 기록한다.
 
-Finding heading과 no-finding 표기 같은 작성 형식은 [Pull Request Review Template](../../../.github/templates/pull-request-review.md)에 위임한다.
-
 ## Validation
 
 수행한 check, result와 evidence를 구분해 기록한다. 실행하지 못한 validation, 접근할 수 없는 evidence 또는 확인하지 않은 범위가 review 판단에 영향을 줄 수 있으면 명시한다.
@@ -38,8 +36,6 @@ Finding heading과 no-finding 표기 같은 작성 형식은 [Pull Request Revie
 Automation pass는 finding 부재를 증명하지 않으며, 실행하지 않은 validation을 수행한 것처럼 표현하지 않는다.
 
 Pull Request가 실질적으로 변경되어 기존 finding이나 validation 근거가 달라지면 영향을 받는 부분을 다시 검토한다.
-
-Validation의 list/table 선택과 상태 표기 형식은 [Pull Request Review Template](../../../.github/templates/pull-request-review.md)을 따른다.
 
 ## Remaining Risks
 
