@@ -59,7 +59,7 @@ Input은 다음 invariant를 모두 만족할 때만 provider review 대상으�
 | `RemediationDraft` | `incident_id`, `incident_type`, `asset_name`, `partition`, `rca_summary`, `evidence_refs`, `affected_assets`, `recommended_actions`, `dbt_test_suggestions`, `backfill_actions`, `validation_actions`, `requires_approval` |
 | Review facts | `deterministic_facts` |
 
-`canonical_input`은 같은 snapshot에서 같은 canonical JSON byte sequence를 생성해야 한다(SHALL). System instruction과 user data는 분리해야 하며(SHALL), `canonical_input` 안의 Evidence summary/payload와 draft text는 instruction이 아니라 untrusted data로 취급해야 한다(MUST NOT).
+`canonical_input`은 같은 snapshot에서 같은 canonical JSON byte sequence를 생성해야 한다(SHALL). System instruction과 user data는 분리해야 하며(SHALL), `canonical_input` 안의 Evidence summary/payload와 draft text는 instruction이 아니라 untrusted data로 취급해야 한다(SHALL).
 
 Rendered messages가 configured `max_prompt_bytes`를 넘으면 시스템은 provider call 전에 `input_rejected`를 반환하고 invocation evidence를 만들지 않아야 한다(MUST NOT).
 
