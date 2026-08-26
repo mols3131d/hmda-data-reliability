@@ -15,6 +15,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = ROOT / "docs"
 INDEX_NAME = "INDEX.tsv"
+HEADER = "path\tdescription\n"
 INDEX_DEPTH = 1
 DIRECTORY_ENTRY_FILES = ("README.md", "index.md")
 EXCLUDED_FILES = {"AGENTS.md", "CLAUDE.md"}
@@ -141,10 +142,18 @@ def generate(docs_root: Path = DOCS_ROOT, *, check: bool = False) -> list[str]:
     for index_path in sorted(targets):
         desired = _render(index_path.parent)
         current = index_path.read_text(encoding="utf-8") if index_path.exists() else None
+        relative = index_path.relative_to(repository_root).as_posix()
+
+        if desired == HEADER:
+            if current is not None:
+                if check:
+                    drift.append(f"stale: {relative}")
+                else:
+                    index_path.unlink()
+            continue
         if current == desired:
             continue
 
-        relative = index_path.relative_to(repository_root).as_posix()
         if check:
             state = "outdated" if current is not None else "missing"
             drift.append(f"{state}: {relative}")
