@@ -26,4 +26,4 @@ rules:
     - owning domain, 변경 결과와 영향받는 Spec을 명확히 하고 관련 capability가 있으면 함께 식별한다.
 
   design:
-    - 영향이 있는 경우 data grain, data schema, idempotency와 recovery를 검토한다.
+    - data grain, data schema, idempotency와 recovery를 검토하되 변경되는 technical delta가 있을 때만 Design에 기록한다.
