@@ -237,7 +237,9 @@ def test_skill_entries_reject_local_external_name_collision(
     )
     monkeypatch.setattr(routes, "skills_cli_dependency_sources", lambda: {})
 
-    with pytest.raises(SystemExit, match="local and external Skill names overlap: shared"):
+    with pytest.raises(
+        SystemExit, match="local and external Skill names overlap: shared"
+    ):
         routes.skill_entries()
 
 
