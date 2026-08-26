@@ -29,7 +29,7 @@ tags:
 | Document | Role |
 | --- | --- |
 | [Development Guides](development/README.md) | 개발·테스트·VCS 작업의 진입점 |
-| [Agent Instructions](development/agent-instructions.md) | `AGENTS.md`, Rulesync Rule, `SKILL.md`의 scope와 관리 기준 |
+| [Agent Instructions](development/ai-agent/README.md) | `AGENTS.md`, Rulesync Rule, `SKILL.md`의 scope와 관리 기준 |
 | [References](references) | 외부 규격과 supporting reference |
 
 ## Human Projection
