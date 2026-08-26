@@ -21,13 +21,14 @@ user-invocable: false
 
 두 reviewer에게 동일한 최소 brief를 제공한다.
 
+- `delegated_by: review-lead`
 - review target과 current revision, version 또는 observable state
 - intended behavior와 applicable contract
 - in-scope / out-of-scope 경계
 - 알려진 validation evidence와 limitation
 - reviewer가 확인해야 할 구체적 질문이 있으면 그 질문
 
-구현 과정의 전체 transcript, caller의 내부 추론 또는 다른 reviewer의 결론은 전달하지 않는다.
+구현 과정의 전체 transcript, caller의 내부 추론 또는 다른 reviewer의 결론은 전달하지 않는다. `delegated_by` marker는 accidental direct invocation을 줄이기 위한 routing contract이며 security boundary로 취급하지 않는다.
 
 ## Delegation
 
