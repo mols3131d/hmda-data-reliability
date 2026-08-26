@@ -17,7 +17,19 @@ LEAD = "review-lead"
 QUALITY = "review-quality"
 ADVERSARIAL = "review-adversarial"
 SPECIALISTS = (QUALITY, ADVERSARIAL)
-QUALITY_EXECUTE_TOOLS = {"execute/runTests", "execute/testFailure"}
+EXPECTED_TOOLS = {
+    LEAD: {"read", "search", "agent"},
+    QUALITY: {
+        "read",
+        "search",
+        "execute/runTests",
+        "execute/testFailure",
+        "vscodeGeneral/usages",
+        "vscodeGeneral/runTests",
+        "vscodeGeneral/testFailure",
+    },
+    ADVERSARIAL: {"read", "search"},
+}
 
 
 def frontmatter(path: Path) -> dict[str, Any]:
@@ -52,31 +64,28 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
-def tools(meta: dict[str, Any]) -> set[str]:
+def agent_tools(name: str, meta: dict[str, Any]) -> set[str]:
     value = meta.get("tools") or []
-    require(isinstance(value, list), "agent tools must be a list")
-    require(all(isinstance(tool, str) for tool in value), "agent tools must be strings")
+    require(isinstance(value, list), f"{name} tools must be a list")
+    require(
+        all(isinstance(tool, str) for tool in value),
+        f"{name} tools must be strings",
+    )
     return set(value)
 
 
-def has_tool_family(agent_tools: set[str], family: str) -> bool:
-    return any(tool == family or tool.startswith(f"{family}/") for tool in agent_tools)
-
-
-def validate_review_agent_common(name: str, meta: dict[str, Any]) -> set[str]:
+def validate_review_agent_common(name: str, meta: dict[str, Any]) -> None:
     require(meta.get("target") == "vscode", f"{name} must target vscode")
     require(meta.get("user-invocable") is False, f"{name} must be subagent-only")
-    agent_tools = tools(meta)
     require(
-        not has_tool_family(agent_tools, "edit"),
-        f"{name} must not expose workspace edit capability",
+        agent_tools(name, meta) == EXPECTED_TOOLS[name],
+        f"{name} tools must match its least-privilege review role",
     )
-    return agent_tools
 
 
 def validate() -> None:
     lead = agent_meta(LEAD)
-    lead_tools = validate_review_agent_common(LEAD, lead)
+    validate_review_agent_common(LEAD, lead)
     require(
         lead.get("disable-model-invocation") is not True,
         "review-lead must remain available for implementation agents to delegate",
@@ -85,47 +94,15 @@ def validate() -> None:
         lead.get("agents") == list(SPECIALISTS),
         "review-lead must explicitly allow exactly review-quality and review-adversarial",
     )
-    require("agent" in lead_tools, "review-lead requires the agent tool")
-    require(
-        not has_tool_family(lead_tools, "execute"),
-        "review-lead must not expose execution capability",
-    )
 
-    quality = agent_meta(QUALITY)
-    quality_tools = validate_review_agent_common(QUALITY, quality)
-    require(
-        quality.get("disable-model-invocation") is True,
-        "review-quality must reject general model invocation and rely on review-lead allowlisting",
-    )
-    require(quality.get("agents") == [], "review-quality must not invoke other agents")
-    require("agent" not in quality_tools, "review-quality must not have agent tool")
-    require("execute" not in quality_tools, "review-quality must not expose general execute")
-    unsupported_execute = {
-        tool
-        for tool in quality_tools
-        if tool.startswith("execute/") and tool not in QUALITY_EXECUTE_TOOLS
-    }
-    require(
-        not unsupported_execute,
-        "review-quality may use only test-specific execute tools: "
-        + ", ".join(sorted(unsupported_execute)),
-    )
-
-    adversarial = agent_meta(ADVERSARIAL)
-    adversarial_tools = validate_review_agent_common(ADVERSARIAL, adversarial)
-    require(
-        adversarial.get("disable-model-invocation") is True,
-        "review-adversarial must reject general model invocation and rely on review-lead allowlisting",
-    )
-    require(
-        adversarial.get("agents") == [],
-        "review-adversarial must not invoke other agents",
-    )
-    require("agent" not in adversarial_tools, "review-adversarial must not have agent tool")
-    require(
-        not has_tool_family(adversarial_tools, "execute"),
-        "review-adversarial must not expose execution capability",
-    )
+    for name in SPECIALISTS:
+        meta = agent_meta(name)
+        validate_review_agent_common(name, meta)
+        require(
+            meta.get("disable-model-invocation") is True,
+            f"{name} must reject general model invocation and rely on review-lead allowlisting",
+        )
+        require(meta.get("agents") == [], f"{name} must not invoke other agents")
 
     settings = json.loads(SETTINGS.read_text(encoding="utf-8"))
     require(
