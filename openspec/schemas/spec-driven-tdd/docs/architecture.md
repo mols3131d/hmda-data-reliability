@@ -9,10 +9,10 @@
 ```mermaid
 flowchart LR
     proposal["Proposal"] -->|scope| specs["Specs"]
-    proposal -.->|scope context| design["Design"]
+    proposal -.->|scope reference| design["Design"]
     specs -->|behavior contract or skipped completion| design
     specs -.->|requirements when applicable| tasks["Tasks"]
-    design -->|technical decisions| tasks
+    design -->|technical delta| tasks
     tasks -->|ordered outcomes| apply["Apply"]
 ```
 
@@ -24,10 +24,23 @@ Spec-level behavior가 없는 Change는 OpenSpec change metadata의 `skip_specs:
 | --- | --- |
 | Proposal | 변경 이유, 범위와 영향받는 Capability 또는 spec-free 판단 |
 | Specs | 외부에서 관찰 가능한 행동 계약 |
-| Design | 구현에 필요한 기술적 결정, 책임 경계와 검증 전략 |
+| Design | Proposal과 Specs만으로 결정되지 않는 non-obvious technical delta |
 | Tasks | 독립적으로 검증 가능한 구현 결과와 진행률 |
 
 이 분리는 같은 판단을 여러 artifact에 복제하지 않고 각 단계가 다음 단계에 필요한 정보만 제공하기 위한 것이다.
+
+### Design Ownership Test
+
+Design은 Change의 독립적인 요약 문서가 아니다. Proposal과 Specs를 prerequisite로 읽는 것을 전제로 하며, 다음 ownership test를 따른다.
+
+| Question | Owner |
+| --- | --- |
+| 왜 바꾸는가, 어디까지 바꾸는가? | Proposal |
+| 시스템이 외부에서 어떻게 동작해야 하는가? | Specs |
+| 그 behavior를 구현하기 위해 어떤 비자명한 기술 선택·경계·제약이 필요한가? | Design |
+| 무엇을 구현하고 어떤 결과로 완료를 확인할 것인가? | Tasks |
+
+Design의 문장이나 section을 제거해도 technical choice, boundary 또는 constraint가 사라지지 않으면 제거한다. Design에서 새로운 observable behavior가 발견되면 그 내용을 Design에 추가하지 않고 Specs로 되돌린다.
 
 ## Design Rationale
 
