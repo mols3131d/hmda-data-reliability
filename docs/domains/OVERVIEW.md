@@ -1,3 +1,12 @@
+---
+title: "Domain Guides: Ownership And Reading Paths"
+description: "HMDA Data Reliability의 domain별 책임과 비책임, 주요 데이터 흐름과 목적별 reading path를 정리합니다."
+categories:
+  - data-engineering
+tags:
+  - data-lineage
+---
+
 # Domain Guides: Ownership And Reading Paths
 
 이 directory는 각 domain의 책임, 비책임과 주요 reading path를 사람이 빠르게 이해하도록 설명한다. **Normative capability contract의 canonical source는 [`../../openspec/specs/`](../../openspec/specs/)다.** Domain guide는 OpenSpec Spec을 대체하거나 독립적으로 override하지 않는다.

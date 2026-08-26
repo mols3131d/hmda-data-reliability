@@ -1,3 +1,13 @@
+---
+title: "Skill"
+description: "Task intent와 semantic relevance에 따라 선택적으로 load하는 Skill의 선택 기준, loading 방식과 source ownership을 정의합니다."
+categories:
+  - ai-engineering
+  - software-engineering
+tags:
+  - rulesync
+---
+
 # Skill
 
 Skill은 **task intent와 semantic relevance에 따라 선택적으로 load하는 instruction, workflow 또는 reusable capability**다. `SKILL.md`는 Skill package의 entry surface이지 source나 ownership의 분류명이 아니다.

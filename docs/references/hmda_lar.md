@@ -1,3 +1,12 @@
+---
+title: "HMDA LAR: Public Data Field Reference"
+description: "Public HMDA LAR의 99개 field를 한국어로 탐색할 수 있도록 원본 data dictionary의 의미, 값과 코드를 정리한 reference입니다."
+categories:
+  - hmda-data
+tags:
+  - csv
+---
+
 # HMDA LAR: Public Data Field Reference
 
 **Public HMDA LAR의 99개 field를 한국어로 탐색하기 위한 reference다.** 설명과 값·코드는 원본 data dictionary의 의미와 구조를 유지한다.

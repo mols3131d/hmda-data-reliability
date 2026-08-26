@@ -1,3 +1,17 @@
+---
+title: "Data Platform: DuckDB, dbt And Artifact Contracts"
+description: "DuckDB 공통 primitive, dbt Bronze-to-Gold 구조와 dbt artifact projection을 소유하는 Data Platform domain의 경계와 contract를 설명합니다."
+categories:
+  - data-platform
+  - data-engineering
+tags:
+  - dbt
+  - duckdb
+  - data-lineage
+  - mart-layer
+  - staging-layer
+---
+
 # Data Platform: DuckDB, dbt And Artifact Contracts
 
 **`data_platform`은 DuckDB 공통 primitive, dbt Bronze-to-Gold 구조와 dbt artifact projection primitive를 소유한다.** 원천 파일 적재, dbt subprocess 실행, candidate 선택과 promotion 결정, orchestration은 이 domain의 책임이 아니다.
