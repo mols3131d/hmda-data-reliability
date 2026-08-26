@@ -21,19 +21,19 @@ user-invocable: false
 
 두 reviewer에게 동일한 최소 brief를 제공한다.
 
-- `delegated_by: review-lead`
 - review target과 current revision, version 또는 observable state
 - intended behavior와 applicable contract
 - in-scope / out-of-scope 경계
 - 알려진 validation evidence와 limitation
 - reviewer가 확인해야 할 구체적 질문이 있으면 그 질문
 
-구현 과정의 전체 transcript, caller의 내부 추론 또는 다른 reviewer의 결론은 전달하지 않는다. `delegated_by` marker는 accidental direct invocation을 줄이기 위한 routing contract이며 security boundary로 취급하지 않는다.
+구현 과정의 전체 transcript, caller의 내부 추론 또는 다른 reviewer의 결론은 전달하지 않는다.
 
 ## Delegation
 
 - `review-quality`와 `review-adversarial`만 호출한다.
 - 두 reviewer는 서로의 결과를 보지 않은 상태에서 독립적으로 작업한다.
+- 두 specialist는 일반 model invocation에서 제외되며 이 agent의 explicit `agents` allowlist를 통해서만 delegated specialist로 사용한다.
 - 한 reviewer가 실패하거나 incomplete하면 다른 reviewer나 lead가 그 관점을 대신 수행했다고 주장하지 않는다.
 - nested subagent invocation이 비활성화되었거나 사용할 수 없으면 두 specialist를 직접 흉내 내지 않고 coverage gap과 limitation을 반환한다.
 
