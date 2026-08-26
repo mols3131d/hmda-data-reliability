@@ -7,7 +7,6 @@ Root `CHATBOT.md`는 chatbot harness에서 누락되는 repository context와 Ag
 | When | References | Purpose |
 | --- | --- | --- |
 | Always | [`AGENTS.md`](AGENTS.md), [`.agents/route/ROUTE.md`](.agents/route/ROUTE.md) | repository guidance와 Agent Asset routing |
-| Git/GitHub task | [`docs/development/vcs-git/README.md`](docs/development/vcs-git/README.md) | Git/GitHub workflow entry |
 | Branch | [`branch.md`](docs/development/vcs-git/branch.md) | branch 생성·운영 기준 |
 | Commit | [`commit.md`](docs/development/vcs-git/commit.md), [`.gitmessage`](.gitmessage) | commit 기준과 message format |
 | Pull Request | [`pull-request.md`](docs/development/vcs-git/pull-request.md), [`pull-request.md` template](.github/templates/pull-request.md) | Pull Request workflow와 description format |
