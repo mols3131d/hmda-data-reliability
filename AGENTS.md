@@ -1,10 +1,11 @@
 # Project Guidance
 
-모든 작업에서 다음 공통 기준만 읽는다.
+`Always`는 모든 작업에서 읽고, `As needed`는 현재 작업에 관련될 때 읽는다.
 
-| Document | Scope |
-| --- | --- |
-| [`docs/VISION.md`](docs/VISION.md) | 장기 방향, trust model과 AI delegation 원칙 |
-| [`docs/language.md`](docs/language.md) | 언어 정책 |
-
-개발, testing, Git/GitHub와 기타 task-specific context는 현재 task와 target path에 applicable한 Skill, Rule과 scoped `AGENTS.md`를 통해 선택적으로 로드한다. 루트에서 세부 workflow를 중복 소유하지 않는다.
+| Load | Document | Scope |
+| --- | --- | --- |
+| Always | [`docs/VISION.md`](docs/VISION.md) | 장기 방향, trust model과 AI delegation 원칙 |
+| Always | [`docs/language.md`](docs/language.md) | 언어 정책 |
+| As needed | [`DEVELOPMENT.md`](DEVELOPMENT.md) | 개발 환경, active tool, package layout과 code convention |
+| As needed | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 시스템 구조, 실행 경계와 domain ownership |
+| As needed | [`docs/mvp.md`](docs/mvp.md) | 현재 MVP 목표, scope와 acceptance |
