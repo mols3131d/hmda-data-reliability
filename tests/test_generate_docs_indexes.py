@@ -52,6 +52,22 @@ def test_generate_projects_paths_and_frontmatter_descriptions(tmp_path: Path) ->
 
 
 @pytest.mark.component
+def test_generate_omits_header_only_directory_index(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    _write(
+        docs / "references" / "README.md",
+        "---\ndescription: Reference docs.\n---\n# References\n",
+    )
+
+    assert generate(docs) == []
+
+    assert _read_tsv(docs / "INDEX.tsv") == [
+        {"path": "references/", "description": "Reference docs."}
+    ]
+    assert not (docs / "references" / "INDEX.tsv").exists()
+
+
+@pytest.mark.component
 def test_generate_check_reports_drift_without_modifying_files(tmp_path: Path) -> None:
     docs = tmp_path / "docs"
     guide = docs / "guide.md"
