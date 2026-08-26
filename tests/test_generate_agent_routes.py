@@ -3,15 +3,22 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
 import scripts.generate_agent_routes as routes
 
 
-def _write_json(path: Path, value: object) -> None:
-    path.write_text(json.dumps(value), encoding="utf-8")
+class _TextFile:
+    def __init__(self, content: str) -> None:
+        self.content = content
+
+    def is_file(self) -> bool:
+        return True
+
+    def read_text(self, *, encoding: str) -> str:
+        assert encoding == "utf-8"
+        return self.content
 
 
 @pytest.mark.unit
@@ -48,38 +55,30 @@ def test_strip_jsonc_comments_preserves_markers_inside_strings() -> None:
     }
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_rulesync_dependency_sources_use_locked_commit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    config_path = tmp_path / "rulesync.jsonc"
-    lock_path = tmp_path / "rulesync.lock"
-    config_path.write_text(
-        """
+    config = """
+    {
+      "sources": [
         {
-          "sources": [
-            {
-              "source": "owner/assets",
-              "path": "src/rulesync/.rulesync/skills" // canonical skill root
-            }
-          ]
+          "source": "owner/assets",
+          "path": "src/rulesync/.rulesync/skills" // canonical skill root
         }
-        """,
-        encoding="utf-8",
-    )
-    _write_json(
-        lock_path,
-        {
-            "sources": {
-                "owner/assets": {
-                    "resolvedRef": "abc123",
-                    "skills": {"alpha": {}, "beta": {}},
-                }
+      ]
+    }
+    """
+    lock = {
+        "sources": {
+            "owner/assets": {
+                "resolvedRef": "abc123",
+                "skills": {"alpha": {}, "beta": {}},
             }
-        },
-    )
-    monkeypatch.setattr(routes, "RULESYNC_CONFIG", config_path)
-    monkeypatch.setattr(routes, "RULESYNC_LOCK", lock_path)
+        }
+    }
+    monkeypatch.setattr(routes, "RULESYNC_CONFIG", _TextFile(config))
+    monkeypatch.setattr(routes, "RULESYNC_LOCK", _TextFile(json.dumps(lock)))
 
     assert routes.rulesync_dependency_sources() == {
         "alpha": (
@@ -93,25 +92,21 @@ def test_rulesync_dependency_sources_use_locked_commit(
     }
 
 
-@pytest.mark.component
+@pytest.mark.unit
 def test_skills_cli_dependency_sources_use_locked_ref(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    lock_path = tmp_path / "skills-lock.json"
-    _write_json(
-        lock_path,
-        {
-            "skills": {
-                "alpha": {
-                    "sourceType": "github",
-                    "sourceUrl": "https://github.com/owner/assets.git",
-                    "ref": "deadbeef",
-                    "skillPath": "skills/alpha/SKILL.md",
-                }
+    lock = {
+        "skills": {
+            "alpha": {
+                "sourceType": "github",
+                "sourceUrl": "https://github.com/owner/assets.git",
+                "ref": "deadbeef",
+                "skillPath": "skills/alpha/SKILL.md",
             }
-        },
-    )
-    monkeypatch.setattr(routes, "SKILLS_LOCK", lock_path)
+        }
+    }
+    monkeypatch.setattr(routes, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
 
     assert routes.skills_cli_dependency_sources() == {
         "alpha": (
