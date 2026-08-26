@@ -215,6 +215,33 @@ def test_skill_entries_include_external_dependency_entries(
 
 
 @pytest.mark.unit
+def test_skill_entries_reject_local_external_name_collision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    local_path = object()
+    monkeypatch.setattr(routes, "find_local_skill_files", lambda: [local_path])
+    monkeypatch.setattr(
+        routes,
+        "load_frontmatter",
+        lambda _path: {"name": "shared", "description": "Local skill"},
+    )
+    monkeypatch.setattr(
+        routes,
+        "relative",
+        lambda _path: ".rulesync/skills/shared/SKILL.md",
+    )
+    monkeypatch.setattr(
+        routes,
+        "rulesync_dependency_sources",
+        lambda: {"shared": "https://example.test/external"},
+    )
+    monkeypatch.setattr(routes, "skills_cli_dependency_sources", lambda: {})
+
+    with pytest.raises(SystemExit, match="local and external Skill names overlap: shared"):
+        routes.skill_entries()
+
+
+@pytest.mark.unit
 def test_skill_entries_reject_dependency_name_collision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
