@@ -1,12 +1,13 @@
 ---
 name: prj-load-context-development
 description: >-
-  Load repository development context for production implementation and code-facing
-  engineering work: writing or changing application code, refactoring, debugging,
+  Load repository development context for code-facing implementation work: writing or
+  changing application code or tests, refactoring, debugging implementation behavior,
   changing runtime or code-facing configuration, package/module structure, dependencies,
-  or implementation behavior. Use alongside more specific context Skills such as testing
-  or Git/GitHub when those concerns also apply. Do not use for review-only, research-only,
-  documentation-only, or repository administration work with no implementation surface.
+  or other implementation behavior. Use alongside more specific context Skills such as
+  testing or Git/GitHub when those concerns also apply. Do not use for review-only,
+  research-only, documentation-only, or repository administration work with no
+  implementation surface.
 targets: [claudecode, codexcli, copilot, antigravity-ide, antigravity-cli]
 ---
 
@@ -28,14 +29,16 @@ Stop loading when additional context is unlikely to change the next implementati
 ## Implementation Defaults
 
 - Prefer an existing domain, package, abstraction, dependency, and project-native mechanism before creating a new owner.
-- Keep changes inside the requested behavior and accepted plan. Do not widen scope for adjacent cleanup or speculative architecture.
+- Keep changes inside the requested behavior and any governing accepted plan. Do not widen scope for adjacent cleanup or speculative architecture.
 - Preserve existing public contracts unless the task explicitly changes them.
 - Use the repository's active toolchain rather than introducing an alternative for convenience.
 - Apply KISS, DRY, and YAGNI; add indirection only when it removes a concrete responsibility or duplication problem.
 
 ## Independent Review Gate
 
-For code-facing implementation, test, runtime, or code-facing configuration changes, the implementing agent does not treat its own self-review as the final Review.
+For code-facing implementation, test, runtime, or code-facing configuration changes, self-review by an implementation context does not count as independent Review.
+
+The agent or workflow that owns the **final implementation completion decision** performs this gate. A bounded implementation specialist may return its handoff to that owner without starting another review workflow itself.
 
 Before declaring the implementation complete, when the runtime supports subagents:
 
@@ -53,3 +56,4 @@ Do not call `review-quality` or `review-adversarial` directly from the implement
 - Do not copy detailed rules from canonical documents into this Skill merely to avoid loading them.
 - Do not require every development document for every implementation task.
 - Do not claim runtime delegation, validation, or reviewer independence that was not actually observed.
+- The intended `review-lead`-only specialist route is a workflow contract, not a per-parent access-control guarantee; do not infer stronger runtime isolation than the active harness provides.
