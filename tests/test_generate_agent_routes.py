@@ -48,7 +48,7 @@ def test_strip_jsonc_comments_preserves_markers_inside_strings() -> None:
     }
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_rulesync_dependency_sources_use_locked_commit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -93,7 +93,7 @@ def test_rulesync_dependency_sources_use_locked_commit(
     }
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_skills_cli_dependency_sources_use_locked_ref(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
