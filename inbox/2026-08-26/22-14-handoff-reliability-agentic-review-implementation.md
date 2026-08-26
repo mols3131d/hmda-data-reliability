@@ -37,11 +37,10 @@ LLM은 evidence와 기존 `RemediationDraft`를 설명·검토한다. Incident t
 
 이 handoff는 repository `main` revision `7bc9339bfa920f7a5b2642ffbbf5b8ea1c6172ac` 기준이다.
 
-- remediation workflow는 현재 deterministic `triage → rca → plan` LangGraph workflow이며 model invocation이 없다.
-- `RemediationDraft`는 Pydantic frozen contract로 이미 존재한다.
+- [`src/hmda_reliability/reliability/remediation/workflow.py`](../../../src/hmda_reliability/reliability/remediation/workflow.py)는 deterministic `triage → rca → plan` LangGraph workflow이며 model invocation이 없다.
+- [`src/hmda_reliability/reliability/remediation/draft.py`](../../../src/hmda_reliability/reliability/remediation/draft.py)에 Pydantic frozen `RemediationDraft`가 있다.
 - active OpenSpec Change는 없다.
-- OpenTelemetry API/SDK는 dev dependency로 존재한다.
-- OpenAI Python SDK와 Langfuse dependency는 아직 없다.
+- OpenTelemetry API/SDK는 dev dependency로 있고 OpenAI Python SDK는 아직 없다.
 
 ## Scope and Boundary
 
@@ -105,7 +104,7 @@ Pydantic schema를 사용하되 schema validity 자체를 safety proof로 보지
 - available token/usage/cost
 - optional `trace_id` correlation
 
-OTel trace는 sampling/retention될 수 있으므로 durable Invocation Evidence를 대체하지 않는다.
+OTel trace는 durable Invocation Evidence를 대체하지 않는다.
 
 ## Model Invocation Boundary
 
@@ -113,12 +112,12 @@ OTel trace는 sampling/retention될 수 있으므로 durable Invocation Evidence
 
 - client: **OpenAI Python SDK**
 - protocol boundary: **OpenAI-compatible API**
-- local development: **Ollama + lightweight model**
-- cloud proof: **OpenAI API**
+- local development/proof: **Ollama + lightweight model**
+- cloud-compatible target: **OpenAI API**
 
 Provider-specific code는 thin internal adapter에 격리한다. `base_url`, `api_key`, `model` 차이는 설정으로 처리하며 provider 변경 때문에 Reliability/domain code를 수정하지 않는다.
 
-첫 endpoint는 `chat.completions`와 `responses` 중 **OpenAI와 선택한 local endpoint에서 실제로 검증되는 가장 작은 공통 경로**를 사용한다.
+첫 endpoint는 `chat.completions`와 `responses` 중 **OpenAI와 선택한 local endpoint에서 공통으로 유지할 수 있는 가장 작은 경로**를 선택한다. 실제 live invocation proof는 Ollama로 닫을 수 있으며 OpenAI credential이 없으면 cloud call 성공을 acceptance로 요구하지 않는다.
 
 ## Security Requirements
 
@@ -138,9 +137,8 @@ LLM input과 output은 모두 untrusted로 취급한다.
 2. **Input/Output contract** — 최소 Pydantic contract를 만든다.
 3. **Validator first** — fake/stub output으로 deterministic validation과 adversarial fixture를 검증한다.
 4. **Thin LLM adapter** — OpenAI Python SDK를 한 곳에 격리한다.
-5. **Local proof** — Ollama에서 `SDK → model → structured output → validator`를 실제로 검증한다.
-6. **Cloud proof** — 같은 contract로 OpenAI API를 검증한다.
-7. **Minimal invocation evidence / tracing** — provenance와 필요한 OTel correlation을 연결한다.
+5. **Provider-compatible proof** — Ollama에서 `SDK → model → structured output → validator`를 실제 검증하고 OpenAI API가 같은 adapter/config boundary를 사용하도록 유지한다.
+6. **Minimal invocation evidence** — provenance를 남기고 필요한 경우 OTel trace와 correlation한다.
 
 Langfuse integration은 이 slice의 완료 조건이 아니다. Core contract가 안정된 뒤 trace/evaluation projection으로 연결한다.
 
@@ -148,7 +146,7 @@ Langfuse integration은 이 slice의 완료 조건이 아니다. Core contract�
 
 - `null_spike` Incident + Evidence + `RemediationDraft`에서 structured advisory review를 생성한다.
 - LLM 호출 없이도 contract와 validator를 deterministic test로 반복 검증할 수 있다.
-- Ollama와 OpenAI가 같은 application/provider boundary를 사용한다.
+- local/cloud provider가 같은 adapter/config boundary를 사용한다.
 - provider 변경 시 Reliability/domain code 변경이 필요하지 않다.
 - fabricated evidence, forbidden authority와 주요 prompt injection fixture를 validator/eval로 다룬다.
 - model output만으로 approval, recovery 또는 mutation이 발생하지 않는다.
