@@ -1,3 +1,13 @@
+---
+title: "AI Agent"
+description: "Repository의 agent instruction surface 선택과 Rule/Skill asset management guidance를 모으는 docs/development/ai-agent directory의 entrypoint입니다."
+categories:
+  - ai-engineering
+  - software-engineering
+tags:
+  - rulesync
+---
+
 # AI Agent
 
 이 directory는 repository에서 **instruction surface 선택과 agent asset 관리 정책**을 소유한다. 세부 Rule/Skill 작성법은 각 문서가 소유한다.
