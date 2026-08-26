@@ -42,11 +42,17 @@ artifacts:
     instruction: |
       Proposal과 적용되는 Specs는 prerequisite로 참조하고 다시 요약하지 않는다.
 
-      Proposal과 Specs만으로 결정되지 않으면서 Tasks를 실질적으로 제약하는 technical delta만 기록한다.
-      새로운 observable behavior는 Design에서 소유하지 말고 Specs로 되돌린다.
-      추가 technical delta가 없으면 한 문장으로 끝내고 내용을 채우기 위해 upstream 내용을 반복하지 않는다.
+      Candidate 내용이 Why, scope 또는 impact면 Proposal이 소유한다.
+      외부에서 관찰하거나 Requirement/Scenario로 검증할 수 있는 behavior, failure, acceptance 또는 contract면 Specs가 소유한다.
+      구현 결과나 완료 조건이면 Tasks가 소유한다.
+      기술 용어를 사용한다는 이유만으로 Design에 넣지 않는다.
 
-      모든 남은 내용이 Tasks에 필요한 technical choice, boundary 또는 constraint를 추가하면 완료한다.
+      제거했을 때 구현 선택, 변경되는 technical responsibility boundary, implementation constraint 또는
+      migration mechanism이 실질적으로 미정이 되는 내용만 Design에 남긴다.
+      새로운 observable behavior는 Design에서 소유하지 말고 Specs로 되돌린다.
+      추가 technical delta가 없으면 기존 architecture를 따른다는 한 문장으로 끝낸다.
+
+      모든 남은 내용이 prerequisite에 없는 technical decision을 추가하면 완료한다.
     requires:
       - proposal
       - specs
