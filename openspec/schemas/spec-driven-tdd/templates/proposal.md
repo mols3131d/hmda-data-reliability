@@ -14,7 +14,7 @@ description: <description>
 작성 규칙:
 - `## Capabilities`, `### New Capabilities`, `### Modified Capabilities`와 Capability 이름 heading은 파싱 계약으로 유지한다.
 - tags를 사용하면 Change-level 분류를 소유하며 Capability 선언과 충돌하지 않게 한다.
-- 구현 접근과 작업 순서는 Design과 Tasks에 맡긴다.
+- 비자명한 technical delta만 Design에 맡기고 구현 결과와 작업 순서는 Tasks에 맡긴다.
 - Spec-level behavior가 바뀌지 않는 pure refactor, tooling 또는 docs 변경은 `.openspec.yaml`에 `skip_specs: true`를 설정하고 New/Modified Capability를 만들지 않는다.
 - `skip_specs: true`를 validation 우회용으로 사용하거나 Requirement를 발명하지 않는다.
 - OPTIONAL 블록은 내용이 있을 때만 유지하고 빈 섹션이나 placeholder를 남기지 않는다.
