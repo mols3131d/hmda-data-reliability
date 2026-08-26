@@ -1,28 +1,28 @@
 path	description
-ARCHITECTURE.md	
-VISION.md	
-development/	
-development/ai-agent/	
-development/ai-agent/rule.md	
-development/ai-agent/skill.md	
-development/dashboard.md	
-development/test-design-and-implementation.md	
-development/testing.md	
-development/vcs-git/	
-development/vcs-git/branch.md	
-development/vcs-git/commit.md	
-development/vcs-git/pull-request-review.md	
-development/vcs-git/pull-request.md	
+ARCHITECTURE.md	로컬 HMDA 파이프라인의 시스템 흐름, 실행 경계, domain ownership과 approval-bound recovery 구조를 설명합니다.
+VISION.md	근거 우선 데이터 신뢰성과 안전한 AI 위임을 결합하는 장기 방향, delegation boundary와 LLMOps 원칙을 정의합니다.
+development/	개발 환경, testing, Git/GitHub workflow, AI agent asset policy와 development dashboard를 연결하는 docs/development directory의 entrypoint입니다.
+development/ai-agent/	Repository의 agent instruction surface 선택과 Rule/Skill asset management guidance를 모으는 docs/development/ai-agent directory의 entrypoint입니다.
+development/ai-agent/rule.md	Repository structure로 applicability가 결정되는 instruction surface인 Rule의 선택 기준, canonical source와 책임 경계를 정의합니다.
+development/ai-agent/skill.md	Task intent와 semantic relevance에 따라 선택적으로 load하는 Skill의 선택 기준, loading 방식과 source ownership을 정의합니다.
+development/dashboard.md	현재 development snapshot에서 domain별 구현·검증 진행률, 남은 gap과 blocker를 한눈에 정리한 human-readable dashboard입니다.
+development/test-design-and-implementation.md	OpenSpec requirement를 observable behavior 중심의 pytest test로 변환하는 scenario, oracle, test level과 구현 원칙을 설명합니다.
+development/testing.md	Local pytest 실행 범위, marker, Git hook, PR CI와 추가 test evidence 수집 방법을 설명합니다.
+development/vcs-git/	Branch, commit, Pull Request와 review guide를 연결하는 docs/development/vcs-git directory의 entrypoint입니다.
+development/vcs-git/branch.md	하나의 변경 목적을 격리하고 검토 가능한 단위로 전달하기 위한 branch 생성, naming, reuse와 agent 제약을 정의합니다.
+development/vcs-git/commit.md	하나의 논리적 변경을 review 가능한 history로 기록하기 위한 commit 단위, staging과 history 관리 기준을 정의합니다.
+development/vcs-git/pull-request-review.md	Pull Request 변경의 correctness, risk와 repository contract 일관성을 검토하고 evidence-backed finding을 기록하는 기준을 정의합니다.
+development/vcs-git/pull-request.md	Branch 변경을 검토하고 repository에 반영할지 결정하기 위한 Pull Request scope, description, validation, review와 lifecycle 기준을 정의합니다.
 domains/	
-domains/OVERVIEW.md	
-domains/data-operations.md	
-domains/data-platform.md	
-domains/hmda-data.md	
-domains/orchestration.md	
-domains/reliability.md	
-language.md	
-mvp.md	
+domains/OVERVIEW.md	HMDA Data Reliability의 domain별 책임과 비책임, 주요 데이터 흐름과 목적별 reading path를 정리합니다.
+domains/data-operations.md	Application-level request, 실행 순서와 결과를 조합하는 Data Operations domain의 책임과 mutation/read-only 경계를 설명합니다.
+domains/data-platform.md	DuckDB 공통 primitive, dbt Bronze-to-Gold 구조와 dbt artifact projection을 소유하는 Data Platform domain의 경계와 contract를 설명합니다.
+domains/hmda-data.md	HMDA 원천의 발견·검증, DuckDB Bronze 적재, descriptive EDA와 deterministic synthetic defect 입력을 소유하는 HMDA Data domain을 설명합니다.
+domains/orchestration.md	Bronze 적재와 dbt 분석을 연결하는 Apache Airflow data plane의 scope, task graph, runtime configuration과 경계를 설명합니다.
+domains/reliability.md	Deterministic evidence 기반 incident 판단, read-only lifecycle, approval-bound recovery와 replay/evaluation 경계를 설명합니다.
+language.md	Repository 문서와 structured metadata에서 한국어와 영어를 사용하는 기준을 정의합니다.
+mvp.md	로컬 HMDA Data Lake와 evidence-first Reliability, 제한된 Agentic review를 하나의 완결된 proof로 검증하기 위한 현재 MVP 목표, scope와 acceptance를 정의합니다.
 references/	
-references/hmda_eda.md	
-references/hmda_lar.md	
-references/python-data-pipeline-oom-testing-guide.md	DuckDB, Polars 기반 파이프라인이 정해진 메모리 예산 안에서 안정적으로 완료되는지 검증하는 방법
+references/hmda_eda.md	특정 HMDA source fingerprint와 repository revision에 고정된 actual-source EDA observation과 핵심 지표를 기록합니다.
+references/hmda_lar.md	Public HMDA LAR의 99개 field를 한국어로 탐색할 수 있도록 원본 data dictionary의 의미, 값과 코드를 정리한 reference입니다.
+references/python-data-pipeline-oom-testing-guide.md	DuckDB와 Polars 기반 Python data pipeline이 정해진 process memory budget 안에서 정확한 결과를 내는지 검증하는 방법을 설명합니다.
