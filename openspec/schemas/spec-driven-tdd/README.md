@@ -15,7 +15,7 @@ flowchart LR
 
 Spec-level behavior가 바뀌지 않는 pure refactor, tooling 또는 docs Change는 `.openspec.yaml`에 `skip_specs: true`를 설정한다. OpenSpec은 이 경우 Specs artifact를 완료로 취급하므로 artifact DAG를 바꾸거나 placeholder Capability와 Requirement를 만들지 않는다.
 
-Design은 Proposal과 Specs의 요약본이 아니다. Prerequisite에서 결정되지 않으면서 구현을 실질적으로 제약하는 technical choice, boundary 또는 constraint만 추가한다.
+Design은 Proposal과 Specs의 요약본이 아니다. 다른 planning artifact가 소유하지 않으며 Tasks에 필요한 non-obvious technical delta만 추가한다.
 
 | Path | Responsibility |
 | --- | --- |
