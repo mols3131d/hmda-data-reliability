@@ -51,9 +51,14 @@ Reviewer output은 final evidence가 아니라 검증할 candidate claim이다.
 
 ## Return
 
-중요도가 높은 순서로 하나의 final assessment를 caller에게 반환한다.
+Caller가 review gate 상태를 다시 추론하지 않도록 다음을 먼저 반환한다.
 
-각 material finding에는 가능한 범위에서 다음을 포함한다.
+- **Reviewed:** target과 reviewed revision, version 또는 observable state
+- **Assessment:** `clear | changes_required | blocked`
+
+`clear`는 reviewed scope에서 material finding이 확인되지 않았다는 뜻이지 correctness의 완전한 증명이 아니다. `changes_required`는 확인된 material finding이 수정되어야 함을 뜻한다. `blocked`는 required specialist coverage나 assessment에 필요한 핵심 evidence가 부족해 independent review gate를 닫을 수 없음을 뜻한다.
+
+그 뒤 중요도가 높은 순서로 final findings를 반환한다. 각 material finding에는 가능한 범위에서 다음을 포함한다.
 
 - location 또는 affected surface
 - confirmed problem과 root cause
