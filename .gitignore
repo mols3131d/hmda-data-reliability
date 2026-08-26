@@ -8,22 +8,24 @@ Desktop.ini
 tempCodeRunnerFile.py
 .idea/
 
-# Agent runtime, generated projections, external Skill installs, and local overlays
-rulesync.local.jsonc
-.rulesync/**/.curated/
-.rulesync/rules/*.local.md
+# Agent runtime and generated projections
+**/CLAUDE.md
+/.agents/*
+!/.agents/route/
+!/.agents/route/**
+/.claude/
+/.codex/
+/.gemini/
+/.github/skills/*
+!/.github/skills/prj-review-code/
+
+# Agent local overlays and external installs
+/rulesync.local.jsonc
+/.rulesync/**/.curated/
+/.rulesync/rules/*.local.md
 **/AGENTS.local.md
 **/CLAUDE.local.md
-CLAUDE.md
-.agents/*
-!.agents/route/
-!.agents/route/**
-.claude/
-.codex/
-.gemini/
-.github/skills/*
-!.github/skills/prj-review-code/
-.caveman-compress/
+/.caveman-compress/
 
 # Editor-local databases
 .frontmatter/database/pinnedItemsDb.json
