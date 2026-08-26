@@ -111,7 +111,7 @@ Active Scope
 | --- | --- |
 | Evidence 또는 material assumption gap | Research로 돌아간다. |
 | Planning defect | 원인을 소유하는 가장 이른 planning artifact를 수정하고 active schema dependency에 따라 직접 영향받는 downstream만 다시 일치시킨다. |
-| Implementation 또는 test defect, planning은 유효함 | 기존 owning task와 Apply work로 돌아간다. Schema가 허용하는 경우 owning task를 다시 열거나 수정하고, owner가 없으면 누락된 결과를 위한 최소 task만 추가한다. |
+| Implementation 또는 test defect, planning은 유효함 | Active schema의 Apply feedback contract로 돌아가 해당 implementation/test work와 필요한 validation을 처리한다. |
 | Same-change scope gap | Scope Control을 거쳐 Research로 필요성과 boundary를 검증한 뒤 owning Proposal과 영향받는 downstream을 갱신한다. |
 | Narrower material blocker | `Recursive Resolution` 조건을 만족하면 child scope로 내려간다. |
 | 독립적인 새 요구사항 또는 현재 change 밖의 범위 | 현재 change에 흡수하지 않는다. Current Goal에 필수면 blocker로 반환하고, 필수가 아니면 follow-up change 후보로 분리한다. |
