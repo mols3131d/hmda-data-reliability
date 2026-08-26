@@ -15,9 +15,14 @@
 
 | Purpose | Command |
 | --- | --- |
+| Repository setup | `python scripts/bootstrap.py setup` |
+| Session bootstrap | `python scripts/bootstrap.py session` |
+| Agent Asset update | `python scripts/agent_assets.py update` |
 | Python format | `uv run ruff format .` |
 | Python lint | `uv run ruff check src tests` |
 | Markdown format | `uv run rumdl fmt .` |
+
+`setup`은 clone 후 처음 한 번 실행해 locked dependency와 Agent Asset을 복원하고 Git hook을 설치한다. 이후 작업 시작 시에는 `session`으로 dependency와 Agent Asset만 현재 lock 상태에 맞춘다. 최신 Agent Asset을 가져오는 작업은 bootstrap과 분리해 명시적으로 `update`한다.
 
 ## Development Environment
 
@@ -54,7 +59,7 @@
 | `dbt/` | model·macro·설정 |
 | `data/` | DuckDB·원천 데이터·metadata |
 | `docs/` | 프로젝트 문서 |
-| `scripts/` | 설정·utility script |
+| `scripts/` | bootstrap·maintenance·utility script |
 
 ## Code Conventions
 
