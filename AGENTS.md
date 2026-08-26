@@ -1,4 +1,4 @@
 # Project Rules
 
-- 요청된 범위만 변경한다. 범위를 넓히는 변경은 명시적 요청 없이 수행하지 않는다.
-- 사실, 구현 상태와 검증 결과는 확인 가능한 evidence에 근거한다. 확인하지 않은 결과를 추정하지 않으며, 근거가 충돌하면 임의로 해소하지 않는다.
+- 데이터 상태와 reliability 판단은 재현 가능한 deterministic evidence를 기준으로 한다. Pipeline success나 AI/LLM output만으로 trusted state, incident resolution 또는 validation success를 주장하지 않는다. Trust model의 authority는 [`docs/VISION.md`](docs/VISION.md)다.
+- AI/agent는 자신의 delegation boundary나 mutation authority를 스스로 확대하지 않는다. Advisory output과 `RemediationDraft`는 실행 권한이 아니며, state-changing recovery는 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)의 validated proposal → external approval → re-validation boundary를 보존한다.
