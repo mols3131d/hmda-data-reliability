@@ -34,6 +34,7 @@ jobs:
           lefthook=false
           rulesync=false
           routes=false
+          review_agents=false
           full_unit=false
           targets=()
 
@@ -87,6 +88,12 @@ jobs:
             case "$path" in
               .rulesync/rules/*|.rulesync/skills/*/SKILL.md|.agents/skills/*/SKILL.md|.agents/route/*|scripts/generate_agent_routes.py)
                 routes=true
+                ;;
+            esac
+
+            case "$path" in
+              .github/agents/review-*.agent.md|.vscode/settings.json|scripts/validate_review_agents.py)
+                review_agents=true
                 ;;
             esac
 
@@ -160,6 +167,7 @@ jobs:
             echo "lefthook=$lefthook"
             echo "rulesync=$rulesync"
             echo "routes=$routes"
+            echo "review_agents=$review_agents"
             echo "full_unit=$full_unit"
             printf 'targets='
             printf '%s ' "${targets[@]}"
@@ -194,13 +202,13 @@ jobs:
           fi
 
       - name: Set up Python
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.rulesync == 'true' || steps.scope.outputs.routes == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.rulesync == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.review_agents == 'true'
         uses: actions/setup-python@v6.2.0
         with:
           python-version-file: ".python-version"
 
       - name: Set up uv
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.review_agents == 'true'
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.11.32"
@@ -222,6 +230,10 @@ jobs:
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
         run: uv run --with PyYAML==6.0.3 python scripts/generate_agent_routes.py --check
+
+      - name: Validate review-agent topology
+        if: steps.scope.outputs.review_agents == 'true'
+        run: uv run --with PyYAML==6.0.3 python scripts/validate_review_agents.py
 
       - name: Validate Lefthook config
         if: steps.scope.outputs.lefthook == 'true'
