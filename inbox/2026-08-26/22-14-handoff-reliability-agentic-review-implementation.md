@@ -37,8 +37,8 @@ LLM은 evidence와 기존 `RemediationDraft`를 설명·검토한다. Incident t
 
 이 handoff는 repository `main` revision `7bc9339bfa920f7a5b2642ffbbf5b8ea1c6172ac` 기준이다.
 
-- [`src/hmda_reliability/reliability/remediation/workflow.py`](../../../src/hmda_reliability/reliability/remediation/workflow.py)는 deterministic `triage → rca → plan` LangGraph workflow이며 model invocation이 없다.
-- [`src/hmda_reliability/reliability/remediation/draft.py`](../../../src/hmda_reliability/reliability/remediation/draft.py)에 Pydantic frozen `RemediationDraft`가 있다.
+- [`src/hmda_reliability/reliability/remediation/workflow.py`](../../src/hmda_reliability/reliability/remediation/workflow.py)는 deterministic `triage → rca → plan` LangGraph workflow이며 model invocation이 없다.
+- [`src/hmda_reliability/reliability/remediation/draft.py`](../../src/hmda_reliability/reliability/remediation/draft.py)에 Pydantic frozen `RemediationDraft`가 있다.
 - active OpenSpec Change는 없다.
 - OpenTelemetry API/SDK는 dev dependency로 있고 OpenAI Python SDK는 아직 없다.
 
