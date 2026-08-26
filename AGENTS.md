@@ -1,6 +1,6 @@
 # Project Guidance
 
-다음 guidance는 load condition에 따라 읽는다. `Always` 항목은 모든 작업에서 반드시 읽는다.
+`Always`는 모든 작업에서 읽고, `As needed`는 현재 작업에 관련될 때 읽는다.
 
 | Load | Document | Scope |
 | --- | --- | --- |
