@@ -40,15 +40,11 @@ artifacts:
     description: Non-obvious technical delta not owned by Proposal or Specs
     template: design.md
     instruction: |
-      Proposal과 적용되는 Specs는 입력으로 참조하고 다시 요약하지 않는다.
+      Proposal과 적용되는 Specs는 prerequisite로 참조하고 다시 요약하지 않는다.
 
-      Proposal과 Specs만으로 결정되지 않으면서 Tasks를 실질적으로 제약하는 technical choice,
-      responsibility boundary, implementation constraint, migration 또는 verification mechanism만 기록한다.
-      Why, scope, impact, Capability, Requirement, Scenario, acceptance, unchanged behavior와 unchanged boundary를 반복하지 않는다.
-      설명에 upstream context가 꼭 필요하면 owning artifact나 Requirement를 짧게 참조하고 새로운 technical delta만 기록한다.
-      Design에서 새로운 observable behavior가 필요하다고 판단되면 여기서 소유하지 말고 Specs로 되돌린다.
-      명백하거나 쉽게 되돌릴 수 있는 선택과 아직 필요하지 않은 확장 설계는 생략한다.
-      추가 설계 판단이 없으면 기존 architecture를 따른다는 짧은 statement만 남기고 내용을 채우기 위해 반복하지 않는다.
+      Proposal과 Specs만으로 결정되지 않으면서 Tasks를 실질적으로 제약하는 technical delta만 기록한다.
+      새로운 observable behavior는 Design에서 소유하지 말고 Specs로 되돌린다.
+      추가 technical delta가 없으면 한 문장으로 끝내고 내용을 채우기 위해 upstream 내용을 반복하지 않는다.
 
       모든 남은 내용이 Tasks에 필요한 technical choice, boundary 또는 constraint를 추가하면 완료한다.
     requires:
