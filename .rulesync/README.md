@@ -2,10 +2,17 @@
 
 Repository Agent asset policy는 [`docs/development/ai-agent/README.md`](../docs/development/ai-agent/README.md)를 따른다.
 
-## Skill projection
+## Projection Ownership
 
-일반 Project Skill은 `.agents/skills` projection을 Copilot/Copilot CLI, Codex CLI와 Antigravity가 공유하고 Claude Code는 `.claude/skills` projection을 사용한다. GitHub.com Copilot code review가 `.github/skills`를 명시적으로 사용하므로 review workflow를 소유하는 `prj-review-code`만 Copilot Skill projection을 추가로 유지한다.
+| Surface | Git | Role |
+| --- | --- | --- |
+| `.rulesync/rules`, `.rulesync/skills/prj-*`, config와 lock | Track | canonical source와 재현 가능한 dependency state |
+| `.agents/rules`, `.agents/skills`, `.claude/**`, generated `CLAUDE.md` | Ignore | local runtime용이며 bootstrap에서 재생성 |
+| `.agents/route` | Track | chatbot discovery용 derived index |
+| `.github/instructions`, `.github/skills/prj-review-code` | Track | GitHub.com이 repository에서 직접 소비하는 projection |
 
-## Chatbot route
+External Rulesync와 Skills CLI 설치물은 추적하지 않는다. Chatbot routing은 설치 경로 대신 lock의 exact ref에 고정된 upstream Skill을 사용한다.
 
-`scripts/generate_agent_routes.py`는 glob이 있는 non-root Rule을 chatbot route index에 투영한다. 특정 vendor capability에만 유효한 Rule은 frontmatter에 `route: false`를 두어 Rulesync projection은 유지하고 chatbot route에서만 제외한다.
+## Chatbot Route
+
+[`scripts/generate_agent_routes.py`](../scripts/generate_agent_routes.py)는 repository-owned Rule/Skill과 locked external Skill에서 `.agents/route` index를 생성한다.
