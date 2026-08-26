@@ -15,6 +15,7 @@
 
 | Purpose | Command |
 | --- | --- |
+| Docs index | `uv run python scripts/generate_docs_indexes.py` |
 | Python format | `uv run ruff format .` |
 | Python lint | `uv run ruff check src tests` |
 | Markdown format | `uv run rumdl fmt .` |
