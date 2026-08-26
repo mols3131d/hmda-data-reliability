@@ -5,7 +5,7 @@ description: >-
   selecting or running tests, debugging failures, validating behavior, checking
   coverage, or working with markers, fixtures, assertions, test plans,
   scenarios, oracles, and test design.
-targets: [claudecode, codexcli, antigravity-ide, antigravity-cli]
+targets: [claudecode, codexcli, copilot, copilotcli, antigravity-ide, antigravity-cli]
 ---
 
 # Testing Context
