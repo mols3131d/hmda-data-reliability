@@ -21,7 +21,15 @@ Rule을 우선 사용하는 경우:
 - applicability를 task 의미가 아니라 repository structure로 안정적으로 결정할 수 있다.
 - 여러 `AGENTS.md`에 같은 cross-cutting 지침을 복제하는 것보다 하나의 selector가 책임을 더 정확하게 표현한다.
 
-하나의 directory subtree가 자연스럽게 소유할 수 있으면 nearest `AGENTS.md`를 우선한다.
+하나의 directory subtree가 자연스럽게 소유할 수 있으면 nearest `AGENTS.md`를 우선한다. 단, child `AGENTS.md`는 nearest parent로 표현할 수 없는 **실질적으로 다른 agent 행동 규칙**이 있을 때만 만든다.
+
+다음 목적만으로 child `AGENTS.md`를 만들지 않는다.
+
+- parent 지침 반복 또는 다른 `AGENTS.md`·`README.md`로의 단순 routing
+- source, OpenSpec, test가 소유해야 하는 system/domain contract나 현재 구현 snapshot 보관
+- directory 존재나 ownership을 표시하기 위한 placeholder
+
+여러 subtree에 반복되는 structural instruction은 Rule로, task 의미에 따라 선택하는 instruction은 Skill로 둔다. System/domain contract는 해당 canonical owner가 소유한다.
 
 Skill도 정책, 제약, 판단 기준 같은 instruction을 담을 수 있다. Rule과 Skill의 선택 기준은 [AI Agent](README.md)가 소유한다.
 

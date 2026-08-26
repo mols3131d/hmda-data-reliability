@@ -1,8 +1,8 @@
 # dbt
 
-- Layers: `models/staging` → schema `staging`, materialize `view`; `models/marts` → schema `marts`, materialize `table`. Config: `dbt/dbt_project.yml`.
-- Raw source of truth: `models/sources.yml` (`raw.hmda_loans`). Do not add an alternate raw source without a contract update.
-- Staging `stg_hmda_loans`: analysis cleanup; keep `state_code` / `county_code` nullable when source allows.
-- Mart `mart_hmda_loan_outcomes`: grain `activity_year + state_code + loan_purpose`; keep unique-grain tests in `schema.yml`.
-- Schema names use only the `generate_schema_name` macro. Do not hard-code environment prefixes in models.
-- Prefer YAML declarative tests over ad-hoc SQL.
+`dbt/` 작업에만 필요한 authoring 규칙이다. Capability behavior와 model semantics는 owning OpenSpec, source configuration과 tests가 소유한다.
+
+- `dbt_project.yml`, `models/sources.yml`과 model schema files의 기존 ownership을 재사용하고 같은 설정을 SQL model에 중복하지 않는다.
+- Schema 이름은 `generate_schema_name` macro를 통해 결정하며 model에 environment prefix를 hard-code하지 않는다.
+- 가능한 경우 ad-hoc SQL test보다 YAML declarative test를 우선한다.
+- Grain, null semantics, metric 또는 source contract를 변경하면 owning Spec과 관련 tests를 함께 갱신한다.
