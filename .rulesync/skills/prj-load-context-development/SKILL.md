@@ -40,14 +40,14 @@ For code-facing implementation, test, runtime, or code-facing configuration chan
 
 The agent or workflow that owns the **final implementation completion decision** performs this gate. A bounded implementation specialist may return its handoff to that owner without starting another review workflow itself.
 
-Before declaring the implementation complete, when the runtime supports subagents:
+Before declaring the implementation complete, when the runtime supports the repository's review subagents:
 
 1. delegate one bounded review to `review-lead` in a separate subagent context;
 1. pass only the target/revision or observable state, intended behavior, active scope, applicable contract, and validation already performed;
 1. let `review-lead` coordinate its own specialist reviewers and return the reconciled assessment;
 1. route material findings back to the implementation owner, then invoke a fresh `review-lead` review after material fixes when Review is still required.
 
-Do not call `review-quality` or `review-adversarial` directly from the implementation workflow when `review-lead` is available. If `review-lead` or required nested subagent invocation is unavailable, report the independent-review coverage gap instead of presenting self-review as independent Review.
+Do not call `review-quality` or `review-adversarial` directly. In VS Code they are excluded from general model invocation and explicitly allowlisted by `review-lead`. If `review-lead`, its specialist delegation, or required nested subagent invocation is unavailable in the active runtime, report the independent-review coverage gap instead of presenting self-review as independent Review.
 
 ## Boundary
 
@@ -56,4 +56,4 @@ Do not call `review-quality` or `review-adversarial` directly from the implement
 - Do not copy detailed rules from canonical documents into this Skill merely to avoid loading them.
 - Do not require every development document for every implementation task.
 - Do not claim runtime delegation, validation, or reviewer independence that was not actually observed.
-- The intended `review-lead`-only specialist route is a workflow contract, not a per-parent access-control guarantee; do not infer stronger runtime isolation than the active harness provides.
+- VS Code-specific subagent access control does not imply equivalent enforcement in other runtimes.
