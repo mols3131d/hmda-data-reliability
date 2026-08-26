@@ -49,9 +49,15 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
+def validate_review_agent_common(name: str, meta: dict[str, Any]) -> None:
+    require(meta.get("target") == "vscode", f"{name} must target vscode")
+    require(meta.get("user-invocable") is False, f"{name} must be subagent-only")
+    require("edit" not in (meta.get("tools") or []), f"{name} must remain read-only")
+
+
 def validate() -> None:
     lead = agent_meta(LEAD)
-    require(lead.get("user-invocable") is False, "review-lead must be subagent-only")
+    validate_review_agent_common(LEAD, lead)
     require(
         lead.get("disable-model-invocation") is not True,
         "review-lead must remain available for implementation agents to delegate",
@@ -64,7 +70,7 @@ def validate() -> None:
 
     for name in SPECIALISTS:
         meta = agent_meta(name)
-        require(meta.get("user-invocable") is False, f"{name} must be hidden from users")
+        validate_review_agent_common(name, meta)
         require(
             meta.get("disable-model-invocation") is True,
             f"{name} must reject general model invocation and rely on review-lead allowlisting",
