@@ -1,3 +1,16 @@
+---
+title: "HMDA Data Reliability Development Dashboard"
+description: "현재 development snapshot에서 domain별 구현·검증 진행률, 남은 gap과 blocker를 한눈에 정리한 human-readable dashboard입니다."
+categories:
+  - data-engineering
+  - reliability
+tags:
+  - ci
+  - evaluation
+  - openspec
+  - testing
+---
+
 # HMDA Data Reliability Development Dashboard
 
 > **Snapshot:** 2026-08-16 / `main@e9a8d2a`

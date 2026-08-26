@@ -1,3 +1,20 @@
+---
+title: "Reliability: Evidence, Approval And Recovery"
+description: "Deterministic evidence 기반 incident 판단, read-only lifecycle, approval-bound recovery와 replay/evaluation 경계를 설명합니다."
+categories:
+  - reliability
+tags:
+  - data-quality
+  - data-profiling
+  - deterministic-validation
+  - evaluation
+  - evidence-first
+  - incident
+  - recovery
+  - replay
+  - rollback
+---
+
 # Reliability: Evidence, Approval And Recovery
 
 **`reliability`는 deterministic evidence로 incident를 판단하고, read-only analysis와 승인된 state mutation을 분리한다.** Lifecycle은 profile, detection, impact와 `RemediationDraft`를 만들고, recovery와 evaluation은 별도 API에서 명시적으로 실행한다.

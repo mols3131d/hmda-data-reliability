@@ -1,3 +1,14 @@
+---
+title: "HMDA EDA Reference"
+description: "특정 HMDA source fingerprint와 repository revision에 고정된 actual-source EDA observation과 핵심 지표를 기록합니다."
+categories:
+  - hmda-data
+tags:
+  - csv
+  - data-profiling
+  - evidence-first
+---
+
 # HMDA EDA Reference
 
 > [!WARNING]

@@ -1,3 +1,14 @@
+---
+title: "Pull Request Reviews"
+description: "Pull Request 변경의 correctness, risk와 repository contract 일관성을 검토하고 evidence-backed finding을 기록하는 기준을 정의합니다."
+categories:
+  - software-engineering
+tags:
+  - git
+  - github
+  - testing
+---
+
 # Pull Request Reviews
 
 Pull Request review는 변경을 채택하기 전에 correctness, risk와 repository contract 일관성을 검토하고 evidence-backed finding을 기록한다.

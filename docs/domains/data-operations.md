@@ -1,3 +1,16 @@
+---
+title: "Data Operations: Application Execution Boundary"
+description: "Application-level request, 실행 순서와 결과를 조합하는 Data Operations domain의 책임과 mutation/read-only 경계를 설명합니다."
+categories:
+  - data-operations
+  - data-engineering
+tags:
+  - dbt
+  - data-lineage
+  - deterministic-validation
+  - incident
+---
+
 # Data Operations: Application Execution Boundary
 
 **`data_operations`는 application-level request, 실행 순서와 결과를 조합한다.** 파일 파싱, DuckDB primitive, dbt model과 reliability rule은 owning domain에 위임한다.

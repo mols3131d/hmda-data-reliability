@@ -1,3 +1,17 @@
+---
+title: "Development"
+description: "개발 환경, testing, Git/GitHub workflow, AI agent asset policy와 development dashboard를 연결하는 docs/development directory의 entrypoint입니다."
+categories:
+  - software-engineering
+tags:
+  - ci
+  - git
+  - github
+  - pytest
+  - rulesync
+  - testing
+---
+
 # Development
 
 이 directory는 repository의 **phase-independent development guides**와 사람이 빠르게 보는 **development dashboard**를 둔다. Dashboard는 위치상 development에 속하지만 개발 규칙이나 canonical state를 소유하지 않는 human-only projection이다.

@@ -1,3 +1,12 @@
+---
+title: "Commits"
+description: "하나의 논리적 변경을 review 가능한 history로 기록하기 위한 commit 단위, staging과 history 관리 기준을 정의합니다."
+categories:
+  - software-engineering
+tags:
+  - git
+---
+
 # Commits
 
 Commit은 하나의 논리적 변경을 기록하고 review 가능한 history를 만든다.

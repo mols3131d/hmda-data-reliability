@@ -1,0 +1,4 @@
+path	description
+hmda_eda.md	특정 HMDA source fingerprint와 repository revision에 고정된 actual-source EDA observation과 핵심 지표를 기록합니다.
+hmda_lar.md	Public HMDA LAR의 99개 field를 한국어로 탐색할 수 있도록 원본 data dictionary의 의미, 값과 코드를 정리한 reference입니다.
+python-data-pipeline-oom-testing-guide.md	DuckDB와 Polars 기반 Python data pipeline이 정해진 process memory budget 안에서 정확한 결과를 내는지 검증하는 방법을 설명합니다.

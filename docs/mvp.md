@@ -1,3 +1,21 @@
+---
+title: "MVP"
+description: "로컬 HMDA Data Lake와 evidence-first Reliability, 제한된 Agentic review를 하나의 완결된 proof로 검증하기 위한 현재 MVP 목표, scope와 acceptance를 정의합니다."
+categories:
+  - data-engineering
+  - reliability
+  - ai-engineering
+tags:
+  - airflow
+  - ai-delegation
+  - dbt
+  - duckdb
+  - evaluation
+  - evidence-first
+  - llm
+  - recovery
+---
+
 # MVP
 
 > **Active goal:** 로컬 HMDA 데이터로 최소 Data Lake를 end-to-end로 실행하고,
@@ -82,7 +100,7 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 
 ## Scope
 
-**In scope**
+### In Scope
 
 - local HMDA CSV/Parquet와 Source → DuckDB Bronze 적재
 - dbt staging/marts와 artifact evidence
@@ -92,7 +110,7 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 - Agentic contract evaluation과 최소 한 번의 observable live model proof
 - validated `RecoveryProposal`, human approval, recovery와 re-validation
 
-**Out of scope**
+### Out of Scope
 
 - cloud deployment와 distributed lakehouse
 - 범용 multi-dataset ingestion platform

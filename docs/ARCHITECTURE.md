@@ -1,3 +1,18 @@
+---
+title: "Architecture: Local HMDA Reliability Pipeline"
+description: "로컬 HMDA 파이프라인의 시스템 흐름, 실행 경계, domain ownership과 approval-bound recovery 구조를 설명합니다."
+categories:
+  - data-engineering
+  - reliability
+tags:
+  - airflow
+  - dbt
+  - duckdb
+  - data-lineage
+  - incident
+  - recovery
+---
+
 # Architecture: Local HMDA Reliability Pipeline
 
 **핵심 경계는 분석과 위험한 상태 변경의 분리다.** 로컬 HMDA 데이터를 DuckDB Bronze에 적재하고 dbt로 Silver·Gold를 만든다. Reliability lifecycle은 raw table과 dbt artifact를 읽어 incident evidence와 `RemediationDraft`를 계산하지만, 상태 변경은 검증된 recovery proposal에 대한 외부 승인 뒤 별도 recovery API에서만 수행한다.

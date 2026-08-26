@@ -1,3 +1,13 @@
+---
+title: "Rule"
+description: "Repository structure로 applicability가 결정되는 instruction surface인 Rule의 선택 기준, canonical source와 책임 경계를 정의합니다."
+categories:
+  - ai-engineering
+  - software-engineering
+tags:
+  - rulesync
+---
+
 # Rule
 
 Rule은 **repository structure로 applicability가 결정되는 instruction surface**다. 이 project에서는 path, glob, file type, extension처럼 여러 위치에 반복되는 structural scope를 표현할 때 Rulesync Rule을 사용한다.

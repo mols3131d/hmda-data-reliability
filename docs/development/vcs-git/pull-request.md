@@ -1,3 +1,16 @@
+---
+title: "Pull Requests"
+description: "Branch 변경을 검토하고 repository에 반영할지 결정하기 위한 Pull Request scope, description, validation, review와 lifecycle 기준을 정의합니다."
+categories:
+  - software-engineering
+tags:
+  - ci
+  - git
+  - github
+  - github-actions
+  - testing
+---
+
 # Pull Requests
 
 Pull Request는 branch의 변경을 검토하고 repository에 반영할지 결정하는 경계다.

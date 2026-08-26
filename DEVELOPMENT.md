@@ -15,6 +15,7 @@
 
 | Purpose | Command |
 | --- | --- |
+| Docs index | `uv run python scripts/generate_docs_indexes.py` |
 | Repository setup | `python scripts/bootstrap.py setup` |
 | Session bootstrap | `python scripts/bootstrap.py session` |
 | Agent Asset update | `python scripts/agent_assets.py update` |
