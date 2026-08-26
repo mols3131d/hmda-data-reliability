@@ -1,4 +1,4 @@
 path	description
 hmda_eda.md	
 hmda_lar.md	
-python-data-pipeline-oom-testing-guide.md	
+python-data-pipeline-oom-testing-guide.md	DuckDB, Polars 기반 파이프라인이 정해진 메모리 예산 안에서 안정적으로 완료되는지 검증하는 방법
