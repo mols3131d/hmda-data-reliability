@@ -84,7 +84,11 @@ _DIRECT_IMPERATIVE_PATTERNS = tuple(
 )
 
 _CLAUSE_SPLIT_PATTERN = re.compile(
-    r"[\n\r;!?.,:—|]+|--|\b(?:but|however|although|though|whereas|while|yet)\b|(?:하지만|그러나|그렇지만|다만|반면)",
+    r"[\n\r;!?]+|"
+    r"(?<!\d)\.+(?!\d)|"
+    r"\s+--\s+|\s+—\s+|"
+    r"\b(?:but|however|although|though|whereas|while|yet|nevertheless|nonetheless)\b|"
+    r"(?:하지만|그러나|그렇지만|다만|반면|그럼에도)",
     re.IGNORECASE,
 )
 
@@ -93,7 +97,7 @@ def _extract_clauses(text: str) -> list[str]:
     raw_clauses = _CLAUSE_SPLIT_PATTERN.split(text)
     clauses: list[str] = []
     for clause in raw_clauses:
-        cleaned = clause.strip().lstrip("-*• \t").strip("\"'()[]{}")
+        cleaned = clause.strip().lstrip("-*• \t").strip("\"'()[]{}.,:;")
         if cleaned:
             clauses.append(cleaned)
     return clauses
@@ -101,10 +105,31 @@ def _extract_clauses(text: str) -> list[str]:
 
 def _has_authority_escalation(text: str) -> bool:
     for clause in _extract_clauses(text):
-        if _NEGATION_PATTERN.search(clause) or _KOREAN_NEGATION_PATTERN.search(clause):
-            continue
-        if any(pattern.search(clause) for pattern in _AUTHORITY_PATTERNS):
-            return True
+        for pattern in _AUTHORITY_PATTERNS:
+            if pattern.search(clause):
+                if re.search(
+                    r"\b(?:without|no)\s+(?:human|external)\s+approval\b",
+                    clause,
+                    re.IGNORECASE,
+                ) and (
+                    _NEGATION_PATTERN.search(clause)
+                    or _KOREAN_NEGATION_PATTERN.search(clause)
+                ):
+                    continue
+                if re.search(r"(?:사람|인간|외부)\s*승인\s*없이", clause) and (
+                    _NEGATION_PATTERN.search(clause)
+                    or _KOREAN_NEGATION_PATTERN.search(clause)
+                ):
+                    continue
+                if re.search(
+                    r"\b(?:not|never|no)\s+(?:automatically|auto[- ]?)approved\b",
+                    clause,
+                    re.IGNORECASE,
+                ):
+                    continue
+                if re.search(r"자동\s*승인\s*(?:금지|되지|하지|않)", clause):
+                    continue
+                return True
     return False
 
 

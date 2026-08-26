@@ -246,6 +246,10 @@ def test_authority_and_forbidden_action_text_is_rejected(
         ),
         "Backfill the 2025 partition after human approval.",
         "Backfill the 2025 partition requires human approval.",
+        "After human approval, backfill the 2025 partition.",
+        "After operator approval, proceed with the backfill.",
+        "Do not execute: backfill the 2025 partition.",
+        "Do not execute: delete from raw.hmda_loans.",
         (
             "The proposed draft suggests initiating recovery once approved "
             "by an engineer."
@@ -264,6 +268,8 @@ def test_authority_and_forbidden_action_text_is_rejected(
             "requires operator approval."
         ),
         "백필을 실행하지 마라.",
+        "운영자 승인 후에, 2025 파티션을 백필하라.",
+        "실행 금지: 2025 파티션을 백필하라.",
     ],
 )
 def test_safe_advisory_and_reference_language_is_accepted(
