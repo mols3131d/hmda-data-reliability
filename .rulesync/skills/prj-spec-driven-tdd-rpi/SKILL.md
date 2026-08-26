@@ -36,6 +36,7 @@ OpenSpec의 custom `spec-driven-tdd` workflow 주위에서 adaptive **Research �
 - Research 또는 Review에서 채택한 결론은 가장 이른 owning planning artifact나 implementation work에 반영한 뒤 필요한 downstream만 다시 일치시킨다.
 - Review finding은 독립적인 canonical authority가 아니다. 근거와 영향을 확인한 뒤 원인을 소유하는 work로 route한다.
 - Recursive child scope는 parent scope의 strict subset이며 parent의 authority, `Out of scope`, acceptance와 Loop budget을 넓히거나 reset하지 않는다.
+- Recursive child는 Change-level planning artifact의 독립 owner가 아니다. Planning correction이 필요하면 parent Review로 반환하고 parent가 owning artifact를 갱신한다.
 - `skip_specs: true` 같은 active schema runtime semantics를 존중하며 RPI를 만족시키기 위해 placeholder Capability, Requirement 또는 artifact를 만들지 않는다.
 - Loop ceiling은 runaway 방지용 상한이지 목표가 아니다. 새로운 근거, 품질 향상 또는 acceptance closure가 없는 no-op Loop를 만들지 않는다.
 
@@ -146,7 +147,7 @@ Child scope는 다음을 모두 만족해야 한다.
 - parent scope에서 계속하는 것보다 독립적으로 해결하는 편이 더 효율적이다.
 - inherited authority, safety, persistence와 current Run budget 안에서 실행 가능하다.
 
-Child는 동일한 Research → schema planning → Apply → Review mapping을 사용할 수 있지만 independent scope를 스스로 추가하거나 별도 Change를 조용히 만들지 않는다. Child 해결에 parent boundary 밖의 work가 필요하면 expansion 또는 new-change need를 parent Review로 돌려보낸다.
+Child는 parent Change의 canonical planning artifact를 독립적으로 수정하거나 새 Change를 만들지 않는다. Child 안에서는 Research와 validation으로 좁은 문제를 해결하고, parent planning이 이미 유효하게 커버하는 bounded implementation/test work만 Apply할 수 있다. Child에서 planning defect, scope expansion 또는 새 requirement가 확인되면 해당 finding과 evidence를 parent Review로 반환하고 child work를 중단한다.
 
 Child Review가 끝나면 parent에 필요한 최소 상태만 반환한다: 새 evidence, resolved decision/finding, 영향을 받는 parent Research·Scope·planning owner, unresolved limitation. Parent로 돌아온 뒤 affected parent artifacts를 revalidate한다. Recursive descent는 새 Run이 아니며 child가 다시 recurse하더라도 같은 Loop counter를 사용한다.
 
