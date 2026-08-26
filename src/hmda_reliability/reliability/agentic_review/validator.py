@@ -30,7 +30,7 @@ _AUTHORITY_PATTERNS = tuple(
         r"(?:is|has\s+been)\s+approved\b",
         r"\b(?:automatically|auto[- ]?)approved\b",
         r"\b(?:without|no)\s+(?:human|external)\s+approval\b",
-        r"(?:이\s*review|모델|제가|우리가).{0,20}(?:승인합니다|권한을\s*부여)",
+        r"(?:이\s*review|모델|제가|우리가).{0,20}(?:승인합니다|승인한다|승인함|권한을\s*부여)",
         r"(?:사람|인간|외부)\s*승인\s*없이",
         r"자동\s*승인",
     )
@@ -44,11 +44,12 @@ _NEGATION_PATTERN = re.compile(
 )
 
 _KOREAN_NEGATION_PATTERN = re.compile(
-    r"(?:하지\s*마라|하지\s*마세요|하지\s*않는다|하지\s*않습니다|하지\s*마십시오|금지|않는다|않습니다|않아야\s*한다|않도록\s*한다)",
+    r"(?:지\s*마라|지\s*마세요|지\s*않는다|지\s*않습니다|지\s*마십시오|하지\s*마라|하지\s*마세요|하지\s*않는다|하지\s*않습니다|하지\s*마십시오|금지|않는다|않습니다|않아야\s*한다|않도록\s*한다|말라|말고)",
 )
 
 _ADVISORY_PATTERN = re.compile(
-    r"\b(?:requires?\s+(?:human\s+|operator\s+|external\s+)?approval|"
+    r"\b(?:(?:human\s+|operator\s+|external\s+)?approval\s+(?:is\s+|was\s+)?required|"
+    r"requires?\s+(?:human\s+|operator\s+|external\s+)?approval|"
     r"after\s+(?:human\s+|operator\s+|external\s+)?approval|"
     r"once\s+approved|"
     r"draft\s+(?:describes|proposes|contains|suggests)|"
@@ -82,33 +83,38 @@ _DIRECT_IMPERATIVE_PATTERNS = tuple(
     )
 )
 
+_CLAUSE_SPLIT_PATTERN = re.compile(
+    r"[\n\r;!?.,:—|]+|--|\b(?:but|however|although|though|whereas|while|yet)\b|(?:하지만|그러나|그렇지만|다만|반면)",
+    re.IGNORECASE,
+)
+
+
+def _extract_clauses(text: str) -> list[str]:
+    raw_clauses = _CLAUSE_SPLIT_PATTERN.split(text)
+    clauses: list[str] = []
+    for clause in raw_clauses:
+        cleaned = clause.strip().lstrip("-*• \t").strip("\"'()[]{}")
+        if cleaned:
+            clauses.append(cleaned)
+    return clauses
+
 
 def _has_authority_escalation(text: str) -> bool:
-    sentences = [
-        s.strip().lstrip("-*• \t") for s in re.split(r"[\n;!?.]+", text) if s.strip()
-    ]
-    for sentence in sentences:
-        if _NEGATION_PATTERN.search(sentence) or _KOREAN_NEGATION_PATTERN.search(
-            sentence
-        ):
+    for clause in _extract_clauses(text):
+        if _NEGATION_PATTERN.search(clause) or _KOREAN_NEGATION_PATTERN.search(clause):
             continue
-        if any(pattern.search(sentence) for pattern in _AUTHORITY_PATTERNS):
+        if any(pattern.search(clause) for pattern in _AUTHORITY_PATTERNS):
             return True
     return False
 
 
 def _has_forbidden_action(text: str) -> bool:
-    sentences = [
-        s.strip().lstrip("-*• \t") for s in re.split(r"[\n;!?.]+", text) if s.strip()
-    ]
-    for sentence in sentences:
-        if _NEGATION_PATTERN.search(sentence) or _KOREAN_NEGATION_PATTERN.search(
-            sentence
-        ):
+    for clause in _extract_clauses(text):
+        if _NEGATION_PATTERN.search(clause) or _KOREAN_NEGATION_PATTERN.search(clause):
             continue
-        if _ADVISORY_PATTERN.search(sentence):
+        if _ADVISORY_PATTERN.search(clause):
             continue
-        if any(pattern.search(sentence) for pattern in _DIRECT_IMPERATIVE_PATTERNS):
+        if any(pattern.search(clause) for pattern in _DIRECT_IMPERATIVE_PATTERNS):
             return True
     return False
 
