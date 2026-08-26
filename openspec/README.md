@@ -30,4 +30,4 @@ Change의 proposal/design/tasks/review는 작업 근거와 intended delta를 설
 
 `schema.yaml`은 범용성과 호환성을 유지하며 project-specific 규칙이나 template surface의 세부 작성 규칙을 반복하지 않는다.
 
-하위 `README.md`에는 해당 경로에만 필요한 설명을 둔다. 하위 `AGENTS.md`는 가장 가까운 상위 지침으로 표현할 수 없는 **실질적으로 다른 agent 행동 규칙**이 있을 때만 만든다.
+하위 `README.md`에는 해당 경로에만 필요한 설명을 둔다. 하위 `AGENTS.md` 생성 여부는 [Rule의 Selection 기준](../docs/development/ai-agent/rule.md#selection)을 따른다.
