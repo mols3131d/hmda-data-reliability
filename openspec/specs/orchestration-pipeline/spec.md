@@ -91,7 +91,7 @@ Orchestration은 지원되는 runtime override를 최종 `DataOperationRequest`�
 
 ### Requirement: Control-plane exclusion
 
-Data-plane workflow는 read-only incident lifecycle, approval, recovery, evaluation 또는 LLMOps orchestration을 자동으로 포함하거나 실행해서는 안 된다(MUST NOT). Migration 단계의 workflow는 schedule 없이 실행되고 automatic retry를 사용하지 않아야 한다(SHALL).
+Data-plane workflow는 read-only incident lifecycle, approval, recovery, evaluation 또는 LLMOps orchestration을 자동으로 포함하거나 실행해서는 안 된다(MUST NOT). Workflow는 schedule 없이 실행되고 automatic retry를 사용하지 않아야 한다(SHALL).
 
 #### Scenario: Data-plane boundary and runtime policy
 
