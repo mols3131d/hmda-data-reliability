@@ -54,20 +54,20 @@ def validate() -> None:
     require(lead.get("user-invocable") is False, "review-lead must be subagent-only")
     require(
         lead.get("disable-model-invocation") is not True,
-        "review-lead must remain model-invocable as a subagent",
+        "review-lead must remain available for implementation agents to delegate",
     )
     require(
         lead.get("agents") == list(SPECIALISTS),
-        "review-lead must delegate exactly review-quality and review-adversarial",
+        "review-lead must explicitly allow exactly review-quality and review-adversarial",
     )
     require("agent" in (lead.get("tools") or []), "review-lead requires the agent tool")
 
     for name in SPECIALISTS:
         meta = agent_meta(name)
-        require(meta.get("user-invocable") is False, f"{name} must be subagent-only")
+        require(meta.get("user-invocable") is False, f"{name} must be hidden from users")
         require(
-            meta.get("disable-model-invocation") is not True,
-            f"{name} must remain invocable by review-lead",
+            meta.get("disable-model-invocation") is True,
+            f"{name} must reject general model invocation and rely on review-lead allowlisting",
         )
         require(meta.get("agents") == [], f"{name} must not invoke other agents")
         require("agent" not in (meta.get("tools") or []), f"{name} must not have agent tool")
