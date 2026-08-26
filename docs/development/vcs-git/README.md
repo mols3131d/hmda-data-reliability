@@ -1,3 +1,13 @@
+---
+title: "Version Control and GitHub"
+description: "Branch, commit, Pull Request와 review guide를 연결하는 docs/development/vcs-git directory의 entrypoint입니다."
+categories:
+  - software-engineering
+tags:
+  - git
+  - github
+---
+
 # Version Control and GitHub
 
 Git과 GitHub 작업의 진입점이다. 작업에 해당하는 문서를 읽고, 각 문서가 연결하는 규칙과 template을 따른다.
