@@ -124,9 +124,7 @@ def _targets(docs_root: Path) -> list[Path]:
         if len(document.relative_to(docs_root).parts) > 1
     }
     targets.extend(
-        path
-        for name in sorted(child_names)
-        if (path := docs_root / name).is_dir()
+        path for name in sorted(child_names) if (path := docs_root / name).is_dir()
     )
     return targets
 
@@ -141,7 +139,9 @@ def generate(docs_root: Path = DOCS_ROOT, *, check: bool = False) -> list[str]:
 
     for index_path in sorted(targets):
         desired = _render(index_path.parent)
-        current = index_path.read_text(encoding="utf-8") if index_path.exists() else None
+        current = (
+            index_path.read_text(encoding="utf-8") if index_path.exists() else None
+        )
         relative = index_path.relative_to(repository_root).as_posix()
 
         if desired == HEADER:

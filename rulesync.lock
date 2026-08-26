@@ -3,8 +3,8 @@
   "sources": {
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
-      "resolvedRef": "fd25a6fa45df18cc5b016aa3e0790f93aabf5ea1",
-      "resolvedAt": "2026-08-26T08:58:59.270Z",
+      "resolvedRef": "63a2b3ced6eecc1f2d39a68cb2f59eef75f08227",
+      "resolvedAt": "2026-08-26T10:05:59.314Z",
       "skills": {
         "mols-agent-asset-validator": {
           "integrity": "sha256-3656ca7d568fbc51286cc262210c7499346909c796e2825c5910f421ec16f940"
@@ -13,7 +13,7 @@
           "integrity": "sha256-124fdbded5fa2d787da6c207c1bbe3db428cc2395b586e8ad25d91936465e0eb"
         },
         "mols-markdown-dashboard": {
-          "integrity": "sha256-405c46621d3a281181dfcb376aeca5c8967517566cf932ed40b4bb7d580edf31"
+          "integrity": "sha256-9625551adfabce0fb66cee9ff56f7e8fb0230a939d033131c9f748b4ab4b480a"
         },
         "mols-markdown-for-human": {
           "integrity": "sha256-d12d681eaad30d33946ef7493e244320e6113accf2a6d1a4ba8962600294a5e0"
