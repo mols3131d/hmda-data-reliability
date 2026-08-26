@@ -4,7 +4,7 @@
 
 | Document | Purpose |
 | --- | --- |
-| `architecture.md` | workflow, artifact 책임, parsing contract와 configuration boundary |
+| `architecture.md` | workflow와 artifact 책임의 설계 근거 |
 | `baseline/DIRECTIVE.md` | 개선 중에도 보존해야 하는 요구사항, 결정사항과 불변 조건 |
 
 ## Maintenance Rule
