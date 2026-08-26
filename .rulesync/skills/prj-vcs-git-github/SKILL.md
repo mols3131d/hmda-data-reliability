@@ -5,7 +5,7 @@ description: >-
   review, merge, and related VCS work. Select only the guides and templates relevant
   to the current operation, and verify mutable GitHub state when it can change the
   decision. Do not perform the operation itself.
-targets: [claudecode, codexcli, antigravity-ide, antigravity-cli]
+targets: [claudecode, codexcli, copilot, copilotcli, antigravity-ide, antigravity-cli]
 ---
 
 # Git and GitHub Context
