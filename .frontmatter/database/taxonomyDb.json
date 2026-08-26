@@ -1,1 +1,14 @@
-{}
+{
+  "taxonomy": {
+    "categories": [
+      "data-operations",
+      "data-platform",
+      "hmda-data",
+      "orchestration",
+      "reliability"
+    ],
+    "tags": [
+      "duckdb"
+    ]
+  }
+}
