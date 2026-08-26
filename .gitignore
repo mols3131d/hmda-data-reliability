@@ -8,7 +8,7 @@ Desktop.ini
 tempCodeRunnerFile.py
 .idea/
 
-# Agent runtime, local overlays, and external Skill installs
+# Agent runtime, generated projections, external Skill installs, and local overlays
 rulesync.local.jsonc
 .rulesync/rules/.curated/
 .rulesync/rules/*.local.md
@@ -20,12 +20,12 @@ rulesync.local.jsonc
 **/.claude/settings.local.json
 .agents/brain/
 .agents/reports/
+.agents/rules/
+.agents/skills/
 .agents/workflows/opsx-*
-.agents/skills/*
-!.agents/skills/prj-*/
-.claude/skills/*
-!.claude/skills/prj-*/
+.claude/skills/
 .github/skills/*
+# GitHub.com consumes this repository-owned projection directly.
 !.github/skills/prj-review-code/
 .codex/skills/
 .gemini/skills/
