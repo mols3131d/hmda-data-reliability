@@ -44,8 +44,13 @@ Before declaring the implementation complete, when the runtime supports the repo
 
 1. delegate one bounded review to `review-lead` in a separate subagent context;
 1. pass only the target/revision or observable state, intended behavior, active scope, applicable contract, and validation already performed;
-1. let `review-lead` coordinate its own specialist reviewers and return the reconciled assessment;
-1. route material findings back to the implementation owner, then invoke a fresh `review-lead` review after material fixes when Review is still required.
+1. let `review-lead` coordinate its own specialist reviewers and return the reconciled `Assessment`;
+1. handle the assessment without replacing it with implementation self-review:
+   - `clear` — the independent review gate is satisfied for the exact reviewed state, subject to reported limitations;
+   - `changes_required` — route findings to the implementation owner and obtain a fresh `review-lead` assessment after the affected state changes;
+   - `blocked` — do not declare the independent review gate satisfied; report the coverage or evidence blocker.
+
+Any post-review change that can affect reviewed behavior, contract, validation evidence, or finding disposition invalidates the prior assessment for completion purposes.
 
 Do not call `review-quality` or `review-adversarial` directly. In VS Code they are excluded from general model invocation and explicitly allowlisted by `review-lead`. If `review-lead`, its specialist delegation, or required nested subagent invocation is unavailable in the active runtime, report the independent-review coverage gap instead of presenting self-review as independent Review.
 
