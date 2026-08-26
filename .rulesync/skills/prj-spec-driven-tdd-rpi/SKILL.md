@@ -133,7 +133,7 @@ Active Scope
 
 ## Scope Control
 
-`adaptive`는 Goal과 user-defined boundary를 보존하는 범위에서 scope를 좁힐 수 있다. 같은 Change intent 안의 작은 확장이 Goal에 materially 필요하면 Review가 expansion을 제안하고 Research가 필요성과 boundary를 검증한 뒤 Proposal owner에 반영해야 한다. 그 전에는 expanded work를 수행하지 않는다.
+`adaptive`는 Goal과 user-defined boundary를 보존하는 범위에서 scope를 좁힐 수 있다. 같은 Change intent 안의 작은 확장이 Goal에 materially 필요하면 Review가 expansion을 제안하고 Research가 필요성과 boundary를 검증한다. `terminal`이 `planning` 또는 `goal`이면 검증된 expansion을 Proposal owner에 반영한 뒤 직접 영향받는 downstream만 다시 일치시킨다. `terminal: research`이면 Proposal을 수정하지 않고 expansion evidence와 필요한 downstream `Next`만 Review에 반환한다. Expanded work는 이 절차와 현재 terminal이 모두 허용하기 전에는 수행하지 않는다.
 
 독립적으로 구현·검증 가능한 새 요구사항은 same-change expansion이 아니라 별도 OpenSpec change 후보다. `narrow-only`는 expansion을 금지하고 `fixed`는 narrowing과 expansion을 모두 금지한다. Explicit `Out of scope`, Goal 또는 acceptance condition은 이를 설정한 authority의 새 승인 없이 바꾸지 않는다.
 
@@ -145,7 +145,8 @@ Research는 기본적으로 transient evidence다. 별도 Research artifact, 저
 
 - 기존 evidence가 current decision에 충분하면 새 Research를 하지 않는다.
 - Repository/workspace truth는 해당 authoritative source를 우선하고, external evidence는 freshness, standard, vendor behavior 또는 independent challenge가 필요한 경우에만 사용한다.
-- 채택한 conclusion, 필요한 근거와 unresolved uncertainty만 active schema responsibility에 따라 owning artifact에 반영한다.
+- `terminal: research`에서는 채택한 conclusion, 필요한 근거와 unresolved uncertainty를 planning artifact에 쓰지 않고 Review 또는 Handoff 결과로만 반환한다.
+- `terminal`이 `planning` 또는 `goal`이고 planning stage로 진행할 때만 채택한 conclusion, 필요한 근거와 unresolved uncertainty를 active schema responsibility에 따라 owning artifact에 최소한으로 반영한다.
 - Research 전체를 planning artifacts에 복제하거나 hidden reasoning, chat history 또는 unpersisted evidence에 downstream work가 의존하게 하지 않는다.
 - 새 evidence가 decision이나 material uncertainty를 바꿀 가능성이 없으면 Research를 중단한다.
 
