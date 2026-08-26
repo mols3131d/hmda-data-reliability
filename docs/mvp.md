@@ -100,7 +100,7 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 
 ## Scope
 
-**In scope**
+### In Scope
 
 - local HMDA CSV/Parquet와 Source → DuckDB Bronze 적재
 - dbt staging/marts와 artifact evidence
@@ -110,7 +110,7 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 - Agentic contract evaluation과 최소 한 번의 observable live model proof
 - validated `RecoveryProposal`, human approval, recovery와 re-validation
 
-**Out of scope**
+### Out of Scope
 
 - cloud deployment와 distributed lakehouse
 - 범용 multi-dataset ingestion platform
