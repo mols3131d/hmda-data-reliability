@@ -177,22 +177,39 @@ def test_authority_and_forbidden_action_text_is_rejected(
     assert expected in validation.violations
 
 
-def test_descriptive_draft_action_is_not_treated_as_an_execution_command(
+@pytest.mark.parametrize(
+    "review_summary",
+    [
+        (
+            "The draft describes a backfill action that requires human approval; "
+            "this is not an execution instruction."
+        ),
+        "Backfill the 2025 partition after human approval.",
+        "Backfill the 2025 partition requires human approval.",
+        (
+            "The proposed draft suggests initiating recovery once approved "
+            "by an engineer."
+        ),
+        (
+            "We recommend that an operator proceed with the backfill after "
+            "thorough review."
+        ),
+        "The analysis indicates that recovery backfill for 2025 is feasible.",
+    ],
+)
+def test_safe_advisory_and_reference_language_is_accepted(
     null_spike_review_material: NullSpikeReviewMaterial,
+    review_summary: str,
 ) -> None:
     review_input = _review_input(null_spike_review_material)
     output = _safe_output(review_input).model_copy(
-        update={
-            "review_summary": (
-                "The draft describes a backfill action that requires human approval; "
-                "this is not an execution instruction."
-            )
-        }
+        update={"review_summary": review_summary}
     )
 
     validation = validator_module.validate_agentic_review(review_input, output)
 
     assert validation.status == "accepted"
+    assert validation.violations == ()
 
 
 def test_prompt_injection_in_evidence_remains_untrusted_input_data(

@@ -19,6 +19,10 @@ from hmda_reliability.reliability.agentic_review.contracts import (
 from hmda_reliability.reliability.agentic_review.provider import ProviderUsage
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
 
+_SENSITIVE_QUERY_KEYS = frozenset(
+    {"key", "api_key", "apikey", "token", "secret", "auth", "password"}
+)
+
 
 class SanitizedAgenticReviewConfiguration(ReliabilityContract):
     """Persistable provider configuration with no credential field."""
@@ -43,6 +47,12 @@ class SanitizedAgenticReviewConfiguration(ReliabilityContract):
         if parsed.username is not None or parsed.password is not None:
             msg = "sanitized base_url must not contain credentials"
             raise ValueError(msg)
+        if parsed.query:
+            query_pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+            for k, v in query_pairs:
+                if k.lower() in _SENSITIVE_QUERY_KEYS and v != "[REDACTED]":
+                    msg = "sanitized base_url contains raw credentials"
+                    raise ValueError(msg)
         return normalized
 
 

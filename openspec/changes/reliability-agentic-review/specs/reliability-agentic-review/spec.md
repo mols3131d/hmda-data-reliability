@@ -181,7 +181,7 @@ Non-accepted result의 output은 비어 있어야 한다. Parsed output이 있�
 
 ### Requirement: Provider-compatible bounded invocation
 
-시스템은 동일한 review contract와 configuration boundary를 사용해 OpenAI-compatible `chat.completions` endpoint를 제공하는 local Ollama model과 OpenAI API를 호출할 수 있어야 한다(SHALL). `base_url`은 userinfo(username/password)나 credential을 포함해서는 안 되며(MUST NOT), Provider 차이는 credentials-free `base_url`, `SecretStr` credential(`api_key`), model과 bounded configuration으로 표현해야 하며 Reliability domain의 incident/evidence/recovery code가 provider별 business rule을 소유해서는 안 된다(MUST NOT).
+시스템은 동일한 review contract와 configuration boundary를 사용해 OpenAI-compatible `chat.completions` endpoint를 제공하는 local Ollama model과 OpenAI API를 호출할 수 있어야 한다(SHALL). `base_url`은 userinfo(username/password)나 credential query parameter를 포함해서는 안 되며(MUST NOT), Provider 차이는 credentials-free `base_url`, `SecretStr` credential(`api_key`), model과 bounded configuration으로 표현해야 하며 Reliability domain의 incident/evidence/recovery code가 provider별 business rule을 소유해서는 안 된다(MUST NOT).
 
 이 Change의 common wire profile은 다음 조건을 만족해야 한다(SHALL).
 
@@ -211,7 +211,7 @@ Non-accepted result의 output은 비어 있어야 한다. Parsed output이 있�
 
 ### Requirement: Durable invocation evidence
 
-Provider call이 실제로 시작된 각 logical `review_null_spike()` invocation은 하나의 immutable-by-identity `AgenticInvocationEvidence` record를 `HMDA_RELIABILITY_ARTIFACTS_DIR` 아래 `agentic-review/invocations/<invocation_id>.json`에 create-only로 저장해야 한다(SHALL). Network retry는 별도 record가 아니라 `attempt_count`로 기록해야 한다(SHALL). Input preflight에서 `input_rejected`로 종료된 call에는 provider invocation evidence를 만들지 않아야 한다. Directory 생성, 임시 파일 생성/쓰기/링크, fsync를 포함한 persistence 과정의 모든 filesystem failure는 raw exception을 탈출시키지 않고 `provenance_failed` result로 정규화해야 한다(SHALL).
+Provider call이 실제로 시작된 각 logical `review_null_spike()` invocation은 하나의 immutable-by-identity `AgenticInvocationEvidence` record를 `HMDA_RELIABILITY_ARTIFACTS_DIR` 아래 `agentic-review/invocations/<invocation_id>.json`에 create-only로 저장해야 한다(SHALL). Network retry는 별도 record가 아니라 `attempt_count`로 기록해야 한다(SHALL). Input preflight에서 `input_rejected`로 종료된 call에는 provider invocation evidence를 만들지 않아야 한다. Directory 생성, 임시 파일 생성/쓰기/링크, fsync를 포함한 persistence 필수 과정의 filesystem failure는 raw exception을 탈출시키지 않고 `provenance_failed` result로 정규화해야 한다(SHALL). 성공적으로 기록된 후의 임시 파일 cleanup 실패는 accepted 결과에 영향을 주지 않는 best-effort hygiene으로 처리한다.
 
 Record 계약은 다음과 같다.
 

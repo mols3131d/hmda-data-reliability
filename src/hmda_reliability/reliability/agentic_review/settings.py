@@ -15,24 +15,20 @@ _SENSITIVE_QUERY_KEYS = frozenset(
 
 
 def _sanitize_base_url(url: str) -> str:
-    """Return URL string with userinfo stripped and sensitive query params redacted."""
+    """Return URL with sensitive query params redacted and authority preserved."""
     parsed = urllib.parse.urlsplit(url)
-    netloc = parsed.hostname or ""
-    if parsed.port is not None:
-        netloc = f"{netloc}:{parsed.port}"
+    if not parsed.query:
+        return url
 
-    if parsed.query:
-        query_pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
-        sanitized_pairs = [
-            (k, "[REDACTED]" if k.lower() in _SENSITIVE_QUERY_KEYS else v)
-            for k, v in query_pairs
-        ]
-        sanitized_query = urllib.parse.urlencode(sanitized_pairs)
-    else:
-        sanitized_query = ""
+    query_pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+    sanitized_pairs = [
+        (k, "[REDACTED]" if k.lower() in _SENSITIVE_QUERY_KEYS else v)
+        for k, v in query_pairs
+    ]
+    sanitized_query = urllib.parse.urlencode(sanitized_pairs)
 
     return urllib.parse.urlunsplit(
-        (parsed.scheme, netloc, parsed.path, sanitized_query, parsed.fragment)
+        (parsed.scheme, parsed.netloc, parsed.path, sanitized_query, parsed.fragment)
     )
 
 
@@ -55,6 +51,12 @@ class AgenticReviewSettings(ReliabilityContract):
         if value.username is not None or value.password is not None:
             msg = "base_url must not contain credentials"
             raise ValueError(msg)
+        if value.query:
+            query_pairs = urllib.parse.parse_qsl(value.query, keep_blank_values=True)
+            for k, _ in query_pairs:
+                if k.lower() in _SENSITIVE_QUERY_KEYS:
+                    msg = f"base_url must not contain credential query parameter: {k}"
+                    raise ValueError(msg)
         return value
 
     @field_validator("api_key")
