@@ -1,3 +1,18 @@
+---
+title: "Testing Guide"
+description: "Local pytest 실행 범위, marker, Git hook, PR CI와 추가 test evidence 수집 방법을 설명합니다."
+categories:
+  - software-engineering
+tags:
+  - ci
+  - github-actions
+  - lefthook
+  - opentelemetry
+  - pytest
+  - testing
+  - uv
+---
+
 # Testing Guide
 
 이 문서는 사람이 local terminal에서 pytest를 선택하고 실행하는 방법을 설명한다. 어떤 behavior를 test로 설계할지는 [Test Design and Implementation](test-design-and-implementation.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.

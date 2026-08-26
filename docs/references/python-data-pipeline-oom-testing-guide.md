@@ -1,7 +1,15 @@
 ---
-title: "Python 데이터 파이프라인 OOM 테스트 가이드"
-description: "DuckDB, Polars 기반 파이프라인이 정해진 메모리 예산 안에서 안정적으로 완료되는지 검증하는 방법"
-date: 2026-07-30
+title: "OOM Testing: Python Data Pipeline Guide"
+description: "DuckDB와 Polars 기반 Python data pipeline이 정해진 process memory budget 안에서 정확한 결과를 내는지 검증하는 방법을 설명합니다."
+categories:
+  - data-engineering
+  - software-engineering
+tags:
+  - duckdb
+  - polars
+  - pytest
+  - python
+  - testing
 ---
 
 # OOM Testing: Python Data Pipeline Guide

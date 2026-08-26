@@ -1,3 +1,20 @@
+---
+title: "Vision"
+description: "근거 우선 데이터 신뢰성과 안전한 AI 위임을 결합하는 장기 방향, delegation boundary와 LLMOps 원칙을 정의합니다."
+categories:
+  - reliability
+  - ai-engineering
+tags:
+  - ai-delegation
+  - deterministic-validation
+  - evaluation
+  - evidence-first
+  - llm
+  - llmops
+  - recovery
+  - replay
+---
+
 # Vision
 
 > **Vision:** 데이터 상태와 신뢰성 판단을 결정론적 근거에 고정하고, 충분한 품질을 보이면서 실패가 탐지·격리·복구 가능한 범위에서는 유용한 작업을 AI에 가능한 한 많이 위임하며, 그 경계 밖에서는 AI를 사람의 판단을 돕는 보조 계층으로 제한하는 **근거 우선(Evidence-First) 데이터 신뢰성 시스템**을 만든다.

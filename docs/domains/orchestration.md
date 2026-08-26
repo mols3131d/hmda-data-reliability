@@ -1,3 +1,15 @@
+---
+title: "Orchestration: Apache Airflow Data Plane"
+description: "Bronze 적재와 dbt 분석을 연결하는 Apache Airflow data plane의 scope, task graph, runtime configuration과 경계를 설명합니다."
+categories:
+  - orchestration
+  - data-engineering
+tags:
+  - airflow
+  - dbt
+  - bronze-layer
+---
+
 # Orchestration: Apache Airflow Data Plane
 
 **`orchestration`은 Bronze 적재와 dbt 분석만 연결한다.** Domain business logic은 공개 API로 위임하며, reliability lifecycle과 recovery/evaluation은 Airflow DAG에 넣지 않는다.

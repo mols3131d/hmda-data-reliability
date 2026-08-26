@@ -1,3 +1,13 @@
+---
+title: "Branches"
+description: "하나의 변경 목적을 격리하고 검토 가능한 단위로 전달하기 위한 branch 생성, naming, reuse와 agent 제약을 정의합니다."
+categories:
+  - software-engineering
+tags:
+  - git
+  - github
+---
+
 # Branches
 
 브랜치는 하나의 변경 목적을 격리하고 검토 가능한 단위로 전달한다. Research, Plan, Implementation, Review는 branch 구조가 아니라 artifact와 commit으로 구분한다.

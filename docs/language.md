@@ -1,3 +1,12 @@
+---
+title: "Language Policy"
+description: "Repository 문서와 structured metadata에서 한국어와 영어를 사용하는 기준을 정의합니다."
+categories:
+  - software-engineering
+tags:
+  - markdown
+---
+
 # Language Policy
 
 Repository text는 한국어를 기본으로 한다. 다만 한국어 표현이 어색하고 영어가 더 자연스러우면 영어를 사용한다. 자연스러운 technical term을 억지로 번역하지 않는다.

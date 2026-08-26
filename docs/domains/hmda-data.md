@@ -1,3 +1,17 @@
+---
+title: "HMDA Data: Source to Bronze"
+description: "HMDA 원천의 발견·검증, DuckDB Bronze 적재, descriptive EDA와 deterministic synthetic defect 입력을 소유하는 HMDA Data domain을 설명합니다."
+categories:
+  - hmda-data
+  - data-engineering
+tags:
+  - bronze-layer
+  - csv
+  - data-profiling
+  - duckdb
+  - parquet
+---
+
 # HMDA Data: Source to Bronze
 
 **`hmda_data`는 HMDA 원천을 발견·검증해 DuckDB Bronze로 적재하고, read-only descriptive EDA와 결정론적 synthetic defect 입력을 제공한다.** 원천 의미를 해석하거나 incident를 판정하지 않는다.

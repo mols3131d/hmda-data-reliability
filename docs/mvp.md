@@ -1,3 +1,21 @@
+---
+title: "MVP"
+description: "로컬 HMDA Data Lake와 evidence-first Reliability, 제한된 Agentic review를 하나의 완결된 proof로 검증하기 위한 현재 MVP 목표, scope와 acceptance를 정의합니다."
+categories:
+  - data-engineering
+  - reliability
+  - ai-engineering
+tags:
+  - airflow
+  - ai-delegation
+  - dbt
+  - duckdb
+  - evaluation
+  - evidence-first
+  - llm
+  - recovery
+---
+
 # MVP
 
 > **Active goal:** 로컬 HMDA 데이터로 최소 Data Lake를 end-to-end로 실행하고,
