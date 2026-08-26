@@ -4,7 +4,7 @@
     "claudecode": ["rules", "skills"],
     "codexcli": ["rules", "skills"],
     "copilot": ["rules", "skills"],
-    "copilotcli": ["rules"],
+    "copilotcli": ["rules", "skills"],
     "antigravity-ide": ["rules", "skills"],
     "antigravity-cli": ["rules", "skills"]
   },
