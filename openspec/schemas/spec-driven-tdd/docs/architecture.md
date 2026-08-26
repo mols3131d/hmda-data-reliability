@@ -24,27 +24,18 @@ Spec-level behavior가 없는 Change는 OpenSpec change metadata의 `skip_specs:
 | --- | --- |
 | Proposal | 변경 이유, 범위와 영향받는 Capability 또는 spec-free 판단 |
 | Specs | 외부에서 관찰 가능한 행동 계약 |
-| Design | Proposal과 Specs만으로 결정되지 않는 non-obvious technical delta |
+| Design | 다른 planning artifact가 소유하지 않는 non-obvious technical delta |
 | Tasks | 독립적으로 검증 가능한 구현 결과와 진행률 |
 
 이 분리는 같은 판단을 여러 artifact에 복제하지 않고 각 단계가 다음 단계에 필요한 정보만 제공하기 위한 것이다.
 
-### Design Admission Test
-
-Design은 Change의 독립적인 요약 문서가 아니다. Candidate 내용은 다음 순서로 owner를 판정한다.
-
-| Question | Owner |
-| --- | --- |
-| 왜 바꾸는가, 어디까지 바꾸는가, 무엇에 영향이 있는가? | Proposal |
-| 외부에서 관찰하거나 Requirement/Scenario로 검증할 수 있는가? | Specs |
-| 구현 결과 또는 완료 조건인가? | Tasks |
-| 위에 해당하지 않고, 빼면 구현 선택·변경되는 technical boundary·constraint·migration mechanism이 실질적으로 미정이 되는가? | Design |
-
-기술 용어를 사용하거나 implementation에 관한 설명이라는 이유만으로 Design에 들어가지 않는다. Observable contract를 기술적인 표현으로 다시 쓴 내용도 Specs가 소유한다. Design에서 새로운 observable behavior가 발견되면 Specs로 되돌리고, migration의 실제 작업 순서와 완료 조건은 Tasks로 보낸다.
-
-추가 technical delta가 없으면 Design은 기존 architecture를 따른다는 한 문장으로 끝낸다. 이 경우 artifact 존재 자체를 정당화하기 위해 Proposal이나 Specs를 반복하지 않는다.
-
 ## Design Rationale
+
+### Delta-Only Design
+
+Design을 standalone change summary로 만들면 prerequisite인 Proposal과 Specs를 다시 설명하게 되고 같은 판단의 owner가 늘어난다. 따라서 Design은 upstream artifact를 읽는 것을 전제로 하고, Tasks를 위해 추가로 결정해야 하는 technical ambiguity만 해소한다.
+
+구체적인 작성 admission과 표현 방식은 `templates/design.md`가 소유한다. Schema는 Design의 목적과 완료 조건만 소유하며 이 문서에서 작성 규칙을 복제하지 않는다.
 
 ### Outcome-Based Tasks
 
