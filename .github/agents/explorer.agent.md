@@ -4,11 +4,6 @@ description: Read-only codebase explorer for locating relevant files, symbols, c
 tools: [read, search]
 user-invocable: false
 disable-model-invocation: false
-model:
-  - "Grok 4.5 (universal-chat-provider)"
-  - "gemini-3.5-flash-extra-low (universal-chat-provider)"
-  - "GPT 5.6 Luna (universal-chat-provider)"
-  - "Auto (copilot)"
 agents: []
 ---
 
