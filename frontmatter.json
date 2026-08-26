@@ -43,7 +43,6 @@
       "filePrefix": "",
       "contentTypes": ["default"],
       "excludePaths": [
-        "**/README.md",
         "**/AGENTS.md",
         "**/CLAUDE.md",
         "**/CHATBOT.md"
