@@ -81,13 +81,13 @@ Orchestration은 지원되는 runtime override를 최종 `DataOperationRequest`�
 
 ### Requirement: Single pipeline orchestration owner
 
-시스템은 Airflow data-plane workflow가 전체 실행 순서를 유일하게 소유하게 해야 하며(SHALL), 다른 domain 또는 active runtime이 별도의 full-pipeline coordinator를 공개해서는 안 된다(MUST NOT).
+시스템은 Airflow data-plane workflow가 전체 실행 순서를 유일하게 소유하게 해야 하며(SHALL), 다른 domain 또는 active vendor runtime이 별도의 full-pipeline coordinator를 공개해서는 안 된다(MUST NOT).
 
 #### Scenario: Single full-pipeline execution surface
 
 - **WHEN** active project runtime과 configuration에서 full-pipeline 실행 surface를 확인할 때
 - **THEN** Airflow data-plane workflow만 raw-to-analytics 순서를 소유해야 함
-- **AND** 별도의 active full-pipeline coordinator가 공존해서는 안 됨
+- **AND** Dagster dependency, import, definitions, asset 또는 job configuration이 active surface에 남아서는 안 됨
 
 ### Requirement: Control-plane exclusion
 
