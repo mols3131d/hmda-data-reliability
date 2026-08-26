@@ -13,8 +13,6 @@ tags:
 
 ## Tasks
 
-> **Status:** `0/8` tasks complete. 각 task는 `Test first`로 계약을 고정한 뒤 `Done when` 조건을 충족하는 순서로 진행한다.
-
 ### Contracts and validation
 
 - [ ] 1. OpenAI-compatible runtime configuration과 dependency contract를 추가한다
