@@ -28,6 +28,18 @@ def _npx_command(args: Sequence[str]) -> list[str]:
     return [executable, "--yes", "skills@latest", *args]
 
 
+def _run_npx(args: Sequence[str]) -> int:
+    command = _npx_command(args)
+    if os.name == "nt":
+        command_line = subprocess.list2cmdline(command)
+        return subprocess.run(
+            ["cmd.exe", "/d", "/s", "/c", command_line],
+            cwd=REPO_ROOT,
+            check=False,
+        ).returncode
+    return _run(command)
+
+
 def _update_rulesync() -> int:
     return _run([sys.executable, str(RULESYNC_SCRIPT), "update"])
 
@@ -36,7 +48,7 @@ def _update_skills() -> int:
     if not SKILLS_LOCK.is_file():
         print("skills-lock.json not found; skipping Skills CLI update.")
         return 0
-    return _run(_npx_command(("update", "--project", "--yes")))
+    return _run_npx(("update", "--project", "--yes"))
 
 
 def main() -> int:
