@@ -11,7 +11,8 @@
 ## Canonical Boundary
 
 - `specs/**`만 current capability의 canonical OpenSpec contract다.
-- `changes/**`는 작업 계획과 변경 기록이다. Proposal, design, tasks와 review는 intended delta를 설명하지만 current Spec을 직접 override하지 않는다.
+- `changes/**`는 작업 계획과 변경 기록이다. Proposal, Specs, Design과 Tasks는 intended delta를 설명하지만 current Spec을 직접 override하지 않는다.
+- Review feedback은 별도 canonical artifact로 만들지 않고 원인을 소유하는 planning artifact 또는 implementation work로 route한다.
 - Change 내용을 current system fact로 재사용해야 할 때는 먼저 대응 `specs/**`, source/tests와 현재 revision evidence를 확인한다.
 - 구현·검증된 durable contract는 OpenSpec workflow에 따라 `specs/**`에 반영한다. 그 전까지 Change의 내용은 planned or in-flight delta로 취급한다.
 - Archive된 Change는 historical evidence이며 canonical current contract가 아니다.
