@@ -4,7 +4,7 @@
         {
             "label": "Bootstrap: Setup",
             "type": "shell",
-            "command": "python scripts/bootstrap.py setup",
+            "command": "uv run python scripts/bootstrap.py setup",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
@@ -15,7 +15,7 @@
         {
             "label": "Bootstrap: Session",
             "type": "shell",
-            "command": "python scripts/bootstrap.py session",
+            "command": "uv run python scripts/bootstrap.py session",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
@@ -26,7 +26,7 @@
         {
             "label": "Agent Assets: Update",
             "type": "shell",
-            "command": "python scripts/agent_assets.py update",
+            "command": "uv run python scripts/agent_assets.py update",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

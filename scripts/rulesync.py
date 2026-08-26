@@ -192,7 +192,8 @@ def main() -> int:
         "action",
         choices=(*_SOURCE_ACTIONS, *_ACTIONS, "validate"),
         help=(
-            "install locked or update external sources, preview or generate projections, "
+            "install locked or update external sources, "
+            "preview or generate projections, "
             "check drift, run doctor, or validate the locked projection state"
         ),
     )
