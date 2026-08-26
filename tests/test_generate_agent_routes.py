@@ -171,5 +171,7 @@ def test_skill_entries_reject_dependency_name_collision(
         lambda: {"shared": "https://example.test/skills-cli"},
     )
 
-    with pytest.raises(SystemExit, match="Skill dependency exists in both locks: shared"):
+    with pytest.raises(
+        SystemExit, match="Skill dependency exists in both locks: shared"
+    ):
         routes.skill_entries()
