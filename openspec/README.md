@@ -1,6 +1,6 @@
 # OpenSpec
 
-`openspec/`는 **current capability의 canonical Spec**과 그 Spec을 변경하기 위한 **work Change**를 관리한다.
+`openspec/`는 **current capability의 canonical Spec**과 시스템 변경을 계획·추적하는 **work Change**를 관리한다.
 
 ## 구조
 
@@ -10,7 +10,7 @@
 | [`changes/`](changes/) | proposal, applicable specs, design, tasks와 intended change를 담는 작업 공간 및 archive | **Non-canonical** |
 | [`schemas/spec-driven-tdd/`](schemas/spec-driven-tdd/) | 재사용 가능한 `spec-driven-tdd` schema | Workflow/schema contract |
 
-Change는 현재 Spec을 바꾸기 위한 계획과 실행 기록이다. Change가 존재하거나 task가 완료됐다는 사실만으로 current capability contract가 바뀌지 않는다. 구현·검증된 durable contract가 OpenSpec workflow를 통해 `specs/**`에 반영된 뒤에야 canonical current Spec이 갱신된다.
+Change는 시스템 변경의 계획과 실행 기록이다. Spec-level behavior가 바뀌면 delta Spec을 통해 canonical contract 변경을 제안하고, 그렇지 않은 Change는 `skip_specs: true`로 Spec을 변경하지 않는다. Change가 존재하거나 task가 완료됐다는 사실만으로 current capability contract가 바뀌지 않으며, 구현·검증된 durable contract가 OpenSpec workflow를 통해 `specs/**`에 반영된 뒤에야 canonical current Spec이 갱신된다.
 
 Review feedback은 별도 canonical artifact가 아니라 원인을 소유하는 planning artifact 또는 implementation work로 route한다. Archive된 Change도 historical work artifact이며 current capability의 source of truth가 아니다.
 
