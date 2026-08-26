@@ -2,7 +2,7 @@
 type: openspec-spec-driven-tdd-design
 category: design
 title: <title>
-description: <이 Design이 해결하는 technical ambiguity를 한 문장으로 설명한다.>
+description: <핵심 technical delta 또는 추가 설계 판단이 없음을 한 문장으로 설명한다.>
 ---
 
 <!--
