@@ -12,6 +12,7 @@
 | R-008 | Schema의 Apply 지침은 특정 언어, 테스트 도구, 명령 또는 저장소 구조를 요구하지 않아야 한다. |
 | R-009 | 프로젝트별 실행 지침은 `openspec/config.yaml`에서 제공할 수 있어야 한다. |
 | R-010 | Schema 개발 문서는 `docs/`, 장기 보존할 개발 의도는 `docs/baseline/`에 위치해야 한다. |
+| R-013 | Spec-level behavior가 없는 Change는 OpenSpec change metadata의 `skip_specs: true`를 사용해 delta Spec 없이 진행할 수 있어야 한다. |
 
 # Decisions
 
@@ -24,6 +25,7 @@
 | D-007 | 모든 Markdown heading을 parser API로 고정하지 않는다. | 인간 가독성과 문서 편집 유연성을 보존한다. |
 | D-008 | 행동 변경은 test-first feedback loop를 사용하되 TDD phase를 별도 task로 요구하지 않는다. | TDD의 feedback 가치는 유지하면서 progress와 planning overhead를 줄인다. |
 | D-011 | 현재 범위의 feedback은 기존 owning task를 수정하거나 누락된 최소 implementation task를 추가하고, planning 수정은 owning artifact와 직접 영향받는 downstream에 한정한다. | Review remediation workstream과 전체 planning 재순회를 방지하면서 실제 누락 작업은 숨기지 않는다. |
+| D-012 | Spec-free Change는 `skip_specs: true`를 사용하고 placeholder Capability나 Requirement를 만들지 않는다. | OpenSpec이 제공하는 zero-delta contract를 사용해 구현 변경을 행동 계약으로 오분류하는 drift를 방지한다. |
 
 # Invariants
 
@@ -36,6 +38,7 @@
 | I-005 | Schema template은 runtime artifact indexing과 Tasks 집계 대상이 아니다. |
 | I-006 | Project-specific command와 tool 선택을 schema baseline에 고정하지 않는다. |
 | I-008 | Review, self-review, TDD phase와 다른 process/gate state는 Tasks의 최상위 체크박스로 표현하지 않는다. |
+| I-009 | `skip_specs: true`인 Change는 delta Spec을 생성하지 않으며 spec-level behavior 변화가 생기면 marker를 제거하고 Specs를 작성한다. |
 
 # Allowed Changes
 
@@ -69,6 +72,16 @@
 | Compatibility | Artifact DAG, checkbox parser syntax와 counter field는 유지한다. Tags field도 계속 허용한다. 기존 active/archive artifact는 migration하지 않으며 새로 생성하거나 의미 있게 수정하는 artifact부터 최소 형식을 적용한다. Schema version은 유지한다. |
 | Rejected alternatives | Review 횟수 제한이나 최대 loop 수만 추가하면 원인인 progress modeling과 feedback ownership은 남는다. 별도 review artifact 복원도 process state를 다시 schema에 넣으므로 기각한다. |
 | Synchronized changes | `schema.yaml`, schema README, `templates/proposal.md`, `templates/spec.md`, `templates/design.md`, `templates/tasks.md`, `docs/architecture.md`와 baseline을 함께 갱신한다. |
+
+## Support Spec-Free Changes
+
+| Item | Record |
+| --- | --- |
+| Changed baseline | R-013, D-012와 I-009 추가 |
+| Problem | Spec-level behavior가 없는 refactor를 OpenSpec Change로 다룰 때 zero-delta 경로가 schema에 드러나지 않아 내부 구현 구조를 새 Capability와 Requirement로 오분류한 사례가 있었다. |
+| Compatibility | Behavior-changing Change의 Proposal → Specs → Design → Tasks 흐름은 유지한다. Spec-free Change는 OpenSpec change metadata의 `skip_specs: true`를 사용하며 기존 archive는 migration하지 않는다. Schema version과 artifact DAG는 유지한다. |
+| Rejected alternatives | Validation을 만족시키기 위한 placeholder Capability/Requirement 생성과 별도 no-spec artifact 추가는 잘못된 canonical contract 또는 불필요한 workflow surface를 만들므로 기각한다. |
+| Synchronized changes | `schema.yaml`, schema README, `templates/proposal.md`, `docs/architecture.md`와 baseline을 함께 갱신한다. |
 
 # Change Control
 
