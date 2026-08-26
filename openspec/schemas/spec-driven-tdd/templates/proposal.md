@@ -26,7 +26,7 @@ description: <description>
 
 ## What Changes
 
-- <외부에서 관찰 가능한 핵심 변경>
+- <이번 Change가 만드는 핵심 결과 또는 변경>
 
 <!-- OPTIONAL SECTION: 범위 오해 가능성이 있을 때만 유지한다. -->
 
