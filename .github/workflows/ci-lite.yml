@@ -92,7 +92,7 @@ jobs:
             esac
 
             case "$path" in
-              .github/agents/review-*.agent.md|.vscode/settings.json|scripts/validate_review_agents.py)
+              .github/agents/review-*.agent.md|.vscode/settings.json|.rulesync/skills/prj-load-context-development/SKILL.md|scripts/validate_review_agents.py)
                 review_agents=true
                 ;;
             esac
@@ -153,6 +153,8 @@ jobs:
                     full_unit=true
                     ;;
                 esac
+                ;;
+              scripts/validate_review_agents.py)
                 ;;
               src/hmda_reliability/*|tests/*|*.py)
                 tests=true
