@@ -185,6 +185,18 @@ def test_identity_and_canonical_fact_contradictions_are_rejected(
             "forbidden_action",
         ),
         (
+            "- Execute the backfill 2025 partition.",
+            "forbidden_action",
+        ),
+        (
+            "* Proceed with the backfill.",
+            "forbidden_action",
+        ),
+        (
+            "데이터 복구를 즉시 진행하십시오.",
+            "forbidden_action",
+        ),
+        (
             "Delete the evidence file.",
             "forbidden_action",
         ),

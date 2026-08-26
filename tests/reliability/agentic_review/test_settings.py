@@ -47,6 +47,8 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
         ("base_url", "https://example.com/v1?access_token=secret-value"),
         ("base_url", "https://example.com/v1?client_secret=secret-value"),
         ("base_url", "http://localhost:11434/v1?mode=eval"),
+        ("base_url", "https://example.com/v1#token"),
+        ("base_url", "http://localhost:11434/v1#secret"),
         ("api_key", "   "),
         ("model", "   "),
         ("timeout_seconds", 0),

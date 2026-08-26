@@ -38,6 +38,9 @@ class AgenticReviewSettings(ReliabilityContract):
         if value.query:
             msg = "base_url must not contain query parameters"
             raise ValueError(msg)
+        if value.fragment:
+            msg = "base_url must not contain URL fragments"
+            raise ValueError(msg)
         return value
 
     @field_validator("api_key")

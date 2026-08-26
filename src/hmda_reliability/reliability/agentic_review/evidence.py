@@ -46,6 +46,9 @@ class SanitizedAgenticReviewConfiguration(ReliabilityContract):
         if parsed.query:
             msg = "sanitized base_url must not contain query parameters"
             raise ValueError(msg)
+        if parsed.fragment:
+            msg = "sanitized base_url must not contain URL fragments"
+            raise ValueError(msg)
         return normalized
 
 

@@ -44,7 +44,7 @@ _NEGATION_PATTERN = re.compile(
 )
 
 _KOREAN_NEGATION_PATTERN = re.compile(
-    r"(?:하지\s*마라|하지\s*마세요|금지|않는다|않습니다|않아야\s*한다|않도록\s*한다)",
+    r"(?:하지\s*마라|하지\s*마세요|하지\s*않는다|하지\s*않습니다|하지\s*마십시오|금지|않는다|않습니다|않아야\s*한다|않도록\s*한다)",
 )
 
 _ADVISORY_PATTERN = re.compile(
@@ -73,17 +73,20 @@ _DIRECT_IMPERATIVE_PATTERNS = tuple(
         r"\brm\s+-[a-z]*r[a-z]*\b",
         r"^(?:please\s+)?(?:delete|overwrite|modify|mutate)\s+(?:the|this|that)\b",
         r"(?:backfill|백필|복구|shell|sql|파일|database|데이터).{0,80}"
-        r"(?:즉시\s*)?(?:실행하라|실행하세요|수행하라|적용하라|삭제하라|변경하라|진행하라|진행하세요|시작하라|시작하세요)",
-        r"(?:실행하라|실행하세요|수행하라|적용하라|진행하라|진행하세요|시작하라|시작하세요).{0,80}"
+        r"(?:즉시\s*)?(?:실행하라|실행하세요|실행하십시오|수행하라|수행하십시오|적용하라|적용하십시오|"
+        r"삭제하라|삭제하십시오|변경하라|변경하십시오|진행하라|진행하세요|진행하십시오|시작하라|시작하세요|시작하십시오)",
+        r"(?:실행하라|실행하세요|실행하십시오|수행하라|수행하십시오|적용하라|적용하십시오|진행하라|진행하세요|진행하십시오|시작하라|시작하세요|시작하십시오).{0,80}"
         r"(?:backfill|백필|복구|shell|sql|파일|database|데이터)",
         r"(?:지금\s*)?(?:즉시\s*)?(?:백필|복구)(?:을|를)?\s*"
-        r"(?:진행하라|진행하세요|시작하라|시작하세요|실행하라|실행하세요)",
+        r"(?:진행하라|진행하세요|진행하십시오|시작하라|시작하세요|시작하십시오|실행하라|실행하세요|실행하십시오|수행하라|수행하십시오)",
     )
 )
 
 
 def _has_authority_escalation(text: str) -> bool:
-    sentences = [s.strip() for s in re.split(r"[\n;!?.]+", text) if s.strip()]
+    sentences = [
+        s.strip().lstrip("-*• \t") for s in re.split(r"[\n;!?.]+", text) if s.strip()
+    ]
     for sentence in sentences:
         if _NEGATION_PATTERN.search(sentence) or _KOREAN_NEGATION_PATTERN.search(
             sentence
@@ -95,7 +98,9 @@ def _has_authority_escalation(text: str) -> bool:
 
 
 def _has_forbidden_action(text: str) -> bool:
-    sentences = [s.strip() for s in re.split(r"[\n;!?.]+", text) if s.strip()]
+    sentences = [
+        s.strip().lstrip("-*• \t") for s in re.split(r"[\n;!?.]+", text) if s.strip()
+    ]
     for sentence in sentences:
         if _NEGATION_PATTERN.search(sentence) or _KOREAN_NEGATION_PATTERN.search(
             sentence
