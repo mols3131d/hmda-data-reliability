@@ -3,7 +3,7 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: "Implement bounded null-spike agentic review"
 description: "null_spike evidence-bound review contract, typed result, deterministic guard, OpenAI-compatible adapter와 invocation provenance를 test-first로 구현한다."
-tasks_completed: 0
+tasks_completed: 8
 tasks_total: 8
 tags:
   - "domain:reliability"
@@ -15,7 +15,7 @@ tags:
 
 ### Contracts and validation
 
-- [ ] 1. OpenAI-compatible runtime configuration과 dependency contract를 추가한다
+- [x] 1. OpenAI-compatible runtime configuration과 dependency contract를 추가한다
   - **Covers:** Provider-compatible bounded invocation, Durable invocation evidence의 sanitized configuration
   - **Test first:**
     - explicit `base_url`, `SecretStr api_key`, `model`, `timeout_seconds`, `max_retries`, `temperature`, `max_output_tokens`, `max_prompt_bytes`와 `max_output_bytes`의 validation 및 기본값을 고정한다.
@@ -26,7 +26,7 @@ tags:
     - Invalid/empty configuration을 거부하고 sanitized configuration serialization에 API key/credential이 포함되지 않는다.
     - Network 없이 contract test가 통과한다.
 
-- [ ] 2. `AgenticReviewInput`·`AgenticReviewOutput`·`AgenticReviewResult` contract를 구현한다
+- [x] 2. `AgenticReviewInput`·`AgenticReviewOutput`·`AgenticReviewResult` contract를 구현한다
   - **Covers:** Structured null-spike review input, Structured advisory review output, Typed review result boundary
   - **Test first:**
     - 기존 detector fixture와 `RemediationDraft`를 이용해 snapshot input, exact evidence reference set, identity/asset/partition match를 고정한다.
@@ -36,7 +36,7 @@ tags:
     - Nested input snapshot이 caller mutation에 영향을 받지 않는다.
     - `accepted`, `validation_failed`, `unavailable`, `input_rejected`, `provenance_failed`의 output/path/failure field invariants가 provider 호출 없이 검증된다.
 
-- [ ] 3. Provider-independent deterministic validator와 adversarial fixture를 구현한다
+- [x] 3. Provider-independent deterministic validator와 adversarial fixture를 구현한다
   - **Covers:** Deterministic review validation, Deterministic and adversarial evaluation의 offline scenarios
   - **Test first:** 제공되지 않은 evidence ID, incident/type/target-column mismatch, canonical numeric fact mismatch, schema-valid authority escalation, forbidden action, descriptive draft action, direct/indirect prompt injection과 safe advisory output을 fake output으로 작성한다.
   - **Done when:**
@@ -46,7 +46,7 @@ tags:
 
 ### Provider and evidence
 
-- [ ] 4. Canonical prompt renderer와 thin OpenAI-compatible adapter를 구현한다
+- [x] 4. Canonical prompt renderer와 thin OpenAI-compatible adapter를 구현한다
   - **Covers:** Canonical provider input projection, Provider-compatible bounded invocation, Prompt injection is data, not instruction
   - **Test first:**
     - Spec-defined allowlist만 가진 `canonical_input`과 allowlist 밖 field exclusion, canonical serialization, prompt digest를 고정한다.
@@ -59,7 +59,7 @@ tags:
     - Evidence payload는 data block으로 전달되고 prompt renderer/adapter가 shell, SQL, file, recovery 또는 mutation action을 실행하지 않는다.
     - Prompt가 `max_prompt_bytes`를 넘으면 provider 전에 `input_rejected`로 종료된다.
 
-- [ ] 5. Logical-call 기준 create-only `AgenticInvocationEvidence` model과 local JSON store를 구현한다
+- [x] 5. Logical-call 기준 create-only `AgenticInvocationEvidence` model과 local JSON store를 구현한다
   - **Covers:** Durable invocation evidence
   - **Test first:**
     - Temporary artifact root의 logical success/validation-failure/unavailable record와 JSON reload를 고정한다.
@@ -74,7 +74,7 @@ tags:
 
 ### Orchestration and product surface
 
-- [ ] 6. `review_null_spike()` orchestration과 typed failure boundary를 연결한다
+- [x] 6. `review_null_spike()` orchestration과 typed failure boundary를 연결한다
   - **Covers:** Structured null-spike review input, Provider-compatible bounded invocation, Advisory and read-only boundary
   - **Test first:** Valid input의 input preflight → canonical projection → prompt → adapter → parse → deterministic validation → evidence persistence 순서와 `input_rejected`/`validation_failed`/`unavailable`/`provenance_failed` 결과를 fake adapter로 고정한다. `Incident`/`Evidence`/`RemediationDraft`/`RecoveryProposal`/`Approval`/database state snapshot을 전후 비교한다.
   - **Done when:**
@@ -83,7 +83,7 @@ tags:
     - `input_rejected`는 provider/evidence를 만들지 않는다.
     - `run_incident_lifecycle()`은 자동 호출되지 않으며 어떤 review 경로도 approval, recovery, mutation을 수행하지 않는다.
 
-- [ ] 7. Offline/integration public surface와 provider configuration 문서를 정렬한다
+- [x] 7. Offline/integration public surface와 provider configuration 문서를 정렬한다
   - **Covers:** Deterministic and adversarial evaluation, Local and cloud-compatible configuration
   - **Test first:** Public export smoke test, fake-client integration, existing reliability regression과 network 없는 기본 pytest 실행을 고정한다.
   - **Done when:**
@@ -93,7 +93,7 @@ tags:
 
 ### Live proof
 
-- [ ] 8. Opt-in Ollama live invocation proof를 제공한다
+- [x] 8. Opt-in Ollama live invocation proof를 제공한다
   - **Covers:** Ollama live proof, Successful invocation provenance
   - **Test first:** 명시적 opt-in과 필수 endpoint/model configuration이 없을 때 default suite가 network 없이 유지되는지 고정한다. 설정이 있을 때 실제 response shape와 provenance assertions가 실행되는 별도 live command를 고정한다.
   - **Done when:**
