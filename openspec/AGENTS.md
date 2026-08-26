@@ -11,16 +11,17 @@
 ## Canonical Boundary
 
 - `specs/**`만 current capability의 canonical OpenSpec contract다.
-- `changes/**`는 작업 계획과 변경 기록이다. Proposal, design, tasks와 review는 intended delta를 설명하지만 current Spec을 직접 override하지 않는다.
+- `changes/**`는 작업 계획과 변경 기록이다. Proposal, Specs, Design과 Tasks는 intended change를 설명하지만 current Spec을 직접 override하지 않는다.
+- Review feedback은 별도 canonical artifact로 만들지 않고 원인을 소유하는 planning artifact 또는 implementation work로 route한다.
 - Change 내용을 current system fact로 재사용해야 할 때는 먼저 대응 `specs/**`, source/tests와 현재 revision evidence를 확인한다.
-- 구현·검증된 durable contract는 OpenSpec workflow에 따라 `specs/**`에 반영한다. 그 전까지 Change의 내용은 planned or in-flight delta로 취급한다.
+- 구현·검증된 durable contract는 OpenSpec workflow에 따라 `specs/**`에 반영한다. 그 전까지 Change의 내용은 planned or in-flight work로 취급한다.
 - Archive된 Change는 historical evidence이며 canonical current contract가 아니다.
 
 ## 작업 규칙
 
 - 활성 지침은 `README.md`의 소유권에 맞는 파일 한 곳에서만 관리한다.
 - 새 Spec 또는 Change를 만들기 전에 같은 capability의 Spec이나 같은 목적의 active Change가 있는지 확인하고, 있으면 기존 artifact 갱신을 우선한다.
-- Change가 영향받는 Spec과 실제 변경 범위를 일치시킨다.
+- Spec-level behavior가 바뀌면 Change가 영향받는 Spec과 실제 변경 범위를 일치시킨다. 바뀌지 않으면 schema가 지원하는 spec-free 경로를 사용하고 Capability나 Requirement를 만들지 않는다.
 - 요청 범위와 직접 관련된 artifact만 수정한다.
 - rename, merge, split 시 의미와 영향받는 OpenSpec 참조를 함께 확인한다.
 - archive 전 구현·검증 근거와 current Spec의 일관성을 확인한다.
