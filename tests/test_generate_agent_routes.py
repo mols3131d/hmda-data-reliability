@@ -151,6 +151,47 @@ def test_dependency_skill_entry_reads_frontmatter_without_real_network(
 
 
 @pytest.mark.unit
+def test_skill_entries_include_external_dependency_entries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rulesync_source = "https://example.test/rulesync/zeta"
+    skills_cli_source = "https://example.test/skills-cli/alpha"
+    monkeypatch.setattr(routes, "find_local_skill_files", lambda: [])
+    monkeypatch.setattr(
+        routes,
+        "rulesync_dependency_sources",
+        lambda: {"zeta": rulesync_source},
+    )
+    monkeypatch.setattr(
+        routes,
+        "skills_cli_dependency_sources",
+        lambda: {"alpha": skills_cli_source},
+    )
+    monkeypatch.setattr(
+        routes,
+        "dependency_skill_entry",
+        lambda name, source: {
+            "name": name,
+            "description": f"{name} skill",
+            "source": source,
+        },
+    )
+
+    assert routes.skill_entries() == [
+        {
+            "name": "alpha",
+            "description": "alpha skill",
+            "source": skills_cli_source,
+        },
+        {
+            "name": "zeta",
+            "description": "zeta skill",
+            "source": rulesync_source,
+        },
+    ]
+
+
+@pytest.mark.unit
 def test_skill_entries_reject_dependency_name_collision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
