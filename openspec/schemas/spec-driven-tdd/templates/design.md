@@ -47,11 +47,3 @@ description: <이 Design이 해결하는 technical ambiguity를 한 문장으로
 
 - <전환 전략 또는 compatibility mechanism>
 -->
-
-<!-- OPTIONAL: technical delta의 구조나 흐름이 텍스트보다 명확할 때만 사용한다. 전체 behavior flow를 다시 그리거나 같은 판단을 prose로 반복하지 않는다.
-
-```mermaid
-flowchart LR
-    A[Existing Boundary] --> B[Changed Implementation]
-```
--->
