@@ -39,21 +39,30 @@ _AUTHORITY_PATTERNS = tuple(
 _FORBIDDEN_ACTION_PATTERNS = tuple(
     re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
     for pattern in (
-        r"\b(?:execute|run|apply|trigger|perform|start)\b.{0,100}"
-        r"\b(?:backfill|recovery|shell|sql|command|mutation|database|file|data)\b",
-        r"\b(?:backfill|recovery|shell|sql|command|mutation)\b.{0,100}"
-        r"\b(?:execute|run|apply|trigger|perform|start)\b",
+        r"\b(?:execute|run|apply|trigger|perform|start|proceed\s+with|initiate|launch)\b.{0,100}"
+        r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command|database|file|data)\b",
+        r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command)\b.{0,100}"
+        r"\b(?:execute|run|apply|trigger|perform|start|proceed\s+with|initiate|launch)\b",
+        r"\b(?:you\s+should|you\s+must|must|should)\s+"
+        r"(?:backfill|recover|execute|run|apply|delete|modify|mutate|perform|initiate)\b.{0,80}"
+        r"\b(?:now|immediately)\b",
         r"\b(?:drop\s+table|delete\s+from|truncate\s+table|insert\s+into|"
         r"update\s+[^\s]+\s+set)\b",
-        r"(?:^|[.!?]\s*)(?:please\s+)?backfill\s+"
-        r"(?:the|this|that|\d{4}\b).{0,80}\b(?:now|immediately)\b",
+        r"(?:^|[.!?]\s*)(?:please\s+)?"
+        r"(?:backfill|proceed\s+with\s+(?:the\s+)?backfill|initiate\s+(?:the\s+)?recovery|"
+        r"launch\s+(?:the\s+)?backfill)\s+"
+        r"(?:the|this|that|\d{4}\b|now|immediately).{0,80}\b(?:now|immediately)?\b",
+        r"(?:^|[.!?]\s*)(?:please\s+)?(?:proceed\s+with|initiate|launch)\s+"
+        r"(?:the\s+|this\s+)?(?:backfill|recovery|remediation|mutation)\b",
         r"(?:^|[.!?]\s*)(?:please\s+)?"
         r"(?:delete|overwrite|modify|mutate)\s+(?:the|this|that)\b",
         r"\brm\s+-[a-z]*r[a-z]*\b",
-        r"(?:backfill|복구|shell|sql|파일|database|데이터).{0,80}"
-        r"(?:즉시\s*)?(?:실행하라|실행하세요|수행하라|적용하라|삭제하라|변경하라)",
-        r"(?:실행하라|실행하세요|수행하라|적용하라).{0,80}"
-        r"(?:backfill|복구|shell|sql|파일|database|데이터)",
+        r"(?:backfill|백필|복구|shell|sql|파일|database|데이터).{0,80}"
+        r"(?:즉시\s*)?(?:실행하라|실행하세요|수행하라|적용하라|삭제하라|변경하라|진행하라|진행하세요|시작하라|시작하세요)",
+        r"(?:실행하라|실행하세요|수행하라|적용하라|진행하라|진행하세요|시작하라|시작하세요).{0,80}"
+        r"(?:backfill|백필|복구|shell|sql|파일|database|데이터)",
+        r"(?:지금\s*)?(?:즉시\s*)?(?:백필|복구)(?:을|를)?\s*"
+        r"(?:진행하라|진행하세요|시작하라|시작하세요|실행하라|실행하세요)",
     )
 )
 

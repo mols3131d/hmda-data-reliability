@@ -45,11 +45,11 @@ Provider SDK, prompt rendering, validator와 filesystem persistence는 서로 �
 
 - **Decision:** Parsed output은 provider와 무관한 deterministic validator가 input snapshot의 identity, canonical facts, Evidence references와 action boundary에 대조한다. Validator는 violation만 반환하며 approval, recovery, shell, SQL, file 또는 data mutation interface를 갖지 않는다.
 - **Rationale:** Schema validity만으로 evidence binding이나 authority safety를 증명할 수 없다. 같은 offline oracle을 fake response와 live response에 적용해야 provider 품질과 safety contract를 분리할 수 있다.
-- **Trade-off:** Versioned action policy는 자연어 의미 전체를 판정하는 semantic judge가 아니다. 안전성은 validator뿐 아니라 read-only execution boundary에도 의존한다.
+- **Trade-off:** Versioned action policy(`forbidden-action-policy-v1`)는 bounded regex/grammar 패턴 기반의 명시적 imperative/execution 탐지 규칙이며, 자연어 의미 전체를 판정하는 semantic judge가 아니다. 안전성은 validator뿐 아니라 read-only execution boundary에도 의존한다.
 
 ### D5. Persist one logical invocation and fail closed on provenance
 
-- **Decision:** Provider call이 시작된 logical review마다 invocation identity 하나를 만들고 transport retry는 attempt count로 집계한다. Record는 canonical input, parsed output이 있으면 그 output, validation, sanitized configuration, prompt identity/digest, `project_revision`과 runtime metadata를 create-only로 저장한다. Persistence가 실패하면 accepted result를 반환하지 않는다. Input preflight failure는 provider invocation이 아니므로 record를 만들지 않는다.
+- **Decision:** Provider call이 시작된 logical review마다 invocation identity 하나를 만들고 transport retry는 attempt count로 집계한다. Record는 canonical input, parsed output이 있으면 그 output, validation, sanitized configuration, prompt identity/digest, `project_revision`과 runtime metadata를 create-only로 저장한다. Directory 생성, temporary file write/link, fsync와 cleanup을 포함한 filesystem failure는 모두 `InvocationEvidenceStoreError`로 정규화하여 accepted result를 차단하고 typed `provenance_failed`로 종료한다. Input preflight failure는 provider invocation이 아니므로 record를 만들지 않는다.
 - **Rationale:** 한 review의 input, output, validation과 runtime evidence를 한 record에 묶으면 failure investigation과 replay가 단순해진다. Provenance가 없는 accepted output을 허용하지 않아 observable AI operation이라는 경계를 유지한다.
 - **Trade-off:** Local filesystem store는 distributed audit log, encryption 또는 retention policy를 제공하지 않는다. 이 slice는 local proof에 필요한 create-only semantics까지만 소유한다.
 
@@ -61,5 +61,5 @@ Offline test는 snapshot invariants, canonical input rendering, provider-indepen
 
 - **Ungrounded output:** canonical facts와 Evidence reference를 deterministic validator가 다시 비교한다.
 - **Prompt injection:** Evidence와 model output을 untrusted data로 취급하고 review surface에 execution interface를 제공하지 않는다.
-- **Provenance leakage:** provider에 전달한 allowlisted canonical input과 parsed output만 bounded record에 보존하고 raw prompt, raw log, credential과 raw provider error는 저장하지 않는다.
+- **Provenance leakage:** `base_url` 내 credential(userinfo) 입력을 거부하고, provider에 전달한 allowlisted canonical input과 parsed output만 bounded record에 보존하며 raw prompt, raw log, credential과 raw provider error는 저장하지 않는다.
 - **Provider drift:** common adapter contract 밖의 model behavior를 자동으로 흡수하지 않고 typed failure로 격리한다.

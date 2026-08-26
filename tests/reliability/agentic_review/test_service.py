@@ -341,3 +341,33 @@ def test_review_preserves_reliability_objects_and_target_state(
     assert material.detection.evidence.model_dump(mode="python") == before["evidence"]
     assert material.draft.model_dump(mode="python") == before["draft"]
     assert target_state.read_text(encoding="utf-8") == "unchanged"
+
+
+def test_service_returns_provenance_failed_on_real_store_directory_error(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    blocked_file = tmp_path / "blocked"
+    blocked_file.write_text("file-not-dir", encoding="utf-8")
+    provider = FakeProvider(
+        provider_module.ProviderResponse(
+            content=_safe_output(null_spike_review_material).model_dump_json(),
+            attempt_count=1,
+            latency_ms=5,
+        )
+    )
+
+    result = service_module.review_null_spike(
+        incident=null_spike_review_material.detection.incident,
+        evidence=[null_spike_review_material.detection.evidence],
+        draft=null_spike_review_material.draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=provider,
+        artifact_root=blocked_file,
+    )
+
+    assert result.status == "provenance_failed"
+    assert result.output is None
+    assert result.failure_code == "invocation_evidence_write_failed"

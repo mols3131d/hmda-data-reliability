@@ -208,3 +208,38 @@ def test_store_rejects_unsafe_identity_and_oversized_record(
     with pytest.raises(store_module.InvocationEvidenceSizeError):
         store.write(record, max_record_bytes=32)
     assert not store.path_for(record.invocation_id).exists()
+
+
+def test_store_write_normalizes_directory_creation_failure(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    blocked_root = tmp_path / "blocked"
+    blocked_root.write_text("not-a-directory", encoding="utf-8")
+    store = store_module.InvocationEvidenceStore(blocked_root)
+    record = _record(null_spike_review_material)
+
+    with pytest.raises(store_module.InvocationEvidenceWriteError):
+        store.write(record, max_record_bytes=131_072)
+
+
+def test_store_write_handles_cleanup_error_gracefully(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = store_module.InvocationEvidenceStore(tmp_path)
+    record = _record(null_spike_review_material)
+
+    original_unlink = Path.unlink
+
+    def failing_unlink(self: Path, missing_ok: bool = False) -> None:
+        if self.name.endswith(".tmp"):
+            raise OSError("simulated unlink failure")
+        original_unlink(self, missing_ok=missing_ok)
+
+    monkeypatch.setattr(Path, "unlink", failing_unlink)
+
+    path = store.write(record, max_record_bytes=131_072)
+    assert path.exists()
+    assert store.load(record.invocation_id) == record

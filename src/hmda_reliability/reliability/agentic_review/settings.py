@@ -2,11 +2,38 @@
 
 from __future__ import annotations
 
+import urllib.parse
 from typing import Literal
 
 from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
 
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
+
+_SENSITIVE_QUERY_KEYS = frozenset(
+    {"key", "api_key", "apikey", "token", "secret", "auth", "password"}
+)
+
+
+def _sanitize_base_url(url: str) -> str:
+    """Return URL string with userinfo stripped and sensitive query params redacted."""
+    parsed = urllib.parse.urlsplit(url)
+    netloc = parsed.hostname or ""
+    if parsed.port is not None:
+        netloc = f"{netloc}:{parsed.port}"
+
+    if parsed.query:
+        query_pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+        sanitized_pairs = [
+            (k, "[REDACTED]" if k.lower() in _SENSITIVE_QUERY_KEYS else v)
+            for k, v in query_pairs
+        ]
+        sanitized_query = urllib.parse.urlencode(sanitized_pairs)
+    else:
+        sanitized_query = ""
+
+    return urllib.parse.urlunsplit(
+        (parsed.scheme, netloc, parsed.path, sanitized_query, parsed.fragment)
+    )
 
 
 class AgenticReviewSettings(ReliabilityContract):
@@ -21,6 +48,14 @@ class AgenticReviewSettings(ReliabilityContract):
     max_output_tokens: int = Field(default=1024, gt=0, le=32_768)
     max_prompt_bytes: int = Field(default=65_536, gt=0, le=1_048_576)
     max_output_bytes: int = Field(default=32_768, gt=0, le=1_048_576)
+
+    @field_validator("base_url")
+    @classmethod
+    def _validate_base_url(cls, value: AnyHttpUrl) -> AnyHttpUrl:
+        if value.username is not None or value.password is not None:
+            msg = "base_url must not contain credentials"
+            raise ValueError(msg)
+        return value
 
     @field_validator("api_key")
     @classmethod
@@ -43,7 +78,7 @@ class AgenticReviewSettings(ReliabilityContract):
         """Return the bounded provider configuration without credentials."""
 
         return {
-            "base_url": str(self.base_url),
+            "base_url": _sanitize_base_url(str(self.base_url)),
             "model": self.model,
             "timeout_seconds": self.timeout_seconds,
             "max_retries": self.max_retries,

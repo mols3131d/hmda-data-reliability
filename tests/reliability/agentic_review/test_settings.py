@@ -39,6 +39,8 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
     [
         ("base_url", ""),
         ("base_url", "not-a-url"),
+        ("base_url", "http://user:secret@localhost:11434/v1"),
+        ("base_url", "https://alice:pass123@example.com/v1"),
         ("api_key", "   "),
         ("model", "   "),
         ("timeout_seconds", 0),
@@ -79,6 +81,20 @@ def test_sanitized_configuration_excludes_credentials() -> None:
     assert "api_key" not in sanitized
     assert "credential" not in sanitized
     assert "local-test-key" not in repr(sanitized)
+
+
+def test_sanitized_configuration_redacts_sensitive_query_parameters() -> None:
+    values = _valid_values()
+    values["base_url"] = "http://localhost:11434/v1?api_key=secret-token&mode=eval"
+    settings = settings_module.AgenticReviewSettings.model_validate(values)
+
+    sanitized = settings.sanitized_configuration()
+
+    assert (
+        sanitized["base_url"]
+        == "http://localhost:11434/v1?api_key=%5BREDACTED%5D&mode=eval"
+    )
+    assert "secret-token" not in repr(sanitized)
 
 
 def test_public_settings_do_not_read_provider_environment(
