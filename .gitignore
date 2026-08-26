@@ -76,7 +76,6 @@ dbt/.user.yml
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
-.airflow
 
 # OpenSpec research is temporary except explicit tracked surfaces
 /openspec/research/*
