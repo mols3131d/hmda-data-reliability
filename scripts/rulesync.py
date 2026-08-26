@@ -4,12 +4,12 @@
 from __future__ import annotations
 
 import argparse
-import os
-import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+
+from _commands import run_npx
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CLAUDE_BRIDGE_NAME = "CLAUDE.md"
@@ -19,7 +19,7 @@ CLAUDE_BRIDGE_MARKER = (
 CLAUDE_BRIDGE_CONTENT = f"{CLAUDE_BRIDGE_MARKER}\n\n@AGENTS.md\n"
 
 _SOURCE_ACTIONS: dict[str, tuple[str, ...]] = {
-    "install": ("install",),
+    "install": ("install", "--frozen"),
     "update": ("install", "--update"),
 }
 _ACTIONS: dict[str, tuple[str, ...]] = {
@@ -30,25 +30,8 @@ _ACTIONS: dict[str, tuple[str, ...]] = {
 }
 
 
-def _npx_command(args: Sequence[str]) -> list[str]:
-    executable = shutil.which("npx.cmd") if os.name == "nt" else shutil.which("npx")
-    if executable is None:
-        executable = shutil.which("npx")
-    if executable is None:
-        raise RuntimeError("npx is required to run Rulesync.")
-    return [executable, "--yes", "rulesync@latest", *args]
-
-
-def _run(args: Sequence[str], *, cwd: Path = REPO_ROOT) -> int:
-    command = _npx_command(args)
-    if os.name == "nt":
-        command_line = subprocess.list2cmdline(command)
-        return subprocess.run(
-            ["cmd.exe", "/d", "/s", "/c", command_line],
-            cwd=cwd,
-            check=False,
-        ).returncode
-    return subprocess.run(command, cwd=cwd, check=False).returncode
+def _run(args: Sequence[str]) -> int:
+    return run_npx("rulesync@latest", args, cwd=REPO_ROOT)
 
 
 def _tracked_diff() -> str:
@@ -178,7 +161,7 @@ def _sync_sources(args: Sequence[str]) -> int:
 
 def _validate() -> int:
     before = _tracked_diff()
-    returncode = _sync_sources(("install", "--frozen"))
+    returncode = _sync_sources(_SOURCE_ACTIONS["install"])
     if returncode != 0:
         return returncode
     if _tracked_diff() != before:
@@ -209,8 +192,8 @@ def main() -> int:
         "action",
         choices=(*_SOURCE_ACTIONS, *_ACTIONS, "validate"),
         help=(
-            "install or update external sources, preview or generate projections, "
-            "check drift, run doctor, or run source install + projection validation"
+            "install locked or update external sources, preview or generate projections, "
+            "check drift, run doctor, or validate the locked projection state"
         ),
     )
     args = parser.parse_args()

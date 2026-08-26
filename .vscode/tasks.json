@@ -2,6 +2,39 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Bootstrap: Setup",
+            "type": "shell",
+            "command": "python scripts/bootstrap.py setup",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Restores locked dependencies and Agent Assets, then installs Git hooks."
+        },
+        {
+            "label": "Bootstrap: Session",
+            "type": "shell",
+            "command": "python scripts/bootstrap.py session",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Refreshes locked dependencies and Agent Assets for a new work session."
+        },
+        {
+            "label": "Agent Assets: Update",
+            "type": "shell",
+            "command": "python scripts/agent_assets.py update",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Updates Rulesync-managed assets and Skills CLI assets when a skills lock exists."
+        },
+        {
             "label": "Format with ruff",
             "type": "shell",
             "command": "uv run ruff format . && uv run ruff check --fix .",
@@ -33,17 +66,6 @@
                 "isDefault": false
             },
             "detail": "Runs both ruff and rumdl to format the workspace."
-        },
-        {
-            "label": "Rulesync: Update Skills",
-            "type": "shell",
-            "command": "uv run python scripts/rulesync.py update",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Updates declarative Agent Skill sources and rulesync.lock with Rulesync."
         },
         {
             "label": "Rulesync: Preview",
