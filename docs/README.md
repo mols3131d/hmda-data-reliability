@@ -1,3 +1,15 @@
+---
+title: "Documentation"
+description: "프로젝트의 장기 방향, architecture와 domain guidance, active MVP, development guides와 references를 연결하는 docs directory의 entrypoint입니다."
+categories:
+  - data-engineering
+  - software-engineering
+  - ai-engineering
+tags:
+  - markdown
+  - openspec
+---
+
 # Documentation
 
 `docs/`는 장기 지침, 현재 목표, 개발 가이드와 인간 편의용 projection을 구분한다. 현재 capability의 normative contract는 [`../openspec/specs/`](../openspec/specs/)가 소유한다.
