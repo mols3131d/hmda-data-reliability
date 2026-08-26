@@ -137,7 +137,15 @@ def test_identity_and_canonical_fact_contradictions_are_rejected(
             "forbidden_action",
         ),
         (
+            "Backfill the 2025 partition.",
+            "forbidden_action",
+        ),
+        (
             "Proceed with the backfill immediately.",
+            "forbidden_action",
+        ),
+        (
+            "Proceed with the backfill.",
             "forbidden_action",
         ),
         (
@@ -145,11 +153,35 @@ def test_identity_and_canonical_fact_contradictions_are_rejected(
             "forbidden_action",
         ),
         (
+            "You should backfill the 2025 partition.",
+            "forbidden_action",
+        ),
+        (
+            "You must backfill the 2025 partition.",
+            "forbidden_action",
+        ),
+        (
             "Initiate recovery now.",
             "forbidden_action",
         ),
         (
+            "Initiate recovery.",
+            "forbidden_action",
+        ),
+        (
+            "Launch the backfill.",
+            "forbidden_action",
+        ),
+        (
             "지금 즉시 백필을 진행하라.",
+            "forbidden_action",
+        ),
+        (
+            "지금 백필을 진행하라.",
+            "forbidden_action",
+        ),
+        (
+            "백필을 실행하라.",
             "forbidden_action",
         ),
         (
@@ -195,6 +227,15 @@ def test_authority_and_forbidden_action_text_is_rejected(
             "thorough review."
         ),
         "The analysis indicates that recovery backfill for 2025 is feasible.",
+        "Do not execute the SQL command now.",
+        "Do not backfill the 2025 partition without human approval.",
+        "Never run the recovery command.",
+        "You must not execute the backfill.",
+        (
+            "The draft proposes 'DELETE FROM raw.hmda_loans' which "
+            "requires operator approval."
+        ),
+        "백필을 실행하지 마라.",
     ],
 )
 def test_safe_advisory_and_reference_language_is_accepted(

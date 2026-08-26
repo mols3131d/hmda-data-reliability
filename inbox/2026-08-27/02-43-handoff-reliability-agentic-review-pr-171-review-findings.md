@@ -40,7 +40,7 @@ http://localhost:11434/v1?api_key=secret-token&mode=eval
 
 `sanitized_configuration()`에서 이를 redaction해 저장 leakage는 줄이지만, `OpenAICompatibleAdapter`에는 원래 `settings.base_url`이 그대로 전달된다. OpenSpec은 `base_url`을 credentials-free configuration으로 정의하므로 현재 구현과 contract가 일치하지 않는다.
 
-**Required change**
+#### Required Change (F1)
 
 - `AgenticReviewSettings` 입력 경계에서 known sensitive query key를 가진 `base_url`을 reject한다.
 - 저장 시 redaction은 defense-in-depth로 유지해도 된다.
@@ -60,7 +60,7 @@ Backfill the 2025 partition requires human approval.
 
 OpenSpec은 draft action을 인용하거나 backfill을 human approval이 필요한 항목으로 설명하는 것은 violation이 아니라고 명시한다. 따라서 direct imperative와 safe advisory/reference를 구분해야 한다.
 
-**Required change**
+#### Required Change (F2)
 
 - imperative/execution command만 잡도록 overly broad pattern을 좁힌다.
 - positive regression뿐 아니라 다음 negative cases를 추가한다.
@@ -77,9 +77,9 @@ OpenSpec은 draft action을 인용하거나 backfill을 human approval이 필요
 
 현재 상태는 Design과 implementation/test가 서로 다른 contract를 가진다.
 
-**Preferred resolution**
+#### Preferred Resolution (F3)
 
-Durable final record가 link되고 directory fsync까지 성공한 뒤의 temporary cleanup 실패는 provenance 자체를 잃은 상태가 아니다. 따라서 cleanup을 best-effort hygiene로 명시하고, `design.md`의 "cleanup을 포함한 모든 filesystem failure" 표현을 좁히는 편이 현재 구현과 fail-closed 목적에 더 정확하다.
+Durable final record가 link되고 directory fsync까지 성공한 뒤의 temporary cleanup 실패는 provenance 자체를 잃은 상태가 아니다. 따라서 cleanup을 best-effort hygiene으로 명시하고, `design.md`의 "cleanup을 포함한 모든 filesystem failure" 표현을 좁히는 편이 현재 구현과 fail-closed 목적에 더 정확하다.
 
 다른 semantics를 선택한다면 implementation과 tests까지 함께 맞춰야 한다. 어느 쪽이든 세 artifact가 같은 observable contract를 가져야 한다.
 
@@ -95,7 +95,7 @@ http://[::1]:11434/v1
 
 이 URL을 재조립하면 `http://::1:11434/v1` 형태가 될 수 있어 sanitized configuration이 malformed된다. Local OpenAI-compatible endpoint에서 IPv6 loopback은 유효한 입력이다.
 
-**Required change**
+#### Required Change (F4)
 
 - validated authority를 불필요하게 수작업 재조립하지 않는다.
 - userinfo는 입력 validator에서 거부하고, query redaction만 필요한 구조를 선호한다.
@@ -112,7 +112,7 @@ PR diff에 다음 unrelated root files가 포함돼 있다.
 
 `tests/hmda_data/eda/test_eda_evidence.py`가 temporary git repository에서 만드는 fixture 이름과 내용에 대응하므로 테스트 과정에서 유입된 변경으로 보인다.
 
-**Required change**
+#### Required Change (F5)
 
 - 두 파일을 PR에서 제거한다.
 - 다른 unrelated root artifact가 없는지 changed-file list를 한 번 더 확인한다.
@@ -122,12 +122,12 @@ PR diff에 다음 unrelated root files가 포함돼 있다.
 수정 후 최소한 다음을 다시 확인한다.
 
 1. `uv run pytest tests/reliability/agentic_review/`
-2. `uv run pytest tests/hmda_data/eda/test_eda_evidence.py`
-3. `openspec validate --all`
-4. `uv run ruff check src tests scripts`
-5. `uv run ruff format --check src tests scripts`
-6. PR changed-file list에 `file.txt`, `tracked.txt`가 남지 않았는지 확인
-7. GitHub CI Lite가 새 head에서 성공하는지 확인
+1. `uv run pytest tests/hmda_data/eda/test_eda_evidence.py`
+1. `openspec validate --all`
+1. `uv run ruff check src tests scripts`
+1. `uv run ruff format --check src tests scripts`
+1. PR changed-file list에 `file.txt`, `tracked.txt`가 남지 않았는지 확인
+1. GitHub CI Lite가 새 head에서 성공하는지 확인
 
 전체 suite는 focused validation 결과나 변경 범위가 필요성을 보여줄 때 실행한다. 기존 PR 본문의 pass count는 새 head 검증으로 재사용하지 않는다.
 

@@ -118,7 +118,7 @@ Output invariant는 다음과 같다.
 
 Violation code는 중복 없이 deterministic order로 반환해야 하며, 하나라도 있으면 validation status는 rejected여야 한다(MUST NOT).
 
-Action policy는 `forbidden-action-policy-v1`로 식별해야 한다(SHALL). `forbidden-action-policy-v1`은 명시적인 bounded regex/grammar pattern rule set으로 직접적인 실행·변이 명령(imperative/action command)을 탐지하며, 자연어 의미 전체를 판정하는 semantic judge가 아니다. 최종 안전성은 read-only execution boundary가 통제한다. 단순히 draft의 action을 인용하거나 backfill을 human approval이 필요한 항목으로 설명하는 것은 violation이 아니다. Output이 approval을 부여하거나 실행을 명령·주장할 때만 각각 `authority_escalation` 또는 `forbidden_action`을 생성해야 한다(SHALL).
+Action policy는 `forbidden-action-policy-v1`로 식별해야 한다(SHALL). `forbidden-action-policy-v1`은 명시적인 bounded regex/grammar pattern rule set으로 직접적인 실행·변이 명령(imperative/action command)을 탐지하며, 명시적 부정(negation), 인용문 또는 human approval을 전제로 한 조건부 조언·설명 문장은 violation으로 판정하지 않는다. 또한 자연어 의미 전체를 판정하는 semantic judge가 아니며, 최종 안전성은 read-only execution boundary가 통제한다. Output이 approval을 부여하거나 직접 실행을 명령·주장할 때만 각각 `authority_escalation` 또는 `forbidden_action`을 생성해야 한다(SHALL).
 
 #### Scenario: Fabricated evidence is rejected
 
@@ -181,7 +181,7 @@ Non-accepted result의 output은 비어 있어야 한다. Parsed output이 있�
 
 ### Requirement: Provider-compatible bounded invocation
 
-시스템은 동일한 review contract와 configuration boundary를 사용해 OpenAI-compatible `chat.completions` endpoint를 제공하는 local Ollama model과 OpenAI API를 호출할 수 있어야 한다(SHALL). `base_url`은 userinfo(username/password)나 credential query parameter를 포함해서는 안 되며(MUST NOT), Provider 차이는 credentials-free `base_url`, `SecretStr` credential(`api_key`), model과 bounded configuration으로 표현해야 하며 Reliability domain의 incident/evidence/recovery code가 provider별 business rule을 소유해서는 안 된다(MUST NOT).
+시스템은 동일한 review contract와 configuration boundary를 사용해 OpenAI-compatible `chat.completions` endpoint를 제공하는 local Ollama model과 OpenAI API를 호출할 수 있어야 한다(SHALL). `base_url`은 userinfo(username/password)나 query parameter를 포함해서는 안 되며(MUST NOT), Provider 차이는 credentials-free `base_url`, `SecretStr` credential(`api_key`), model과 bounded configuration으로 표현해야 하며 Reliability domain의 incident/evidence/recovery code가 provider별 business rule을 소유해서는 안 된다(MUST NOT).
 
 이 Change의 common wire profile은 다음 조건을 만족해야 한다(SHALL).
 

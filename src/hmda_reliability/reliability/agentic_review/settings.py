@@ -9,27 +9,11 @@ from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
 
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
 
-_SENSITIVE_QUERY_KEYS = frozenset(
-    {"key", "api_key", "apikey", "token", "secret", "auth", "password"}
-)
-
 
 def _sanitize_base_url(url: str) -> str:
-    """Return URL with sensitive query params redacted and authority preserved."""
+    """Return normalized base URL string without userinfo or query parameters."""
     parsed = urllib.parse.urlsplit(url)
-    if not parsed.query:
-        return url
-
-    query_pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
-    sanitized_pairs = [
-        (k, "[REDACTED]" if k.lower() in _SENSITIVE_QUERY_KEYS else v)
-        for k, v in query_pairs
-    ]
-    sanitized_query = urllib.parse.urlencode(sanitized_pairs)
-
-    return urllib.parse.urlunsplit(
-        (parsed.scheme, parsed.netloc, parsed.path, sanitized_query, parsed.fragment)
-    )
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
 
 
 class AgenticReviewSettings(ReliabilityContract):
@@ -52,11 +36,8 @@ class AgenticReviewSettings(ReliabilityContract):
             msg = "base_url must not contain credentials"
             raise ValueError(msg)
         if value.query:
-            query_pairs = urllib.parse.parse_qsl(value.query, keep_blank_values=True)
-            for k, _ in query_pairs:
-                if k.lower() in _SENSITIVE_QUERY_KEYS:
-                    msg = f"base_url must not contain credential query parameter: {k}"
-                    raise ValueError(msg)
+            msg = "base_url must not contain query parameters"
+            raise ValueError(msg)
         return value
 
     @field_validator("api_key")

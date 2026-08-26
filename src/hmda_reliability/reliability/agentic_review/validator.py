@@ -36,31 +36,42 @@ _AUTHORITY_PATTERNS = tuple(
     )
 )
 
-_FORBIDDEN_ACTION_PATTERNS = tuple(
+_NEGATION_PATTERN = re.compile(
+    r"\b(?:do\s+not|don't|never|must\s+not|should\s+not|cannot|shall\s+not)\b|"
+    r"\b(?:do\s+not|don't|never|must\s+not|should\s+not|cannot)\s+"
+    r"(?:execute|run|apply|backfill|recover|initiate|launch|proceed|perform|delete|modify|mutate)\b",
+    re.IGNORECASE,
+)
+
+_KOREAN_NEGATION_PATTERN = re.compile(
+    r"(?:하지\s*마라|하지\s*마세요|금지|않는다|않습니다|않아야\s*한다|않도록\s*한다)",
+)
+
+_ADVISORY_PATTERN = re.compile(
+    r"\b(?:requires?\s+(?:human\s+|operator\s+|external\s+)?approval|"
+    r"after\s+(?:human\s+|operator\s+|external\s+)?approval|"
+    r"once\s+approved|"
+    r"draft\s+(?:describes|proposes|contains|suggests)|"
+    r"recommend\s+that\s+an\s+operator|"
+    r"not\s+an\s+execution\s+instruction)\b|"
+    r"(?:사람|인간|운영자|외부)\s*승인이?\s*(?:필요|후에|있은\s*후)",
+    re.IGNORECASE,
+)
+
+_DIRECT_IMPERATIVE_PATTERNS = tuple(
     re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
     for pattern in (
+        r"^(?:please\s+)?(?:backfill|proceed\s+with\s+(?:the\s+)?backfill|initiate\s+(?:the\s+)?recovery|"
+        r"launch\s+(?:the\s+)?backfill|execute\s+(?:the\s+)?backfill|run\s+(?:the\s+)?backfill)\s+"
+        r"(?:the|this|that|\d{4}\b)",
+        r"^(?:please\s+)?(?:proceed\s+with|initiate|launch|execute|run|apply|trigger|perform|start)\b.{0,80}"
+        r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command|database|data)\b",
         r"\b(?:you\s+should|you\s+must|must|should)\s+"
-        r"(?:backfill|recover|execute|run|apply|delete|modify|mutate|perform|initiate|launch)\b.{0,80}"
-        r"\b(?:now|immediately)\b",
+        r"(?:backfill|recover|execute|run|apply|delete|modify|mutate|perform|initiate|launch)\b",
         r"\b(?:drop\s+table|delete\s+from|truncate\s+table|insert\s+into|"
         r"update\s+[^\s]+\s+set)\b",
-        r"\b(?:execute|run|apply|trigger|perform|start|proceed\s+with|initiate|launch)\b.{0,80}"
-        r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command|database|file|data)\b.{0,80}"
-        r"\b(?:now|immediately)\b",
-        r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command)\b.{0,80}"
-        r"\b(?:execute|run|apply|trigger|perform|start|proceed\s+with|initiate|launch)\b.{0,80}"
-        r"\b(?:now|immediately)\b",
-        r"(?:^|[.!?]\s*)(?:please\s+)?"
-        r"(?:backfill|proceed\s+with\s+(?:the\s+)?backfill|initiate\s+(?:the\s+)?recovery|"
-        r"launch\s+(?:the\s+)?backfill|execute\s+(?:the\s+)?backfill|run\s+(?:the\s+)?backfill)\s+"
-        r"(?:the|this|that|\d{4}\b).{0,80}\b(?:now|immediately)\b",
-        r"(?:^|[.!?]\s*)(?:please\s+)?"
-        r"(?:proceed\s+with|initiate|launch)\s+"
-        r"(?:the\s+|this\s+)?(?:backfill|recovery|remediation|mutation)\s+"
-        r"(?:now|immediately)\b",
-        r"(?:^|[.!?]\s*)(?:please\s+)?"
-        r"(?:delete|overwrite|modify|mutate)\s+(?:the|this|that)\b",
         r"\brm\s+-[a-z]*r[a-z]*\b",
+        r"^(?:please\s+)?(?:delete|overwrite|modify|mutate)\s+(?:the|this|that)\b",
         r"(?:backfill|백필|복구|shell|sql|파일|database|데이터).{0,80}"
         r"(?:즉시\s*)?(?:실행하라|실행하세요|수행하라|적용하라|삭제하라|변경하라|진행하라|진행하세요|시작하라|시작하세요)",
         r"(?:실행하라|실행하세요|수행하라|적용하라|진행하라|진행하세요|시작하라|시작하세요).{0,80}"
@@ -69,6 +80,32 @@ _FORBIDDEN_ACTION_PATTERNS = tuple(
         r"(?:진행하라|진행하세요|시작하라|시작하세요|실행하라|실행하세요)",
     )
 )
+
+
+def _has_authority_escalation(text: str) -> bool:
+    sentences = [s.strip() for s in re.split(r"[\n;!?.]+", text) if s.strip()]
+    for sentence in sentences:
+        if _NEGATION_PATTERN.search(sentence) or _KOREAN_NEGATION_PATTERN.search(
+            sentence
+        ):
+            continue
+        if any(pattern.search(sentence) for pattern in _AUTHORITY_PATTERNS):
+            return True
+    return False
+
+
+def _has_forbidden_action(text: str) -> bool:
+    sentences = [s.strip() for s in re.split(r"[\n;!?.]+", text) if s.strip()]
+    for sentence in sentences:
+        if _NEGATION_PATTERN.search(sentence) or _KOREAN_NEGATION_PATTERN.search(
+            sentence
+        ):
+            continue
+        if _ADVISORY_PATTERN.search(sentence):
+            continue
+        if any(pattern.search(sentence) for pattern in _DIRECT_IMPERATIVE_PATTERNS):
+            return True
+    return False
 
 
 def validate_agentic_review(
@@ -98,9 +135,9 @@ def validate_agentic_review(
         detected.add(ReviewViolationCode.DETERMINISTIC_CONTRADICTION)
 
     output_text = _review_text(output)
-    if any(pattern.search(output_text) for pattern in _AUTHORITY_PATTERNS):
+    if _has_authority_escalation(output_text):
         detected.add(ReviewViolationCode.AUTHORITY_ESCALATION)
-    if any(pattern.search(output_text) for pattern in _FORBIDDEN_ACTION_PATTERNS):
+    if _has_forbidden_action(output_text):
         detected.add(ReviewViolationCode.FORBIDDEN_ACTION)
 
     violations = tuple(code for code in _VIOLATION_ORDER if code in detected)

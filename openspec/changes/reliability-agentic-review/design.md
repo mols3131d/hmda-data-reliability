@@ -61,5 +61,5 @@ Offline test는 snapshot invariants, canonical input rendering, provider-indepen
 
 - **Ungrounded output:** canonical facts와 Evidence reference를 deterministic validator가 다시 비교한다.
 - **Prompt injection:** Evidence와 model output을 untrusted data로 취급하고 review surface에 execution interface를 제공하지 않는다.
-- **Provenance leakage:** `base_url` 내 credential(userinfo 및 sensitive query parameter) 입력을 거부하고, provider에 전달한 allowlisted canonical input과 parsed output만 bounded record에 보존하며 raw prompt, raw log, credential과 raw provider error는 저장하지 않는다.
+- **Provenance leakage:** `base_url` 내 credential(userinfo 및 query parameter) 입력을 거부하고, provider에 전달한 allowlisted canonical input과 parsed output만 bounded record에 보존하며 raw prompt, raw log, credential과 raw provider error는 저장하지 않는다.
 - **Provider drift:** common adapter contract 밖의 model behavior를 자동으로 흡수하지 않고 typed failure로 격리한다.

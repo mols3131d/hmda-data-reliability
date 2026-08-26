@@ -44,6 +44,9 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
         ("base_url", "http://localhost:11434/v1?api_key=secret-token"),
         ("base_url", "https://example.com/v1?token=xyz"),
         ("base_url", "http://localhost:11434/v1?secret=xyz"),
+        ("base_url", "https://example.com/v1?access_token=secret-value"),
+        ("base_url", "https://example.com/v1?client_secret=secret-value"),
+        ("base_url", "http://localhost:11434/v1?mode=eval"),
         ("api_key", "   "),
         ("model", "   "),
         ("timeout_seconds", 0),
@@ -94,16 +97,6 @@ def test_sanitized_configuration_preserves_ipv6_authority() -> None:
     sanitized = settings.sanitized_configuration()
 
     assert sanitized["base_url"] == "http://[::1]:11434/v1"
-
-
-def test_settings_accept_and_preserve_safe_query_parameters() -> None:
-    values = _valid_values()
-    values["base_url"] = "http://localhost:11434/v1?mode=eval&batch=1"
-    settings = settings_module.AgenticReviewSettings.model_validate(values)
-
-    sanitized = settings.sanitized_configuration()
-
-    assert sanitized["base_url"] == "http://localhost:11434/v1?mode=eval&batch=1"
 
 
 def test_public_settings_do_not_read_provider_environment(
