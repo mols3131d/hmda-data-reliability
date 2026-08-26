@@ -20,7 +20,7 @@
 | ID | Decision | Rationale |
 | --- | --- | --- |
 | D-001 | Workflow는 `Proposal → Specs → Design → Tasks → Apply` 순서를 사용한다. | 계획 artifact가 변경 의도, 행동 계약, 기술적 접근과 구현 작업을 직접 소유하며 별도 review state artifact를 두지 않는다. |
-| D-004 | 별도 Test Design artifact를 기본 workflow에 두지 않는다. | Specs, Design, Tasks와 실제 테스트 코드가 기본 검증 책임을 충분히 분담한다. |
+| D-004 | 별도 Test Design artifact를 기본 workflow에 두지 않는다. | Behavior verification은 Specs, Tasks와 실제 테스트 코드가 소유하고, verification architecture 자체가 비자명한 기술 결정일 때만 Design의 technical delta로 기록하면 충분하다. |
 | D-005 | Tags는 optional metadata로 단일 frontmatter 필드에만 표현한다. | 검색·분류를 허용하면서 planning artifact 사이의 불필요한 metadata 복제를 피한다. |
 | D-006 | Capability identifier의 canonical source는 `specs/<capability>/spec.md` 경로다. | Proposal 선언과 tags 사이의 충돌을 판정할 기준이 필요하다. |
 | D-007 | 모든 Markdown heading을 parser API로 고정하지 않는다. | 인간 가독성과 문서 편집 유연성을 보존한다. |
@@ -90,7 +90,7 @@
 
 | Item | Record |
 | --- | --- |
-| Changed baseline | R-014, D-013과 I-010 추가 |
+| Changed baseline | R-014, D-004·D-013과 I-010 추가 또는 수정 |
 | Problem | Design이 prerequisite인 Proposal과 Specs의 동기, scope, behavior와 acceptance를 다시 서술하면서 같은 판단을 여러 artifact가 소유하고 downstream drift surface가 커졌다. |
 | Compatibility | Design artifact와 workflow dependency는 유지한다. 새 Design과 의미 있게 수정하는 Design부터 technical delta만 기록하며 기존 archive는 migration하지 않는다. Schema version과 parser contract는 유지한다. |
 | Rejected alternatives | Design 제거 또는 optional artifact화는 현재 workflow dependency를 바꾸는 비용이 크고, 중복의 직접 원인은 artifact 존재가 아니라 Design의 과도한 소유권이므로 채택하지 않는다. |
