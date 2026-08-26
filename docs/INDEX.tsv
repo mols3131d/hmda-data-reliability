@@ -13,7 +13,7 @@ development/vcs-git/branch.md	하나의 변경 목적을 격리하고 검토 가
 development/vcs-git/commit.md	하나의 논리적 변경을 review 가능한 history로 기록하기 위한 commit 단위, staging과 history 관리 기준을 정의합니다.
 development/vcs-git/pull-request-review.md	Pull Request 변경의 correctness, risk와 repository contract 일관성을 검토하고 evidence-backed finding을 기록하는 기준을 정의합니다.
 development/vcs-git/pull-request.md	Branch 변경을 검토하고 repository에 반영할지 결정하기 위한 Pull Request scope, description, validation, review와 lifecycle 기준을 정의합니다.
-domains/	
+domains/	HMDA Data Reliability의 domain별 책임, 경계와 reading path를 모아 탐색하는 docs/domains directory의 entrypoint입니다.
 domains/OVERVIEW.md	HMDA Data Reliability의 domain별 책임과 비책임, 주요 데이터 흐름과 목적별 reading path를 정리합니다.
 domains/data-operations.md	Application-level request, 실행 순서와 결과를 조합하는 Data Operations domain의 책임과 mutation/read-only 경계를 설명합니다.
 domains/data-platform.md	DuckDB 공통 primitive, dbt Bronze-to-Gold 구조와 dbt artifact projection을 소유하는 Data Platform domain의 경계와 contract를 설명합니다.
@@ -22,7 +22,7 @@ domains/orchestration.md	Bronze 적재와 dbt 분석을 연결하는 Apache Airf
 domains/reliability.md	Deterministic evidence 기반 incident 판단, read-only lifecycle, approval-bound recovery와 replay/evaluation 경계를 설명합니다.
 language.md	Repository 문서와 structured metadata에서 한국어와 영어를 사용하는 기준을 정의합니다.
 mvp.md	로컬 HMDA Data Lake와 evidence-first Reliability, 제한된 Agentic review를 하나의 완결된 proof로 검증하기 위한 현재 MVP 목표, scope와 acceptance를 정의합니다.
-references/	
+references/	HMDA source, EDA와 Python data pipeline testing처럼 구현·판단을 보조하는 supporting reference를 모은 docs/references directory의 entrypoint입니다.
 references/hmda_eda.md	특정 HMDA source fingerprint와 repository revision에 고정된 actual-source EDA observation과 핵심 지표를 기록합니다.
 references/hmda_lar.md	Public HMDA LAR의 99개 field를 한국어로 탐색할 수 있도록 원본 data dictionary의 의미, 값과 코드를 정리한 reference입니다.
 references/python-data-pipeline-oom-testing-guide.md	DuckDB와 Polars 기반 Python data pipeline이 정해진 process memory budget 안에서 정확한 결과를 내는지 검증하는 방법을 설명합니다.
