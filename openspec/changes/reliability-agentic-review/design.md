@@ -37,7 +37,7 @@ Provider SDK, prompt rendering, validator와 filesystem persistence는 서로 �
 
 ### D3. Use the canonical input projection as the replay boundary
 
-- **Decision:** Prompt renderer는 allowlisted field만 담은 하나의 `canonical_input` object를 만든다. 같은 object를 provider user data block의 source로 사용하고 invocation evidence에도 bounded structured snapshot으로 저장한다. Raw rendered prompt는 저장하지 않는다. `PromptIdentity`, caller-provided `project_revision`, stored `canonical_input`으로 prompt를 다시 render한 뒤 실제 invocation의 `prompt_digest`와 비교한다.
+- **Decision:** Prompt renderer는 Spec이 정의한 allowlist로 하나의 `canonical_input` object를 만든다. 같은 object를 provider user data block의 source로 사용하고 invocation evidence에도 bounded structured snapshot으로 저장한다. Raw rendered prompt는 저장하지 않는다. `PromptIdentity`, caller-provided `project_revision`, stored `canonical_input`으로 prompt를 다시 render한 뒤 실제 invocation의 `prompt_digest`와 비교한다.
 - **Rationale:** Incident/Evidence reference와 digest만으로는 실제 input을 복원할 수 없고, raw prompt 전체 저장은 불필요한 중복과 leakage surface를 만든다. Provider에 실제 전달한 structured projection을 보존하면 replay 근거와 최소 저장 원칙을 함께 만족한다.
 - **Trade-off:** 과거의 exact replay는 recorded `project_revision`에 해당하는 prompt implementation을 다시 사용할 수 있어야 한다. 해당 revision을 resolve할 수 없으면 structured input과 digest는 검토할 수 있지만 exact prompt reconstruction은 증명할 수 없다.
 

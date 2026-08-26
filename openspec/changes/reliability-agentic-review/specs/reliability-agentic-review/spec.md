@@ -48,6 +48,36 @@ Input은 다음 invariant를 모두 만족할 때만 provider review 대상으�
 - **WHEN** `volume_drop`, `schema_drift` 또는 `freshness_delay` Incident를 이 Change의 review entry point에 제공할 때
 - **THEN** 시스템은 명시적인 `input_rejected` result를 반환하고 provider invocation, approval 또는 recovery를 수행해서는 안 된다(MUST NOT).
 
+### Requirement: Canonical provider input projection
+
+시스템은 provider user data와 invocation provenance에 사용할 `canonical_input`을 `AgenticReviewInput`에서 결정적으로 투영해야 하며(SHALL), 다음 allowlisted field 외의 runtime field를 포함해서는 안 된다(MUST NOT).
+
+| Source | Allowed fields |
+| --- | --- |
+| `Incident` | `incident_id`, `incident_type`, `asset_name`, `partition`, `status`, `severity` |
+| Each `Evidence` | `evidence_id`, `source`, `asset_name`, `partition`, `observed_at`, `summary`, `payload` |
+| `RemediationDraft` | `incident_id`, `incident_type`, `asset_name`, `partition`, `rca_summary`, `evidence_refs`, `affected_assets`, `recommended_actions`, `dbt_test_suggestions`, `backfill_actions`, `validation_actions`, `requires_approval` |
+| Review facts | `deterministic_facts` |
+
+`canonical_input`은 같은 snapshot에서 같은 canonical JSON byte sequence를 생성해야 한다(SHALL). System instruction과 user data는 분리해야 하며(SHALL), `canonical_input` 안의 Evidence summary/payload와 draft text는 instruction이 아니라 untrusted data로 취급해야 한다(MUST NOT).
+
+Rendered messages가 configured `max_prompt_bytes`를 넘으면 시스템은 provider call 전에 `input_rejected`를 반환하고 invocation evidence를 만들지 않아야 한다(MUST NOT).
+
+#### Scenario: Canonical projection is deterministic and bounded
+
+- **WHEN** 같은 valid `AgenticReviewInput`을 반복 render할 때
+- **THEN** 같은 allowlisted `canonical_input`과 같은 prompt digest가 생성되어야 하며 allowlist 밖의 Incident, Evidence, Draft 또는 runtime field는 provider user data에 포함되지 않아야 한다(MUST NOT).
+
+#### Scenario: Prompt-injection text remains data
+
+- **WHEN** Evidence summary/payload 또는 draft text에 명령문 형태의 문자열이 있을 때
+- **THEN** 문자열은 `canonical_input`의 data로만 serialize되어야 하며 system instruction 또는 execution command로 승격되어서는 안 된다(MUST NOT).
+
+#### Scenario: Oversized prompt is rejected before provider invocation
+
+- **WHEN** canonical input을 포함한 rendered messages가 configured `max_prompt_bytes`를 넘을 때
+- **THEN** 시스템은 `input_rejected` result를 반환하고 provider invocation 또는 invocation evidence 생성을 수행해서는 안 된다(MUST NOT).
+
 ### Requirement: Structured advisory review output
 
 시스템은 provider response를 다음 immutable `AgenticReviewOutput`으로 표현해야 한다(SHALL).
@@ -243,7 +273,7 @@ Sanitized record, stored `canonical_input`과 stored output은 configured size l
 
 | Evaluation path | Network | Required coverage |
 | --- | --- | --- |
-| Offline default suite | 사용하지 않음 | Input/output contract, typed result, validator, provenance replay와 adversarial fixture |
+| Offline default suite | 사용하지 않음 | Input/output contract, canonical input projection, typed result, validator, provenance replay와 adversarial fixture |
 | Opt-in Ollama live proof | 명시적으로 활성화한 경우에만 사용 | 실제 response, common adapter와 invocation provenance |
 
 #### Scenario: Offline contract and guard evaluation

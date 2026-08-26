@@ -49,12 +49,13 @@ tags:
 ### Provider and evidence
 
 - [ ] 4. Canonical prompt renderer와 thin OpenAI-compatible adapter를 구현한다
-  - **Covers:** Provider-compatible bounded invocation, Prompt injection is data, not instruction
+  - **Covers:** Canonical provider input projection, Provider-compatible bounded invocation, Prompt injection is data, not instruction
   - **Test first:**
-    - Fake client가 받는 allowlisted `canonical_input` 기반 messages, prompt digest, common `max_tokens` wire mapping, JSON object response, `stream=false`, no-tools를 고정한다.
+    - Spec-defined allowlist만 가진 `canonical_input`과 allowlist 밖 field exclusion, canonical serialization, prompt digest를 고정한다.
+    - Fake client가 받는 `canonical_input` 기반 messages, common `max_tokens` wire mapping, JSON object response, `stream=false`, no-tools를 고정한다.
     - Ollama/OpenAI base URL 교체, timeout, connection/5xx bounded retry, 4xx/schema failure no-retry를 고정한다.
   - **Done when:**
-    - Prompt renderer가 하나의 allowlisted `canonical_input`을 만들고 같은 projection을 provider user data block과 invocation evidence input으로 전달한다.
+    - Prompt renderer가 Spec-defined allowlist로 하나의 `canonical_input`을 만들고 같은 projection을 provider user data block과 invocation evidence input으로 전달한다.
     - Adapter는 OpenAI Python SDK를 한 곳에서만 사용하고 SDK hidden retry는 `0`이다.
     - `max_output_tokens`는 common `chat.completions` profile의 `max_tokens`로 매핑된다.
     - Evidence payload는 data block으로 전달되고 prompt renderer/adapter가 shell, SQL, file, recovery 또는 mutation action을 실행하지 않는다.
