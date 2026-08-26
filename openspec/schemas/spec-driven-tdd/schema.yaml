@@ -37,16 +37,20 @@ artifacts:
 
   - id: design
     generates: design.md
-    description: Minimal technical approach and non-obvious implementation decisions
+    description: Non-obvious technical delta not owned by Proposal or Specs
     template: design.md
     instruction: |
-      Proposal과 적용되는 Specs에서 Tasks를 도출하는 데 필요한 최소 구현 접근만 기록한다.
+      Proposal과 적용되는 Specs는 입력으로 참조하고 다시 요약하지 않는다.
 
-      Proposal과 Specs를 반복하지 않는다.
-      비자명한 책임 경계, 검증 전략 또는 기술적 결정이 있을 때만 추가한다.
-      명백하거나 쉽게 되돌릴 수 있는 선택, 아직 필요하지 않은 확장 설계는 생략한다.
+      Proposal과 Specs만으로 결정되지 않으면서 Tasks를 실질적으로 제약하는 technical choice,
+      responsibility boundary, implementation constraint, migration 또는 verification mechanism만 기록한다.
+      Why, scope, impact, Capability, Requirement, Scenario, acceptance, unchanged behavior와 unchanged boundary를 반복하지 않는다.
+      설명에 upstream context가 꼭 필요하면 owning artifact나 Requirement를 짧게 참조하고 새로운 technical delta만 기록한다.
+      Design에서 새로운 observable behavior가 필요하다고 판단되면 여기서 소유하지 말고 Specs로 되돌린다.
+      명백하거나 쉽게 되돌릴 수 있는 선택과 아직 필요하지 않은 확장 설계는 생략한다.
+      추가 설계 판단이 없으면 기존 architecture를 따른다는 짧은 statement만 남기고 내용을 채우기 위해 반복하지 않는다.
 
-      Tasks를 도출하는 데 필요한 중요한 설계 판단이 해결되면 완료한다.
+      모든 남은 내용이 Tasks에 필요한 technical choice, boundary 또는 constraint를 추가하면 완료한다.
     requires:
       - proposal
       - specs
@@ -61,6 +65,8 @@ artifacts:
       각 task는 하나의 구현 결과와 객관적인 완료 조건을 가진다.
       행동 변경은 test-first feedback을 포함하되 RED, GREEN, REFACTOR를 별도 task로 나누지 않는다.
       Review, self-review, 승인 대기 같은 process 또는 gate state를 task로 만들지 않는다.
+      Design은 새로운 Requirement의 source가 아니다. Design에서 Proposal이나 Specs가 소유하지 않는 observable behavior가 발견되면
+      Tasks로 흡수하지 말고 원인을 소유하는 planning artifact로 되돌린다.
 
       모든 계획 범위가 중복 없이 의존성 순서의 task로 연결되면 완료한다.
     requires:
