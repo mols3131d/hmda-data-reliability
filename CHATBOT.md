@@ -2,7 +2,7 @@
 
 Root `CHATBOT.md`는 chatbot harness에서 누락되는 repository context와 Agent Asset loading을 보정한다. Repository state와 GitHub object를 읽거나 변경할 때는 GitHub plugin으로 live state를 확인한다.
 
-`Always` 항목을 먼저 읽고, 이후 현재 GitHub 작업에 해당하는 항목만 추가로 읽는다.
+`Always`를 먼저 읽고, 현재 GitHub 작업과 일치하는 행만 추가로 읽는다.
 
 | When | References | Purpose |
 | --- | --- | --- |
