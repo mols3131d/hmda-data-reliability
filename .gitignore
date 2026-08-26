@@ -10,26 +10,19 @@ tempCodeRunnerFile.py
 
 # Agent runtime, generated projections, external Skill installs, and local overlays
 rulesync.local.jsonc
-.rulesync/rules/.curated/
+.rulesync/**/.curated/
 .rulesync/rules/*.local.md
-.rulesync/skills/.curated/
 **/AGENTS.local.md
 **/CLAUDE.local.md
-**/.claude/*.lock
-**/.claude/memories/
-**/.claude/settings.local.json
-.agents/brain/
-.agents/reports/
-.agents/rules/
-.agents/skills/
-.agents/workflows/opsx-*
-.claude/skills/
+CLAUDE.md
+.agents/*
+!.agents/route/
+!.agents/route/**
+.claude/
+.codex/
+.gemini/
 .github/skills/*
-# GitHub.com consumes this repository-owned projection directly.
 !.github/skills/prj-review-code/
-.codex/skills/
-.gemini/skills/
-.gemini/commands/
 .caveman-compress/
 
 # Editor-local databases
