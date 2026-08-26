@@ -180,6 +180,22 @@ uv run python scripts/run_actual_source.py
 > [!WARNING]
 > 이 observation은 성능 또는 OOM 안전성 보장이 아니다. source fingerprint, revision과 실행 시각이 일치하는지 확인한다.
 
+## Agentic Review
+
+Agentic review의 default suite는 fake transport와 temporary artifact root만 사용하며 network provider를 호출하지 않는다.
+
+```bash
+uv run pytest tests/reliability/agentic_review
+```
+
+실제 Ollama proof는 default suite와 분리된 명시적 opt-in command다. `.env.example`의 `HMDA_AGENTIC_REVIEW_*` 값을 local `.env`에 설정한 뒤 실행한다. `HMDA_AGENTIC_REVIEW_API_KEY`는 OpenAI-compatible client에 필요한 값이지만 invocation evidence에는 저장되지 않는다.
+
+```bash
+uv run --env-file .env python scripts/run_agentic_review_live.py
+```
+
+`HMDA_AGENTIC_REVIEW_LIVE=true`, non-empty base URL, API key, model과 caller-provided project revision이 모두 있어야 provider를 호출한다. 결과는 `accepted` 또는 typed failure이며, provider-started call은 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
+
 ## Interpret Results
 
 실행하지 않은 test는 통과했다고 기록하지 않는다. 실패가 나면 test 자체의 오류, production behavior 불일치, requirement의 빈틈, environment 문제, 현재 작업과 무관한 baseline failure를 구분한다. Test를 약화하거나 무조건 skip해 실패를 숨기지 않는다.
