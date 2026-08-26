@@ -5,7 +5,7 @@ description: Spec-driven planning with TDD-compatible execution
 artifacts:
   - id: proposal
     generates: proposal.md
-    description: Change intent, scope, and affected capabilities
+    description: Change intent, scope, and affected capabilities when applicable
     template: proposal.md
     instruction: |
       변경의 이유, 범위와 영향을 받는 capability만 합의한다.
