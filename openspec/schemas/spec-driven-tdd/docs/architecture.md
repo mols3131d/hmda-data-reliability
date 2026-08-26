@@ -29,18 +29,20 @@ Spec-level behavior가 없는 Change는 OpenSpec change metadata의 `skip_specs:
 
 이 분리는 같은 판단을 여러 artifact에 복제하지 않고 각 단계가 다음 단계에 필요한 정보만 제공하기 위한 것이다.
 
-### Design Ownership Test
+### Design Admission Test
 
-Design은 Change의 독립적인 요약 문서가 아니다. Proposal과 Specs를 prerequisite로 읽는 것을 전제로 하며, 다음 ownership test를 따른다.
+Design은 Change의 독립적인 요약 문서가 아니다. Candidate 내용은 다음 순서로 owner를 판정한다.
 
 | Question | Owner |
 | --- | --- |
-| 왜 바꾸는가, 어디까지 바꾸는가? | Proposal |
-| 시스템이 외부에서 어떻게 동작해야 하는가? | Specs |
-| 그 behavior를 구현하기 위해 어떤 비자명한 기술 선택·경계·제약이 필요한가? | Design |
-| 무엇을 구현하고 어떤 결과로 완료를 확인할 것인가? | Tasks |
+| 왜 바꾸는가, 어디까지 바꾸는가, 무엇에 영향이 있는가? | Proposal |
+| 외부에서 관찰하거나 Requirement/Scenario로 검증할 수 있는가? | Specs |
+| 구현 결과 또는 완료 조건인가? | Tasks |
+| 위에 해당하지 않고, 빼면 구현 선택·변경되는 technical boundary·constraint·migration mechanism이 실질적으로 미정이 되는가? | Design |
 
-Design의 문장이나 section을 제거해도 technical choice, boundary 또는 constraint가 사라지지 않으면 제거한다. Design에서 새로운 observable behavior가 발견되면 그 내용을 Design에 추가하지 않고 Specs로 되돌린다.
+기술 용어를 사용하거나 implementation에 관한 설명이라는 이유만으로 Design에 들어가지 않는다. Observable contract를 기술적인 표현으로 다시 쓴 내용도 Specs가 소유한다. Design에서 새로운 observable behavior가 발견되면 Specs로 되돌리고, migration의 실제 작업 순서와 완료 조건은 Tasks로 보낸다.
+
+추가 technical delta가 없으면 Design은 기존 architecture를 따른다는 한 문장으로 끝낸다. 이 경우 artifact 존재 자체를 정당화하기 위해 Proposal이나 Specs를 반복하지 않는다.
 
 ## Design Rationale
 
