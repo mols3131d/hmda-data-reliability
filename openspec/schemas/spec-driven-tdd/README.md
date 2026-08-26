@@ -6,7 +6,7 @@ OpenSpec의 artifact dependency를 사용해 필요한 계획만 만들고 TDD-c
 flowchart LR
     subgraph planning ["Planning Artifacts"]
         proposal["Proposal<br/>why + scope"] --> specs["Specs<br/>observable behavior<br/>or skipped for spec-free change"]
-        specs --> design["Design<br/>minimal technical approach"]
+        specs --> design["Design<br/>technical delta only"]
         design --> tasks["Tasks<br/>verifiable outcomes"]
     end
 
@@ -14,6 +14,8 @@ flowchart LR
 ```
 
 Spec-level behavior가 바뀌지 않는 pure refactor, tooling 또는 docs Change는 `.openspec.yaml`에 `skip_specs: true`를 설정한다. OpenSpec은 이 경우 Specs artifact를 완료로 취급하므로 artifact DAG를 바꾸거나 placeholder Capability와 Requirement를 만들지 않는다.
+
+Design은 Proposal과 Specs의 요약본이 아니다. Prerequisite에서 결정되지 않으면서 구현을 실질적으로 제약하는 technical choice, boundary 또는 constraint만 추가한다.
 
 | Path | Responsibility |
 | --- | --- |
