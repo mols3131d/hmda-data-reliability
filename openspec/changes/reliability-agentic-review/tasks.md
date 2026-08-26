@@ -51,9 +51,10 @@ tags:
 - [ ] 4. Canonical prompt renderer와 thin OpenAI-compatible adapter를 구현한다
   - **Covers:** Provider-compatible bounded invocation, Prompt injection is data, not instruction
   - **Test first:**
-    - Fake client가 받는 allowlisted canonical messages, prompt digest, common `max_tokens` wire mapping, JSON object response, `stream=false`, no-tools를 고정한다.
+    - Fake client가 받는 allowlisted `canonical_input` 기반 messages, prompt digest, common `max_tokens` wire mapping, JSON object response, `stream=false`, no-tools를 고정한다.
     - Ollama/OpenAI base URL 교체, timeout, connection/5xx bounded retry, 4xx/schema failure no-retry를 고정한다.
   - **Done when:**
+    - Prompt renderer가 하나의 allowlisted `canonical_input`을 만들고 같은 projection을 provider user data block과 invocation evidence input으로 전달한다.
     - Adapter는 OpenAI Python SDK를 한 곳에서만 사용하고 SDK hidden retry는 `0`이다.
     - `max_output_tokens`는 common `chat.completions` profile의 `max_tokens`로 매핑된다.
     - Evidence payload는 data block으로 전달되고 prompt renderer/adapter가 shell, SQL, file, recovery 또는 mutation action을 실행하지 않는다.
@@ -63,9 +64,12 @@ tags:
   - **Covers:** Durable invocation evidence
   - **Test first:**
     - Temporary artifact root의 logical success/validation-failure/unavailable record와 JSON reload를 고정한다.
-    - Prompt digest, `project_revision`, incident/evidence refs, latency, attempt count, optional usage/trace, sanitized configuration, raw prompt/error 부재와 concurrent duplicate ID를 고정한다.
+    - `canonical_input`, prompt identity/digest, `project_revision`, incident/evidence refs, latency, attempt count, optional usage/trace, sanitized configuration, raw prompt/error 부재와 concurrent duplicate ID를 고정한다.
+    - Stored `PromptIdentity`, `project_revision`와 `canonical_input`을 같은 application revision에서 다시 render했을 때 prompt digest가 일치하는지 고정한다.
   - **Done when:**
     - Provider call마다 logical invocation 하나가 `HMDA_RELIABILITY_ARTIFACTS_DIR` 또는 `.local/artifacts` 아래 `agentic-review/invocations/<invocation_id>.json`에 create-only atomic write된다.
+    - Record는 provider에 전달한 bounded `canonical_input`을 보존하고 raw rendered prompt, credential, raw log와 raw provider error를 보존하지 않는다.
+    - Stored canonical input으로 replay한 message digest가 recorded `prompt_digest`와 일치한다.
     - Retry는 `attempt_count`로 보존된다.
     - 동일 ID overwrite 및 collision은 `provenance_failed`가 되며, write failure는 accepted result를 허용하지 않는다.
 
@@ -95,5 +99,5 @@ tags:
   - **Test first:** 명시적 opt-in과 필수 endpoint/model configuration이 없을 때 default suite가 network 없이 유지되는지 고정한다. 설정이 있을 때 실제 response shape와 provenance assertions가 실행되는 별도 live command를 고정한다.
   - **Done when:**
     - `scripts/run_agentic_review_live.py` 또는 동등한 opt-in command가 실제 Ollama OpenAI-compatible endpoint에서 deterministic `null_spike` `Incident`/`Evidence`/`RemediationDraft`를 같은 adapter boundary로 검증한다.
-    - Invocation JSON에 model/config, prompt identity/digest, `project_revision`, structured output 또는 typed failure, validation, latency와 available usage가 남는다.
+    - Invocation JSON에 model/config, prompt identity/digest, `project_revision`, canonical input, structured output 또는 typed failure, validation, latency와 available usage가 남는다.
     - Approval/recovery/mutation은 발생하지 않는다.

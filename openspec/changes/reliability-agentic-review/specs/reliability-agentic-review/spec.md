@@ -11,7 +11,7 @@ tags:
 
 > **핵심 경계:** `null_spike`의 deterministic truth와 제공된 Evidence가 review의 기준이다. LLM은 advisory output만 만들며, `accepted` 결과도 deterministic validation과 durable provenance를 모두 통과해야 한다.
 
-이 Change는 deterministic `Incident`, 실제 `Evidence`와 `RemediationDraft`를 LLM이 검토하더라도 결과가 canonical facts와 제공된 근거에 묶이고 advisory 경계를 넘지 않도록 한다. 각 provider 결과와 실패는 재현 가능한 evidence로 남긴다.
+이 Change는 deterministic `Incident`, 실제 `Evidence`와 `RemediationDraft`를 LLM이 검토하더라도 결과가 canonical facts와 제공된 근거에 묶이고 advisory 경계를 넘지 않도록 한다. 각 provider 결과와 실패는 replay 가능한 evidence로 남긴다.
 
 ## ADDED Requirements
 
@@ -187,22 +187,29 @@ Record 계약은 다음과 같다.
 
 | Category | Must retain |
 | --- | --- |
-| Identity and context | `invocation_id`, sanitized model/configuration, prompt identity/digest, caller-provided `project_revision`, incident/evidence references |
+| Identity and context | `invocation_id`, sanitized model/configuration, prompt identity/digest, caller-provided `project_revision`, incident/evidence references, provider user data의 source인 bounded `canonical_input` |
 | Result | status, parsed structured output(가능한 경우), validation result 또는 typed failure code |
 | Runtime | latency, attempt count, available token/usage/cost |
-| Safety | API key, credential, raw prompt, raw log와 raw provider exception/response는 기록하지 않음 |
+| Safety | API key, credential, raw system/user prompt, raw log와 raw provider exception/response는 기록하지 않음 |
 
-Sanitized record와 stored output은 configured size limit을 넘어서는 안 된다(SHALL).
+Stored `canonical_input`은 prompt renderer가 provider user data block을 만들 때 사용한 allowlisted structured projection과 같아야 한다(SHALL). Recorded `project_revision`에 해당하는 prompt implementation을 사용할 수 있을 때 `PromptIdentity`와 stored `canonical_input`으로 messages를 다시 render하면 stored `prompt_digest`와 일치해야 한다(SHALL). Raw rendered prompt를 replay 목적으로 저장해서는 안 된다(MUST NOT).
+
+Sanitized record, stored `canonical_input`과 stored output은 configured size limit을 넘어서는 안 된다(SHALL).
 
 #### Scenario: Successful invocation provenance
 
 - **WHEN** local 또는 cloud-compatible provider가 schema-valid response를 반환하고 deterministic validation이 accepted이며 evidence store가 성공할 때
-- **THEN** 저장된 invocation evidence에서 model/config, prompt identity/digest, `project_revision`, incident/evidence refs, structured output, validation status, latency와 attempt count를 다시 확인할 수 있어야 한다.
+- **THEN** 저장된 invocation evidence에서 model/config, prompt identity/digest, `project_revision`, canonical input, incident/evidence refs, structured output, validation status, latency와 attempt count를 다시 확인할 수 있어야 한다.
+
+#### Scenario: Invocation can be replayed without raw prompt storage
+
+- **WHEN** stored `PromptIdentity`, `project_revision`와 `canonical_input`을 recorded application revision의 prompt implementation으로 다시 render할 때
+- **THEN** 생성한 message digest는 stored `prompt_digest`와 일치해야 하고 raw rendered prompt를 provenance에 요구해서는 안 된다(MUST NOT).
 
 #### Scenario: Failed invocation provenance
 
 - **WHEN** provider가 unavailable이거나 response schema/guard validation에 실패할 때
-- **THEN** invocation evidence는 실패 status, typed failure reason, attempt/latency와 가능한 structured output을 보존해야 하며 secret과 raw prompt/log/provider error를 포함해서는 안 된다.
+- **THEN** invocation evidence는 canonical input, 실패 status, typed failure reason, attempt/latency와 가능한 structured output을 보존해야 하며 secret과 raw prompt/log/provider error를 포함해서는 안 된다.
 
 #### Scenario: Evidence persistence failure
 
@@ -232,11 +239,11 @@ Sanitized record와 stored output은 configured size limit을 넘어서는 안 �
 
 ### Requirement: Deterministic and adversarial evaluation
 
-시스템은 provider network call 없이 input/output contract, typed result와 validator를 반복 평가할 수 있어야 하며(SHALL), `null_spike` 기준으로 valid response, fabricated evidence, canonical fact mismatch, direct/indirect prompt injection, authority escalation, descriptive draft action, schema-invalid response와 provider unavailability를 포함한 adversarial fixture를 다뤄야 한다(SHALL). 적어도 하나의 local Ollama live invocation은 default suite와 분리된 opt-in path에서 같은 contract와 provenance 경계를 사용해 검증할 수 있어야 한다(SHALL).
+시스템은 provider network call 없이 input/output contract, typed result, validator와 provenance replay contract를 반복 평가할 수 있어야 하며(SHALL), `null_spike` 기준으로 valid response, fabricated evidence, canonical fact mismatch, direct/indirect prompt injection, authority escalation, descriptive draft action, schema-invalid response와 provider unavailability를 포함한 adversarial fixture를 다뤄야 한다(SHALL). 적어도 하나의 local Ollama live invocation은 default suite와 분리된 opt-in path에서 같은 contract와 provenance 경계를 사용해 검증할 수 있어야 한다(SHALL).
 
 | Evaluation path | Network | Required coverage |
 | --- | --- | --- |
-| Offline default suite | 사용하지 않음 | Input/output contract, typed result, validator와 adversarial fixture |
+| Offline default suite | 사용하지 않음 | Input/output contract, typed result, validator, provenance replay와 adversarial fixture |
 | Opt-in Ollama live proof | 명시적으로 활성화한 경우에만 사용 | 실제 response, common adapter와 invocation provenance |
 
 #### Scenario: Offline contract and guard evaluation
@@ -252,4 +259,4 @@ Sanitized record와 stored output은 configured size limit을 넘어서는 안 �
 #### Scenario: Ollama live proof
 
 - **WHEN** opt-in live proof가 명시적으로 활성화되고 configured Ollama OpenAI-compatible endpoint가 접근 가능하며 deterministic `null_spike` `Incident`/`Evidence`/`RemediationDraft`가 제공될 때
-- **THEN** 실제 model response가 `AgenticReviewOutput`과 deterministic validator를 통과하거나 typed failure로 종료되고, invocation evidence에 model/config, prompt identity/digest, `project_revision`, output 또는 failure reason, validation, latency와 available usage가 남아야 한다.
+- **THEN** 실제 model response가 `AgenticReviewOutput`과 deterministic validator를 통과하거나 typed failure로 종료되고, invocation evidence에 model/config, prompt identity/digest, `project_revision`, canonical input, output 또는 failure reason, validation, latency와 available usage가 남아야 한다.
