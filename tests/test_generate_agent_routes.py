@@ -21,6 +21,20 @@ class _TextFile:
         return self.content
 
 
+class _BytesResponse:
+    def __init__(self, payload: bytes) -> None:
+        self.payload = payload
+
+    def __enter__(self) -> _BytesResponse:
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return self.payload
+
+
 @pytest.mark.unit
 @pytest.mark.parametrize(
     ("source", "expected"),
@@ -126,20 +140,10 @@ def test_dependency_skill_entry_reads_frontmatter_without_real_network(
     )
     payload = b"---\nname: alpha\ndescription:  Useful   skill.\n---\n# Alpha\n"
 
-    class Response:
-        def __enter__(self) -> Response:
-            return self
-
-        def __exit__(self, *_args: object) -> None:
-            return None
-
-        def read(self) -> bytes:
-            return payload
-
-    def fake_urlopen(actual_source: str, timeout: int) -> Response:
+    def fake_urlopen(actual_source: str, timeout: int) -> _BytesResponse:
         assert actual_source == source
         assert timeout == 30
-        return Response()
+        return _BytesResponse(payload)
 
     monkeypatch.setattr(routes, "urlopen", fake_urlopen)
 
@@ -148,6 +152,25 @@ def test_dependency_skill_entry_reads_frontmatter_without_real_network(
         "description": "Useful skill.",
         "source": source,
     }
+
+
+@pytest.mark.unit
+def test_dependency_skill_entry_rejects_locked_name_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = (
+        "https://raw.githubusercontent.com/owner/assets/abc123/"
+        "skills/alpha/SKILL.md"
+    )
+    payload = b"---\nname: beta\ndescription: Different skill.\n---\n# Beta\n"
+    monkeypatch.setattr(
+        routes,
+        "urlopen",
+        lambda _source, timeout: _BytesResponse(payload),
+    )
+
+    with pytest.raises(SystemExit, match="locked Skill name mismatch: alpha != beta"):
+        routes.dependency_skill_entry("alpha", source)
 
 
 @pytest.mark.unit
