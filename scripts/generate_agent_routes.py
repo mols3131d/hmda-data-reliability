@@ -12,7 +12,7 @@ from typing import Any
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SKILLS_ROOT = REPO_ROOT / ".agents" / "skills"
+SKILLS_ROOT = REPO_ROOT / ".rulesync" / "skills"
 RULES_ROOT = REPO_ROOT / ".rulesync" / "rules"
 ROUTE_ROOT = REPO_ROOT / ".agents" / "route"
 
@@ -73,7 +73,7 @@ def route_enabled(meta: dict[str, Any], *, path: Path) -> bool:
 def find_skill_files() -> list[Path]:
     try:
         proc = subprocess.run(
-            ["git", "ls-files", ".agents/skills/*/SKILL.md"],
+            ["git", "ls-files", ".rulesync/skills/*/SKILL.md"],
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
