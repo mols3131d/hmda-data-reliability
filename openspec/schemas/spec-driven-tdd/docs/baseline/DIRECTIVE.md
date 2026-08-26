@@ -13,7 +13,7 @@
 | R-009 | 프로젝트별 실행 지침은 `openspec/config.yaml`에서 제공할 수 있어야 한다. |
 | R-010 | Schema 개발 문서는 `docs/`, 장기 보존할 개발 의도는 `docs/baseline/`에 위치해야 한다. |
 | R-013 | Spec-level behavior가 없는 Change는 OpenSpec change metadata의 `skip_specs: true`를 사용해 delta Spec 없이 진행할 수 있어야 한다. |
-| R-014 | Design은 Proposal과 Specs가 소유하지 않는 non-obvious technical delta만 기록해야 한다. |
+| R-014 | Design은 Proposal, Specs와 Tasks가 소유하지 않고 제거 시 구현 선택·변경되는 technical boundary·constraint·migration mechanism이 실질적으로 미정이 되는 non-obvious technical delta만 기록해야 한다. |
 
 # Decisions
 
@@ -27,7 +27,7 @@
 | D-008 | 행동 변경은 test-first feedback loop를 사용하되 TDD phase를 별도 task로 요구하지 않는다. | TDD의 feedback 가치는 유지하면서 progress와 planning overhead를 줄인다. |
 | D-011 | 현재 범위의 feedback은 기존 owning task를 수정하거나 누락된 최소 implementation task를 추가하고, planning 수정은 owning artifact와 직접 영향받는 downstream에 한정한다. | Review remediation workstream과 전체 planning 재순회를 방지하면서 실제 누락 작업은 숨기지 않는다. |
 | D-012 | Spec-free Change는 `skip_specs: true`를 사용하고 placeholder Capability나 Requirement를 만들지 않는다. | OpenSpec이 제공하는 zero-delta contract를 사용해 구현 변경을 행동 계약으로 오분류하는 drift를 방지한다. |
-| D-013 | Design은 standalone change summary가 아니라 prerequisite artifact에서 결정되지 않는 technical delta 문서로 유지한다. | Proposal·Specs의 반복 소유를 줄이고 Design이 실제 구현 판단만 추가하도록 한다. |
+| D-013 | Design은 standalone change summary가 아니라 prerequisite artifact를 만족시키기 위해 추가로 결정해야 하는 technical delta 문서로 유지한다. | 기술적 표현으로 observable contract를 재서술하는 escape hatch를 막고 Design이 실제 구현 ambiguity만 해소하도록 한다. |
 
 # Invariants
 
@@ -41,7 +41,7 @@
 | I-006 | Project-specific command와 tool 선택을 schema baseline에 고정하지 않는다. |
 | I-008 | Review, self-review, TDD phase와 다른 process/gate state는 Tasks의 최상위 체크박스로 표현하지 않는다. |
 | I-009 | `skip_specs: true`인 Change는 delta Spec을 생성하지 않으며 spec-level behavior 변화가 생기면 marker를 제거하고 Specs를 작성한다. |
-| I-010 | Design은 Why, scope, impact, Capability, Requirement, Scenario, acceptance 또는 unchanged behavior를 다시 소유하지 않으며, 새 observable behavior가 발견되면 Specs로 되돌린다. |
+| I-010 | Design은 Why, scope, impact, Capability, Requirement, Scenario, observable failure, acceptance, implementation outcome 또는 unchanged behavior를 다시 소유하지 않는다. 기술적 표현으로 다시 쓴 observable contract도 Specs가 소유하며, 실제 migration 작업과 완료 조건은 Tasks가 소유한다. |
 
 # Allowed Changes
 
@@ -91,9 +91,9 @@
 | Item | Record |
 | --- | --- |
 | Changed baseline | R-014, D-004·D-013과 I-010 추가 또는 수정 |
-| Problem | Design이 prerequisite인 Proposal과 Specs의 동기, scope, behavior와 acceptance를 다시 서술하면서 같은 판단을 여러 artifact가 소유하고 downstream drift surface가 커졌다. |
-| Compatibility | Design artifact와 workflow dependency는 유지한다. 새 Design과 의미 있게 수정하는 Design부터 technical delta만 기록하며 기존 archive는 migration하지 않는다. Schema version과 parser contract는 유지한다. |
-| Rejected alternatives | Design 제거 또는 optional artifact화는 현재 workflow dependency를 바꾸는 비용이 크고, 중복의 직접 원인은 artifact 존재가 아니라 Design의 과도한 소유권이므로 채택하지 않는다. |
+| Problem | Design이 prerequisite인 Proposal과 Specs의 동기, scope, behavior와 acceptance를 다시 서술하고, observable contract를 기술적 표현으로 바꾸거나 migration checklist를 넣는 방식으로 같은 판단을 여러 artifact가 소유했다. |
+| Compatibility | Design artifact와 workflow dependency는 유지한다. 새 Design과 의미 있게 수정하는 Design부터 admission test를 적용해 실제 technical ambiguity만 기록하며 기존 archive는 migration하지 않는다. Schema version과 parser contract는 유지한다. |
+| Rejected alternatives | Design 제거 또는 optional artifact화는 현재 workflow dependency를 바꾸는 비용이 크다. 별도 validator 추가는 아직 문서 ownership rule로 해결 가능한 문제에 새로운 maintenance surface를 만들므로 채택하지 않는다. |
 | Synchronized changes | `schema.yaml`, schema README, `templates/design.md`, `docs/architecture.md`와 baseline을 함께 갱신한다. |
 
 # Change Control
