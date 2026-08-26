@@ -5,13 +5,15 @@ OpenSpec의 artifact dependency를 사용해 필요한 계획만 만들고 TDD-c
 ```mermaid
 flowchart LR
     subgraph planning ["Planning Artifacts"]
-        proposal["Proposal<br/>why + scope"] --> specs["Specs<br/>observable behavior"]
+        proposal["Proposal<br/>why + scope"] --> specs["Specs<br/>observable behavior<br/>or skipped for spec-free change"]
         specs --> design["Design<br/>minimal technical approach"]
         design --> tasks["Tasks<br/>verifiable outcomes"]
     end
 
     tasks --> apply["Apply<br/>test-first implementation"]
 ```
+
+Spec-level behavior가 바뀌지 않는 pure refactor, tooling 또는 docs Change는 `.openspec.yaml`에 `skip_specs: true`를 설정한다. OpenSpec은 이 경우 Specs artifact를 완료로 취급하므로 artifact DAG를 바꾸거나 placeholder Capability와 Requirement를 만들지 않는다.
 
 | Path | Responsibility |
 | --- | --- |
