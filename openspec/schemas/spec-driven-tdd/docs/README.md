@@ -13,3 +13,4 @@
 - 설계 근거와 유지보수 규칙은 `docs/`에 둔다.
 - 장기적으로 바뀌면 안 되는 취지와 계약은 `docs/baseline/`에 둔다.
 - 구현 세부나 일시적 조사 기록을 baseline에 넣지 않는다.
+- OpenSpec dependency를 의미 있게 갱신할 때 built-in `spec-driven`의 metadata, validation, artifact completion과 archive contract 변화를 확인하고 현재 schema에 필요한 runtime semantics만 선별 반영한다. Upstream 문구나 구조를 그대로 동기화하지 않는다.
