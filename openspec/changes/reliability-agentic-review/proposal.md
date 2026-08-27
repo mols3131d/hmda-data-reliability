@@ -24,7 +24,7 @@ MVP는 deterministic truth를 유지한 채 LLM이 제공된 evidence와 기존 
 
 - **Review contract:** `null_spike` `Incident`, 실제 `Evidence`와 기존 `RemediationDraft`를 묶는 snapshot 기반 structured input과 deterministic facts를 보존하는 advisory output을 추가한다.
 - **Validation and safety:** typed review result, evidence subset, fabricated evidence, deterministic contradiction, authority escalation과 forbidden action을 검사하는 provider-independent validation contract를 추가한다. Untrusted `Evidence`와 model output은 data로만 취급한다.
-- **Provider boundary:** OpenAI-compatible `chat.completions` API를 통해 local model과 cloud model을 같은 bounded review interface로 호출한다. 명시적인 실행 의도만 versioned action policy로 차단한다.
+- **Provider boundary:** OpenAI-compatible `chat.completions` API를 통해 local model과 cloud model을 같은 bounded review interface로 호출한다. 명백한 standalone command/authority pattern만 versioned bounded action policy로 보수적으로 차단하며, 자연어 의미의 정확한 판정은 MVP 범위에 포함하지 않는다.
 - **Provenance:** provider에 전달한 bounded canonical input projection, parsed output, sanitized configuration, `project_revision`, prompt digest와 logical invocation 단위의 durable evidence를 추가한다. Raw prompt는 저장하지 않는다.
 - **Evaluation:** 정상·실패·adversarial review를 model 호출 없이 반복 검증하고, default suite와 분리된 opt-in Ollama live proof를 제공한다.
 
@@ -41,7 +41,7 @@ MVP는 deterministic truth를 유지한 채 LLM이 제공된 evidence와 기존 
 
 #### reliability-agentic-review
 
-시스템이 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 검토 가능한 structured advisory 결과로 변환한다. 또한 canonical facts·evidence references·action boundary를 deterministic하게 판정하고, provider invocation을 replay 가능한 provenance와 함께 기록한다.
+시스템이 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 검토 가능한 structured advisory 결과로 변환한다. 또한 canonical facts·evidence references를 deterministic하게 판정하고 action boundary에는 bounded conservative guard를 적용하며, provider invocation을 replay 가능한 provenance와 함께 기록한다.
 
 ## Impact
 
