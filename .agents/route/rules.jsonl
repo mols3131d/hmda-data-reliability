@@ -1,3 +1,2 @@
-{"_meta":{"kind":"rules"}}
 {"description":"Use when writing or editing Markdown docs, README, notes, or AGENTS-style guidelines. Covers GFM callouts, tables, Mermaid, and language.","globs":["**/*.md"],"source":".rulesync/rules/markdown.md"}
 {"description":"Python-specific source rules under src. Covers imports, typing, resource handling, exceptions, mutable state, and docstrings.","globs":["src/**/*.py"],"source":".rulesync/rules/python.md"}
