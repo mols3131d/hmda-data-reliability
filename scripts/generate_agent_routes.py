@@ -24,9 +24,6 @@ RULESYNC_CONFIG = REPO_ROOT / "rulesync.jsonc"
 RULESYNC_LOCK = REPO_ROOT / "rulesync.lock"
 SKILLS_LOCK = REPO_ROOT / "skills-lock.json"
 
-SKILLS_META: dict[str, object] = {"kind": "skills"}
-RULES_META: dict[str, object] = {"kind": "rules"}
-
 
 class RouteGenerationError(RuntimeError):
     """Raised when route source metadata cannot be converted into a valid index."""
@@ -319,11 +316,11 @@ def rule_entries() -> list[dict[str, object]]:
     return entries
 
 
-def render(meta: dict[str, object], entries: list[dict[str, object]]) -> str:
-    rows: list[dict[str, object]] = [{"_meta": meta}, *entries]
+def render(entries: list[dict[str, object]]) -> str:
     return (
         "\n".join(
-            json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in rows
+            json.dumps(entry, ensure_ascii=False, separators=(",", ":"))
+            for entry in entries
         )
         + "\n"
     )
@@ -333,8 +330,8 @@ def generated_routes(
     loader: Callable[[str], str] = fetch_text,
 ) -> dict[Path, str]:
     return {
-        ROUTE_ROOT / "skills.jsonl": render(SKILLS_META, skill_entries(loader)),
-        ROUTE_ROOT / "rules.jsonl": render(RULES_META, rule_entries()),
+        ROUTE_ROOT / "skills.jsonl": render(skill_entries(loader)),
+        ROUTE_ROOT / "rules.jsonl": render(rule_entries()),
     }
 
 
