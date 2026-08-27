@@ -58,18 +58,16 @@ flowchart TB
 
 ## Git Hooks
 
-Lefthook은 commit의 자동 수정과 push 전 검증을 분리한다. Commit hook은 변경 파일만 고치고, push hook은 이미 고쳐진 상태와 영향 범위 test를 확인한다.
+Lefthook은 local feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. `main` admission에 필요한 전체 검증은 CI가 담당한다.
 
 | Hook | Trigger | Action |
 | --- | --- | --- |
-| `pre-commit` | staged Markdown | changed file에 isolated rumdl fix 후 자동 stage |
-| `pre-commit` | staged Python | changed file에 isolated Ruff fix + format 후 자동 stage |
-| `pre-push` | pushed Markdown | 존재하는 changed file만 rumdl check |
-| `pre-push` | pushed Python | 존재하는 changed file Ruff check + format check, project `ty check`, testmon affected tests |
+| `pre-commit` | staged Markdown | changed file rumdl fix 후 자동 stage |
+| `pre-commit` | staged Python | changed file Ruff fix + format 후 자동 stage |
+| `pre-push` | pushed Python | 존재하는 changed file Ruff check + format check, testmon affected tests |
 | `pre-push` | pushed dbt SQL/YAML | `tests/dbt` |
-| `pre-push` | Python/dependency runtime config | full `unit` fallback |
 
-`pre-commit`에는 type check나 pytest를 넣지 않는다. rumdl과 Ruff는 project environment sync가 필요 없는 isolated `uvx` tool로 실행해 짧은 mutation loop를 유지한다. 삭제된 file은 fixer와 linter 대상에서 제외한다.
+`pre-commit`과 `pre-push`에는 project-wide type check나 full unit suite를 넣지 않는다. Project tool은 이미 준비된 `.venv`에서 `uv run --no-sync`로 실행해 매 hook마다 dependency sync를 확인하거나 별도 tool environment를 만드는 비용을 피한다. 삭제된 file은 fixer와 linter 대상에서 제외한다.
 
 Python push에서는 `--testmon --testmon-forceselect`로 local `.testmondata`가 알고 있는 실제 dependency를 기준으로 affected tests를 선택한다. `.testmondata`는 Git에서 제외된 local selection cache이며 validation evidence가 아니다. Cache가 없으면 첫 testmon 실행의 선택 이점이 작고, 실행하면서 dependency data가 생성·갱신된다.
 
@@ -80,6 +78,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
 - Markdown은 위치와 관계없이 runtime scope에서 제외하고, 현재 존재하는 changed Markdown file만 `rumdl check`한다.
+- Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check와 project-wide `ty check`를 실행한다.
 - Domain source는 own test와 현재 reverse dependency에 따른 consumer test directory를 선택한다.
 - Scoped domain test는 `unit`, `component`, `integration`을 유지하고 `memory`, `stress`만 제외한다.
 - 선택된 test directory가 3개 이상이면 xdist를 사용한다.
