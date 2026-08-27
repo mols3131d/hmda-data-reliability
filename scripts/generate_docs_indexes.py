@@ -7,6 +7,7 @@ import argparse
 import csv
 import io
 import sys
+from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -16,8 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = ROOT / "docs"
 INDEX_NAME = "INDEX.tsv"
 HEADER = "path\tdescription\n"
-INDEX_DEPTH = 1
-DIRECTORY_ENTRY_FILES = ("README.md", "index.md")
+DEFAULT_INDEX_DEPTH = 1
+DEFAULT_DEPTH = -1
+DEFAULT_DIRECTORY_ENTRY_FILES = ("README.md", "index.md")
 EXCLUDED_FILES = {"AGENTS.md", "CLAUDE.md"}
 
 
@@ -62,11 +64,47 @@ def _is_document(path: Path) -> bool:
 
 
 def _documents(directory: Path) -> list[Path]:
-    return sorted(path for path in directory.rglob("*") if _is_document(path))
+    return sorted(path for path in directory.rglob("*.md") if _is_document(path))
 
 
-def _directory_description(directory: Path) -> str:
-    for filename in DIRECTORY_ENTRY_FILES:
+def _has_markdown_content(directory: Path) -> bool:
+    return bool(_documents(directory))
+
+
+def _route_children(directory: Path) -> list[Path]:
+    return [
+        child
+        for child in sorted(directory.iterdir())
+        if child.is_dir() and _has_markdown_content(child)
+    ]
+
+
+def _index_targets(docs_root: Path, index_depth: int) -> list[Path]:
+    if index_depth < -1:
+        raise ValueError("index_depth must be -1 or greater")
+
+    targets: list[Path] = []
+    queue = deque([(docs_root, 0)])
+    while queue:
+        directory, current_depth = queue.popleft()
+        targets.append(directory)
+
+        if index_depth != -1 and current_depth >= index_depth:
+            continue
+        queue.extend((child, current_depth + 1) for child in _route_children(directory))
+
+    return targets
+
+
+def _path_depth(path: Path, directory: Path) -> int:
+    return len(path.relative_to(directory).parts) - 1
+
+
+def _directory_description(
+    directory: Path,
+    entry_files: tuple[str, ...],
+) -> str:
+    for filename in entry_files:
         entry = directory / filename
         if not entry.is_file():
             continue
@@ -76,7 +114,15 @@ def _directory_description(directory: Path) -> str:
     return ""
 
 
-def _rows(directory: Path) -> list[tuple[str, str]]:
+def _rows(
+    directory: Path,
+    entry_files: tuple[str, ...],
+    depth: int,
+) -> list[tuple[str, str]]:
+    if depth < -1:
+        raise ValueError("depth must be -1 or greater")
+
+    max_depth = None if depth == -1 else depth
     documents = _documents(directory)
     directories: set[Path] = set()
 
@@ -89,9 +135,10 @@ def _rows(directory: Path) -> list[tuple[str, str]]:
     rows = [
         (
             f"{path.relative_to(directory).as_posix()}/",
-            _directory_description(path),
+            _directory_description(path, entry_files),
         )
         for path in directories
+        if max_depth is None or _path_depth(path, directory) <= max_depth
     ]
     rows.extend(
         (
@@ -99,46 +146,52 @@ def _rows(directory: Path) -> list[tuple[str, str]]:
             _frontmatter_description(path),
         )
         for path in documents
-        if path.name not in DIRECTORY_ENTRY_FILES
+        if path.name not in entry_files
+        and (max_depth is None or _path_depth(path, directory) <= max_depth)
     )
     return sorted(rows, key=lambda row: row[0])
 
 
-def _render(directory: Path) -> str:
+def _render(
+    directory: Path,
+    entry_files: tuple[str, ...],
+    depth: int,
+) -> str:
     output = io.StringIO(newline="")
     writer = csv.writer(output, delimiter="\t", lineterminator="\n")
     writer.writerow(("path", "description"))
-    writer.writerows(_rows(directory))
+    writer.writerows(_rows(directory, entry_files, depth))
     return output.getvalue()
 
 
-def _targets(docs_root: Path) -> list[Path]:
-    targets = [docs_root]
-    if INDEX_DEPTH == 0:
-        return targets
-
-    documents = _documents(docs_root)
-    child_names = {
-        document.relative_to(docs_root).parts[0]
-        for document in documents
-        if len(document.relative_to(docs_root).parts) > 1
-    }
-    targets.extend(
-        path for name in sorted(child_names) if (path := docs_root / name).is_dir()
-    )
-    return targets
-
-
-def generate(docs_root: Path = DOCS_ROOT, *, check: bool = False) -> list[str]:
+def generate_docs_indexes(
+    docs_root: Path = DOCS_ROOT,
+    *,
+    check: bool = False,
+    index_depth: int = DEFAULT_INDEX_DEPTH,
+    depth: int = DEFAULT_DEPTH,
+    directory_entry_files: tuple[str, ...] | list[str] = DEFAULT_DIRECTORY_ENTRY_FILES,
+) -> list[str]:
+    """Generate docs indexes or report drift when ``check`` is true."""
     if not docs_root.is_dir():
         raise NotADirectoryError(docs_root)
+    if index_depth < -1:
+        raise ValueError("index_depth must be -1 or greater")
+    if depth < -1:
+        raise ValueError("depth must be -1 or greater")
+
+    entry_files = tuple(directory_entry_files)
+    if not entry_files:
+        raise ValueError("directory_entry_files must not be empty")
 
     repository_root = docs_root.parent
     drift: list[str] = []
-    targets = {directory / INDEX_NAME for directory in _targets(docs_root)}
+    targets = {
+        directory / INDEX_NAME for directory in _index_targets(docs_root, index_depth)
+    }
 
     for index_path in sorted(targets):
-        desired = _render(index_path.parent)
+        desired = _render(index_path.parent, entry_files, depth)
         current = (
             index_path.read_text(encoding="utf-8") if index_path.exists() else None
         )
@@ -179,10 +232,38 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="report index drift without modifying files",
     )
+    parser.add_argument(
+        "--index-depth",
+        type=int,
+        default=DEFAULT_INDEX_DEPTH,
+        help="maximum depth where INDEX files are materialized (0=root, -1=unlimited)",
+    )
+    parser.add_argument(
+        "--depth",
+        type=int,
+        default=DEFAULT_DEPTH,
+        help="maximum subtree depth included in each INDEX (0=current, -1=unlimited)",
+    )
+    parser.add_argument(
+        "--directory-entry-files",
+        nargs="+",
+        default=list(DEFAULT_DIRECTORY_ENTRY_FILES),
+        help="ordered entrypoint filenames that provide directory descriptions",
+    )
     args = parser.parse_args(argv)
 
+    if args.index_depth < -1:
+        parser.error("--index-depth must be -1 or greater")
+    if args.depth < -1:
+        parser.error("--depth must be -1 or greater")
+
     try:
-        drift = generate(check=args.check)
+        drift = generate_docs_indexes(
+            check=args.check,
+            index_depth=args.index_depth,
+            depth=args.depth,
+            directory_entry_files=args.directory_entry_files,
+        )
     except (OSError, ValueError, yaml.YAMLError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
