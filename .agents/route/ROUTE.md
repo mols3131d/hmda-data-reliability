@@ -4,8 +4,6 @@
 
 작업을 시작할 때 [`skills.jsonl`](skills.jsonl)과 [`rules.jsonl`](rules.jsonl)을 반드시 끝까지 읽는다. 두 파일은 작업 전체에서 재사용하는 derived discovery index이며 routing 지침 자체를 소유하지 않는다.
 
-Known target path마다 repository root부터 target directory까지 applicable `AGENTS.md`를 로드한다. 충돌하지 않는 상위 guidance는 유지하고 더 가까운 scoped override를 우선한다.
-
 초기 task intent와 known target path에 맞는 context만 선택한다.
 
 - `skills.jsonl`: `name`과 `description`으로 관련 Skill을 선택하고 해당 `source`를 읽는다.
