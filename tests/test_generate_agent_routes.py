@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -19,20 +20,6 @@ class _TextFile:
     def read_text(self, *, encoding: str) -> str:
         assert encoding == "utf-8"
         return self.content
-
-
-class _BytesResponse:
-    def __init__(self, payload: bytes) -> None:
-        self.payload = payload
-
-    def __enter__(self) -> _BytesResponse:
-        return self
-
-    def __exit__(self, *_args: object) -> None:
-        return None
-
-    def read(self) -> bytes:
-        return self.payload
 
 
 @pytest.mark.unit
@@ -131,23 +118,26 @@ def test_skills_cli_dependency_sources_use_locked_ref(
 
 
 @pytest.mark.unit
-def test_dependency_skill_entry_reads_frontmatter_without_real_network(
+def test_find_local_skill_files_keeps_empty_tracked_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    source = (
-        "https://raw.githubusercontent.com/owner/assets/abc123/"
-        "skills/alpha/SKILL.md"
+    monkeypatch.setattr(
+        routes.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(stdout=""),
     )
-    payload = b"---\nname: alpha\ndescription:  Useful   skill.\n---\n# Alpha\n"
 
-    def fake_urlopen(actual_source: str, timeout: int) -> _BytesResponse:
-        assert actual_source == source
-        assert timeout == 30
-        return _BytesResponse(payload)
+    assert routes.find_local_skill_files() == []
 
-    monkeypatch.setattr(routes, "urlopen", fake_urlopen)
 
-    assert routes.dependency_skill_entry("alpha", source) == {
+@pytest.mark.unit
+def test_dependency_skill_entry_uses_injected_loader() -> None:
+    source = (
+        "https://raw.githubusercontent.com/owner/assets/abc123/skills/alpha/SKILL.md"
+    )
+    text = "---\nname: alpha\ndescription:  Useful   skill.\n---\n# Alpha\n"
+
+    assert routes.dependency_skill_entry("alpha", source, lambda _source: text) == {
         "name": "alpha",
         "description": "Useful skill.",
         "source": source,
@@ -155,22 +145,17 @@ def test_dependency_skill_entry_reads_frontmatter_without_real_network(
 
 
 @pytest.mark.unit
-def test_dependency_skill_entry_rejects_locked_name_mismatch(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_dependency_skill_entry_rejects_locked_name_mismatch() -> None:
     source = (
-        "https://raw.githubusercontent.com/owner/assets/abc123/"
-        "skills/alpha/SKILL.md"
+        "https://raw.githubusercontent.com/owner/assets/abc123/skills/alpha/SKILL.md"
     )
-    payload = b"---\nname: beta\ndescription: Different skill.\n---\n# Beta\n"
-    monkeypatch.setattr(
-        routes,
-        "urlopen",
-        lambda _source, timeout: _BytesResponse(payload),
-    )
+    text = "---\nname: beta\ndescription: Different skill.\n---\n# Beta\n"
 
-    with pytest.raises(SystemExit, match="locked Skill name mismatch: alpha != beta"):
-        routes.dependency_skill_entry("alpha", source)
+    with pytest.raises(
+        routes.RouteGenerationError,
+        match="locked Skill name mismatch: alpha != beta",
+    ):
+        routes.dependency_skill_entry("alpha", source, lambda _source: text)
 
 
 @pytest.mark.unit
@@ -190,17 +175,12 @@ def test_skill_entries_include_external_dependency_entries(
         "skills_cli_dependency_sources",
         lambda: {"alpha": skills_cli_source},
     )
-    monkeypatch.setattr(
-        routes,
-        "dependency_skill_entry",
-        lambda name, source: {
-            "name": name,
-            "description": f"{name} skill",
-            "source": source,
-        },
-    )
 
-    assert routes.skill_entries() == [
+    def loader(source: str) -> str:
+        name = "zeta" if source == rulesync_source else "alpha"
+        return f"---\nname: {name}\ndescription: {name} skill\n---\n"
+
+    assert routes.skill_entries(loader) == [
         {
             "name": "alpha",
             "description": "alpha skill",
@@ -238,7 +218,8 @@ def test_skill_entries_reject_local_external_name_collision(
     monkeypatch.setattr(routes, "skills_cli_dependency_sources", lambda: {})
 
     with pytest.raises(
-        SystemExit, match="local and external Skill names overlap: shared"
+        routes.RouteGenerationError,
+        match="local and external Skill names overlap: shared",
     ):
         routes.skill_entries()
 
@@ -260,6 +241,7 @@ def test_skill_entries_reject_dependency_name_collision(
     )
 
     with pytest.raises(
-        SystemExit, match="Skill dependency exists in both locks: shared"
+        routes.RouteGenerationError,
+        match="Skill dependency exists in both locks: shared",
     ):
         routes.skill_entries()

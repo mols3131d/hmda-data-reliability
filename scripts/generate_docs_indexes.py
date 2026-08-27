@@ -129,7 +129,12 @@ def _targets(docs_root: Path) -> list[Path]:
     return targets
 
 
-def generate(docs_root: Path = DOCS_ROOT, *, check: bool = False) -> list[str]:
+def generate_docs_indexes(
+    docs_root: Path = DOCS_ROOT,
+    *,
+    check: bool = False,
+) -> list[str]:
+    """Generate docs indexes or report drift when ``check`` is true."""
     if not docs_root.is_dir():
         raise NotADirectoryError(docs_root)
 
@@ -182,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        drift = generate(check=args.check)
+        drift = generate_docs_indexes(check=args.check)
     except (OSError, ValueError, yaml.YAMLError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.generate_docs_indexes import generate
+from scripts.generate_docs_indexes import generate_docs_indexes
 
 
 def _write(path: Path, content: str) -> None:
@@ -36,7 +36,7 @@ def test_generate_projects_paths_and_frontmatter_descriptions(tmp_path: Path) ->
         "---\ndescription: Deep reference.\n---\n# Deep\n",
     )
 
-    assert generate(docs) == []
+    assert generate_docs_indexes(docs) == []
 
     assert _read_tsv(docs / "INDEX.tsv") == [
         {"path": "guide.md", "description": ""},
@@ -59,7 +59,7 @@ def test_generate_omits_header_only_directory_index(tmp_path: Path) -> None:
         "---\ndescription: Reference docs.\n---\n# References\n",
     )
 
-    assert generate(docs) == []
+    assert generate_docs_indexes(docs) == []
 
     assert _read_tsv(docs / "INDEX.tsv") == [
         {"path": "references/", "description": "Reference docs."}
@@ -73,7 +73,7 @@ def test_generate_check_reports_drift_without_modifying_files(tmp_path: Path) ->
     guide = docs / "guide.md"
     _write(guide, "---\ndescription: Initial.\n---\n# Guide\n")
     _write(docs / "references" / "nested" / "reference.md", "# Reference\n")
-    generate(docs)
+    generate_docs_indexes(docs)
 
     original_root_index = (docs / "INDEX.tsv").read_text(encoding="utf-8")
     _write(guide, "---\ndescription: Updated.\n---\n# Guide\n")
@@ -81,7 +81,7 @@ def test_generate_check_reports_drift_without_modifying_files(tmp_path: Path) ->
     stale = docs / "references" / "nested" / "INDEX.tsv"
     _write(stale, "path\tdescription\nold.md\tOld.\n")
 
-    assert generate(docs, check=True) == [
+    assert generate_docs_indexes(docs, check=True) == [
         "outdated: docs/INDEX.tsv",
         "missing: docs/references/INDEX.tsv",
         "stale: docs/references/nested/INDEX.tsv",
@@ -99,4 +99,4 @@ def test_generate_rejects_non_string_description(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValueError, match="description must be a string"):
-        generate(docs)
+        generate_docs_indexes(docs)
