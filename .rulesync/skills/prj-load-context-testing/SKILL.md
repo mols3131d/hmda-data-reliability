@@ -10,46 +10,19 @@ targets: [claudecode, codexcli, copilot, copilotcli, antigravity-ide, antigravit
 
 # Testing Context
 
-Load the smallest repository testing context needed for the task. Canonical testing documents own the detailed rules; this skill selects and anchors the context needed to apply them consistently.
+현재 testing task의 다음 판단에 필요한 context만 선택한다. 상세 testing 규칙은 canonical 문서가 소유한다.
 
-## Load Context
+| Need | Load |
+| --- | --- |
+| `tests/` authored file 수정 또는 test 배치 판단 | [`tests/AGENTS.md`](../../../tests/AGENTS.md) |
+| scenario, oracle, assertion, test level 또는 test design 판단 | [`docs/development/test-design-and-implementation.md`](../../../docs/development/test-design-and-implementation.md) |
+| pytest 실행·선택·debug, marker, coverage, report 또는 CI test behavior | [`docs/development/testing.md`](../../../docs/development/testing.md) |
+| 정확한 pytest default, marker 또는 plugin configuration | [`pyproject.toml`](../../../pyproject.toml) |
 
-- When changing authored files under `tests/` or deciding where a test belongs, read [`tests/AGENTS.md`](../../../tests/AGENTS.md).
-- When designing, changing, or reviewing behavior, scenarios, oracles, assertions, or test level, read [`docs/development/test-design-and-implementation.md`](../../../docs/development/test-design-and-implementation.md).
-- When selecting, running, or debugging pytest commands, markers, reports, coverage, or traces, read [`docs/development/testing.md`](../../../docs/development/testing.md).
-- When exact configured pytest defaults or plugin availability matters, inspect [`pyproject.toml`](../../../pyproject.toml). When Git hook behavior matters, inspect [`lefthook.yml`](../../../lefthook.yml).
-- When pull-request CI selection, CI-only filters, or CI execution scope matters, inspect `.github/workflows/ci-lite.yml`.
+문서가 가리키는 config나 workflow의 현재 값이 실제 판단에 필요할 때만 해당 source를 추가로 확인한다. 다음 testing 결정을 내릴 수 있으면 context loading을 멈춘다.
 
-Read only the context relevant to the current task. Do not duplicate detailed rules or invent a conflicting convention.
+## Boundary
 
-## Execution Defaults
-
-- Run pytest through `uv`.
-- Start with the narrowest relevant test path, test node, keyword, or marker.
-- `pyproject.toml` supplies the project pytest defaults; do not override them without a task-specific reason.
-- Parallel execution, hook selection, and report generation are execution policies owned by `testing.md` and `lefthook.yml`; do not assume they are global pytest defaults.
-- Use `--lf` only to rerun a known previous failure.
-- Collect HTML, coverage, trace, or JUnit evidence only when it adds evidence for the task.
-
-## Agent Evidence
-
-When a result must be parsed or persisted, disable decorative output and write JUnit XML.
-
-```bash
-mkdir -p artifacts && uv run pytest <focused-target> \
-	-p no:sugar \
-	--color=no \
-	--tb=short \
-	-ra \
-	--junitxml=artifacts/pytest.xml
-```
-
-Replace `<focused-target>` with the narrowest applicable path, node, keyword, or marker. Treat `artifacts/pytest.xml`, HTML reports, cache, and coverage output as generated evidence, not authored source.
-
-Report the executed command, outcome, failure classification, and remaining risk. Never claim an unexecuted test passed.
-
-## Boundaries
-
-- Loading testing context does not expand the current task's write scope or ownership.
-- A failing test does not authorize weakening the test or modifying production code; classify the failure and follow the rules of the task that owns the change.
-- Do not redefine detailed test-design, execution, marker, hook, CI, or reporting policy in this skill.
+- 이 Skill은 testing context를 선택할 뿐 test design, 실행, CI 또는 reporting policy를 소유하지 않는다.
+- Context loading은 현재 task의 write authority나 scope를 확장하지 않는다.
+- Canonical 문서의 command, 규칙, 예시를 이 Skill에 복제하지 않는다.
