@@ -1,3 +1,3 @@
-{"_meta":{"kind":"rules","instructions":"Known target path와 globs로 후보를 좁히고 description으로 현재 task에 관련된 Rule만 선택해 읽는다. Target path가 없으면 Rule source를 선로드하지 않는다. Task intent나 target path가 materially 바뀌면 다시 선택한다. 이 파일은 derived discovery metadata이며 각 canonical Rule이 authoritative source다."}}
+{"_meta":{"kind":"rules"}}
 {"description":"Use when writing or editing Markdown docs, README, notes, or AGENTS-style guidelines. Covers GFM callouts, tables, Mermaid, and language.","globs":["**/*.md"],"source":".rulesync/rules/markdown.md"}
 {"description":"Python-specific source rules under src. Covers imports, typing, resource handling, exceptions, mutable state, and docstrings.","globs":["src/**/*.py"],"source":".rulesync/rules/python.md"}
