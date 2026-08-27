@@ -20,7 +20,7 @@ Load the smallest repository development context needed for the active implement
 - Read [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) for active runtime, package layout, tool choices, code convention, and development commands that affect the task.
 - Read [`docs/ARCHITECTURE.md`](../../../docs/ARCHITECTURE.md) when the change touches system boundaries, domain ownership, orchestration, persistence, cross-package dependencies, or placement of new responsibility.
 - Read [`docs/mvp.md`](../../../docs/mvp.md) only when current MVP scope or acceptance can change the implementation decision.
-- For test design, test implementation, pytest execution, or validation details, use `prj-load-context-testing`; do not duplicate its testing contract here.
+- For test design, test implementation, pytest execution, or validation details, use `prj-testing-context`; do not duplicate testing context routing here.
 - For branch, commit, Pull Request, review delivery, merge, or mutable GitHub state, use `prj-vcs-git-github`; do not duplicate VCS policy here.
 - For each known target path, keep applicable path-scoped `AGENTS.md` and Rule context in force through the repository's normal routing mechanism.
 

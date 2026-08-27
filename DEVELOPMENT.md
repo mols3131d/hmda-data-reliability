@@ -8,7 +8,7 @@
 | --- | --- |
 | [ARCHITECTURE](docs/ARCHITECTURE.md) | 시스템 경계, 실행 경계, domain ownership guidance |
 | [Testing Guide](docs/development/testing.md) | pytest 실행 command, marker, report, coverage, tracing |
-| [Test Design and Implementation](docs/development/test-design-and-implementation.md) | test design, observable contract, scenario, oracle, validation 기준 |
+| [Test Design](docs/development/test-design.md) | test design, observable contract, scenario, oracle, validation 기준 |
 | [Version Control and GitHub](docs/development/vcs-git/README.md) | branch, commit, Pull Request와 review workflow |
 
 ## Quick Commands

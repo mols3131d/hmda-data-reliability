@@ -25,6 +25,6 @@ production source, OpenSpec artifact, project configuration, dependency와 CI는
 
 ## Validation
 
-변경한 test 또는 module부터 실행하고 필요한 경우 관련 package suite로 넓힌다. 실행 방법과 marker는 [`docs/development/testing.md`](../docs/development/testing.md)를, requirement-to-scenario와 oracle 설계는 [`docs/development/test-design-and-implementation.md`](../docs/development/test-design-and-implementation.md)를 따른다.
+변경한 test 또는 module부터 실행하고 필요한 경우 관련 package suite로 넓힌다. 실행 방법과 marker는 [`docs/development/testing.md`](../docs/development/testing.md)를, requirement-to-scenario와 oracle 설계는 [`docs/development/test-design.md`](../docs/development/test-design.md)를 따른다.
 
 실행하지 않은 test를 통과로 기록하지 않는다. 실패는 test defect, production defect, specification gap, environment failure, unrelated failure로 구분한다.
