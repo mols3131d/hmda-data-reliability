@@ -3,7 +3,7 @@ ai-agent/	Repository의 agent instruction surface 선택과 Rule/Skill asset man
 ai-agent/rule.md	Repository structure로 applicability가 결정되는 instruction surface인 Rule의 선택 기준, canonical source와 책임 경계를 정의합니다.
 ai-agent/skill.md	Task intent와 semantic relevance에 따라 선택적으로 load하는 Skill의 선택 기준, loading 방식과 source ownership을 정의합니다.
 dashboard.md	현재 development snapshot에서 domain별 구현·검증 진행률, 남은 gap과 blocker를 한눈에 정리한 human-readable dashboard입니다.
-test-design-and-implementation.md	OpenSpec requirement를 observable behavior 중심의 pytest test로 변환하는 scenario, oracle, test level과 구현 원칙을 설명합니다.
+test-design.md	OpenSpec requirement를 observable behavior 중심의 pytest test로 변환하는 scenario, oracle, test level과 구현 원칙을 설명합니다.
 testing.md	Local pytest 실행 범위, marker, Git hook, PR CI와 추가 test evidence 수집 방법을 설명합니다.
 vcs-git/	Branch, commit, Pull Request와 review guide를 연결하는 docs/development/vcs-git directory의 entrypoint입니다.
 vcs-git/branch.md	하나의 변경 목적을 격리하고 검토 가능한 단위로 전달하기 위한 branch 생성, naming, reuse와 agent 제약을 정의합니다.

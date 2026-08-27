@@ -1,5 +1,5 @@
 ---
-title: "Test Design and Implementation"
+title: "Test Design"
 description: "OpenSpec requirement를 observable behavior 중심의 pytest test로 변환하는 scenario, oracle, test level과 구현 원칙을 설명합니다."
 categories:
   - software-engineering
@@ -11,7 +11,7 @@ tags:
   - testing
 ---
 
-# Test Design and Implementation
+# Test Design
 
 이 문서는 OpenSpec requirement를 사람이 읽고 유지할 수 있는 pytest test로 바꾸는 방법을 설명한다. 목표는 implementation detail을 고정하는 것이 아니라, 사용자가 관찰할 수 있는 behavior를 빠르고 신뢰성 있게 보호하는 것이다.
 

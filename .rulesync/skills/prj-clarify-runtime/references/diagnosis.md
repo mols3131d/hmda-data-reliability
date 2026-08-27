@@ -11,7 +11,7 @@ runtime 문제를 모두 관찰하려 하지 않는다. **실행 후 답하기 �
 | 실행 후 무엇이 일어났는지 복원하기 어렵다 | `prj-clarify-runtime` |
 | 코드를 읽어도 의미, 책임 또는 caller contract를 이해하기 어렵다 | `prj-clarify-code` |
 | 현재 동작이 올바른지, defect인지 판단해야 한다 | `prj-review-code` 또는 debugging workflow |
-| 어떤 test나 validation으로 동작을 증명할지 설계해야 한다 | `prj-load-context-testing` |
+| 어떤 test나 validation으로 동작을 증명할지 설계해야 한다 | `prj-testing-context` |
 | 실행 boundary나 책임 자체를 재설계해야 한다 | architecture/design |
 | 지속적인 상태 감시, alert, SLO가 필요하다 | monitoring/observability |
 | 왜 느리거나 자원을 많이 쓰는지 찾아야 한다 | profiling/performance |

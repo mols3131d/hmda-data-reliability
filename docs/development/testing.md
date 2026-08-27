@@ -15,7 +15,7 @@ tags:
 
 # Testing Guide
 
-이 문서는 사람이 local terminal에서 pytest를 선택하고 실행하는 방법을 설명한다. 어떤 behavior를 test로 설계할지는 [Test Design and Implementation](test-design-and-implementation.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
+이 문서는 사람이 local terminal에서 pytest를 선택하고 실행하는 방법을 설명한다. 어떤 behavior를 test로 설계할지는 [Test Design](test-design.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
 
 ## Start Here
 
@@ -202,7 +202,7 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 
 ## Related Guides
 
-- [Test Design and Implementation](test-design-and-implementation.md): requirement를 scenario와 oracle로 바꾸는 방법
+- [Test Design](test-design.md): requirement를 scenario와 oracle로 바꾸는 방법
 - [`tests/AGENTS.md`](../../tests/AGENTS.md): `tests/` 파일을 수정할 때의 agent context
 - [`pyproject.toml`](../../pyproject.toml): pytest correctness/safety defaults와 marker 등록
 - [`lefthook.yml`](../../lefthook.yml): commit/push 실행 정책

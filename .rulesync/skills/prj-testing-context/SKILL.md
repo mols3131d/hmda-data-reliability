@@ -1,25 +1,23 @@
 ---
-name: prj-load-context-testing
+name: prj-testing-context
 description: >-
-  Load repository testing context for pytest work: writing or changing tests,
-  selecting or running tests, debugging failures, validating behavior, checking
-  coverage, or working with markers, fixtures, assertions, test plans,
-  scenarios, oracles, and test design.
+  Select repository context for testing tasks: test design, pytest execution and
+  debugging, or changes under the tests path.
 targets: [claudecode, codexcli, copilot, copilotcli, antigravity-ide, antigravity-cli]
 ---
 
 # Testing Context
 
-현재 testing task의 다음 판단에 필요한 context만 선택한다. 상세 testing 규칙은 canonical 문서가 소유한다.
+현재 testing task에 필요한 canonical context만 선택한다. 상세 testing 규칙은 각 owner가 소유한다.
 
 | Need | Load |
 | --- | --- |
 | `tests/` authored file 수정 또는 test 배치 판단 | [`tests/AGENTS.md`](../../../tests/AGENTS.md) |
-| scenario, oracle, assertion, test level 또는 test design 판단 | [`docs/development/test-design-and-implementation.md`](../../../docs/development/test-design-and-implementation.md) |
+| requirement, scenario, oracle, assertion 또는 test level 설계 | [`docs/development/test-design.md`](../../../docs/development/test-design.md) |
 | pytest 실행·선택·debug, marker, coverage, report 또는 CI test behavior | [`docs/development/testing.md`](../../../docs/development/testing.md) |
 | 정확한 pytest default, marker 또는 plugin configuration | [`pyproject.toml`](../../../pyproject.toml) |
 
-문서가 가리키는 config나 workflow의 현재 값이 실제 판단에 필요할 때만 해당 source를 추가로 확인한다. 다음 testing 결정을 내릴 수 있으면 context loading을 멈춘다.
+CI 또는 Git hook의 구체적인 실행 동작이 직접 필요할 때만 해당 workflow/config를 추가로 확인한다. 필요한 testing 결정을 내릴 수 있으면 context loading을 멈춘다.
 
 ## Boundary
 
