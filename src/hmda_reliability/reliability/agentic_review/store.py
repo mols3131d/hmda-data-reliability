@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import tempfile
@@ -61,10 +62,10 @@ class InvocationEvidenceStore:
             )
 
         path = self.path_for(record.invocation_id)
-        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         descriptor = -1
         temporary_path: Path | None = None
         try:
+            path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             descriptor, raw_temporary_path = tempfile.mkstemp(
                 prefix=f".{record.invocation_id}.",
                 suffix=".tmp",
@@ -82,7 +83,12 @@ class InvocationEvidenceStore:
                 raise InvocationEvidenceExistsError(
                     "invocation evidence identity already exists"
                 ) from error
-            _fsync_directory(path.parent)
+            try:
+                _fsync_directory(path.parent)
+            except OSError:
+                with contextlib.suppress(OSError):
+                    path.unlink(missing_ok=True)
+                raise
         except InvocationEvidenceExistsError:
             raise
         except OSError as error:
@@ -91,9 +97,11 @@ class InvocationEvidenceStore:
             ) from error
         finally:
             if descriptor >= 0:
-                os.close(descriptor)
+                with contextlib.suppress(OSError):
+                    os.close(descriptor)
             if temporary_path is not None:
-                temporary_path.unlink(missing_ok=True)
+                with contextlib.suppress(OSError):
+                    temporary_path.unlink(missing_ok=True)
         return path
 
     def load(self, invocation_id: str) -> AgenticInvocationEvidence:

@@ -19,6 +19,13 @@ from scripts.run_actual_source import (
 pytestmark = pytest.mark.component
 
 
+@pytest.fixture(autouse=True)
+def _clean_git_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key in list(os.environ):
+        if key.startswith("GIT_"):
+            monkeypatch.delenv(key, raising=False)
+
+
 def test_write_evidence_generates_consistent_json_and_markdown(tmp_path: Path) -> None:
     """단일 evidence 객체에서 일치하는 JSON과 Markdown을 생성한다."""
     evidence = {

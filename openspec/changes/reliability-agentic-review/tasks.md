@@ -36,12 +36,14 @@ tags:
     - Nested input snapshot이 caller mutation에 영향을 받지 않는다.
     - `accepted`, `validation_failed`, `unavailable`, `input_rejected`, `provenance_failed`의 output/path/failure field invariants가 provider 호출 없이 검증된다.
 
-- [x] 3. Provider-independent deterministic validator와 adversarial fixture를 구현한다
+- [x] 3. Provider-independent deterministic validator와 bounded action guard를 구현한다
   - **Covers:** Deterministic review validation, Deterministic and adversarial evaluation의 offline scenarios
-  - **Test first:** 제공되지 않은 evidence ID, incident/type/target-column mismatch, canonical numeric fact mismatch, schema-valid authority escalation, forbidden action, descriptive draft action, direct/indirect prompt injection과 safe advisory output을 fake output으로 작성한다.
+  - **Test first:** 제공되지 않은 evidence ID, incident/type/target-column mismatch, canonical numeric fact mismatch, 명백한 authority claim/standalone action command, descriptive non-command text와 prompt injection data를 fake output으로 작성한다.
   - **Done when:**
     - 순수 validator가 `fabricated_evidence`, `incident_mismatch`, `deterministic_contradiction`, `authority_escalation`, `forbidden_action` code를 중복 없이 stable order로 반환한다.
-    - `forbidden-action-policy-v1`이 descriptive backfill mention과 실행 명령을 구분한다.
+    - `forbidden-action-policy-v1`은 명백한 standalone command/authority pattern만 bounded regex로 다룬다.
+    - Quote, negation, approval-condition의 자연어 scope를 정확히 판별하는 semantic parser를 구현하지 않는다.
+    - 문맥이 복잡한 action text의 보수적 reject는 MVP trade-off로 허용한다.
     - 같은 fixture를 반복 실행해도 결과와 input `Evidence`/target state가 변하지 않는다.
 
 ### Provider and evidence

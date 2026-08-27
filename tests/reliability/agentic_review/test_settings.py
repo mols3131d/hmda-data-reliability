@@ -39,6 +39,16 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
     [
         ("base_url", ""),
         ("base_url", "not-a-url"),
+        ("base_url", "http://user:secret@localhost:11434/v1"),
+        ("base_url", "https://alice:pass123@example.com/v1"),
+        ("base_url", "http://localhost:11434/v1?api_key=secret-token"),
+        ("base_url", "https://example.com/v1?token=xyz"),
+        ("base_url", "http://localhost:11434/v1?secret=xyz"),
+        ("base_url", "https://example.com/v1?access_token=secret-value"),
+        ("base_url", "https://example.com/v1?client_secret=secret-value"),
+        ("base_url", "http://localhost:11434/v1?mode=eval"),
+        ("base_url", "https://example.com/v1#token"),
+        ("base_url", "http://localhost:11434/v1#secret"),
         ("api_key", "   "),
         ("model", "   "),
         ("timeout_seconds", 0),
@@ -79,6 +89,16 @@ def test_sanitized_configuration_excludes_credentials() -> None:
     assert "api_key" not in sanitized
     assert "credential" not in sanitized
     assert "local-test-key" not in repr(sanitized)
+
+
+def test_sanitized_configuration_preserves_ipv6_authority() -> None:
+    values = _valid_values()
+    values["base_url"] = "http://[::1]:11434/v1"
+    settings = settings_module.AgenticReviewSettings.model_validate(values)
+
+    sanitized = settings.sanitized_configuration()
+
+    assert sanitized["base_url"] == "http://[::1]:11434/v1"
 
 
 def test_public_settings_do_not_read_provider_environment(
