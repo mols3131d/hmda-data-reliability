@@ -14,7 +14,7 @@ user-invocable: false
 - OpenSpec custom schema `spec-driven-tdd`에서 test design부터 test implementation까지 담당
   - workflow contract: `openspec/schemas/spec-driven-tdd/`
 
-작업 시작 시 [`prj-load-context-development`](../../.rulesync/skills/prj-load-context-development/SKILL.md)와 [`prj-load-context-testing`](../../.rulesync/skills/prj-load-context-testing/SKILL.md)을 읽고 현재 task에 필요한 context만 로드한다. Repository-wide implementation context는 development Skill이, test 설계와 실행의 세부 기준은 testing Skill이 연결하는 canonical 문서가 소유한다.
+작업 시작 시 [`prj-load-context-development`](../../.rulesync/skills/prj-load-context-development/SKILL.md)와 [`prj-testing-context`](../../.rulesync/skills/prj-testing-context/SKILL.md)을 읽고 현재 task에 필요한 context만 로드한다. Repository-wide implementation context는 development Skill이, test 설계와 실행의 세부 기준은 testing Skill이 연결하는 canonical 문서가 소유한다.
 
 ## Workflow
 

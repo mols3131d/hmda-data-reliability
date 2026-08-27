@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -30,12 +31,14 @@ def _sha256(path: Path) -> str:
 
 
 def _repository_revision(project_root: Path) -> str:
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     status_proc = subprocess.run(
         ["git", "status", "--porcelain", ":(exclude)inbox"],
         cwd=project_root,
         check=True,
         capture_output=True,
         text=True,
+        env=env,
     )
     if status_proc.stdout.strip():
         msg = (
@@ -50,6 +53,7 @@ def _repository_revision(project_root: Path) -> str:
         check=True,
         capture_output=True,
         text=True,
+        env=env,
     ).stdout.strip()
 
     return revision

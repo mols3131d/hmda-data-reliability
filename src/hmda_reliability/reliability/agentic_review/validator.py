@@ -23,39 +23,67 @@ _VIOLATION_ORDER = (
 _AUTHORITY_PATTERNS = tuple(
     re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
     for pattern in (
-        r"\b(?:this (?:model )?review|the model|i|we)\s+"
-        r"(?:grants?\s+approval|approves?|authorizes?)\b",
+        r"\b(?:this (?:model )?(?:review|output)|the model|i|we)\s+"
+        r"(?:grants?\s+approval|gives?\s+approval|provides?\s+approval|approves?|authorizes?)\b",
         r"\bapproval\s+(?:is|has been)\s+granted\b",
         r"\b(?:remediation|recovery|backfill|draft|proposal|action)\s+"
         r"(?:is|has\s+been)\s+approved\b",
+        r"\bapproved\s+by\s+(?:the\s+)?model\b",
         r"\b(?:automatically|auto[- ]?)approved\b",
-        r"\b(?:without|no)\s+(?:human|external)\s+approval\b",
-        r"(?:이\s*review|모델|제가|우리가).{0,20}(?:승인합니다|권한을\s*부여)",
-        r"(?:사람|인간|외부)\s*승인\s*없이",
+        r"\b(?:without|no)\s+(?:human|external|operator)\s+approval\b",
+        r"(?:이\s*review|모델|제가|우리가).{0,20}(?:승인합니다|승인한다|승인함|권한을\s*부여|승인을\s*(?:제공|부여))",
+        r"(?:사람|인간|운영자|외부)\s*승인\s*없이",
         r"자동\s*승인",
+        r"모델(?:에\s*의해|\s*이)\s*승인",
     )
 )
 
 _FORBIDDEN_ACTION_PATTERNS = tuple(
     re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
     for pattern in (
-        r"\b(?:execute|run|apply|trigger|perform|start)\b.{0,100}"
-        r"\b(?:backfill|recovery|shell|sql|command|mutation|database|file|data)\b",
-        r"\b(?:backfill|recovery|shell|sql|command|mutation)\b.{0,100}"
-        r"\b(?:execute|run|apply|trigger|perform|start)\b",
+        r"^(?:please\s+)?(?:backfill|recover)\s+"
+        r"(?:(?:the|this|that)\s+)?(?:\d{4}\s+partition\b|partition(?:\s+\d{4})?\b|data\b|dataset\b|records?\b|table\b|database\b)",
+        r"^(?:please\s+)?(?:backfill|recover)\s+(?:now|immediately)\b",
+        r"^(?:please\s+)?(?:proceed\s+with|initiate|launch|execute|run|apply|trigger|perform|start)\b.{0,80}"
+        r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command|database|data|partition)\b",
+        r"^(?:you\s+should|you\s+must|must|should)\s+"
+        r"(?:backfill|recover|execute|run|apply|delete|remove|modify|mutate|perform|initiate|launch)\b",
         r"\b(?:drop\s+table|delete\s+from|truncate\s+table|insert\s+into|"
         r"update\s+[^\s]+\s+set)\b",
-        r"(?:^|[.!?]\s*)(?:please\s+)?backfill\s+"
-        r"(?:the|this|that|\d{4}\b).{0,80}\b(?:now|immediately)\b",
-        r"(?:^|[.!?]\s*)(?:please\s+)?"
-        r"(?:delete|overwrite|modify|mutate)\s+(?:the|this|that)\b",
-        r"\brm\s+-[a-z]*r[a-z]*\b",
-        r"(?:backfill|복구|shell|sql|파일|database|데이터).{0,80}"
-        r"(?:즉시\s*)?(?:실행하라|실행하세요|수행하라|적용하라|삭제하라|변경하라)",
-        r"(?:실행하라|실행하세요|수행하라|적용하라).{0,80}"
-        r"(?:backfill|복구|shell|sql|파일|database|데이터)",
+        r"\brm\s+-[a-z]*\b",
+        r"^(?:please\s+)?(?:delete|remove|overwrite|modify|mutate)\s+"
+        r"(?:the\s+)?(?:evidence(?:\.json|\s+file)?|file|database|table|partition|data|record)\b",
+        r"^(?:delete|remove)\s+(?:evidence\.json|[a-zA-Z0-9_-]+\.(?:json|parquet|duckdb|csv|txt))\b",
+        r"(?:backfill|백필|복구|파티션|shell|sql|파일|database|데이터|evidence).{0,80}"
+        r"(?:즉시\s*)?(?:실행하라|실행하세요|실행하십시오|수행하라|수행하십시오|적용하라|적용하십시오|"
+        r"삭제하라|삭제하십시오|제거하라|제거하십시오|변경하라|변경하십시오|진행하라|진행하세요|진행하십시오|시작하라|시작하세요|시작하십시오)",
+        r"(?:실행하라|실행하세요|실행하십시오|수행하라|수행하십시오|적용하라|적용하십시오|삭제하라|삭제하십시오|제거하라|제거하십시오|"
+        r"진행하라|진행하세요|진행하십시오|시작하라|시작하세요|시작하십시오).{0,80}"
+        r"(?:backfill|백필|복구|파티션|shell|sql|파일|database|데이터|evidence)",
     )
 )
+
+_SEGMENT_SPLIT_PATTERN = re.compile(r"[\n\r,;:!?]+|(?<!\d)\.+(?!\d)")
+
+
+def _review_segments(text: str) -> tuple[str, ...]:
+    return tuple(
+        segment.strip().lstrip("-*• \t").strip("\"'()[]{}.,:;")
+        for segment in _SEGMENT_SPLIT_PATTERN.split(text)
+        if segment.strip()
+    )
+
+
+def _has_authority_escalation(text: str) -> bool:
+    return any(pattern.search(text) for pattern in _AUTHORITY_PATTERNS)
+
+
+def _has_forbidden_action(text: str) -> bool:
+    return any(
+        pattern.search(segment)
+        for segment in _review_segments(text)
+        for pattern in _FORBIDDEN_ACTION_PATTERNS
+    )
 
 
 def validate_agentic_review(
@@ -85,9 +113,9 @@ def validate_agentic_review(
         detected.add(ReviewViolationCode.DETERMINISTIC_CONTRADICTION)
 
     output_text = _review_text(output)
-    if any(pattern.search(output_text) for pattern in _AUTHORITY_PATTERNS):
+    if _has_authority_escalation(output_text):
         detected.add(ReviewViolationCode.AUTHORITY_ESCALATION)
-    if any(pattern.search(output_text) for pattern in _FORBIDDEN_ACTION_PATTERNS):
+    if _has_forbidden_action(output_text):
         detected.add(ReviewViolationCode.FORBIDDEN_ACTION)
 
     violations = tuple(code for code in _VIOLATION_ORDER if code in detected)

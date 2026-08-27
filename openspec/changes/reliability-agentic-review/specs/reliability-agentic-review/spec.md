@@ -91,8 +91,10 @@ Output invariant는 다음과 같다.
 
 - 각 finding의 `kind`는 `observation`, `concern`, `omission` 또는 `uncertainty` 중 하나이고, non-empty `description`과 optional `evidence_refs`를 가져야 한다(SHALL).
 - Output은 `extra=forbid`에 해당하는 closed shape여야 한다.
-- Approval, `RecoveryProposal`, recovery, shell, SQL, file, database 또는 data mutation action을 명령하거나 부여하는 field를 제공해서는 안 된다(MUST NOT).
+- Approval, `RecoveryProposal`, recovery, shell, SQL, file, database 또는 data mutation action을 명령하거나 부여하는 dedicated field를 제공해서는 안 된다(MUST NOT).
 - Text와 collection은 configured bounded limit을 넘어서는 안 된다(SHALL).
+
+Free-text가 advisory instruction을 얼마나 잘 따르는지는 prompt/evaluation concern이다. MVP deterministic validator는 자연어 의미 전체를 authoritative safety oracle로 취급하지 않는다. 실제 action authority는 review output shape와 분리된 read-only execution boundary 및 proposal-bound human approval이 통제한다.
 
 #### Scenario: Valid advisory response
 
@@ -106,19 +108,19 @@ Output invariant는 다음과 같다.
 
 ### Requirement: Deterministic review validation
 
-시스템은 parsed model output을 외부 action 또는 accepted advisory result로 사용하기 전에 deterministic validator로 `AgenticReviewInput`과 대조해야 한다(SHALL). Validator는 identity, canonical target column, `deterministic_facts`, `evidence_used`와 finding `evidence_refs`를 비교하고 다음 minimum violation code를 사용해야 한다(SHALL).
+시스템은 parsed model output을 accepted advisory result로 사용하기 전에 deterministic validator로 `AgenticReviewInput`과 대조해야 한다(SHALL). Validator는 identity, canonical target column, `deterministic_facts`, `evidence_used`와 finding `evidence_refs`를 비교하고 다음 violation code를 사용해야 한다(SHALL).
 
 | Violation code | 생성 조건 |
 | --- | --- |
 | `fabricated_evidence` | Input에 제공되지 않은 Evidence ID가 `evidence_used` 또는 finding reference에 포함됨 |
 | `incident_mismatch` | Incident ID 또는 type이 input과 다름 |
 | `deterministic_contradiction` | Target column 또는 canonical numeric facts가 input과 다름 |
-| `authority_escalation` | Output이 approval을 부여하거나 model output만으로 권한이 생겼다고 주장함 |
-| `forbidden_action` | Recovery, backfill execution, shell/SQL/file/database/data mutation 실행을 명령함 |
+| `authority_escalation` | Bounded policy가 명백한 model-granted authority pattern을 탐지함 |
+| `forbidden_action` | Bounded policy가 명백한 standalone recovery/backfill/shell/SQL/file/database/data mutation command pattern을 탐지함 |
 
 Violation code는 중복 없이 deterministic order로 반환해야 하며, 하나라도 있으면 validation status는 rejected여야 한다(MUST NOT).
 
-Action policy는 `forbidden-action-policy-v1`로 식별해야 한다(SHALL). 단순히 draft의 action을 인용하거나 backfill을 human approval이 필요한 항목으로 설명하는 것은 violation이 아니다. Output이 approval을 부여하거나 실행을 명령·주장할 때만 각각 `authority_escalation` 또는 `forbidden_action`을 생성해야 한다(SHALL).
+Action policy는 `forbidden-action-policy-v1`로 식별해야 한다(SHALL). 이 policy는 MVP를 위한 **보수적인 bounded regex guard**다. 명백한 standalone command 또는 authority pattern을 차단하되 자연어 의미 전체를 판정하는 semantic judge가 아니며, negation, quote/reference, human-approval condition의 scope를 정확히 구분한다는 보장을 하지 않는다. 이런 context-heavy text가 explicit action pattern을 포함하면 false positive로 reject될 수 있다. 이 trade-off는 MVP에서 허용하며, 최종 mutation 안전성은 read-only execution boundary와 proposal-bound human approval이 통제한다.
 
 #### Scenario: Fabricated evidence is rejected
 
@@ -130,19 +132,24 @@ Action policy는 `forbidden-action-policy-v1`로 식별해야 한다(SHALL). 단
 - **WHEN** output의 `incident_id`, `incident_type`, `target_column` 또는 `deterministic_facts`가 input의 deterministic facts와 다를 때
 - **THEN** validator는 `incident_mismatch` 또는 `deterministic_contradiction` violation을 반환하고 model 주장을 deterministic Reliability 결과보다 우선해서는 안 된다(MUST NOT).
 
-#### Scenario: Schema-valid dangerous output is rejected
+#### Scenario: Explicit dangerous output is rejected
 
-- **WHEN** schema-valid output이 approval, `RecoveryProposal`, recovery, backfill execution, shell/SQL/file/database/data mutation을 수행하라고 명령하거나 model output만으로 권한이 생겼다고 주장할 때
-- **THEN** validator는 `authority_escalation` 또는 `forbidden_action` violation을 반환하고 output을 외부 action에 전달해서는 안 된다(MUST NOT).
+- **WHEN** schema-valid output이 bounded policy가 인식하는 명백한 approval/authority claim 또는 standalone recovery, backfill execution, shell/SQL/file/database/data mutation command를 포함할 때
+- **THEN** validator는 `authority_escalation` 또는 `forbidden_action` violation을 반환하고 output을 accepted advisory result로 채택해서는 안 된다(MUST NOT).
 
-#### Scenario: Descriptive draft action is not itself forbidden
+#### Scenario: Descriptive non-command language is not itself forbidden
 
-- **WHEN** output이 `RemediationDraft`의 backfill 또는 validation action을 human approval이 필요한 draft 내용으로 설명하지만 실행을 명령하거나 authority를 주장하지 않을 때
-- **THEN** validator는 그 단어만으로 `forbidden_action` 또는 `authority_escalation`을 생성해서는 안 된다(MUST NOT).
+- **WHEN** output이 기존 `RemediationDraft`의 backfill 또는 validation plan을 실행 명령이 아닌 설명으로 언급할 때
+- **THEN** validator는 그 단어의 존재만으로 `forbidden_action`을 생성해서는 안 된다(MUST NOT).
+
+#### Scenario: Context-heavy action text may be conservatively rejected
+
+- **WHEN** negation, quote/reference 또는 approval-condition이 포함된 text 안에 bounded policy가 독립 action segment로 인식하는 mutation command가 함께 있을 때
+- **THEN** validator는 `forbidden_action`으로 reject할 수 있으며(MAY), MVP는 해당 자연어 scope의 정확한 semantic classification을 요구하지 않는다.
 
 #### Scenario: Safe advisory output is accepted
 
-- **WHEN** output이 input identity와 canonical facts를 보존하고 실제 Evidence subset을 사용하며 violation을 포함하지 않을 때
+- **WHEN** output이 input identity와 canonical facts를 보존하고 실제 Evidence subset을 사용하며 bounded policy violation을 포함하지 않을 때
 - **THEN** validator는 accepted result를 반환하되 승인·복구 권한이나 data mutation 권한을 생성해서는 안 된다(MUST NOT).
 
 ### Requirement: Typed review result boundary
@@ -181,7 +188,7 @@ Non-accepted result의 output은 비어 있어야 한다. Parsed output이 있�
 
 ### Requirement: Provider-compatible bounded invocation
 
-시스템은 동일한 review contract와 configuration boundary를 사용해 OpenAI-compatible `chat.completions` endpoint를 제공하는 local Ollama model과 OpenAI API를 호출할 수 있어야 한다(SHALL). Provider 차이는 `base_url`, credential, model과 bounded configuration으로 표현해야 하며 Reliability domain의 incident/evidence/recovery code가 provider별 business rule을 소유해서는 안 된다(MUST NOT).
+시스템은 동일한 review contract와 configuration boundary를 사용해 OpenAI-compatible `chat.completions` endpoint를 제공하는 local Ollama model과 OpenAI API를 호출할 수 있어야 한다(SHALL). `base_url`은 userinfo(username/password), query parameter 또는 URL fragment를 포함해서는 안 되며(MUST NOT), Provider 차이는 credentials-free `base_url`, `SecretStr` credential(`api_key`), model과 bounded configuration으로 표현해야 하며 Reliability domain의 incident/evidence/recovery code가 provider별 business rule을 소유해서는 안 된다(MUST NOT).
 
 이 Change의 common wire profile은 다음 조건을 만족해야 한다(SHALL).
 
@@ -211,7 +218,7 @@ Non-accepted result의 output은 비어 있어야 한다. Parsed output이 있�
 
 ### Requirement: Durable invocation evidence
 
-Provider call이 실제로 시작된 각 logical `review_null_spike()` invocation은 하나의 immutable-by-identity `AgenticInvocationEvidence` record를 `HMDA_RELIABILITY_ARTIFACTS_DIR` 아래 `agentic-review/invocations/<invocation_id>.json`에 create-only로 저장해야 한다(SHALL). Network retry는 별도 record가 아니라 `attempt_count`로 기록해야 한다(SHALL). Input preflight에서 `input_rejected`로 종료된 call에는 provider invocation evidence를 만들지 않아야 한다.
+Provider call이 실제로 시작된 각 logical `review_null_spike()` invocation은 하나의 immutable-by-identity `AgenticInvocationEvidence` record를 `HMDA_RELIABILITY_ARTIFACTS_DIR` 아래 `agentic-review/invocations/<invocation_id>.json`에 create-only로 저장해야 한다(SHALL). Network retry는 별도 record가 아니라 `attempt_count`로 기록해야 한다(SHALL). Input preflight에서 `input_rejected`로 종료된 call에는 provider invocation evidence를 만들지 않아야 한다. Directory 생성, 임시 파일 생성/쓰기/링크, fsync를 포함한 persistence 필수 과정의 filesystem failure는 raw exception을 탈출시키지 않고 `provenance_failed` result로 정규화해야 한다(SHALL). 성공적으로 기록된 후의 임시 파일 cleanup 실패는 accepted 결과에 영향을 주지 않는 best-effort hygiene으로 처리한다.
 
 Record 계약은 다음과 같다.
 
@@ -243,8 +250,8 @@ Sanitized record, stored `canonical_input`과 stored output은 configured size l
 
 #### Scenario: Evidence persistence failure
 
-- **WHEN** invocation result를 durable evidence로 저장할 수 없을 때
-- **THEN** 시스템은 `provenance_failed` result를 반환하고 accepted review, approval, recovery 또는 mutation을 수행해서는 안 된다(MUST NOT).
+- **WHEN** invocation result의 directory 생성 실패, 권한 오류 또는 I/O failure로 인해 durable evidence로 저장할 수 없을 때
+- **THEN** 시스템은 raw exception 탈출 없이 `provenance_failed` result를 반환하고 accepted review, approval, recovery 또는 mutation을 수행해서는 안 된다(MUST NOT).
 
 #### Scenario: Invocation evidence is immutable by identity
 
@@ -264,12 +271,12 @@ Sanitized record, stored `canonical_input`과 stored output은 configured size l
 
 #### Scenario: Rejected or unavailable review remains contained
 
-- **WHEN** fabricated evidence, prompt injection, authority escalation, schema failure, provider unavailability 또는 provenance failure가 발생할 때
+- **WHEN** fabricated evidence, canonical contradiction, bounded action guard, schema failure, provider unavailability 또는 provenance failure가 발생할 때
 - **THEN** 시스템은 해당 review를 typed result와 evidence로 격리하고 deterministic Reliability 결과와 target data를 보존하며 recovery authority를 부여해서는 안 된다(MUST NOT).
 
 ### Requirement: Deterministic and adversarial evaluation
 
-시스템은 provider network call 없이 input/output contract, typed result, validator와 provenance replay contract를 반복 평가할 수 있어야 하며(SHALL), `null_spike` 기준으로 valid response, fabricated evidence, canonical fact mismatch, direct/indirect prompt injection, authority escalation, descriptive draft action, schema-invalid response와 provider unavailability를 포함한 adversarial fixture를 다뤄야 한다(SHALL). 적어도 하나의 local Ollama live invocation은 default suite와 분리된 opt-in path에서 같은 contract와 provenance 경계를 사용해 검증할 수 있어야 한다(SHALL).
+시스템은 provider network call 없이 input/output contract, typed result, validator와 provenance replay contract를 반복 평가할 수 있어야 하며(SHALL), `null_spike` 기준으로 valid response, fabricated evidence, canonical fact mismatch, direct/indirect prompt injection, explicit authority/action pattern, descriptive non-command language, schema-invalid response와 provider unavailability를 포함한 adversarial fixture를 다뤄야 한다(SHALL). Negation, quote/reference와 approval-condition의 자연어 scope 정확도는 MVP deterministic acceptance가 아니라 evaluation 대상으로만 관찰한다. 적어도 하나의 local Ollama live invocation은 default suite와 분리된 opt-in path에서 같은 contract와 provenance 경계를 사용해 검증할 수 있어야 한다(SHALL).
 
 | Evaluation path | Network | Required coverage |
 | --- | --- | --- |
@@ -284,7 +291,7 @@ Sanitized record, stored `canonical_input`과 stored output은 configured size l
 #### Scenario: Prompt injection is data, not instruction
 
 - **WHEN** Evidence summary/payload 또는 provider output에 direct/indirect prompt injection 문장이 포함될 때
-- **THEN** 시스템은 그 문장을 Reliability instruction으로 실행하거나 권한으로 승격하지 않고 data로만 전달하거나 validation violation으로 처리해야 한다(MUST NOT).
+- **THEN** 시스템은 그 문장을 Reliability instruction으로 실행하거나 권한으로 승격해서는 안 되며(MUST NOT), provider output의 경우 bounded guard가 인식하는 explicit action pattern이면 validation violation으로 격리할 수 있다.
 
 #### Scenario: Ollama live proof
 

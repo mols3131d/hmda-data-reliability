@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import urllib.parse
 from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Literal
@@ -30,6 +31,25 @@ class SanitizedAgenticReviewConfiguration(ReliabilityContract):
     max_output_tokens: int = Field(gt=0, le=32_768)
     max_prompt_bytes: int = Field(gt=0, le=1_048_576)
     max_output_bytes: int = Field(gt=0, le=1_048_576)
+
+    @field_validator("base_url")
+    @classmethod
+    def _validate_base_url(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            msg = "base_url must be non-empty"
+            raise ValueError(msg)
+        parsed = urllib.parse.urlsplit(normalized)
+        if parsed.username is not None or parsed.password is not None:
+            msg = "sanitized base_url must not contain credentials"
+            raise ValueError(msg)
+        if parsed.query:
+            msg = "sanitized base_url must not contain query parameters"
+            raise ValueError(msg)
+        if parsed.fragment:
+            msg = "sanitized base_url must not contain URL fragments"
+            raise ValueError(msg)
+        return normalized
 
 
 class AgenticInvocationEvidence(ReliabilityContract):
