@@ -31,6 +31,7 @@ jobs:
 
           markdown=false
           tests=false
+          python_static=false
           lefthook=false
           rulesync=false
           routes=false
@@ -94,6 +95,12 @@ jobs:
             case "$path" in
               .github/agents/review-*.agent.md|.vscode/settings.json|.rulesync/skills/prj-load-context-development/SKILL.md|scripts/validate_review_agents.py)
                 review_agents=true
+                ;;
+            esac
+
+            case "$path" in
+              *.py|pyproject.toml)
+                python_static=true
                 ;;
             esac
 
@@ -166,6 +173,7 @@ jobs:
           {
             echo "markdown=$markdown"
             echo "tests=$tests"
+            echo "python_static=$python_static"
             echo "lefthook=$lefthook"
             echo "rulesync=$rulesync"
             echo "routes=$routes"
@@ -222,6 +230,22 @@ jobs:
       - name: Sync dependencies
         if: steps.scope.outputs.tests == 'true'
         run: uv sync --locked
+
+      - name: Validate Python static checks
+        if: steps.scope.outputs.python_static == 'true'
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(
+            git diff --name-only HEAD^1 HEAD -- '*.py' \
+              | while IFS= read -r path; do
+                  [[ -f "$path" ]] && printf '%s\n' "$path"
+                done
+          )
+          if ((${#files[@]})); then
+            uv run --no-sync ruff check "${files[@]}"
+            uv run --no-sync ruff format --check "${files[@]}"
+          fi
+          uv run --no-sync ty check
 
       - name: Validate Rulesync projections
         if: steps.scope.outputs.rulesync == 'true'
