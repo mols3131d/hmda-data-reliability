@@ -64,7 +64,7 @@ def _is_document(path: Path) -> bool:
 
 
 def _documents(directory: Path) -> list[Path]:
-    return sorted(path for path in directory.rglob("*.md") if _is_document(path))
+    return sorted(path for path in directory.rglob("*") if _is_document(path))
 
 
 def _has_markdown_content(directory: Path) -> bool:
