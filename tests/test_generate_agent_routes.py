@@ -133,8 +133,7 @@ def test_find_local_skill_files_keeps_empty_tracked_result(
 @pytest.mark.unit
 def test_dependency_skill_entry_uses_injected_loader() -> None:
     source = (
-        "https://raw.githubusercontent.com/owner/assets/abc123/"
-        "skills/alpha/SKILL.md"
+        "https://raw.githubusercontent.com/owner/assets/abc123/skills/alpha/SKILL.md"
     )
     text = "---\nname: alpha\ndescription:  Useful   skill.\n---\n# Alpha\n"
 
@@ -148,8 +147,7 @@ def test_dependency_skill_entry_uses_injected_loader() -> None:
 @pytest.mark.unit
 def test_dependency_skill_entry_rejects_locked_name_mismatch() -> None:
     source = (
-        "https://raw.githubusercontent.com/owner/assets/abc123/"
-        "skills/alpha/SKILL.md"
+        "https://raw.githubusercontent.com/owner/assets/abc123/skills/alpha/SKILL.md"
     )
     text = "---\nname: beta\ndescription: Different skill.\n---\n# Beta\n"
 
