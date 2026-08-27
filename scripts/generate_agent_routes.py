@@ -23,25 +23,8 @@ RULESYNC_CONFIG = REPO_ROOT / "rulesync.jsonc"
 RULESYNC_LOCK = REPO_ROOT / "rulesync.lock"
 SKILLS_LOCK = REPO_ROOT / "skills-lock.json"
 
-SKILLS_META = {
-    "kind": "skills",
-    "instructions": (
-        "name과 description으로 현재 task에 관련된 Skill을 모두 선택하고 "
-        "선택한 source만 읽는다. 일치하는 Skill이 없으면 읽지 않는다. "
-        "Task intent가 materially 바뀌면 다시 선택한다. "
-        "이 파일은 derived discovery metadata이며 각 SKILL.md가 authoritative source다."
-    ),
-}
-RULES_META = {
-    "kind": "rules",
-    "instructions": (
-        "Known target path와 globs로 후보를 좁히고 description으로 현재 task에 관련된 "
-        "Rule만 선택해 읽는다. Target path가 없으면 Rule source를 선로드하지 않는다. "
-        "Task intent나 target path가 materially 바뀌면 다시 선택한다. "
-        "이 파일은 derived discovery metadata이며 "
-        "각 canonical Rule이 authoritative source다."
-    ),
-}
+SKILLS_META = {"kind": "skills"}
+RULES_META = {"kind": "rules"}
 
 
 class RouteGenerationError(RuntimeError):
