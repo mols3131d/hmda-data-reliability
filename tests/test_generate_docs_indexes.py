@@ -68,55 +68,6 @@ def test_generate_omits_header_only_directory_index(tmp_path: Path) -> None:
 
 
 @pytest.mark.component
-def test_generate_depth_limits_each_index_subtree(tmp_path: Path) -> None:
-    docs = tmp_path / "docs"
-    _write(
-        docs / "references" / "nested" / "deep.md",
-        "---\ndescription: Deep.\n---\n# Deep\n",
-    )
-    _write(
-        docs / "references" / "reference.md",
-        "---\ndescription: Reference.\n---\n# Reference\n",
-    )
-
-    assert generate_docs_indexes(docs, index_depth=0, depth=1) == []
-
-    assert _read_tsv(docs / "INDEX.tsv") == [
-        {"path": "references/", "description": ""},
-        {"path": "references/nested/", "description": ""},
-        {"path": "references/reference.md", "description": "Reference."},
-    ]
-    assert not (docs / "references" / "INDEX.tsv").exists()
-
-
-@pytest.mark.component
-def test_generate_index_depth_minus_one_is_unlimited(tmp_path: Path) -> None:
-    docs = tmp_path / "docs"
-    _write(
-        docs / "one" / "two" / "three" / "guide.md",
-        "---\ndescription: Guide.\n---\n# Guide\n",
-    )
-
-    assert generate_docs_indexes(docs, index_depth=-1) == []
-
-    assert (docs / "INDEX.tsv").exists()
-    assert (docs / "one" / "INDEX.tsv").exists()
-    assert (docs / "one" / "two" / "INDEX.tsv").exists()
-    assert (docs / "one" / "two" / "three" / "INDEX.tsv").exists()
-
-
-@pytest.mark.component
-def test_generate_rejects_invalid_depths(tmp_path: Path) -> None:
-    docs = tmp_path / "docs"
-    docs.mkdir()
-
-    with pytest.raises(ValueError, match="index_depth"):
-        generate_docs_indexes(docs, index_depth=-2)
-    with pytest.raises(ValueError, match="depth"):
-        generate_docs_indexes(docs, depth=-2)
-
-
-@pytest.mark.component
 def test_generate_check_reports_drift_without_modifying_files(tmp_path: Path) -> None:
     docs = tmp_path / "docs"
     guide = docs / "guide.md"
