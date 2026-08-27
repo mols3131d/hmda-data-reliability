@@ -1,8 +1,9 @@
 ---
 name: prj-testing-context
 description: >-
-  Select repository context for testing tasks: test design, pytest execution and
-  debugging, or changes under the tests path.
+  Select repository context for testing tasks: test design or implementation,
+  pytest execution, debugging or validation, markers or coverage, or changes
+  under the tests path.
 targets: [claudecode, codexcli, copilot, copilotcli, antigravity-ide, antigravity-cli]
 ---
 
