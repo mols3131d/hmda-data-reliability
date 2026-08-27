@@ -24,8 +24,8 @@ RULESYNC_CONFIG = REPO_ROOT / "rulesync.jsonc"
 RULESYNC_LOCK = REPO_ROOT / "rulesync.lock"
 SKILLS_LOCK = REPO_ROOT / "skills-lock.json"
 
-SKILLS_META = {"kind": "skills"}
-RULES_META = {"kind": "rules"}
+SKILLS_META: dict[str, object] = {"kind": "skills"}
+RULES_META: dict[str, object] = {"kind": "rules"}
 
 
 class RouteGenerationError(RuntimeError):
