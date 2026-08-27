@@ -8,8 +8,9 @@ import json
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
@@ -144,7 +145,9 @@ def rulesync_dependency_sources() -> dict[str, str]:
         return {}
 
     lock = json.loads(RULESYNC_LOCK.read_text(encoding="utf-8"))
-    config = json.loads(strip_jsonc_comments(RULESYNC_CONFIG.read_text(encoding="utf-8")))
+    config = json.loads(
+        strip_jsonc_comments(RULESYNC_CONFIG.read_text(encoding="utf-8"))
+    )
     config_sources = {
         entry["source"]: entry
         for entry in config.get("sources", [])
