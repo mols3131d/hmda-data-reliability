@@ -243,3 +243,23 @@ def test_store_write_handles_cleanup_error_gracefully(
     path = store.write(record, max_record_bytes=131_072)
     assert path.exists()
     assert store.load(record.invocation_id) == record
+
+
+def test_store_write_rolls_back_final_link_on_directory_fsync_failure(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = store_module.InvocationEvidenceStore(tmp_path)
+    record = _record(null_spike_review_material)
+
+    def failing_fsync_directory(directory: Path) -> None:
+        raise OSError("simulated directory fsync failure")
+
+    monkeypatch.setattr(store_module, "_fsync_directory", failing_fsync_directory)
+
+    with pytest.raises(store_module.InvocationEvidenceWriteError):
+        store.write(record, max_record_bytes=131_072)
+
+    final_path = store.path_for(record.invocation_id)
+    assert not final_path.exists()

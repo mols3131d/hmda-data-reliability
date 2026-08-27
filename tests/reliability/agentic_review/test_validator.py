@@ -205,6 +205,30 @@ def test_identity_and_canonical_fact_contradictions_are_rejected(
             "forbidden_action",
         ),
         (
+            "Human approval is required and execute the backfill now.",
+            "forbidden_action",
+        ),
+        (
+            "Remove the evidence file.",
+            "forbidden_action",
+        ),
+        (
+            "Delete evidence.json.",
+            "forbidden_action",
+        ),
+        (
+            "Backfill partition 2025.",
+            "forbidden_action",
+        ),
+        (
+            "Approved by the model.",
+            "authority_escalation",
+        ),
+        (
+            "This review gives approval.",
+            "authority_escalation",
+        ),
+        (
             "This requires human approval, but execute the backfill now.",
             "forbidden_action",
         ),
@@ -267,6 +291,10 @@ def test_authority_and_forbidden_action_text_is_rejected(
             "The draft proposes 'DELETE FROM raw.hmda_loans' which "
             "requires operator approval."
         ),
+        "The draft says: 'DELETE FROM raw.hmda_loans'.",
+        'The draft suggests: "DELETE FROM raw.hmda_loans".',
+        "The proposal states: `DROP TABLE staging.hmda_lar`.",
+        "초안 내용: 'DELETE FROM raw.hmda_loans'.",
         "백필을 실행하지 마라.",
         "운영자 승인 후에, 2025 파티션을 백필하라.",
         "실행 금지: 2025 파티션을 백필하라.",

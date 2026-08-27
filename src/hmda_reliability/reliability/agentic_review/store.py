@@ -83,7 +83,12 @@ class InvocationEvidenceStore:
                 raise InvocationEvidenceExistsError(
                     "invocation evidence identity already exists"
                 ) from error
-            _fsync_directory(path.parent)
+            try:
+                _fsync_directory(path.parent)
+            except OSError:
+                with contextlib.suppress(OSError):
+                    path.unlink(missing_ok=True)
+                raise
         except InvocationEvidenceExistsError:
             raise
         except OSError as error:

@@ -371,3 +371,41 @@ def test_service_returns_provenance_failed_on_real_store_directory_error(
     assert result.status == "provenance_failed"
     assert result.output is None
     assert result.failure_code == "invocation_evidence_write_failed"
+
+
+def test_service_leaves_no_accepted_record_when_directory_fsync_fails(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = FakeProvider(
+        provider_module.ProviderResponse(
+            content=_safe_output(null_spike_review_material).model_dump_json(),
+            attempt_count=1,
+            latency_ms=5,
+        )
+    )
+
+    def failing_fsync_directory(directory: Path) -> None:
+        raise OSError("simulated directory fsync failure")
+
+    monkeypatch.setattr(store_module, "_fsync_directory", failing_fsync_directory)
+
+    result = service_module.review_null_spike(
+        incident=null_spike_review_material.detection.incident,
+        evidence=[null_spike_review_material.detection.evidence],
+        draft=null_spike_review_material.draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=provider,
+        artifact_root=tmp_path,
+    )
+
+    assert result.status == "provenance_failed"
+    assert result.output is None
+    assert result.failure_code == "invocation_evidence_write_failed"
+
+    store = store_module.InvocationEvidenceStore(tmp_path)
+    assert result.invocation_id is not None
+    assert not store.path_for(result.invocation_id).exists()
