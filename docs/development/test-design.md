@@ -1,6 +1,6 @@
 ---
 title: "Test Design"
-description: "OpenSpec requirement를 observable behavior 중심의 pytest test로 변환하는 scenario, oracle, test level과 구현 원칙을 설명합니다."
+description: "Requirement와 observable behavior를 pytest test로 변환하는 scenario, oracle, test level과 구현 원칙을 설명합니다."
 categories:
   - software-engineering
 tags:
@@ -13,7 +13,7 @@ tags:
 
 # Test Design
 
-이 문서는 OpenSpec requirement를 사람이 읽고 유지할 수 있는 pytest test로 바꾸는 방법을 설명한다. 목표는 implementation detail을 고정하는 것이 아니라, 사용자가 관찰할 수 있는 behavior를 빠르고 신뢰성 있게 보호하는 것이다.
+이 문서는 requirement 또는 기존 observable behavior contract를 사람이 읽고 유지할 수 있는 pytest test로 바꾸는 방법을 설명한다. 목표는 implementation detail을 고정하는 것이 아니라, 사용자가 관찰할 수 있는 behavior를 빠르고 신뢰성 있게 보호하는 것이다.
 
 Test command와 marker 선택은 [Testing Guide](testing.md)를 따른다. `tests/` file의 agent write boundary는 [`tests/AGENTS.md`](../../tests/AGENTS.md)가 소유한다.
 
@@ -45,9 +45,9 @@ flowchart TB
 | Oracle | 성공·실패를 무엇으로 판정하나 | incident가 없고 measured value가 보존된다. |
 | Test level | 가장 싼 신뢰성 있는 경계는 무엇인가 | `unit` |
 
-## Start From The Change Contract
+## Start From The Behavior Contract
 
-OpenSpec change가 있으면 artifact를 다음 순서로 읽는다.
+먼저 test가 증명할 requirement 또는 observable behavior contract를 확인한다. OpenSpec change가 현재 작업을 소유하면 artifact를 다음 순서로 읽는다.
 
 | Priority | Artifact | Test에서 확인할 내용 |
 | ---: | --- | --- |
@@ -56,7 +56,7 @@ OpenSpec change가 있으면 artifact를 다음 순서로 읽는다.
 | 3 | Tasks | 이번 구현에서 다룰 범위 |
 | 4 | Proposal | 목적과 용어의 맥락 |
 
-Spec은 **무엇을** 해야 하는지, Design은 필요한 **경계와 제약**을, Tasks는 **이번 작업 범위**를 정한다. 기존 code나 test가 requirement를 조용히 바꾸는 근거가 되지는 않는다.
+OpenSpec에서는 Spec이 **무엇을** 해야 하는지, Design이 필요한 **경계와 제약**을, Tasks가 **이번 작업 범위**를 정한다. 기존 code나 test가 governing contract를 조용히 바꾸는 근거가 되지는 않는다.
 
 다음 질문에 답할 수 없으면 test가 아니라 decision이 먼저 필요하다.
 
@@ -69,7 +69,7 @@ Spec은 **무엇을** 해야 하는지, Design은 필요한 **경계와 제약**
 
 ## Design A Scenario
 
-각 in-scope requirement에 최소 하나의 scenario 또는 명시적인 exclusion을 연결한다. Happy path를 기계적으로 복제하지 말고 실패 영향과 회귀 위험이 있는 case를 선택한다.
+각 in-scope contract에 최소 하나의 scenario 또는 명시적인 exclusion을 연결한다. Happy path를 기계적으로 복제하지 말고 실패 영향과 회귀 위험이 있는 case를 선택한다.
 
 | Scenario kind | 확인할 질문 |
 | --- | --- |
@@ -90,7 +90,7 @@ Oracle은 test가 기대 결과를 판정하는 기준이다. Production algorit
 
 다음 oracle을 우선한다.
 
-- Spec에 명시된 반환값, error, event, persisted state를 직접 비교한다.
+- Governing contract에 명시된 반환값, error, event, persisted state를 직접 비교한다.
 - 작은 고정 입력에는 사람이 계산할 수 있는 exact expected value를 둔다.
 - count 합계, 정렬, 보존, 단조성처럼 단순하고 독립적인 invariant를 확인한다.
 - Mock call 횟수보다 public result와 externally visible state를 먼저 확인한다.
@@ -99,7 +99,7 @@ Mock은 network, clock, file system, external service처럼 test가 통제해야
 
 ## Choose The Lowest Useful Level
 
-가장 낮은 비용으로 requirement를 신뢰성 있게 입증하는 primary level marker 하나를 선택한다.
+가장 낮은 비용으로 contract를 신뢰성 있게 입증하는 primary level marker 하나를 선택한다.
 
 | Level | Best for | Avoid when |
 | --- | --- | --- |
@@ -151,14 +151,14 @@ Test 하나는 하나의 논리적 behavior가 실패하도록 작성한다. 의
 
 Production implementation 전에 intentional red test를 만들 수 있다. 좋은 red test는 collection에 성공하고 observable behavior assertion에서 실패한다.
 
-다음은 requirement 불일치를 입증하는 red test가 아니다.
+다음은 contract 불일치를 입증하는 red test가 아니다.
 
 - syntax, import path, fixture, marker 오류
 - 합의되지 않은 API를 test가 가정한 경우
 - environment 또는 unrelated dependency failure
 - cleanup과 isolation failure
 
-Red test가 requirement가 아니라 test 설계의 빈틈을 드러내면, production code를 고치기 전에 scenario와 oracle을 다시 확인한다.
+Red test가 governing contract가 아니라 test 설계의 빈틈을 드러내면, production code를 고치기 전에 scenario와 oracle을 다시 확인한다.
 
 ## Finish With Evidence
 
@@ -166,7 +166,7 @@ Red test가 requirement가 아니라 test 설계의 빈틈을 드러내면, prod
 
 완료 전에 다음을 확인한다.
 
-- in-scope requirement가 scenario 또는 exclusion에 연결되어 있다.
+- in-scope contract가 scenario 또는 exclusion에 연결되어 있다.
 - scenario마다 observable result와 independent oracle이 있다.
 - test가 production algorithm을 복제하거나 false green을 만들지 않는다.
 - 필요한 module docstring과 optional design document가 현재 code와 일치한다.
