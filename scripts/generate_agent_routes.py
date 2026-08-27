@@ -225,9 +225,7 @@ def find_local_skill_files() -> list[Path]:
         return sorted(SKILLS_ROOT.glob("*/SKILL.md"))
 
     return sorted(
-        REPO_ROOT / line.strip()
-        for line in proc.stdout.splitlines()
-        if line.strip()
+        REPO_ROOT / line.strip() for line in proc.stdout.splitlines() if line.strip()
     )
 
 
@@ -276,9 +274,7 @@ def skill_entries(
     dependency_sources = rulesync_dependency_sources()
     for name, source in skills_cli_dependency_sources().items():
         if name in dependency_sources:
-            raise RouteGenerationError(
-                f"Skill dependency exists in both locks: {name}"
-            )
+            raise RouteGenerationError(f"Skill dependency exists in both locks: {name}")
         dependency_sources[name] = source
 
     for name, source in dependency_sources.items():
