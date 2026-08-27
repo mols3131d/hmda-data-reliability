@@ -41,7 +41,9 @@ _AUTHORITY_PATTERNS = tuple(
 _FORBIDDEN_ACTION_PATTERNS = tuple(
     re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
     for pattern in (
-        r"^(?:please\s+)?(?:backfill|recover)\b",
+        r"^(?:please\s+)?(?:backfill|recover)\s+"
+        r"(?:(?:the|this|that)\s+)?(?:\d{4}\s+partition\b|partition(?:\s+\d{4})?\b|data\b|dataset\b|records?\b|table\b|database\b)",
+        r"^(?:please\s+)?(?:backfill|recover)\s+(?:now|immediately)\b",
         r"^(?:please\s+)?(?:proceed\s+with|initiate|launch|execute|run|apply|trigger|perform|start)\b.{0,80}"
         r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command|database|data|partition)\b",
         r"^(?:you\s+should|you\s+must|must|should)\s+"
