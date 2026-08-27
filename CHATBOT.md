@@ -4,6 +4,14 @@ Root `CHATBOT.md`는 chatbot harness에서 누락되는 repository context와 Ag
 
 항상 [`AGENTS.md`](AGENTS.md)와 [`.agents/route/ROUTE.md`](.agents/route/ROUTE.md)를 읽는다. Git/GitHub 세부 작업에 필요한 guide, template과 live context 선택은 Agent Asset routing에 위임하고 이 문서에서 중복 소유하지 않는다.
 
+## Scoped AGENTS.md
+
+Repository의 파일이나 디렉토리를 보거나 읽거나 작업하기 전에 해당 target에 적용되는 `AGENTS.md`를 함께 읽는다.
+
+Repository root부터 target directory까지 경로에 있는 모든 applicable `AGENTS.md`를 읽는다. 같은 깊이의 `AGENTS.md`만 보지 않으며, 상위 scope의 guidance도 유지한다. 서로 충돌하면 target에 더 가까운 scoped `AGENTS.md`를 우선한다.
+
+Target path가 작업 중 새로 생기거나 바뀌면 그 path에 적용되는 `AGENTS.md`를 다시 계산하고, 아직 읽지 않은 applicable guidance를 해당 target을 다루기 전에 읽는다.
+
 ## Scope Boundary
 
 Repository guidance와 platform guidance를 구별하고 각각의 scope에만 적용한다.
