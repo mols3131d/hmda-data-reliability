@@ -36,6 +36,7 @@ class ReviewViolationCode(StrEnum):
     FABRICATED_EVIDENCE = "fabricated_evidence"
     INCIDENT_MISMATCH = "incident_mismatch"
     DETERMINISTIC_CONTRADICTION = "deterministic_contradiction"
+    # Historical values remain readable in forbidden-action-policy-v1 evidence.
     AUTHORITY_ESCALATION = "authority_escalation"
     FORBIDDEN_ACTION = "forbidden_action"
 
@@ -202,9 +203,14 @@ class AgenticReviewOutput(ReliabilityContract):
 
 
 class AgenticReviewValidation(ReliabilityContract):
+    """Versioned deterministic validation result retained in provenance."""
+
     status: ReviewValidationStatus
     violations: tuple[ReviewViolationCode, ...]
-    policy_id: Literal["forbidden-action-policy-v1"] = "forbidden-action-policy-v1"
+    policy_id: Literal[
+        "structured-fact-validation-v1",
+        "forbidden-action-policy-v1",
+    ] = "structured-fact-validation-v1"
 
     @model_validator(mode="after")
     def _validate_status(self) -> AgenticReviewValidation:
@@ -216,6 +222,16 @@ class AgenticReviewValidation(ReliabilityContract):
             raise ValueError(msg)
         if self.status is ReviewValidationStatus.REJECTED and not self.violations:
             msg = "rejected validation requires at least one violation"
+            raise ValueError(msg)
+        if self.policy_id == "structured-fact-validation-v1" and any(
+            violation
+            in {
+                ReviewViolationCode.AUTHORITY_ESCALATION,
+                ReviewViolationCode.FORBIDDEN_ACTION,
+            }
+            for violation in self.violations
+        ):
+            msg = "structured fact validation forbids legacy text-policy violations"
             raise ValueError(msg)
         return self
 

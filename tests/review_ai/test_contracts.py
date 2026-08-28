@@ -157,6 +157,11 @@ def test_output_is_closed_bounded_and_uses_typed_values(
     assert output.advisory_recommendation == "needs_human_review"
 
     payload = output.model_dump(mode="json")
+    payload["incident_type"] = "volume_drop"
+    with pytest.raises(ValidationError):
+        contracts_module.AgenticReviewOutput.model_validate(payload)
+
+    payload["incident_type"] = "null_spike"
     payload["approval"] = True
     with pytest.raises(ValidationError):
         contracts_module.AgenticReviewOutput.model_validate(payload)
@@ -175,6 +180,34 @@ def test_output_is_closed_bounded_and_uses_typed_values(
     payload["evidence_used"] = ["e" * 257]
     with pytest.raises(ValidationError):
         contracts_module.AgenticReviewOutput.model_validate(payload)
+
+
+def test_validation_policy_versions_restrict_active_violations() -> None:
+    accepted = contracts_module.AgenticReviewValidation(
+        status="accepted",
+        violations=[],
+    )
+    rejected = contracts_module.AgenticReviewValidation(
+        status="rejected",
+        violations=["fabricated_evidence"],
+        policy_id="structured-fact-validation-v1",
+    )
+
+    assert accepted.policy_id == "structured-fact-validation-v1"
+    assert rejected.violations == ("fabricated_evidence",)
+
+    with pytest.raises(ValidationError):
+        contracts_module.AgenticReviewValidation(
+            status="rejected",
+            violations=["forbidden_action"],
+        )
+
+    legacy = contracts_module.AgenticReviewValidation(
+        status="rejected",
+        violations=["forbidden_action"],
+        policy_id="forbidden-action-policy-v1",
+    )
+    assert legacy.violations == ("forbidden_action",)
 
 
 def test_typed_result_enforces_status_specific_output_and_provenance(
