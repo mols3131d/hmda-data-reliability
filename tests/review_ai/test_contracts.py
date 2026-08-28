@@ -157,6 +157,11 @@ def test_output_is_closed_bounded_and_uses_typed_values(
     assert output.advisory_recommendation == "needs_human_review"
 
     payload = output.model_dump(mode="json")
+    payload["incident_type"] = "volume_drop"
+    with pytest.raises(ValidationError):
+        contracts_module.AgenticReviewOutput.model_validate(payload)
+
+    payload["incident_type"] = "null_spike"
     payload["approval"] = True
     with pytest.raises(ValidationError):
         contracts_module.AgenticReviewOutput.model_validate(payload)
