@@ -30,7 +30,6 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
     assert settings.max_retries == 1
     assert settings.temperature == 0
     assert settings.max_output_tokens == 1024
-    assert settings.max_prompt_bytes == 65_536
     assert settings.max_output_bytes == 32_768
 
 
@@ -56,7 +55,6 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
         ("max_retries", 6),
         ("temperature", 0.1),
         ("max_output_tokens", 0),
-        ("max_prompt_bytes", 0),
         ("max_output_bytes", 0),
     ],
 )
@@ -83,7 +81,6 @@ def test_sanitized_configuration_excludes_credentials() -> None:
         "max_retries": 1,
         "temperature": 0.0,
         "max_output_tokens": 1024,
-        "max_prompt_bytes": 65_536,
         "max_output_bytes": 32_768,
     }
     assert "api_key" not in sanitized

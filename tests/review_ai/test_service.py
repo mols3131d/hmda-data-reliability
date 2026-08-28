@@ -14,6 +14,7 @@ from hmda_reliability.review_ai import contracts
 from hmda_reliability.review_ai import service as service_module
 from hmda_reliability.review_ai import store as store_module
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
+from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
 from hmda_reliability.runtime_ai import provider as provider_module
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
@@ -31,6 +32,10 @@ def _settings(**updates: object) -> RuntimeAISettings:
     }
     values.update(updates)
     return RuntimeAISettings.model_validate(values)
+
+
+def _review_settings(**updates: object) -> ReviewAISettings:
+    return ReviewAISettings.model_validate(updates)
 
 
 def _review_input(material: NullSpikeReviewMaterial) -> contracts.AgenticReviewInput:
@@ -75,7 +80,7 @@ class FakeProvider:
 
     def invoke(
         self,
-        rendered: runtime_contracts.RenderedPrompt,
+        messages: tuple[runtime_contracts.ChatMessage, ...],
     ) -> runtime_contracts.ProviderResponse:
         self.calls += 1
         if self.events is not None:
@@ -119,6 +124,7 @@ def _call(
     provider: service_module.ReviewProvider,
     evidence_store: service_module.InvocationEvidenceWriter,
     settings: RuntimeAISettings | None = None,
+    review_settings: ReviewAISettings | None = None,
     evidence: Sequence[Evidence] | None = None,
 ) -> contracts.AgenticReviewResult:
     return service_module.review_null_spike(
@@ -128,6 +134,7 @@ def _call(
         prompt_identity=contracts.PromptIdentity(),
         project_revision="e09c54b",
         settings=settings or _settings(),
+        review_settings=review_settings,
         provider=provider,
         evidence_store=evidence_store,
         invocation_id_factory=lambda: "inv-fixed",
@@ -166,6 +173,7 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
     record = store.delegate.load("inv-fixed")
     assert record.status == "accepted"
     assert record.canonical_input == store.records[0].canonical_input
+    assert record.configuration.max_prompt_bytes == 65_536
     assert record.trace_id == "req-1"
 
 
@@ -193,7 +201,7 @@ def test_preflight_rejection_never_calls_provider_or_evidence_store(
         null_spike_review_material,
         provider=provider,
         evidence_store=store,
-        settings=_settings(max_prompt_bytes=max_prompt_bytes),
+        review_settings=_review_settings(max_prompt_bytes=max_prompt_bytes),
         evidence=evidence,
     )
 

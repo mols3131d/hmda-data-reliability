@@ -11,9 +11,9 @@ from openai.types.chat import ChatCompletionMessageParam
 
 from hmda_reliability.runtime_ai.contracts import (
     ChatCompletionRequest,
+    ChatMessage,
     ProviderResponse,
     ProviderUsage,
-    RenderedPrompt,
     TransportResponse,
 )
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
@@ -92,9 +92,9 @@ class OpenAICompatibleAdapter:
             transport = _OpenAIChatCompletionTransport(client)
         self._transport = transport
 
-    def invoke(self, rendered: RenderedPrompt) -> ProviderResponse:
+    def invoke(self, messages: tuple[ChatMessage, ...]) -> ProviderResponse:
         request = ChatCompletionRequest(
-            messages=rendered.messages,
+            messages=messages,
             model=self._settings.model,
             temperature=self._settings.temperature,
             max_tokens=self._settings.max_output_tokens,

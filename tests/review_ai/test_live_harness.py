@@ -16,6 +16,7 @@ from hmda_reliability.review_ai import (
     PromptIdentity,
 )
 from hmda_reliability.review_ai.contracts import AgenticReviewValidation
+from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.runtime_ai import RuntimeAISettings
 from scripts import run_agentic_review_live as live_module
 
@@ -98,6 +99,7 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
     assert len(calls) == 1
     call = calls[0]
     settings = cast(RuntimeAISettings, call["settings"])
+    review_settings = cast(ReviewAISettings, call["review_settings"])
     incident = cast(Incident, call["incident"])
     draft = cast(RemediationDraft, call["draft"])
     evidence = cast(Sequence[Evidence], call["evidence"])
@@ -107,7 +109,7 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
     assert settings.timeout_seconds == 15
     assert settings.max_retries == 0
     assert settings.max_output_tokens == 512
-    assert settings.max_prompt_bytes == 32_768
+    assert review_settings.max_prompt_bytes == 32_768
     assert settings.max_output_bytes == 16_384
     assert call["project_revision"] == "revision-123"
     assert call["artifact_root"] == tmp_path / "artifacts"

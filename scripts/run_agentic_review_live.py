@@ -33,6 +33,7 @@ from hmda_reliability.review_ai.contracts import (
 )
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
 from hmda_reliability.review_ai.prompt import render_canonical_input
+from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.runtime_ai import RuntimeAISettings
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -54,6 +55,7 @@ class Reviewer(Protocol):
         prompt_identity: PromptIdentity,
         project_revision: str,
         settings: RuntimeAISettings,
+        review_settings: ReviewAISettings,
         artifact_root: Path,
     ) -> AgenticReviewResult: ...
 
@@ -101,16 +103,18 @@ def main(
                 "HMDA_AGENTIC_REVIEW_MAX_OUTPUT_TOKENS",
                 1024,
             ),
-            max_prompt_bytes=_int_value(
-                environment,
-                "HMDA_AGENTIC_REVIEW_MAX_PROMPT_BYTES",
-                65_536,
-            ),
             max_output_bytes=_int_value(
                 environment,
                 "HMDA_AGENTIC_REVIEW_MAX_OUTPUT_BYTES",
                 32_768,
             ),
+        )
+        review_settings = ReviewAISettings(
+            max_prompt_bytes=_int_value(
+                environment,
+                "HMDA_AGENTIC_REVIEW_MAX_PROMPT_BYTES",
+                65_536,
+            )
         )
     except (KeyError, ValueError, ValidationError):
         print("Invalid live agentic review configuration.", file=sys.stderr)
@@ -124,6 +128,7 @@ def main(
         prompt_identity=PromptIdentity(),
         project_revision=environment["HMDA_AGENTIC_REVIEW_PROJECT_REVISION"],
         settings=settings,
+        review_settings=review_settings,
         artifact_root=Path(
             environment.get(
                 "HMDA_RELIABILITY_ARTIFACTS_DIR",
@@ -135,6 +140,7 @@ def main(
     if not _verify_live_provenance(
         result,
         settings=settings,
+        review_settings=review_settings,
         project_revision=environment["HMDA_AGENTIC_REVIEW_PROJECT_REVISION"],
     ):
         print("Live invocation provenance validation failed.", file=sys.stderr)
@@ -186,6 +192,7 @@ def _verify_live_provenance(
     result: AgenticReviewResult,
     *,
     settings: RuntimeAISettings,
+    review_settings: ReviewAISettings,
     project_revision: str,
 ) -> bool:
     if result.status in {
@@ -203,7 +210,7 @@ def _verify_live_provenance(
         replay = render_canonical_input(
             record.canonical_input,
             record.prompt_identity,
-            max_prompt_bytes=settings.max_prompt_bytes,
+            max_prompt_bytes=review_settings.max_prompt_bytes,
         )
     except (OSError, ValidationError, ValueError):
         return False
@@ -212,6 +219,7 @@ def _verify_live_provenance(
         record.invocation_id == result.invocation_id
         and record.status is result.status
         and record.configuration.model == settings.model
+        and record.configuration.max_prompt_bytes == review_settings.max_prompt_bytes
         and record.project_revision == project_revision.strip()
         and replay.prompt_digest == record.prompt_digest
     )

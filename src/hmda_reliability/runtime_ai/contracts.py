@@ -18,14 +18,6 @@ class ChatMessage(RuntimeAIContract):
     content: str = Field(min_length=1)
 
 
-class RenderedPrompt(RuntimeAIContract):
-    canonical_input: dict[str, object]
-    canonical_json: str
-    messages: tuple[ChatMessage, ...]
-    prompt_digest: str
-    prompt_bytes: int = Field(gt=0)
-
-
 class ProviderUsage(RuntimeAIContract):
     prompt_tokens: int | None = Field(default=None, ge=0)
     completion_tokens: int | None = Field(default=None, ge=0)

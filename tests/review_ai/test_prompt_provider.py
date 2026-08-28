@@ -154,7 +154,7 @@ def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile(
         _settings(), transport=transport, sleep=lambda _: None
     )
 
-    response = adapter.invoke(rendered)
+    response = adapter.invoke(rendered.messages)
 
     request = transport.requests[0]
     wire = request.wire_payload()
@@ -191,7 +191,7 @@ def test_adapter_owns_bounded_retry_for_connection_and_server_failures(
         _settings(max_retries=1), transport=transport, sleep=lambda _: None
     )
 
-    result = adapter.invoke(rendered)
+    result = adapter.invoke(rendered.messages)
 
     assert result.attempt_count == 2
     assert len(transport.requests) == 2
@@ -215,7 +215,7 @@ def test_adapter_does_not_retry_client_or_response_validation_failures(
     )
 
     with pytest.raises(provider_module.ProviderUnavailableError) as error:
-        adapter.invoke(rendered)
+        adapter.invoke(rendered.messages)
 
     assert error.value.attempt_count == 1
     assert error.value.failure_code == "provider_client_error"
@@ -230,7 +230,7 @@ def test_adapter_does_not_retry_client_or_response_validation_failures(
         sleep=lambda _: None,
     )
     with pytest.raises(provider_module.ProviderResponseTooLargeError):
-        oversized_adapter.invoke(rendered)
+        oversized_adapter.invoke(rendered.messages)
     assert len(oversized_transport.requests) == 1
 
 
@@ -270,6 +270,6 @@ def test_local_and_cloud_urls_use_the_same_adapter_request(
         _settings(base_url=base_url), transport=transport, sleep=lambda _: None
     )
 
-    adapter.invoke(rendered)
+    adapter.invoke(rendered.messages)
 
     assert transport.requests[0].wire_payload()["model"] == "test-model"
