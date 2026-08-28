@@ -193,7 +193,7 @@ uv run pytest tests/review_ai tests/runtime_ai
 uv run --env-file .env python scripts/run_agentic_review_live.py
 ```
 
-`HMDA_AGENTIC_REVIEW_LIVE=true`, non-empty base URL, API key, model과 caller-provided project revision이 모두 있어야 provider를 호출한다. 결과는 `accepted` 또는 typed failure이며, provider-started call은 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
+`HMDA_AGENTIC_REVIEW_LIVE=true`와 non-empty base URL, API key, model이 있어야 provider를 호출한다. `HMDA_AGENTIC_REVIEW_PROJECT_REVISION`은 기본 `auto`에서 현재 Git HEAD를 사용하며, 잘못된 provenance를 피하기 위해 tracked worktree가 clean해야 한다. 필요하면 non-empty revision을 명시적으로 제공할 수 있다. 결과는 `accepted` 또는 typed failure이며, provider-started call은 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
 
 ## Interpret Results
 
