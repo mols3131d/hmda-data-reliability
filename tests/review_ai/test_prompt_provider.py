@@ -179,12 +179,14 @@ def test_adapter_owns_bounded_retry_for_connection_and_server_failures(
         _review_input(null_spike_review_material), max_prompt_bytes=65_536
     )
     response = provider_module.TransportResponse(content="{}")
-    transport = FakeTransport([
-        provider_module.ProviderTransportError(
-            failure_code="provider_connection_error", retryable=True
-        ),
-        response,
-    ])
+    transport = FakeTransport(
+        [
+            provider_module.ProviderTransportError(
+                failure_code="provider_connection_error", retryable=True
+            ),
+            response,
+        ]
+    )
     adapter = provider_module.OpenAICompatibleAdapter(
         _settings(max_retries=1), transport=transport, sleep=lambda _: None
     )
@@ -201,11 +203,13 @@ def test_adapter_does_not_retry_client_or_response_validation_failures(
     rendered = prompt_module.render_review_prompt(
         _review_input(null_spike_review_material), max_prompt_bytes=65_536
     )
-    transport = FakeTransport([
-        provider_module.ProviderTransportError(
-            failure_code="provider_client_error", retryable=False
-        )
-    ])
+    transport = FakeTransport(
+        [
+            provider_module.ProviderTransportError(
+                failure_code="provider_client_error", retryable=False
+            )
+        ]
+    )
     adapter = provider_module.OpenAICompatibleAdapter(
         _settings(max_retries=5), transport=transport, sleep=lambda _: None
     )
@@ -217,9 +221,9 @@ def test_adapter_does_not_retry_client_or_response_validation_failures(
     assert error.value.failure_code == "provider_client_error"
     assert len(transport.requests) == 1
 
-    oversized_transport = FakeTransport([
-        provider_module.TransportResponse(content="x" * 33)
-    ])
+    oversized_transport = FakeTransport(
+        [provider_module.TransportResponse(content="x" * 33)]
+    )
     oversized_adapter = provider_module.OpenAICompatibleAdapter(
         _settings(max_output_bytes=32),
         transport=oversized_transport,
