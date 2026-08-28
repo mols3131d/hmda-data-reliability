@@ -8,55 +8,15 @@ from typing import Protocol, cast
 
 from openai import APIConnectionError, APIError, APIStatusError, OpenAI
 from openai.types.chat import ChatCompletionMessageParam
-from pydantic import Field
 
-from hmda_reliability.reliability.agentic_review.prompt import (
+from hmda_reliability.runtime_ai.contracts import (
+    ChatCompletionRequest,
     ChatMessage,
-    RenderedPrompt,
+    ProviderResponse,
+    ProviderUsage,
+    TransportResponse,
 )
-from hmda_reliability.reliability.agentic_review.settings import (
-    AgenticReviewSettings,
-)
-from hmda_reliability.reliability.contracts.base import ReliabilityContract
-
-
-class ProviderUsage(ReliabilityContract):
-    prompt_tokens: int | None = Field(default=None, ge=0)
-    completion_tokens: int | None = Field(default=None, ge=0)
-    total_tokens: int | None = Field(default=None, ge=0)
-
-
-class TransportResponse(ReliabilityContract):
-    content: str
-    usage: ProviderUsage | None = None
-    trace_id: str | None = None
-
-
-class ChatCompletionRequest(ReliabilityContract):
-    messages: tuple[ChatMessage, ...]
-    model: str
-    temperature: int
-    max_tokens: int = Field(gt=0)
-    response_format: dict[str, str]
-    stream: bool
-
-    def wire_payload(self) -> dict[str, object]:
-        return {
-            "messages": [message.model_dump(mode="json") for message in self.messages],
-            "model": self.model,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-            "response_format": dict(self.response_format),
-            "stream": self.stream,
-        }
-
-
-class ProviderResponse(ReliabilityContract):
-    content: str
-    attempt_count: int = Field(ge=1)
-    latency_ms: float = Field(ge=0)
-    usage: ProviderUsage | None = None
-    trace_id: str | None = None
+from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 
 class ProviderTransportError(Exception):
@@ -115,7 +75,7 @@ class OpenAICompatibleAdapter:
 
     def __init__(
         self,
-        settings: AgenticReviewSettings,
+        settings: RuntimeAISettings,
         *,
         transport: ChatCompletionTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
@@ -132,9 +92,9 @@ class OpenAICompatibleAdapter:
             transport = _OpenAIChatCompletionTransport(client)
         self._transport = transport
 
-    def invoke(self, rendered: RenderedPrompt) -> ProviderResponse:
+    def invoke(self, messages: tuple[ChatMessage, ...]) -> ProviderResponse:
         request = ChatCompletionRequest(
-            messages=rendered.messages,
+            messages=messages,
             model=self._settings.model,
             temperature=self._settings.temperature,
             max_tokens=self._settings.max_output_tokens,

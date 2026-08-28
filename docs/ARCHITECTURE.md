@@ -35,6 +35,11 @@ flowchart TB
         lifecycle -.->|advisory only| draft["RemediationDraft"]
     end
 
+    subgraph ai_plane ["Bounded AI Delegation"]
+        review["Review AI"] -->|provider invocation| runtime["Runtime AI"]
+        runtime --> provider["OpenAI-compatible Provider"]
+    end
+
     subgraph recovery_plane ["Approval-Bound Recovery"]
         proposal["Validated Recovery Proposal"] --> recovery["Recovery API"] --> verify["Re-validation"]
     end
@@ -42,13 +47,15 @@ flowchart TB
     files --> ingest
     bronze -.->|read state| lifecycle
     current_artifacts -.->|read lineage / run evidence| lifecycle
+    incident -.->|deterministic input| review
+    draft -.->|advisory input| review
     incident -->|bind evidence + target| proposal
     recovery_candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
     proposal -->|exact proposal| approval["External Approval"]
     approval -->|authorize same proposal| recovery
 ```
 
-`RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다. Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
+`RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Review AI output도 approval 또는 Reliability truth가 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다. Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
 
 ## Execution Boundaries
 
@@ -56,6 +63,8 @@ flowchart TB
 | --- | --- |
 | Pipeline | Airflow `hmda_data_plane` DAG은 Bronze 적재 후 dbt 분석만 실행한다. |
 | Reliability lifecycle | Read-only다. approval, recovery, evaluation 또는 report write를 수행하지 않는다. |
+| Review AI | Reliability evidence를 immutable input으로 받아 advisory review와 deterministic validation/provenance만 소유한다. |
+| Runtime AI | Review semantics를 알지 않고 provider-neutral settings, bounded invocation과 runtime error normalization만 소유한다. |
 | Recovery proposal | Incident evidence, 검증된 candidate와 target state를 mutation 전에 immutable contract로 묶는다. Concrete contract는 recovery scope에 따라 달라진다. |
 | Approval | Lifecycle 밖에서 결정하며 exact validated proposal에 결합된다. |
 | Recovery | Approved proposal의 target/action/state를 다시 확인한 뒤 별도 API로 실행하고 재검증한다. |
@@ -64,6 +73,7 @@ flowchart TB
 ## Design Constraints
 
 - lifecycle은 caller가 제공한 baseline을 받아 profile, detection, impact와 remediation draft만 계산한다.
+- `review_ai`는 `reliability`와 `runtime_ai`를 사용할 수 있지만, `reliability`는 AI package를 import하지 않고 `runtime_ai`는 review/Reliability semantics를 import하지 않는다.
 - Airflow는 data plane 실행만 담당하며 reliability lifecycle, approval, recovery 또는 evaluation을 자동으로 묶지 않는다.
 - `RemediationDraft`와 validated recovery proposal은 다른 역할이다. Draft는 권고이고 proposal은 승인 가능한 exact mutation contract다.
 - Partition/freshness recovery의 `RecoveryProposal`과 schema/table recovery의 `SchemaRecoveryProposal`은 각 scope의 state identity와 action을 독립적으로 고정한다.
@@ -81,6 +91,8 @@ Current capability의 normative contract는 [`../openspec/specs/`](../openspec/s
 | 실행 request, 결과, dbt build와 promotion | [`Data Operations`](domains/data-operations.md) |
 | DuckDB, dbt model·lineage, artifact projection primitive | [`Data Platform`](domains/data-platform.md) |
 | Incident, impact, remediation, recovery, evaluation | [`Reliability`](domains/reliability.md) |
+| Evidence-bound advisory review와 provenance | [`Review AI`](domains/review-ai.md) |
+| Provider-neutral AI invocation과 settings | [`Runtime AI`](domains/runtime-ai.md) |
 | Airflow DAG와 runtime config | [`Orchestration`](domains/orchestration.md) |
 
 ## Project Scope
@@ -89,4 +101,5 @@ Current capability의 normative contract는 [`../openspec/specs/`](../openspec/s
 | --- | --- |
 | 로컬 DuckDB, HMDA 적재, dbt model, reliability control plane | 원천 다운로드, lakehouse, 분산 처리 |
 | 승인된 recovery와 deterministic re-validation/evaluation | human approval UI, 범용 자율 복구, 감사 시스템 |
+| evidence-bound AI advisory review와 bounded provider runtime | 범용 autonomous agent, model gateway/router, AI-driven mutation |
 | 로컬 Airflow data plane | schedule, automatic retry, distributed executor, cloud 배포, production SLO, 장기 모니터링 |

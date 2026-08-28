@@ -11,7 +11,9 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
-from hmda_reliability.reliability.agentic_review.contracts import (
+from hmda_reliability.reliability.contracts import Evidence, Incident
+from hmda_reliability.reliability.remediation import RemediationDraft
+from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewResult,
@@ -20,38 +22,36 @@ from hmda_reliability.reliability.agentic_review.contracts import (
     PromptIdentity,
     ReviewValidationStatus,
 )
-from hmda_reliability.reliability.agentic_review.evidence import (
+from hmda_reliability.review_ai.evidence import (
     AgenticInvocationEvidence,
     SanitizedAgenticReviewConfiguration,
 )
-from hmda_reliability.reliability.agentic_review.prompt import (
+from hmda_reliability.review_ai.prompt import (
     PromptTooLargeError,
-    RenderedPrompt,
+    RenderedReviewPrompt,
     render_review_prompt,
 )
-from hmda_reliability.reliability.agentic_review.provider import (
-    OpenAICompatibleAdapter,
-    ProviderResponse,
-    ProviderResponseTooLargeError,
-    ProviderUnavailableError,
-    ProviderUsage,
-)
-from hmda_reliability.reliability.agentic_review.settings import (
-    AgenticReviewSettings,
-)
-from hmda_reliability.reliability.agentic_review.store import (
+from hmda_reliability.review_ai.settings import ReviewAISettings
+from hmda_reliability.review_ai.store import (
     InvocationEvidenceStore,
     InvocationEvidenceStoreError,
 )
-from hmda_reliability.reliability.agentic_review.validator import (
-    validate_agentic_review,
+from hmda_reliability.review_ai.validator import validate_agentic_review
+from hmda_reliability.runtime_ai.contracts import (
+    ChatMessage,
+    ProviderResponse,
+    ProviderUsage,
 )
-from hmda_reliability.reliability.contracts import Evidence, Incident
-from hmda_reliability.reliability.remediation import RemediationDraft
+from hmda_reliability.runtime_ai.provider import (
+    OpenAICompatibleAdapter,
+    ProviderResponseTooLargeError,
+    ProviderUnavailableError,
+)
+from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 
 class ReviewProvider(Protocol):
-    def invoke(self, rendered: RenderedPrompt) -> ProviderResponse: ...
+    def invoke(self, messages: tuple[ChatMessage, ...]) -> ProviderResponse: ...
 
 
 class InvocationEvidenceWriter(Protocol):
@@ -70,7 +70,8 @@ def review_null_spike(
     draft: RemediationDraft,
     prompt_identity: PromptIdentity,
     project_revision: str,
-    settings: AgenticReviewSettings,
+    settings: RuntimeAISettings,
+    review_settings: ReviewAISettings | None = None,
     provider: ReviewProvider | None = None,
     evidence_store: InvocationEvidenceWriter | None = None,
     artifact_root: Path = Path(".local/artifacts"),
@@ -79,6 +80,7 @@ def review_null_spike(
 ) -> AgenticReviewResult:
     """Generate one evidence-bound advisory result without invoking recovery."""
 
+    active_review_settings = review_settings or ReviewAISettings()
     try:
         review_input = AgenticReviewInput(
             incident=incident,
@@ -96,7 +98,7 @@ def review_null_spike(
     try:
         rendered = render_review_prompt(
             review_input,
-            max_prompt_bytes=settings.max_prompt_bytes,
+            max_prompt_bytes=active_review_settings.max_prompt_bytes,
         )
     except PromptTooLargeError:
         return AgenticReviewResult(
@@ -111,13 +113,14 @@ def review_null_spike(
     invocation_id = make_invocation_id()
 
     try:
-        provider_response = review_provider.invoke(rendered)
+        provider_response = review_provider.invoke(rendered.messages)
     except ProviderUnavailableError as error:
         record = _build_record(
             invocation_id=invocation_id,
             recorded_at=current_time(),
             status=AgenticReviewStatus.UNAVAILABLE,
             settings=settings,
+            review_settings=active_review_settings,
             review_input=review_input,
             rendered=rendered,
             parsed_output=None,
@@ -128,13 +131,19 @@ def review_null_spike(
             usage=None,
             trace_id=None,
         )
-        return _persist_result(record=record, settings=settings, writer=writer)
+        return _persist_result(
+            record=record,
+            settings=settings,
+            review_settings=active_review_settings,
+            writer=writer,
+        )
     except ProviderResponseTooLargeError as error:
         record = _build_record(
             invocation_id=invocation_id,
             recorded_at=current_time(),
             status=AgenticReviewStatus.VALIDATION_FAILED,
             settings=settings,
+            review_settings=active_review_settings,
             review_input=review_input,
             rendered=rendered,
             parsed_output=None,
@@ -145,7 +154,12 @@ def review_null_spike(
             usage=error.usage,
             trace_id=error.trace_id,
         )
-        return _persist_result(record=record, settings=settings, writer=writer)
+        return _persist_result(
+            record=record,
+            settings=settings,
+            review_settings=active_review_settings,
+            writer=writer,
+        )
 
     parsed_output = _parse_output(provider_response.content)
     if parsed_output is None:
@@ -154,6 +168,7 @@ def review_null_spike(
             recorded_at=current_time(),
             status=AgenticReviewStatus.VALIDATION_FAILED,
             settings=settings,
+            review_settings=active_review_settings,
             review_input=review_input,
             rendered=rendered,
             parsed_output=None,
@@ -164,7 +179,12 @@ def review_null_spike(
             usage=provider_response.usage,
             trace_id=provider_response.trace_id,
         )
-        return _persist_result(record=record, settings=settings, writer=writer)
+        return _persist_result(
+            record=record,
+            settings=settings,
+            review_settings=active_review_settings,
+            writer=writer,
+        )
 
     validation = validate_agentic_review(review_input, parsed_output)
     if validation.status is ReviewValidationStatus.REJECTED:
@@ -178,6 +198,7 @@ def review_null_spike(
         recorded_at=current_time(),
         status=status,
         settings=settings,
+        review_settings=active_review_settings,
         review_input=review_input,
         rendered=rendered,
         parsed_output=parsed_output,
@@ -188,7 +209,12 @@ def review_null_spike(
         usage=provider_response.usage,
         trace_id=provider_response.trace_id,
     )
-    return _persist_result(record=record, settings=settings, writer=writer)
+    return _persist_result(
+        record=record,
+        settings=settings,
+        review_settings=active_review_settings,
+        writer=writer,
+    )
 
 
 def _parse_output(content: str) -> AgenticReviewOutput | None:
@@ -204,9 +230,10 @@ def _build_record(
     invocation_id: str,
     recorded_at: datetime,
     status: AgenticReviewStatus,
-    settings: AgenticReviewSettings,
+    settings: RuntimeAISettings,
+    review_settings: ReviewAISettings,
     review_input: AgenticReviewInput,
-    rendered: RenderedPrompt,
+    rendered: RenderedReviewPrompt,
     parsed_output: AgenticReviewOutput | None,
     validation: AgenticReviewValidation | None,
     failure_code: str | None,
@@ -215,13 +242,13 @@ def _build_record(
     usage: ProviderUsage | None,
     trace_id: str | None,
 ) -> AgenticInvocationEvidence:
+    configuration = settings.sanitized_configuration()
+    configuration.update(review_settings.sanitized_configuration())
     return AgenticInvocationEvidence(
         invocation_id=invocation_id,
         recorded_at=recorded_at,
         status=status,
-        configuration=SanitizedAgenticReviewConfiguration.model_validate(
-            settings.sanitized_configuration()
-        ),
+        configuration=SanitizedAgenticReviewConfiguration.model_validate(configuration),
         prompt_identity=review_input.prompt_identity,
         prompt_digest=rendered.prompt_digest,
         project_revision=review_input.project_revision,
@@ -241,10 +268,13 @@ def _build_record(
 def _persist_result(
     *,
     record: AgenticInvocationEvidence,
-    settings: AgenticReviewSettings,
+    settings: RuntimeAISettings,
+    review_settings: ReviewAISettings,
     writer: InvocationEvidenceWriter,
 ) -> AgenticReviewResult:
-    max_record_bytes = settings.max_prompt_bytes + settings.max_output_bytes + 16_384
+    max_record_bytes = (
+        review_settings.max_prompt_bytes + settings.max_output_bytes + 16_384
+    )
     try:
         path = writer.write(record, max_record_bytes=max_record_bytes)
     except InvocationEvidenceStoreError:

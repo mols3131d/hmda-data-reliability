@@ -84,7 +84,9 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 | [HMDA Data](domains/hmda-data.md) | 같은 source와 case에서 재현 가능한 Source → Bronze state와 synthetic incident input을 만든다. |
 | [Data Platform](domains/data-platform.md) | Bronze → staging → mart와 채택된 dbt artifact/lineage evidence를 추적할 수 있다. |
 | [Data Operations](domains/data-operations.md) | ingestion/dbt/reliability execution과 candidate/current adoption boundary, failure evidence가 명확하다. |
-| [Reliability](domains/reliability.md) | deterministic incident → bounded Agentic review + validated proposal/approval → recovery → re-validation을 닫는다. |
+| [Reliability](domains/reliability.md) | deterministic incident → validated proposal/approval → recovery → re-validation을 닫는다. |
+| [Review AI](domains/review-ai.md) | Reliability evidence와 `RemediationDraft`를 bounded advisory review로 변환하고 deterministic validation과 invocation provenance를 남긴다. |
+| [Runtime AI](domains/runtime-ai.md) | Review semantics와 분리된 provider-neutral settings와 bounded invocation contract를 재현 가능하게 검증한다. |
 | [Orchestration](domains/orchestration.md) | Bronze와 dbt analytical layer의 local data plane을 Airflow dependency로 반복 실행한다. |
 
 ## MVP Acceptance

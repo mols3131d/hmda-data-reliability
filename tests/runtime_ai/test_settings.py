@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from hmda_reliability.reliability.agentic_review import settings as settings_module
+from hmda_reliability.runtime_ai import settings as settings_module
 
 pytestmark = pytest.mark.unit
 
@@ -19,7 +19,7 @@ def _valid_values() -> dict[str, object]:
 
 
 def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
-    settings_type = settings_module.AgenticReviewSettings
+    settings_type = settings_module.RuntimeAISettings
 
     settings = settings_type.model_validate(_valid_values())
 
@@ -30,7 +30,6 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
     assert settings.max_retries == 1
     assert settings.temperature == 0
     assert settings.max_output_tokens == 1024
-    assert settings.max_prompt_bytes == 65_536
     assert settings.max_output_bytes == 32_768
 
 
@@ -56,7 +55,6 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
         ("max_retries", 6),
         ("temperature", 0.1),
         ("max_output_tokens", 0),
-        ("max_prompt_bytes", 0),
         ("max_output_bytes", 0),
     ],
 )
@@ -68,11 +66,11 @@ def test_settings_reject_invalid_or_unbounded_values(
     values[field] = value
 
     with pytest.raises(ValidationError):
-        settings_module.AgenticReviewSettings.model_validate(values)
+        settings_module.RuntimeAISettings.model_validate(values)
 
 
 def test_sanitized_configuration_excludes_credentials() -> None:
-    settings = settings_module.AgenticReviewSettings.model_validate(_valid_values())
+    settings = settings_module.RuntimeAISettings.model_validate(_valid_values())
 
     sanitized = settings.sanitized_configuration()
 
@@ -83,7 +81,6 @@ def test_sanitized_configuration_excludes_credentials() -> None:
         "max_retries": 1,
         "temperature": 0.0,
         "max_output_tokens": 1024,
-        "max_prompt_bytes": 65_536,
         "max_output_bytes": 32_768,
     }
     assert "api_key" not in sanitized
@@ -94,7 +91,7 @@ def test_sanitized_configuration_excludes_credentials() -> None:
 def test_sanitized_configuration_preserves_ipv6_authority() -> None:
     values = _valid_values()
     values["base_url"] = "http://[::1]:11434/v1"
-    settings = settings_module.AgenticReviewSettings.model_validate(values)
+    settings = settings_module.RuntimeAISettings.model_validate(values)
 
     sanitized = settings.sanitized_configuration()
 
@@ -109,4 +106,4 @@ def test_public_settings_do_not_read_provider_environment(
     monkeypatch.setenv("HMDA_AGENTIC_REVIEW_MODEL", "environment-model")
 
     with pytest.raises(ValidationError):
-        settings_module.AgenticReviewSettings.model_validate({})
+        settings_module.RuntimeAISettings.model_validate({})

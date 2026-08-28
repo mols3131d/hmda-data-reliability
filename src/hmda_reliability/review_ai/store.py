@@ -8,10 +8,8 @@ import re
 import tempfile
 from pathlib import Path
 
-from hmda_reliability.reliability.agentic_review.evidence import (
-    AgenticInvocationEvidence,
-)
-from hmda_reliability.reliability.agentic_review.prompt import canonical_json_bytes
+from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
+from hmda_reliability.review_ai.prompt import canonical_json_bytes
 
 _SAFE_INVOCATION_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 

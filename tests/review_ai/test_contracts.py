@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from hmda_reliability.reliability.agentic_review import contracts as contracts_module
+from hmda_reliability.review_ai import contracts as contracts_module
 
 from .conftest import NullSpikeReviewMaterial
 

@@ -1,0 +1,27 @@
+---
+type: openspec-spec-driven-tdd-tasks
+category: tasks
+title: "Review AI Runtime Extraction"
+description: "기존 review behavior를 보존하면서 test-first로 package ownership과 import direction을 분리합니다."
+tasks_completed: 3
+tasks_total: 3
+tags:
+  - "domain:review-ai"
+  - "ai-runtime"
+---
+
+## Tasks
+
+- [x] 1. 새 ownership을 executable specification으로 고정한다
+  - **Test first:** `review_ai` 최소 package-root API, `runtime_ai` settings-only root API, Reliability AI re-export 부재, AST 기반 forbidden-import boundary와 기존 review/provenance behavior를 검증한다.
+  - **Done when:** test가 새 import path와 dependency boundary를 사용하며 `runtime_ai -> no review_ai/reliability`, `reliability -> no AI package` invariant를 직접 검사하고 기존 behavioral assertion은 약화되지 않는다.
+
+- [x] 2. source package를 `review_ai`와 `runtime_ai`로 분리한다
+  - **Done when:** `review_ai -> reliability/runtime_ai`, `runtime_ai -> no review_ai/reliability`, `reliability -> no AI package` import direction이 성립한다.
+  - **Done when:** rendered review/provenance state와 `max_prompt_bytes` preflight는 `review_ai`가 소유하고 `runtime_ai` adapter는 provider-neutral messages와 provider/transport/output settings만 사용한다.
+  - **Done when:** prompt identity, typed result, validation, provider retry/limits와 invocation evidence semantics가 유지된다.
+
+- [x] 3. 내부 caller, canonical guide와 validation routing을 정렬한다
+  - **Done when:** live harness와 test command가 새 owner를 사용하고 Reliability/domain ownership 문서가 현재 source와 일치한다.
+  - **Done when:** CI가 `review_ai`와 `runtime_ai` source/test 변경에서 own test와 필요한 reverse-dependency test를 선택한다.
+  - **Validation:** focused review/runtime test, Ruff, project type check와 영향 범위에 필요한 pytest를 실행한다.

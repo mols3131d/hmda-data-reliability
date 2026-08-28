@@ -18,7 +18,9 @@ tags:
 | [HMDA Data](hmda-data.md) | 원천 파일 발견·검증, Bronze 적재, descriptive EDA, 합성 결함 파일 | CSV/Parquet → `raw.hmda_loans`, EDA evidence, synthetic Parquet | 실행 조합, dbt 변환, incident 판단 |
 | [Data Operations](data-operations.md) | 실행 request·순서·결과, dbt execution/promotion, 오류 경계 | request → raw load, dbt build, lifecycle result | 파일 파싱, DuckDB 세부 구현, incident 규칙 |
 | [Data Platform](data-platform.md) | DuckDB helper, dbt source·model·test·lineage, artifact projection primitive | `raw.hmda_loans` → staging/mart, dbt artifact pair identity | 원천 적재, dbt subprocess 실행, promotion 결정, orchestration |
-| [Reliability](reliability.md) | profile, incident, 영향 분석, remediation, recovery, evaluation | raw table + dbt artifacts → lifecycle/recovery/evaluation result | 외부 approval 결정과 Airflow orchestration |
+| [Reliability](reliability.md) | profile, incident, 영향 분석, remediation, recovery, evaluation | raw table + dbt artifacts → lifecycle/recovery/evaluation result | AI review/provider runtime, 외부 approval 결정과 Airflow orchestration |
+| [Review AI](review-ai.md) | review contract, prompt projection, deterministic validation, review provenance | Reliability evidence + remediation draft → advisory review result | deterministic truth, provider SDK mechanics, approval/recovery authority |
+| [Runtime AI](runtime-ai.md) | provider-neutral message/settings/response contract와 OpenAI-compatible adapter | rendered messages + explicit settings → provider response/typed runtime failure | review policy, Reliability contract, provenance meaning |
 | [Orchestration](orchestration.md) | Airflow DAG dependency와 config 변환 | `load_raw_hmda_loans` → `build_dbt_loan_analytics` | domain business logic, reliability control-plane |
 
 ```mermaid
@@ -29,9 +31,11 @@ flowchart TB
     operations -->|read-only lifecycle only| reliability["Reliability<br/>incident + recovery + evaluation"]
     hmda -.->|Bronze state| reliability
     platform -.->|dbt artifacts + lineage| reliability
+    reliability -.->|Incident + Evidence + RemediationDraft| review["Review AI<br/>advisory semantics + provenance"]
+    review -->|provider-neutral invocation| runtime["Runtime AI<br/>provider adapter + limits"]
 ```
 
-이 표와 그림은 architecture/domain ownership을 설명하는 guide다. 실선은 application-level delegation/use를, 점선은 Reliability가 읽는 state/evidence 관계를 나타낸다. Normative behavior나 capability requirement가 필요하면 대응 `openspec/specs/**`를 확인하고, 실제 구현 상태는 source/tests와 matching-revision evidence로 검증한다.
+이 표와 그림은 architecture/domain ownership을 설명하는 guide다. 실선은 application-level delegation/use를, 점선은 state/evidence 관계를 나타낸다. Source dependency는 `review_ai -> reliability`와 `review_ai -> runtime_ai` 방향이며 data-flow arrow와 구분한다. Normative behavior나 capability requirement가 필요하면 대응 `openspec/specs/**`를 확인하고, 실제 구현 상태는 source/tests와 matching-revision evidence로 검증한다.
 
 ## Goal-Based Reading Paths
 
@@ -40,6 +44,8 @@ flowchart TB
 | 원천 파일부터 분석 mart까지 이해 | [HMDA Data](hmda-data.md) → [Data Platform](data-platform.md) → [Data Operations](data-operations.md) |
 | HMDA descriptive EDA 이해 | [HMDA Data](hmda-data.md) |
 | 품질 incident와 recovery 이해 | [Reliability](reliability.md) → [Data Operations](data-operations.md) → [Data Platform](data-platform.md) |
+| AI advisory review 이해 | [Review AI](review-ai.md) → [Reliability](reliability.md) → [Runtime AI](runtime-ai.md) |
+| Provider 호출 경계 이해 | [Runtime AI](runtime-ai.md) → [Review AI](review-ai.md) |
 | Airflow 실행 경계 이해 | [Orchestration](orchestration.md) → [Data Operations](data-operations.md) |
 
 시스템 흐름과 공통 경계는 [`ARCHITECTURE`](../ARCHITECTURE.md)에서 확인한다.

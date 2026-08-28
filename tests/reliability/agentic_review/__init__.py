@@ -1,1 +1,0 @@
-"""Agentic review executable specifications."""

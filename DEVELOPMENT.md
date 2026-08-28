@@ -44,6 +44,7 @@
 | Contracts | `Pydantic` | reliability structured models |
 | Control quality | custom profiler/detector | profile snapshot과 detection rules |
 | Remediation | `LangGraph` | remediation draft 경로만 |
+| AI runtime | `OpenAI` Python SDK | OpenAI-compatible bounded provider invocation |
 | Orchestration | `Apache Airflow` | DAG dependency와 task/data-update evidence |
 
 `PyIceberg`는 dependency로 존재하지만 active table engine으로 사용하지 않는다. Spark, cloud warehouse, FastAPI 기반 통합 pipeline CLI, OpenTelemetry, 외부 catalog와 approval UI는 현재 active toolchain에 포함하지 않는다.
@@ -51,7 +52,7 @@
 ## Package And Directory Layout
 
 - 애플리케이션 package root는 `src/hmda_reliability/`다.
-- 새 package를 만들기 전에 `data_operations`, `data_platform`, `hmda_data`, `orchestration`, `reliability`, `shared`, `configs` 중 기존 domain을 우선 사용한다.
+- 새 package를 만들기 전에 `configs`, `data_operations`, `data_platform`, `hmda_data`, `orchestration`, `reliability`, `review_ai`, `runtime_ai`, `shared` 중 기존 domain을 우선 사용한다.
 
 | Directory | Purpose |
 | --- | --- |

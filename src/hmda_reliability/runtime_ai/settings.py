@@ -1,4 +1,4 @@
-"""Explicit runtime settings for bounded agentic review."""
+"""Explicit provider-neutral AI runtime settings."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
 
-from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.runtime_ai.contracts import RuntimeAIContract
 
 
 def _sanitize_base_url(url: str) -> str:
@@ -16,7 +16,7 @@ def _sanitize_base_url(url: str) -> str:
     return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
 
 
-class AgenticReviewSettings(ReliabilityContract):
+class RuntimeAISettings(RuntimeAIContract):
     """Provider settings supplied explicitly by the caller."""
 
     base_url: AnyHttpUrl
@@ -26,7 +26,6 @@ class AgenticReviewSettings(ReliabilityContract):
     max_retries: int = Field(default=1, ge=0, le=5)
     temperature: Literal[0] = 0
     max_output_tokens: int = Field(default=1024, gt=0, le=32_768)
-    max_prompt_bytes: int = Field(default=65_536, gt=0, le=1_048_576)
     max_output_bytes: int = Field(default=32_768, gt=0, le=1_048_576)
 
     @field_validator("base_url")
@@ -70,6 +69,5 @@ class AgenticReviewSettings(ReliabilityContract):
             "max_retries": self.max_retries,
             "temperature": self.temperature,
             "max_output_tokens": self.max_output_tokens,
-            "max_prompt_bytes": self.max_prompt_bytes,
             "max_output_bytes": self.max_output_bytes,
         }

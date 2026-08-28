@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from hmda_reliability.reliability.agentic_review.contracts import (
+from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewValidation,
@@ -44,7 +44,7 @@ _FORBIDDEN_ACTION_PATTERNS = tuple(
         r"^(?:please\s+)?(?:backfill|recover)\s+"
         r"(?:(?:the|this|that)\s+)?(?:\d{4}\s+partition\b|partition(?:\s+\d{4})?\b|data\b|dataset\b|records?\b|table\b|database\b)",
         r"^(?:please\s+)?(?:backfill|recover)\s+(?:now|immediately)\b",
-        r"^(?:please\s+)?(?:proceed\s+with|initiate|launch|execute|run|apply|trigger|perform|start)\b.{0,80}"
+        r"^(?:but\s+)?(?:please\s+)?(?:proceed\s+with|initiate|launch|execute|run|apply|trigger|perform|start)\b.{0,80}"
         r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command|database|data|partition)\b",
         r"^(?:you\s+should|you\s+must|must|should)\s+"
         r"(?:backfill|recover|execute|run|apply|delete|remove|modify|mutate|perform|initiate|launch)\b",

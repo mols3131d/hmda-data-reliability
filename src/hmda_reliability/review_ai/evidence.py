@@ -9,15 +9,15 @@ from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 
-from hmda_reliability.reliability.agentic_review.contracts import (
+from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.review_ai.contracts import (
     AgenticReviewOutput,
     AgenticReviewStatus,
     AgenticReviewValidation,
     PromptIdentity,
     ReviewValidationStatus,
 )
-from hmda_reliability.reliability.agentic_review.provider import ProviderUsage
-from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.runtime_ai.contracts import ProviderUsage
 
 
 class SanitizedAgenticReviewConfiguration(ReliabilityContract):

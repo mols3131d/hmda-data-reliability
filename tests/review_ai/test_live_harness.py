@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
@@ -9,14 +10,15 @@ from typing import cast
 import pytest
 
 from hmda_reliability.reliability import Evidence, Incident, RemediationDraft
-from hmda_reliability.reliability.agentic_review import (
+from hmda_reliability.review_ai import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewResult,
-    AgenticReviewSettings,
-    AgenticReviewValidation,
     PromptIdentity,
 )
+from hmda_reliability.review_ai.contracts import AgenticReviewValidation
+from hmda_reliability.review_ai.settings import ReviewAISettings
+from hmda_reliability.runtime_ai import RuntimeAISettings
 from scripts import run_agentic_review_live as live_module
 
 pytestmark = pytest.mark.unit
@@ -54,7 +56,7 @@ def test_default_harness_is_disabled_and_never_calls_review(
     assert "disabled" in capsys.readouterr().out.lower()
 
 
-def test_opt_in_requires_all_provider_identity_and_revision_values(
+def test_opt_in_requires_provider_identity_values(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     calls: list[dict[str, object]] = []
@@ -73,7 +75,6 @@ def test_opt_in_requires_all_provider_identity_and_revision_values(
     assert calls == []
     assert "HMDA_AGENTIC_REVIEW_BASE_URL" in captured.err
     assert "HMDA_AGENTIC_REVIEW_MODEL" in captured.err
-    assert "HMDA_AGENTIC_REVIEW_PROJECT_REVISION" in captured.err
 
 
 def test_live_harness_passes_explicit_settings_and_deterministic_material(
@@ -97,7 +98,8 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
     assert exit_code == 1
     assert len(calls) == 1
     call = calls[0]
-    settings = cast(AgenticReviewSettings, call["settings"])
+    settings = cast(RuntimeAISettings, call["settings"])
+    review_settings = cast(ReviewAISettings, call["review_settings"])
     incident = cast(Incident, call["incident"])
     draft = cast(RemediationDraft, call["draft"])
     evidence = cast(Sequence[Evidence], call["evidence"])
@@ -107,7 +109,7 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
     assert settings.timeout_seconds == 15
     assert settings.max_retries == 0
     assert settings.max_output_tokens == 512
-    assert settings.max_prompt_bytes == 32_768
+    assert review_settings.max_prompt_bytes == 32_768
     assert settings.max_output_bytes == 16_384
     assert call["project_revision"] == "revision-123"
     assert call["artifact_root"] == tmp_path / "artifacts"
@@ -118,6 +120,102 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
     output = capsys.readouterr().out
     assert '"status": "input_rejected"' in output
     assert "live-test-secret" not in output
+
+
+@pytest.mark.parametrize("configured_revision", [None, "", "auto"])
+def test_live_harness_auto_resolves_project_revision(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    configured_revision: str | None,
+) -> None:
+    environment = _live_environment(tmp_path)
+    if configured_revision is None:
+        environment.pop("HMDA_AGENTIC_REVIEW_PROJECT_REVISION")
+    else:
+        environment["HMDA_AGENTIC_REVIEW_PROJECT_REVISION"] = configured_revision
+    calls: list[dict[str, object]] = []
+
+    monkeypatch.setattr(live_module, "_current_git_revision", lambda: "git-head-123")
+
+    def capture_review(**kwargs: object) -> AgenticReviewResult:
+        calls.append(kwargs)
+        return AgenticReviewResult(
+            status="input_rejected",
+            failure_code="simulated_typed_result",
+        )
+
+    exit_code = live_module.main(env=environment, reviewer=capture_review)
+
+    assert exit_code == 1
+    assert len(calls) == 1
+    assert calls[0]["project_revision"] == "git-head-123"
+
+
+def test_auto_project_revision_uses_clean_git_head(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    results = iter(
+        [
+            subprocess.CompletedProcess([], 0, stdout="git-head-123\n", stderr=""),
+            subprocess.CompletedProcess([], 0, stdout="", stderr=""),
+        ]
+    )
+    monkeypatch.setattr(
+        live_module.subprocess,
+        "run",
+        lambda *args, **kwargs: next(results),
+    )
+
+    assert live_module._current_git_revision() == "git-head-123"
+
+
+def test_auto_project_revision_rejects_dirty_tracked_worktree(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    results = iter(
+        [
+            subprocess.CompletedProcess([], 0, stdout="git-head-123\n", stderr=""),
+            subprocess.CompletedProcess(
+                [],
+                0,
+                stdout=" M src/hmda_reliability/review_ai/prompt.py\n",
+                stderr="",
+            ),
+        ]
+    )
+    monkeypatch.setattr(
+        live_module.subprocess,
+        "run",
+        lambda *args, **kwargs: next(results),
+    )
+
+    with pytest.raises(ValueError, match="clean tracked worktree"):
+        live_module._current_git_revision()
+
+
+def test_auto_project_revision_failure_stops_before_review(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_PROJECT_REVISION"] = "auto"
+    calls: list[dict[str, object]] = []
+
+    def fail_revision() -> str:
+        raise ValueError("git unavailable")
+
+    def fail_if_called(**kwargs: object) -> AgenticReviewResult:
+        calls.append(kwargs)
+        raise AssertionError("unresolved revision must not call provider")
+
+    monkeypatch.setattr(live_module, "_current_git_revision", fail_revision)
+
+    exit_code = live_module.main(env=environment, reviewer=fail_if_called)
+
+    assert exit_code == 2
+    assert calls == []
+    assert "configuration" in capsys.readouterr().err.lower()
 
 
 def test_invalid_numeric_live_configuration_fails_before_review(

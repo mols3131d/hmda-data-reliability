@@ -6,8 +6,8 @@ from copy import deepcopy
 
 import pytest
 
-from hmda_reliability.reliability.agentic_review import contracts
-from hmda_reliability.reliability.agentic_review import validator as validator_module
+from hmda_reliability.review_ai import contracts
+from hmda_reliability.review_ai import validator as validator_module
 
 from .conftest import NullSpikeReviewMaterial
 
@@ -151,6 +151,10 @@ def test_explicit_authority_and_action_patterns_are_rejected(
         "The review discusses the existing backfill plan.",
         "Backfill feasibility remains a human review topic.",
         "The draft contains a validation action for later review.",
+        (
+            "This report is advisory but backfill the 2025 partition "
+            "remains a historical option."
+        ),
         "복구 계획은 사람의 검토 대상이다.",
     ],
 )
@@ -188,6 +192,68 @@ def test_mvp_guard_is_conservative_for_context_heavy_action_text(
 
     validation = validator_module.validate_agentic_review(review_input, output)
 
+    assert validation.status == "rejected"
+    assert "forbidden_action" in validation.violations
+
+
+def test_approval_prefix_does_not_hide_a_comma_separated_action(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    review_input = _review_input(null_spike_review_material)
+    output = _safe_output(review_input).model_copy(
+        update={
+            "review_summary": "This requires human approval, execute the backfill now."
+        }
+    )
+
+    validation = validator_module.validate_agentic_review(review_input, output)
+
+    assert validation.status == "rejected"
+    assert validation.violations == ("forbidden_action",)
+
+
+@pytest.mark.parametrize(
+    ("review_summary", "expected"),
+    [
+        (
+            "This requires human approval, but execute the backfill now.",
+            "forbidden_action",
+        ),
+        (
+            "Do not wait, the model approves this recovery.",
+            "authority_escalation",
+        ),
+        ("This is advisory: backfill the 2025 partition.", "forbidden_action"),
+        ("Do not wait, backfill the 2025 partition.", "forbidden_action"),
+    ],
+)
+def test_unscoped_action_or_authority_is_rejected(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    review_summary: str,
+    expected: str,
+) -> None:
+    review_input = _review_input(null_spike_review_material)
+    output = _safe_output(review_input).model_copy(
+        update={"review_summary": review_summary}
+    )
+
+    validation = validator_module.validate_agentic_review(review_input, output)
+
+    assert validation.status == "rejected"
+    assert expected in validation.violations
+
+
+def test_quoted_action_text_remains_conservatively_rejected(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    review_input = _review_input(null_spike_review_material)
+    output = _safe_output(review_input).model_copy(
+        update={"review_summary": 'The log says: "DELETE FROM raw.hmda_loans".'}
+    )
+
+    validation = validator_module.validate_agentic_review(review_input, output)
+
+    assert validation.status == "rejected"
     assert "forbidden_action" in validation.violations
 
 
