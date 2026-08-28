@@ -160,7 +160,11 @@ def test_auto_project_revision_uses_clean_git_head(
             subprocess.CompletedProcess([], 0, stdout="", stderr=""),
         ]
     )
-    monkeypatch.setattr(live_module.subprocess, "run", lambda *args, **kwargs: next(results))
+    monkeypatch.setattr(
+        live_module.subprocess,
+        "run",
+        lambda *args, **kwargs: next(results),
+    )
 
     assert live_module._current_git_revision() == "git-head-123"
 
@@ -179,7 +183,11 @@ def test_auto_project_revision_rejects_dirty_tracked_worktree(
             ),
         ]
     )
-    monkeypatch.setattr(live_module.subprocess, "run", lambda *args, **kwargs: next(results))
+    monkeypatch.setattr(
+        live_module.subprocess,
+        "run",
+        lambda *args, **kwargs: next(results),
+    )
 
     with pytest.raises(ValueError, match="clean tracked worktree"):
         live_module._current_git_revision()

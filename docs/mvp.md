@@ -95,7 +95,7 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 
 - **Data Lake proof** — HMDA source가 Bronze와 dbt analytical layer까지 재현 가능하게 흐른다.
 - **Reliability proof** — 대표 synthetic incident를 deterministic evidence로 탐지·설명하고 recovery 뒤 같은 기준으로 다시 검증한다.
-- **Agentic contract proof** — structured review contract, evidence binding, forbidden-action guardrail과 evaluation을 deterministic하게 반복 검증할 수 있다.
+- **Agentic contract proof** — structured review contract, evidence binding, structured-fact validation과 evaluation을 deterministic하게 반복 검증할 수 있다.
 - **Live Agentic proof** — 같은 revision에서 실제 model invocation이 evidence와 `RemediationDraft`를 기반으로 structured review를 최소 한 번 만들고, model/config, prompt identity, project revision, evidence refs, output, latency와 제공 가능한 usage(token/cost)를 invocation evidence로 남긴다. 이 proof는 deterministic regression과 동일하게 취급하지 않는다.
 - **Safety proof** — Agentic output은 deterministic guardrail과 proposal-bound human approval을 우회해 mutation을 일으킬 수 없고, LLM availability 자체가 recovery authority를 부여하거나 변경하지 않는다.
 - **Reproducibility proof** — 정상, incident, recovery와 주요 failure/retry의 deterministic 결과를 같은 revision에서 다시 설명할 수 있고 live invocation 결과는 evidence로 보존된다.

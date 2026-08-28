@@ -87,7 +87,7 @@ def _record(
     elif status == "validation_failed":
         validation = contracts.AgenticReviewValidation(
             status="rejected",
-            violations=["forbidden_action"],
+            violations=["fabricated_evidence"],
         )
         failure_code = "deterministic_guard_failed"
     elif status == "unavailable":
@@ -135,6 +135,37 @@ def test_store_round_trips_logical_invocation_records(
     assert path == tmp_path / "agentic-review" / "invocations" / "inv-1.json"
     assert loaded == record
     assert path.stat().st_mode & 0o077 == 0
+
+
+@pytest.mark.parametrize(
+    ("status", "legacy_violations"),
+    [
+        ("accepted", ()),
+        ("validation_failed", ("forbidden_action",)),
+    ],
+)
+def test_store_loads_legacy_validation_provenance(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    status: str,
+    legacy_violations: tuple[str, ...],
+) -> None:
+    record = _record(null_spike_review_material, status=status)
+    payload = record.model_dump(mode="json")
+    validation = payload["validation"]
+    assert isinstance(validation, dict)
+    validation["policy_id"] = "forbidden-action-policy-v1"
+    validation["violations"] = list(legacy_violations)
+    store = store_module.InvocationEvidenceStore(tmp_path)
+    path = store.path_for(record.invocation_id)
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    loaded = store.load(record.invocation_id)
+
+    assert loaded.validation is not None
+    assert loaded.validation.policy_id == "forbidden-action-policy-v1"
+    assert loaded.validation.violations == legacy_violations
 
 
 def test_stored_record_replays_digest_without_raw_prompt_or_credentials(
