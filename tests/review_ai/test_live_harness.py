@@ -13,9 +13,9 @@ from hmda_reliability.review_ai import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewResult,
-    AgenticReviewValidation,
     PromptIdentity,
 )
+from hmda_reliability.review_ai.contracts import AgenticReviewValidation
 from hmda_reliability.runtime_ai import RuntimeAISettings
 from scripts import run_agentic_review_live as live_module
 

@@ -53,19 +53,34 @@ jobs:
             case "$domain" in
               data_platform)
                 for target in \
-                  data_platform hmda_data reliability \
+                  data_platform hmda_data reliability review_ai \
                   data_operations orchestration dbt; do
                   add_target "tests/$target"
                 done
                 ;;
               hmda_data)
                 for target in \
-                  hmda_data reliability data_operations orchestration dbt; do
+                  hmda_data reliability review_ai data_operations \
+                  orchestration dbt; do
                   add_target "tests/$target"
                 done
                 ;;
-              data_operations|reliability)
+              data_operations)
                 for target in reliability data_operations orchestration; do
+                  add_target "tests/$target"
+                done
+                ;;
+              reliability)
+                for target in \
+                  reliability review_ai data_operations orchestration; do
+                  add_target "tests/$target"
+                done
+                ;;
+              review_ai)
+                add_target tests/review_ai
+                ;;
+              runtime_ai)
+                for target in runtime_ai review_ai; do
                   add_target "tests/$target"
                 done
                 ;;
@@ -146,7 +161,7 @@ jobs:
                 domain="${path#tests/}"
                 domain="${domain%%/*}"
                 case "$domain" in
-                  data_operations|data_platform|dbt|hmda_data|orchestration|reliability)
+                  data_operations|data_platform|dbt|hmda_data|orchestration|reliability|review_ai|runtime_ai)
                     add_target "tests/$domain"
                     ;;
                   *)

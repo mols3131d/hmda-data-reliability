@@ -38,34 +38,26 @@ Source dependency는 `review_ai -> reliability`와 `review_ai -> runtime_ai`만 
 
 ## Review Boundary
 
-`review_null_spike()`는 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider output은 canonical identity, numeric facts, evidence reference와 forbidden-action boundary에 다시 대조된다.
+`review_null_spike()`는 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider output은 canonical identity, numeric facts, evidence reference와 forbidden-action boundary에 다시 대조된다. 결과는 acceptance, preflight rejection, provider unavailability, validation failure와 provenance failure를 typed result로 구분하며 exact status/failure mapping은 source와 executable specification이 소유한다.
 
-| Result | Boundary |
-| --- | --- |
-| `accepted` | Structured output, accepted deterministic validation과 durable invocation evidence가 모두 존재한다. |
-| `validation_failed` | Response schema 또는 deterministic guard가 실패하며 provider output을 public result로 노출하지 않는다. |
-| `unavailable` | Bounded provider invocation이 실패한다. |
-| `input_rejected` | Provider 호출 전 identity, evidence, canonical target 또는 prompt-size preflight가 실패한다. |
-| `provenance_failed` | Provider 결과를 create-only invocation evidence로 보존하지 못해 acceptance를 차단한다. |
+Provider가 실제로 호출된 logical review는 sanitized invocation evidence를 남긴다. Credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다. Exact storage layout과 record field는 source와 tests에서 확인한다.
 
-Provider가 실제로 호출된 logical review는 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/<invocation_id>.json`에 sanitized evidence를 남긴다. API key, credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다.
+## Package Root API
 
-## Public Surface
+`hmda_reliability.review_ai` package root는 review consumer가 직접 사용하는 최소 surface만 노출한다.
 
 - `AgenticReviewInput`, `AgenticReviewOutput`, `AgenticReviewResult`
-- `PromptIdentity`, `render_review_prompt()`
-- `validate_agentic_review()`
-- `AgenticInvocationEvidence`, `InvocationEvidenceStore`
+- `PromptIdentity`
 - `review_null_spike()`
 
-정확한 field와 validation behavior는 [`../../src/hmda_reliability/review_ai/`](../../src/hmda_reliability/review_ai/)와 [`../../tests/review_ai/`](../../tests/review_ai/)에서 확인한다.
+Prompt rendering, deterministic validation, provenance contract/store와 storage error는 domain 내부 module surface다. 필요할 때 owning module을 직접 읽고, 두 번째 외부 consumer가 생기기 전에는 package root API를 넓히지 않는다.
 
 ## Safety Boundaries
 
 - Model output은 approval 또는 recovery authority가 아니다.
 - Prompt에 전달되는 incident, evidence와 draft는 untrusted data로 취급한다.
 - Provider output은 deterministic validation을 통과해도 Reliability truth를 수정하지 않는다.
-- `input_rejected`는 provider를 호출하지 않고 invocation evidence directory도 만들지 않는다.
+- Provider 호출 전 거부된 input은 invocation provenance를 만들지 않는다.
 - Review-specific provenance store는 두 번째 독립 consumer가 생기기 전까지 이 domain이 소유한다.
 
 ## Reading Order
