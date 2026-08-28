@@ -1,11 +1,9 @@
 # Project Guidance
 
-`Always`는 모든 작업에서 읽고, `As needed`는 현재 작업에 관련될 때 읽는다.
-
-| Load | Document | Scope |
-| --- | --- | --- |
-| Always | [`docs/VISION.md`](docs/VISION.md) | 장기 방향, trust model과 AI delegation 원칙 |
-| Always | [`docs/language.md`](docs/language.md) | 언어 정책 |
-| As needed | [`DEVELOPMENT.md`](DEVELOPMENT.md) | 개발 환경, active tool, package layout과 code convention |
-| As needed | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 시스템 구조, 실행 경계와 domain ownership |
-| As needed | [`docs/mvp.md`](docs/mvp.md) | 현재 MVP 목표, scope와 acceptance |
+| Path | Description |
+| --- | --- |
+| [`docs/VISION.md`](docs/VISION.md) | 모든 작업에서 읽는다. 프로젝트의 장기 방향, trust model과 AI delegation 원칙을 소유한다. |
+| [`docs/language.md`](docs/language.md) | 모든 작업에서 읽는다. Repository 문서와 structured metadata의 언어 정책을 소유한다. |
+| [`DEVELOPMENT.md`](DEVELOPMENT.md) | 개발 환경, tool, package layout 또는 code convention이 작업에 영향을 줄 때 읽는다. Repository 개발 방식과 구현 context를 소유한다. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 시스템 구조, 실행 경계 또는 domain ownership이 판단에 영향을 줄 때 읽는다. Architecture와 domain boundary를 소유한다. |
+| [`docs/mvp.md`](docs/mvp.md) | 현재 제품 scope, 우선순위 또는 acceptance를 판단할 때 읽는다. MVP 목표와 acceptance boundary를 소유한다. |
