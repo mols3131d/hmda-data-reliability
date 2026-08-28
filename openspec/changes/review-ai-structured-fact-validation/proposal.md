@@ -14,7 +14,7 @@ tags:
 
 ## What Changes
 
-- Deterministic validator는 output이 제공된 Evidence만 참조하는지, incident identity가 같은지, canonical target과 numeric facts가 deterministic input과 같은지만 authoritative하게 검증한다.
+- Deterministic validator는 output이 제공된 Evidence만 참조하는지, incident ID가 같은지, canonical target과 numeric facts가 deterministic input과 같은지만 authoritative하게 검증한다. `incident_type`은 `AgenticReviewOutput` schema에서 `null_spike`로 제한한다.
 - Free-text advisory wording은 deterministic acceptance를 차단하지 않으며 active validation은 `authority_escalation`, `forbidden_action` violation과 `forbidden-action-policy-v1` identity를 생성하지 않는다.
 - Validation provenance는 structured-fact semantics를 식별하는 새 policy identity를 사용하고, 기존 `forbidden-action-policy-v1` record는 historical evidence로 계속 읽을 수 있게 한다.
 - Typed result, accepted-result provenance requirement, immutable invocation evidence와 deterministic violation ordering·uniqueness는 유지한다.
@@ -32,7 +32,7 @@ tags:
 
 #### `reliability-agentic-review`
 
-- Deterministic output validation을 structured evidence reference, incident identity와 canonical facts consistency에 한정한다.
+- Deterministic output validation을 structured evidence reference, incident ID와 canonical facts consistency에 한정하고 unsupported incident type은 output schema에서 거부한다.
 - Free-text advisory semantics를 blocking acceptance policy에서 제거하되 review output의 advisory-only/read-only boundary와 typed provenance contract를 유지한다.
 - Deterministic evaluation contract를 structured validation과 authority separation을 직접 검증하는 scenario로 정렬한다.
 

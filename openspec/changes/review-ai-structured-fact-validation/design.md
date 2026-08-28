@@ -15,7 +15,7 @@ description: "Active validation을 structured facts에 한정하면서 immutable
 
 ### D2. Remove natural-language inspection from the validator boundary
 
-- **Decision:** `validate_agentic_review()`는 Evidence reference, incident identity, target column과 deterministic facts 비교만 수행한다. Free-text fields를 합치거나 segment/pattern으로 검사하는 helper와 policy data는 삭제하며 다른 module이나 configuration으로 옮기지 않는다.
+- **Decision:** `validate_agentic_review()`는 Evidence reference, incident ID, target column과 deterministic facts 비교만 수행한다. `incident_type`은 `AgenticReviewOutput` schema가 `null_spike`로 제한한다. Free-text fields를 합치거나 segment/pattern으로 검사하는 helper와 policy data는 삭제하며 다른 module이나 configuration으로 옮기지 않는다.
 - **Rationale:** Action 또는 approval text를 해석하는 책임을 이동하면 같은 semantic judge가 다른 위치에 남는다. 실제 execution safety는 Review AI와 dependency 방향이 분리된 typed approval/recovery boundary가 소유한다.
 
 ### Boundary Changes
