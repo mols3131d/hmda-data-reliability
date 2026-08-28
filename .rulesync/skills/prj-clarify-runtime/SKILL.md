@@ -1,7 +1,6 @@
 ---
 name: prj-clarify-runtime
 description: Use this skill to reduce runtime understanding debt in this repository when important execution paths, decisions, state transitions, external actions, or failure causes are hard to reconstruct, or when existing runtime evidence is duplicated, noisy, disconnected, or owned at the wrong boundary. Preserve domain behavior and existing caller/consumer contracts. Clarify one reconstruction question at a time by reusing, moving, reducing, removing, or adding the smallest evidence needed. Do not use for defect debugging, correctness review, test design, monitoring, telemetry-platform design, performance profiling, or feature implementation.
-targets: [claudecode, codexcli, antigravity-ide, antigravity-cli]
 ---
 
 # Clarify Runtime
