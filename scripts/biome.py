@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the repository-pinned Biome CLI."""
+"""Run the current stable Biome CLI."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 from _commands import run_npx
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-BIOME_PACKAGE = "@biomejs/biome@2.5.10"
+BIOME_PACKAGE = "@biomejs/biome@latest"
 
 
 def main() -> int:
