@@ -1,24 +1,26 @@
 ---
 type: openspec-spec-driven-tdd-design
 category: design
-title: "Bounded agentic review design"
-description: "deterministic Reliability truth를 보존하면서 provider 호출, validation과 replay 가능한 invocation evidence를 분리한다."
+title: "Bounded Agentic Review Design"
+description: "deterministic Reliability truth를 보존하면서 review semantics, provider runtime, validation과 replay 가능한 invocation evidence를 분리한다."
 ---
 
 ## Approach
 
-`reliability/agentic_review/`를 기존 detection, impact, remediation과 나란히 두는 read-only surface로 추가한다. `review_null_spike()`는 input preflight → canonical input projection → provider call → parse와 deterministic validation → invocation evidence persistence 순서로 실행한다. Input preflight가 실패하면 provider와 evidence store를 호출하지 않는다.
+`review_ai`는 Reliability가 제공하는 deterministic `Incident`, `Evidence`, `RemediationDraft`를 입력으로 받는 read-only review surface를 소유한다. `review_null_spike()`는 input preflight → canonical input projection → provider call → parse와 deterministic validation → invocation evidence persistence 순서로 실행한다. Input preflight가 실패하면 provider와 evidence store를 호출하지 않는다.
 
-Provider SDK, prompt rendering, validator와 filesystem persistence는 서로 다른 책임으로 둔다. Public review surface는 approval, recovery 또는 data mutation API를 호출하지 않는다. Exact field, status, wire profile과 failure contract는 Spec이 소유하고, 이 문서는 구현을 제약하는 비자명한 결정만 기록한다.
+Prompt rendering, validator와 review provenance는 `review_ai`에 두고 provider-neutral settings와 OpenAI-compatible SDK adapter는 `runtime_ai`에 둔다. `reliability`는 AI provider implementation을 import하거나 re-export하지 않는다. Exact field, status, wire profile과 failure contract는 Spec이 소유하고, 이 문서는 구현을 제약하는 비자명한 결정만 기록한다.
+
+`reliability-agentic-review` capability와 `PromptIdentity` 이름은 behavioral identifier로 유지한다. 후속 ownership refactor는 이 identifier를 rename하지 않고 implementation owner만 분리한다.
 
 ## Boundaries
 
 | Boundary | Owns | Does Not Own |
 | --- | --- | --- |
 | **Deterministic Reliability** | `Incident`, `Evidence`, `RemediationDraft`와 null-spike canonical facts | LLM 해석, provider 선택, approval 결정 |
-| **Agentic Review** | snapshot, prompt projection, structured output와 deterministic validation | incident 탐지, RCA truth 변경, action 실행 |
-| **OpenAI-compatible adapter** | SDK client와 bounded transport behavior | Reliability business rule, approval 또는 recovery |
-| **Invocation Evidence Store** | logical invocation provenance의 create-only persistence | canonical Reliability state 변경, raw prompt/log 보존 |
+| **Review AI** | snapshot, prompt projection, structured output, deterministic validation, review orchestration과 invocation provenance | incident 탐지, RCA truth 변경, action 실행 |
+| **Runtime AI** | provider-neutral settings, SDK client와 bounded transport behavior | Reliability business rule, review policy, provenance meaning, approval 또는 recovery |
+| **Invocation Evidence Store** | `review_ai` 내부 logical invocation provenance의 create-only persistence | canonical Reliability state 변경, raw prompt/log 보존 |
 | **Approval / Recovery** | 기존 exact proposal과 external approval 이후의 mutation | Agentic output 해석 또는 자동 실행 |
 
 ## Decisions
@@ -31,7 +33,7 @@ Provider SDK, prompt rendering, validator와 filesystem persistence는 서로 �
 
 ### D2. Keep one thin provider adapter
 
-- **Decision:** OpenAI Python SDK는 하나의 OpenAI-compatible adapter 뒤에서만 사용한다. SDK hidden retry는 끄고 transport retry ownership은 adapter 한 곳에 둔다. Reliability domain은 provider별 branch를 소유하지 않는다.
+- **Decision:** OpenAI Python SDK는 `runtime_ai`의 하나의 OpenAI-compatible adapter 뒤에서만 사용한다. SDK hidden retry는 끄고 transport retry ownership은 adapter 한 곳에 둔다. `review_ai`는 provider별 branch를 소유하지 않는다.
 - **Rationale:** Local Ollama와 cloud endpoint가 공유하는 최소 wire profile을 한 경계에서 검증하고 retry 횟수와 failure classification을 예측 가능하게 만든다.
 - **Trade-off:** Common profile을 지원하지 않는 model은 이 slice에서 사용할 수 없다. Provider-specific profile은 실제 필요가 생길 때 별도 변경으로 다룬다.
 
@@ -55,7 +57,7 @@ Provider SDK, prompt rendering, validator와 filesystem persistence는 서로 �
 
 ## Verification
 
-Offline test는 snapshot invariants, canonical input rendering, provider-independent validation, conservative action guard, adapter transport behavior와 create-only evidence replay를 검증한다. Integration test는 accepted와 각 typed failure 전후 deterministic Reliability state가 같고 invocation evidence write 외 mutation이 없는지 확인한다. Ollama live proof는 같은 adapter와 validator를 사용하되 default suite와 분리한다.
+Offline test는 `tests/review_ai`와 `tests/runtime_ai`에서 snapshot invariants, canonical input rendering, provider-independent validation, conservative action guard, adapter transport behavior와 create-only evidence replay를 검증한다. Integration test는 accepted와 각 typed failure 전후 deterministic Reliability state가 같고 invocation evidence write 외 mutation이 없는지 확인한다. Ollama live proof는 같은 runtime adapter와 review validator를 사용하되 default suite와 분리한다.
 
 ## Risks
 

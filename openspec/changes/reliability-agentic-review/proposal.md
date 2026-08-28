@@ -32,7 +32,7 @@ MVP는 deterministic truth를 유지한 채 LLM이 제공된 evidence와 기존 
 
 | Scope | Decision |
 | --- | --- |
-| **In scope** | Reliability domain의 `null_spike` 단일 vertical slice, evidence-bound advisory review, deterministic validation, typed failure result, OpenAI-compatible invocation과 최소 invocation provenance |
+| **In scope** | `null_spike` deterministic Reliability evidence를 입력으로 사용하는 단일 advisory review vertical slice, deterministic validation, typed failure result, OpenAI-compatible invocation과 최소 invocation provenance |
 | **Out of scope** | 다른 incident type parity, LLM 기반 incident detection 또는 RCA, approval/recovery/mutation authority, autonomous action, multi-agent/RAG/persistent memory, generic gateway·provider routing platform, Langfuse와 production authorization |
 
 ## Capabilities
@@ -43,12 +43,14 @@ MVP는 deterministic truth를 유지한 채 LLM이 제공된 evidence와 기존 
 
 시스템이 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 검토 가능한 structured advisory 결과로 변환한다. 또한 canonical facts·evidence references를 deterministic하게 판정하고 action boundary에는 bounded conservative guard를 적용하며, provider invocation을 replay 가능한 provenance와 함께 기록한다.
 
+`reliability-agentic-review` capability 이름과 `PromptIdentity`는 behavioral identifier로 유지한다. 구현 ownership은 후속 refactor에 따라 `review_ai`와 `runtime_ai`로 분리될 수 있으며 capability identity 자체를 의미하지 않는다.
+
 ## Impact
 
 | Surface | Impact |
 | --- | --- |
-| **Code / Systems** | `src/hmda_reliability/reliability` 아래 review contract, typed result, validator, provider boundary와 invocation evidence 저장 경로를 추가하고 public reliability export를 확장한다. |
+| **Code / Systems** | `review_ai`가 review contract, prompt, validation, orchestration과 invocation provenance를 소유하고 `runtime_ai`가 provider-neutral settings와 OpenAI-compatible adapter를 소유한다. `reliability`는 deterministic input contract를 제공하며 AI surface를 re-export하지 않는다. |
 | **Data / Contracts** | Pydantic frozen snapshot/input/output/validation/invocation contract와 `null_spike` adversarial fixture를 추가한다. 기존 `Incident`, `Evidence`, `RemediationDraft`, `RecoveryProposal`의 authority 의미는 변경하지 않는다. |
-| **Interfaces / APIs** | OpenAI-compatible `chat.completions` 기반 local/cloud-compatible review 호출 경계와 deterministic 호출 없는 validation API를 추가한다. Input preflight 실패는 provider invocation 없이 종료한다. |
-| **Operations / Dependencies** | OpenAI Python SDK를 runtime dependency로 추가하고 local invocation은 Ollama를 사용한다. Invocation evidence는 기존 `HMDA_RELIABILITY_ARTIFACTS_DIR` 아래 logical call별로 canonical input projection과 parsed result를 저장하며 API key, credential, raw prompt/log와 raw provider error는 저장하지 않는다. |
-| **Documentation** | Reliability domain guide, testing guidance와 `.env.example`에 opt-in provider configuration 및 live-proof 경계를 문서화한다. |
+| **Interfaces / APIs** | `review_ai`의 bounded review entry point와 OpenAI-compatible `chat.completions` 기반 local/cloud-compatible provider boundary를 제공한다. Input preflight 실패는 provider invocation 없이 종료한다. |
+| **Operations / Dependencies** | OpenAI Python SDK를 runtime dependency로 사용하고 local invocation은 Ollama를 지원한다. Invocation evidence는 기존 `HMDA_RELIABILITY_ARTIFACTS_DIR` 아래 logical call별로 canonical input projection과 parsed result를 저장하며 API key, credential, raw prompt/log와 raw provider error는 저장하지 않는다. |
+| **Documentation** | Review AI, Runtime AI, Reliability와 testing guide에 ownership, opt-in provider configuration 및 live-proof 경계를 문서화한다. |
