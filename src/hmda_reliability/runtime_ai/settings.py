@@ -1,4 +1,4 @@
-"""Explicit runtime settings for bounded agentic review."""
+"""Explicit provider-neutral AI runtime settings."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
 
-from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.runtime_ai.contracts import RuntimeAIContract
 
 
 def _sanitize_base_url(url: str) -> str:
@@ -16,7 +16,7 @@ def _sanitize_base_url(url: str) -> str:
     return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
 
 
-class AgenticReviewSettings(ReliabilityContract):
+class RuntimeAISettings(RuntimeAIContract):
     """Provider settings supplied explicitly by the caller."""
 
     base_url: AnyHttpUrl

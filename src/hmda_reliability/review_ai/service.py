@@ -11,7 +11,9 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
-from hmda_reliability.reliability.agentic_review.contracts import (
+from hmda_reliability.reliability.contracts import Evidence, Incident
+from hmda_reliability.reliability.remediation import RemediationDraft
+from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewResult,
@@ -20,34 +22,27 @@ from hmda_reliability.reliability.agentic_review.contracts import (
     PromptIdentity,
     ReviewValidationStatus,
 )
-from hmda_reliability.reliability.agentic_review.evidence import (
+from hmda_reliability.review_ai.evidence import (
     AgenticInvocationEvidence,
     SanitizedAgenticReviewConfiguration,
 )
-from hmda_reliability.reliability.agentic_review.prompt import (
-    PromptTooLargeError,
-    RenderedPrompt,
-    render_review_prompt,
-)
-from hmda_reliability.reliability.agentic_review.provider import (
-    OpenAICompatibleAdapter,
-    ProviderResponse,
-    ProviderResponseTooLargeError,
-    ProviderUnavailableError,
-    ProviderUsage,
-)
-from hmda_reliability.reliability.agentic_review.settings import (
-    AgenticReviewSettings,
-)
-from hmda_reliability.reliability.agentic_review.store import (
+from hmda_reliability.review_ai.prompt import PromptTooLargeError, render_review_prompt
+from hmda_reliability.review_ai.store import (
     InvocationEvidenceStore,
     InvocationEvidenceStoreError,
 )
-from hmda_reliability.reliability.agentic_review.validator import (
-    validate_agentic_review,
+from hmda_reliability.review_ai.validator import validate_agentic_review
+from hmda_reliability.runtime_ai.contracts import (
+    ProviderResponse,
+    ProviderUsage,
+    RenderedPrompt,
 )
-from hmda_reliability.reliability.contracts import Evidence, Incident
-from hmda_reliability.reliability.remediation import RemediationDraft
+from hmda_reliability.runtime_ai.provider import (
+    OpenAICompatibleAdapter,
+    ProviderResponseTooLargeError,
+    ProviderUnavailableError,
+)
+from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 
 class ReviewProvider(Protocol):
@@ -70,7 +65,7 @@ def review_null_spike(
     draft: RemediationDraft,
     prompt_identity: PromptIdentity,
     project_revision: str,
-    settings: AgenticReviewSettings,
+    settings: RuntimeAISettings,
     provider: ReviewProvider | None = None,
     evidence_store: InvocationEvidenceWriter | None = None,
     artifact_root: Path = Path(".local/artifacts"),
@@ -204,7 +199,7 @@ def _build_record(
     invocation_id: str,
     recorded_at: datetime,
     status: AgenticReviewStatus,
-    settings: AgenticReviewSettings,
+    settings: RuntimeAISettings,
     review_input: AgenticReviewInput,
     rendered: RenderedPrompt,
     parsed_output: AgenticReviewOutput | None,
@@ -241,7 +236,7 @@ def _build_record(
 def _persist_result(
     *,
     record: AgenticInvocationEvidence,
-    settings: AgenticReviewSettings,
+    settings: RuntimeAISettings,
     writer: InvocationEvidenceWriter,
 ) -> AgenticReviewResult:
     max_record_bytes = settings.max_prompt_bytes + settings.max_output_bytes + 16_384

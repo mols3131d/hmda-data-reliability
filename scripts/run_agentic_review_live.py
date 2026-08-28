@@ -12,26 +12,26 @@ from typing import Protocol
 from pydantic import ValidationError
 
 from hmda_reliability.reliability import (
-    AgenticReviewResult,
-    AgenticReviewSettings,
     DetectionRequest,
     Evidence,
     FreshnessMeasurementStatus,
     Incident,
     ProfileSnapshot,
-    PromptIdentity,
     RemediationDraft,
     RemediationDraftRequest,
     create_remediation_draft,
     detect_basic_incidents,
-    review_null_spike,
 )
-from hmda_reliability.reliability.agentic_review import (
+from hmda_reliability.review_ai import (
     AgenticInvocationEvidence,
+    AgenticReviewResult,
     AgenticReviewStatus,
+    PromptIdentity,
     ReviewValidationStatus,
     render_canonical_input,
+    review_null_spike,
 )
+from hmda_reliability.runtime_ai import RuntimeAISettings
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _REQUIRED_ENVIRONMENT = (
@@ -51,7 +51,7 @@ class Reviewer(Protocol):
         draft: RemediationDraft,
         prompt_identity: PromptIdentity,
         project_revision: str,
-        settings: AgenticReviewSettings,
+        settings: RuntimeAISettings,
         artifact_root: Path,
     ) -> AgenticReviewResult: ...
 
@@ -80,7 +80,7 @@ def main(
         return 2
 
     try:
-        settings = AgenticReviewSettings(
+        settings = RuntimeAISettings(
             base_url=environment["HMDA_AGENTIC_REVIEW_BASE_URL"],
             api_key=environment["HMDA_AGENTIC_REVIEW_API_KEY"],
             model=environment["HMDA_AGENTIC_REVIEW_MODEL"],
@@ -183,7 +183,7 @@ def _build_null_spike_material() -> tuple[Incident, Evidence, RemediationDraft]:
 def _verify_live_provenance(
     result: AgenticReviewResult,
     *,
-    settings: AgenticReviewSettings,
+    settings: RuntimeAISettings,
     project_revision: str,
 ) -> bool:
     if result.status in {

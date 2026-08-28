@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from hmda_reliability.reliability.agentic_review.contracts import (
+from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewValidation,
