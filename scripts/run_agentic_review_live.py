@@ -86,6 +86,11 @@ def main(
 
     try:
         project_revision = _project_revision(environment)
+    except ValueError as error:
+        print(f"Invalid live project revision: {error}", file=sys.stderr)
+        return 2
+
+    try:
         settings = RuntimeAISettings(
             base_url=environment["HMDA_AGENTIC_REVIEW_BASE_URL"],
             api_key=environment["HMDA_AGENTIC_REVIEW_API_KEY"],
