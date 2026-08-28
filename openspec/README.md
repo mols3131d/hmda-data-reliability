@@ -19,8 +19,7 @@ Review feedback은 별도 canonical artifact가 아니라 원인을 소유하는
 | 파일 | 소유하는 지침 |
 | --- | --- |
 | [`schemas/spec-driven-tdd/schema.yaml`](schemas/spec-driven-tdd/schema.yaml) | 범용 workflow, artifact 목적·의존성·완료 조건과 gate |
-| [`config.yaml`](config.yaml) | 사용할 schema와 repository-specific context, naming, 추가 규칙 |
-| [`AGENTS.md`](AGENTS.md) | OpenSpec workflow 사용 여부와 무관하게 `openspec/`에서 지켜야 할 agent 행동 규칙 |
+| [`config.yaml`](config.yaml) | 사용할 schema와 OpenSpec workflow용 repository-specific context, naming, canonical boundary와 artifact별 추가 규칙 |
 | `README.md` | 구조, canonical boundary와 지침 소유권을 설명하는 인간용 안내 |
 | `schemas/spec-driven-tdd/templates/*` | artifact 구조·필드·parser contract와 그 구조에 종속된 작성 안내 |
 
@@ -30,4 +29,4 @@ Change의 proposal/applicable specs/design/tasks는 작업 근거와 intended ch
 
 `schema.yaml`은 범용성과 호환성을 유지하며 project-specific 규칙이나 template surface의 세부 작성 규칙을 반복하지 않는다.
 
-하위 `README.md`에는 해당 경로에만 필요한 설명을 둔다. 하위 `AGENTS.md` 생성 여부는 [Rule의 Selection 기준](../docs/development/ai-agent/rule.md#selection)을 따른다.
+하위 `README.md`에는 해당 경로에만 필요한 설명을 둔다. OpenSpec update 이후에도 OpenSpec workflow에 주입해야 하는 repository-specific guidance는 `config.yaml`의 `context` 또는 `rules`가 소유한다.
