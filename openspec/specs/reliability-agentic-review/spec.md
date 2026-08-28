@@ -127,8 +127,10 @@ Provider response가 schema validation을 통과한 뒤 시스템은 network 또
 | Violation | Deterministic condition |
 | --- | --- |
 | `fabricated_evidence` | `evidence_used` 또는 finding의 `evidence_refs`가 provided Evidence subset이 아님 |
-| `incident_mismatch` | output의 `incident_id` 또는 `incident_type`이 input과 다름 |
+| `incident_mismatch` | output의 `incident_id`가 input과 다름 |
 | `deterministic_contradiction` | output의 `target_column` 또는 `deterministic_facts`가 canonical input과 다름 |
+
+`AgenticReviewOutput.incident_type`은 schema에서 `null_spike`로 제한한다. 지원하지 않는 incident type은 schema-invalid response로 거부되며 deterministic validator에 도달하지 않는다.
 
 Validation result는 `structured-fact-validation-v1` policy identity를 사용해야 한다(SHALL). Validator는 `review_summary`, finding description 또는 uncertainty의 command, approval, authority, negation, quotation, punctuation이나 다른 자연어 의미를 acceptance의 blocking oracle로 사용해서는 안 된다(MUST NOT). Structured violation이 없으면 free-text wording과 무관하게 validation을 accepted로 반환해야 하며(SHALL), 이 acceptance는 approval, recovery 또는 mutation authority를 생성하지 않는다(MUST NOT).
 
@@ -139,8 +141,13 @@ Validation result는 `structured-fact-validation-v1` policy identity를 사용�
 
 #### Scenario: Identity or canonical fact contradiction is rejected
 
-- **WHEN** output의 `incident_id`, `incident_type`, `target_column` 또는 `deterministic_facts`가 input의 deterministic facts와 다를 때
+- **WHEN** schema-valid output의 `incident_id`, `target_column` 또는 `deterministic_facts`가 input의 deterministic facts와 다를 때
 - **THEN** validator는 `incident_mismatch` 또는 `deterministic_contradiction` violation을 포함한 rejected result를 반환하고 model 주장을 deterministic Reliability 결과보다 우선해서는 안 된다(MUST NOT).
+
+#### Scenario: Unsupported incident type is rejected by output schema
+
+- **WHEN** provider response가 `null_spike`가 아닌 `incident_type`을 반환할 때
+- **THEN** `AgenticReviewOutput` schema validation에서 response를 거부하고 deterministic validator를 실행해서는 안 된다(MUST NOT).
 
 #### Scenario: Multiple structured violations keep stable order
 
@@ -313,7 +320,7 @@ Sanitized record, stored `canonical_input`과 stored output은 configured size l
 
 #### Scenario: Prompt injection is data, not instruction
 
-- **WHEN** Evidence summary/payload 또는 provider output에 direct/indirect prompt-injection-like 문장이 포함될 때
+- **WHEN** Evidence summary/payload 또는 provider output에 direct/indirect prompt-injection-like 문장이 포함되어 있을 때
 - **THEN** 시스템은 그 문장을 Reliability instruction으로 실행하거나 권한으로 승격해서는 안 되며(MUST NOT), validation은 structured Evidence reference, identity와 canonical facts에만 의해 결정되어야 한다.
 
 #### Scenario: Ollama live proof
