@@ -87,7 +87,10 @@ def main(
     try:
         project_revision = _project_revision(environment)
     except ValueError as error:
-        print(f"Invalid live project revision: {error}", file=sys.stderr)
+        print(
+            f"Invalid live agentic review configuration: project revision: {error}",
+            file=sys.stderr,
+        )
         return 2
 
     try:
