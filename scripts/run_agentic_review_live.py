@@ -159,8 +159,21 @@ def _project_revision(environment: Mapping[str, str]) -> str:
 
 def _current_git_revision() -> str:
     try:
-        completed = subprocess.run(
+        revision_result = subprocess.run(
             ["git", "-C", str(_REPOSITORY_ROOT), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        status_result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(_REPOSITORY_ROOT),
+                "status",
+                "--porcelain",
+                "--untracked-files=no",
+            ],
             check=True,
             capture_output=True,
             text=True,
@@ -168,9 +181,11 @@ def _current_git_revision() -> str:
     except (OSError, subprocess.CalledProcessError) as error:
         raise ValueError("project revision could not be resolved from Git") from error
 
-    revision = completed.stdout.strip()
+    revision = revision_result.stdout.strip()
     if not revision:
         raise ValueError("project revision could not be resolved from Git")
+    if status_result.stdout.strip():
+        raise ValueError("auto project revision requires a clean tracked worktree")
     return revision
 
 
