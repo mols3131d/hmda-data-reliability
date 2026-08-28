@@ -6,7 +6,7 @@ Root `CHATBOT.md`는 chatbot harness에서 누락되는 repository context와 Ag
 
 - [`AGENTS.md`](AGENTS.md)
 - [`.agents/route/ROUTE.md`](.agents/route/ROUTE.md)
-- Git/GitHub 작업에서는 `prj-vcs-git-github`를 반드시 선택·로드한다. 필요한 guide, template과 live context 선택은 해당 Skill에 위임하고, 세부 Git/GitHub 정책은 이 문서에서 중복 소유하지 않는다.
+- Git/GitHub 작업에서는 [`.rulesync/skills/prj-vcs-git-github/SKILL.md`](.rulesync/skills/prj-vcs-git-github/SKILL.md)를 반드시 읽는다. 필요한 guide, template과 live context 선택은 해당 Skill에 위임하고, 세부 Git/GitHub 정책은 이 문서에서 중복 소유하지 않는다.
 
 ## Scoped AGENTS.md
 
