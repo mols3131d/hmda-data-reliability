@@ -6,6 +6,14 @@ context: |
 
   Domain ownership은 docs/domains/OVERVIEW.md를 따른다.
 
+  OpenSpec contract boundary:
+  - `specs/**`는 current capability의 canonical contract다.
+  - `changes/**`는 planned/in-flight work와 archive history이며 current contract를 override하지 않는다.
+  - Change 내용을 current system fact로 사용할 때는 관련 `specs/**`, source/tests와 현재 revision evidence를 확인한다.
+  - 새 Spec 또는 Change를 만들기 전에 같은 capability의 Spec이나 같은 목적의 active Change를 확인하고, 같은 목적이면 기존 artifact를 갱신한다.
+  - Spec-level behavior가 바뀌면 영향받는 Spec과 Change 범위를 맞춘다. 바뀌지 않으면 schema가 지원하는 spec-free 경로를 사용하고 불필요한 Capability나 Requirement를 만들지 않는다.
+  - Review feedback은 별도 canonical artifact로 만들지 않고 원인을 소유하는 planning artifact 또는 implementation work로 반영한다.
+
   Spec ID:
   <domain>[-<subdomain>]-<capability>[-<extensions>]
 
