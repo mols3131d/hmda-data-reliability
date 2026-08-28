@@ -10,11 +10,12 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from hmda_reliability.reliability.agentic_review import contracts, provider
-from hmda_reliability.reliability.agentic_review import evidence as evidence_module
-from hmda_reliability.reliability.agentic_review import prompt as prompt_module
-from hmda_reliability.reliability.agentic_review import store as store_module
-from hmda_reliability.reliability.agentic_review.settings import AgenticReviewSettings
+from hmda_reliability.review_ai import contracts
+from hmda_reliability.review_ai import evidence as evidence_module
+from hmda_reliability.review_ai import prompt as prompt_module
+from hmda_reliability.review_ai import store as store_module
+from hmda_reliability.runtime_ai import contracts as runtime_contracts
+from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 from .conftest import NullSpikeReviewMaterial
 
@@ -48,8 +49,8 @@ def _output(
     )
 
 
-def _settings() -> AgenticReviewSettings:
-    return AgenticReviewSettings(
+def _settings() -> RuntimeAISettings:
+    return RuntimeAISettings(
         base_url="http://localhost:11434/v1",
         api_key="local-test-key",
         model="test-model",
@@ -103,7 +104,7 @@ def _record(
         failure_code=failure_code,
         latency_ms=125.5,
         attempt_count=2 if status == "unavailable" else 1,
-        usage=provider.ProviderUsage(
+        usage=runtime_contracts.ProviderUsage(
             prompt_tokens=100,
             completion_tokens=25,
             total_tokens=125,

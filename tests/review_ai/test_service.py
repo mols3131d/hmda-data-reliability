@@ -9,30 +9,28 @@ from pathlib import Path
 
 import pytest
 
-from hmda_reliability.reliability.agentic_review import contracts
-from hmda_reliability.reliability.agentic_review import provider as provider_module
-from hmda_reliability.reliability.agentic_review import service as service_module
-from hmda_reliability.reliability.agentic_review import store as store_module
-from hmda_reliability.reliability.agentic_review.evidence import (
-    AgenticInvocationEvidence,
-)
-from hmda_reliability.reliability.agentic_review.prompt import RenderedPrompt
-from hmda_reliability.reliability.agentic_review.settings import AgenticReviewSettings
+from hmda_reliability.review_ai import contracts
+from hmda_reliability.review_ai import service as service_module
+from hmda_reliability.review_ai import store as store_module
+from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
 from hmda_reliability.reliability.contracts import Evidence
+from hmda_reliability.runtime_ai import contracts as runtime_contracts
+from hmda_reliability.runtime_ai import provider as provider_module
+from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 from .conftest import NullSpikeReviewMaterial
 
 pytestmark = pytest.mark.integration
 
 
-def _settings(**updates: object) -> AgenticReviewSettings:
+def _settings(**updates: object) -> RuntimeAISettings:
     values: dict[str, object] = {
         "base_url": "http://localhost:11434/v1",
         "api_key": "local-test-key",
         "model": "test-model",
     }
     values.update(updates)
-    return AgenticReviewSettings.model_validate(values)
+    return RuntimeAISettings.model_validate(values)
 
 
 def _review_input(material: NullSpikeReviewMaterial) -> contracts.AgenticReviewInput:
@@ -65,7 +63,7 @@ class FakeProvider:
     def __init__(
         self,
         outcome: (
-            provider_module.ProviderResponse
+            runtime_contracts.ProviderResponse
             | provider_module.ProviderUnavailableError
             | provider_module.ProviderResponseTooLargeError
         ),
@@ -75,7 +73,7 @@ class FakeProvider:
         self.calls = 0
         self.events = events
 
-    def invoke(self, rendered: RenderedPrompt) -> provider_module.ProviderResponse:
+    def invoke(self, rendered: runtime_contracts.RenderedPrompt) -> runtime_contracts.ProviderResponse:
         self.calls += 1
         if self.events is not None:
             self.events.append("provider")
@@ -117,7 +115,7 @@ def _call(
     *,
     provider: service_module.ReviewProvider,
     evidence_store: service_module.InvocationEvidenceWriter,
-    settings: AgenticReviewSettings | None = None,
+    settings: RuntimeAISettings | None = None,
     evidence: Sequence[Evidence] | None = None,
 ) -> contracts.AgenticReviewResult:
     return service_module.review_null_spike(
@@ -141,11 +139,11 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
     material = null_spike_review_material
     events: list[str] = []
     provider = FakeProvider(
-        provider_module.ProviderResponse(
+        runtime_contracts.ProviderResponse(
             content=_safe_output(material).model_dump_json(),
             attempt_count=1,
             latency_ms=12.5,
-            usage=provider_module.ProviderUsage(total_tokens=123),
+            usage=runtime_contracts.ProviderUsage(total_tokens=123),
             trace_id="req-1",
         ),
         events,
@@ -179,13 +177,7 @@ def test_preflight_rejection_never_calls_provider_or_evidence_store(
     max_prompt_bytes: int,
     failure_code: str,
 ) -> None:
-    provider = FakeProvider(
-        provider_module.ProviderResponse(
-            content="{}",
-            attempt_count=1,
-            latency_ms=1,
-        )
-    )
+    provider = FakeProvider(runtime_contracts.ProviderResponse(content="{}", attempt_count=1, latency_ms=1))
     store = RecordingStore(tmp_path)
 
     result = _call(
@@ -230,13 +222,7 @@ def test_schema_and_guard_failures_are_persisted_without_exposing_output(
             prompt_identity=contracts.PromptIdentity(),
             project_revision="e09c54b",
             settings=_settings(),
-            provider=FakeProvider(
-                provider_module.ProviderResponse(
-                    content=content,
-                    attempt_count=1,
-                    latency_ms=5,
-                )
-            ),
+            provider=FakeProvider(runtime_contracts.ProviderResponse(content=content, attempt_count=1, latency_ms=5)),
             evidence_store=store,
             invocation_id_factory=lambda index=index: f"inv-{index}",
             clock=lambda: datetime(2026, 8, 27, 2, 0, tzinfo=UTC),
@@ -262,20 +248,10 @@ def test_unavailable_provider_is_typed_and_persisted(
     tmp_path: Path,
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
-    provider = FakeProvider(
-        provider_module.ProviderUnavailableError(
-            failure_code="provider_connection_error",
-            attempt_count=2,
-            latency_ms=75,
-        )
-    )
+    provider = FakeProvider(provider_module.ProviderUnavailableError(failure_code="provider_connection_error", attempt_count=2, latency_ms=75))
     store = RecordingStore(tmp_path)
 
-    result = _call(
-        null_spike_review_material,
-        provider=provider,
-        evidence_store=store,
-    )
+    result = _call(null_spike_review_material, provider=provider, evidence_store=store)
 
     assert result.status == "unavailable"
     assert result.output is None
@@ -289,19 +265,8 @@ def test_unavailable_provider_is_typed_and_persisted(
 def test_persistence_failure_blocks_an_otherwise_accepted_result(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
-    provider = FakeProvider(
-        provider_module.ProviderResponse(
-            content=_safe_output(null_spike_review_material).model_dump_json(),
-            attempt_count=1,
-            latency_ms=5,
-        )
-    )
-
-    result = _call(
-        null_spike_review_material,
-        provider=provider,
-        evidence_store=FailingStore(),
-    )
+    provider = FakeProvider(runtime_contracts.ProviderResponse(content=_safe_output(null_spike_review_material).model_dump_json(), attempt_count=1, latency_ms=5))
+    result = _call(null_spike_review_material, provider=provider, evidence_store=FailingStore())
 
     assert result.status == "provenance_failed"
     assert result.output is None
@@ -322,19 +287,9 @@ def test_review_preserves_reliability_objects_and_target_state(
     }
     target_state = tmp_path / "target-state.txt"
     target_state.write_text("unchanged", encoding="utf-8")
-    provider = FakeProvider(
-        provider_module.ProviderResponse(
-            content=_safe_output(material).model_dump_json(),
-            attempt_count=1,
-            latency_ms=5,
-        )
-    )
+    provider = FakeProvider(runtime_contracts.ProviderResponse(content=_safe_output(material).model_dump_json(), attempt_count=1, latency_ms=5))
 
-    result = _call(
-        material,
-        provider=provider,
-        evidence_store=RecordingStore(tmp_path / "artifacts"),
-    )
+    result = _call(material, provider=provider, evidence_store=RecordingStore(tmp_path / "artifacts"))
 
     assert result.status == "accepted"
     assert material.detection.incident.model_dump(mode="python") == before["incident"]
@@ -349,13 +304,7 @@ def test_service_returns_provenance_failed_on_real_store_directory_error(
 ) -> None:
     blocked_file = tmp_path / "blocked"
     blocked_file.write_text("file-not-dir", encoding="utf-8")
-    provider = FakeProvider(
-        provider_module.ProviderResponse(
-            content=_safe_output(null_spike_review_material).model_dump_json(),
-            attempt_count=1,
-            latency_ms=5,
-        )
-    )
+    provider = FakeProvider(runtime_contracts.ProviderResponse(content=_safe_output(null_spike_review_material).model_dump_json(), attempt_count=1, latency_ms=5))
 
     result = service_module.review_null_spike(
         incident=null_spike_review_material.detection.incident,
@@ -378,13 +327,7 @@ def test_service_leaves_no_accepted_record_when_directory_fsync_fails(
     null_spike_review_material: NullSpikeReviewMaterial,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    provider = FakeProvider(
-        provider_module.ProviderResponse(
-            content=_safe_output(null_spike_review_material).model_dump_json(),
-            attempt_count=1,
-            latency_ms=5,
-        )
-    )
+    provider = FakeProvider(runtime_contracts.ProviderResponse(content=_safe_output(null_spike_review_material).model_dump_json(), attempt_count=1, latency_ms=5))
 
     def failing_fsync_directory(directory: Path) -> None:
         raise OSError("simulated directory fsync failure")

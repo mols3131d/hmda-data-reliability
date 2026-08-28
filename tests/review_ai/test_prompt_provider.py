@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from hmda_reliability.reliability.agentic_review import contracts
-from hmda_reliability.reliability.agentic_review import prompt as prompt_module
-from hmda_reliability.reliability.agentic_review import provider as provider_module
-from hmda_reliability.reliability.agentic_review.settings import AgenticReviewSettings
+from hmda_reliability.review_ai import contracts
+from hmda_reliability.review_ai import prompt as prompt_module
+from hmda_reliability.runtime_ai import provider as provider_module
+from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 from .conftest import NullSpikeReviewMaterial
 
@@ -24,14 +24,14 @@ def _review_input(material: NullSpikeReviewMaterial) -> contracts.AgenticReviewI
     )
 
 
-def _settings(**updates: object) -> AgenticReviewSettings:
+def _settings(**updates: object) -> RuntimeAISettings:
     values: dict[str, object] = {
         "base_url": "http://localhost:11434/v1",
         "api_key": "local-test-key",
         "model": "test-model",
     }
     values.update(updates)
-    return AgenticReviewSettings.model_validate(values)
+    return RuntimeAISettings.model_validate(values)
 
 
 class FakeTransport:
@@ -59,11 +59,7 @@ def test_canonical_projection_uses_only_the_spec_allowlist(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
     review_input = _review_input(null_spike_review_material)
-
-    rendered = prompt_module.render_review_prompt(
-        review_input,
-        max_prompt_bytes=65_536,
-    )
+    rendered = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
 
     assert set(rendered.canonical_input) == {
         "incident",
@@ -155,9 +151,7 @@ def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile(
     )
     transport = FakeTransport([transport_response])
     adapter = provider_module.OpenAICompatibleAdapter(
-        _settings(),
-        transport=transport,
-        sleep=lambda _: None,
+        _settings(), transport=transport, sleep=lambda _: None
     )
 
     response = adapter.invoke(rendered)
@@ -182,23 +176,17 @@ def test_adapter_owns_bounded_retry_for_connection_and_server_failures(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
     rendered = prompt_module.render_review_prompt(
-        _review_input(null_spike_review_material),
-        max_prompt_bytes=65_536,
+        _review_input(null_spike_review_material), max_prompt_bytes=65_536
     )
     response = provider_module.TransportResponse(content="{}")
-    transport = FakeTransport(
-        [
-            provider_module.ProviderTransportError(
-                failure_code="provider_connection_error",
-                retryable=True,
-            ),
-            response,
-        ]
-    )
+    transport = FakeTransport([
+        provider_module.ProviderTransportError(
+            failure_code="provider_connection_error", retryable=True
+        ),
+        response,
+    ])
     adapter = provider_module.OpenAICompatibleAdapter(
-        _settings(max_retries=1),
-        transport=transport,
-        sleep=lambda _: None,
+        _settings(max_retries=1), transport=transport, sleep=lambda _: None
     )
 
     result = adapter.invoke(rendered)
@@ -211,21 +199,15 @@ def test_adapter_does_not_retry_client_or_response_validation_failures(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
     rendered = prompt_module.render_review_prompt(
-        _review_input(null_spike_review_material),
-        max_prompt_bytes=65_536,
+        _review_input(null_spike_review_material), max_prompt_bytes=65_536
     )
-    transport = FakeTransport(
-        [
-            provider_module.ProviderTransportError(
-                failure_code="provider_client_error",
-                retryable=False,
-            )
-        ]
-    )
+    transport = FakeTransport([
+        provider_module.ProviderTransportError(
+            failure_code="provider_client_error", retryable=False
+        )
+    ])
     adapter = provider_module.OpenAICompatibleAdapter(
-        _settings(max_retries=5),
-        transport=transport,
-        sleep=lambda _: None,
+        _settings(max_retries=5), transport=transport, sleep=lambda _: None
     )
 
     with pytest.raises(provider_module.ProviderUnavailableError) as error:
@@ -235,9 +217,9 @@ def test_adapter_does_not_retry_client_or_response_validation_failures(
     assert error.value.failure_code == "provider_client_error"
     assert len(transport.requests) == 1
 
-    oversized_transport = FakeTransport(
-        [provider_module.TransportResponse(content="x" * 33)]
-    )
+    oversized_transport = FakeTransport([
+        provider_module.TransportResponse(content="x" * 33)
+    ])
     oversized_adapter = provider_module.OpenAICompatibleAdapter(
         _settings(max_output_bytes=32),
         transport=oversized_transport,
@@ -258,7 +240,6 @@ def test_adapter_disables_sdk_hidden_retry_and_passes_explicit_credentials(
             captured.update(kwargs)
 
     monkeypatch.setattr(provider_module, "OpenAI", FakeOpenAI)
-
     provider_module.OpenAICompatibleAdapter(_settings())
 
     assert captured == {
@@ -278,14 +259,11 @@ def test_local_and_cloud_urls_use_the_same_adapter_request(
     base_url: str,
 ) -> None:
     rendered = prompt_module.render_review_prompt(
-        _review_input(null_spike_review_material),
-        max_prompt_bytes=65_536,
+        _review_input(null_spike_review_material), max_prompt_bytes=65_536
     )
     transport = FakeTransport([provider_module.TransportResponse(content="{}")])
     adapter = provider_module.OpenAICompatibleAdapter(
-        _settings(base_url=base_url),
-        transport=transport,
-        sleep=lambda _: None,
+        _settings(base_url=base_url), transport=transport, sleep=lambda _: None
     )
 
     adapter.invoke(rendered)
