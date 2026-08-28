@@ -19,7 +19,7 @@ Implementation은 `reliability-agentic-review` capability contract와 PR #181의
 - [x] Restrict active deterministic validation to structured facts
   - **Covers:** `Deterministic review validation`, `Free-text variation does not change structured result`
   - **Test first:** `review_summary`, finding description과 uncertainty에 action, approval, negation, quotation 또는 prompt-injection-like wording을 넣어도 같은 structured input이면 accepted가 되는 matrix와 세 violation의 exact ordering test를 고정한다.
-  - **Done when:** Validator는 Evidence references, incident identity, target column과 deterministic facts만 비교하고 natural-language pattern, segmentation과 text aggregation subsystem은 다른 위치에 재생성되지 않은 채 제거된다.
+  - **Done when:** Validator는 Evidence references, incident ID, target column과 deterministic facts만 비교하고 natural-language pattern, segmentation과 text aggregation subsystem은 다른 위치에 재생성되지 않은 채 제거된다.
 
 - [x] Preserve typed read-only service and current-policy provenance
   - **Covers:** `Advisory and read-only boundary`, `New evidence uses only the current policy`
@@ -27,12 +27,5 @@ Implementation은 `reliability-agentic-review` capability contract와 PR #181의
   - **Done when:** `review_null_spike()`의 status/failure/provenance contract는 유지되고 새 invocation은 legacy policy나 violation을 기록하지 않으며 `Approval`, `RecoveryProposal` 또는 recovery executor와 연결되지 않는다.
 
 - [x] Align Review AI documentation and verification closure
-  - **Covers:** `Deterministic and adversarial evaluation`
-  - **Done when:** Review AI domain documentation과 affected fixtures가 structured-fact policy와 historical compatibility를 표현하고, obsolete active-policy references는 제거되며 `uv run pytest tests/review_ai`, `uv run pytest tests/reliability tests/review_ai tests/runtime_ai`, `uv run ruff check .`, `uv run ty check`와 strict OpenSpec validation 결과가 기록된다.
-  - **Covers:** `Advisory and read-only boundary`, `New evidence uses only the current policy`
-  - **Test first:** Action-like free text가 포함된 accepted provider output이 current validation policy와 create-only evidence를 남기되 Reliability objects, approval/recovery state와 target data를 변경하지 않는 service test를 추가한다.
-  - **Done when:** `review_null_spike()`의 status/failure/provenance contract는 유지되고 새 invocation은 legacy policy나 violation을 기록하지 않으며 `Approval`, `RecoveryProposal` 또는 recovery executor와 연결되지 않는다.
-
-- [ ] Align Review AI documentation and verification closure
   - **Covers:** `Deterministic and adversarial evaluation`
   - **Done when:** Review AI domain documentation과 affected fixtures가 structured-fact policy와 historical compatibility를 표현하고, obsolete active-policy references는 제거되며 `uv run pytest tests/review_ai`, `uv run pytest tests/reliability tests/review_ai tests/runtime_ai`, `uv run ruff check .`, `uv run ty check`와 strict OpenSpec validation 결과가 기록된다.

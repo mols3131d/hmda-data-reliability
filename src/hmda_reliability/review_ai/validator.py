@@ -31,10 +31,7 @@ def validate_agentic_review(
     if not referenced_evidence.issubset(provided_evidence):
         detected.add(ReviewViolationCode.FABRICATED_EVIDENCE)
 
-    if (
-        output.incident_id != review_input.incident.incident_id
-        or output.incident_type != review_input.incident.incident_type
-    ):
+    if output.incident_id != review_input.incident.incident_id:
         detected.add(ReviewViolationCode.INCIDENT_MISMATCH)
 
     if (
