@@ -8,7 +8,6 @@ description: >-
   controller and the generic controller must not run in parallel. Do not use for generic
   RPI/recursive/deep/improvement-loop requests without `spec-driven-tdd` context, or for
   ordinary one-pass schema planning or Apply without adaptive Research or Review control.
-targets: [claudecode, codexcli, antigravity-ide, antigravity-cli]
 compatibility: >-
   Requires OpenSpec with the custom `spec-driven-tdd` schema. No additional
   skill, project document, repository convention, or standalone template is a
