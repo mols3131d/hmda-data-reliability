@@ -2,6 +2,13 @@ glob_matcher: doublestar
 
 pre-commit:
   commands:
+    json-fix:
+      files: git diff --cached --name-only --diff-filter=d
+      glob:
+        - "**/*.json"
+        - "**/*.jsonc"
+      run: python scripts/biome.py format --write {files}
+      stage_fixed: true
     markdown-fix:
       files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.md"
@@ -16,6 +23,16 @@ pre-commit:
 pre-push:
   parallel: true
   commands:
+    json-check:
+      glob:
+        - "**/*.json"
+        - "**/*.jsonc"
+      run: |
+        set --
+        for file in {push_files}; do
+          [ -f "$file" ] && set -- "$@" "$file"
+        done
+        [ "$#" -eq 0 ] || python scripts/biome.py check "$@"
     python-check:
       glob: "**/*.py"
       run: |

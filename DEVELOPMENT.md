@@ -18,19 +18,23 @@
 | Docs index | `uv run python scripts/generate_docs_indexes.py` |
 | Repository setup | `python scripts/bootstrap.py setup` |
 | Session bootstrap | `python scripts/bootstrap.py session` |
-| Agent Asset update | `python scripts/agent_assets.py update` |
+| Tooling update | `python scripts/bootstrap.py update` |
 | Python format | `uv run ruff format .` |
 | Python lint | `uv run ruff check src tests` |
 | Markdown format | `uv run rumdl fmt .` |
+| JSON / JSONC format | `python scripts/biome.py format --write --files-ignore-unknown=true .` |
 
-`setup`은 clone 후 처음 한 번 실행해 locked dependency와 Agent Asset을 복원하고 Git hook을 설치한다. 이후 작업 시작 시에는 `session`으로 dependency와 Agent Asset만 현재 lock 상태에 맞춘다. 최신 Agent Asset을 가져오는 작업은 bootstrap과 분리해 명시적으로 `update`한다.
+`setup`은 clone 후 처음 한 번 실행해 locked dependency와 Agent Asset을 복원하고 Git hook을 설치하며 OpenSpec과 Biome 사용 상태를 준비한다. 이후 작업 시작 시에는 `session`으로 dependency와 Agent Asset만 현재 lock 상태에 맞춘다.
+
+`update`는 외부에서 관리되는 Agent Asset source와 OpenSpec integration을 명시적으로 갱신한다. `npx` 기반 repository tooling은 기본적으로 upstream의 stable `latest` channel을 따른다. Upstream이 명시적인 LTS channel을 제공하고 안정성상 이점이 있으면 해당 channel을 선택할 수 있다. Python dependency lock은 자동으로 올리지 않으며 별도 dependency change로 검토한다.
 
 ## Development Environment
 
 | Field | Tools |
 | --- | --- |
-| Runtime | `Python>=3.13` |
-| Package manager | `uv` |
+| Runtime | `Python>=3.13`, `Node.js` |
+| Package manager | `uv`, `npx` |
+| Repository tooling | `OpenSpec`, `RuleSync`, `Skills CLI`, `Biome`, `Lefthook` |
 | Data platform | `DuckDB`, `dbt` |
 | Orchestration | `Apache Airflow 3.3.0` |
 | Analysis | `Polars` |
