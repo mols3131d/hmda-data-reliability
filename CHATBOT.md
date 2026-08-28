@@ -1,4 +1,4 @@
-# HMDA Data Reliability Chatbot Agent Instructions
+# HMDA Data Reliability Chatbot Instructions
 
 ## Harness Compatibility
 
