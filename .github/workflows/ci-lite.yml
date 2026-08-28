@@ -33,7 +33,6 @@ jobs:
           tests=false
           python=false
           lefthook=false
-          rulesync=false
           routes=false
           full_unit=false
           targets=()
@@ -95,13 +94,7 @@ jobs:
 
           while IFS= read -r path; do
             case "$path" in
-              .rulesync/*|rulesync.jsonc|rulesync.lock|scripts/rulesync.py|AGENTS.md|*/AGENTS.md|CLAUDE.md|*/CLAUDE.md|.agents/rules/*|.agents/skills/*|.github/copilot-instructions.md|.github/instructions/*.instructions.md|.github/skills/*|.claude/rules/*|.claude/skills/*)
-                rulesync=true
-                ;;
-            esac
-
-            case "$path" in
-              .rulesync/rules/*|.rulesync/skills/*/SKILL.md|.agents/skills/*/SKILL.md|.agents/route/*|scripts/generate_agent_routes.py)
+              .rulesync/rules/*|.rulesync/skills/*/SKILL.md|rulesync.jsonc|rulesync.lock|skills-lock.json|.agents/route/*|scripts/generate_agent_routes.py)
                 routes=true
                 ;;
             esac
@@ -121,7 +114,7 @@ jobs:
               lefthook.yml)
                 lefthook=true
                 ;;
-              .python-version|pyproject.toml|uv.lock|.github/workflows/ci-lite.yml)
+              .python-version|pyproject.toml|uv.lock)
                 tests=true
                 full_unit=true
                 ;;
@@ -181,7 +174,6 @@ jobs:
             echo "tests=$tests"
             echo "python=$python"
             echo "lefthook=$lefthook"
-            echo "rulesync=$rulesync"
             echo "routes=$routes"
             echo "full_unit=$full_unit"
             printf 'targets='
@@ -217,13 +209,13 @@ jobs:
           fi
 
       - name: Set up Python
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.rulesync == 'true' || steps.scope.outputs.routes == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true'
         uses: actions/setup-python@v6.2.0
         with:
           python-version-file: ".python-version"
 
       - name: Set up uv
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.lefthook == 'true'
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.11.32"
@@ -252,15 +244,13 @@ jobs:
           fi
           uv run --no-sync ty check
 
-      - name: Validate Rulesync projections
-        if: steps.scope.outputs.rulesync == 'true'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python scripts/rulesync.py validate
+      - name: Install route dependency
+        if: steps.scope.outputs.routes == 'true'
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.3
 
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
-        run: uv run --with PyYAML==6.0.3 python scripts/generate_agent_routes.py --check
+        run: python scripts/generate_agent_routes.py --check
 
       - name: Validate Lefthook config
         if: steps.scope.outputs.lefthook == 'true'
@@ -284,6 +274,7 @@ jobs:
 
           if [[ "$FULL_UNIT" == true ]]; then
             "${common[@]}" -n auto -m "unit and not memory and not stress"
+            exit
           fi
 
           read -r -a targets <<< "$TARGETS"

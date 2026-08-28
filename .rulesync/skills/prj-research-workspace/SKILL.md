@@ -1,7 +1,6 @@
 ---
 name: prj-research-workspace
 description: Conduct evidence-backed research before specification, implementation, or technical decisions. Use to understand current behavior, bound scope, verify dependencies, compare meaningful options, or investigate failures. Do not use for implementation, final requirements, or independent Review.
-targets: [claudecode, codexcli, antigravity-ide, antigravity-cli]
 metadata:
   version: "0.1.0"
 ---

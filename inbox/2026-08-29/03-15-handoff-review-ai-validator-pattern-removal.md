@@ -106,10 +106,10 @@ _review_text()
 다음 가정을 코드와 spec에서 직접 검증하라.
 
 1. `AgenticReviewOutput`은 approval, recovery 또는 mutation을 수행하는 executable field를 제공하지 않는다.
-2. `review_ai`의 accepted free text 자체가 recovery/backfill/mutation 호출 권한으로 변환되지 않는다.
-3. 실제 mutation path가 존재한다면 review output과 분리된 typed proposal/approval boundary를 거친다.
-4. prompt는 model에게 advisory-only 역할을 명시하되, prompt adherence를 deterministic security oracle로 취급하지 않는다.
-5. provenance에는 accepted output과 deterministic validation 결과를 충분히 남겨 사후 evaluation이 가능하다.
+1. `review_ai`의 accepted free text 자체가 recovery/backfill/mutation 호출 권한으로 변환되지 않는다.
+1. 실제 mutation path가 존재한다면 review output과 분리된 typed proposal/approval boundary를 거친다.
+1. prompt는 model에게 advisory-only 역할을 명시하되, prompt adherence를 deterministic security oracle로 취급하지 않는다.
+1. provenance에는 accepted output과 deterministic validation 결과를 충분히 남겨 사후 evaluation이 가능하다.
 
 이 중 하나라도 성립하지 않으면 regex 제거 전에 실제 authority boundary부터 보강해야 한다.
 
@@ -164,12 +164,12 @@ free-text advisory quality나 action-like language 감지는 필요하면 blocki
 ## 작업 순서
 
 1. 현재 Agentic Review spec과 실제 authority/mutation path를 조사한다.
-2. regex guard가 제거되었을 때 새로 생기는 실제 capability 또는 privilege가 있는지 확인한다.
-3. structured deterministic validation만 남기는 방향의 OpenSpec Change를 작성한다.
-4. contract에서 obsolete violation/policy identity를 함께 정리한다.
-5. validator와 tests를 최소 구현으로 축소한다.
-6. affected review/service/provenance tests와 전체 relevant test closure를 실행한다.
-7. diff를 다시 읽고 자연어 semantic judge가 다른 위치에 우회적으로 재생성되지 않았는지 review한다.
+1. regex guard가 제거되었을 때 새로 생기는 실제 capability 또는 privilege가 있는지 확인한다.
+1. structured deterministic validation만 남기는 방향의 OpenSpec Change를 작성한다.
+1. contract에서 obsolete violation/policy identity를 함께 정리한다.
+1. validator와 tests를 최소 구현으로 축소한다.
+1. affected review/service/provenance tests와 전체 relevant test closure를 실행한다.
+1. diff를 다시 읽고 자연어 semantic judge가 다른 위치에 우회적으로 재생성되지 않았는지 review한다.
 
 ## 하지 말 것
 

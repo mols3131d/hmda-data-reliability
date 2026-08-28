@@ -8,7 +8,6 @@ description: >-
   testing or Git/GitHub when those concerns also apply. Do not use for review-only,
   research-only, documentation-only, or repository administration work with no
   implementation surface.
-targets: [claudecode, codexcli, copilot, copilotcli, antigravity-ide, antigravity-cli]
 ---
 
 # Development Context

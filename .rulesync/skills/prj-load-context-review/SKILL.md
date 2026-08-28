@@ -6,7 +6,6 @@ description: >-
   tree changes, implementation, tests, runtime, or code-facing configuration. In VS Code,
   route dual-perspective review through review-lead when available. Do not use inside
   review-lead, review-quality, or review-adversarial, or for implementation self-review.
-targets: [claudecode, codexcli, copilot, copilotcli, antigravity-ide, antigravity-cli]
 ---
 
 # Review Context
