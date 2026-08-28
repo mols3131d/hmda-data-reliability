@@ -17,6 +17,7 @@ tempCodeRunnerFile.py
 /.codex/
 /.gemini/
 /.github/skills/*
+!/.github/skills/prj-review-code/
 
 # Agent local overlays and external installs
 /rulesync.local.jsonc
