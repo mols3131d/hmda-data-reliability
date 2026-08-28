@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
@@ -148,6 +149,40 @@ def test_live_harness_auto_resolves_project_revision(
     assert exit_code == 1
     assert len(calls) == 1
     assert calls[0]["project_revision"] == "git-head-123"
+
+
+def test_auto_project_revision_uses_clean_git_head(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    results = iter(
+        [
+            subprocess.CompletedProcess([], 0, stdout="git-head-123\n", stderr=""),
+            subprocess.CompletedProcess([], 0, stdout="", stderr=""),
+        ]
+    )
+    monkeypatch.setattr(live_module.subprocess, "run", lambda *args, **kwargs: next(results))
+
+    assert live_module._current_git_revision() == "git-head-123"
+
+
+def test_auto_project_revision_rejects_dirty_tracked_worktree(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    results = iter(
+        [
+            subprocess.CompletedProcess([], 0, stdout="git-head-123\n", stderr=""),
+            subprocess.CompletedProcess(
+                [],
+                0,
+                stdout=" M src/hmda_reliability/review_ai/prompt.py\n",
+                stderr="",
+            ),
+        ]
+    )
+    monkeypatch.setattr(live_module.subprocess, "run", lambda *args, **kwargs: next(results))
+
+    with pytest.raises(ValueError, match="clean tracked worktree"):
+        live_module._current_git_revision()
 
 
 def test_auto_project_revision_failure_stops_before_review(
