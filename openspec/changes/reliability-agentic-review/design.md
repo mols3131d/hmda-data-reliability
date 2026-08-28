@@ -9,7 +9,7 @@ description: "deterministic Reliability truth를 보존하면서 review semantic
 
 `review_ai`는 Reliability가 제공하는 deterministic `Incident`, `Evidence`, `RemediationDraft`를 입력으로 받는 read-only review surface를 소유한다. `review_null_spike()`는 input preflight → canonical input projection → provider call → parse와 deterministic validation → invocation evidence persistence 순서로 실행한다. Input preflight가 실패하면 provider와 evidence store를 호출하지 않는다.
 
-Prompt rendering, validator와 review provenance는 `review_ai`에 두고 provider-neutral settings와 OpenAI-compatible SDK adapter는 `runtime_ai`에 둔다. `reliability`는 AI provider implementation을 import하거나 re-export하지 않는다. Exact field, status, wire profile과 failure contract는 Spec이 소유하고, 이 문서는 구현을 제약하는 비자명한 결정만 기록한다.
+Prompt rendering, review-only prompt byte preflight, validator와 review provenance는 `review_ai`에 두고 provider-neutral endpoint/model/transport/output settings와 OpenAI-compatible SDK adapter는 `runtime_ai`에 둔다. `reliability`는 AI provider implementation을 import하거나 re-export하지 않는다. Exact field, status, wire profile과 failure contract는 Spec이 소유하고, 이 문서는 구현을 제약하는 비자명한 결정만 기록한다.
 
 `reliability-agentic-review` capability와 `PromptIdentity` 이름은 behavioral identifier로 유지한다. 후속 ownership refactor는 이 identifier를 rename하지 않고 implementation owner만 분리한다.
 
@@ -18,8 +18,8 @@ Prompt rendering, validator와 review provenance는 `review_ai`에 두고 provid
 | Boundary | Owns | Does Not Own |
 | --- | --- | --- |
 | **Deterministic Reliability** | `Incident`, `Evidence`, `RemediationDraft`와 null-spike canonical facts | LLM 해석, provider 선택, approval 결정 |
-| **Review AI** | snapshot, prompt projection, structured output, deterministic validation, review orchestration과 invocation provenance | incident 탐지, RCA truth 변경, action 실행 |
-| **Runtime AI** | provider-neutral settings, SDK client와 bounded transport behavior | Reliability business rule, review policy, provenance meaning, approval 또는 recovery |
+| **Review AI** | snapshot, prompt projection와 byte preflight, structured output, deterministic validation, review orchestration과 invocation provenance | incident 탐지, RCA truth 변경, action 실행 |
+| **Runtime AI** | provider/model/transport/output settings, SDK client와 bounded transport behavior | Reliability business rule, review prompt policy/provenance, approval 또는 recovery |
 | **Invocation Evidence Store** | `review_ai` 내부 logical invocation provenance의 create-only persistence | canonical Reliability state 변경, raw prompt/log 보존 |
 | **Approval / Recovery** | 기존 exact proposal과 external approval 이후의 mutation | Agentic output 해석 또는 자동 실행 |
 

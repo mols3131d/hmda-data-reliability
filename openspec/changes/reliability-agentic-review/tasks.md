@@ -1,14 +1,12 @@
 ---
 type: openspec-spec-driven-tdd-tasks
 category: tasks
-title: "Implement Bounded Null-Spike Agentic Review"
-description: "null_spike evidence-bound review contract, typed result, deterministic guard, OpenAI-compatible adapter와 invocation provenance를 test-first로 구현한다."
+title: reliability-agentic-review
+description: "evidence-bound null_spike advisory review, deterministic validation과 replay 가능한 invocation provenance를 OpenAI-compatible provider 위에 구현한다."
 tasks_completed: 8
 tasks_total: 8
 tags:
-  - "domain:reliability"
   - "capability:reliability-agentic-review"
-  - "null-spike"
 ---
 
 ## Tasks
@@ -18,12 +16,12 @@ tags:
 - [x] 1. OpenAI-compatible runtime configuration과 dependency contract를 추가한다
   - **Covers:** Provider-compatible bounded invocation, Durable invocation evidence의 sanitized configuration
   - **Test first:**
-    - explicit `base_url`, `SecretStr api_key`, `model`, `timeout_seconds`, `max_retries`, `temperature`, `max_output_tokens`, `max_prompt_bytes`와 `max_output_bytes`의 validation 및 기본값을 고정한다.
-    - Environment를 암묵적으로 읽지 않는 public settings와 live harness용 환경 변수 이름을 고정한다.
+    - explicit `base_url`, `SecretStr api_key`, `model`, `timeout_seconds`, `max_retries`, `temperature`, `max_output_tokens`, review-owned `max_prompt_bytes`와 `max_output_bytes`의 validation 및 기본값을 고정한다.
+    - Environment를 암묵적으로 읽지 않는 public runtime settings와 live harness용 환경 변수 이름을 고정한다.
   - **Done when:**
     - `openai`가 project runtime dependency와 `uv.lock`에 반영된다.
-    - `RuntimeAISettings`가 `timeout_seconds=30`, `max_retries=1`, `temperature=0`, `max_output_tokens=1024`, `max_prompt_bytes=65536`, `max_output_bytes=32768`을 사용한다.
-    - Invalid/empty configuration을 거부하고 sanitized configuration serialization에 API key/credential이 포함되지 않는다.
+    - `RuntimeAISettings`가 `timeout_seconds=30`, `max_retries=1`, `temperature=0`, `max_output_tokens=1024`, `max_output_bytes=32768`을 사용하고 `ReviewAISettings`가 `max_prompt_bytes=65536`을 사용한다.
+    - Invalid/empty configuration을 거부하고 sanitized invocation configuration에 API key/credential이 포함되지 않는다.
     - Network 없이 contract test가 통과한다.
 
 - [x] 2. `AgenticReviewInput`·`AgenticReviewOutput`·`AgenticReviewResult` contract를 구현한다
@@ -59,7 +57,7 @@ tags:
     - `runtime_ai` adapter는 OpenAI Python SDK를 한 곳에서만 사용하고 SDK hidden retry는 `0`이다.
     - `max_output_tokens`는 common `chat.completions` profile의 `max_tokens`로 매핑된다.
     - Evidence payload는 data block으로 전달되고 prompt renderer/adapter가 shell, SQL, file, recovery 또는 mutation action을 실행하지 않는다.
-    - Prompt가 `max_prompt_bytes`를 넘으면 provider 전에 `input_rejected`로 종료된다.
+    - Prompt가 review-owned `max_prompt_bytes`를 넘으면 provider 전에 `input_rejected`로 종료된다.
 
 - [x] 5. Logical-call 기준 create-only `AgenticInvocationEvidence` model과 local JSON store를 구현한다
   - **Covers:** Durable invocation evidence
@@ -78,27 +76,24 @@ tags:
 
 - [x] 6. `review_null_spike()` orchestration과 typed failure boundary를 연결한다
   - **Covers:** Structured null-spike review input, Provider-compatible bounded invocation, Advisory and read-only boundary
-  - **Test first:** Valid input의 input preflight → canonical projection → prompt → adapter → parse → deterministic validation → evidence persistence 순서와 `input_rejected`/`validation_failed`/`unavailable`/`provenance_failed` 결과를 fake adapter로 고정한다. `Incident`/`Evidence`/`RemediationDraft`/`RecoveryProposal`/`Approval`/database state snapshot을 전후 비교한다.
+  - **Test first:** input preflight reject, accepted review, provider unavailable, response/guard validation failure와 provenance failure를 fake provider/store로 연결하고 provider/store call ordering 및 input/recovery state 불변을 고정한다.
   - **Done when:**
-    - `review_ai.review_null_spike()`의 `accepted` result만 structured output, accepted validation과 invocation evidence path/id를 반환한다.
-    - Non-accepted result은 accepted output 또는 authority를 반환하지 않는다.
-    - `input_rejected`는 provider/evidence를 만들지 않는다.
-    - `run_incident_lifecycle()`은 자동 호출되지 않으며 어떤 review 경로도 approval, recovery, mutation을 수행하지 않는다.
+    - `input_rejected`는 provider와 invocation evidence write를 시작하지 않는다.
+    - Provider-started logical review는 하나의 invocation ID를 유지하고 provider 결과를 validation 후 create-only provenance로 저장한다.
+    - `accepted`는 valid output + accepted validation + durable provenance가 모두 있을 때만 반환된다.
+    - 어떤 review result도 approval, recovery 또는 data mutation authority를 생성하지 않는다.
 
-- [x] 7. Offline/integration public surface와 provider configuration 문서를 정렬한다
-  - **Covers:** Deterministic and adversarial evaluation, Local and cloud-compatible configuration
-  - **Test first:** Public export smoke test, fake-client integration, existing reliability regression과 network 없는 기본 pytest 실행을 고정한다.
+- [x] 7. Public review surface와 opt-in live harness를 연결한다
+  - **Covers:** Local and cloud-compatible configuration, Advisory and read-only boundary
+  - **Test first:** public package surface, live-disabled default, required environment, invalid configuration과 provenance verification failure를 network 없이 검증한다.
   - **Done when:**
     - `review_ai` package root가 review consumer에 필요한 최소 contract와 use case만 export하고, `runtime_ai` root는 explicit settings contract만 export하며, `reliability`는 AI-specific surface를 re-export하지 않는다.
     - `.env.example`, `docs/domains/review-ai.md`, `docs/domains/runtime-ai.md`, `docs/domains/reliability.md`와 `docs/development/testing.md`가 provider configuration, secret 비저장, typed failure, ownership과 opt-in live proof를 설명한다.
     - 기존 deterministic lifecycle/recovery contract와 충돌하지 않는다.
 
-### Live proof
-
-- [x] 8. Opt-in Ollama live invocation proof를 제공한다
-  - **Covers:** Ollama live proof, Successful invocation provenance
-  - **Test first:** 명시적 opt-in과 필수 endpoint/model configuration이 없을 때 default suite가 network 없이 유지되는지 고정한다. 설정이 있을 때 실제 response shape와 provenance assertions가 실행되는 별도 live command를 고정한다.
+- [x] 8. Offline regression과 live proof 경계를 검증한다
+  - **Covers:** Deterministic and adversarial evaluation, Local and cloud-compatible configuration
+  - **Test first:** default pytest가 network를 사용하지 않고 동일 fixture를 반복 검증하며 live command만 명시적 opt-in에서 provider를 호출하는지 확인한다.
   - **Done when:**
-    - `scripts/run_agentic_review_live.py` 또는 동등한 opt-in command가 실제 Ollama OpenAI-compatible endpoint에서 deterministic `null_spike` `Incident`/`Evidence`/`RemediationDraft`를 같은 adapter boundary로 검증한다.
-    - Invocation JSON에 model/config, prompt identity/digest, `project_revision`, canonical input, structured output 또는 typed failure, validation, latency와 available usage가 남는다.
-    - Approval/recovery/mutation은 발생하지 않는다.
+    - focused `tests/review_ai tests/runtime_ai`, 영향받는 Reliability regression, Ruff와 project type check가 통과한다.
+    - 실제 Ollama proof는 default suite에서 분리하고 실행하지 않은 경우 미검증으로 명시한다.

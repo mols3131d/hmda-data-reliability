@@ -13,11 +13,12 @@ tags:
 ## Tasks
 
 - [x] 1. 새 ownership을 executable specification으로 고정한다
-  - **Test first:** `review_ai` 최소 package-root API, `runtime_ai` settings-only root API, Reliability AI re-export 부재와 기존 review/provenance behavior를 검증한다.
-  - **Done when:** test가 새 import path와 dependency boundary를 사용하며 기존 behavioral assertion은 약화되지 않는다.
+  - **Test first:** `review_ai` 최소 package-root API, `runtime_ai` settings-only root API, Reliability AI re-export 부재, AST 기반 forbidden-import boundary와 기존 review/provenance behavior를 검증한다.
+  - **Done when:** test가 새 import path와 dependency boundary를 사용하며 `runtime_ai -> no review_ai/reliability`, `reliability -> no AI package` invariant를 직접 검사하고 기존 behavioral assertion은 약화되지 않는다.
 
 - [x] 2. source package를 `review_ai`와 `runtime_ai`로 분리한다
   - **Done when:** `review_ai -> reliability/runtime_ai`, `runtime_ai -> no review_ai/reliability`, `reliability -> no AI package` import direction이 성립한다.
+  - **Done when:** rendered review/provenance state와 `max_prompt_bytes` preflight는 `review_ai`가 소유하고 `runtime_ai` adapter는 provider-neutral messages와 provider/transport/output settings만 사용한다.
   - **Done when:** prompt identity, typed result, validation, provider retry/limits와 invocation evidence semantics가 유지된다.
 
 - [x] 3. 내부 caller, canonical guide와 validation routing을 정렬한다
