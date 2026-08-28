@@ -38,8 +38,7 @@ class FakeTransport:
     def __init__(
         self,
         outcomes: list[
-            runtime_contracts.TransportResponse
-            | provider_module.ProviderTransportError
+            runtime_contracts.TransportResponse | provider_module.ProviderTransportError
         ],
     ) -> None:
         self.outcomes = list(outcomes)
