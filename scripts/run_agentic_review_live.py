@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -41,8 +42,8 @@ _REQUIRED_ENVIRONMENT = (
     "HMDA_AGENTIC_REVIEW_BASE_URL",
     "HMDA_AGENTIC_REVIEW_API_KEY",
     "HMDA_AGENTIC_REVIEW_MODEL",
-    "HMDA_AGENTIC_REVIEW_PROJECT_REVISION",
 )
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 class Reviewer(Protocol):
@@ -84,6 +85,7 @@ def main(
         return 2
 
     try:
+        project_revision = _project_revision(environment)
         settings = RuntimeAISettings(
             base_url=environment["HMDA_AGENTIC_REVIEW_BASE_URL"],
             api_key=environment["HMDA_AGENTIC_REVIEW_API_KEY"],
@@ -126,7 +128,7 @@ def main(
         evidence=[evidence],
         draft=draft,
         prompt_identity=PromptIdentity(),
-        project_revision=environment["HMDA_AGENTIC_REVIEW_PROJECT_REVISION"],
+        project_revision=project_revision,
         settings=settings,
         review_settings=review_settings,
         artifact_root=Path(
@@ -141,11 +143,35 @@ def main(
         result,
         settings=settings,
         review_settings=review_settings,
-        project_revision=environment["HMDA_AGENTIC_REVIEW_PROJECT_REVISION"],
+        project_revision=project_revision,
     ):
         print("Live invocation provenance validation failed.", file=sys.stderr)
         return 3
     return 0 if result.status == "accepted" else 1
+
+
+def _project_revision(environment: Mapping[str, str]) -> str:
+    configured = environment.get("HMDA_AGENTIC_REVIEW_PROJECT_REVISION", "").strip()
+    if configured and configured.lower() != "auto":
+        return configured
+    return _current_git_revision()
+
+
+def _current_git_revision() -> str:
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(_REPOSITORY_ROOT), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ValueError("project revision could not be resolved from Git") from error
+
+    revision = completed.stdout.strip()
+    if not revision:
+        raise ValueError("project revision could not be resolved from Git")
+    return revision
 
 
 def _build_null_spike_material() -> tuple[Incident, Evidence, RemediationDraft]:
