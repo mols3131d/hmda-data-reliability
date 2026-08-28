@@ -26,7 +26,7 @@
 
 `setup`은 clone 후 처음 한 번 실행해 locked dependency와 Agent Asset을 복원하고 Git hook을 설치하며 OpenSpec과 Biome 사용 상태를 준비한다. 이후 작업 시작 시에는 `session`으로 dependency와 Agent Asset만 현재 lock 상태에 맞춘다.
 
-`update`는 외부에서 관리되는 Agent Asset source와 OpenSpec integration을 명시적으로 갱신한다. Python dependency lock이나 repository에 고정한 formatter 버전은 자동으로 올리지 않는다. 이런 변경은 별도 dependency/tooling change로 검토한다.
+`update`는 외부에서 관리되는 Agent Asset source와 OpenSpec integration을 명시적으로 갱신한다. `npx` 기반 repository tooling은 기본적으로 upstream의 stable `latest` channel을 따르고, upstream이 명시적인 LTS channel을 제공하면 필요에 따라 그 channel을 우선할 수 있다. Python dependency lock은 자동으로 올리지 않으며 별도 dependency change로 검토한다.
 
 ## Development Environment
 
