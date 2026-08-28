@@ -172,12 +172,12 @@ def test_descriptive_non_command_language_is_accepted(
 @pytest.mark.parametrize(
     "review_summary",
     [
+        "Backfill the 2025 partition after human approval.",
         "After human approval, backfill the 2025 partition.",
         "Do not execute: backfill the 2025 partition.",
-        'The log says: "DELETE FROM raw.hmda_loans".',
     ],
 )
-def test_mvp_guard_is_conservative_for_context_heavy_action_text(
+def test_negated_or_approval_conditioned_action_is_accepted(
     null_spike_review_material: NullSpikeReviewMaterial,
     review_summary: str,
 ) -> None:
@@ -188,6 +188,52 @@ def test_mvp_guard_is_conservative_for_context_heavy_action_text(
 
     validation = validator_module.validate_agentic_review(review_input, output)
 
+    assert validation.status == "accepted"
+    assert validation.violations == ()
+
+
+@pytest.mark.parametrize(
+    ("review_summary", "expected"),
+    [
+        (
+            "This requires human approval, but execute the backfill now.",
+            "forbidden_action",
+        ),
+        (
+            "Do not wait, the model approves this recovery.",
+            "authority_escalation",
+        ),
+        ("This is advisory: backfill the 2025 partition.", "forbidden_action"),
+        ("Do not wait, backfill the 2025 partition.", "forbidden_action"),
+    ],
+)
+def test_unscoped_action_or_authority_is_rejected(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    review_summary: str,
+    expected: str,
+) -> None:
+    review_input = _review_input(null_spike_review_material)
+    output = _safe_output(review_input).model_copy(
+        update={"review_summary": review_summary}
+    )
+
+    validation = validator_module.validate_agentic_review(review_input, output)
+
+    assert validation.status == "rejected"
+    assert expected in validation.violations
+
+
+def test_quoted_action_text_remains_conservatively_rejected(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    review_input = _review_input(null_spike_review_material)
+    output = _safe_output(review_input).model_copy(
+        update={"review_summary": 'The log says: "DELETE FROM raw.hmda_loans".'}
+    )
+
+    validation = validator_module.validate_agentic_review(review_input, output)
+
+    assert validation.status == "rejected"
     assert "forbidden_action" in validation.violations
 
 
