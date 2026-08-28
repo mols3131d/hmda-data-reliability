@@ -14,6 +14,7 @@ from hmda_reliability.review_ai import contracts
 from hmda_reliability.review_ai import evidence as evidence_module
 from hmda_reliability.review_ai import prompt as prompt_module
 from hmda_reliability.review_ai import store as store_module
+from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
@@ -57,6 +58,12 @@ def _settings() -> RuntimeAISettings:
     )
 
 
+def _sanitized_configuration() -> dict[str, str | float | int]:
+    configuration = _settings().sanitized_configuration()
+    configuration.update(ReviewAISettings().sanitized_configuration())
+    return configuration
+
+
 def _record(
     material: NullSpikeReviewMaterial,
     *,
@@ -91,7 +98,7 @@ def _record(
         recorded_at=datetime(2026, 8, 27, 1, 2, 3, tzinfo=UTC),
         status=status,
         configuration=evidence_module.SanitizedAgenticReviewConfiguration.model_validate(
-            _settings().sanitized_configuration()
+            _sanitized_configuration()
         ),
         prompt_identity=review_input.prompt_identity,
         prompt_digest=rendered.prompt_digest,
@@ -150,6 +157,7 @@ def test_stored_record_replays_digest_without_raw_prompt_or_credentials(
     assert replay.prompt_digest == loaded.prompt_digest
     assert payload["canonical_input"] == loaded.canonical_input
     assert payload["configuration"]["model"] == "test-model"
+    assert payload["configuration"]["max_prompt_bytes"] == 65_536
     assert "api_key" not in raw_record
     assert "local-test-key" not in raw_record
     assert "raw_prompt" not in raw_record
