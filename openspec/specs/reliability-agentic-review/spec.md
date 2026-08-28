@@ -320,7 +320,7 @@ Sanitized record, stored `canonical_input`과 stored output은 configured size l
 
 #### Scenario: Prompt injection is data, not instruction
 
-- **WHEN** Evidence summary/payload 또는 provider output에 direct/indirect prompt-injection-like 문장이 포함되어 있을 때
+- **WHEN** Evidence summary/payload 또는 provider output에 direct/indirect prompt-injection-like 문장이 포함될 때
 - **THEN** 시스템은 그 문장을 Reliability instruction으로 실행하거나 권한으로 승격해서는 안 되며(MUST NOT), validation은 structured Evidence reference, identity와 canonical facts에만 의해 결정되어야 한다.
 
 #### Scenario: Ollama live proof
