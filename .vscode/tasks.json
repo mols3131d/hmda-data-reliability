@@ -1,104 +1,69 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Bootstrap: Setup",
-            "type": "shell",
-            "command": "uv run python scripts/bootstrap.py setup",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Restores locked dependencies and Agent Assets, then installs Git hooks."
-        },
-        {
-            "label": "Bootstrap: Session",
-            "type": "shell",
-            "command": "uv run python scripts/bootstrap.py session",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Refreshes locked dependencies and Agent Assets for a new work session."
-        },
-        {
-            "label": "Agent Assets: Update",
-            "type": "shell",
-            "command": "uv run python scripts/agent_assets.py update",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Updates Rulesync-managed assets and Skills CLI assets when a skills lock exists."
-        },
-        {
-            "label": "Format with ruff",
-            "type": "shell",
-            "command": "uv run ruff format . && uv run ruff check --fix .",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Runs ruff formatting and lint auto-fixes."
-        },
-        {
-            "label": "Format with rumdl",
-            "type": "shell",
-            "command": "uv run rumdl fmt .",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Runs rumdl markdown formatting."
-        },
-        {
-            "label": "Format ruff & rumdl",
-            "type": "shell",
-            "command": "uv run ruff format . && uv run ruff check --fix . && uv run rumdl format .",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Runs both ruff and rumdl to format the workspace."
-        },
-        {
-            "label": "Rulesync: Preview",
-            "type": "shell",
-            "command": "uv run python scripts/rulesync.py preview",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Previews Rule projection changes without writing files."
-        },
-        {
-            "label": "Rulesync: Generate",
-            "type": "shell",
-            "command": "uv run python scripts/rulesync.py generate",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Generates agent Rule projections with the latest Rulesync."
-        },
-        {
-            "label": "Rulesync: Validate",
-            "type": "shell",
-            "command": "uv run python scripts/rulesync.py validate",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Runs strict diagnostics followed by projection drift checks."
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Bootstrap: Setup",
+      "type": "shell",
+      "command": "python scripts/bootstrap.py setup",
+      "detail": "Restore locked state, install Git hooks, and prepare OpenSpec and Biome."
+    },
+    {
+      "label": "Bootstrap: Session",
+      "type": "shell",
+      "command": "python scripts/bootstrap.py session",
+      "detail": "Restore locked dependencies and Agent Assets for a work session."
+    },
+    {
+      "label": "Bootstrap: Update",
+      "type": "shell",
+      "command": "python scripts/bootstrap.py update",
+      "detail": "Refresh Agent Assets and OpenSpec integration."
+    },
+    {
+      "label": "Format: Python",
+      "type": "shell",
+      "command": "uv run ruff check --fix . && uv run ruff format .",
+      "detail": "Apply Ruff lint fixes and formatting across Python files."
+    },
+    {
+      "label": "Format: Markdown",
+      "type": "shell",
+      "command": "uv run rumdl fmt .",
+      "detail": "Format Markdown with rumdl."
+    },
+    {
+      "label": "Format: JSON / JSONC",
+      "type": "shell",
+      "command": "python scripts/biome.py format --write --files-ignore-unknown=true .",
+      "detail": "Format JSON and JSONC with Biome."
+    },
+    {
+      "label": "Format: All",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Format: Python",
+        "Format: Markdown",
+        "Format: JSON / JSONC"
+      ],
+      "detail": "Run all repository formatters in sequence."
+    },
+    {
+      "label": "RuleSync: Preview",
+      "type": "shell",
+      "command": "python scripts/rulesync.py preview",
+      "detail": "Preview Rule projection changes without writing files."
+    },
+    {
+      "label": "RuleSync: Generate",
+      "type": "shell",
+      "command": "python scripts/rulesync.py generate",
+      "detail": "Generate Rule projections and compatibility bridges."
+    },
+    {
+      "label": "RuleSync: Validate",
+      "type": "shell",
+      "command": "python scripts/rulesync.py validate",
+      "detail": "Validate locked sources, diagnostics, projection drift, and bridges."
+    }
+  ]
 }
