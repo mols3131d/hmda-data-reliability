@@ -179,12 +179,12 @@ uv run python scripts/run_actual_source.py
 > [!WARNING]
 > 이 observation은 성능 또는 OOM 안전성 보장이 아니다. source fingerprint, revision과 실행 시각이 일치하는지 확인한다.
 
-## Agentic Review
+## Review AI And Runtime AI
 
-Agentic review의 default suite는 fake transport와 temporary artifact root만 사용하며 network provider를 호출하지 않는다.
+Review AI의 default suite는 fake transport와 temporary artifact root만 사용하며 network provider를 호출하지 않는다. Runtime AI의 settings와 provider-neutral contract도 함께 검증한다.
 
 ```bash
-uv run pytest tests/reliability/agentic_review
+uv run pytest tests/review_ai tests/runtime_ai
 ```
 
 실제 Ollama proof는 default suite와 분리된 명시적 opt-in command다. `.env.example`의 `HMDA_AGENTIC_REVIEW_*` 값을 local `.env`에 설정한 뒤 실행한다. `HMDA_AGENTIC_REVIEW_API_KEY`는 OpenAI-compatible client에 필요한 값이지만 invocation evidence에는 저장되지 않는다.
