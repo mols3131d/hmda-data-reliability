@@ -20,7 +20,9 @@ def _valid_values() -> dict[str, object]:
 
 def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
     settings_type = settings_module.RuntimeAISettings
+
     settings = settings_type.model_validate(_valid_values())
+
     assert str(settings.base_url) == "http://localhost:11434/v1"
     assert settings.api_key.get_secret_value() == "local-test-key"
     assert settings.model == "test-model"
@@ -32,18 +34,58 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
     assert settings.max_output_bytes == 32_768
 
 
-@pytest.mark.parametrize(("field", "value"), [("base_url", ""), ("base_url", "not-a-url"), ("base_url", "http://user:secret@localhost:11434/v1"), ("base_url", "https://alice:pass123@example.com/v1"), ("base_url", "http://localhost:11434/v1?api_key=secret-token"), ("base_url", "https://example.com/v1?token=xyz"), ("base_url", "http://localhost:11434/v1?secret=xyz"), ("base_url", "https://example.com/v1?access_token=secret-value"), ("base_url", "https://example.com/v1?client_secret=secret-value"), ("base_url", "http://localhost:11434/v1?mode=eval"), ("base_url", "https://example.com/v1#token"), ("base_url", "http://localhost:11434/v1#secret"), ("api_key", "   "), ("model", "   "), ("timeout_seconds", 0), ("max_retries", -1), ("max_retries", 6), ("temperature", 0.1), ("max_output_tokens", 0), ("max_prompt_bytes", 0), ("max_output_bytes", 0)])
-def test_settings_reject_invalid_or_unbounded_values(field: str, value: object) -> None:
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("base_url", ""),
+        ("base_url", "not-a-url"),
+        ("base_url", "http://user:secret@localhost:11434/v1"),
+        ("base_url", "https://alice:pass123@example.com/v1"),
+        ("base_url", "http://localhost:11434/v1?api_key=secret-token"),
+        ("base_url", "https://example.com/v1?token=xyz"),
+        ("base_url", "http://localhost:11434/v1?secret=xyz"),
+        ("base_url", "https://example.com/v1?access_token=secret-value"),
+        ("base_url", "https://example.com/v1?client_secret=secret-value"),
+        ("base_url", "http://localhost:11434/v1?mode=eval"),
+        ("base_url", "https://example.com/v1#token"),
+        ("base_url", "http://localhost:11434/v1#secret"),
+        ("api_key", "   "),
+        ("model", "   "),
+        ("timeout_seconds", 0),
+        ("max_retries", -1),
+        ("max_retries", 6),
+        ("temperature", 0.1),
+        ("max_output_tokens", 0),
+        ("max_prompt_bytes", 0),
+        ("max_output_bytes", 0),
+    ],
+)
+def test_settings_reject_invalid_or_unbounded_values(
+    field: str,
+    value: object,
+) -> None:
     values = _valid_values()
     values[field] = value
+
     with pytest.raises(ValidationError):
         settings_module.RuntimeAISettings.model_validate(values)
 
 
 def test_sanitized_configuration_excludes_credentials() -> None:
     settings = settings_module.RuntimeAISettings.model_validate(_valid_values())
+
     sanitized = settings.sanitized_configuration()
-    assert sanitized == {"base_url": "http://localhost:11434/v1", "model": "test-model", "timeout_seconds": 30.0, "max_retries": 1, "temperature": 0.0, "max_output_tokens": 1024, "max_prompt_bytes": 65_536, "max_output_bytes": 32_768}
+
+    assert sanitized == {
+        "base_url": "http://localhost:11434/v1",
+        "model": "test-model",
+        "timeout_seconds": 30.0,
+        "max_retries": 1,
+        "temperature": 0.0,
+        "max_output_tokens": 1024,
+        "max_prompt_bytes": 65_536,
+        "max_output_bytes": 32_768,
+    }
     assert "api_key" not in sanitized
     assert "credential" not in sanitized
     assert "local-test-key" not in repr(sanitized)
@@ -53,12 +95,18 @@ def test_sanitized_configuration_preserves_ipv6_authority() -> None:
     values = _valid_values()
     values["base_url"] = "http://[::1]:11434/v1"
     settings = settings_module.RuntimeAISettings.model_validate(values)
-    assert settings.sanitized_configuration()["base_url"] == "http://[::1]:11434/v1"
+
+    sanitized = settings.sanitized_configuration()
+
+    assert sanitized["base_url"] == "http://[::1]:11434/v1"
 
 
-def test_public_settings_do_not_read_provider_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_public_settings_do_not_read_provider_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("HMDA_AGENTIC_REVIEW_BASE_URL", "http://example.test/v1")
     monkeypatch.setenv("HMDA_AGENTIC_REVIEW_API_KEY", "environment-secret")
     monkeypatch.setenv("HMDA_AGENTIC_REVIEW_MODEL", "environment-model")
+
     with pytest.raises(ValidationError):
         settings_module.RuntimeAISettings.model_validate({})
