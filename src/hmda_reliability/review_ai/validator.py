@@ -44,7 +44,7 @@ _FORBIDDEN_ACTION_PATTERNS = tuple(
         r"^(?:please\s+)?(?:backfill|recover)\s+"
         r"(?:(?:the|this|that)\s+)?(?:\d{4}\s+partition\b|partition(?:\s+\d{4})?\b|data\b|dataset\b|records?\b|table\b|database\b)",
         r"^(?:please\s+)?(?:backfill|recover)\s+(?:now|immediately)\b",
-        r"^(?:please\s+)?(?:proceed\s+with|initiate|launch|execute|run|apply|trigger|perform|start)\b.{0,80}"
+        r"^(?:but\s+)?(?:please\s+)?(?:proceed\s+with|initiate|launch|execute|run|apply|trigger|perform|start)\b.{0,80}"
         r"\b(?:backfill|recovery|remediation|mutation|shell|sql|command|database|data|partition)\b",
         r"^(?:you\s+should|you\s+must|must|should)\s+"
         r"(?:backfill|recover|execute|run|apply|delete|remove|modify|mutate|perform|initiate|launch)\b",
@@ -63,42 +63,15 @@ _FORBIDDEN_ACTION_PATTERNS = tuple(
     )
 )
 
-_CLAUSE_SPLIT_PATTERN = re.compile(
-    r"[\n\r;!?]+|(?<!\d)\.+(?!\d)|\b(?:but|however)\b|(?:하지만|그러나)",
-    flags=re.IGNORECASE,
-)
-_WEAK_CLAUSE_SPLIT_PATTERN = re.compile(r"[,:]+")
-_SAFE_ACTION_SCOPE_PATTERNS = tuple(
-    re.compile(pattern, flags=re.IGNORECASE | re.DOTALL)
-    for pattern in (
-        r"\b(?:after|with|pending|subject\s+to)\s+(?:explicit\s+)?"
-        r"(?:human|external|operator)\s+approval\b",
-        r"\brequires?\s+(?:explicit\s+)?(?:human|external|operator)\s+approval\b",
-        r"\b(?:do\s+not|don't|never|must\s+not|should\s+not)\s+"
-        r"(?:execute|run|apply|trigger|perform|start|initiate|launch|backfill|"
-        r"recover|delete|remove|overwrite|modify|mutate)\b",
+_SEGMENT_SPLIT_PATTERN = re.compile(r"[\n\r,;:!?]+|(?<!\d)\.+(?!\d)")
+
+
+def _review_segments(text: str) -> tuple[str, ...]:
+    return tuple(
+        segment.strip().lstrip("-*• \t").strip("\"'()[]{}.,:;")
+        for segment in _SEGMENT_SPLIT_PATTERN.split(text)
+        if segment.strip()
     )
-)
-
-
-def _has_safe_action_scope(text: str) -> bool:
-    return any(pattern.search(text) for pattern in _SAFE_ACTION_SCOPE_PATTERNS)
-
-
-def _extract_clauses(text: str) -> tuple[str, ...]:
-    """Preserve weak punctuation inside explicit negation or approval scope."""
-    clauses: list[str] = []
-    for candidate in _CLAUSE_SPLIT_PATTERN.split(text):
-        segments = (
-            (candidate,)
-            if _has_safe_action_scope(candidate)
-            else _WEAK_CLAUSE_SPLIT_PATTERN.split(candidate)
-        )
-        for segment in segments:
-            clause = segment.strip().lstrip("-*• \t").strip("\"'()[]{}.,:;")
-            if clause:
-                clauses.append(clause)
-    return tuple(clauses)
 
 
 def _has_authority_escalation(text: str) -> bool:
@@ -107,9 +80,8 @@ def _has_authority_escalation(text: str) -> bool:
 
 def _has_forbidden_action(text: str) -> bool:
     return any(
-        pattern.search(clause)
-        for clause in _extract_clauses(text)
-        if not _has_safe_action_scope(clause)
+        pattern.search(segment)
+        for segment in _review_segments(text)
         for pattern in _FORBIDDEN_ACTION_PATTERNS
     )
 
