@@ -74,7 +74,7 @@ def main() -> int:
         choices=("setup", "session", "update"),
         help=(
             "setup once after clone, restore locked session state, "
-            "or update external agent tooling"
+            "or refresh external tooling sources"
         ),
     )
     args = parser.parse_args()
