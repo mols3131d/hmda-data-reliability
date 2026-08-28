@@ -1,4 +1,6 @@
-# Harness Compatibility
+# HMDA Data Reliability Chatbot Agent Instructions
+
+## Harness Compatibility
 
 `CHATBOT.md`는 chatbot harness를 repository guidance와 Agent Assets에 연결하는 최소 bootstrap이다. 정책, Skill 또는 Rule 본문은 여기서 소유하지 않는다.
 
