@@ -1,4 +1,4 @@
-"""Thin OpenAI-compatible chat-completions adapter."""
+"""경량 OpenAI 호환 chat-completions 어댑터 모듈."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 
 class ProviderTransportError(Exception):
-    """Sanitized transport failure classified at the SDK boundary."""
+    """SDK 경계에서 분류된 정제된 전송(transport) 실패 예외."""
 
     def __init__(self, *, failure_code: str, retryable: bool) -> None:
         super().__init__(failure_code)
@@ -29,7 +29,7 @@ class ProviderTransportError(Exception):
 
 
 class ProviderUnavailableError(Exception):
-    """Bounded transport attempts ended without a provider response."""
+    """제한된 재시도 횟수 내에 응답을 받지 못했을 때 발생하는 예외."""
 
     def __init__(
         self,
@@ -45,7 +45,7 @@ class ProviderUnavailableError(Exception):
 
 
 class ProviderResponseTooLargeError(Exception):
-    """Provider content exceeded the configured response byte boundary."""
+    """Provider 응답 바이트 크기가 설정된 한도를 초과할 때 발생하는 예외."""
 
     def __init__(
         self,
@@ -71,7 +71,7 @@ class ChatCompletionTransport(Protocol):
 
 
 class OpenAICompatibleAdapter:
-    """Apply one provider-neutral request profile with adapter-owned retries."""
+    """어댑터 자체 재시도 로직이 포함된 provider 중립적 요청 어댑터."""
 
     def __init__(
         self,
@@ -93,11 +93,11 @@ class OpenAICompatibleAdapter:
         self._transport = transport
 
     def invoke(self, messages: tuple[ChatMessage, ...]) -> ProviderResponse:
-        """Invoke chat completion transport with exponential backoff retries.
+        """지수 백오프 재시도를 적용하여 chat completion 전송을 호출한다.
 
-        Applies configured model, temperature=0, token limits, and JSON format.
-        Sanitizes transport errors into `ProviderUnavailableError` and bounds
-        response payload size against `max_output_bytes`.
+        설정된 모델, temperature=0, 토큰 제한 및 JSON 형식을 적용한다.
+        전송 에러를 `ProviderUnavailableError`로 정제하고, 응답 바이트 크기를
+        `max_output_bytes` 한도로 제한한다.
         """
         request = ChatCompletionRequest(
             messages=messages,

@@ -1,4 +1,4 @@
-"""Read-only null-spike agentic review orchestration."""
+"""조회 전용(Read-only) null-spike agentic review 오케스트레이션 모듈."""
 
 from __future__ import annotations
 
@@ -78,18 +78,18 @@ def review_null_spike(
     invocation_id_factory: Callable[[], str] | None = None,
     clock: Callable[[], datetime] | None = None,
 ) -> AgenticReviewResult:
-    """Generate evidence-bound advisory review without mutating repository state.
+    """저장소 상태 변경 없이 evidence 기반의 advisory review 결과를 생성한다.
 
-    Orchestrates the full read-only review lifecycle:
-    1. Validates and snapshots `review_input`.
-    2. Renders canonical prompt under `max_prompt_bytes`.
-    3. Invokes provider via `runtime_ai` adapter with retry/timeout bounding.
-    4. Parses JSON response and validates structured facts deterministically.
-    5. Persists sanitized invocation evidence to disk for auditability and replay.
+    전체 조회 전용 review 라이프사이클을 오케스트레이션한다:
+    1. `review_input`의 유효성을 검증하고 불변 스냅샷을 생성한다.
+    2. `max_prompt_bytes` 제한 아래에서 표준(canonical) 프롬프트를 렌더링한다.
+    3. 재시도 및 타임아웃 경계가 적용된 `runtime_ai` 어댑터를 통해 provider를 호출한다.
+    4. JSON 응답을 파싱하고 구조화된 사실을 결정론적으로 검증한다.
+    5. 감사 및 재현(replay)을 위해 정제된 호출 evidence를 디스크에 영속화한다.
 
-    Returns `AgenticReviewResult` with `ACCEPTED` status on success, or
-    appropriate failure statuses (`INPUT_REJECTED`, `UNAVAILABLE`,
-    `VALIDATION_FAILED`, `PROVENANCE_FAILED`).
+    성공 시 `ACCEPTED` 상태의 `AgenticReviewResult`를 반환하며, 실패 시
+    적절한 실패 상태(`INPUT_REJECTED`, `UNAVAILABLE`, `VALIDATION_FAILED`,
+    `PROVENANCE_FAILED`)를 반환한다.
     """
 
     active_review_settings = review_settings or ReviewAISettings()

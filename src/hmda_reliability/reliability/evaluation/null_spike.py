@@ -81,15 +81,16 @@ def evaluate_null_spike_vertical_slice(
     validate_target: DbtValidationCallback,
     null_fraction: float = 0.2,
 ) -> NullSpikeVerticalSliceResult:
-    """Evaluate a controlled null spike through clean, defect, and recovery.
+    """Clean, Defect, Recovery 단계별로 통제된 null spike 복구를 결정론적으로 평가한다.
 
-    Executes deterministic evaluation across isolated workspace databases:
-    1. Runs baseline clean case and profiles target column null rate.
-    2. Injects synthetic null spike defect and verifies incident & draft.
-    3. Requests approval and executes recovery backfill via candidate validation.
-    4. Validates post-recovery projection and verifies reconciliation.
+    격리된 워크스페이스 데이터베이스 간에 결정론적 평가를 실행한다:
+    1. 기준 clean 케이스를 실행하고 대상 컬럼의 null 비율을 프로파일링한다.
+    2. 합성 null spike 결함을 주입하고 인시던트 감지 및 조치 초안 생성을 검증한다.
+    3. 승인을 요청하고 candidate 검증을 통해 복구 backfill을 실행한다.
+    4. 복구 후 프로젝션을 검증하고 최종 조화를 확인한다.
 
-    Raises `ValueError` if target_column is missing or observed_at is None.
+    `target_column`이 `profile_columns`에 없거나 `observed_at`이 없으면
+    `ValueError`를 발생시킨다.
     """
 
     from hmda_reliability.data_operations import run_incident_lifecycle

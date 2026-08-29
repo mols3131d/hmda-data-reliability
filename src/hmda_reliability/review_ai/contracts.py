@@ -1,4 +1,4 @@
-"""Structured contracts for bounded agentic review."""
+"""제한된(bounded) agentic review를 위한 구조화된 계약 모델 정의."""
 
 from __future__ import annotations
 

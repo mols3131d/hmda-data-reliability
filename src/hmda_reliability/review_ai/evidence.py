@@ -1,4 +1,4 @@
-"""Logical invocation evidence contracts."""
+"""논리적 호출 evidence 계약 모듈."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from hmda_reliability.runtime_ai.contracts import ProviderUsage
 
 
 class SanitizedAgenticReviewConfiguration(ReliabilityContract):
-    """Persistable provider configuration with no credential field."""
+    """자격 증명이 제거된 영속화 가능한 provider 설정 계약."""
 
     base_url: str = Field(min_length=1, max_length=2048)
     model: str = Field(min_length=1, max_length=512)
@@ -53,7 +53,7 @@ class SanitizedAgenticReviewConfiguration(ReliabilityContract):
 
 
 class AgenticInvocationEvidence(ReliabilityContract):
-    """One sanitized record for one logical provider-started invocation."""
+    """한 번의 논리적 provider 호출에 대해 기록되는 정제된 evidence 레코드."""
 
     invocation_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
     recorded_at: datetime

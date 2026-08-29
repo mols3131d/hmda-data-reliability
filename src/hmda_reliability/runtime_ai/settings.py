@@ -1,4 +1,4 @@
-"""Explicit provider-neutral AI runtime settings."""
+"""명시적인 provider 중립 AI 런타임 설정 모듈."""
 
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ from hmda_reliability.runtime_ai.contracts import RuntimeAIContract
 
 
 def _sanitize_base_url(url: str) -> str:
-    """Return normalized base URL string without userinfo or query parameters."""
+    """사용자 정보 또는 쿼리 파라미터가 제거된 정규화된 기본 URL을 반환한다."""
     parsed = urllib.parse.urlsplit(url)
     return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
 
 
 class RuntimeAISettings(RuntimeAIContract):
-    """Provider settings supplied explicitly by the caller."""
+    """호출자가 명시적으로 제공하는 provider 런타임 설정."""
 
     base_url: AnyHttpUrl
     api_key: SecretStr
@@ -60,7 +60,7 @@ class RuntimeAISettings(RuntimeAIContract):
         return normalized
 
     def sanitized_configuration(self) -> dict[str, str | float | int]:
-        """Return the bounded provider configuration without credentials."""
+        """자격 증명이 제거된 제한된 provider 설정을 반환한다."""
 
         return {
             "base_url": _sanitize_base_url(str(self.base_url)),

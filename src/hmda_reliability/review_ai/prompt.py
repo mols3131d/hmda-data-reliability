@@ -1,4 +1,4 @@
-"""Canonical input projection and prompt rendering."""
+"""표준 입력 투영(projection) 및 프롬프트 렌더링 모듈."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ recovery, backfill, shell, SQL, file, database, or data mutation execution."""
 
 
 class RenderedReviewPrompt(ReliabilityContract):
-    """Review-owned rendered prompt state used for validation and provenance."""
+    """검증 및 출처 증명에 사용되는 렌더링된 프롬프트 상태 계약."""
 
     canonical_input: dict[str, object]
     canonical_json: str
@@ -37,7 +37,7 @@ class RenderedReviewPrompt(ReliabilityContract):
 
 
 class PromptTooLargeError(ValueError):
-    """Rendered messages exceed the configured pre-invocation byte limit."""
+    """렌더링된 메시지가 설정된 바이트 한도를 초과할 때 발생하는 예외."""
 
     def __init__(self, *, actual_bytes: int, max_bytes: int) -> None:
         super().__init__("rendered prompt exceeds max_prompt_bytes")
@@ -50,10 +50,11 @@ def render_review_prompt(
     *,
     max_prompt_bytes: int,
 ) -> RenderedReviewPrompt:
-    """Project an immutable review input into messages and SHA-256 prompt digest.
+    """불변의 review 입력을 메시지 튜플 및 SHA-256 프롬프트 다이제스트로 투영한다.
 
-    Builds the canonical input allowlist and formats system/user chat messages.
-    Raises `PromptTooLargeError` if rendered prompt bytes exceed `max_prompt_bytes`.
+    표준 입력 allowlist를 구성하고 system/user 대화 메시지를 포맷팅한다.
+    렌더링된 프롬프트 바이트가 `max_prompt_bytes`를 초과하면
+    `PromptTooLargeError`를 발생시킨다.
     """
 
     return render_canonical_input(
@@ -64,7 +65,7 @@ def render_review_prompt(
 
 
 def build_canonical_input(review_input: AgenticReviewInput) -> dict[str, object]:
-    """Extract only spec-allowlisted fields and sort evidence deterministically."""
+    """스펙에서 허용된 필드만 추출하고 evidence를 결정론적으로 정렬한다."""
 
     incident = review_input.incident.model_dump(mode="json")
     evidence = [item.model_dump(mode="json") for item in review_input.evidence]
@@ -121,12 +122,12 @@ def render_canonical_input(
     *,
     max_prompt_bytes: int,
 ) -> RenderedReviewPrompt:
-    """Render a stored canonical input projection through versioned prompt template.
+    """저장된 표준 입력을 버전이 지정된 프롬프트 템플릿으로 렌더링한다.
 
-    Constructs untrusted JSON user message alongside fixed system instructions.
-    Calculates deterministic `sha256` digest over rendered JSON byte sequence.
+    신뢰할 수 없는 JSON 형태의 user 메시지와 고정된 system 지침을 구성하고,
+    렌더링된 JSON 바이트에 대해 결정론적 `sha256` 다이제스트를 계산한다.
 
-    Raises `PromptTooLargeError` if rendered messages exceed `max_prompt_bytes`.
+    렌더링된 메시지가 `max_prompt_bytes`를 초과하면 `PromptTooLargeError`를 발생시킨다.
     """
 
     if prompt_identity.version != "v1":  # pragma: no cover - closed by contract
@@ -158,9 +159,9 @@ def render_canonical_input(
 
 
 def canonical_json_bytes(value: object) -> bytes:
-    """Serialize a JSON value into deterministic byte representation for replay.
+    """결정론적 재생(replay)을 위해 JSON 값을 표준 바이트로 직렬화한다.
 
-    Enforces sorted keys, compact delimiters, UTF-8 encoding, and no NaN values.
+    키 정렬, 압축된 구분자, UTF-8 인코딩 및 NaN 방지를 강제한다.
     """
 
     return json.dumps(
