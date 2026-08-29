@@ -11,7 +11,7 @@ tags:
 
 기본 언어는 한국어다. 한국어가 어색하고 영어가 자연스러울 때만 영어를 사용한다. 한국어와 영어가 모두 어색하면 한국어를 사용한다.
 
-## English-required Surfaces
+## Surface Language Rules
 
 | Surface | Rule | Note |
 | --- | --- | --- |
