@@ -20,7 +20,7 @@ Repository text는 한국어를 기본으로 한다. 다만 한국어 표현이 
 | Metadata key와 짧은 structured value | English | 문단 수준의 긴 value는 prose로 취급한다. |
 | File name, directory name, repository path | English | |
 | Code identifier, API name, CLI name | Declared identifier | 식별에 필요한 이름은 선언된 표기를 유지하고 주변 설명은 한국어 또는 영어를 사용한다. |
-| Established technical term | Korean or English | 둘 중 더 자연스럽고 정확한 표현을 사용한다. 판단이 애매하면 한국어를 기본으로 한다. |
+| Established technical term | Korean or English | 둘 중 더 자연스럽고 정확한 표현을 사용한다. 둘 다 적절하지 않거나 판단이 애매하면 한국어를 기본으로 한다. |
 
 ## Prose
 
