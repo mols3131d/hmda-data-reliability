@@ -9,20 +9,19 @@ tags:
 
 # Language Policy
 
-Repository text는 한국어를 기본으로 한다. 다만 한국어 표현이 어색하고 영어가 더 자연스러우면 영어를 사용한다. 자연스러운 technical term을 억지로 번역하지 않는다.
+기본 언어는 한국어다. 한국어가 어색하고 영어가 자연스러울 때만 영어를 사용한다. 한국어와 영어가 모두 어색하면 한국어를 사용한다.
 
-## English-required Surfaces
+## Surface Language Rules
 
-| Surface | Rule |
-| --- | --- |
-| Document title, section heading | English |
-| Field name, label | English |
-| Metadata key와 짧은 structured value | English |
-| File name, directory name, repository path | English |
-| Code identifier, API name, CLI name, established technical term | English 또는 원래 표기 |
-
-Metadata value가 문단 수준의 긴 설명문이면 prose로 취급해 한국어 기본 규칙을 적용한다.
+| Surface | Rule | Note |
+| --- | --- | --- |
+| Document title, H1–H3 heading | English | H4 이하 제목은 기본 언어 규칙을 따른다. |
+| Field name, label | English | |
+| Metadata key와 짧은 structured value | English | 문단처럼 긴 값은 본문으로 보고 기본 언어 규칙을 따른다. |
+| File name, directory name, repository path | English | |
+| Code identifier, API name, CLI name | Declared identifier | 식별에 필요한 이름은 선언된 표기를 그대로 쓰고, 주변 설명은 기본 언어 규칙을 따른다. |
+| Established technical term | Korean or English | 일반적인 기술 용어도 기본 언어 규칙을 따른다. |
 
 ## Prose
 
-설명 본문과 긴 서술형 text는 한국어를 기본으로 한다. 다만 같은 의미를 한국어로 옮겼을 때 부자연스럽거나 의미가 흐려지고 영어 표현이 자연스러우면 영어를 사용한다. Technical topic이라는 이유만으로 본문 전체를 영어로 바꾸지는 않는다.
+설명 본문과 긴 서술형 문장은 기본 언어 규칙을 따른다. 기술 용어가 영어라고 해서 주변 본문까지 영어로 쓰지 않는다.
