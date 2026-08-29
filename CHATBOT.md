@@ -10,6 +10,10 @@
 1. Route가 선택한 source와 그 source가 요구하는 context를 해당 작업 전에 읽는다.
 1. Task intent, operation 또는 target path가 달라지면 applicable context를 다시 계산한다. 같은 revision에서 이미 읽었고 여전히 applicable한 context는 재사용한다.
 
+## Routing Priority
+
+Git 또는 GitHub의 mutable state나 VCS operation이 작업에 포함되면 [`prj-vcs-git-github`](.rulesync/skills/prj-vcs-git-github/SKILL.md)를 우선 routing candidate로 고려한다. 특히 branch, commit, Pull Request, review, merge 작업에서는 이 Skill을 확인한다. 세부 VCS 정책과 추가 context 선택은 이 Skill이 소유한다.
+
 ## Loading Gate
 
 - Required source의 일부만 로드되거나 output이 truncated되면 읽은 것으로 간주하지 않는다. 필요한 경우 범위를 좁히거나 나눠서 끝까지 읽는다.
