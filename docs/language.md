@@ -15,11 +15,13 @@ Repository text는 한국어를 기본으로 한다. 다만 한국어 표현이 
 
 | Surface | Rule |
 | --- | --- |
-| Document title, section heading | English |
+| Document title, H1–H3 heading | English |
 | Field name, label | English |
 | Metadata key와 짧은 structured value | English |
 | File name, directory name, repository path | English |
 | Code identifier, API name, CLI name, established technical term | English 또는 원래 표기 |
+
+H4 이하 heading은 기본 언어 규칙을 적용하며, 한국어를 기본으로 하되 영어가 더 자연스러우면 영어를 사용한다.
 
 Metadata value가 문단 수준의 긴 설명문이면 prose로 취급해 한국어 기본 규칙을 적용한다.
 
