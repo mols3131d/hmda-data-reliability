@@ -66,7 +66,7 @@ Optional metadata의 사용 조건과 형식은 [GitHub Templates](../../../.git
 
 Agent의 review action과 lifecycle 제약은 [Pull Requests](pull-request.md#agent-instructions)를 따른다. 인간의 명시적 요청 없이 review thread를 해결하거나 approval을 대신 확정하지 않는다.
 
-Agent가 Pull Request author와 동일한 GitHub identity인 self-review는 approval이나 independent review로 제출하지 않는다. 이 경우 전체 review 결과는 Pull Request Conversation comment로 기록하고, 구체적인 diff location이 있는 finding은 가능한 경우 `Finding Placement` 원칙에 따라 inline comment를 사용한다. Platform 또는 API 제약으로 정상적인 review submission을 사용할 수 없는 경우에도 같은 fallback을 사용한다.
+Agent가 Pull Request author와 동일한 GitHub identity인 self-review는 approval이나 independent review로 표현하지 않는다. 승인 없는 feedback은 가능한 경우 `Comment` review로 기록하고, 구체적인 diff location이 있는 finding은 `Finding Placement` 원칙에 따라 inline review comment를 사용한다. `Comment` review를 포함한 review submission 자체를 사용할 수 없는 platform 또는 API 제약이 있을 때만 전체 review 결과를 Pull Request Conversation comment로 기록한다.
 
 ## Related
 
