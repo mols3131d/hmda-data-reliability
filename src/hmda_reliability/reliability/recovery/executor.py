@@ -230,7 +230,7 @@ def execute_approved_backfill(
     connection: duckdb.DuckDBPyConnection,
     request: ApprovedBackfillRequest,
 ) -> BackfillValidationResult:
-    """Apply the recovery gate and return identity-based validation evidence."""
+    """복구 게이트를 적용하고 내용 식별자 기반의 검증 증거를 반환한다."""
 
     return ApprovalBackfillValidator(connection).execute(request)
 

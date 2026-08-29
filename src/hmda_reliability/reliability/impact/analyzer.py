@@ -55,7 +55,7 @@ class DbtImpactAnalyzer:
 
 
 def analyze_dbt_impact(request: ImpactAnalysisRequest) -> ImpactAnalysisResult:
-    """Calculate downstream impact from manifest lineage and recorded artifact paths."""
+    """매니페스트 계통 및 기록된 아티팩트 경로로부터 다운스트림 영향을 계산한다."""
 
     return DbtImpactAnalyzer().analyze(request)
 

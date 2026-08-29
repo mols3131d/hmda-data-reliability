@@ -1,4 +1,4 @@
-"""Execute externally approved exact table-schema recovery."""
+"""외부 승인된 테이블 스키마 복구 실행 및 검증 모듈."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ _LOGGER = get_logger(__name__)
 def execute_approved_schema_recovery(
     request: ApprovedSchemaRecoveryRequest,
 ) -> SchemaRecoveryValidationResult:
-    """Restore an exact approved table state or resume verification on replay."""
+    """승인된 정확한 테이블 상태를 복구하거나 재현(replay) 시 검증을 재개한다."""
 
     validated_request = _ensure_approved_schema_recovery(request)
     proposal = validated_request.proposal

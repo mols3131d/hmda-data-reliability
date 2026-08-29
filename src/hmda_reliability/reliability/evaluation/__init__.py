@@ -1,4 +1,4 @@
-"""Synthetic case evaluation report."""
+"""합성 케이스 신뢰성 평가 및 보고서 패키지."""
 
 from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
 from hmda_reliability.reliability.evaluation.freshness_delay import (

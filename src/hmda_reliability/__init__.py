@@ -1,1 +1,1 @@
-"""Data reliability package."""
+"""HMDA Data Reliability 패키지."""

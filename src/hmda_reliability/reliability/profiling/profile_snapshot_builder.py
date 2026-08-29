@@ -67,7 +67,7 @@ def create_profile_snapshot(
     connection: duckdb.DuckDBPyConnection,
     request: ProfileSnapshotRequest,
 ) -> ProfileSnapshot:
-    """Build a snapshot, wrapping DuckDB failures as ProfileSnapshotError."""
+    """DuckDB 실패를 ProfileSnapshotError로 래핑하여 스냅샷을 생성한다."""
 
     return DuckDBProfileSnapshotBuilder(connection).build(request)
 
@@ -76,7 +76,7 @@ def calculate_schema_hash(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> str:
-    """Hash name-sorted column names and types; row data is not included."""
+    """이름순 정렬된 컬럼명과 타입을 해시화한다; 행 데이터는 포함되지 않는다."""
 
     rows = connection.execute(f"DESCRIBE {qualify_table_name(table_name)}").fetchall()
     schema = sorted(

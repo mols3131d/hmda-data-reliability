@@ -141,7 +141,7 @@ class BasicIncidentDetector:
 
 
 def detect_basic_incidents(request: DetectionRequest) -> list[DetectionResult]:
-    """Apply the default deterministic detector to a validated profile pair."""
+    """검증된 프로파일 쌍에 기본 결정론적 인시던트 감지기를 적용한다."""
 
     return BasicIncidentDetector().detect(request)
 

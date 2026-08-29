@@ -122,7 +122,7 @@ def stage_approved_schema_recovery_candidate(
     approved_candidate_state: TableStateIdentity,
     staging_directory: str | Path,
 ) -> StagedSchemaRecoveryCandidate:
-    """Export and revalidate the exact approved candidate under its mutation lock."""
+    """뮤테이션 락 하에서 승인된 후보를 스테이징 Parquet으로 내보내고 재검증한다."""
 
     database_path = Path(candidate_database_path)
     staging_root = Path(staging_directory)

@@ -1,4 +1,4 @@
-"""Bounded, evidence-bound advisory review."""
+"""제한된 evidence 기반 advisory review 공개 API 모듈."""
 
 from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,

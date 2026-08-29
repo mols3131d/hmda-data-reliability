@@ -1,4 +1,4 @@
-"""dbt build result model."""
+"""dbt build 결과 모델 정의 모듈."""
 
 from pathlib import Path
 

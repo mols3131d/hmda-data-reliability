@@ -1,1 +1,1 @@
-"""Shared domain helpers and utilities."""
+"""공유 도메인 헬퍼 및 유틸리티 패키지."""

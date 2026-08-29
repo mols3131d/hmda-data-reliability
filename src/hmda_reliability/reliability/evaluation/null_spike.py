@@ -1,4 +1,4 @@
-"""Deterministic null-spike recovery evaluation."""
+"""결정론적 null-spike 복구 평가 모듈."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ type DbtValidationCallback = Callable[[DataOperationRequest], str]
 
 
 class NullSpikeVerticalSliceResult(BaseModel):
-    """Deterministic clean and null-spike recovery evidence."""
+    """결정론적 clean 및 null-spike 복구 증거 결과 모델."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

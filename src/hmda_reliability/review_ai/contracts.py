@@ -203,7 +203,7 @@ class AgenticReviewOutput(ReliabilityContract):
 
 
 class AgenticReviewValidation(ReliabilityContract):
-    """Versioned deterministic validation result retained in provenance."""
+    """출처 증명에 보존되는 버전 관리된 결정론적 검증 결과 모델."""
 
     status: ReviewValidationStatus
     violations: tuple[ReviewViolationCode, ...]
