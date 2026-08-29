@@ -1,20 +1,21 @@
 # HMDA Data Reliability Chatbot Instructions
 
-`CHATBOT.md`는 chatbot harness를 repository guidance와 Agent Assets에 연결하는 최소 bootstrap이다. 정책, Skill 또는 Rule 본문은 여기서 소유하지 않는다.
+`CHATBOT.md`는 native repository instruction discovery를 보완하는 최소 compatibility bootstrap이다. Project policy, Skill, Rule 또는 workflow 세부사항을 여기서 소유하지 않는다.
 
-## Context
+## Bootstrap
 
-| Path | Description |
-| --- | --- |
-| [`AGENTS.md`](AGENTS.md) | 모든 작업에서 읽는다. Project guidance의 root entrypoint이며 기본 context와 추가 context 탐색을 안내한다. |
-| [`.agents/route/ROUTE.md`](.agents/route/ROUTE.md) | 모든 작업에서 읽는다. Task intent와 target path에 맞는 Skill과 Rule의 discovery와 loading route를 소유한다. |
-| [`.rulesync/skills/prj-vcs-git-github/SKILL.md`](.rulesync/skills/prj-vcs-git-github/SKILL.md) | Git/GitHub 작업에서 읽는다. Branch, commit, Pull Request, review, merge에 필요한 repository VCS guide, template과 live context 선택을 소유한다. |
-| `**/AGENTS.md` | Repository path를 읽거나 변경하기 전에 root부터 target까지 적용되는 파일을 읽는다. Scoped guidance를 소유하며, 충돌하면 target에 가까운 지침을 우선하고 target이 바뀌면 다시 계산한다. |
+1. [`AGENTS.md`](AGENTS.md)를 끝까지 읽고 root guidance를 적용한다.
+1. [`.agents/route/ROUTE.md`](.agents/route/ROUTE.md)를 끝까지 읽고 current task intent와 known target path에 맞는 Skill과 Rule을 선택한다.
+1. Repository path를 읽거나 변경하기 전에 root부터 target까지 적용되는 `AGENTS.md`를 모두 읽는다.
+1. Route가 선택한 source와 그 source가 요구하는 context를 해당 작업 전에 읽는다.
+1. Task intent, operation 또는 target path가 달라지면 applicable context를 다시 계산한다. 같은 revision에서 이미 읽었고 여전히 applicable한 context는 재사용한다.
 
-## GitHub State
+## Loading Gate
 
-현재 GitHub 상태가 판단에 영향을 줄 때 GitHub plugin으로 live state를 확인한다.
+- Required source의 일부만 로드되거나 output이 truncated되면 읽은 것으로 간주하지 않는다. 필요한 경우 범위를 좁히거나 나눠서 끝까지 읽는다.
+- Required context를 확인할 수 없으면 그 context에 의존하는 mutation이나 판단을 추측으로 진행하지 않고 limitation을 명시한다.
+- Route와 index metadata는 discovery만 소유한다. 선택된 canonical source가 실제 behavior와 policy를 소유한다.
 
 ## Boundary
 
-Repository guidance와 platform/runtime guidance는 각자의 scope에만 적용한다. 서로의 authority를 재정의하거나 platform-specific behavior를 명시적인 요청 없이 repository policy로 영구 반영하지 않는다.
+Repository guidance와 platform/runtime guidance는 각자의 scope에만 적용한다. Compatibility bootstrap은 authority를 재정의하지 않으며, platform-specific behavior를 명시적인 요청 없이 repository policy로 영구 반영하지 않는다.
