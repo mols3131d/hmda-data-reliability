@@ -1,4 +1,4 @@
-"""Complete candidate preflight for exact table-schema recovery."""
+"""테이블 스키마 복구를 위한 사전 점검(preflight) 모듈."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 class SchemaRecoveryCandidateEvidence(ReliabilityContract):
-    """Immutable complete candidate state and downstream dbt evidence."""
+    """불변의 완전한 후보 상태 및 downstream dbt evidence."""
 
     candidate_state: TableStateIdentity
     dbt_projection_id: str = Field(min_length=1)
@@ -49,7 +49,7 @@ class SchemaRecoveryCandidateEvidence(ReliabilityContract):
 
 
 class StagedSchemaRecoveryCandidate(ReliabilityContract):
-    """Immutable Parquet artifact whose complete state matches approval."""
+    """승인된 상태와 일치하는 스테이징된 Parquet 아티팩트 계약."""
 
     artifact_path: Path
     candidate_state: TableStateIdentity
@@ -61,7 +61,7 @@ def preflight_schema_recovery_candidate(
     expected_after_state: TableStateIdentity,
     dbt_result: DbtBuildResult,
 ) -> SchemaRecoveryCandidateEvidence:
-    """Validate an isolated complete candidate before approval or target access."""
+    """대상 데이터베이스 변경 전에 격리된 후보 데이터베이스 상태를 사전 점검한다."""
 
     if (
         not dbt_result.succeeded

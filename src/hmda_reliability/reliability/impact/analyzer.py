@@ -1,4 +1,4 @@
-"""Analyze dbt manifest lineage under a shared artifact reader lock."""
+"""공유 아티팩트 reader 락 하에서 dbt 매니페스트 계통(lineage)을 분석한다."""
 
 from hmda_reliability.data_platform.artifacts import (
     ArtifactProjectionLockError,
@@ -12,10 +12,10 @@ from hmda_reliability.reliability.impact.result import ImpactAnalysisResult
 
 
 class DbtImpactAnalyzer:
-    """Attach downstream dbt lineage to a copied incident without mutating artifacts."""
+    """아티팩트 변경 없이 incident에 downstream dbt 계통 evidence를 연결한다."""
 
     def analyze(self, request: ImpactAnalysisRequest) -> ImpactAnalysisResult:
-        """Return copied incident and lineage evidence; require run-results to exist."""
+        """복사된 incident와 계통 evidence를 반환한다; run-results 파일이 필요하다."""
 
         try:
             # Share the manifest directory's reader lock with artifact promotion.

@@ -1,4 +1,4 @@
-"""Recovery safety case evaluation adapter."""
+"""복구 안전성 평가 케이스 어댑터 모듈."""
 
 from collections.abc import Sequence
 
@@ -17,7 +17,7 @@ def build_recovery_evaluation_case(
     evidence_refs: Sequence[str] = (),
     artifact_projection_ids: Sequence[str] = (),
 ) -> EvaluationCaseResult:
-    """Convert recovery success or failure into observable evaluation evidence."""
+    """복구 성공 또는 실패 결과를 관찰 가능한 평가 evidence로 변환한다."""
 
     target_mutated = None
     resolved_reconciliation_action = reconciliation_action

@@ -1,4 +1,4 @@
-"""Build complete HMDA table schema/content state from DuckDB."""
+"""DuckDB로부터 완전한 HMDA 테이블 스키마 및 내용 상태를 생성한다."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def create_table_state_identity(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> TableStateIdentity:
-    """Return exact schema and complete ``source_year`` content identity."""
+    """정확한 스키마와 완전한 연도별 내용 식별자를 반환한다."""
 
     try:
         row_count = table_row_count(connection, table_name)
