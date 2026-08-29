@@ -25,6 +25,12 @@ Review의 결론과 가장 중요한 근거를 먼저 요약한다. Section 구�
 
 GitHub가 소유하는 review decision(`Approve`, `Comment`, `Request Changes`)은 review body에 반복하지 않는다.
 
+## Finding Placement
+
+구체적인 diff location에 귀속되는 finding은 가능한 경우 해당 line 또는 range의 inline review comment로 기록한다. 특정 line에 안정적으로 귀속되지 않는 cross-cutting finding, 전체 결론과 validation은 review body에 기록한다.
+
+같은 finding의 상세 내용을 review body와 inline review comment에 중복하지 않는다. Review body의 `Findings`에는 전체 판단에 필요한 finding ID와 요약만 연결할 수 있다.
+
 ## Findings
 
 Finding은 root cause별로 독립적인 ID를 부여하고 location, evidence, impact와 required change를 연결한다. 근거 없이 가능성만 제시하거나 변경 범위를 벗어난 선호를 blocker로 만들지 않는다.
@@ -59,6 +65,8 @@ Optional metadata의 사용 조건과 형식은 [GitHub Templates](../../../.git
 ## Agent Instructions
 
 Agent의 review action과 lifecycle 제약은 [Pull Requests](pull-request.md#agent-instructions)를 따른다. 인간의 명시적 요청 없이 review thread를 해결하거나 approval을 대신 확정하지 않는다.
+
+Agent가 Pull Request author와 동일한 GitHub identity인 self-review는 approval이나 independent review로 제출하지 않는다. 이 경우 전체 review 결과는 Pull Request Conversation comment로 기록하고, 구체적인 diff location이 있는 finding은 가능한 경우 `Finding Placement` 원칙에 따라 inline comment를 사용한다. Platform 또는 API 제약으로 정상적인 review submission을 사용할 수 없는 경우에도 같은 fallback을 사용한다.
 
 ## Related
 
