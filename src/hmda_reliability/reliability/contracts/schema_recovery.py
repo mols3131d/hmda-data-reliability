@@ -1,4 +1,4 @@
-"""Exact table-schema recovery proposal and approval contracts."""
+"""테이블 스키마 복구 제안 및 승인 계약 모델 모듈."""
 
 from datetime import datetime
 
@@ -12,7 +12,7 @@ _SCHEMA_RECOVERY_ACTIONS = ("replace_table", "rerun_profile_snapshot")
 
 
 class SchemaRecoveryProposal(ReliabilityContract):
-    """Exact table target, states, evidence, and actions presented for approval."""
+    """승인을 위해 제시되는 정확한 테이블 대상, 상태, 증거 및 작업 제안 계약."""
 
     proposal_id: str = Field(min_length=1)
     incident_id: str = Field(min_length=1)

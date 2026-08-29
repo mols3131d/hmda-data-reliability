@@ -1,4 +1,4 @@
-"""Incident contract models."""
+"""인시던트(Incident) 계약 모델 정의 모듈."""
 
 from enum import StrEnum
 
@@ -31,6 +31,8 @@ class HumanReviewStatus(StrEnum):
 
 
 class Incident(ReliabilityContract):
+    """결정론적 인시던트 식별자 및 상태를 정의하는 계약 모델."""
+
     incident_id: str
     asset_name: str
     partition: str

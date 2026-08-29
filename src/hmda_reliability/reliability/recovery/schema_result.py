@@ -1,4 +1,4 @@
-"""Exact table-schema recovery validation result."""
+"""테이블 스키마 복구 검증 결과 모델 정의 모듈."""
 
 from typing import Literal
 
@@ -12,7 +12,7 @@ from hmda_reliability.reliability.contracts import (
 
 
 class SchemaRecoveryValidationResult(ReliabilityContract):
-    """Mutation-aware exact table state and aligned profile evidence."""
+    """변이 상태 및 프로파일 증거가 정렬된 테이블 복구 결과 모델."""
 
     approval_id: str
     incident_id: str
