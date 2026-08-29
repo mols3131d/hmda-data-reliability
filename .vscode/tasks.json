@@ -1,104 +1,23 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Bootstrap: Setup",
-            "type": "shell",
-            "command": "uv run python scripts/bootstrap.py setup",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Restores locked dependencies and Agent Assets, then installs Git hooks."
-        },
-        {
-            "label": "Bootstrap: Session",
-            "type": "shell",
-            "command": "uv run python scripts/bootstrap.py session",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Refreshes locked dependencies and Agent Assets for a new work session."
-        },
-        {
-            "label": "Agent Assets: Update",
-            "type": "shell",
-            "command": "uv run python scripts/agent_assets.py update",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Updates Rulesync-managed assets and Skills CLI assets when a skills lock exists."
-        },
-        {
-            "label": "Format with ruff",
-            "type": "shell",
-            "command": "uv run ruff format . && uv run ruff check --fix .",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Runs ruff formatting and lint auto-fixes."
-        },
-        {
-            "label": "Format with rumdl",
-            "type": "shell",
-            "command": "uv run rumdl fmt .",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Runs rumdl markdown formatting."
-        },
-        {
-            "label": "Format ruff & rumdl",
-            "type": "shell",
-            "command": "uv run ruff format . && uv run ruff check --fix . && uv run rumdl format .",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Runs both ruff and rumdl to format the workspace."
-        },
-        {
-            "label": "Rulesync: Preview",
-            "type": "shell",
-            "command": "uv run python scripts/rulesync.py preview",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Previews Rule projection changes without writing files."
-        },
-        {
-            "label": "Rulesync: Generate",
-            "type": "shell",
-            "command": "uv run python scripts/rulesync.py generate",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Generates agent Rule projections with the latest Rulesync."
-        },
-        {
-            "label": "Rulesync: Validate",
-            "type": "shell",
-            "command": "uv run python scripts/rulesync.py validate",
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Runs strict diagnostics followed by projection drift checks."
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Bootstrap: Session",
+      "type": "shell",
+      "command": "python scripts/bootstrap.py session",
+      "detail": "Restore the repository state needed to start a work session."
+    },
+    {
+      "label": "Bootstrap: Update",
+      "type": "shell",
+      "command": "python scripts/bootstrap.py update",
+      "detail": "Refresh externally managed repository tooling."
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": "uv run ruff check --fix . && uv run ruff format . && uv run rumdl fmt . && python scripts/biome.py format --write --files-ignore-unknown=true .",
+      "detail": "Format Python, Markdown, JSON, and JSONC across the repository."
+    }
+  ]
 }
