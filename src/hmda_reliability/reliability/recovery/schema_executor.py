@@ -14,6 +14,7 @@ from hmda_reliability.data_platform.duckdb import (
     database_mutation_lock,
 )
 from hmda_reliability.data_platform.sql import qualify_table_name, quote_string_literal
+from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     ProfileSnapshotError,
@@ -33,6 +34,8 @@ from hmda_reliability.reliability.recovery.schema_request import (
 from hmda_reliability.reliability.recovery.schema_result import (
     SchemaRecoveryValidationResult,
 )
+
+_LOGGER = get_logger(__name__)
 
 
 def execute_approved_schema_recovery(
@@ -163,6 +166,14 @@ def _replace_table(
         profile_snapshot = create_profile_snapshot(connection, request.profile_request)
         connection.execute("COMMIT")
         transaction_started = False
+        _LOGGER.info(
+            "schema recovery table 교체 완료",
+            extra={
+                "table_name": proposal.table_name,
+                "approval_id": request.approval.approval_id,
+                "incident_id": request.approval.incident_id,
+            },
+        )
     except SchemaRecoveryValidationError:
         if transaction_started:
             connection.execute("ROLLBACK")

@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
+from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability.contracts import Evidence, Incident
 from hmda_reliability.reliability.remediation import RemediationDraft
 from hmda_reliability.review_ai.contracts import (
@@ -48,6 +49,8 @@ from hmda_reliability.runtime_ai.provider import (
     ProviderUnavailableError,
 )
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
+
+_LOGGER = get_logger(__name__)
 
 
 class ReviewProvider(Protocol):
@@ -290,12 +293,28 @@ def _persist_result(
     try:
         path = writer.write(record, max_record_bytes=max_record_bytes)
     except InvocationEvidenceStoreError:
+        _LOGGER.error(
+            "호출 evidence 영속화 실패",
+            extra={
+                "invocation_id": record.invocation_id,
+                "incident_id": record.incident_id,
+            },
+        )
         return AgenticReviewResult(
             status=AgenticReviewStatus.PROVENANCE_FAILED,
             invocation_id=record.invocation_id,
             failure_code="invocation_evidence_write_failed",
         )
 
+    _LOGGER.info(
+        "null-spike agentic review 완료",
+        extra={
+            "invocation_id": record.invocation_id,
+            "incident_id": record.incident_id,
+            "status": record.status,
+            "prompt_digest": record.prompt_digest,
+        },
+    )
     if record.status is AgenticReviewStatus.ACCEPTED:
         return AgenticReviewResult(
             status=record.status,

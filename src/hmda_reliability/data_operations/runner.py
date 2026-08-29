@@ -33,7 +33,9 @@ from hmda_reliability.data_platform.duckdb import (
     database_mutation_lock,
 )
 from hmda_reliability.hmda_data import discover_hmda_files, load_hmda_loans_partition
+from hmda_reliability.logger import get_logger
 
+_LOGGER = get_logger(__name__)
 _DBT_BUILD_TIMEOUT_SECONDS = 300
 
 
@@ -52,6 +54,14 @@ def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
             source_file=request.source_file,
             table_name=request.raw_table_name,
         )
+    _LOGGER.info(
+        "원천 데이터 적재 완료",
+        extra={
+            "table_name": request.raw_table_name,
+            "source_year": request.source_year,
+            "row_count": hmda_loans_row_count,
+        },
+    )
     return RawLoadResult(
         database_path=request.database_path,
         source_root=request.source_root,
@@ -105,6 +115,14 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
         projection_id = artifact_projection_id(manifest_path, run_results_path)
     except ArtifactProjectionReadError as exc:
         raise _artifact_read_error(run_target_path, exc) from exc
+    _LOGGER.info(
+        "dbt build 완료",
+        extra={
+            "return_code": result.returncode,
+            "projection_id": projection_id,
+            "run_target_path": str(run_target_path),
+        },
+    )
     return DbtBuildResult(
         command=command,
         return_code=result.returncode,
@@ -140,6 +158,13 @@ def promote_dbt_artifacts(
                 result.run_results_path,
                 request.dbt_manifest_path,
                 request.dbt_run_results_path,
+            )
+            _LOGGER.info(
+                "dbt artifact projection 승격 완료",
+                extra={
+                    "projection_id": result.projection_id,
+                    "manifest_path": str(request.dbt_manifest_path),
+                },
             )
     except ArtifactProjectionLockError as exc:
         raise DataOperationError(
