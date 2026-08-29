@@ -2,12 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Bootstrap: Setup",
-      "type": "shell",
-      "command": "python scripts/bootstrap.py setup",
-      "detail": "Restore locked state, install Git hooks, and prepare repository tooling."
-    },
-    {
       "label": "Bootstrap: Session",
       "type": "shell",
       "command": "python scripts/bootstrap.py session",
@@ -18,6 +12,12 @@
       "type": "shell",
       "command": "python scripts/bootstrap.py update",
       "detail": "Refresh externally managed repository tooling."
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": "uv run ruff check --fix . && uv run ruff format . && uv run rumdl fmt . && python scripts/biome.py format --write --files-ignore-unknown=true .",
+      "detail": "Format Python, Markdown, JSON, and JSONC across the repository."
     }
   ]
 }
