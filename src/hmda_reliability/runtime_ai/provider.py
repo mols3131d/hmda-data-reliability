@@ -9,6 +9,7 @@ from typing import Protocol, cast
 from openai import APIConnectionError, APIError, APIStatusError, OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
+from hmda_reliability.logger import get_logger
 from hmda_reliability.runtime_ai.contracts import (
     ChatCompletionRequest,
     ChatMessage,
@@ -17,6 +18,8 @@ from hmda_reliability.runtime_ai.contracts import (
     TransportResponse,
 )
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
+
+_LOGGER = get_logger(__name__)
 
 
 class ProviderTransportError(Exception):
@@ -112,12 +115,28 @@ class OpenAICompatibleAdapter:
         while True:
             attempt_count += 1
             try:
+                _LOGGER.debug(
+                    "provider 호출 시도",
+                    extra={
+                        "model": self._settings.model,
+                        "attempt": attempt_count,
+                        "message_count": len(messages),
+                    },
+                )
                 response = self._transport.create(request)
             except ProviderTransportError as error:
                 can_retry = (
                     error.retryable and attempt_count <= self._settings.max_retries
                 )
                 if can_retry:
+                    _LOGGER.warning(
+                        "provider 호출 재시도",
+                        extra={
+                            "attempt": attempt_count,
+                            "failure_code": error.failure_code,
+                            "max_retries": self._settings.max_retries,
+                        },
+                    )
                     self._sleep(min(0.25 * (2 ** (attempt_count - 1)), 1.0))
                     continue
                 raise ProviderUnavailableError(

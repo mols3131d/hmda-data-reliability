@@ -205,6 +205,14 @@ def review_null_spike(
     if validation.status is ReviewValidationStatus.REJECTED:
         status = AgenticReviewStatus.VALIDATION_FAILED
         failure_code = "deterministic_guard_failed"
+        _LOGGER.warning(
+            "review 결정론적 검증 실패",
+            extra={
+                "invocation_id": invocation_id,
+                "incident_id": review_input.incident.incident_id,
+                "violations": [str(v) for v in validation.violations],
+            },
+        )
     else:
         status = AgenticReviewStatus.ACCEPTED
         failure_code = None
