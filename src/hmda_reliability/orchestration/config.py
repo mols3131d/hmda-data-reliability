@@ -1,4 +1,4 @@
-"""Framework-independent runtime configuration for the data-plane adapter."""
+"""데이터 플레인 어댑터를 위한 프레임워크 독립적 런타임 설정 모듈."""
 
 from __future__ import annotations
 
@@ -30,11 +30,10 @@ def data_operation_request_from_runtime(
     overrides: Mapping[str, object],
     environment: Mapping[str, str] | None = None,
 ) -> DataOperationRequest:
-    """Build the final request from explicit runtime values and environment.
+    """명시적 런타임 오버라이드와 환경 변수를 조합하여 최종 요청 객체를 생성한다.
 
-    Explicit non-``None`` values take precedence over supported environment
-    values. ``DataOperationRequest`` performs the final validation after both
-    sources are combined.
+    명시적인 non-None 값은 환경 변수 값보다 우선순위를 갖는다.
+    두 소스가 결합된 후 `DataOperationRequest`에서 최종 유효성 검증을 수행한다.
     """
 
     explicit = {

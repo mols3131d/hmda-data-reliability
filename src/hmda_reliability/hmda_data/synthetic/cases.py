@@ -201,7 +201,7 @@ def _target_value_counts(
     params: Sequence[object],
     quoted_target: str,
 ) -> tuple[int, int]:
-    """Query row and non-null target counts for a synthetic input relation."""
+    """합성 입력 관계에 대한 전체 row 수와 non-null 대상 컬럼 row 수를 조회한다."""
 
     try:
         row = connection.execute(
@@ -220,7 +220,7 @@ def _target_value_counts(
 
 
 def _null_spike_sample_query(ranked_query: str, quoted_target: str) -> str:
-    """Keep per-year sample cardinality while retaining eligible target values."""
+    """연도별 샘플 카디널리티를 유지하면서 대상 값을 추출하는 쿼리를 생성한다."""
 
     return f"""
         SELECT *
