@@ -12,7 +12,7 @@
 
 ## Routing Priority
 
-Git 또는 GitHub의 mutable state나 VCS operation이 작업에 포함되면 [`prj-vcs-git-github`](.rulesync/skills/prj-vcs-git-github/SKILL.md)를 우선 routing candidate로 고려한다. 특히 branch, commit, Pull Request, review, merge 작업에서는 이 Skill을 확인한다. 세부 VCS 정책과 추가 context 선택은 이 Skill이 소유한다.
+Chatbot에서는 repository content를 변경하는 작업을 Git/GitHub context trigger로 취급하고 [`prj-vcs-git-github`](.rulesync/skills/prj-vcs-git-github/SKILL.md)를 로드한다. Git 또는 GitHub의 mutable state가 판단에 영향을 주거나 branch, commit, Pull Request, review, merge 같은 VCS operation을 수행하는 경우에도 이 Skill을 로드한다. 단순한 read-only repository content 조회만으로는 이 Skill을 강제하지 않는다. 세부 VCS 정책과 추가 context 선택은 이 Skill이 소유한다.
 
 ## Loading Gate
 
