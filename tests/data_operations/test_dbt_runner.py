@@ -51,7 +51,9 @@ def test_request_from_environment_rejects_invalid_source_year() -> None:
     """정수가 아닌 source year는 request validation error로 노출한다."""
 
     with pytest.raises(ValueError, match="source_year"):
-        data_operation_request_from_environment({"HMDA_RELIABILITY_SOURCE_YEAR": "next"})
+        data_operation_request_from_environment(
+            {"HMDA_RELIABILITY_SOURCE_YEAR": "next"}
+        )
 
 
 @pytest.mark.unit

@@ -50,7 +50,11 @@ def render_review_prompt(
     *,
     max_prompt_bytes: int,
 ) -> RenderedReviewPrompt:
-    """Project one immutable review snapshot into the provider data boundary."""
+    """Project an immutable review input into messages and SHA-256 prompt digest.
+
+    Builds the canonical input allowlist and formats system/user chat messages.
+    Raises `PromptTooLargeError` if rendered prompt bytes exceed `max_prompt_bytes`.
+    """
 
     return render_canonical_input(
         build_canonical_input(review_input),
@@ -60,7 +64,7 @@ def render_review_prompt(
 
 
 def build_canonical_input(review_input: AgenticReviewInput) -> dict[str, object]:
-    """Return only the fields permitted by the Change's canonical allowlist."""
+    """Extract only spec-allowlisted fields and sort evidence deterministically."""
 
     incident = review_input.incident.model_dump(mode="json")
     evidence = [item.model_dump(mode="json") for item in review_input.evidence]
@@ -117,7 +121,13 @@ def render_canonical_input(
     *,
     max_prompt_bytes: int,
 ) -> RenderedReviewPrompt:
-    """Render a stored canonical projection through a versioned prompt template."""
+    """Render a stored canonical input projection through versioned prompt template.
+
+    Constructs untrusted JSON user message alongside fixed system instructions.
+    Calculates deterministic `sha256` digest over rendered JSON byte sequence.
+
+    Raises `PromptTooLargeError` if rendered messages exceed `max_prompt_bytes`.
+    """
 
     if prompt_identity.version != "v1":  # pragma: no cover - closed by contract
         msg = "unsupported prompt identity"
@@ -148,7 +158,10 @@ def render_canonical_input(
 
 
 def canonical_json_bytes(value: object) -> bytes:
-    """Serialize a JSON value into the deterministic replay representation."""
+    """Serialize a JSON value into deterministic byte representation for replay.
+
+    Enforces sorted keys, compact delimiters, UTF-8 encoding, and no NaN values.
+    """
 
     return json.dumps(
         value,

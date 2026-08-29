@@ -81,7 +81,16 @@ def evaluate_null_spike_vertical_slice(
     validate_target: DbtValidationCallback,
     null_fraction: float = 0.2,
 ) -> NullSpikeVerticalSliceResult:
-    """Evaluate a controlled single-column null spike before recovery execution."""
+    """Evaluate a controlled null spike through clean, defect, and recovery.
+
+    Executes deterministic evaluation across isolated workspace databases:
+    1. Runs baseline clean case and profiles target column null rate.
+    2. Injects synthetic null spike defect and verifies incident & draft.
+    3. Requests approval and executes recovery backfill via candidate validation.
+    4. Validates post-recovery projection and verifies reconciliation.
+
+    Raises `ValueError` if target_column is missing or observed_at is None.
+    """
 
     from hmda_reliability.data_operations import run_incident_lifecycle
     from hmda_reliability.data_operations.errors import DataOperationError

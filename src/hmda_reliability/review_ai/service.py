@@ -78,7 +78,19 @@ def review_null_spike(
     invocation_id_factory: Callable[[], str] | None = None,
     clock: Callable[[], datetime] | None = None,
 ) -> AgenticReviewResult:
-    """Generate one evidence-bound advisory result without invoking recovery."""
+    """Generate evidence-bound advisory review without mutating repository state.
+
+    Orchestrates the full read-only review lifecycle:
+    1. Validates and snapshots `review_input`.
+    2. Renders canonical prompt under `max_prompt_bytes`.
+    3. Invokes provider via `runtime_ai` adapter with retry/timeout bounding.
+    4. Parses JSON response and validates structured facts deterministically.
+    5. Persists sanitized invocation evidence to disk for auditability and replay.
+
+    Returns `AgenticReviewResult` with `ACCEPTED` status on success, or
+    appropriate failure statuses (`INPUT_REJECTED`, `UNAVAILABLE`,
+    `VALIDATION_FAILED`, `PROVENANCE_FAILED`).
+    """
 
     active_review_settings = review_settings or ReviewAISettings()
     try:

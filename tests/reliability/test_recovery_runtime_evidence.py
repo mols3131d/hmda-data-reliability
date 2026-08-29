@@ -12,7 +12,10 @@ import pytest
 
 import hmda_reliability.reliability.recovery.executor as recovery_executor
 from hmda_reliability.hmda_data.errors import HMDADataLoadError
-from hmda_reliability.reliability import ApprovedBackfillRequest, BackfillValidationError
+from hmda_reliability.reliability import (
+    ApprovedBackfillRequest,
+    BackfillValidationError,
+)
 
 
 @pytest.mark.unit

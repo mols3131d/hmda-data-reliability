@@ -93,6 +93,12 @@ class OpenAICompatibleAdapter:
         self._transport = transport
 
     def invoke(self, messages: tuple[ChatMessage, ...]) -> ProviderResponse:
+        """Invoke chat completion transport with exponential backoff retries.
+
+        Applies configured model, temperature=0, token limits, and JSON format.
+        Sanitizes transport errors into `ProviderUnavailableError` and bounds
+        response payload size against `max_output_bytes`.
+        """
         request = ChatCompletionRequest(
             messages=messages,
             model=self._settings.model,

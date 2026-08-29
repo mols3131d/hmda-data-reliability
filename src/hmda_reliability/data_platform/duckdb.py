@@ -74,7 +74,8 @@ def current_database_path(
 ) -> Path | None:
     """Connection의 current file database path를 반환한다.
 
-    Isolated in-memory database는 ``None``을 반환한다.
+    Attached된 database 중 현재 활성 database의 파일 경로를 조회합니다.
+    Isolated in-memory database(:memory:)는 ``None``을 반환합니다.
     """
 
     row = connection.execute(

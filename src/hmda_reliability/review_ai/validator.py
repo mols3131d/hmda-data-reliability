@@ -10,6 +10,7 @@ from hmda_reliability.review_ai.contracts import (
     ReviewViolationCode,
 )
 
+# Canonical violation evaluation order preserved for deterministic diagnostics.
 _VIOLATION_ORDER = (
     ReviewViolationCode.FABRICATED_EVIDENCE,
     ReviewViolationCode.INCIDENT_MISMATCH,
@@ -21,19 +22,31 @@ def validate_agentic_review(
     review_input: AgenticReviewInput,
     output: AgenticReviewOutput,
 ) -> AgenticReviewValidation:
-    """Compare provider output with the immutable deterministic input snapshot."""
+    """Validate provider output against immutable deterministic input snapshot.
+
+    Enforces three structural integrity invariants:
+    1. `fabricated_evidence`: output must cite only supplied evidence IDs.
+    2. `incident_mismatch`: output incident_id must match input incident_id.
+    3. `deterministic_contradiction`: target_column and facts must match exactly.
+
+    Returns `AgenticReviewValidation` with `ACCEPTED` if valid, or `REJECTED`
+    with canonically ordered violation codes.
+    """
 
     detected: set[ReviewViolationCode] = set()
     provided_evidence = {item.evidence_id for item in review_input.evidence}
     referenced_evidence = set(output.evidence_used)
     for finding in output.findings:
         referenced_evidence.update(finding.evidence_refs)
+    # Check evidence citation subset invariant.
     if not referenced_evidence.issubset(provided_evidence):
         detected.add(ReviewViolationCode.FABRICATED_EVIDENCE)
 
+    # Check incident identity invariant.
     if output.incident_id != review_input.incident.incident_id:
         detected.add(ReviewViolationCode.INCIDENT_MISMATCH)
 
+    # Check numerical and column fact equality invariant.
     if (
         output.target_column != review_input.target_column
         or output.deterministic_facts != review_input.deterministic_facts

@@ -24,7 +24,10 @@ from hmda_reliability.hmda_data import (
     row_count_drop,
 )
 from hmda_reliability.reliability.contracts import Approval, RecoveryProposal
-from hmda_reliability.reliability.errors import ApprovalGateError, BackfillValidationError
+from hmda_reliability.reliability.errors import (
+    ApprovalGateError,
+    BackfillValidationError,
+)
 from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
 from hmda_reliability.reliability.evaluation.recovery_case import (
     build_recovery_evaluation_case,

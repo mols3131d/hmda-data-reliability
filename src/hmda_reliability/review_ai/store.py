@@ -37,6 +37,10 @@ class InvocationEvidenceStore:
         self._artifact_root = Path(artifact_root)
 
     def path_for(self, invocation_id: str) -> Path:
+        """Return canonical storage path for an invocation record.
+
+        Raises `ValueError` if invocation ID contains unsafe characters.
+        """
         if _SAFE_INVOCATION_ID.fullmatch(invocation_id) is None:
             msg = "unsafe invocation identity"
             raise ValueError(msg)
@@ -53,6 +57,15 @@ class InvocationEvidenceStore:
         *,
         max_record_bytes: int,
     ) -> Path:
+        """Durably write one sanitized invocation record using atomic temporary link.
+
+        Writes to a hidden temporary file and hard-links it to the destination path
+        to prevent partial writes and guarantee create-only immutability.
+
+        Raises `InvocationEvidenceSizeError` if byte length exceeds `max_record_bytes`,
+        `InvocationEvidenceExistsError` if the record file already exists, or
+        `InvocationEvidenceWriteError` on underlying I/O errors.
+        """
         payload = canonical_json_bytes(record.model_dump(mode="json")) + b"\n"
         if len(payload) > max_record_bytes:
             raise InvocationEvidenceSizeError(
