@@ -4,7 +4,7 @@
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
       "resolvedRef": "2e88727b68aab9ce18b5f8e55c689626161c8326",
-      "resolvedAt": "2026-08-30T14:51:52.224Z",
+      "resolvedAt": "2026-08-30T17:33:06.438Z",
       "skills": {
         "mols-agent-asset-validator": {
           "integrity": "sha256-3656ca7d568fbc51286cc262210c7499346909c796e2825c5910f421ec16f940"
