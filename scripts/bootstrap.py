@@ -59,8 +59,7 @@ def _install_node_tools() -> int:
 
 def _ensure_node_tools() -> int:
     if all(
-        local_node_tool_path(tool, cwd=REPO_ROOT).is_file()
-        for tool in NODE_TOOL_NAMES
+        local_node_tool_path(tool, cwd=REPO_ROOT).is_file() for tool in NODE_TOOL_NAMES
     ):
         return 0
     return _install_node_tools()
