@@ -1,6 +1,6 @@
 ---
 title: "Lefthook"
-description: "이 repository의 Git hook 설치 경로와 lefthook.yml이 정의하는 pre-commit/pre-push 동작을 설명합니다."
+description: "이 repository의 Git hook 설치 경로와 pre-commit/pre-push가 지켜야 할 운영 baseline을 설명합니다."
 categories:
   - software-engineering
 tags:
@@ -13,6 +13,8 @@ tags:
 
 Lefthook 자체의 설치 방법, configuration option과 command reference는 [Lefthook 공식 문서](https://lefthook.dev/)를 따른다. 이 repository에서는 [`lefthook.yml`](../../../lefthook.yml)이 hook 동작을 소유하고 [`scripts/bootstrap.py`](../../../scripts/bootstrap.py)의 `setup`이 hook 설치를 담당한다.
 
+Git hook은 개발 흐름에서 빠른 feedback을 주는 local guard다. Hook을 확장할 때는 검사 수를 늘리는 것보다 **commit과 push 시점에 필요한 최소 품질 경계를 낮은 마찰로 유지하는 것**을 우선한다.
+
 ## Setup
 
 Clone 이후 별도로 `lefthook install`을 기억해서 실행하지 않는다. Repository setup entrypoint를 사용한다.
@@ -22,6 +24,33 @@ uv run --no-sync python scripts/bootstrap.py setup
 ```
 
 `session`과 `update`는 Git hook을 다시 설치하지 않는다.
+
+## Baseline
+
+### Pre-commit
+
+Pre-commit은 **commit에 들어가는 파일을 빠르게 정리하고 즉시 고칠 수 있는 문제를 차단하는 단계**다.
+
+- staged change에 직접 관련된 검사만 수행한다.
+- formatting, lint autofix처럼 빠르고 결정론적이며 안전하게 자동 수정할 수 있는 작업을 우선한다.
+- 자동 수정한 파일은 commit에 실제 반영되도록 다시 stage한다.
+- 긴 test suite, network 의존 작업, dependency/tool update처럼 commit마다 반복하기 비싼 작업은 두지 않는다.
+- repository state를 예측하기 어렵게 바꾸는 작업이나 unrelated file까지 수정하는 작업은 피한다.
+
+즉, pre-commit은 **작고 빠른 hygiene gate**를 지향한다. 깊은 correctness 검증보다 잘못된 형식, 기본 정적 오류와 일관성 문제를 commit 전에 제거하는 데 집중한다.
+
+### Pre-push
+
+Pre-push는 **원격 branch와 CI에 변경을 보내기 전에 relevant correctness를 확인하는 단계**다.
+
+- push되는 변경의 영향 범위에 맞춰 lint, format check와 test를 선택한다.
+- pre-commit보다 강한 검증을 허용하지만, 가능한 한 affected scope만 실행해 feedback 시간을 제한한다.
+- 검증 단계에서는 source를 자동 수정하거나 stage하지 않는다. 실패하면 원인을 확인하고 명시적으로 수정한 뒤 다시 push한다.
+- 독립적인 검사는 안전하면 병렬 실행할 수 있다.
+- full CI, 고비용 integration/stress 검증 또는 외부 service에 강하게 의존하는 검사를 무조건 복제하지 않는다.
+- push되는 변경과 관련된 필수 검증이 실패하면 push를 차단한다.
+
+즉, pre-push는 **change-aware verification gate**를 지향한다. 로컬에서 합리적인 비용으로 잡을 수 있는 regression을 원격에 보내기 전에 발견하되 CI를 그대로 재현하는 두 번째 CI로 만들지 않는다.
 
 ## Repository Hooks
 
@@ -36,6 +65,8 @@ Hook 내부 command를 문서에 전체 복제하지 않는다. Formatter와 lin
 
 ## Boundary
 
-Lefthook은 빠른 local feedback을 제공하지만 repository validation 전체를 대체하지 않는다. Test 설계와 pytest 실행 기준은 [Testing Guide](../testing.md), Git/GitHub workflow는 [Version Control and GitHub](../vcs-git/README.md)가 소유한다.
+Lefthook은 빠른 local feedback을 제공하지만 repository validation 전체를 대체하지 않는다. Hook 통과는 CI 또는 matching revision의 validation evidence를 대신하지 않는다.
 
-Hook 동작을 변경하려면 일반 Lefthook 사용법보다 먼저 [`lefthook.yml`](../../../lefthook.yml)의 repository-specific 목적과 기존 command scope를 확인한다.
+Test 설계와 pytest 실행 기준은 [Testing Guide](../testing.md), Git/GitHub workflow는 [Version Control and GitHub](../vcs-git/README.md)가 소유한다.
+
+Hook 동작을 변경할 때는 이 baseline과 [`lefthook.yml`](../../../lefthook.yml)의 current scope를 함께 확인한다. 새로운 검사는 해당 Git 시점에 반복해서 실행할 가치가 있고 개발 흐름의 마찰보다 예방 효과가 클 때만 추가한다.
