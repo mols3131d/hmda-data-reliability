@@ -151,6 +151,14 @@ jobs:
                   add_target "tests/$target"
                 done
                 ;;
+              scripts/generate_agent_routes.py)
+                tests=true
+                add_target tests/test_generate_agent_routes.py
+                ;;
+              scripts/run_actual_source.py)
+                tests=true
+                add_target tests/hmda_data/eda/test_eda_evidence.py
+                ;;
               src/hmda_reliability/logger.py)
                 tests=true
                 add_target tests/test_log_agent_event.py
@@ -189,7 +197,7 @@ jobs:
                     ;;
                 esac
                 ;;
-              src/hmda_reliability/*|tests/*|*.py)
+              src/hmda_reliability/*|tests/*)
                 tests=true
                 full_unit=true
                 ;;
