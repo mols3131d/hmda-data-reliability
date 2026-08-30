@@ -29,7 +29,7 @@ DuckDB, dbt, Apache Airflow, Polars, PyArrow, Pydantic, LangGraph, OpenAI SDK처
 | --- | --- |
 | [Bootstrap](bootstrap.md) | clone 이후 setup, session 준비와 external tooling update entrypoint |
 | [OpenSpec](openspec.md) | 이 repository의 OpenSpec integration, config와 contract boundary |
-| [Rulesync and Skills CLI](rulesync.md) | Agent Asset source 설치·갱신·projection과 Skills CLI 연동 |
+| [Rulesync](rulesync.md) | Agent Asset 관리의 주 경로와 Skills CLI 보조 경로, source sync와 projection |
 | [Lefthook](lefthook.md) | Git hook 설치와 이 repository의 pre-commit/pre-push 동작 |
 | [Formatting](formatting.md) | Ruff, rumdl, Biome, Tombi의 repository-owned 실행 경로와 configuration |
 
