@@ -14,15 +14,6 @@ def run(command: Sequence[str], *, cwd: Path) -> int:
     return subprocess.run(list(command), cwd=cwd, check=False).returncode
 
 
-def _run_windows_command(command: Sequence[str], *, cwd: Path) -> int:
-    command_line = subprocess.list2cmdline(list(command))
-    return subprocess.run(
-        ["cmd.exe", "/d", "/s", "/c", command_line],
-        cwd=cwd,
-        check=False,
-    ).returncode
-
-
 def run_npm(args: Sequence[str], *, cwd: Path) -> int:
     """Run npm consistently on POSIX and Windows."""
     executable = shutil.which("npm.cmd") if os.name == "nt" else shutil.which("npm")
@@ -31,10 +22,7 @@ def run_npm(args: Sequence[str], *, cwd: Path) -> int:
     if executable is None:
         raise RuntimeError("npm is required to run repository Node tooling.")
 
-    command = [executable, *args]
-    if os.name == "nt":
-        return _run_windows_command(command, cwd=cwd)
-    return run(command, cwd=cwd)
+    return run([executable, *args], cwd=cwd)
 
 
 def run_npm_exec(
@@ -62,10 +50,8 @@ def run_local_node_tool(tool: str, args: Sequence[str], *, cwd: Path) -> int:
     executable = local_node_tool_path(tool, cwd=cwd)
     if not executable.is_file():
         raise RuntimeError(
-            f"{tool} is not installed; run `uv run python scripts/bootstrap.py setup`."
+            f"{tool} is not installed; run "
+            "`uv run --no-sync python scripts/bootstrap.py setup`."
         )
 
-    command = [str(executable), *args]
-    if os.name == "nt":
-        return _run_windows_command(command, cwd=cwd)
-    return run(command, cwd=cwd)
+    return run([str(executable), *args], cwd=cwd)

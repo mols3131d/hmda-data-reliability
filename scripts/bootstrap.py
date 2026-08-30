@@ -28,7 +28,7 @@ def _sync_dependencies() -> int:
 
 
 def _install_hooks() -> int:
-    return run(["uv", "run", "lefthook", "install"], cwd=REPO_ROOT)
+    return run(["uv", "run", "--no-sync", "lefthook", "install"], cwd=REPO_ROOT)
 
 
 def _sync_agent_assets(action: str) -> int:

@@ -4,13 +4,13 @@
     {
       "label": "Bootstrap: Session",
       "type": "shell",
-      "command": "uv run python scripts/bootstrap.py session",
+      "command": "uv run --no-sync python scripts/bootstrap.py session",
       "detail": "Restore the repository state needed to start a work session."
     },
     {
       "label": "Bootstrap: Update",
       "type": "shell",
-      "command": "uv run python scripts/bootstrap.py update",
+      "command": "uv run --no-sync python scripts/bootstrap.py update",
       "detail": "Refresh externally managed repository tooling."
     },
     {

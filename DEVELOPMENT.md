@@ -16,9 +16,9 @@
 | Purpose | Command |
 | --- | --- |
 | Docs index | `uv run python scripts/generate_docs_indexes.py` |
-| Repository setup | `uv run python scripts/bootstrap.py setup` |
-| Session bootstrap | `uv run python scripts/bootstrap.py session` |
-| Tooling update | `uv run python scripts/bootstrap.py update` |
+| Repository setup | `uv run --no-sync python scripts/bootstrap.py setup` |
+| Session bootstrap | `uv run --no-sync python scripts/bootstrap.py session` |
+| Tooling update | `uv run --no-sync python scripts/bootstrap.py update` |
 | Agent 실행 | `uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>` |
 | Python format | `uv run ruff format .` |
 | Python lint | `uv run ruff check src tests` |
