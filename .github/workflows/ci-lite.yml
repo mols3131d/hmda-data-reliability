@@ -29,8 +29,10 @@ jobs:
         run: |
           set -euo pipefail
 
+          json=false
           markdown=false
           tests=false
+          toml=false
           python=false
           lefthook=false
           routes=false
@@ -100,6 +102,31 @@ jobs:
             esac
 
             case "$path" in
+              *.json|*.jsonc)
+                [[ -f "$path" ]] && json=true
+                ;;
+            esac
+
+            case "$path" in
+              *.toml)
+                [[ -f "$path" ]] && toml=true
+                ;;
+            esac
+
+            case "$path" in
+              scripts/biome.py)
+                json=true
+                ;;
+              scripts/tombi.py)
+                toml=true
+                ;;
+              scripts/bootstrap.py)
+                json=true
+                toml=true
+                ;;
+            esac
+
+            case "$path" in
               *.py|.python-version|pyproject.toml|uv.lock)
                 python=true
                 ;;
@@ -123,6 +150,14 @@ jobs:
                 for target in dbt data_operations reliability orchestration; do
                   add_target "tests/$target"
                 done
+                ;;
+              scripts/generate_agent_routes.py)
+                tests=true
+                add_target tests/test_generate_agent_routes.py
+                ;;
+              scripts/run_actual_source.py)
+                tests=true
+                add_target tests/hmda_data/eda/test_eda_evidence.py
                 ;;
               src/hmda_reliability/logger.py)
                 tests=true
@@ -162,7 +197,7 @@ jobs:
                     ;;
                 esac
                 ;;
-              src/hmda_reliability/*|tests/*|*.py)
+              src/hmda_reliability/*|tests/*)
                 tests=true
                 full_unit=true
                 ;;
@@ -170,8 +205,10 @@ jobs:
           done < <(git diff --name-only HEAD^1 HEAD)
 
           {
+            echo "json=$json"
             echo "markdown=$markdown"
             echo "tests=$tests"
+            echo "toml=$toml"
             echo "python=$python"
             echo "lefthook=$lefthook"
             echo "routes=$routes"
@@ -209,10 +246,45 @@ jobs:
           fi
 
       - name: Set up Python
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true'
         uses: actions/setup-python@v6.2.0
         with:
           python-version-file: ".python-version"
+
+      - name: Install structured-data tooling
+        if: steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true'
+        run: npm install --prefix .local/tooling --no-save --package-lock=false @biomejs/biome@2 tombi@1
+
+      - name: Validate changed JSON
+        if: steps.scope.outputs.json == 'true'
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(
+            git diff --name-only HEAD^1 HEAD -- '*.json' '*.jsonc' \
+              | while IFS= read -r path; do
+                  [[ -f "$path" ]] && printf '%s\n' "$path"
+                done
+          )
+          if ((${#files[@]})); then
+            python scripts/biome.py check "${files[@]}"
+          fi
+
+      - name: Validate changed TOML
+        if: steps.scope.outputs.toml == 'true'
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(
+            git diff --name-only HEAD^1 HEAD -- '*.toml' \
+              | while IFS= read -r path; do
+                  [[ -f "$path" ]] && printf '%s\n' "$path"
+                done
+          )
+          if ((${#files[@]})); then
+            python scripts/tombi.py format --check "${files[@]}"
+            python scripts/tombi.py lint "${files[@]}"
+          else
+            python scripts/tombi.py --version
+          fi
 
       - name: Set up uv
         if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.lefthook == 'true'
