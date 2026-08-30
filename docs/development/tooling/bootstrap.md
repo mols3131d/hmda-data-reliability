@@ -36,7 +36,7 @@ uv run --no-sync python scripts/bootstrap.py update
 
 ## Update Boundary
 
-`update`는 session restore가 아니라 **external source와 tooling state를 새 revision으로 전진시키는 작업**이다. Rulesync/Skills CLI lock state, generated Agent Asset projection 또는 OpenSpec integration file처럼 tracked state가 바뀔 수 있으므로 실행 후 repository diff와 관련 validation을 확인한다.
+`update`는 session restore가 아니라 **external source와 tooling state를 새 revision으로 전진시키는 작업**이다. `rulesync.lock`, `skills-lock.json`이 존재하는 경우의 Skills CLI lock, generated Agent Asset projection 또는 OpenSpec integration file처럼 tracked state가 바뀔 수 있으므로 실행 후 repository diff와 관련 validation을 확인한다.
 
 Routine 작업 시작에는 `session`을 사용하고, 단순히 환경을 복구하려는 이유로 `update`를 실행하지 않는다.
 

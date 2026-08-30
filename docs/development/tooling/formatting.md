@@ -25,7 +25,7 @@ Formatter와 linter의 일반 option과 기능 설명은 각 공식 문서를 �
 | JSON / JSONC | `uv run python scripts/biome.py format --write <paths>` | `uv run python scripts/biome.py check <paths>` | [`scripts/biome.py`](../../../scripts/biome.py) |
 | TOML | `uv run python scripts/tombi.py format <paths>` | `uv run python scripts/tombi.py format --check <paths>` + `uv run python scripts/tombi.py lint <paths>` | [`scripts/tombi.py`](../../../scripts/tombi.py) |
 
-`<paths>`에는 필요한 file이나 directory만 넘긴다. Repository 전체를 의도적으로 정리할 때만 `.`을 사용한다.
+`<paths>`에는 가능한 한 필요한 file만 넘긴다. Directory나 `.`은 의도적으로 해당 tree 전체를 대상으로 할 때만 사용한다. Biome에는 JSON/JSONC file을 직접 넘기는 것을 기본으로 하고, repository 전체 JSON/JSONC formatting은 [`DEVELOPMENT.md`](../../../DEVELOPMENT.md)의 quick command를 사용한다.
 
 Biome과 Tombi는 [`scripts/bootstrap.py`](../../../scripts/bootstrap.py)가 `.local/tooling` 아래에 준비한다. 직접 `.local/tooling`의 binary path에 의존하지 않고 repository wrapper를 사용한다.
 

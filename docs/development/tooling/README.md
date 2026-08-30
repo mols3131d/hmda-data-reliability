@@ -19,7 +19,7 @@ tags:
 
 - 일반 설치 방법, 전체 CLI reference, tool 자체의 기능과 일반 troubleshooting은 공식 문서에 맡긴다.
 - 이 repository에서 선택한 wrapper, configuration, entrypoint, ownership boundary와 예외만 local guide에 기록한다.
-- 자주 바뀌는 version, exact command/glob과 generated state는 owning source를 우선하고, 사람이 반복해서 알아야 하는 안정적인 의도만 문서에 요약한다.
+- 자주 바뀌는 exact version, tool 내부 command/glob과 generated state는 owning source를 우선하고, 사람이 반복해서 알아야 하는 안정적인 의도만 문서에 요약한다.
 
 ## Boundary
 
