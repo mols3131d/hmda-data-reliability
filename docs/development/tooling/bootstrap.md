@@ -26,6 +26,8 @@ uv run --no-sync python scripts/bootstrap.py session
 uv run --no-sync python scripts/bootstrap.py update
 ```
 
+`update`는 `setup`이나 `session`의 상위집합이 아니다. Python dependency sync와 Git hook 설치를 수행하지 않으므로 dependency restore가 필요하면 `session`, clone 직후 전체 준비가 필요하면 `setup`을 별도로 사용한다.
+
 ## Repository-specific Behavior
 
 - Python dependency는 `uv sync --locked`로 현재 lock 상태를 복원한다.
@@ -37,6 +39,8 @@ uv run --no-sync python scripts/bootstrap.py update
 ## Update Boundary
 
 `update`는 session restore가 아니라 **external source와 tooling state를 새 revision으로 전진시키는 작업**이다. `rulesync.lock`, `skills-lock.json`이 존재하는 경우의 Skills CLI lock, generated Agent Asset projection 또는 OpenSpec integration file처럼 tracked state가 바뀔 수 있으므로 실행 후 repository diff와 관련 validation을 확인한다.
+
+Bootstrap action은 여러 tool step을 순서대로 실행하며 전체를 하나의 transaction으로 rollback하지 않는다. 중간 step이 실패하면 앞에서 성공한 step의 변경이 남을 수 있으므로 diff와 현재 state를 확인한 뒤 원인을 해결하고 다시 실행한다.
 
 Routine 작업 시작에는 `session`을 사용하고, 단순히 환경을 복구하려는 이유로 `update`를 실행하지 않는다.
 

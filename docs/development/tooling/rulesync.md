@@ -49,12 +49,14 @@ Rulesync projection 자체를 확인하거나 검증해야 할 때는 `scripts/r
 | `generate` | current source에서 projection 생성 |
 | `check` | projection drift 확인 |
 | `doctor` | Rulesync strict diagnostics 실행 |
-| `validate` | locked source restore, projection drift, doctor와 compatibility bridge를 함께 검증 |
+| `validate` | locked source restore/generate 후 tracked projection drift와 doctor/check/compatibility bridge를 함께 검증 |
 
 ```bash
 uv run --no-sync python scripts/rulesync.py preview
 uv run --no-sync python scripts/rulesync.py validate
 ```
+
+`preview`, `check`, `doctor`는 inspection-oriented 경로다. `validate`는 검증 전에 locked source install과 projection generate를 실제로 수행하므로 strictly read-only가 아니다. Drift가 있으면 실패하면서 regenerated tracked projection이 남을 수 있으므로 실패 시 diff를 확인한다.
 
 Rulesync 밖의 특정 agentskills.io 호환 external Skill을 설치하지 않고 supported agent에서 직접 실행할 때만 Skills CLI 기반 `run` entrypoint를 사용한다.
 

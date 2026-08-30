@@ -17,7 +17,10 @@ OpenSpec의 일반 workflow, slash command와 CLI reference는 [OpenSpec 공식 
 - [`openspec/config.yaml`](../../../openspec/config.yaml)은 사용할 schema와 repository-specific context/rule을 소유하며 `spec-driven-tdd` schema를 선택한다.
 - Project-local `spec-driven-tdd` workflow/schema contract는 [`openspec/schemas/spec-driven-tdd/`](../../../openspec/schemas/spec-driven-tdd/)가 소유한다.
 - [`scripts/bootstrap.py`](../../../scripts/bootstrap.py)의 `setup`과 `update`는 `npm exec @fission-ai/openspec@latest`를 통해 `openspec update`를 실행한다. `session`은 OpenSpec integration을 갱신하지 않는다.
+- Repository는 이미 OpenSpec project structure와 config를 소유한다. Routine bootstrap에서 `openspec init`을 다시 실행하지 않고 기존 integration만 `update`로 refresh한다.
 - OpenSpec을 repository dependency로 별도 고정 설치하거나 global installation을 전제로 하지 않는다.
+
+Bootstrap의 OpenSpec step은 installed instruction/integration surface를 refresh하는 경로다. Project-local config와 schema의 source ownership을 대체하지 않는다.
 
 새로운 OpenSpec command, option 또는 tool 자체의 동작이 필요하면 repository 문서에 복제하지 않고 [공식 CLI reference](https://openspec.dev/docs/cli)를 확인한다.
 
