@@ -23,3 +23,6 @@ Chatbot에서는 repository content를 변경하는 작업을 Git/GitHub context
 ## Boundary
 
 Repository guidance와 platform/runtime guidance는 각자의 scope에만 적용한다. Compatibility bootstrap은 authority를 재정의하지 않으며, platform-specific behavior를 명시적인 요청 없이 repository policy로 영구 반영하지 않는다.
+
+- Chatbot compatibility는 repository의 local development workflow보다 우선하지 않는다. 오직 Chatbot을 더 쉽게 동작시키기 위해 repository structure, tooling, tracked state 또는 개발 workflow를 변경하지 않는다.
+- Local tool이나 runtime이 자연스럽게 소유하는 작업과 derived state는 해당 local workflow에 맡긴다. Chatbot이 직접 처리하기 어렵다는 이유로 lockfile, generated output, install/update 결과 등을 원격에서 수동 재현하거나 우회 구현하지 않으며 local development에 추가 부담을 만들지 않는다.
