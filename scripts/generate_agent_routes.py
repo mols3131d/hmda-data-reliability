@@ -12,7 +12,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import yaml
 
@@ -133,7 +133,11 @@ def github_raw_url(source: str, ref: str, path: str) -> str:
 
 
 def fetch_text(url: str) -> str:
-    with urlopen(url, timeout=30) as response:  # noqa: S310
+    request = Request(
+        url,
+        headers={"User-Agent": "hmda-data-reliability-agent-route"},
+    )
+    with urlopen(request, timeout=30) as response:  # noqa: S310
         return response.read().decode("utf-8")
 
 
@@ -145,33 +149,59 @@ def rulesync_dependency_sources() -> dict[str, str]:
     config = json.loads(
         strip_jsonc_comments(RULESYNC_CONFIG.read_text(encoding="utf-8"))
     )
-    config_sources = {
-        entry["source"]: entry
-        for entry in config.get("sources", [])
-        if isinstance(entry, dict) and isinstance(entry.get("source"), str)
-    }
+    config_sources: dict[str, dict[str, object]] = {}
+    for entry in config.get("sources", []):
+        if not isinstance(entry, dict) or not isinstance(entry.get("source"), str):
+            continue
+        config_sources[entry["source"]] = entry
+
+    lock_sources = lock.get("sources")
+    if not isinstance(lock_sources, dict):
+        raise RouteGenerationError("invalid Rulesync lock: sources must be an object")
 
     result: dict[str, str] = {}
-    for source, locked in lock.get("sources", {}).items():
+    for source, config_source in config_sources.items():
+        raw_configured_skills = config_source.get("skills")
+        if raw_configured_skills is None:
+            continue
+        if not isinstance(raw_configured_skills, list):
+            raise RouteGenerationError(
+                f"incomplete configured Rulesync Skills: {source}"
+            )
+
+        locked = lock_sources.get(source)
         if not isinstance(locked, dict):
-            raise RouteGenerationError(f"invalid Rulesync lock source: {source}")
-        config_source = config_sources.get(source)
+            raise RouteGenerationError(f"Rulesync lock is missing source: {source}")
+
+        path_value = config_source.get("path")
         resolved_ref = locked.get("resolvedRef")
         skills = locked.get("skills")
         if (
-            not isinstance(config_source, dict)
-            or not isinstance(config_source.get("path"), str)
+            not isinstance(path_value, str)
             or not isinstance(resolved_ref, str)
             or not isinstance(skills, dict)
         ):
             raise RouteGenerationError(f"incomplete Rulesync Skill source: {source}")
 
-        base_path = config_source["path"].rstrip("/")
-        for skill_name in skills:
-            if not isinstance(skill_name, str):
+        configured_skills: list[str] = []
+        for skill_name in raw_configured_skills:
+            if not isinstance(skill_name, str) or not skill_name:
                 raise RouteGenerationError(
-                    f"invalid Rulesync Skill name: {skill_name!r}"
+                    f"invalid configured Rulesync Skill name: {skill_name!r}"
                 )
+            configured_skills.append(skill_name)
+
+        missing_skills = [
+            skill_name for skill_name in configured_skills if skill_name not in skills
+        ]
+        if missing_skills:
+            missing = ", ".join(missing_skills)
+            raise RouteGenerationError(
+                f"Rulesync lock is missing configured Skills for {source}: {missing}"
+            )
+
+        base_path = path_value.rstrip("/")
+        for skill_name in configured_skills:
             result[skill_name] = github_raw_url(
                 source,
                 resolved_ref,

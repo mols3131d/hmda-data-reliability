@@ -9,7 +9,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from _commands import run_npx
+from _commands import run_npm_exec
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CLAUDE_BRIDGE_NAME = "CLAUDE.md"
@@ -31,7 +31,7 @@ _ACTIONS: dict[str, tuple[str, ...]] = {
 
 
 def _run(args: Sequence[str]) -> int:
-    return run_npx("rulesync@latest", args, cwd=REPO_ROOT)
+    return run_npm_exec("rulesync@latest", "rulesync", args, cwd=REPO_ROOT)
 
 
 def _tracked_diff() -> str:

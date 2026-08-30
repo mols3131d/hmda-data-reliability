@@ -13,6 +13,16 @@ Repository Agent asset policy는 [`docs/development/ai-agent/README.md`](../docs
 
 External Rulesync와 Skills CLI 설치물은 추적하지 않는다. Chatbot routing은 설치 경로 대신 lock의 exact ref에 고정된 upstream Skill을 사용한다.
 
+## Agent Execution
+
+외부 Skill을 지원하는 coding agent로 직접 실행하려면 다음 command를 사용한다.
+
+```bash
+uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>
+```
+
+이 command는 `npm exec`를 통해 Skills CLI의 `use` command를 실행한다. `source`, `skill`과 `agent`를 모두 명시해야 하며, 지원되는 agent identifier와 실제 실행·권한 semantics는 Skills CLI와 target runtime이 소유한다.
+
 ## Chatbot Route
 
 [`scripts/generate_agent_routes.py`](../scripts/generate_agent_routes.py)는 repository-owned Rule/Skill과 locked external Skill에서 `.agents/route` index를 생성한다.

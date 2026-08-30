@@ -9,11 +9,13 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from _commands import run, run_npx
+from _commands import local_node_tool_path, run, run_npm, run_npm_exec
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AGENT_ASSETS_SCRIPT = REPO_ROOT / "scripts" / "agent_assets.py"
-BIOME_SCRIPT = REPO_ROOT / "scripts" / "biome.py"
+NODE_TOOL_PREFIX = REPO_ROOT / ".local" / "tooling"
+NODE_TOOL_PACKAGES = ("@biomejs/biome@2", "tombi@1")
+NODE_TOOL_NAMES = ("biome", "tombi")
 OPENSPEC_PACKAGE = "@fission-ai/openspec@latest"
 
 Step = tuple[str, Callable[[], int]]
@@ -26,7 +28,7 @@ def _sync_dependencies() -> int:
 
 
 def _install_hooks() -> int:
-    return run(["uv", "run", "lefthook", "install"], cwd=REPO_ROOT)
+    return run(["uv", "run", "--no-sync", "lefthook", "install"], cwd=REPO_ROOT)
 
 
 def _sync_agent_assets(action: str) -> int:
@@ -37,11 +39,30 @@ def _sync_agent_assets(action: str) -> int:
 
 
 def _sync_openspec() -> int:
-    return run_npx(OPENSPEC_PACKAGE, ("update",), cwd=REPO_ROOT)
+    return run_npm_exec(OPENSPEC_PACKAGE, "openspec", ("update",), cwd=REPO_ROOT)
 
 
-def _check_biome() -> int:
-    return run([sys.executable, str(BIOME_SCRIPT), "--version"], cwd=REPO_ROOT)
+def _install_node_tools() -> int:
+    NODE_TOOL_PREFIX.mkdir(parents=True, exist_ok=True)
+    return run_npm(
+        (
+            "install",
+            "--prefix",
+            str(NODE_TOOL_PREFIX),
+            "--no-save",
+            "--package-lock=false",
+            *NODE_TOOL_PACKAGES,
+        ),
+        cwd=REPO_ROOT,
+    )
+
+
+def _ensure_node_tools() -> int:
+    if all(
+        local_node_tool_path(tool, cwd=REPO_ROOT).is_file() for tool in NODE_TOOL_NAMES
+    ):
+        return 0
+    return _install_node_tools()
 
 
 def _steps(action: str) -> list[Step]:
@@ -49,19 +70,16 @@ def _steps(action: str) -> list[Step]:
         return [
             ("agent assets", lambda: _sync_agent_assets("update")),
             ("openspec", _sync_openspec),
+            ("node tools", _install_node_tools),
         ]
 
     steps: list[Step] = [("dependencies", _sync_dependencies)]
     if action == "setup":
         steps.append(("git hooks", _install_hooks))
     steps.append(("agent assets", lambda: _sync_agent_assets("install")))
+    steps.append(("node tools", _ensure_node_tools))
     if action == "setup":
-        steps.extend(
-            [
-                ("openspec", _sync_openspec),
-                ("biome", _check_biome),
-            ]
-        )
+        steps.append(("openspec", _sync_openspec))
     return steps
 
 
@@ -73,7 +91,7 @@ def main() -> int:
         "action",
         choices=("setup", "session", "update"),
         help=(
-            "setup once after clone, restore locked session state, "
+            "setup once after clone, restore session dependencies and local tools, "
             "or refresh external tooling sources"
         ),
     )
