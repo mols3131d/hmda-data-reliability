@@ -16,16 +16,16 @@
 | Purpose | Command |
 | --- | --- |
 | Docs index | `uv run python scripts/generate_docs_indexes.py` |
-| Repository setup | `python scripts/bootstrap.py setup` |
-| Session bootstrap | `python scripts/bootstrap.py session` |
-| Tooling update | `python scripts/bootstrap.py update` |
-| Agent 실행 | `python scripts/agent_assets.py run <source> --skill <name> --agent <id>` |
+| Repository setup | `uv run python scripts/bootstrap.py setup` |
+| Session bootstrap | `uv run python scripts/bootstrap.py session` |
+| Tooling update | `uv run python scripts/bootstrap.py update` |
+| Agent 실행 | `uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>` |
 | Python format | `uv run ruff format .` |
 | Python lint | `uv run ruff check src tests` |
 | Markdown format | `uv run rumdl fmt .` |
-| JSON / JSONC format | `python scripts/biome.py format --write --files-ignore-unknown=true .` |
-| TOML format | `python scripts/tombi.py format .` |
-| TOML lint | `python scripts/tombi.py lint .` |
+| JSON / JSONC format | `uv run python scripts/biome.py format --write --files-ignore-unknown=true .` |
+| TOML format | `uv run python scripts/tombi.py format .` |
+| TOML lint | `uv run python scripts/tombi.py lint .` |
 
 `setup`은 clone 후 처음 한 번 실행해 locked dependency와 Agent Asset을 복원하고 Git hook을 설치하며 OpenSpec, Biome과 Tombi 사용 상태를 준비한다. 이후 작업 시작 시에는 `session`으로 dependency와 Agent Asset을 현재 lock 상태에 맞추고 repository-local Node tooling이 준비됐는지만 확인한다.
 

@@ -37,7 +37,7 @@ AI agent asset 관리는 **Rulesync-first**다.
 
 External standard Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
 
-외부 Skill을 특정 supported agent로 실행해야 하면 `python scripts/agent_assets.py run <source> --skill <name> --agent <id>`를 사용한다. 이 경로는 Skills CLI가 제공하는 interactive `use` 실행만 시작하며, repository의 `.github/agents/*.agent.md` 정의를 임의로 자동 실행하거나 권한을 확장하지 않는다.
+외부 Skill을 특정 supported agent로 실행해야 하면 `uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>`를 사용한다. 이 경로는 Skills CLI가 제공하는 interactive `use` 실행만 시작하며, repository의 `.github/agents/*.agent.md` 정의를 임의로 자동 실행하거나 권한을 확장하지 않는다.
 
 ## Boundary
 

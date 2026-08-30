@@ -62,7 +62,7 @@ def run_local_node_tool(tool: str, args: Sequence[str], *, cwd: Path) -> int:
     executable = local_node_tool_path(tool, cwd=cwd)
     if not executable.is_file():
         raise RuntimeError(
-            f"{tool} is not installed; run `python scripts/bootstrap.py setup`."
+            f"{tool} is not installed; run `uv run python scripts/bootstrap.py setup`."
         )
 
     command = [str(executable), *args]

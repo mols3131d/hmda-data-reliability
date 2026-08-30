@@ -7,7 +7,7 @@ pre-commit:
       glob:
         - "**/*.json"
         - "**/*.jsonc"
-      run: python scripts/biome.py format --write {files}
+      run: uv run --no-sync python scripts/biome.py format --write {files}
       stage_fixed: true
     markdown-fix:
       files: git diff --cached --name-only --diff-filter=d
@@ -22,7 +22,7 @@ pre-commit:
     toml-fix:
       files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.toml"
-      run: python scripts/tombi.py format {files}
+      run: uv run --no-sync python scripts/tombi.py format {files}
       stage_fixed: true
 
 pre-push:
@@ -37,7 +37,7 @@ pre-push:
         for file in {push_files}; do
           [ -f "$file" ] && set -- "$@" "$file"
         done
-        [ "$#" -eq 0 ] || python scripts/biome.py check "$@"
+        [ "$#" -eq 0 ] || uv run --no-sync python scripts/biome.py check "$@"
     python-check:
       glob: "**/*.py"
       run: |
@@ -66,6 +66,6 @@ pre-push:
           [ -f "$file" ] && set -- "$@" "$file"
         done
         [ "$#" -eq 0 ] || {
-          python scripts/tombi.py format --check "$@" &&
-          python scripts/tombi.py lint "$@"
+          uv run --no-sync python scripts/tombi.py format --check "$@" &&
+          uv run --no-sync python scripts/tombi.py lint "$@"
         }

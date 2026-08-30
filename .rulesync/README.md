@@ -18,7 +18,7 @@ External Rulesync와 Skills CLI 설치물은 추적하지 않는다. Chatbot rou
 외부 Skill을 지원하는 coding agent로 직접 실행하려면 다음 command를 사용한다.
 
 ```bash
-python scripts/agent_assets.py run <source> --skill <name> --agent <id>
+uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>
 ```
 
 이 command는 `npm exec`를 통해 Skills CLI의 `use` command를 실행한다. `source`, `skill`과 `agent`를 모두 명시해야 하며, 지원되는 agent identifier와 실제 실행·권한 semantics는 Skills CLI와 target runtime이 소유한다.
