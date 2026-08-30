@@ -31,11 +31,13 @@ AI agent asset 관리는 **Rulesync-first**다.
 
 | Asset | Management |
 | --- | --- |
-| repository에서 직접 작성·관리하는 Rule 또는 Skill | Rulesync source |
-| external Rulesync Rule 또는 Skill | Rulesync |
-| external standard Agent Skill | Skills CLI + `skills-lock.json` |
+| project Rule 또는 Skill | Rulesync source |
+| Rulesync로 관리하는 external Rule 또는 Skill | Rulesync |
+| Rulesync로 관리하지 않는 agentskills.io-compatible external Skill | Skills CLI + `skills-lock.json` |
 
-External standard Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
+Project asset과 Rulesync-managed external asset은 Rulesync가 소유한다. Skills CLI는 Rulesync에서 관리하지 않는 agentskills.io-compatible external Skill을 보조적으로 관리한다.
+
+Skills CLI로 가져온 external Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
 
 외부 Skill을 특정 supported agent로 실행해야 하면 `uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>`를 사용한다. 이 경로는 Skills CLI가 제공하는 interactive `use` 실행만 시작하며, repository의 `.github/agents/*.agent.md` 정의를 임의로 자동 실행하거나 권한을 확장하지 않는다.
 
