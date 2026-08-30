@@ -19,6 +19,11 @@ pre-commit:
       glob: "**/*.py"
       run: uv run --no-sync ruff check --fix {files} && uv run --no-sync ruff format {files}
       stage_fixed: true
+    toml-fix:
+      files: git diff --cached --name-only --diff-filter=d
+      glob: "**/*.toml"
+      run: python scripts/tombi.py format {files}
+      stage_fixed: true
 
 pre-push:
   parallel: true
@@ -53,3 +58,14 @@ pre-push:
         - "dbt/**/*.yml"
         - "dbt/**/*.yaml"
       run: uv run --no-sync pytest tests/dbt
+    toml-check:
+      glob: "**/*.toml"
+      run: |
+        set --
+        for file in {push_files}; do
+          [ -f "$file" ] && set -- "$@" "$file"
+        done
+        [ "$#" -eq 0 ] || {
+          python scripts/tombi.py format --check "$@" &&
+          python scripts/tombi.py lint "$@"
+        }
