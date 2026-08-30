@@ -34,7 +34,9 @@ def _settings(**updates: object) -> RuntimeAISettings:
     return RuntimeAISettings.model_validate(values)
 
 
-class FakeTransport:
+class RecordingTransport:
+    """Record requests while returning or raising each configured outcome."""
+
     def __init__(
         self,
         outcomes: list[
@@ -66,7 +68,7 @@ def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile() -> None:
         ),
         trace_id="req-1",
     )
-    transport = FakeTransport([transport_response])
+    transport = RecordingTransport([transport_response])
     adapter = provider_module.OpenAICompatibleAdapter(
         _settings(), transport=transport, sleep=lambda _: None
     )
@@ -88,7 +90,7 @@ def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile() -> None:
 
 
 def test_adapter_owns_bounded_retry_for_retryable_transport_failures() -> None:
-    transport = FakeTransport(
+    transport = RecordingTransport(
         [
             provider_module.ProviderTransportError(
                 failure_code="provider_connection_error",
@@ -108,7 +110,7 @@ def test_adapter_owns_bounded_retry_for_retryable_transport_failures() -> None:
 
 
 def test_adapter_does_not_retry_non_retryable_transport_failures() -> None:
-    transport = FakeTransport(
+    transport = RecordingTransport(
         [
             provider_module.ProviderTransportError(
                 failure_code="provider_client_error",
@@ -129,7 +131,9 @@ def test_adapter_does_not_retry_non_retryable_transport_failures() -> None:
 
 
 def test_adapter_rejects_oversized_response_without_retry() -> None:
-    transport = FakeTransport([runtime_contracts.TransportResponse(content="x" * 33)])
+    transport = RecordingTransport(
+        [runtime_contracts.TransportResponse(content="x" * 33)]
+    )
     adapter = provider_module.OpenAICompatibleAdapter(
         _settings(max_output_bytes=32),
         transport=transport,
@@ -168,7 +172,7 @@ def test_adapter_disables_sdk_hidden_retry_and_passes_explicit_credentials(
 )
 def test_local_and_cloud_urls_use_the_same_adapter_request(base_url: str) -> None:
     messages = _messages()
-    transport = FakeTransport([runtime_contracts.TransportResponse(content="{}")])
+    transport = RecordingTransport([runtime_contracts.TransportResponse(content="{}")])
     adapter = provider_module.OpenAICompatibleAdapter(
         _settings(base_url=base_url), transport=transport, sleep=lambda _: None
     )
