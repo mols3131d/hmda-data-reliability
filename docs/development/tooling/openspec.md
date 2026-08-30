@@ -1,6 +1,6 @@
 ---
 title: "OpenSpec"
-description: "이 repository에서 OpenSpec을 사용하는 integration 방식, project config와 contract boundary를 설명합니다."
+description: "이 repository에서 OpenSpec을 실행·갱신하는 integration 방식과 project-specific owning source를 연결합니다."
 categories:
   - software-engineering
 tags:
@@ -10,40 +10,25 @@ tags:
 
 # OpenSpec
 
-OpenSpec의 일반 workflow, slash command와 CLI reference는 [OpenSpec 공식 문서](https://openspec.dev/docs/)를 따른다. 이 문서는 **HMDA Data Reliability repository에서 달라지는 부분**만 설명한다.
+OpenSpec의 일반 workflow, slash command와 CLI reference는 [OpenSpec 공식 문서](https://openspec.dev/docs/)를 따른다. 이 문서는 **HMDA Data Reliability repository의 integration과 owning source**만 설명한다.
 
 ## Repository Integration
 
-[`openspec/config.yaml`](../../../openspec/config.yaml)은 이 repository의 OpenSpec project configuration을 소유하며 `spec-driven-tdd` schema를 사용한다.
+- [`openspec/config.yaml`](../../../openspec/config.yaml)은 사용할 schema와 repository-specific context/rule을 소유하며 `spec-driven-tdd` schema를 선택한다.
+- Project-local `spec-driven-tdd` workflow/schema contract는 [`openspec/schemas/spec-driven-tdd/`](../../../openspec/schemas/spec-driven-tdd/)가 소유한다.
+- [`scripts/bootstrap.py`](../../../scripts/bootstrap.py)의 `setup`과 `update`는 `npm exec @fission-ai/openspec@latest`를 통해 `openspec update`를 실행한다. `session`은 OpenSpec integration을 갱신하지 않는다.
+- OpenSpec을 repository dependency로 별도 고정 설치하거나 global installation을 전제로 하지 않는다.
 
-OpenSpec integration은 [`scripts/bootstrap.py`](../../../scripts/bootstrap.py)가 관리한다.
+새로운 OpenSpec command, option 또는 tool 자체의 동작이 필요하면 repository 문서에 복제하지 않고 [공식 CLI reference](https://openspec.dev/docs/cli)를 확인한다.
 
-- `setup`: clone 이후 OpenSpec integration을 현재 tool 상태에 맞춘다.
-- `update`: external tooling 갱신과 함께 OpenSpec integration을 갱신한다.
-- 실행은 `npm exec @fission-ai/openspec@latest` 경로를 사용하며 OpenSpec을 repository dependency로 고정 설치하지 않는다.
+## Artifact Authority
 
-일반적인 OpenSpec 설치나 command 사용법을 repository 문서에 복제하지 않는다. 새로운 CLI 동작이나 option이 필요하면 [공식 CLI reference](https://openspec.dev/docs/cli)를 먼저 확인한다.
+OpenSpec artifact authority와 instruction ownership map은 [`openspec/README.md`](../../../openspec/README.md)가 설명한다. Repository-specific context/rule은 [`openspec/config.yaml`](../../../openspec/config.yaml), workflow/schema contract는 [`openspec/schemas/spec-driven-tdd/`](../../../openspec/schemas/spec-driven-tdd/)가 소유한다. 이 tooling guide는 canonical boundary, naming rule 또는 artifact 작성 규칙을 다시 정의하지 않는다.
 
-## Contract Boundary
+Current capability를 판단하거나 OpenSpec artifact를 작성할 때는 tooling 문서가 아니라 해당 OpenSpec owning source를 따른다.
 
-이 repository에서는 OpenSpec artifact의 역할을 다음처럼 구분한다.
+## Boundary
 
-| Surface | Role |
-| --- | --- |
-| `openspec/specs/**` | current capability의 canonical contract |
-| `openspec/changes/**` | planned/in-flight work와 archive history |
-| `openspec/config.yaml` | schema, project context와 project-specific OpenSpec rule |
-
-Change artifact만으로 current system behavior를 단정하지 않는다. Current capability를 판단할 때는 관련 Spec과 실제 source/test 또는 matching revision evidence를 함께 확인한다.
-
-Spec ID, Change ID와 schema-specific 작성 규칙은 [`openspec/config.yaml`](../../../openspec/config.yaml)이 소유하므로 이 문서에서 반복하지 않는다.
-
-## When to Use This Guide
-
-OpenSpec 자체의 사용법이 궁금하면 공식 문서를 본다. 이 guide는 다음 질문에 답할 때만 사용한다.
-
-- 이 repository가 어떤 OpenSpec schema와 config를 사용하는가?
-- OpenSpec integration update는 어떤 repository entrypoint가 소유하는가?
-- Spec과 Change 중 무엇이 current contract를 소유하는가?
-
-Repository-wide documentation trust boundary는 [`docs/AGENTS.md`](../../AGENTS.md)를 따른다.
+- OpenSpec 일반 사용법과 CLI semantics → 공식 문서
+- repository의 schema, artifact authority와 작성 규칙 → [`openspec/`](../../../openspec/README.md)의 owning source
+- OpenSpec integration refresh 시점 → [Bootstrap](bootstrap.md)

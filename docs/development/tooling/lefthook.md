@@ -37,8 +37,6 @@ Pre-commit은 **commit에 들어가는 파일을 빠르게 정리하고 즉시 �
 - 긴 test suite, network 의존 작업, dependency/tool update처럼 commit마다 반복하기 비싼 작업은 두지 않는다.
 - repository state를 예측하기 어렵게 바꾸는 작업이나 unrelated file까지 수정하는 작업은 피한다.
 
-즉, pre-commit은 **작고 빠른 hygiene gate**를 지향한다. 깊은 correctness 검증보다 잘못된 형식, 기본 정적 오류와 일관성 문제를 commit 전에 제거하는 데 집중한다.
-
 ### Pre-push
 
 Pre-push는 **원격 branch와 CI에 변경을 보내기 전에 relevant correctness를 확인하는 단계**다.
@@ -50,7 +48,7 @@ Pre-push는 **원격 branch와 CI에 변경을 보내기 전에 relevant correct
 - full CI, 고비용 integration/stress 검증 또는 외부 service에 강하게 의존하는 검사를 무조건 복제하지 않는다.
 - push되는 변경과 관련된 필수 검증이 실패하면 push를 차단한다.
 
-즉, pre-push는 **change-aware verification gate**를 지향한다. 로컬에서 합리적인 비용으로 잡을 수 있는 regression을 원격에 보내기 전에 발견하되 CI를 그대로 재현하는 두 번째 CI로 만들지 않는다.
+Hook bypass는 정상 workflow가 아니라 예외적인 escape hatch다. 환경 문제 등으로 hook을 우회하더라도 해당 commit/push를 validated state로 간주하지 않고, 필요한 repository validation을 별도로 수행한다.
 
 ## Repository Hooks
 
