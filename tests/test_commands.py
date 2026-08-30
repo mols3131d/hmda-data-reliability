@@ -188,7 +188,7 @@ def test_run_npm_preserves_windows_agent_arguments_at_process_boundary(
         "exec",
         "--offline",
         "--",
-        node,
+        "node",
         str(script),
         str(capture),
         source,
