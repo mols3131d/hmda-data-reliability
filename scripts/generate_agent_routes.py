@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -134,13 +133,10 @@ def github_raw_url(source: str, ref: str, path: str) -> str:
 
 
 def fetch_text(url: str) -> str:
-    headers = {"User-Agent": "hmda-data-reliability-agent-route"}
-    if urlparse(url).hostname == "raw.githubusercontent.com":
-        token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-
-    request = Request(url, headers=headers)
+    request = Request(
+        url,
+        headers={"User-Agent": "hmda-data-reliability-agent-route"},
+    )
     with urlopen(request, timeout=30) as response:  # noqa: S310
         return response.read().decode("utf-8")
 

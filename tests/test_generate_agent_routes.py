@@ -131,12 +131,13 @@ def test_rulesync_dependency_sources_reject_missing_configured_skill(
 
 
 @pytest.mark.unit
-def test_fetch_text_adds_github_token_only_for_raw_github(
+def test_fetch_text_does_not_send_github_token(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """GitHub token은 raw GitHub metadata 요청에만 authorization으로 보낸다."""
+    """public metadata fetch는 설정된 GitHub token도 요청에 보내지 않는다."""
 
     monkeypatch.setenv("GH_TOKEN", "secret-token")
+    monkeypatch.setenv("GITHUB_TOKEN", "another-secret-token")
     requests: list[Request] = []
 
     class _Response:
@@ -159,7 +160,7 @@ def test_fetch_text_adds_github_token_only_for_raw_github(
     raw_url = "https://raw.githubusercontent.com/owner/repo/main/SKILL.md"
     assert routes.fetch_text(raw_url) == "metadata"
     assert routes.fetch_text("https://example.test/SKILL.md") == "metadata"
-    assert requests[0].get_header("Authorization") == "Bearer secret-token"
+    assert requests[0].get_header("Authorization") is None
     assert requests[1].get_header("Authorization") is None
 
 
