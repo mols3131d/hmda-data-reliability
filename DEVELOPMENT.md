@@ -16,26 +16,27 @@
 | Purpose | Command |
 | --- | --- |
 | Docs index | `uv run python scripts/generate_docs_indexes.py` |
-| Repository setup | `python scripts/bootstrap.py setup` |
-| Session bootstrap | `python scripts/bootstrap.py session` |
-| Tooling update | `python scripts/bootstrap.py update` |
+| Repository setup | `uv run --no-sync python scripts/bootstrap.py setup` |
+| Session bootstrap | `uv run --no-sync python scripts/bootstrap.py session` |
+| Tooling update | `uv run --no-sync python scripts/bootstrap.py update` |
+| Agent 실행 | `uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>` |
 | Python format | `uv run ruff format .` |
 | Python lint | `uv run ruff check src tests` |
 | Markdown format | `uv run rumdl fmt .` |
-| JSON / JSONC format | `python scripts/biome.py format --write --files-ignore-unknown=true .` |
-| TOML format | `python scripts/tombi.py format .` |
-| TOML lint | `python scripts/tombi.py lint .` |
+| JSON / JSONC format | `uv run python scripts/biome.py format --write --files-ignore-unknown=true .` |
+| TOML format | `uv run python scripts/tombi.py format .` |
+| TOML lint | `uv run python scripts/tombi.py lint .` |
 
 `setup`은 clone 후 처음 한 번 실행해 locked dependency와 Agent Asset을 복원하고 Git hook을 설치하며 OpenSpec, Biome과 Tombi 사용 상태를 준비한다. 이후 작업 시작 시에는 `session`으로 dependency와 Agent Asset을 현재 lock 상태에 맞추고 repository-local Node tooling이 준비됐는지만 확인한다.
 
-Biome과 Tombi는 `setup`에서 `.local/tooling`에 repository-local로 설치한다. 이 설치 상태는 local derived state로 추적하지 않는다. `update`는 외부에서 관리되는 Agent Asset source와 OpenSpec integration을 갱신하고 Biome 2, Tombi 1 stable major channel 안에서 local tooling을 새로 받는다. `npx`는 OpenSpec과 RuleSync처럼 repository-local 설치를 소유하지 않는 integration에만 사용한다. Python dependency lock은 자동으로 올리지 않으며 별도 dependency change로 검토한다.
+Biome과 Tombi는 `setup`에서 `.local/tooling`에 repository-local로 설치한다. 이 설치 상태는 local derived state로 추적하지 않는다. `update`는 외부에서 관리되는 Agent Asset source와 OpenSpec integration을 갱신하고 Biome 2, Tombi 1 stable major channel 안에서 local tooling을 새로 받는다. OpenSpec, RuleSync와 Skills CLI처럼 repository-local 설치를 소유하지 않는 integration은 `npm exec`로 실행한다. Python dependency lock은 자동으로 올리지 않으며 별도 dependency change로 검토한다.
 
 ## Development Environment
 
 | Field | Tools |
 | --- | --- |
 | Runtime | `Python>=3.13`, `Node.js` |
-| Package manager | `uv`, `npm`, `npx` |
+| Package manager | `uv`, `npm` |
 | Repository tooling | `OpenSpec`, `RuleSync`, `Skills CLI`, `Biome`, `Tombi`, `Lefthook` |
 | Data platform | `DuckDB`, `dbt` |
 | Orchestration | `Apache Airflow 3.3.0` |

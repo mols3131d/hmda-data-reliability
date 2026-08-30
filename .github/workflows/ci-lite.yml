@@ -357,3 +357,33 @@ jobs:
           else
             "${common[@]}" -m "not memory and not stress" "${targets[@]}"
           fi
+
+  windows-command-boundary:
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version-file: ".python-version"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.32"
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Test Windows command boundary
+        run: uv run --no-sync pytest tests/test_commands.py -q -p no:sugar
