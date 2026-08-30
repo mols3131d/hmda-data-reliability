@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from types import SimpleNamespace
+from urllib.request import Request
 
 import pytest
 
@@ -65,7 +66,8 @@ def test_rulesync_dependency_sources_use_locked_commit(
       "sources": [
         {
           "source": "owner/assets",
-          "path": "src/rulesync/.rulesync/skills" // canonical skill root
+          "path": "src/rulesync/.rulesync/skills", // canonical skill root
+          "skills": ["alpha", "beta"]
         }
       ]
     }
@@ -91,6 +93,74 @@ def test_rulesync_dependency_sources_use_locked_commit(
             "src/rulesync/.rulesync/skills/beta/SKILL.md"
         ),
     }
+
+
+@pytest.mark.unit
+def test_rulesync_dependency_sources_reject_missing_configured_skill(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """설정된 외부 Skill이 lock에서 빠지면 route 생성을 중단한다."""
+
+    config = """
+    {
+      "sources": [
+        {
+          "source": "owner/assets",
+          "path": "src/rulesync/.rulesync/skills",
+          "skills": ["alpha", "beta"]
+        }
+      ]
+    }
+    """
+    lock = {
+        "sources": {
+            "owner/assets": {
+                "resolvedRef": "abc123",
+                "skills": {"alpha": {}},
+            }
+        }
+    }
+    monkeypatch.setattr(routes, "RULESYNC_CONFIG", _TextFile(config))
+    monkeypatch.setattr(routes, "RULESYNC_LOCK", _TextFile(json.dumps(lock)))
+
+    with pytest.raises(
+        routes.RouteGenerationError,
+        match="missing configured Skills.*beta",
+    ):
+        routes.rulesync_dependency_sources()
+
+
+@pytest.mark.unit
+def test_fetch_text_adds_github_token_only_for_raw_github(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """GitHub token은 raw GitHub metadata 요청에만 authorization으로 보낸다."""
+
+    monkeypatch.setenv("GH_TOKEN", "secret-token")
+    requests: list[Request] = []
+
+    class _Response:
+        def __enter__(self) -> _Response:
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b"metadata"
+
+    def fake_urlopen(request: Request, *, timeout: int) -> _Response:
+        assert timeout == 30
+        requests.append(request)
+        return _Response()
+
+    monkeypatch.setattr(routes, "urlopen", fake_urlopen)
+
+    raw_url = "https://raw.githubusercontent.com/owner/repo/main/SKILL.md"
+    assert routes.fetch_text(raw_url) == "metadata"
+    assert routes.fetch_text("https://example.test/SKILL.md") == "metadata"
+    assert requests[0].get_header("Authorization") == "Bearer secret-token"
+    assert requests[1].get_header("Authorization") is None
 
 
 @pytest.mark.unit

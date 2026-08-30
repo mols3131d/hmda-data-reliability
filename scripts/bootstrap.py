@@ -9,7 +9,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from _commands import local_node_tool_path, run, run_npm, run_npx
+from _commands import local_node_tool_path, run, run_npm, run_npm_exec
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AGENT_ASSETS_SCRIPT = REPO_ROOT / "scripts" / "agent_assets.py"
@@ -39,7 +39,7 @@ def _sync_agent_assets(action: str) -> int:
 
 
 def _sync_openspec() -> int:
-    return run_npx(OPENSPEC_PACKAGE, ("update",), cwd=REPO_ROOT)
+    return run_npm_exec(OPENSPEC_PACKAGE, "openspec", ("update",), cwd=REPO_ROOT)
 
 
 def _install_node_tools() -> int:

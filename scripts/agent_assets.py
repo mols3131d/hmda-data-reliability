@@ -7,7 +7,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from _commands import run, run_npx
+try:
+    from _commands import run, run_npm_exec
+except ModuleNotFoundError:
+    from scripts._commands import run, run_npm_exec
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RULESYNC_SCRIPT = REPO_ROOT / "scripts" / "rulesync.py"
@@ -28,7 +31,22 @@ def _run_skills(action: str) -> int:
     if not SKILLS_LOCK.is_file():
         print("skills-lock.json not found; skipping Skills CLI.")
         return 0
-    return run_npx("skills@latest", _SKILLS_ACTIONS[action], cwd=REPO_ROOT)
+    return run_npm_exec(
+        "skills@latest",
+        "skills",
+        _SKILLS_ACTIONS[action],
+        cwd=REPO_ROOT,
+    )
+
+
+def _run_agent(source: str, skill: str, agent: str) -> int:
+    """Start one supported agent with a selected external Skill."""
+    return run_npm_exec(
+        "skills@latest",
+        "skills",
+        ("use", source, "--skill", skill, "--agent", agent),
+        cwd=REPO_ROOT,
+    )
 
 
 def _sync(action: str) -> int:
@@ -45,14 +63,29 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Restore locked Agent Assets or update their managed sources."
     )
-    parser.add_argument(
-        "action",
-        choices=tuple(_SKILLS_ACTIONS),
-        help="install locked assets or update managed sources",
+    subparsers = parser.add_subparsers(dest="action", required=True)
+    for action, help_text in (
+        ("install", "install locked assets"),
+        ("update", "update managed sources"),
+    ):
+        subparsers.add_parser(action, help=help_text)
+
+    run_parser = subparsers.add_parser(
+        "run",
+        help="start a supported agent with one selected Skill",
+    )
+    run_parser.add_argument("source", help="Skill source accepted by the Skills CLI")
+    run_parser.add_argument("--skill", required=True, help="Skill name to activate")
+    run_parser.add_argument(
+        "--agent",
+        required=True,
+        help="supported agent identifier, for example codex or claude-code",
     )
     args = parser.parse_args()
 
     try:
+        if args.action == "run":
+            return _run_agent(args.source, args.skill, args.agent)
         return _sync(args.action)
     except RuntimeError as error:
         print(f"error: {error}", file=sys.stderr)

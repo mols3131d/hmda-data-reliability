@@ -322,6 +322,8 @@ jobs:
 
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: python scripts/generate_agent_routes.py --check
 
       - name: Validate Lefthook config

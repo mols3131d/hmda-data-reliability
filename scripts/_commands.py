@@ -23,32 +23,32 @@ def _run_windows_command(command: Sequence[str], *, cwd: Path) -> int:
     ).returncode
 
 
-def run_npx(package: str, args: Sequence[str], *, cwd: Path) -> int:
-    """Run an npx package consistently on POSIX and Windows."""
-    executable = shutil.which("npx.cmd") if os.name == "nt" else shutil.which("npx")
-    if executable is None:
-        executable = shutil.which("npx")
-    if executable is None:
-        raise RuntimeError(f"npx is required to run {package}.")
-
-    command = [executable, "--yes", package, *args]
-    if os.name == "nt":
-        return _run_windows_command(command, cwd=cwd)
-    return run(command, cwd=cwd)
-
-
 def run_npm(args: Sequence[str], *, cwd: Path) -> int:
     """Run npm consistently on POSIX and Windows."""
     executable = shutil.which("npm.cmd") if os.name == "nt" else shutil.which("npm")
     if executable is None:
         executable = shutil.which("npm")
     if executable is None:
-        raise RuntimeError("npm is required to install repository Node tooling.")
+        raise RuntimeError("npm is required to run repository Node tooling.")
 
     command = [executable, *args]
     if os.name == "nt":
         return _run_windows_command(command, cwd=cwd)
     return run(command, cwd=cwd)
+
+
+def run_npm_exec(
+    package: str,
+    binary: str,
+    args: Sequence[str],
+    *,
+    cwd: Path,
+) -> int:
+    """Run a package binary through npm without a project dependency."""
+    return run_npm(
+        ("exec", "--yes", f"--package={package}", "--", binary, *args),
+        cwd=cwd,
+    )
 
 
 def local_node_tool_path(tool: str, *, cwd: Path) -> Path:
