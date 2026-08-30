@@ -15,6 +15,9 @@
       "skills": [
         "mols-agent-asset",
         "mols-agent-asset-validator",
+        "mols-clarify-code",
+        "mols-clarify-runtime",
+        "mols-code-comprehension-refactor",
         "mols-markdown-dashboard",
         "mols-markdown-for-human",
         "mols-markdown-maintenance",
