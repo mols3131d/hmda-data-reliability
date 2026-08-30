@@ -171,12 +171,17 @@ def test_run_npm_preserves_windows_agent_arguments_at_process_boundary(
     """실제 Windows 프로세스 경계에서도 Agent source 인자를 보존한다."""
 
     npm = shutil.which("npm.cmd")
-    node = shutil.which("node.exe") or shutil.which("node")
-    if npm is None or node is None:
+    if npm is None or (shutil.which("node.exe") or shutil.which("node")) is None:
         pytest.fail("npm.cmd and node.exe are required for this Windows test")
 
     capture = tmp_path / "argv.txt"
     script = tmp_path / "capture.js"
+    package = tmp_path / "package.json"
+    package.write_text(
+        '{"name":"windows-argv-boundary","private":true,'
+        '"scripts":{"probe":"node capture.js"}}',
+        encoding="ascii",
+    )
     script.write_text(
         "const fs = require('node:fs');\n"
         "fs.writeFileSync(process.argv[2], process.argv[3], 'ascii');\n",
@@ -185,11 +190,10 @@ def test_run_npm_preserves_windows_agent_arguments_at_process_boundary(
 
     source = r"C:\R&D\skills"
     args = (
-        "exec",
         "--offline",
+        "run-script",
+        "probe",
         "--",
-        "node",
-        str(script),
         str(capture),
         source,
     )
