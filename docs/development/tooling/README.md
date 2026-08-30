@@ -45,11 +45,10 @@ Application 또는 runtime을 구성하는 기술 스택은 이 directory의 소
 | OpenSpec project configuration | [`openspec/config.yaml`](../../../openspec/config.yaml) |
 | Rulesync targets and external sources | [`rulesync.jsonc`](../../../rulesync.jsonc) |
 | Rulesync external source lock | [`rulesync.lock`](../../../rulesync.lock) |
-| Skills CLI external Skill lock | [`skills-lock.json`](../../../skills-lock.json) |
 | Agent Asset synchronization | [`scripts/agent_assets.py`](../../../scripts/agent_assets.py), [`scripts/rulesync.py`](../../../scripts/rulesync.py) |
 | Git hooks | [`lefthook.yml`](../../../lefthook.yml) |
 | Python formatter/linter | [`pyproject.toml`](../../../pyproject.toml) |
 | Markdown formatter/linter | [`.rumdl.toml`](../../../.rumdl.toml) |
 | repository-local Biome / Tombi execution | [`scripts/biome.py`](../../../scripts/biome.py), [`scripts/tombi.py`](../../../scripts/tombi.py) |
 
-Agent instruction surface와 Rule/Skill asset management policy는 [AI Agent](../ai-agent/README.md)가 소유한다. 이 directory는 해당 정책을 반복하지 않고 도구의 repository-specific operation만 설명한다.
+Skills CLI의 optional project lock은 `skills-lock.json`이 존재할 때만 사용한다. Agent instruction surface와 Rule/Skill asset management policy는 [AI Agent](../ai-agent/README.md)가 소유한다. 이 directory는 해당 정책을 반복하지 않고 도구의 repository-specific operation만 설명한다.

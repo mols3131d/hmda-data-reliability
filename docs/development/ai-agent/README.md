@@ -33,7 +33,7 @@ AI agent asset 관리는 **Rulesync-first**다.
 | --- | --- |
 | project Rule 또는 Skill | Rulesync source |
 | Rulesync로 관리하는 external Rule 또는 Skill | Rulesync |
-| Rulesync로 관리하지 않는 [agentskills.io 호환](https://agentskills.io/specification) external Skill | Skills CLI + [`skills-lock.json`](../../../skills-lock.json) |
+| Rulesync로 관리하지 않는 [agentskills.io 호환](https://agentskills.io/specification) external Skill | Skills CLI + `skills-lock.json` when present |
 
 Project asset과 Rulesync-managed external asset은 Rulesync가 소유한다. Skills CLI는 Rulesync에서 관리하지 않는 agentskills.io 호환 external Skill만 보조적으로 관리한다.
 
