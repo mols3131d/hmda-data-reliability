@@ -16,8 +16,8 @@
     {
       "label": "Format",
       "type": "shell",
-      "command": "uv run ruff check --fix . && uv run ruff format . && uv run rumdl fmt . && python scripts/biome.py format --write --files-ignore-unknown=true .",
-      "detail": "Format Python, Markdown, JSON, and JSONC across the repository."
+      "command": "uv run ruff check --fix . && uv run ruff format . && uv run rumdl fmt . && python scripts/biome.py format --write --files-ignore-unknown=true . && python scripts/tombi.py format .",
+      "detail": "Format Python, Markdown, JSON, JSONC, and TOML across the repository."
     }
   ]
 }
