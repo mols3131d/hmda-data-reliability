@@ -48,6 +48,31 @@ class ApprovalBackfillValidator:
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
 
+    def _reconcile_state(
+        self,
+        *,
+        request: ApprovedBackfillRequest,
+        proposal: RecoveryProposal,
+        current_identity: PartitionContentIdentity,
+    ) -> tuple[str, str, tuple[str, ...]]:
+        """Proposal 바인딩 종류(content vs freshness)에 따라 목표 상태를 조정한다."""
+        if proposal.freshness_binding is None:
+            return _reconcile_content_state(current_identity, proposal)
+
+        current_freshness_at = partition_max_ingested_at(
+            self._connection,
+            table_name=request.table_name,
+            source_year=request.source_year,
+            source_file=request.source_file,
+        )
+        return _reconcile_freshness_state(
+            current_identity=current_identity,
+            current_freshness_at=current_freshness_at,
+            observed_at=request.profile_request.observed_at,
+            proposal=proposal,
+            binding=proposal.freshness_binding,
+        )
+
     def execute(self, request: ApprovedBackfillRequest) -> BackfillValidationResult:
         """승인된 이전 상태로 복구하거나 재현(replay) 시 정확한 상태를 검증한다."""
 
@@ -65,27 +90,13 @@ class ApprovalBackfillValidator:
                     source_year=request.source_year,
                     source_file=request.source_file,
                 )
-                binding = proposal.freshness_binding
-                if binding is None:
-                    mutation_state, reconciliation_action, executed_actions = (
-                        _reconcile_content_state(current_identity, proposal)
+                mutation_state, reconciliation_action, executed_actions = (
+                    self._reconcile_state(
+                        request=request,
+                        proposal=proposal,
+                        current_identity=current_identity,
                     )
-                else:
-                    current_freshness_at = partition_max_ingested_at(
-                        self._connection,
-                        table_name=request.table_name,
-                        source_year=request.source_year,
-                        source_file=request.source_file,
-                    )
-                    mutation_state, reconciliation_action, executed_actions = (
-                        _reconcile_freshness_state(
-                            current_identity=current_identity,
-                            current_freshness_at=current_freshness_at,
-                            observed_at=request.profile_request.observed_at,
-                            proposal=proposal,
-                            binding=binding,
-                        )
-                    )
+                )
                 if reconciliation_action == "overwrite_partition":
                     _LOGGER.info(
                         "recovery partition overwrite attempt",
@@ -102,7 +113,7 @@ class ApprovalBackfillValidator:
                         staged_source_path=staged_source_path,
                         request=request,
                         proposal=proposal,
-                        binding=binding,
+                        binding=proposal.freshness_binding,
                     )
                 else:
                     row_count = current_identity.row_count

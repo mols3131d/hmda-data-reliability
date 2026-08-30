@@ -91,6 +91,21 @@ def null_spike(
         msg = "null_spike target_column에 non-null 값이 없어 증가를 만들 수 없습니다."
         raise SyntheticCaseError(msg)
     source_null_count = source_count - source_non_null_count
+    # Strict Null Rate 증가를 위한 연도별 대상 인덱스 계산 식:
+    # 1) 요청된 null_fraction에 따른 최소 null 개수 (ceil)
+    # 2) 원천 null 비율을 초과하기 위해 필요한 정수 단위 최소 null 개수
+    null_threshold_expr = """
+        least(
+            __year_non_null,
+            greatest(
+                CAST(ceil(__year_count * ?) AS BIGINT),
+                CAST(
+                    (__year_count * CAST(? AS BIGINT))
+                    // CAST(? AS BIGINT) AS BIGINT
+                ) + 1 - (__year_count - __year_non_null)
+            )
+        )
+    """
     case_query = f"""
         WITH sampled AS ({sampled_query}),
         year_stats AS (
@@ -120,16 +135,7 @@ def null_spike(
             REPLACE (
                 CASE
                     WHEN {quoted_target} IS NOT NULL
-                    AND __non_null_rank <= least(
-                        __year_non_null,
-                        greatest(
-                            CAST(ceil(__year_count * ?) AS BIGINT),
-                            CAST(
-                                (__year_count * CAST(? AS BIGINT))
-                                // CAST(? AS BIGINT) AS BIGINT
-                            ) + 1 - (__year_count - __year_non_null)
-                        )
-                    )
+                    AND __non_null_rank <= {null_threshold_expr}
                     THEN NULL
                     ELSE {quoted_target}
                 END AS {quoted_target}
