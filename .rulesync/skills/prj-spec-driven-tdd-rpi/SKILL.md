@@ -2,26 +2,38 @@
 name: prj-spec-driven-tdd-rpi
 description: >-
   Specialize adaptive, recursive Research → Plan → Implementation → Review control for
-  OpenSpec's custom `spec-driven-tdd` workflow. Use when an active or explicitly targeted
-  `spec-driven-tdd` Change, its pre-change Research, or its Review feedback needs adaptive
-  RPI control. When a generic RPI Skill also matches, this Skill owns the schema-specific
-  controller and the generic controller must not run in parallel. Do not use for generic
-  RPI/recursive/deep/improvement-loop requests without `spec-driven-tdd` context, or for
-  ordinary one-pass schema planning or Apply without adaptive Research or Review control.
+  implementation work governed by OpenSpec's custom `spec-driven-tdd` workflow. Use when an
+  active or explicitly targeted `spec-driven-tdd` Change governs code-facing implementation,
+  implementation tests, Apply remediation, or the Research, Planning, and Review stages needed
+  to complete that implementation Goal. Research, Planning, or Review alone are not triggers.
+  When a generic RPI Skill also matches this governed surface, this Skill owns the lifecycle
+  controller and the generic controller must not run in parallel. Do not use for generic RPI,
+  documentation or agent-asset work, repository policy, OpenSpec schema/tooling maintenance,
+  or work merely because OpenSpec artifacts are present.
 compatibility: >-
   Requires OpenSpec with the custom `spec-driven-tdd` schema. No additional
   skill, project document, repository convention, or standalone template is a
   dependency of this skill. Applicable host-project instructions still apply as
   ambient constraints.
 metadata:
-  version: "0.4.0"
+  version: "0.4.1"
 ---
 
 # Spec-Driven TDD RPI
 
-OpenSpec의 custom `spec-driven-tdd` workflow 주위에서 adaptive **Research → Plan → Implementation → Review**를 실행한다. 이 skill은 orchestration만 소유하며 schema의 planning model을 대체하지 않는다.
+OpenSpec의 custom `spec-driven-tdd` Change가 실제로 지배하는 code-facing implementation lifecycle에서 adaptive **Research → Plan → Implementation → Review**를 실행한다. 이 Skill은 OpenSpec 구현 workflow의 orchestration만 소유하며 schema의 planning model을 대체하지 않는다.
 
-이 Skill은 generic RPI controller의 project-local specialization이다. `spec-driven-tdd` surface에서 generic RPI Skill이 함께 선택되어도 두 lifecycle controller를 합성하지 않는다. 이 Skill이 schema-specific Run/Loop, terminal, scope, Review transition, recursion과 handoff를 소유하고 generic controller는 해당 surface 밖의 fallback으로만 남는다.
+## Applicability
+
+이 Skill은 OpenSpec 파일이 존재하거나 OpenSpec을 언급했다는 이유만으로 활성화하지 않는다. 다음 조건을 모두 만족하는 구현 Goal에서만 사용한다.
+
+- active 또는 explicitly targeted `spec-driven-tdd` Change가 현재 작업의 lifecycle을 지배한다.
+- Goal이 application/runtime code, implementation test 또는 Apply remediation의 실제 구현을 포함한다.
+- Research, Planning 또는 Review가 필요하면 위 구현 Goal을 완료하기 위한 stage로서만 이 controller가 소유한다. 해당 stage 자체가 독립적인 요청이면 trigger로 사용하지 않는다.
+
+문서, agent asset, repository policy, OpenSpec schema/tooling 자체의 유지보수, 구현 Goal과 무관한 조사·설계·검토 또는 generic improvement loop에는 generic RPI나 해당 domain Skill을 사용한다.
+
+이 Skill은 generic RPI controller의 project-local specialization이다. 위 `spec-driven-tdd` implementation surface에서 generic RPI Skill이 함께 선택되어도 두 lifecycle controller를 합성하지 않는다. 이 Skill이 schema-specific Run/Loop, terminal, scope, Review transition, recursion과 handoff를 소유하고 generic controller는 해당 surface 밖의 fallback으로만 남는다.
 
 | RPI stage | `spec-driven-tdd` representation |
 | --- | --- |
@@ -63,8 +75,8 @@ max_total_loops: auto
 | Argument | Values / `auto` behavior |
 | --- | --- |
 | `entry` | `research`, `planning`, `apply`, `review-feedback`; 요청과 확인된 상태에서 가장 이른 필요한 진입점을 선택한다. |
-| `change` | 명확히 식별되는 기존 OpenSpec change를 사용한다. Research-only에서는 change를 강제하지 않는다. |
-| `goal` | 현재 Run에서 Review가 accept할 observable end state를 사용한다. |
+| `change` | 현재 구현 Goal을 지배하는 existing `spec-driven-tdd` Change를 사용한다. 명확히 식별할 수 없으면 implementation surface를 추측하지 않고 unresolved로 둔다. |
+| `goal` | 현재 Run에서 Review가 accept할 observable implementation end state를 사용한다. |
 | `terminal` | `research`, `planning`, `goal`; 요청된 종료 수준을 선택한다. |
 | `scope` | Goal을 달성하는 데 필요한 가장 작은 boundary를 사용한다. |
 | `scope_policy` | `adaptive`, `narrow-only`, `fixed`; 명시적 user boundary를 우선한다. |
@@ -86,7 +98,7 @@ Run 시작 시 다음 상태를 확인한다.
 ```text
 Active Scope
 - Goal
-- Change: <id | not-applicable | unresolved>
+- Change: <id | unresolved>
 - In scope
 - Out of scope
 - Acceptance conditions
@@ -106,7 +118,7 @@ Active Scope
 
 ## Adaptive Lifecycle
 
-1. 요청된 `entry`, Goal, terminal과 확인 가능한 change를 식별하고 Active Scope를 정한다.
+1. 요청된 `entry`, implementation Goal, terminal과 이를 지배하는 existing `spec-driven-tdd` Change를 식별하고 Active Scope를 정한다.
 1. 현재 판단에 필요한 근거가 부족하거나 stale하면 Research를 수행한다.
 1. `terminal: research`이면 downstream planning이나 Apply로 진행하지 않고 Review로 이동한다.
 1. Planning이 필요하면 active schema의 prerequisite와 responsibility를 그대로 따라 가장 이른 stale planning owner부터 갱신한다.
@@ -181,7 +193,7 @@ Handoff는 OpenSpec artifact가 아니라 현재 호출의 최소 continuation s
 - State: <COMPLETE | HANDOFF | BLOCKED>
 - Entry:
 - Terminal:
-- Change: <id | not-applicable | unresolved>
+- Change: <id | unresolved>
 - Goal:
 - Scope: <current boundary or reference>
 - Loops: <used>/<effective ceiling>
