@@ -1,6 +1,6 @@
 # Documentation Rules
 
-`docs/`는 장기 지침, 현재 목표, 개발 가이드와 human-only projection을 구분한다. 이 파일은 **`docs/**`의 공통 작성·trust·lifecycle 규칙**을 소유하며, subject-specific workflow는 해당 owning guide가 소유한다.
+`docs/`는 장기 지침, 현재 목표, 개발 가이드와 human-only projection을 구분한다. 이 파일은 **`docs/**`의 trust·lifecycle과 subject ownership 규칙**을 소유하며, 일반 문서 품질·배치 원칙은 [`documentation/`](documentation/README.md), subject-specific workflow는 해당 owning guide가 소유한다.
 
 ## Ownership
 
@@ -9,12 +9,13 @@
 | `VISION.md` | 장기 방향, 제품 철학과 불변 원칙 |
 | `ARCHITECTURE.md` | 시스템 흐름과 cross-domain boundary guidance |
 | `language.md` | repository text의 언어 선택과 English-required surface |
+| `documentation/**` | 일반 문서의 목적·ownership·정본·탐색성, frontmatter와 README 작성 정책 |
 | `domains/**` | 각 domain의 책임, 공개 surface와 비책임을 설명하는 guide |
 | `mvp.md` | 현재 active MVP의 목표, scope와 acceptance |
 | `development/**` | phase-independent 개발 가이드와 human-only development dashboard |
 | `references/**` | 외부 규격과 supporting reference |
 
-Current capability의 normative contract는 `docs/`가 아니라 [`../openspec/specs/`](../openspec/specs/)가 소유한다. OpenSpec-specific agent와 workflow 규칙은 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)를 진입점으로 해당 owning file을 따른다.
+Current capability의 normative contract는 `docs/`가 아니라 [`../openspec/specs/`](../openspec/specs/)가 소유한다. OpenSpec 구조와 지침 소유권은 [`../openspec/README.md`](../openspec/README.md)를 진입점으로 해당 owning file을 따른다.
 
 ## Trust Boundary
 
@@ -50,7 +51,10 @@ Phase 문서는 active phase 동안만 `main`에 둘 수 있다.
 
 ## Writing
 
-- 한 사실에는 한 owning source를 둔다.
+일반 문서의 목적, responsibility, 정본, 탐색성과 유지보수성은 [Documentation Principles](documentation/principles.md)를 따른다. Frontmatter와 README 작성은 각각 [Frontmatter](documentation/frontmatter.md), [README Authoring](documentation/readme-authoring.md)을 따른다.
+
+이 범위에서 추가로 지켜야 할 trust 규칙은 다음과 같다.
+
 - 목표, normative contract, historical work evidence와 human summary를 섞지 않는다.
 - 현재성을 자주 잃는 상태 정보는 durable guide나 normative contract에 복제하지 않는다.
 - 링크 대상의 역할을 과장하지 않는다. Guide는 guide로, contract는 contract로 표현한다.
