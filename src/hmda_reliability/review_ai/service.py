@@ -129,7 +129,7 @@ def review_null_spike(
     invocation_id = make_invocation_id()
     session = _ReviewSession(
         invocation_id=invocation_id,
-        recorded_at=current_time(),
+        clock=current_time,
         settings=settings,
         review_settings=active_review_settings,
         review_input=review_input,
@@ -200,7 +200,7 @@ class _ReviewSession:
     """단일 review 요청에서 변하지 않는 컨텍스트를 바인딩하여 증적 조립을 캡슐화한다."""
 
     invocation_id: str
-    recorded_at: datetime
+    clock: Callable[[], datetime]
     settings: RuntimeAISettings
     review_settings: ReviewAISettings
     review_input: AgenticReviewInput
@@ -252,7 +252,7 @@ class _ReviewSession:
         configuration.update(self.review_settings.sanitized_configuration())
         return AgenticInvocationEvidence(
             invocation_id=self.invocation_id,
-            recorded_at=self.recorded_at,
+            recorded_at=self.clock(),
             status=status,
             configuration=SanitizedAgenticReviewConfiguration.model_validate(
                 configuration
