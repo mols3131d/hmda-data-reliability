@@ -33,11 +33,11 @@ Archive 시 새 main spec의 Purpose로 복사되므로 50자 이상의 완전�
 
 ## ADDED Requirements
 
-### Requirement: <requirement name>
+### Requirement: Added requirement name
 
 <시스템이 보장해야 하는 행동을 SHALL 또는 MUST로 작성한다.>
 
-#### Scenario: <scenario name>
+#### Scenario: Added scenario name
 
 - **WHEN** - <행동을 유발하는 조건 또는 입력>
 - **THEN** - <관찰되어야 하는 결과>
@@ -49,11 +49,11 @@ OPTIONAL SECTION: 기존 Requirement의 행동이나 계약이 바뀔 때만 유
 
 ## MODIFIED Requirements
 
-### Requirement: <existing requirement name>
+### Requirement: Modified requirement name
 
 <변경 후 시스템이 보장해야 하는 전체 행동>
 
-#### Scenario: <scenario name>
+#### Scenario: Modified scenario name
 
 - **WHEN** - <행동을 유발하는 조건 또는 입력>
 - **THEN** - <변경 후 관찰되어야 하는 결과>
@@ -62,9 +62,8 @@ OPTIONAL SECTION: 기존 Requirement의 행동이나 계약이 바뀔 때만 유
 
 ## REMOVED Requirements
 
-### Requirement: <existing requirement name>
+### Requirement: Removed requirement name
 
-- **Reason** - <제거 이유>
 - **Migration** - <전환 방법 또는 대체 행동>
 
 <!-- OPTIONAL SECTION: 행동은 유지하고 이름만 바뀔 때만 유지한다. -->

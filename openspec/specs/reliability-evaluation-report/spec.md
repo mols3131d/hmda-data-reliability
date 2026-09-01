@@ -194,10 +194,8 @@ Read-only incident lifecycle은 synthetic evaluation이나 report write를 자�
 
 - **GIVEN** target, clean 또는 candidate database path가 이미 존재하거나 둘 이상이 같은 physical path를 식별할 때
 - **WHEN** schema-drift evaluation을 요청할 때
-- **THEN** workspace 생성, source load, synthetic defect, callback과 recovery 전에 요청을 거부해야 한다.
-- **AND** 기존 database content를 변경해서는 안 된다.
 
-#### Scenario: Clean baseline
+#### Scenario: Clean baseline (schema drift)
 
 - **WHEN** deterministic clean fixture를 평가할 때
 - **THEN** `schema_drift` incident가 없어야 하고 baseline schema identity와 complete content state를 evidence로 제공해야 한다.
@@ -246,7 +244,7 @@ Read-only incident lifecycle은 synthetic evaluation이나 report write를 자�
 - **THEN** evaluation은 failure stage, committed target mutation 여부와 reconciliation action을 구조화해야 한다.
 - **AND** schema recovery failure를 partition-specific mutation state로 표현해서는 안 된다.
 
-#### Scenario: Read-only lifecycle preservation
+#### Scenario: Read-only lifecycle preservation (schema drift)
 
 - **WHEN** controlled schema-drift target에 read-only incident lifecycle만 실행할 때
 - **THEN** incident와 remediation draft를 반환하되 approval, complete candidate materialization, table replacement와 evaluation report write를 실행해서는 안 된다.
@@ -268,7 +266,7 @@ Read-only incident lifecycle은 synthetic evaluation이나 report write를 자�
 - **THEN** `freshness_delay` incident 하나만 탐지하고 age/max-age evidence를 반환해야 한다.
 - **AND** approval, target recovery 또는 report write를 자동 실행해서는 안 된다.
 
-#### Scenario: Existing or aliased evaluation database
+#### Scenario: Existing or aliased freshness evaluation database
 
 - **GIVEN** target, clean 또는 candidate database가 존재하거나 둘 이상의 path가 같은 physical path를 식별할 때
 - **WHEN** freshness evaluation entry를 요청할 때
