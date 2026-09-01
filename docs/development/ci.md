@@ -40,6 +40,8 @@ CI가 모든 correctness risk를 혼자 소유하지는 않는다. Human review,
 
 낮은 tier의 evidence가 높은 tier의 주장을 대신하지 않는다. 반대로 static 또는 deterministic evidence로 충분한데 semantic/model/runtime 검증을 추가하지 않는다. Runtime behavior에 대한 주장은 matching revision의 runtime evidence가 있을 때만 인정한다.
 
+결과가 stochastic하면 한 번의 성공이나 실패를 deterministic evidence처럼 해석하지 않는다. Merge admission에 사용할 때는 재현 가능한 baseline, threshold, sample 또는 retry 해석 기준 중 필요한 것을 먼저 정의한다.
+
 ## Validation Layers
 
 | Layer | Responsibility | Typical work |
