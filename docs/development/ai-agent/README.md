@@ -31,14 +31,16 @@ AI agent asset 관리는 **Rulesync-first**다.
 
 | Asset | Management |
 | --- | --- |
-| repository에서 직접 작성·관리하는 Rule 또는 Skill | Rulesync source |
-| external Rulesync Rule 또는 Skill | Rulesync |
-| external standard Agent Skill | Skills CLI + `skills-lock.json` |
+| project Rule 또는 Skill | Rulesync |
+| Rulesync로 관리하는 external Rule 또는 Skill | Rulesync |
+| Rulesync로 관리하지 않는 [agentskills.io 호환](https://agentskills.io/specification) external Skill | Skills CLI + `skills-lock.json` when present |
 
-External standard Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
+Project asset과 Rulesync-managed external asset은 Rulesync가 소유한다. Skills CLI는 Rulesync에서 관리하지 않는 agentskills.io 호환 external Skill만 보조적으로 관리한다.
 
-외부 Skill을 특정 supported agent로 실행해야 하면 `uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>`를 사용한다. 이 경로는 Skills CLI가 제공하는 interactive `use` 실행만 시작하며, repository의 `.github/agents/*.agent.md` 정의를 임의로 자동 실행하거나 권한을 확장하지 않는다.
+Skills CLI로 가져온 external Skill을 Rulesync asset으로 다시 포장해 중복 source를 만들지 않는다. Generated projection과 routing index는 derived surface이며 canonical source가 아니다.
+
+Asset 복원·갱신, Rulesync projection 검증과 Skills CLI 기반 external Skill 실행은 [Rulesync tooling guide](../tooling/rulesync.md)의 repository entrypoint를 사용한다.
 
 ## Boundary
 
-이 문서는 **surface 선택과 asset management policy**만 소유한다. Rule-specific 기준은 [Rule](rule.md), Skill-specific 기준은 [Skill](skill.md)이 소유한다. Rulesync generation/projection, Skills CLI 동작과 target별 runtime semantics는 해당 tool 또는 runtime의 owning source를 따른다.
+이 문서는 **surface 선택과 asset management policy**만 소유한다. Rule-specific 기준은 [Rule](rule.md), Skill-specific 기준은 [Skill](skill.md)이 소유한다. Rulesync generation/projection과 Skills CLI의 repository operation은 [Rulesync tooling guide](../tooling/rulesync.md), target별 runtime semantics는 해당 runtime의 owning source를 따른다.
