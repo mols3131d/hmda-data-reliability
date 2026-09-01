@@ -42,11 +42,7 @@
       "path": "[[workspace]]/docs",
       "filePrefix": "",
       "contentTypes": ["default"],
-      "excludePaths": [
-        "**/AGENTS.md",
-        "**/CLAUDE.md",
-        "**/CHATBOT.md"
-      ]
+      "excludePaths": ["**/AGENTS.md", "**/CLAUDE.md", "**/CHATBOT.md"]
     }
   ]
 }
