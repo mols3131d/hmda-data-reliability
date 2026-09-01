@@ -38,7 +38,7 @@ README에는 진입에 필요한 내용만 둔다. 자세한 tutorial, 긴 refer
 - 더 자세한 procedure, reference나 도움말은 어디에 있는가?
 - responsibility나 contribution boundary가 불분명하다면 무엇이 이를 소유하는가?
 
-루트 README와 하위 README는 같은 구성을 기계적으로 복제하지 않는다. 각 README는 자신이 대표하는 범위에 필요한 내용만 가진다.
+`docs/README.md`와 하위 README는 같은 구성을 기계적으로 복제하지 않는다. 각 README는 자신이 대표하는 범위에 필요한 내용만 가진다.
 
 ## Recommended Flow
 
