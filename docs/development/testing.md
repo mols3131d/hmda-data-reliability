@@ -90,7 +90,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 - Lefthook 설정 변경은 `lefthook validate`로 configuration을 확인한다.
 - Python dependency setup은 Python/test validation이 필요할 때만 수행하고 uv cache를 재사용한다.
 
-CI는 Markdown을 자동 수정해 통과시키지 않는다. 수정이 필요한 Markdown은 PR에서 실패해야 하며, `main`에 들어간 뒤 bot commit으로 고치는 post-merge autofix workflow는 사용하지 않는다.
+`CI Lite`는 Markdown을 자동 수정하지 않는다. Formatting 변경이 필요하면 PR에서 실패하며, 별도의 post-merge Markdown autofix workflow는 현재 두지 않는다.
 
 ## Select Tests
 
