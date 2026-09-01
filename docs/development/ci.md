@@ -32,7 +32,7 @@ Evidence는 필요한 주장에 맞는 가장 낮은 tier부터 선택한다.
 | --- | --- | --- |
 | Static | 표현과 구조가 계약을 만족하는가 | syntax, schema, frontmatter, parseability |
 | Deterministic | 재현 가능한 동작과 invariant가 유지되는가 | script, generator, contract/regression test |
-| Projection / Integration | 변환·연결 경계가 의도대로 유지되는가 | generated projection, adapter, integration boundary |
+| Harness / Projection | harness나 변환 경계가 의도대로 유지되는가 | generated projection, adapter fidelity, round-trip check |
 | Semantic | 결정론적 assertion만으로 닫기 어려운 의미적 동작이 유지되는가 | routing, instruction following, adversarial case |
 | Live runtime | 실제 provider·tool·runtime에서 동작하는가 | provider invocation, runtime parity, latency/cost |
 
