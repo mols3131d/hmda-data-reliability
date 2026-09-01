@@ -16,7 +16,7 @@ tags:
 > **Historical Snapshot:** 2026-08-16 / `main@e9a8d2a`
 >
 > 이 문서는 현재 상태의 canonical source가 아니다. 아래 진행률과 gap은 위 revision에 대한 기록이며, 현재 revision에 그대로 적용하지 않는다.
-> **Current Focus:** bounded Agentic review와 current-revision acceptance를 닫는다.
+> **Snapshot Focus:** bounded Agentic review와 당시 revision acceptance를 닫는다.
 
 ## Development Progress
 
@@ -33,10 +33,10 @@ tags:
 
 | Domain | # | Remaining Requirement |
 | --- | :---: | --- |
-| HMDA Data | 1 | `hmda-data-synthetic-defects` **Null spike case** — current source는 target null floor를 적용하지만 canonical Scenario가 요구하는 original-relative null-rate increase를 보장하지 않는다. |
-| HMDA Data | 2 | `hmda-data-synthetic-defects` **Freshness delay case** — 이 historical snapshot에서 추적한 항목이며 현재 canonical Spec에는 해당 requirement가 없다. 현재 MVP gap으로 해석하지 않는다. |
-| Reliability | 1 | `reliability-profile-snapshots` **Freshness metric** — canonical Spec은 측정 불가 상태에서 `freshness_at=null`, `freshness_status=unavailable`을 요구하고 `observed_at` fallback을 금지한다. 해당 historical implementation gap은 이 snapshot의 기준에 한정된다. |
-| Reliability | 2 | `reliability-incident-detection` **Freshness delay detection** — canonical Spec은 baseline-relative delay를 요구하지만 current source는 current observation age와 max-age threshold로 판정한다. |
+| HMDA Data | 1 | `hmda-data-synthetic-defects` **Null spike case** — snapshot 당시 source는 target null floor를 적용했지만 당시 canonical Scenario가 요구한 original-relative null-rate increase를 보장하지 않았다. |
+| HMDA Data | 2 | `hmda-data-synthetic-defects` **Freshness delay case** — snapshot 당시 canonical Spec에는 존재했지만 당시 HMDA synthetic surface에서는 제거되어 있었다. 현재 canonical Spec에는 해당 requirement가 없으므로 현재 MVP gap으로 재사용하지 않는다. |
+| Reliability | 1 | `reliability-profile-snapshots` **Freshness metric** — snapshot 당시 canonical Spec은 측정 불가 상태에서 `observed_at` fallback을 요구했지만 당시 source는 `freshness_at=null`, `freshness_status=unavailable`을 반환했다. 현재 canonical Spec은 반대로 fallback을 금지하므로 현재 implementation gap으로 재사용하지 않는다. |
+| Reliability | 2 | `reliability-incident-detection` **Freshness delay detection** — snapshot 당시 canonical Spec은 baseline-relative delay를 요구했지만 당시 source는 observation age와 max-age threshold로 판정했다. |
 
 ## Verification Gaps
 
@@ -64,14 +64,16 @@ tags:
 
 | Area | Risk / Blocker | Impact |
 | --- | --- | --- |
-| Reliability / MVP | `docs/mvp.md`가 요구하는 bounded Agentic review, deterministic review validation과 live model proof가 current canonical Spec inventory와 runtime source에 아직 없다. | Deterministic capability 구현률과 별개로 HMDA Data Reliability MVP 완료를 선언할 수 없다. |
+| Reliability / MVP | snapshot 당시 `docs/mvp.md`가 요구한 bounded Agentic review, deterministic review validation과 live model proof가 당시 canonical Spec inventory와 runtime source에 아직 없었다. | Deterministic capability 구현률과 별개로 당시 HMDA Data Reliability MVP 완료를 선언할 수 없었다. |
 
 ## References
 
-- Current MVP scope: [`../mvp.md`](../mvp.md)
-- Canonical capability contracts: [`../../openspec/specs/`](../../openspec/specs/)
-- Implementation evidence: `src/hmda_reliability/`, `dbt/`
-- Executable specification surfaces: `tests/`
-- Counting rule: Implementation은 canonical Requirement 98개, Verification은 canonical capability별 matching-revision acceptance target 17개를 의미 단위로 집계한다.
+아래 repository-relative path는 현재 파일을 가리키므로, snapshot 사실을 재검증할 때는 `main@e9a8d2a`의 동일 경로를 기준으로 한다.
+
+- MVP scope path: [`../mvp.md`](../mvp.md)
+- Canonical capability contract path: [`../../openspec/specs/`](../../openspec/specs/)
+- Implementation evidence paths: `src/hmda_reliability/`, `dbt/`
+- Executable specification path: `tests/`
+- Snapshot counting rule: Implementation은 당시 canonical Requirement 98개, Verification은 당시 canonical capability별 matching-revision acceptance target 17개를 의미 단위로 집계한다.
 - Validation scope: 이 문서의 수치와 gap은 `main@e9a8d2a` historical snapshot에 한정되며, 현재 revision의 validation evidence로 재사용하지 않는다.
 - Dashboard policy: [`../AGENTS.md`](../AGENTS.md#dashboard-policy)
