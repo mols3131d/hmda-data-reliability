@@ -17,13 +17,14 @@ CI는 repository hygiene를 전부 반복하는 곳이 아니라, 변경을 `mai
 
 ## Admission Boundary
 
-`main`에 들어가면 안 되는 실패는 merge 전에 자동으로 탐지할 수 있어야 한다. 검증은 변경 위험과 영향 범위에 비례하며, 가능한 한 가장 싼 충분한 evidence를 사용한다.
+CI가 소유하는 merge-critical failure는 merge 전에 blocking evidence로 탐지할 수 있어야 한다. 검증은 변경 위험과 영향 범위에 비례하며, 가능한 한 가장 싼 충분한 evidence를 사용한다.
 
 - correctness, repository contract, required validation처럼 merge 여부를 바꾸는 실패를 우선한다.
 - CI 최적화는 검증의 실행 범위와 비용을 줄이는 것이며 admission standard 자체를 낮추는 것이 아니다. `main`에서 허용할 수 없는 실패라면 검사가 비싸다는 이유만으로 post-merge로 이동하지 않는다.
 - formatting이나 local hygiene 자체를 CI의 목적처럼 취급하지 않는다. 다만 representation이 parseability, correctness 또는 명시적 contract에 영향을 주면 merge evidence가 될 수 있다.
 - low-risk 또는 non-semantic 변경은 unrelated expensive check 비용을 지불하지 않는다.
-- 영향 범위를 확신할 수 없으면 관련 검증을 생략하지 않고 더 넓게 실행한다.
+
+CI가 모든 correctness risk를 혼자 소유하지는 않는다. Human review, release control 또는 runtime monitoring이 소유하는 위험은 해당 경계에 남기되, CI가 소유한다고 정한 merge-critical failure를 다른 단계가 있다는 이유로 생략하지 않는다.
 
 ## Evidence Selection
 
@@ -33,7 +34,7 @@ CI는 repository hygiene를 전부 반복하는 곳이 아니라, 변경을 `mai
 | --- | --- | --- |
 | Static | 표현과 구조가 계약을 만족하는지 | syntax, schema, frontmatter, parseability |
 | Deterministic | 재현 가능한 동작과 invariant가 유지되는지 | script, generator, contract/regression test |
-| Projection / integration | 변환·연결 경계가 의도대로 유지되는지 | generated projection, adapter, integration boundary |
+| Projection / Integration | 변환·연결 경계가 의도대로 유지되는지 | generated projection, adapter, integration boundary |
 | Semantic | 결정론적 assertion만으로 닫기 어려운 의미적 동작이 유지되는지 | routing, instruction following, adversarial case |
 | Live runtime | 실제 provider·tool·runtime에서 동작하는지 | provider invocation, runtime parity, latency/cost |
 
@@ -53,7 +54,7 @@ CI는 repository hygiene를 전부 반복하는 곳이 아니라, 변경을 `mai
 
 Local validation과 CI는 서로를 그대로 복제하지 않는다. Lefthook의 운영 baseline은 [Lefthook](tooling/lefthook.md), test 설계와 실행 기준은 [Testing Guide](testing.md)와 [Test Design](test-design.md)가 소유한다.
 
-Post-merge나 scheduled 검증이 유용하더라도 merge-critical failure를 그쪽으로 밀어내는 근거가 되지 않는다. Maintenance automation은 자동화되어 있다는 이유만으로 merge gate가 되지 않는다.
+Maintenance automation은 자동화되어 있다는 이유만으로 merge gate가 되지 않는다. 반대로 post-merge나 scheduled validation이 있다는 사실도 merge-critical evidence를 PR에서 제거하는 근거가 되지 않는다.
 
 ## Change Impact
 
@@ -75,14 +76,13 @@ CI는 변경된 path와 의미를 기준으로 필요한 검증만 선택한다.
 
 이 경계는 Inbox의 의미를 재정의하지 않는다. Inbox의 content, structure와 lifecycle은 `inbox/AGENTS.md`가 계속 소유한다.
 
-## Safety And Authority
+## Safety and Authority
 
-CI는 repository의 owning source와 contract를 검증하며 새로운 authority를 만들지 않는다. Generated output, index, projection, eval result와 maintenance output은 repository가 별도로 authority를 부여하지 않는 한 derived state로 취급한다.
+CI는 repository의 owning source와 contract를 검증하며 새로운 authority를 만들지 않는다. CI 결과와 automation output은 repository가 정한 canonical owner를 대체하지 않는다.
 
-- blocking CI는 practical한 최소 권한과 read-only repository access를 우선한다.
+- blocking CI는 가능한 범위에서 최소 권한과 read-only repository access를 우선한다.
 - secret이 필요한 검증은 untrusted Pull Request와의 trust boundary를 명확히 하고, admission에 필요하지 않은 secret-bearing 실행을 PR에 두지 않는다.
-- third-party action, downloaded tool, external API와 generated commit은 trust boundary로 취급한다.
-- expensive job은 필요한 경우 timeout, bounded sample/retry와 superseded run cancellation으로 비용과 실패 범위를 제한한다.
+- third-party action, downloaded tool, external API와 write-capable automation은 trust boundary로 취급한다.
 - maintenance나 write-back automation은 merge admission과 분리하고, canonical source를 덮어쓰거나 commit loop를 만들지 않도록 한다.
 
 ## Change Rule
@@ -96,4 +96,4 @@ CI를 변경할 때는 "무엇을 더 검사할까"보다 먼저 다음을 확�
 1. 어느 validation layer와 실행 시점이 이 evidence를 소유해야 하는가?
 1. Lefthook이나 다른 validation과 불필요하게 중복되지 않는가?
 
-새 검사는 merge 판단을 실제로 개선하고 장기 유지 비용보다 가치가 클 때만 추가한다. Existing provider, repository-native checker와 test를 우선하고, cache, matrix, 별도 router나 새 framework는 현재 evidence로 필요성이 입증될 때만 도입한다.
+새 검사는 merge 판단을 실제로 개선하고 장기 유지 비용보다 가치가 클 때만 추가한다. Existing provider, repository-native checker와 test를 우선하고 새로운 CI machinery는 현재 evidence로 필요성이 입증될 때만 도입한다.
