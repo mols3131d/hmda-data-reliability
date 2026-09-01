@@ -1,6 +1,6 @@
 ---
 title: "Documentation"
-description: "문서의 공통 원칙, frontmatter와 README 작성 기준을 확인하거나 문서 구조·탐색성을 설계할 때 사용하는 documentation policy entrypoint입니다."
+description: "`docs/**` 일반 문서의 공통 원칙, frontmatter와 README 작성 기준을 확인하거나 문서 구조·탐색성을 설계할 때 사용하는 documentation policy entrypoint입니다."
 categories:
   - software-engineering
 tags:
@@ -10,7 +10,7 @@ tags:
 
 # Documentation
 
-이 디렉터리는 repository 문서를 만들고 배치할 때 적용하는 **공통 문서 정책의 진입점**이다.
+이 디렉터리는 **`docs/**`의 일반 문서**를 만들고 배치할 때 적용하는 공통 문서 정책의 진입점이다.
 
 문서의 일반적인 품질과 ownership 판단은 [Documentation Principles](principles.md)가 소유한다. Frontmatter와 README처럼 특정 surface의 작성 기준은 각각의 문서가 소유한다. `docs/**`의 trust boundary와 phase lifecycle은 상위 [`AGENTS.md`](../AGENTS.md)가 계속 소유한다.
 

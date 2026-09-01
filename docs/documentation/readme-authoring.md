@@ -1,6 +1,6 @@
 ---
 title: "README Authoring"
-description: "디렉터리나 문서·파일 묶음에 README가 필요한지 판단하고 entrypoint의 범위, 첫 행동과 navigation을 설계할 때 사용하는 정책입니다."
+description: "`docs/**`의 디렉터리나 문서·파일 묶음에 README가 필요한지 판단하고 entrypoint의 범위, 첫 행동과 navigation을 설계할 때 사용하는 정책입니다."
 categories:
   - software-engineering
 tags:
@@ -11,7 +11,7 @@ tags:
 
 # README Authoring
 
-`README.md`는 디렉터리나 문서·파일 묶음의 **진입점**이다. 모든 내용을 담는 설명서가 아니라, 이 범위가 무엇인지 빠르게 이해하고 다음에 무엇을 볼지 결정하게 한다.
+이 정책에서 `README.md`는 `docs/**` 아래 디렉터리나 문서·파일 묶음의 **진입점**이다. 모든 내용을 담는 설명서가 아니라, 이 범위가 무엇인지 빠르게 이해하고 다음에 무엇을 볼지 결정하게 한다.
 
 디렉터리나 묶음이 있다는 이유만으로 README를 만들지 않는다. 시작점에서 안내해야 할 responsibility가 있을 때만 둔다.
 

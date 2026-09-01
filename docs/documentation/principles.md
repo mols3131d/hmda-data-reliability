@@ -1,6 +1,6 @@
 ---
 title: "Documentation Principles"
-description: "문서를 새로 만들거나 구조·내용·배치를 바꿀 때 목적, ownership, 정본, 탐색성, 현재성과 유지보수성을 판단하는 공통 원칙입니다."
+description: "`docs/**` 일반 문서를 새로 만들거나 구조·내용·배치를 바꿀 때 목적, ownership, 정본, 탐색성, 현재성과 유지보수성을 판단하는 공통 원칙입니다."
 categories:
   - software-engineering
 tags:
@@ -46,7 +46,7 @@ LLM과 AI Agent는 사람을 위한 품질을 유지하면서 필요한 문서�
 
 ## Boundaries
 
-이 문서는 일반 문서 품질과 ownership 원칙을 소유한다. 다음 concern은 더 구체적인 owner를 따른다.
+이 문서는 `docs/**` 일반 문서의 품질과 ownership 원칙을 소유한다. 다음 concern은 더 구체적인 owner를 따른다.
 
 - `docs/**`의 trust boundary, phase lifecycle과 subject ownership → [`../AGENTS.md`](../AGENTS.md)
 - 일반 문서 frontmatter의 schema와 required field → [`../../frontmatter.json`](../../frontmatter.json)

@@ -1,6 +1,6 @@
 ---
 title: "Frontmatter"
-description: "일반 문서에 frontmatter를 적용하거나 `description`을 탐색·라우팅에 맞게 작성할 때 적용 범위와 선택 기준을 확인하는 정책입니다."
+description: "`docs/**` 일반 문서에 frontmatter를 적용하거나 `description`을 탐색·라우팅에 맞게 작성할 때 적용 범위와 선택 기준을 확인하는 정책입니다."
 categories:
   - software-engineering
 tags:
@@ -15,7 +15,7 @@ tags:
 
 ## Scope
 
-일반 문서는 repository의 frontmatter schema를 따른다. 확장자만 보고 일괄 적용하지 않고 file role을 먼저 판단한다.
+`docs/**`의 일반 문서는 repository의 frontmatter schema를 따른다. 확장자만 보고 일괄 적용하지 않고 file role을 먼저 판단한다.
 
 - `AGENTS.md`, `CHATBOT.md`, `SKILL.md`, agent/subagent file 같은 **Agent Asset과 instruction surface**에는 일반 문서 frontmatter를 강제하지 않는다. 해당 standard, framework, vendor 또는 repository rule이 metadata 형식을 소유한다.
 - Systemic/generated artifact는 해당 artifact의 owner와 generator 규칙을 따른다.

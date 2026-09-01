@@ -41,6 +41,6 @@ tags:
 
 - `docs/**`의 trust boundary, subject ownership, dashboard policy와 phase lifecycle은 [`AGENTS.md`](AGENTS.md)가 소유한다.
 - 일반 문서의 품질·배치·frontmatter·README 작성 정책은 [`documentation/`](documentation/README.md)이 소유한다.
-- OpenSpec의 canonical/change workflow는 [`../openspec/AGENTS.md`](../openspec/AGENTS.md)가 소유한다.
+- OpenSpec의 구조, canonical boundary와 지침 소유권은 [`../openspec/README.md`](../openspec/README.md)를 진입점으로 해당 owning source를 따른다.
 
 이 README는 navigation만 설명하며 owning rule을 복제하지 않는다.
