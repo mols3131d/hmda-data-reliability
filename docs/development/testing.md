@@ -58,7 +58,7 @@ flowchart TB
 
 ## Git Hooks
 
-Lefthook은 local feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. `main` admission에 필요한 전체 검증은 CI가 담당한다.
+Lefthook은 local feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. `main` admission에서 CI가 소유하는 책임 경계는 [Continuous Integration](ci.md)을 따른다.
 
 | Hook | Trigger | Action |
 | --- | --- | --- |
@@ -75,6 +75,8 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 ## Pull Request CI
 
+이 section은 `CI Lite`의 현재 validation behavior를 설명한다. Merge admission policy와 validation responsibility는 [Continuous Integration](ci.md)이 소유한다.
+
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
 - Markdown은 위치와 관계없이 runtime scope에서 제외하고, 현재 존재하는 changed Markdown file만 `rumdl check`한다.
@@ -88,7 +90,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 - Lefthook 설정 변경은 `lefthook validate`로 configuration을 확인한다.
 - Python dependency setup은 Python/test validation이 필요할 때만 수행하고 uv cache를 재사용한다.
 
-CI는 Markdown을 자동 수정해 통과시키지 않는다. 수정이 필요한 Markdown은 PR에서 실패해야 하며, `main`에 들어간 뒤 bot commit으로 고치는 post-merge autofix workflow는 사용하지 않는다.
+`CI Lite`는 Markdown을 자동 수정하지 않는다. Formatting 변경이 필요하면 PR에서 실패하며, 별도의 post-merge Markdown autofix workflow는 현재 두지 않는다.
 
 ## Select Tests
 
@@ -201,6 +203,7 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 
 ## Related Guides
 
+- [Continuous Integration](ci.md): `main` merge admission과 CI validation responsibility
 - [Test Design](test-design.md): requirement를 scenario와 oracle로 바꾸는 방법
 - [`tests/AGENTS.md`](../../tests/AGENTS.md): `tests/` 파일을 수정할 때의 agent context
 - [`pyproject.toml`](../../pyproject.toml): pytest correctness/safety defaults와 marker 등록
