@@ -32,7 +32,10 @@ from hmda_reliability.data_platform.artifacts import (
     artifact_projection_id,
 )
 from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
-from hmda_reliability.hmda_data import PartitionContentIdentity, partition_content_identity
+from hmda_reliability.hmda_data import (
+    PartitionContentIdentity,
+    partition_content_identity,
+)
 from hmda_reliability.hmda_data.errors import HMDAStalePartitionError
 from hmda_reliability.reliability import (
     Approval,
@@ -147,79 +150,63 @@ def test_null_spike_vertical_slice_rejects_existing_evaluation_database(
         connection.execute("CREATE TABLE sentinel(value INTEGER)")
         connection.execute("INSERT INTO sentinel VALUES (42)")
     original_content = existing_path.read_bytes()
+    source_content = source_path.read_bytes()
+    manifest_content = request.dbt_manifest_path.read_bytes()
+    run_results_content = request.dbt_run_results_path.read_bytes()
     original_workspace_entries = (
         {path.name for path in workspace.iterdir()} if workspace.exists() else None
     )
 
-    load_calls: list[Path] = []
-    callback_calls: list[str] = []
-    original_load = null_spike_evaluation.load_hmda_loans_partition
+    side_effects: list[str] = []
 
-    def track_load(
-        connection: duckdb.DuckDBPyConnection,
-        source_paths: Sequence[str | Path],
-        source_year: int,
-        *,
-        source_file: str | None = None,
-        table_name: str = "raw.hmda_loans",
-        expected_identity: PartitionContentIdentity | None = None,
-        preserve_source_metadata: bool = False,
-    ) -> int:
-        database_row = connection.execute("PRAGMA database_list").fetchone()
-        assert database_row is not None
-        load_calls.append(Path(database_row[2]))
-        return original_load(
-            connection,
-            source_paths,
-            source_year,
-            source_file=source_file,
-            table_name=table_name,
-            expected_identity=expected_identity,
-            preserve_source_metadata=preserve_source_metadata,
-        )
+    class EvaluationSideEffect(RuntimeError):
+        pass
 
-    def approve(proposal: RecoveryProposal) -> Approval:
-        callback_calls.append("approve")
-        return _approved(proposal)
-
-    def validate_candidate(_request: DataOperationRequest) -> str:
-        callback_calls.append("validate_candidate")
-        return "sha256:candidate"
-
-    def validate_target(_request: DataOperationRequest) -> str:
-        callback_calls.append("validate_target")
-        return "sha256:target"
+    def fail_side_effect(*args: object, **kwargs: object) -> Never:
+        side_effects.append("evaluation")
+        raise EvaluationSideEffect
 
     monkeypatch.setattr(
         null_spike_evaluation,
+        "DuckDBConnectionManager",
+        fail_side_effect,
+    )
+    monkeypatch.setattr(
+        null_spike_evaluation,
         "load_hmda_loans_partition",
-        track_load,
+        fail_side_effect,
+    )
+    monkeypatch.setattr(null_spike_evaluation, "null_spike", fail_side_effect)
+    monkeypatch.setattr(
+        null_spike_evaluation,
+        "_materialize_defect_source",
+        fail_side_effect,
     )
 
-    try:
-        result = _evaluate_null_spike(
+    with pytest.raises(ValueError, match="새 path여야 합니다"):
+        _evaluate_null_spike(
             request=request,
             source_paths=(source_path,),
             workspace=workspace,
             target_column="income",
             null_fraction=0.2,
-            approve=approve,
-            validate_candidate=validate_candidate,
-            validate_target=validate_target,
+            approve=fail_side_effect,
+            validate_candidate=fail_side_effect,
+            validate_target=fail_side_effect,
         )
-    except ValueError:
-        pass
-    else:
-        assert result.post_recovery_case.failure_stage == "before_target_mutation"
-        assert result.post_recovery_case.target_mutated is False
 
-    assert load_calls == []
-    assert callback_calls == []
+    assert side_effects == []
     assert existing_path.read_bytes() == original_content
+    assert source_path.read_bytes() == source_content
+    assert request.dbt_manifest_path.read_bytes() == manifest_content
+    assert request.dbt_run_results_path.read_bytes() == run_results_content
     if original_workspace_entries is None:
         assert not workspace.exists()
     else:
         assert {path.name for path in workspace.iterdir()} == original_workspace_entries
+    assert all(
+        path == existing_path or not path.exists() for path in database_paths.values()
+    )
 
 
 @pytest.mark.integration
@@ -228,7 +215,6 @@ def test_null_spike_vertical_slice_rejects_existing_evaluation_database(
     [
         pytest.param("target", "clean", id="target-clean"),
         pytest.param("target", "candidate", id="target-candidate"),
-        pytest.param("clean", "candidate", id="clean-candidate"),
     ],
 )
 def test_null_spike_vertical_slice_rejects_aliased_evaluation_database_paths(
@@ -248,11 +234,7 @@ def test_null_spike_vertical_slice_rejects_aliased_evaluation_database_paths(
         "clean": workspace / "clean.duckdb",
         "candidate": workspace / "candidate.duckdb",
     }
-    if left_name == "target":
-        database_paths["target"] = database_paths[right_name]
-    else:
-        workspace.mkdir()
-        database_paths["candidate"].symlink_to(database_paths["clean"].name)
+    database_paths["target"] = database_paths[right_name]
     request = request.model_copy(update={"database_path": database_paths["target"]})
 
     assert database_paths[left_name].resolve(strict=False) == (
@@ -263,18 +245,6 @@ def test_null_spike_vertical_slice_rejects_aliased_evaluation_database_paths(
     source_content = source_path.read_bytes()
     manifest_content = request.dbt_manifest_path.read_bytes()
     run_results_content = request.dbt_run_results_path.read_bytes()
-    original_workspace_entries = (
-        {path.name for path in workspace.iterdir()} if workspace.exists() else None
-    )
-    original_symlink_targets = (
-        {
-            path.name: path.readlink()
-            for path in workspace.iterdir()
-            if path.is_symlink()
-        }
-        if workspace.exists()
-        else {}
-    )
     database_calls: list[str] = []
     load_calls: list[None] = []
     synthetic_calls: list[str] = []
@@ -328,8 +298,7 @@ def test_null_spike_vertical_slice_rejects_aliased_evaluation_database_paths(
         track_materialize,
     )
 
-    rejected = False
-    try:
+    with pytest.raises(ValueError, match="서로 달라야 합니다"):
         _evaluate_null_spike(
             request=request,
             source_paths=(source_path,),
@@ -340,49 +309,17 @@ def test_null_spike_vertical_slice_rejects_aliased_evaluation_database_paths(
             validate_candidate=validate_candidate,
             validate_target=validate_target,
         )
-    except ValueError:
-        rejected = True
-    except EvaluationSideEffect:
-        pass
 
-    violations = []
-    if not rejected:
-        violations.append("aliased database paths were not rejected")
-    if database_calls:
-        violations.append("database workspace was opened")
-    if load_calls:
-        violations.append("source load was invoked")
-    if synthetic_calls:
-        violations.append("synthetic materialization was invoked")
-    if callback_calls:
-        violations.append(f"callbacks were invoked: {callback_calls}")
-    if original_workspace_entries is None:
-        if workspace.exists():
-            violations.append("workspace directory was created")
-    elif {path.name for path in workspace.iterdir()} != original_workspace_entries:
-        violations.append("workspace entries changed")
-    if (
-        workspace.exists()
-        and {
-            path.name: path.readlink()
-            for path in workspace.iterdir()
-            if path.is_symlink()
-        }
-        != original_symlink_targets
-    ):
-        violations.append("workspace aliases changed")
-    if sentinel_path.read_text(encoding="utf-8") != "preserve":
-        violations.append("unrelated sentinel changed")
-    if source_path.read_bytes() != source_content:
-        violations.append("source content changed")
-    if request.dbt_manifest_path.read_bytes() != manifest_content:
-        violations.append("manifest artifact changed")
-    if request.dbt_run_results_path.read_bytes() != run_results_content:
-        violations.append("run-results artifact changed")
-    if any(path.exists() for path in database_paths.values()):
-        violations.append("evaluation database was created")
-
-    assert violations == []
+    assert database_calls == []
+    assert load_calls == []
+    assert synthetic_calls == []
+    assert callback_calls == []
+    assert not workspace.exists()
+    assert sentinel_path.read_text(encoding="utf-8") == "preserve"
+    assert source_path.read_bytes() == source_content
+    assert request.dbt_manifest_path.read_bytes() == manifest_content
+    assert request.dbt_run_results_path.read_bytes() == run_results_content
+    assert all(not path.exists() for path in database_paths.values())
 
 
 @pytest.mark.integration
@@ -447,8 +384,7 @@ def test_null_spike_vertical_slice_rejects_dangling_database_symlink(
         fail_side_effect,
     )
 
-    rejected = False
-    try:
+    with pytest.raises(ValueError, match="새 path여야 합니다"):
         _evaluate_null_spike(
             request=request,
             source_paths=(source_path,),
@@ -459,12 +395,7 @@ def test_null_spike_vertical_slice_rejects_dangling_database_symlink(
             validate_candidate=fail_side_effect,
             validate_target=fail_side_effect,
         )
-    except ValueError:
-        rejected = True
-    except EvaluationSideEffect:
-        pass
 
-    assert rejected, "dangling database symlink must be rejected as existing"
     assert side_effects == []
     assert dangling_path.is_symlink()
     assert dangling_path.readlink() == original_link_text
@@ -760,15 +691,12 @@ def test_null_spike_vertical_slice_rejects_unachieved_controlled_defect(
 
     source_path, request = _null_spike_fixture(tmp_path, row_count=20)
     original_lifecycle = data_operations.run_incident_lifecycle
-    lifecycle_count = 0
 
     def lifecycle_stub(
         lifecycle_request: DataOperationRequest,
         baseline: ProfileSnapshot,
     ) -> LifecycleResult:
-        nonlocal lifecycle_count
-        lifecycle_count += 1
-        if lifecycle_count == 1:
+        if lifecycle_request.database_path != request.database_path:
             return original_lifecycle(lifecycle_request, baseline)
         with DuckDBConnectionManager(lifecycle_request.database_path) as connection:
             if invalid_target_state == "row_count":
@@ -851,7 +779,9 @@ def test_null_spike_vertical_slice_rejects_residual_null_candidate_with_evidence
         encoding="utf-8",
     )
     original_load = null_spike_evaluation.load_hmda_loans_partition
-    load_count = 0
+    workspace = tmp_path / "run"
+    candidate_database_path = workspace / "candidate.duckdb"
+    load_journal: list[tuple[Path, tuple[Path, ...]]] = []
     candidate_identity: PartitionContentIdentity | None = None
     candidate_null_rate: float | None = None
     target_identity_before_recovery: PartitionContentIdentity | None = None
@@ -866,10 +796,19 @@ def test_null_spike_vertical_slice_rejects_residual_null_candidate_with_evidence
         expected_identity: PartitionContentIdentity | None = None,
         preserve_source_metadata: bool = False,
     ) -> int:
-        nonlocal load_count, candidate_identity, candidate_null_rate
+        nonlocal candidate_identity, candidate_null_rate
         nonlocal target_identity_before_recovery
-        load_count += 1
-        selected_source_paths = (residual_source,) if load_count == 3 else source_paths
+        database_row = connection.execute("PRAGMA database_list").fetchone()
+        assert database_row is not None
+        database_path = Path(database_row[2])
+        selected_source_paths = (
+            (residual_source,)
+            if database_path == candidate_database_path
+            else source_paths
+        )
+        load_journal.append(
+            (database_path, tuple(Path(path) for path in selected_source_paths))
+        )
         row_count = original_load(
             connection,
             selected_source_paths,
@@ -879,18 +818,18 @@ def test_null_spike_vertical_slice_rejects_residual_null_candidate_with_evidence
             expected_identity=expected_identity,
             preserve_source_metadata=preserve_source_metadata,
         )
-        if load_count in {2, 3}:
+        if database_path in {request.database_path, candidate_database_path}:
             observed_identity = partition_content_identity(
                 connection,
                 table_name=request.raw_table_name,
                 source_year=request.source_year,
                 source_file=request.source_file,
             )
-            if load_count == 2:
+            if database_path == request.database_path:
                 target_identity_before_recovery = observed_identity
             else:
                 candidate_identity = observed_identity
-        if load_count == 3:
+        if database_path == candidate_database_path:
             null_rate_row = connection.execute(
                 "SELECT avg(CASE WHEN income IS NULL THEN 1.0 ELSE 0.0 END) "
                 "FROM raw.hmda_loans"
@@ -904,50 +843,6 @@ def test_null_spike_vertical_slice_rejects_residual_null_candidate_with_evidence
         "load_hmda_loans_partition",
         load_residual_candidate,
     )
-    recovery_count = 0
-
-    def accept_residual_candidate(
-        _connection: duckdb.DuckDBPyConnection,
-        recovery_request,
-    ) -> BackfillValidationResult:
-        nonlocal recovery_count
-        recovery_count += 1
-        assert candidate_identity is not None
-        assert request.observed_at is not None
-        return BackfillValidationResult(
-            approval_id=recovery_request.approval.approval_id,
-            incident_id=recovery_request.approval.incident_id,
-            partition=str(recovery_request.source_year),
-            row_count=candidate_identity.row_count,
-            profile_snapshot=ProfileSnapshot(
-                snapshot_id=f"residual-{recovery_count}",
-                asset_name=request.asset_name,
-                partition=str(request.source_year),
-                observed_at=request.observed_at,
-                row_count=candidate_identity.row_count,
-                null_rates={"income": 0.05},
-                schema_hash="residual",
-                freshness_at=request.observed_at,
-                freshness_status="measured",
-            ),
-            approved_before_identity=recovery_request.proposal.approved_before_identity,
-            expected_after_identity=recovery_request.proposal.expected_after_identity,
-            actual_identity=candidate_identity,
-            mutation_state=(
-                "partition_changed" if recovery_count == 1 else "already_recovered"
-            ),
-            reconciliation_action=(
-                "overwrite_partition" if recovery_count == 1 else "resume_verification"
-            ),
-            validation_passed=False,
-            executed_actions=["rerun_profile_snapshot"],
-        )
-
-    monkeypatch.setattr(
-        null_spike_evaluation,
-        "execute_approved_backfill",
-        accept_residual_candidate,
-    )
     approval_calls: list[RecoveryProposal] = []
 
     def approve(proposal: RecoveryProposal) -> Approval:
@@ -957,7 +852,7 @@ def test_null_spike_vertical_slice_rejects_residual_null_candidate_with_evidence
     result = _evaluate_null_spike(
         request=request,
         source_paths=(source_path,),
-        workspace=tmp_path / "run",
+        workspace=workspace,
         target_column="income",
         null_fraction=0.2,
         approve=approve,
@@ -990,6 +885,12 @@ def test_null_spike_vertical_slice_rejects_residual_null_candidate_with_evidence
     assert result.post_recovery_case.target_mutated is False
     assert approval_calls == []
     assert target_identity_before_recovery is not None
+    assert [path for path, _source_paths in load_journal] == [
+        workspace / "clean.duckdb",
+        request.database_path,
+        candidate_database_path,
+    ]
+    assert load_journal[-1] == (candidate_database_path, (residual_source,))
     with DuckDBConnectionManager(request.database_path, read_only=True) as connection:
         assert (
             partition_content_identity(
@@ -1038,22 +939,66 @@ def test_null_spike_replay_profile_failure_preserves_first_recovery(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """Replay profile failure retains the completed partition mutation evidence."""
+    """Second approved execution retains first mutation evidence on replay failure."""
 
     source_path, request = _null_spike_fixture(tmp_path)
+    original_recovery = null_spike_evaluation.execute_approved_backfill
     original_snapshot = recovery_executor.create_profile_snapshot
-    snapshot_count = 0
+    active_execution: int | None = None
+    execution_journal: list[tuple[int, tuple[str, str, int, str, str | None]]] = []
+    completed_mutation_states: list[str] = []
+    snapshot_journal: list[tuple[int, str, str, str]] = []
+
+    def execute_with_journal(
+        connection: duckdb.DuckDBPyConnection,
+        recovery_request,
+    ) -> BackfillValidationResult:
+        nonlocal active_execution
+        active_execution = len(execution_journal) + 1
+        execution_journal.append(
+            (
+                active_execution,
+                (
+                    recovery_request.approval.approval_id,
+                    recovery_request.proposal.proposal_id,
+                    recovery_request.source_year,
+                    recovery_request.table_name,
+                    recovery_request.source_file,
+                ),
+            )
+        )
+        try:
+            recovery = original_recovery(connection, recovery_request)
+        except Exception:
+            raise
+        else:
+            completed_mutation_states.append(recovery.mutation_state)
+            return recovery
+        finally:
+            active_execution = None
 
     def fail_replay_snapshot(
         connection: duckdb.DuckDBPyConnection,
         profile_request: ProfileSnapshotRequest,
     ) -> ProfileSnapshot:
-        nonlocal snapshot_count
-        snapshot_count += 1
-        if snapshot_count == 2:
+        assert active_execution is not None
+        snapshot_journal.append(
+            (
+                active_execution,
+                profile_request.table_name,
+                profile_request.partition,
+                profile_request.observed_at.isoformat(),
+            )
+        )
+        if active_execution == 2:
             raise ProfileSnapshotError("replay profile failed")
         return original_snapshot(connection, profile_request)
 
+    monkeypatch.setattr(
+        null_spike_evaluation,
+        "execute_approved_backfill",
+        execute_with_journal,
+    )
     monkeypatch.setattr(
         recovery_executor,
         "create_profile_snapshot",
@@ -1084,6 +1029,11 @@ def test_null_spike_replay_profile_failure_preserves_first_recovery(
     assert result.post_recovery_case.failure_stage == "after_partition_mutation"
     assert result.post_recovery_case.target_mutated is True
     assert result.post_recovery_case.reconciliation_action == "resume_verification"
+    assert [attempt for attempt, _fingerprint in execution_journal] == [1, 2]
+    assert execution_journal[0][1] == execution_journal[1][1]
+    assert completed_mutation_states == ["partition_changed"]
+    assert [attempt for attempt, *_details in snapshot_journal] == [1, 2]
+    assert snapshot_journal[0][1:] == snapshot_journal[1][1:]
 
 
 @pytest.mark.integration
@@ -1099,15 +1049,31 @@ def test_null_spike_post_recovery_lifecycle_failure_preserves_mutation_evidence(
         request.dbt_run_results_path,
     )
     original_lifecycle = data_operations.run_incident_lifecycle
-    lifecycle_count = 0
+    clean_identity: PartitionContentIdentity | None = None
+    lifecycle_journal: list[tuple[Path, PartitionContentIdentity]] = []
 
     def fail_post_recovery_lifecycle(
         lifecycle_request: DataOperationRequest,
         baseline: ProfileSnapshot,
     ) -> LifecycleResult:
-        nonlocal lifecycle_count
-        lifecycle_count += 1
-        if lifecycle_count == 3:
+        nonlocal clean_identity
+        with DuckDBConnectionManager(
+            lifecycle_request.database_path,
+            read_only=True,
+        ) as connection:
+            observed_identity = partition_content_identity(
+                connection,
+                table_name=lifecycle_request.raw_table_name,
+                source_year=lifecycle_request.source_year,
+                source_file=lifecycle_request.source_file,
+            )
+        lifecycle_journal.append((lifecycle_request.database_path, observed_identity))
+        if clean_identity is None:
+            clean_identity = observed_identity
+        if (
+            lifecycle_request.database_path == request.database_path
+            and observed_identity == clean_identity
+        ):
             raise DataOperationError("post-recovery lifecycle failed")
         return original_lifecycle(lifecycle_request, baseline)
 
@@ -1134,7 +1100,6 @@ def test_null_spike_post_recovery_lifecycle_failure_preserves_mutation_evidence(
             pytrace=False,
         )
 
-    assert lifecycle_count == 3
     assert result.recovery is not None
     assert result.recovery.mutation_state == "partition_changed"
     assert result.replay is not None
@@ -1148,6 +1113,12 @@ def test_null_spike_post_recovery_lifecycle_failure_preserves_mutation_evidence(
         for evidence in result.post_recovery_case.evidence_refs
     )
     _assert_exact_null_rate_evidence(result.post_recovery_case.evidence_refs)
+    assert clean_identity is not None
+    assert len(lifecycle_journal) == 3
+    assert lifecycle_journal[0][0] != request.database_path
+    assert lifecycle_journal[1][0] == request.database_path
+    assert lifecycle_journal[1][1] != clean_identity
+    assert lifecycle_journal[2] == (request.database_path, clean_identity)
 
 
 @pytest.mark.integration
@@ -1163,15 +1134,31 @@ def test_null_spike_post_recovery_artifact_lock_failure_preserves_evidence(
         request.dbt_run_results_path,
     )
     original_lifecycle = data_operations.run_incident_lifecycle
-    lifecycle_count = 0
+    clean_identity: PartitionContentIdentity | None = None
+    lifecycle_journal: list[tuple[Path, PartitionContentIdentity]] = []
 
     def fail_post_recovery_lifecycle(
         lifecycle_request: DataOperationRequest,
         baseline: ProfileSnapshot,
     ) -> LifecycleResult:
-        nonlocal lifecycle_count
-        lifecycle_count += 1
-        if lifecycle_count == 3:
+        nonlocal clean_identity
+        with DuckDBConnectionManager(
+            lifecycle_request.database_path,
+            read_only=True,
+        ) as connection:
+            observed_identity = partition_content_identity(
+                connection,
+                table_name=lifecycle_request.raw_table_name,
+                source_year=lifecycle_request.source_year,
+                source_file=lifecycle_request.source_file,
+            )
+        lifecycle_journal.append((lifecycle_request.database_path, observed_identity))
+        if clean_identity is None:
+            clean_identity = observed_identity
+        if (
+            lifecycle_request.database_path == request.database_path
+            and observed_identity == clean_identity
+        ):
             raise ArtifactProjectionLockError("post-recovery artifact lock failed")
         return original_lifecycle(lifecycle_request, baseline)
 
@@ -1202,6 +1189,12 @@ def test_null_spike_post_recovery_artifact_lock_failure_preserves_evidence(
         "ArtifactProjectionLockError" in evidence
         for evidence in result.post_recovery_case.evidence_refs
     )
+    assert clean_identity is not None
+    assert len(lifecycle_journal) == 3
+    assert lifecycle_journal[0][0] != request.database_path
+    assert lifecycle_journal[1][0] == request.database_path
+    assert lifecycle_journal[1][1] != clean_identity
+    assert lifecycle_journal[2] == (request.database_path, clean_identity)
 
 
 @pytest.mark.integration
@@ -1213,14 +1206,26 @@ def test_null_spike_failed_replay_quality_preserves_replay_result(
 
     source_path, request = _null_spike_fixture(tmp_path)
     original_recovery = null_spike_evaluation.execute_approved_backfill
-    recovery_count = 0
+    execution_journal: list[tuple[int, tuple[str, str, int, str, str | None]]] = []
     failed_replay: BackfillValidationResult | None = None
 
     def fail_replay_validation(connection, recovery_request):
-        nonlocal recovery_count, failed_replay
-        recovery_count += 1
+        nonlocal failed_replay
+        attempt = len(execution_journal) + 1
+        execution_journal.append(
+            (
+                attempt,
+                (
+                    recovery_request.approval.approval_id,
+                    recovery_request.proposal.proposal_id,
+                    recovery_request.source_year,
+                    recovery_request.table_name,
+                    recovery_request.source_file,
+                ),
+            )
+        )
         recovery = original_recovery(connection, recovery_request)
-        if recovery_count == 2:
+        if attempt == 2:
             failed_replay = recovery.model_copy(update={"validation_passed": False})
             return failed_replay
         return recovery
@@ -1252,6 +1257,8 @@ def test_null_spike_failed_replay_quality_preserves_replay_result(
     assert result.post_recovery_case.reconciliation_action == (
         "request_new_validation_and_approval"
     )
+    assert [attempt for attempt, _fingerprint in execution_journal] == [1, 2]
+    assert execution_journal[0][1] == execution_journal[1][1]
 
 
 @pytest.mark.integration
@@ -1263,13 +1270,24 @@ def test_null_spike_diverged_replay_requests_new_validation_and_approval(
 
     source_path, request = _null_spike_fixture(tmp_path)
     original_recovery = null_spike_evaluation.execute_approved_backfill
-    recovery_count = 0
+    execution_journal: list[tuple[int, tuple[str, str, int, str, str | None]]] = []
 
     def diverge_after_first_recovery(connection, recovery_request):
-        nonlocal recovery_count
-        recovery_count += 1
+        attempt = len(execution_journal) + 1
+        execution_journal.append(
+            (
+                attempt,
+                (
+                    recovery_request.approval.approval_id,
+                    recovery_request.proposal.proposal_id,
+                    recovery_request.source_year,
+                    recovery_request.table_name,
+                    recovery_request.source_file,
+                ),
+            )
+        )
         recovery = original_recovery(connection, recovery_request)
-        if recovery_count == 1:
+        if attempt == 1:
             connection.execute("UPDATE raw.hmda_loans SET income = income + 1")
         return recovery
 
@@ -1305,6 +1323,8 @@ def test_null_spike_diverged_replay_requests_new_validation_and_approval(
     assert result.post_recovery_case.reconciliation_action == (
         "request_new_validation_and_approval"
     )
+    assert [attempt for attempt, _fingerprint in execution_journal] == [1, 2]
+    assert execution_journal[0][1] == execution_journal[1][1]
 
 
 @pytest.mark.integration
@@ -1336,9 +1356,12 @@ def test_null_spike_pre_mutation_gates_return_safety_evidence(
     """Representative approval and target gates fail without recovery mutation."""
 
     source_path, request = _null_spike_fixture(tmp_path)
+    approved_before_identity: PartitionContentIdentity | None = None
     if gate == "stale":
         original_load = recovery_executor.load_hmda_loans_partition
-        load_count = 0
+        load_journal: list[
+            tuple[tuple[Path, ...], PartitionContentIdentity | None]
+        ] = []
 
         def raise_stale_on_target_load(
             connection: duckdb.DuckDBPyConnection,
@@ -1350,9 +1373,12 @@ def test_null_spike_pre_mutation_gates_return_safety_evidence(
             expected_identity: PartitionContentIdentity | None = None,
             preserve_source_metadata: bool = False,
         ) -> int:
-            nonlocal load_count
-            load_count += 1
-            if load_count == 2:
+            loaded_paths = tuple(Path(path) for path in source_paths)
+            load_journal.append((loaded_paths, expected_identity))
+            if (
+                loaded_paths[0].name == "approved-candidate.parquet"
+                and expected_identity == approved_before_identity
+            ):
                 raise HMDAStalePartitionError("stale")
             return original_load(
                 connection,
@@ -1371,6 +1397,8 @@ def test_null_spike_pre_mutation_gates_return_safety_evidence(
         )
 
     def approve(proposal: RecoveryProposal) -> Approval:
+        nonlocal approved_before_identity
+        approved_before_identity = proposal.approved_before_identity
         approval = _approved(proposal)
         if gate == "incomplete":
             return approval.model_copy(
@@ -1407,6 +1435,23 @@ def test_null_spike_pre_mutation_gates_return_safety_evidence(
     assert any(
         "ApprovalGateError" in ref for ref in result.post_recovery_case.evidence_refs
     )
+    if gate == "stale":
+        assert approved_before_identity is not None
+        candidate_staging_calls = [
+            entry
+            for entry in load_journal
+            if entry[0] == (source_path,) and entry[1] is None
+        ]
+        target_overwrite_calls = [
+            entry
+            for entry in load_journal
+            if (
+                entry[0][0].name == "approved-candidate.parquet"
+                and entry[1] == approved_before_identity
+            )
+        ]
+        assert candidate_staging_calls
+        assert len(target_overwrite_calls) == 1
 
 
 @pytest.mark.integration

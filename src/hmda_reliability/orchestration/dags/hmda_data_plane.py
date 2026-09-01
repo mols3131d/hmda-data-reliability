@@ -1,4 +1,4 @@
-"""Airflow adapter for the raw-to-analytics data plane."""
+"""Raw 데이터부터 분석 마트까지의 데이터 플레인을 위한 Airflow 어댑터."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ _RUNTIME_OVERRIDE_FIELDS: Final = (
 
 
 def _runtime_overrides() -> dict[str, object]:
-    """Read only the runtime fields exposed by the Airflow trigger form."""
+    """Airflow 트리거 폼에서 제공된 런타임 필드만 읽어온다."""
 
     context = get_current_context()
     params = context.get("params", {})
@@ -45,7 +45,7 @@ def _runtime_overrides() -> dict[str, object]:
 
 
 def _set_asset_evidence(asset: Asset, evidence: Mapping[str, JsonValue]) -> None:
-    """Attach execution-independent data-update evidence to a successful outlet."""
+    """성공한 아울렛에 실행 독립적 데이터 갱신 evidence를 연결한다."""
 
     context = get_current_context()
     context["outlet_events"][asset].extra.update(evidence)
@@ -58,7 +58,7 @@ def _set_asset_evidence(asset: Asset, evidence: Mapping[str, JsonValue]) -> None
     do_xcom_push=False,
 )
 def load_raw_hmda_loans() -> None:
-    """Delegate raw ingestion to Data Operations."""
+    """원천 데이터 수집 및 적재를 Data Operations로 위임한다."""
 
     request = data_operation_request_from_runtime(_runtime_overrides())
     result = load_raw_data(request)
@@ -88,7 +88,7 @@ def load_raw_hmda_loans() -> None:
     do_xcom_push=False,
 )
 def build_dbt_loan_analytics() -> None:
-    """Delegate dbt build and candidate promotion to Data Operations."""
+    """dbt build 및 candidate 승격을 Data Operations로 위임한다."""
 
     request = data_operation_request_from_runtime(_runtime_overrides())
     if not request.run_dbt_build:
@@ -126,7 +126,7 @@ def build_dbt_loan_analytics() -> None:
     },
 )
 def _hmda_data_plane() -> None:
-    """Define the single manual, non-retrying raw-to-analytics workflow."""
+    """단일 수동 실행, 비재시도 raw-to-analytics 워크플로우를 정의한다."""
 
     raw_task = load_raw_hmda_loans()
     analytics_task = build_dbt_loan_analytics()

@@ -1,4 +1,4 @@
-"""Deterministic volume-drop recovery evaluation."""
+"""결정론적 volume-drop 복구 평가 모듈."""
 
 from __future__ import annotations
 
@@ -24,7 +24,10 @@ from hmda_reliability.hmda_data import (
     row_count_drop,
 )
 from hmda_reliability.reliability.contracts import Approval, RecoveryProposal
-from hmda_reliability.reliability.errors import ApprovalGateError, BackfillValidationError
+from hmda_reliability.reliability.errors import (
+    ApprovalGateError,
+    BackfillValidationError,
+)
 from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
 from hmda_reliability.reliability.evaluation.recovery_case import (
     build_recovery_evaluation_case,
@@ -48,7 +51,7 @@ type DbtValidationCallback = Callable[[DataOperationRequest], str]
 
 
 class VolumeDropVerticalSliceResult(BaseModel):
-    """Deterministic clean and volume-drop recovery evidence."""
+    """결정론적 clean 및 volume-drop 복구 evidence 결과 모델."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -75,12 +78,10 @@ def evaluate_volume_drop_vertical_slice(
     validate_target: DbtValidationCallback,
     sample_fraction: float = 0.1,
 ) -> VolumeDropVerticalSliceResult:
-    """Exercise controlled volume-drop recovery against request.database_path.
+    """통제된 volume-drop 복구 라이프사이클을 결정론적으로 평가한다.
 
-    Evaluation fixtures are written under ``workspace`` and the target partition is
-    intentionally replaced with a synthetic defect before candidate validation or
-    approval. Approval gates recovery of that target, not defect injection; the same
-    approved request is replayed to verify reconciliation.
+    Clean 케이스 실행, 합성 결함 주입, 승인 게이트 검증, 복구 backfill 실행 및
+    재현(replay) 검증 단계를 수행하여 최종 결과를 반환한다.
     """
 
     from hmda_reliability.data_operations import run_incident_lifecycle

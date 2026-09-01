@@ -1,4 +1,4 @@
-"""Deterministic null-spike recovery evaluation."""
+"""결정론적 null-spike 복구 평가 모듈."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ type DbtValidationCallback = Callable[[DataOperationRequest], str]
 
 
 class NullSpikeVerticalSliceResult(BaseModel):
-    """Deterministic clean and null-spike recovery evidence."""
+    """결정론적 clean 및 null-spike 복구 증거 결과 모델."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -81,7 +81,17 @@ def evaluate_null_spike_vertical_slice(
     validate_target: DbtValidationCallback,
     null_fraction: float = 0.2,
 ) -> NullSpikeVerticalSliceResult:
-    """Evaluate a controlled single-column null spike before recovery execution."""
+    """Clean, Defect, Recovery 단계별로 통제된 null spike 복구를 결정론적으로 평가한다.
+
+    격리된 워크스페이스 데이터베이스 간에 결정론적 평가를 실행한다:
+    1. 기준 clean 케이스를 실행하고 대상 컬럼의 null 비율을 프로파일링한다.
+    2. 합성 null spike 결함을 주입하고 인시던트 감지 및 조치 초안 생성을 검증한다.
+    3. 승인을 요청하고 candidate 검증을 통해 복구 backfill을 실행한다.
+    4. 복구 후 프로젝션을 검증하고 최종 조화를 확인한다.
+
+    `target_column`이 `profile_columns`에 없거나 `observed_at`이 없으면
+    `ValueError`를 발생시킨다.
+    """
 
     from hmda_reliability.data_operations import run_incident_lifecycle
     from hmda_reliability.data_operations.errors import DataOperationError

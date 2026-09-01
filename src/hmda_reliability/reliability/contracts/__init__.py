@@ -1,4 +1,4 @@
-"""Reliability contract models."""
+"""신뢰성(Reliability) 계약 모델 모음."""
 
 from hmda_reliability.reliability.contracts.approval import (
     Approval,

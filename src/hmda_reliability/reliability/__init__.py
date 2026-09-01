@@ -1,4 +1,4 @@
-"""Public reliability APIs for read-only analysis, approved recovery, and evaluation."""
+"""읽기 전용 분석, 승인된 복구, 평가를 위한 공개 신뢰성 API 모듈."""
 
 from hmda_reliability.reliability.contracts import (
     Approval,

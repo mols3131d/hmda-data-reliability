@@ -1,4 +1,4 @@
-"""Evidence contract models."""
+"""증거(Evidence) 계약 모델 정의 모듈."""
 
 from datetime import datetime
 from enum import StrEnum
@@ -17,6 +17,8 @@ class EvidenceSource(StrEnum):
 
 
 class Evidence(ReliabilityContract):
+    """신뢰성 판단 및 검증에 사용되는 불변의 증거 계약 모델."""
+
     evidence_id: str
     source: EvidenceSource
     asset_name: str

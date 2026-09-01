@@ -1,4 +1,4 @@
-"""Thin OpenAI-compatible chat-completions adapter."""
+"""경량 OpenAI 호환 chat-completions 어댑터 모듈."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Protocol, cast
 from openai import APIConnectionError, APIError, APIStatusError, OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
+from hmda_reliability.logger import get_logger
 from hmda_reliability.runtime_ai.contracts import (
     ChatCompletionRequest,
     ChatMessage,
@@ -18,9 +19,11 @@ from hmda_reliability.runtime_ai.contracts import (
 )
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
+_LOGGER = get_logger(__name__)
+
 
 class ProviderTransportError(Exception):
-    """Sanitized transport failure classified at the SDK boundary."""
+    """SDK 경계에서 분류된 정제된 전송(transport) 실패 예외."""
 
     def __init__(self, *, failure_code: str, retryable: bool) -> None:
         super().__init__(failure_code)
@@ -29,7 +32,7 @@ class ProviderTransportError(Exception):
 
 
 class ProviderUnavailableError(Exception):
-    """Bounded transport attempts ended without a provider response."""
+    """제한된 재시도 횟수 내에 응답을 받지 못했을 때 발생하는 예외."""
 
     def __init__(
         self,
@@ -45,7 +48,7 @@ class ProviderUnavailableError(Exception):
 
 
 class ProviderResponseTooLargeError(Exception):
-    """Provider content exceeded the configured response byte boundary."""
+    """Provider 응답 바이트 크기가 설정된 한도를 초과할 때 발생하는 예외."""
 
     def __init__(
         self,
@@ -71,7 +74,7 @@ class ChatCompletionTransport(Protocol):
 
 
 class OpenAICompatibleAdapter:
-    """Apply one provider-neutral request profile with adapter-owned retries."""
+    """어댑터 자체 재시도 로직이 포함된 provider 중립적 요청 어댑터."""
 
     def __init__(
         self,
@@ -93,6 +96,12 @@ class OpenAICompatibleAdapter:
         self._transport = transport
 
     def invoke(self, messages: tuple[ChatMessage, ...]) -> ProviderResponse:
+        """지수 백오프 재시도를 적용하여 chat completion 전송을 호출한다.
+
+        설정된 모델, temperature=0, 토큰 제한 및 JSON 형식을 적용한다.
+        전송 에러를 `ProviderUnavailableError`로 정제하고, 응답 바이트 크기를
+        `max_output_bytes` 한도로 제한한다.
+        """
         request = ChatCompletionRequest(
             messages=messages,
             model=self._settings.model,
@@ -106,12 +115,28 @@ class OpenAICompatibleAdapter:
         while True:
             attempt_count += 1
             try:
+                _LOGGER.debug(
+                    "provider 호출 시도",
+                    extra={
+                        "model": self._settings.model,
+                        "attempt": attempt_count,
+                        "message_count": len(messages),
+                    },
+                )
                 response = self._transport.create(request)
             except ProviderTransportError as error:
                 can_retry = (
                     error.retryable and attempt_count <= self._settings.max_retries
                 )
                 if can_retry:
+                    _LOGGER.warning(
+                        "provider 호출 재시도",
+                        extra={
+                            "attempt": attempt_count,
+                            "failure_code": error.failure_code,
+                            "max_retries": self._settings.max_retries,
+                        },
+                    )
                     self._sleep(min(0.25 * (2 ** (attempt_count - 1)), 1.0))
                     continue
                 raise ProviderUnavailableError(

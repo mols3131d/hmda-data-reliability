@@ -1,4 +1,4 @@
-"""dbt manifest lineage graph parser."""
+"""dbt 매니페스트 계통(lineage) 그래프 파서 모듈."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from hmda_reliability.reliability.errors import ImpactAnalysisError
 
 
 class DbtManifestGraph:
-    """dbt manifest nodes/sources dependency graph."""
+    """dbt 매니페스트 노드/소스 간 의존성 그래프."""
 
     def __init__(self, manifest: dict[str, Any]) -> None:
         self._resources = _resources(manifest)

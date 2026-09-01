@@ -1,4 +1,4 @@
-"""Detect deterministic incidents from matching baseline/current profile snapshots."""
+"""일치하는 baseline과 current 프로파일 스냅샷으로부터 결정론적 인시던트를 감지한다."""
 
 from __future__ import annotations
 
@@ -18,10 +18,10 @@ from hmda_reliability.reliability.detection.result import DetectionResult
 
 
 class BasicIncidentDetector:
-    """Compare matched profiles without mutating pipeline or reliability state."""
+    """파이프라인 상태를 변경하지 않고 프로파일을 비교하여 인시던트를 감지한다."""
 
     def detect(self, request: DetectionRequest) -> list[DetectionResult]:
-        """Return incidents in rule order, with null spikes ordered by column."""
+        """규칙 순서대로 감지된 인시던트 목록을 반환한다."""
 
         results: list[DetectionResult] = []
         results.extend(self._detect_volume_drop(request))
@@ -141,7 +141,7 @@ class BasicIncidentDetector:
 
 
 def detect_basic_incidents(request: DetectionRequest) -> list[DetectionResult]:
-    """Apply the default deterministic detector to a validated profile pair."""
+    """검증된 프로파일 쌍에 기본 결정론적 인시던트 감지기를 적용한다."""
 
     return BasicIncidentDetector().detect(request)
 

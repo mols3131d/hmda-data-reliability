@@ -1,4 +1,4 @@
-"""Approval contract models."""
+"""승인(Approval) 계약 모델 정의 모듈."""
 
 from datetime import datetime
 from enum import StrEnum
@@ -16,7 +16,7 @@ class ApprovalStatus(StrEnum):
 
 
 class Approval(ReliabilityContract):
-    """Record external review; action-specific gates still validate exact scope."""
+    """외부 검토 및 승인 기록 계약; 각 위험 작업 게이트에서 세부 범위를 검증한다."""
 
     approval_id: str
     incident_id: str
@@ -44,12 +44,12 @@ class Approval(ReliabilityContract):
         return self
 
     def allows_execution(self) -> bool:
-        """Return whether review status permits an execution gate to continue."""
+        """승인 상태가 실행 게이트 통과를 허용하는지 여부를 반환한다."""
 
         return self.status is ApprovalStatus.APPROVED
 
 
 def can_execute_risky_action(approval: Approval) -> bool:
-    """Check approval status only; callers must enforce action-specific scope."""
+    """승인 상태만을 확인하며, 호출자는 작업별 세부 범위를 반드시 추가 검증해야 한다."""
 
     return approval.allows_execution()

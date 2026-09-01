@@ -12,7 +12,10 @@ import pytest
 
 import hmda_reliability.reliability.recovery.executor as recovery_executor
 from hmda_reliability.hmda_data.errors import HMDADataLoadError
-from hmda_reliability.reliability import ApprovedBackfillRequest, BackfillValidationError
+from hmda_reliability.reliability import (
+    ApprovedBackfillRequest,
+    BackfillValidationError,
+)
 
 
 @pytest.mark.unit
@@ -74,14 +77,14 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
     ):
         validator.execute(cast(ApprovedBackfillRequest, request))
 
-    records = [
+    overwrite_attempt_records = [
         record
         for record in caplog.records
         if record.getMessage() == "recovery partition overwrite attempt"
     ]
-    assert len(records) == 1
-    context = records[0].__dict__
-    assert context["incident_id"] == "inc-runtime-evidence"
-    assert context["approval_id"] == "approval-runtime-evidence"
-    assert context["source_year"] == 2025
-    assert context["table_name"] == "raw.hmda_loans"
+    assert len(overwrite_attempt_records) == 1
+    overwrite_attempt_context = overwrite_attempt_records[0].__dict__
+    assert overwrite_attempt_context["incident_id"] == "inc-runtime-evidence"
+    assert overwrite_attempt_context["approval_id"] == "approval-runtime-evidence"
+    assert overwrite_attempt_context["source_year"] == 2025
+    assert overwrite_attempt_context["table_name"] == "raw.hmda_loans"

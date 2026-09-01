@@ -1,4 +1,4 @@
-"""Remediation draft output contract."""
+"""조치 제안 초안(RemediationDraft) 결과 모델 정의 모듈."""
 
 from pydantic import BaseModel, ConfigDict, Field
 

@@ -1,4 +1,4 @@
-"""Deterministic Bronze ingestion freshness-delay evaluation."""
+"""결정론적 Bronze 수집 freshness-delay 평가 모듈."""
 
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ type DbtValidationCallback = Callable[[DataOperationRequest], str]
 
 
 class FreshnessDelayVerticalSliceResult(BaseModel):
-    """Controlled delay, recovery, replay, and failure evidence."""
+    """통제된 freshness 지연, 복구, 재현 및 실패 evidence 결과 모델."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -88,7 +88,7 @@ def evaluate_freshness_delay_vertical_slice(
     max_age_minutes: float = 60.0,
     delay_minutes: float = 120.0,
 ) -> FreshnessDelayVerticalSliceResult:
-    """Evaluate a controlled Bronze ingestion delay and approved recovery."""
+    """통제된 Bronze 수집 지연 결함 및 승인된 복구 과정을 결정론적으로 평가한다."""
 
     from hmda_reliability.data_operations import run_incident_lifecycle
     from hmda_reliability.data_operations.errors import DataOperationError

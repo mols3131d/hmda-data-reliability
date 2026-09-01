@@ -1,4 +1,4 @@
-"""Build read-only partition metrics with table-wide schema identity from DuckDB."""
+"""DuckDB로부터 테이블 스키마 식별자 및 읽기 전용 파티션 메트릭을 생성한다."""
 
 from __future__ import annotations
 
@@ -21,13 +21,13 @@ from hmda_reliability.reliability.profiling.profile_snapshot_request import (
 
 
 class DuckDBProfileSnapshotBuilder:
-    """Build partition metrics plus the table-wide schema hash."""
+    """파티션 메트릭과 테이블 전체 스키마 해시를 생성하는 빌더."""
 
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
 
     def build(self, request: ProfileSnapshotRequest) -> ProfileSnapshot:
-        """Return measured partition metrics without inventing freshness."""
+        """인위적인 freshness 생성 없이 측정된 파티션 메트릭을 반환한다."""
 
         try:
             schema_hash = calculate_schema_hash(self._connection, request.table_name)
@@ -67,7 +67,7 @@ def create_profile_snapshot(
     connection: duckdb.DuckDBPyConnection,
     request: ProfileSnapshotRequest,
 ) -> ProfileSnapshot:
-    """Build a snapshot, wrapping DuckDB failures as ProfileSnapshotError."""
+    """DuckDB 실패를 ProfileSnapshotError로 래핑하여 스냅샷을 생성한다."""
 
     return DuckDBProfileSnapshotBuilder(connection).build(request)
 
@@ -76,7 +76,7 @@ def calculate_schema_hash(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> str:
-    """Hash name-sorted column names and types; row data is not included."""
+    """이름순 정렬된 컬럼명과 타입을 해시화한다; 행 데이터는 포함되지 않는다."""
 
     rows = connection.execute(f"DESCRIBE {qualify_table_name(table_name)}").fetchall()
     schema = sorted(

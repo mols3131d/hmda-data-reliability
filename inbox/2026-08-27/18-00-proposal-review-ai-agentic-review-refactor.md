@@ -45,7 +45,7 @@ src/hmda_reliability/
 
 ## Naming
 
-### `review_ai`
+### `review_ai` Domain
 
 `review`가 capability이고 AI는 modifier다.
 
@@ -55,7 +55,7 @@ review_ai/
 
 AI 기술 자체보다 무엇을 수행하는지를 먼저 드러낸다.
 
-### `runtime_ai`
+### `runtime_ai` Domain
 
 `runtime_ai`는 generic AI domain이나 common-utils package가 아니다. 여러 AI capability가 공유하는 **runtime execution responsibility**를 소유하는 supporting technical domain이다.
 
@@ -199,13 +199,13 @@ evidence -> provider implementation -> OpenAI SDK
 리팩토링 시 함께 확인할 범위:
 
 1. `src/hmda_reliability/reliability/agentic_review/`의 책임을 `review_ai`와 `runtime_ai`로 분리
-2. `reliability/__init__.py`의 AI-specific re-export 제거
-3. 최소 `review_ai`와 `runtime_ai` public surface 정의
-4. provider-neutral contracts와 SDK integration dependency 정리
-5. tests를 새 ownership에 맞게 이동 및 조정
-6. live harness/script import path 갱신
-7. domain ownership을 설명하는 canonical docs 갱신
-8. 현재 agentic review를 소유하는 OpenSpec/change contract가 있다면 새 ownership과 dependency direction에 맞게 정리
+1. `reliability/__init__.py`의 AI-specific re-export 제거
+1. 최소 `review_ai`와 `runtime_ai` public surface 정의
+1. provider-neutral contracts와 SDK integration dependency 정리
+1. tests를 새 ownership에 맞게 이동 및 조정
+1. live harness/script import path 갱신
+1. domain ownership을 설명하는 canonical docs 갱신
+1. 현재 agentic review를 소유하는 OpenSpec/change contract가 있다면 새 ownership과 dependency direction에 맞게 정리
 
 ## Tests
 
@@ -272,9 +272,7 @@ from hmda_reliability.reliability import review_null_spike
 ## Principles
 
 > Reliability owns deterministic truth.
-
 > Capability-specific AI behavior belongs to its `*_ai` domain.
-
 > `runtime_ai` owns only capability-neutral AI execution semantics.
 
 KISS, DRY, YAGNI를 우선하며 이번 변경은 ownership과 dependency boundary를 바로잡는 데 필요한 최소 범위로 제한한다.

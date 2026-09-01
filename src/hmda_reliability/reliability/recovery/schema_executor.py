@@ -1,4 +1,4 @@
-"""Execute externally approved exact table-schema recovery."""
+"""외부 승인된 테이블 스키마 복구 실행 및 검증 모듈."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from hmda_reliability.data_platform.duckdb import (
     database_mutation_lock,
 )
 from hmda_reliability.data_platform.sql import qualify_table_name, quote_string_literal
+from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     ProfileSnapshotError,
@@ -34,11 +35,13 @@ from hmda_reliability.reliability.recovery.schema_result import (
     SchemaRecoveryValidationResult,
 )
 
+_LOGGER = get_logger(__name__)
+
 
 def execute_approved_schema_recovery(
     request: ApprovedSchemaRecoveryRequest,
 ) -> SchemaRecoveryValidationResult:
-    """Restore an exact approved table state or resume verification on replay."""
+    """승인된 정확한 테이블 상태를 복구하거나 재현(replay) 시 검증을 재개한다."""
 
     validated_request = _ensure_approved_schema_recovery(request)
     proposal = validated_request.proposal
@@ -163,6 +166,14 @@ def _replace_table(
         profile_snapshot = create_profile_snapshot(connection, request.profile_request)
         connection.execute("COMMIT")
         transaction_started = False
+        _LOGGER.info(
+            "schema recovery table 교체 완료",
+            extra={
+                "table_name": proposal.table_name,
+                "approval_id": request.approval.approval_id,
+                "incident_id": request.approval.incident_id,
+            },
+        )
     except SchemaRecoveryValidationError:
         if transaction_started:
             connection.execute("ROLLBACK")

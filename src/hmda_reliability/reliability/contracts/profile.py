@@ -1,4 +1,4 @@
-"""Profile contract models."""
+"""프로파일 스냅샷 계약 모델 정의 모듈."""
 
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -9,13 +9,15 @@ from hmda_reliability.reliability.contracts.base import ReliabilityContract
 
 
 class FreshnessMeasurementStatus(StrEnum):
-    """Availability of a profile freshness measurement."""
+    """프로파일 Freshness 측정 가용성 상태."""
 
     MEASURED = "measured"
     UNAVAILABLE = "unavailable"
 
 
 class ProfileSnapshot(ReliabilityContract):
+    """파티션에 대한 결정론적 프로파일 스냅샷 계약."""
+
     snapshot_id: str
     asset_name: str
     partition: str

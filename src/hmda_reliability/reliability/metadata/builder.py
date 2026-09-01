@@ -1,4 +1,4 @@
-"""Build read-only table metadata evidence from DuckDB."""
+"""DuckDB로부터 읽기 전용 테이블 메타데이터 evidence를 생성한다."""
 
 from __future__ import annotations
 
@@ -13,16 +13,13 @@ from hmda_reliability.reliability.profiling import calculate_schema_hash
 
 
 class DuckDBTableMetadataEvidenceBuilder:
-    """Capture table-wide schema and row-count evidence without mutating DuckDB."""
+    """DuckDB 변경 없이 테이블 단위 스키마 및 행 수 evidence를 수집한다."""
 
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
 
     def build(self, request: TableMetadataEvidenceRequest) -> Evidence:
-        """Capture table-wide metadata.
-
-        ``partition`` labels the Evidence and does not filter table rows.
-        """
+        """테이블 단위 메타데이터 evidence를 생성한다."""
 
         try:
             columns = _describe_table(self._connection, request.table_name)

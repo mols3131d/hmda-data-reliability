@@ -1,4 +1,4 @@
-"""Deterministic complete-table schema-drift recovery evaluation."""
+"""전체 테이블 스키마 드리프트 복구 평가 모듈."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ type DbtValidationCallback = Callable[[DataOperationRequest], DbtBuildResult]
 
 
 class SchemaDriftVerticalSliceResult(ReliabilityContract):
-    """Controlled drift setup, recovery, replay, and downstream evidence."""
+    """통제된 스키마 드리프트 구성, 복구, 재현 및 downstream evidence 결과 모델."""
 
     baseline_state: TableStateIdentity
     drifted_state: TableStateIdentity
@@ -76,7 +76,7 @@ def evaluate_schema_drift_vertical_slice(
     validate_candidate: DbtValidationCallback,
     validate_target: DbtValidationCallback,
 ) -> SchemaDriftVerticalSliceResult:
-    """Build clean and drifted complete tables before approved restoration."""
+    """Clean 및 드리프트된 테이블을 구성하고 승인된 복구를 결정론적으로 평가한다."""
 
     from hmda_reliability.data_operations import run_incident_lifecycle
     from hmda_reliability.data_operations.errors import DataOperationError

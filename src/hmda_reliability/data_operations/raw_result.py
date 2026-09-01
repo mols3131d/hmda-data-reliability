@@ -1,4 +1,4 @@
-"""Raw load result model."""
+"""원천 데이터 적재 결과 모델 정의 모듈."""
 
 from pathlib import Path
 
@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class RawLoadResult(BaseModel):
-    """raw source load result."""
+    """원천 소스 적재 결과 모델."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

@@ -134,11 +134,11 @@ LLM input과 output은 모두 untrusted로 취급한다.
 ## Implementation Sequence
 
 1. **OpenSpec Change** — `null_spike` bounded review와 authority boundary를 계약한다. 후보 capability는 `reliability-agentic-review`다.
-2. **Input/Output contract** — 최소 Pydantic contract를 만든다.
-3. **Validator first** — fake/stub output으로 deterministic validation과 adversarial fixture를 검증한다.
-4. **Thin LLM adapter** — OpenAI Python SDK를 한 곳에 격리한다.
-5. **Provider-compatible proof** — Ollama에서 `SDK → model → structured output → validator`를 실제 검증하고 OpenAI API가 같은 adapter/config boundary를 사용하도록 유지한다.
-6. **Minimal invocation evidence** — provenance를 남기고 필요한 경우 OTel trace와 correlation한다.
+1. **Input/Output contract** — 최소 Pydantic contract를 만든다.
+1. **Validator first** — fake/stub output으로 deterministic validation과 adversarial fixture를 검증한다.
+1. **Thin LLM adapter** — OpenAI Python SDK를 한 곳에 격리한다.
+1. **Provider-compatible proof** — Ollama에서 `SDK → model → structured output → validator`를 실제 검증하고 OpenAI API가 같은 adapter/config boundary를 사용하도록 유지한다.
+1. **Minimal invocation evidence** — provenance를 남기고 필요한 경우 OTel trace와 correlation한다.
 
 Langfuse integration은 이 slice의 완료 조건이 아니다. Core contract가 안정된 뒤 trace/evaluation projection으로 연결한다.
 

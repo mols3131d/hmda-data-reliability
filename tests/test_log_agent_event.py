@@ -62,7 +62,9 @@ def test_artifact_log_path_uses_configured_root(tmp_path: Path) -> None:
     relative = module.artifact_log_path(
         {"HMDA_RELIABILITY_ARTIFACTS_DIR": "var/artifacts"}
     )
-    absolute = module.artifact_log_path({"HMDA_RELIABILITY_ARTIFACTS_DIR": str(tmp_path)})
+    absolute = module.artifact_log_path(
+        {"HMDA_RELIABILITY_ARTIFACTS_DIR": str(tmp_path)}
+    )
 
     assert relative == REPOSITORY_ROOT / "var" / "artifacts" / "agent-events.jsonl"
     assert absolute == tmp_path / "agent-events.jsonl"

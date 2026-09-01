@@ -447,12 +447,43 @@ def test_recovery_classifies_compare_and_replace_race_as_stale_approval(
         Callable[..., int],
         recovery_executor.load_hmda_loans_partition,
     )
-    load_count = 0
+    load_journal: list[
+        tuple[
+            tuple[Path, ...],
+            int,
+            str,
+            PartitionContentIdentity | None,
+            bool,
+        ]
+    ] = []
 
     def raise_stale_on_target_load(*args: object, **kwargs: object) -> int:
-        nonlocal load_count
-        load_count += 1
-        if load_count == 2:
+        loaded_paths = tuple(
+            Path(path) for path in cast(tuple[str | Path, ...], args[1])
+        )
+        source_year = cast(int, args[2])
+        table_name = cast(str, kwargs.get("table_name", HMDA_LOANS_TABLE))
+        expected_identity = cast(
+            PartitionContentIdentity | None,
+            kwargs.get("expected_identity"),
+        )
+        preserve_source_metadata = cast(
+            bool,
+            kwargs.get("preserve_source_metadata", False),
+        )
+        load_journal.append(
+            (
+                loaded_paths,
+                source_year,
+                table_name,
+                expected_identity,
+                preserve_source_metadata,
+            )
+        )
+        if (
+            loaded_paths[0].name == "approved-candidate.parquet"
+            and expected_identity == proposal.approved_before_identity
+        ):
             raise HMDAStalePartitionError("stale")
         return original_load(*args, **kwargs)
 
@@ -474,6 +505,28 @@ def test_recovery_classifies_compare_and_replace_race_as_stale_approval(
                 source_paths=(source_path,),
             ),
         )
+
+    candidate_staging_calls = [
+        entry
+        for entry in load_journal
+        if entry[0] == (source_path,) and entry[3] is None
+    ]
+    target_overwrite_calls = [
+        entry
+        for entry in load_journal
+        if (
+            entry[0][0].name == "approved-candidate.parquet"
+            and entry[3] == proposal.approved_before_identity
+        )
+    ]
+    assert candidate_staging_calls
+    assert all(
+        entry[1:3] == (2025, HMDA_LOANS_TABLE) for entry in candidate_staging_calls
+    )
+    assert all(entry[4] is False for entry in candidate_staging_calls)
+    assert len(target_overwrite_calls) == 1
+    assert target_overwrite_calls[0][1:3] == (2025, HMDA_LOANS_TABLE)
+    assert target_overwrite_calls[0][4] is True
 
 
 @pytest.mark.integration

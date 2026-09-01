@@ -1,4 +1,4 @@
-"""Execute externally approved recovery and verify exact partition content identity."""
+"""외부 승인된 복구를 실행하고 파티션 내용 식별자를 검증한다."""
 
 from __future__ import annotations
 
@@ -43,13 +43,38 @@ _REQUIRED_APPROVAL_ACTIONS = frozenset(
 
 
 class ApprovalBackfillValidator:
-    """Enforce exact approval scope before candidate access or target mutation."""
+    """후보 소스 접근 및 대상 변이 전에 승인 범위를 엄격히 검증한다."""
 
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
 
+    def _reconcile_state(
+        self,
+        *,
+        request: ApprovedBackfillRequest,
+        proposal: RecoveryProposal,
+        current_identity: PartitionContentIdentity,
+    ) -> tuple[str, str, tuple[str, ...]]:
+        """Proposal 바인딩 종류(content vs freshness)에 따라 목표 상태를 조정한다."""
+        if proposal.freshness_binding is None:
+            return _reconcile_content_state(current_identity, proposal)
+
+        current_freshness_at = partition_max_ingested_at(
+            self._connection,
+            table_name=request.table_name,
+            source_year=request.source_year,
+            source_file=request.source_file,
+        )
+        return _reconcile_freshness_state(
+            current_identity=current_identity,
+            current_freshness_at=current_freshness_at,
+            observed_at=request.profile_request.observed_at,
+            proposal=proposal,
+            binding=proposal.freshness_binding,
+        )
+
     def execute(self, request: ApprovedBackfillRequest) -> BackfillValidationResult:
-        """Recover approved before-state or verify the exact after-state on replay."""
+        """승인된 이전 상태로 복구하거나 재현(replay) 시 정확한 상태를 검증한다."""
 
         # Approval scope is validated before the candidate source is read.
         approval, proposal = _ensure_approved(request)
@@ -65,27 +90,13 @@ class ApprovalBackfillValidator:
                     source_year=request.source_year,
                     source_file=request.source_file,
                 )
-                binding = proposal.freshness_binding
-                if binding is None:
-                    mutation_state, reconciliation_action, executed_actions = (
-                        _reconcile_content_state(current_identity, proposal)
+                mutation_state, reconciliation_action, executed_actions = (
+                    self._reconcile_state(
+                        request=request,
+                        proposal=proposal,
+                        current_identity=current_identity,
                     )
-                else:
-                    current_freshness_at = partition_max_ingested_at(
-                        self._connection,
-                        table_name=request.table_name,
-                        source_year=request.source_year,
-                        source_file=request.source_file,
-                    )
-                    mutation_state, reconciliation_action, executed_actions = (
-                        _reconcile_freshness_state(
-                            current_identity=current_identity,
-                            current_freshness_at=current_freshness_at,
-                            observed_at=request.profile_request.observed_at,
-                            proposal=proposal,
-                            binding=binding,
-                        )
-                    )
+                )
                 if reconciliation_action == "overwrite_partition":
                     _LOGGER.info(
                         "recovery partition overwrite attempt",
@@ -102,7 +113,7 @@ class ApprovalBackfillValidator:
                         staged_source_path=staged_source_path,
                         request=request,
                         proposal=proposal,
-                        binding=binding,
+                        binding=proposal.freshness_binding,
                     )
                 else:
                     row_count = current_identity.row_count
@@ -230,7 +241,7 @@ def execute_approved_backfill(
     connection: duckdb.DuckDBPyConnection,
     request: ApprovedBackfillRequest,
 ) -> BackfillValidationResult:
-    """Apply the recovery gate and return identity-based validation evidence."""
+    """복구 게이트를 적용하고 내용 식별자 기반의 검증 증거를 반환한다."""
 
     return ApprovalBackfillValidator(connection).execute(request)
 

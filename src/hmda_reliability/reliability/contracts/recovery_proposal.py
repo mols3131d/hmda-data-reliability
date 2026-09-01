@@ -1,4 +1,4 @@
-"""Exact content and freshness recovery proposal contracts."""
+"""내용 및 freshness 복구 제안 계약 모델 모듈."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -10,7 +10,7 @@ from hmda_reliability.reliability.contracts.profile import FreshnessMeasurementS
 
 
 class FreshnessObservation(ReliabilityContract):
-    """A freshness measurement tied to its observation clock."""
+    """관찰 시각과 결합된 freshness 측정값 계약."""
 
     freshness_status: FreshnessMeasurementStatus
     freshness_at: datetime | None

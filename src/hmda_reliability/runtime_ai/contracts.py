@@ -1,4 +1,4 @@
-"""Provider-neutral AI runtime contracts."""
+"""Provider 중립적 AI 런타임 계약 모듈."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class RuntimeAIContract(BaseModel):
-    """Closed immutable contract for provider-neutral AI runtime values."""
+    """Provider 중립적 AI 런타임 값을 위한 불변 기본 계약."""
 
     model_config = ConfigDict(allow_inf_nan=False, extra="forbid", frozen=True)
 

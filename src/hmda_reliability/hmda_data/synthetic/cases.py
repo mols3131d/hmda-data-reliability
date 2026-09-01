@@ -91,6 +91,21 @@ def null_spike(
         msg = "null_spike target_column에 non-null 값이 없어 증가를 만들 수 없습니다."
         raise SyntheticCaseError(msg)
     source_null_count = source_count - source_non_null_count
+    # Strict Null Rate 증가를 위한 연도별 대상 인덱스 계산 식:
+    # 1) 요청된 null_fraction에 따른 최소 null 개수 (ceil)
+    # 2) 원천 null 비율을 초과하기 위해 필요한 정수 단위 최소 null 개수
+    null_threshold_expr = """
+        least(
+            __year_non_null,
+            greatest(
+                CAST(ceil(__year_count * ?) AS BIGINT),
+                CAST(
+                    (__year_count * CAST(? AS BIGINT))
+                    // CAST(? AS BIGINT) AS BIGINT
+                ) + 1 - (__year_count - __year_non_null)
+            )
+        )
+    """
     case_query = f"""
         WITH sampled AS ({sampled_query}),
         year_stats AS (
@@ -120,16 +135,7 @@ def null_spike(
             REPLACE (
                 CASE
                     WHEN {quoted_target} IS NOT NULL
-                    AND __non_null_rank <= least(
-                        __year_non_null,
-                        greatest(
-                            CAST(ceil(__year_count * ?) AS BIGINT),
-                            CAST(
-                                (__year_count * CAST(? AS BIGINT))
-                                // CAST(? AS BIGINT) AS BIGINT
-                            ) + 1 - (__year_count - __year_non_null)
-                        )
-                    )
+                    AND __non_null_rank <= {null_threshold_expr}
                     THEN NULL
                     ELSE {quoted_target}
                 END AS {quoted_target}
@@ -201,7 +207,7 @@ def _target_value_counts(
     params: Sequence[object],
     quoted_target: str,
 ) -> tuple[int, int]:
-    """Query row and non-null target counts for a synthetic input relation."""
+    """합성 입력 관계에 대한 전체 row 수와 non-null 대상 컬럼 row 수를 조회한다."""
 
     try:
         row = connection.execute(
@@ -220,7 +226,7 @@ def _target_value_counts(
 
 
 def _null_spike_sample_query(ranked_query: str, quoted_target: str) -> str:
-    """Keep per-year sample cardinality while retaining eligible target values."""
+    """연도별 샘플 카디널리티를 유지하면서 대상 값을 추출하는 쿼리를 생성한다."""
 
     return f"""
         SELECT *

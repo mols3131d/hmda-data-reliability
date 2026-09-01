@@ -1,1 +1,1 @@
-"""HMDA data contract definitions."""
+"""HMDA 데이터 계약 정의 모듈."""

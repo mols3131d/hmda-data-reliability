@@ -177,6 +177,49 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
     assert record.trace_id == "req-1"
 
 
+def test_records_evidence_when_review_outcome_is_created(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    invocation_started_at = datetime(2026, 8, 27, 2, 0, tzinfo=UTC)
+    outcome_created_at = datetime(2026, 8, 27, 2, 1, tzinfo=UTC)
+    current_time = {"value": invocation_started_at}
+
+    class AdvancingProvider(FakeProvider):
+        def invoke(
+            self,
+            messages: tuple[runtime_contracts.ChatMessage, ...],
+        ) -> runtime_contracts.ProviderResponse:
+            current_time["value"] = outcome_created_at
+            return super().invoke(messages)
+
+    provider = AdvancingProvider(
+        runtime_contracts.ProviderResponse(
+            content=_safe_output(material).model_dump_json(),
+            attempt_count=1,
+            latency_ms=60_000,
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    result = service_module.review_null_spike(
+        incident=material.detection.incident,
+        evidence=[material.detection.evidence],
+        draft=material.draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=provider,
+        evidence_store=store,
+        invocation_id_factory=lambda: "inv-timestamp",
+        clock=lambda: current_time["value"],
+    )
+
+    assert result.status == "accepted"
+    assert store.records[0].recorded_at == outcome_created_at
+
+
 @pytest.mark.parametrize(
     ("evidence", "max_prompt_bytes", "failure_code"),
     [([], 65_536, "invalid_review_input"), (None, 64, "prompt_too_large")],

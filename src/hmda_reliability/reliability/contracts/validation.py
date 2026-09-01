@@ -1,4 +1,4 @@
-"""Validation utilities for contracts."""
+"""계약 유효성 검증 유틸리티 모듈."""
 
 from pydantic import ValidationError
 
@@ -10,6 +10,7 @@ def validate_contract[ContractT: ReliabilityContract](
     contract_type: type[ContractT],
     payload: dict[str, object],
 ) -> ContractT:
+    """페이로드를 검증하여 지정된 신뢰성 계약 모델 객체로 변환한다."""
     try:
         return contract_type.model_validate(payload)
     except ValidationError as error:

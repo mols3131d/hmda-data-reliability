@@ -21,7 +21,10 @@ from hmda_reliability.data_platform.artifacts import (
     artifact_projection_lock,
 )
 from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
-from hmda_reliability.hmda_data import PartitionContentIdentity, partition_content_identity
+from hmda_reliability.hmda_data import (
+    PartitionContentIdentity,
+    partition_content_identity,
+)
 from hmda_reliability.reliability import (
     DetectionRequest,
     DetectionResult,

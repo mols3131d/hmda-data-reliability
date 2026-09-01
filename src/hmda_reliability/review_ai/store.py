@@ -1,4 +1,4 @@
-"""Create-only local JSON invocation evidence store."""
+"""생성 전용(Create-only) 로컬 JSON 호출 evidence 저장소 모듈."""
 
 from __future__ import annotations
 
@@ -15,28 +15,33 @@ _SAFE_INVOCATION_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
 class InvocationEvidenceStoreError(Exception):
-    """Invocation evidence could not be persisted safely."""
+    """호출 evidence를 안전하게 영속화할 수 없을 때 발생하는 기본 예외."""
 
 
 class InvocationEvidenceExistsError(InvocationEvidenceStoreError):
-    """The immutable invocation identity already exists."""
+    """불변의 호출 식별자가 이미 존재할 때 발생하는 예외."""
 
 
 class InvocationEvidenceSizeError(InvocationEvidenceStoreError):
-    """The sanitized record exceeds the configured storage boundary."""
+    """정제된 레코드 크기가 설정된 저장소 한도를 초과할 때 발생하는 예외."""
 
 
 class InvocationEvidenceWriteError(InvocationEvidenceStoreError):
-    """The sanitized record could not be durably created."""
+    """정제된 레코드를 영속적으로 생성할 수 없을 때 발생하는 예외."""
 
 
 class InvocationEvidenceStore:
-    """Persist bounded records under an explicit local artifact root."""
+    """명시적인 로컬 artifact 루트 하위에 제한된 레코드를 영속화한다."""
 
     def __init__(self, artifact_root: Path) -> None:
         self._artifact_root = Path(artifact_root)
 
     def path_for(self, invocation_id: str) -> Path:
+        """호출 레코드의 표준 저장 경로를 반환한다.
+
+        호출 ID가 안전하지 않은 문자를 포함하거나 허용 패턴에 맞지 않으면
+        `ValueError`를 발생시킨다.
+        """
         if _SAFE_INVOCATION_ID.fullmatch(invocation_id) is None:
             msg = "unsafe invocation identity"
             raise ValueError(msg)
@@ -53,6 +58,15 @@ class InvocationEvidenceStore:
         *,
         max_record_bytes: int,
     ) -> Path:
+        """원자적 임시 링크(hard-link)를 사용하여 정제된 호출 레코드를 기록한다.
+
+        부분 쓰기(partial write)를 방지하고 생성 전용 불변성을 보장하기 위해
+        숨김 임시 파일에 기록한 뒤 대상 경로로 하드 링크한다.
+
+        바이트 길이가 `max_record_bytes`를 초과하면 `InvocationEvidenceSizeError`,
+        레코드 파일이 이미 존재하면 `InvocationEvidenceExistsError`,
+        기타 I/O 실패 시 `InvocationEvidenceWriteError`를 발생시킨다.
+        """
         payload = canonical_json_bytes(record.model_dump(mode="json")) + b"\n"
         if len(payload) > max_record_bytes:
             raise InvocationEvidenceSizeError(

@@ -1,4 +1,4 @@
-"""Build deterministic remediation drafts without executing recovery actions."""
+"""복구 작업을 직접 실행하지 않고 결정론적 조치 초안(RemediationDraft)을 구성한다."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from hmda_reliability.reliability.remediation.request import RemediationDraftReq
 
 
 class RemediationState(TypedDict, total=False):
-    """Internal state for deterministic triage, RCA, and plan assembly."""
+    """결정론적 분류(triage), 근본 원인 분석(RCA), 계획 수립을 위한 내부 상태."""
 
     request: RemediationDraftRequest
     affected_assets: list[str]
@@ -26,7 +26,7 @@ class RemediationState(TypedDict, total=False):
 
 
 def create_remediation_draft(request: RemediationDraftRequest) -> RemediationDraft:
-    """Create a review draft; never approve, backfill, validate, or run dbt."""
+    """검토용 조치 초안을 생성한다; 승인이나 복구 실행은 수행하지 않는다."""
 
     graph = _build_graph()
     final_state = graph.invoke({"request": request})

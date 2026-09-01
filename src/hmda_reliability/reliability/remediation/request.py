@@ -1,4 +1,4 @@
-"""Remediation draft request model."""
+"""조치 제안 초안 생성 요청 모델 정의 모듈."""
 
 from pydantic import BaseModel, ConfigDict, Field
 

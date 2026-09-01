@@ -1,4 +1,4 @@
-"""Structured contracts for bounded agentic review."""
+"""제한된(bounded) agentic review를 위한 구조화된 계약 모델 정의."""
 
 from __future__ import annotations
 
@@ -203,7 +203,7 @@ class AgenticReviewOutput(ReliabilityContract):
 
 
 class AgenticReviewValidation(ReliabilityContract):
-    """Versioned deterministic validation result retained in provenance."""
+    """출처 증명에 보존되는 버전 관리된 결정론적 검증 결과 모델."""
 
     status: ReviewValidationStatus
     violations: tuple[ReviewViolationCode, ...]

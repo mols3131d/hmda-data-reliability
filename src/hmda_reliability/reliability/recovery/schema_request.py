@@ -1,4 +1,4 @@
-"""Approved exact table-schema recovery execution request."""
+"""승인된 테이블 스키마 복구 실행 요청 모델 정의 모듈."""
 
 from pathlib import Path
 
@@ -13,7 +13,7 @@ from hmda_reliability.reliability.profiling import ProfileSnapshotRequest
 
 
 class ApprovedSchemaRecoveryRequest(ReliabilityContract):
-    """Execution inputs bound to one externally approved table proposal."""
+    """외부 승인된 테이블 제안에 바인딩된 실행 입력 모델."""
 
     approval: SchemaRecoveryApproval
     proposal: SchemaRecoveryProposal

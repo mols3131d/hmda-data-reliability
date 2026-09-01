@@ -1,1 +1,1 @@
-"""Data-plane orchestration adapter package."""
+"""데이터 플레인 오케스트레이션 어댑터 패키지."""

@@ -303,16 +303,13 @@ def _collect_volume_and_null_metrics(
         f"FROM hmda_eda_source {grouping_clause}"
     ).fetchall()
 
-    total_row = next(row for row in metric_rows if not has_activity_year or row[1] == 1)
     metric_offset = 2 if has_activity_year else 0
-    row_count = total_row[metric_offset]
-    null_counts = dict(
-        zip(
-            profile_columns,
-            total_row[metric_offset + 1 : metric_offset + 1 + len(profile_columns)],
-            strict=True,
-        )
-    )
+    total_row = next(row for row in metric_rows if not has_activity_year or row[1] == 1)
+    row_count = int(total_row[metric_offset])
+    null_counts = {
+        column: int(total_row[metric_offset + 1 + idx])
+        for idx, column in enumerate(profile_columns)
+    }
     activity_year_rows = (
         sorted(
             (row for row in metric_rows if row[1] == 0),

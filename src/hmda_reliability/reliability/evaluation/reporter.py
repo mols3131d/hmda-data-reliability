@@ -1,4 +1,4 @@
-"""Aggregate evaluation evidence and render or write its Markdown report."""
+"""평가 evidence를 집계하고 Markdown 보고서로 렌더링/작성하는 모듈."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ def build_evaluation_report(
     *,
     generated_at: datetime | None = None,
 ) -> EvaluationReport:
-    """Aggregate case outcomes; an empty case set has zero success rates."""
+    """평가 케이스 결과를 집계하여 요약 보고서 객체를 생성한다."""
 
     case_results = list(cases)
     total_cases = len(case_results)

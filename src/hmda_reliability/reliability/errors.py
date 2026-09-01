@@ -1,4 +1,4 @@
-"""Reliability domain exceptions."""
+"""신뢰성(Reliability) 도메인 예외 정의 모듈."""
 
 from __future__ import annotations
 
@@ -8,19 +8,19 @@ from pydantic import ValidationError
 
 
 class ReliabilityError(Exception):
-    """Reliability application error base class."""
+    """신뢰성 애플리케이션 예외의 기본 클래스."""
 
 
 class ProfileSnapshotError(ReliabilityError):
-    """Profile snapshot calculation failed."""
+    """프로파일 스냅샷 계산 실패 시 발생하는 예외."""
 
 
 class TableStateIdentityError(ReliabilityError):
-    """Complete table state identity calculation failed."""
+    """전체 테이블 상태 식별자 계산 실패 시 발생하는 예외."""
 
 
 class SchemaRecoveryCandidateError(ReliabilityError):
-    """Schema recovery candidate preflight failed before target access."""
+    """타깃 접근 전 스키마 복구 후보 사전 점검 실패 시 발생하는 예외."""
 
     def __init__(
         self,
@@ -33,7 +33,7 @@ class SchemaRecoveryCandidateError(ReliabilityError):
 
 
 class SchemaRecoveryValidationError(ReliabilityError):
-    """Schema recovery target reconciliation or validation failed."""
+    """스키마 복구 대상 정합성 검증 또는 유효성 검증 실패 시 발생하는 예외."""
 
     def __init__(
         self,
@@ -52,11 +52,11 @@ class SchemaRecoveryValidationError(ReliabilityError):
 
 
 class ApprovalGateError(ReliabilityError):
-    """Approval gate rejected execution."""
+    """승인 게이트에서 실행이 거부되었을 때 발생하는 예외."""
 
 
 class BackfillValidationError(ReliabilityError):
-    """Approved backfill validation failed."""
+    """승인된 backfill 검증 실패 시 발생하는 예외."""
 
     def __init__(
         self,
@@ -73,7 +73,7 @@ class BackfillValidationError(ReliabilityError):
 
 
 class TableMetadataEvidenceError(ReliabilityError):
-    """Table metadata evidence lookup failed."""
+    """테이블 메타데이터 증거 조회 실패 시 발생하는 예외."""
 
 
 class ImpactAnalysisError(ReliabilityError):

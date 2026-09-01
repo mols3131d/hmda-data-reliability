@@ -11,6 +11,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
 
@@ -33,8 +34,30 @@ from hmda_reliability.data_platform.duckdb import (
     database_mutation_lock,
 )
 from hmda_reliability.hmda_data import discover_hmda_files, load_hmda_loans_partition
+from hmda_reliability.logger import get_logger
 
+_LOGGER = get_logger(__name__)
 _DBT_BUILD_TIMEOUT_SECONDS = 300
+
+
+@dataclass(frozen=True)
+class _ArtifactPromotion:
+    """하나의 candidate artifact를 current projection에 교체하는 경로를 묶는다."""
+
+    source: Path
+    destination: Path
+
+    @property
+    def staged_path(self) -> Path:
+        """Current를 건드리기 전에 준비하는 candidate copy 경로다."""
+
+        return self.destination.with_suffix(f"{self.destination.suffix}.next")
+
+    @property
+    def backup_path(self) -> Path:
+        """중간 교체 실패 시 current를 복구하는 백업 경로다."""
+
+        return self.destination.with_suffix(f"{self.destination.suffix}.previous")
 
 
 def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
@@ -52,6 +75,14 @@ def load_raw_data(request: DataOperationRequest) -> RawLoadResult:
             source_file=request.source_file,
             table_name=request.raw_table_name,
         )
+    _LOGGER.info(
+        "원천 데이터 적재 완료",
+        extra={
+            "table_name": request.raw_table_name,
+            "source_year": request.source_year,
+            "row_count": hmda_loans_row_count,
+        },
+    )
     return RawLoadResult(
         database_path=request.database_path,
         source_root=request.source_root,
@@ -105,6 +136,14 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
         projection_id = artifact_projection_id(manifest_path, run_results_path)
     except ArtifactProjectionReadError as exc:
         raise _artifact_read_error(run_target_path, exc) from exc
+    _LOGGER.info(
+        "dbt build 완료",
+        extra={
+            "return_code": result.returncode,
+            "projection_id": projection_id,
+            "run_target_path": str(run_target_path),
+        },
+    )
     return DbtBuildResult(
         command=command,
         return_code=result.returncode,
@@ -140,6 +179,13 @@ def promote_dbt_artifacts(
                 result.run_results_path,
                 request.dbt_manifest_path,
                 request.dbt_run_results_path,
+            )
+            _LOGGER.info(
+                "dbt artifact projection 승격 완료",
+                extra={
+                    "projection_id": result.projection_id,
+                    "manifest_path": str(request.dbt_manifest_path),
+                },
             )
     except ArtifactProjectionLockError as exc:
         raise DataOperationError(
@@ -278,44 +324,42 @@ def _promote_dbt_artifacts(
     current_manifest_path: Path,
     current_run_results_path: Path,
 ) -> None:
-    destinations = (
-        (run_manifest_path, current_manifest_path),
-        (run_results_path, current_run_results_path),
+    promotions = (
+        _ArtifactPromotion(run_manifest_path, current_manifest_path),
+        _ArtifactPromotion(run_results_path, current_run_results_path),
     )
-    temporary_paths: list[tuple[Path, Path]] = []
-    backup_paths: list[tuple[Path, Path]] = []
-    promoted_destinations: list[Path] = []
+    staged_promotions: list[_ArtifactPromotion] = []
+    backed_up_promotions: list[_ArtifactPromotion] = []
+    committed_promotions: list[_ArtifactPromotion] = []
     try:
         # Current를 직접 덮어쓰지 않고 두 candidate copy를 먼저 준비한다.
         # Copy 단계 실패가 기존 current pair를 일부만 변경하지 않게 하기 위함이다.
-        for source, destination in destinations:
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            temporary = destination.with_suffix(f"{destination.suffix}.next")
-            shutil.copyfile(source, temporary)
-            temporary_paths.append((temporary, destination))
+        for promotion in promotions:
+            promotion.destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(promotion.source, promotion.staged_path)
+            staged_promotions.append(promotion)
         # 기존 current를 backup한 뒤 교체해 중간 실패 시 rollback 경로를 남긴다.
-        for temporary, destination in temporary_paths:
-            backup = destination.with_suffix(f"{destination.suffix}.previous")
-            backup.unlink(missing_ok=True)
-            if destination.exists():
-                destination.replace(backup)
-                backup_paths.append((backup, destination))
-            temporary.replace(destination)
-            promoted_destinations.append(destination)
+        for promotion in staged_promotions:
+            promotion.backup_path.unlink(missing_ok=True)
+            if promotion.destination.exists():
+                promotion.destination.replace(promotion.backup_path)
+                backed_up_promotions.append(promotion)
+            promotion.staged_path.replace(promotion.destination)
+            committed_promotions.append(promotion)
     except OSError as exc:
-        for temporary, _ in temporary_paths:
-            temporary.unlink(missing_ok=True)
-        for destination in promoted_destinations:
-            destination.unlink(missing_ok=True)
-        for backup, destination in reversed(backup_paths):
-            backup.replace(destination)
+        for promotion in staged_promotions:
+            promotion.staged_path.unlink(missing_ok=True)
+        for promotion in committed_promotions:
+            promotion.destination.unlink(missing_ok=True)
+        for promotion in reversed(backed_up_promotions):
+            promotion.backup_path.replace(promotion.destination)
         raise DataOperationError(
             "dbt artifact projection을 승격할 수 없습니다.",
             context={"run_target_path": str(run_manifest_path.parent)},
         ) from exc
     # 승격은 이미 완료되었으므로 backup cleanup 실패가 성공 결과를 뒤집지 않게 한다.
-    for backup, _ in backup_paths:
+    for promotion in backed_up_promotions:
         try:
-            backup.unlink(missing_ok=True)
+            promotion.backup_path.unlink(missing_ok=True)
         except OSError:
             continue
