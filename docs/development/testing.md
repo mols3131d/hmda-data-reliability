@@ -75,7 +75,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 ## Pull Request CI
 
-이 section은 CI의 test-specific current behavior만 설명한다. Merge admission policy와 validation responsibility는 [Continuous Integration](ci.md)이 소유한다.
+이 section은 `CI Lite`의 현재 validation behavior를 설명한다. Merge admission policy와 validation responsibility는 [Continuous Integration](ci.md)이 소유한다.
 
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
