@@ -44,7 +44,7 @@ Pre-push는 **원격 branch와 CI에 변경을 보내기 전에 relevant correct
 - push되는 변경의 영향 범위에 맞춰 lint, format check와 test를 선택한다.
 - pre-commit보다 강한 검증을 허용하지만, 가능한 한 affected scope만 실행해 feedback 시간을 제한한다.
 - 검증 단계에서는 source를 자동 수정하거나 stage하지 않는다. 실패하면 원인을 확인하고 명시적으로 수정한 뒤 다시 push한다.
-- 독립적인 검사는 안전하면 병렬 실행할 수 있다.
+- shared cache나 generated state를 쓰는 검사는 병렬 실행하지 않는다.
 - full CI, 고비용 integration/stress 검증 또는 외부 service에 강하게 의존하는 검사를 무조건 복제하지 않는다.
 - push되는 변경과 관련된 필수 검증이 실패하면 push를 차단한다.
 

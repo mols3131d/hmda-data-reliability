@@ -155,9 +155,33 @@ jobs:
                 tests=true
                 add_target tests/test_generate_agent_routes.py
                 ;;
+              scripts/agent_assets.py)
+                tests=true
+                add_target tests/test_agent_assets.py
+                ;;
+              scripts/_commands.py|scripts/bootstrap.py|scripts/biome.py|scripts/tombi.py)
+                tests=true
+                add_target tests/test_commands.py
+                ;;
+              scripts/generate_docs_indexes.py)
+                tests=true
+                add_target tests/test_generate_docs_indexes.py
+                ;;
+              scripts/log_agent_event.py)
+                tests=true
+                add_target tests/test_log_agent_event.py
+                ;;
               scripts/run_actual_source.py)
                 tests=true
                 add_target tests/hmda_data/eda/test_eda_evidence.py
+                ;;
+              scripts/run_agentic_review_live.py)
+                tests=true
+                add_target tests/review_ai/test_live_harness.py
+                ;;
+              scripts/*.py)
+                tests=true
+                full_unit=true
                 ;;
               src/hmda_reliability/logger.py)
                 tests=true
@@ -176,13 +200,11 @@ jobs:
                     ;;
                 esac
                 ;;
-              tests/test_log_agent_event.py)
-                tests=true
-                add_target tests/test_log_agent_event.py
-                ;;
-              tests/test_pytest_opentelemetry.py)
-                tests=true
-                add_target tests/test_pytest_opentelemetry.py
+              tests/test_*.py)
+                [[ -f "$path" ]] && {
+                  tests=true
+                  add_target "$path"
+                }
                 ;;
               tests/*/*)
                 tests=true
@@ -287,7 +309,7 @@ jobs:
           fi
 
       - name: Set up uv
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.lefthook == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true'
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.11.32"
@@ -316,13 +338,9 @@ jobs:
           fi
           uv run --no-sync ty check
 
-      - name: Install route dependency
-        if: steps.scope.outputs.routes == 'true'
-        run: python -m pip install --disable-pip-version-check PyYAML==6.0.3
-
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
-        run: python scripts/generate_agent_routes.py --check
+        run: uv run --no-project --with "PyYAML==6.0.3" python scripts/generate_agent_routes.py --check
 
       - name: Validate Lefthook config
         if: steps.scope.outputs.lefthook == 'true'
