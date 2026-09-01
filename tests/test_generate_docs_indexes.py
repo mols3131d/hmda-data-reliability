@@ -16,8 +16,19 @@ def _write(path: Path, content: str) -> None:
 
 
 def _read_tsv(path: Path) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
     with path.open(encoding="utf-8", newline="") as handle:
-        return list(csv.DictReader(handle, delimiter="\t"))
+        for row in csv.DictReader(handle, delimiter="\t"):
+            path_value = row.get("path")
+            if path_value is None:
+                raise AssertionError(f"missing path field: {row}")
+            rows.append(
+                {
+                    "path": path_value,
+                    "description": row.get("description") or "",
+                }
+            )
+    return rows
 
 
 @pytest.mark.component
@@ -49,6 +60,18 @@ def test_generate_projects_paths_and_frontmatter_descriptions(tmp_path: Path) ->
         {"path": "nested/deep.md", "description": "Deep reference."},
     ]
     assert not (docs / "references" / "nested" / "INDEX.tsv").exists()
+
+
+@pytest.mark.component
+def test_generate_omits_trailing_tab_for_empty_description(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    _write(docs / "guide.md", "# Guide\n")
+
+    assert generate_docs_indexes(docs) == []
+
+    index_path = docs / "INDEX.tsv"
+    assert index_path.read_text(encoding="utf-8") == "path\tdescription\nguide.md\n"
+    assert _read_tsv(index_path) == [{"path": "guide.md", "description": ""}]
 
 
 @pytest.mark.component

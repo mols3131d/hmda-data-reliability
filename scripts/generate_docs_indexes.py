@@ -108,7 +108,8 @@ def _render(directory: Path) -> str:
     output = io.StringIO(newline="")
     writer = csv.writer(output, delimiter="\t", lineterminator="\n")
     writer.writerow(("path", "description"))
-    writer.writerows(_rows(directory))
+    for path, description in _rows(directory):
+        writer.writerow((path, description) if description else (path,))
     return output.getvalue()
 
 
