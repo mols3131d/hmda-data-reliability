@@ -1,13 +1,22 @@
 path	description
 ARCHITECTURE.md	로컬 HMDA 파이프라인의 시스템 흐름, 실행 경계, domain ownership과 approval-bound recovery 구조를 설명합니다.
 VISION.md	근거 우선 데이터 신뢰성과 안전한 AI 위임을 결합하는 장기 방향, delegation boundary와 LLMOps 원칙을 정의합니다.
-development/	개발 환경, testing, Git/GitHub workflow, AI agent asset policy와 development dashboard를 연결하는 docs/development directory의 entrypoint입니다.
+agents/
+agents/skills/	Repository-owned Agent Skill의 유지보수 문서와 훼손되면 안 되는 baseline을 배치하는 경계를 정의합니다.
+development/	개발 환경, tooling, testing, CI, Git/GitHub workflow, AI agent asset policy와 development dashboard를 연결하는 docs/development directory의 entrypoint입니다.
 development/ai-agent/	Repository의 agent instruction surface 선택과 Rule/Skill asset management guidance를 모으는 docs/development/ai-agent directory의 entrypoint입니다.
 development/ai-agent/rule.md	Repository structure로 applicability가 결정되는 instruction surface인 Rule의 선택 기준, canonical source와 책임 경계를 정의합니다.
 development/ai-agent/skill.md	Task intent와 semantic relevance에 따라 선택적으로 load하는 Skill의 선택 기준, loading 방식과 source ownership을 정의합니다.
+development/ci.md	main 입장 경계에서 CI가 제공해야 하는 검증 증거, change-impact 선택과 local validation의 책임 경계를 정의합니다.
 development/dashboard.md	현재 development snapshot에서 domain별 구현·검증 진행률, 남은 gap과 blocker를 한눈에 정리한 human-readable dashboard입니다.
 development/test-design.md	Requirement와 observable behavior를 pytest test로 변환하는 scenario, oracle, test level과 구현 원칙을 설명합니다.
 development/testing.md	Local pytest 실행 범위, marker, Git hook, PR CI와 추가 test evidence 수집 방법을 설명합니다.
+development/tooling/	Repository 개발·검증·유지보수 workflow를 지원하는 도구의 project-specific usage, owning source와 managed state를 연결하는 entrypoint입니다.
+development/tooling/bootstrap.md	Repository clone 이후 setup, 작업 session 준비와 intentional tooling update를 scripts/bootstrap.py 하나의 entrypoint로 사용하는 방법을 설명합니다.
+development/tooling/formatting.md	이 repository에서 Python, Markdown, JSON/JSONC, TOML을 formatting·linting할 때 사용하는 fix/check command와 owning source를 정리합니다.
+development/tooling/lefthook.md	이 repository의 Git hook 설치 경로와 pre-commit/pre-push가 지켜야 할 운영 baseline을 설명합니다.
+development/tooling/openspec.md	이 repository에서 OpenSpec을 실행·갱신하는 integration 방식과 project-specific owning source를 연결합니다.
+development/tooling/rulesync.md	Rulesync를 Agent Asset 관리의 주 실행 경로로 사용하고 Skills CLI를 Rulesync 밖의 agentskills.io 호환 external Skill 보조 경로로 연결하는 repository-specific tooling guide입니다.
 development/vcs-git/	Branch, commit, Pull Request와 review guide를 연결하는 docs/development/vcs-git directory의 entrypoint입니다.
 development/vcs-git/branch.md	하나의 변경 목적을 격리하고 검토 가능한 단위로 전달하기 위한 branch 생성, naming, reuse와 agent 제약을 정의합니다.
 development/vcs-git/commit.md	하나의 논리적 변경을 review 가능한 history로 기록하기 위한 commit 단위, staging과 history 관리 기준을 정의합니다.

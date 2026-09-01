@@ -13,7 +13,9 @@ tags:
 
 # HMDA Data Reliability Development Dashboard
 
-> **Snapshot:** 2026-08-16 / `main@e9a8d2a`
+> **Historical Snapshot:** 2026-08-16 / `main@e9a8d2a`
+>
+> 이 문서는 현재 상태의 canonical source가 아니다. 아래 진행률과 gap은 위 revision에 대한 기록이며, 현재 revision에 그대로 적용하지 않는다.
 > **Current Focus:** bounded Agentic review와 current-revision acceptance를 닫는다.
 
 ## Development Progress
@@ -32,8 +34,8 @@ tags:
 | Domain | # | Remaining Requirement |
 | --- | :---: | --- |
 | HMDA Data | 1 | `hmda-data-synthetic-defects` **Null spike case** — current source는 target null floor를 적용하지만 canonical Scenario가 요구하는 original-relative null-rate increase를 보장하지 않는다. |
-| HMDA Data | 2 | `hmda-data-synthetic-defects` **Freshness delay case** — canonical Spec에는 존재하지만 current HMDA synthetic surface에서는 제거되어 있다. |
-| Reliability | 1 | `reliability-profile-snapshots` **Freshness metric** — canonical Spec은 unavailable measurement에서 `observed_at` fallback을 요구하지만 current source는 `freshness_at=null`, `freshness_status=unavailable`을 반환한다. |
+| HMDA Data | 2 | `hmda-data-synthetic-defects` **Freshness delay case** — 이 historical snapshot에서 추적한 항목이며 현재 canonical Spec에는 해당 requirement가 없다. 현재 MVP gap으로 해석하지 않는다. |
+| Reliability | 1 | `reliability-profile-snapshots` **Freshness metric** — canonical Spec은 측정 불가 상태에서 `freshness_at=null`, `freshness_status=unavailable`을 요구하고 `observed_at` fallback을 금지한다. 해당 historical implementation gap은 이 snapshot의 기준에 한정된다. |
 | Reliability | 2 | `reliability-incident-detection` **Freshness delay detection** — canonical Spec은 baseline-relative delay를 요구하지만 current source는 current observation age와 max-age threshold로 판정한다. |
 
 ## Verification Gaps
@@ -71,5 +73,5 @@ tags:
 - Implementation evidence: `src/hmda_reliability/`, `dbt/`
 - Executable specification surfaces: `tests/`
 - Counting rule: Implementation은 canonical Requirement 98개, Verification은 canonical capability별 matching-revision acceptance target 17개를 의미 단위로 집계한다.
-- Current-revision validation: `main@e9a8d2a`에 연결된 GitHub Actions workflow run을 확인하지 못했으며 과거 revision 결과는 재사용하지 않았다.
+- Validation scope: 이 문서의 수치와 gap은 `main@e9a8d2a` historical snapshot에 한정되며, 현재 revision의 validation evidence로 재사용하지 않는다.
 - Dashboard policy: [`../AGENTS.md`](../AGENTS.md#dashboard-policy)
