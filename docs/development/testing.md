@@ -58,7 +58,7 @@ flowchart TB
 
 ## Git Hooks
 
-Lefthook은 local feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. `main` admission에 필요한 전체 검증은 CI가 담당한다.
+Lefthook은 local feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. `main` admission에서 CI가 소유하는 책임 경계는 [Continuous Integration](ci.md)을 따른다.
 
 | Hook | Trigger | Action |
 | --- | --- | --- |
@@ -74,6 +74,8 @@ Python push에서는 `--testmon --testmon-forceselect`로 local `.testmondata`�
 Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없다. Pull 안전성은 불완전한 local hook 조합을 추가하는 대신 merge 대상 branch가 CI를 통과한 clean state라는 invariant로 관리한다.
 
 ## Pull Request CI
+
+이 section은 CI의 test-specific current behavior만 설명한다. Merge admission policy와 validation responsibility는 [Continuous Integration](ci.md)이 소유한다.
 
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
@@ -201,6 +203,7 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 
 ## Related Guides
 
+- [Continuous Integration](ci.md): `main` merge admission과 CI validation responsibility
 - [Test Design](test-design.md): requirement를 scenario와 oracle로 바꾸는 방법
 - [`tests/AGENTS.md`](../../tests/AGENTS.md): `tests/` 파일을 수정할 때의 agent context
 - [`pyproject.toml`](../../pyproject.toml): pytest correctness/safety defaults와 marker 등록
