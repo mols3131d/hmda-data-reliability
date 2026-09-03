@@ -190,42 +190,66 @@ def test_lifecycle_has_no_recovery_or_evaluation_side_effects(
 def test_lifecycle_evaluates_new_year_partition_synthetic_defect(
     tmp_path: Path,
 ) -> None:
-    """2026년 신규 파티션의 합성 결함 데이터에 대해서도
-    격리 환경에서 사고 탐지 및 계통 영향을 도출한다.
+    """2026년 신규 파티션의 합성 결함 산출물을 인제스션하여 격리 환경에서
+    사고 탐지, 계통 영향, 구체적 권고 조치를 검증하고 메인 DB 무변경을 보장한다.
     """
 
+    from hmda_reliability.hmda_data import load_hmda_loans_partition, null_spike
+
+    main_db = tmp_path / "hmda_reliability.duckdb"
+    request_base = _prepare_request(tmp_path)
+
+    # 1. 2025년 원천 CSV 픽스처 생성
+    source_dir = tmp_path / "raw"
+    source_dir.mkdir(parents=True)
+    source_file = source_dir / "year_2025.csv"
+    source_file.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income,loan_purpose,action_taken,"
+                "state_code,county_code,loan_type",
+                "2025,350000,120,1,1,CA,06001,conventional",
+                "2025,400000,150,1,1,CA,06001,conventional",
+                "2025,500000,180,1,1,CA,06001,conventional",
+                "2025,600000,200,1,1,CA,06001,conventional",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    # 2. 실제 null_spike() 생성기로 2026년 합성 결함 Parquet 생성
+    cases_dir = tmp_path / "cases"
+    with DuckDBConnectionManager() as conn:
+        defect_path = null_spike(
+            conn,
+            [source_file],
+            cases_dir,
+            target_column="income",
+            null_fraction=0.5,
+            target_year=2026,
+            case_name="null_spike_2026",
+        )
+
+    # 3. 샌드박스 DB에 파티션 인제스션 함수로 적재 (E2E 파이프라인 결합)
     sandbox_db = tmp_path / "sandbox_2026.duckdb"
-    request = _prepare_request(tmp_path).model_copy(
+    with DuckDBConnectionManager(sandbox_db) as conn:
+        loaded_rows = load_hmda_loans_partition(
+            conn,
+            [defect_path],
+            2026,
+            source_file="null_spike_2026.parquet",
+            table_name="raw.hmda_loans",
+        )
+    assert loaded_rows == 4
+
+    request = request_base.model_copy(
         update={
             "database_path": sandbox_db,
             "source_year": 2026,
+            "source_file": "null_spike_2026.parquet",
             "observed_at": datetime(2026, 9, 3, 0, 0, tzinfo=UTC),
         }
     )
-
-    with DuckDBConnectionManager(sandbox_db) as connection:
-        connection.execute("CREATE SCHEMA raw")
-        connection.execute(
-            """
-            CREATE TABLE raw.hmda_loans (
-                activity_year INTEGER,
-                loan_amount DOUBLE,
-                income DOUBLE,
-                source_year INTEGER,
-                source_file_name VARCHAR,
-                ingested_at TIMESTAMPTZ
-            )
-            """
-        )
-        connection.execute(
-            """
-            INSERT INTO raw.hmda_loans VALUES
-                (2026, 350000, NULL, 2026, 'year_2026.csv', TIMESTAMPTZ '2026-09-03'),
-                (2026, 400000, 150, 2026, 'year_2026.csv', TIMESTAMPTZ '2026-09-03'),
-                (2026, 500000, NULL, 2026, 'year_2026.csv', TIMESTAMPTZ '2026-09-03'),
-                (2026, 600000, 200, 2026, 'year_2026.csv', TIMESTAMPTZ '2026-09-03')
-            """
-        )
 
     baseline = _baseline_snapshot(
         request,
@@ -233,13 +257,30 @@ def test_lifecycle_evaluates_new_year_partition_synthetic_defect(
         null_rates={"income": 0.0, "loan_amount": 0.0},
     )
 
+    # 4. 신뢰성 수명주기 실행 및 엄격한 단언 검증
     result = run_incident_lifecycle(request, baseline)
 
     assert result.current_row_count == 4
     assert result.detected_incident_types == ["null_spike"]
     assert "stg_hmda_loans" in result.affected_assets
     assert "mart_hmda_loan_outcomes" in result.affected_assets
-    assert len(result.recommended_actions) > 0
+    assert result.recommended_actions == [
+        "inspect_source_columns",
+        "add_dbt_not_null_test",
+        "validate_source_partition",
+    ]
+    assert any("null_spike" in ref and "2026" in ref for ref in result.evidence_refs)
+
+    # 5. 메인 데이터베이스(main_db)의 상태 무변경 단언 검증
+    with DuckDBConnectionManager(main_db, read_only=True) as conn:
+        main_rows = conn.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE activity_year = 2025"
+        ).fetchone()
+        main_2026 = conn.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE activity_year = 2026"
+        ).fetchone()
+    assert main_rows == (4,)
+    assert main_2026 == (0,)
 
 
 def _prepare_request(tmp_path: Path) -> DataOperationRequest:

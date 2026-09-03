@@ -409,7 +409,6 @@ def test_null_spike_supports_target_year_override(
             case_root,
             null_fraction=0.3,
             target_year=2026,
-            case_name="null_spike_2026",
         )
         years = connection.execute(
             "SELECT DISTINCT activity_year FROM read_parquet(?)",
@@ -417,8 +416,84 @@ def test_null_spike_supports_target_year_override(
         ).fetchall()
         null_ratio = _null_ratio(connection, null_path, "income")
 
+    assert null_path.name == "null_spike_2026.parquet"
     assert years == [(2026,)]
     assert null_ratio >= 0.3
+
+
+def test_null_spike_rejects_activity_year_target_column_with_target_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """target_year와 target_column='activity_year'의 동시 지정은 거부된다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="activity_year"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_column="activity_year",
+            target_year=2026,
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_year",
+    [1999, 2101, True, False, "2026", 0],
+)
+def test_null_spike_rejects_invalid_target_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+    invalid_year: object,
+) -> None:
+    """유효하지 않은 target_year(범위 밖, bool, 비정수)는 거부된다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="target_year"),
+    ):
+        from typing import cast
+
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=cast(int, invalid_year),
+        )
+
+
+def test_null_spike_rejects_multi_year_source_with_target_year(
+    tmp_path: Path,
+) -> None:
+    """다중 연도 원천 데이터에 target_year 지정 시
+    파티션 붕괴를 방지하기 위해 거부된다.
+    """
+
+    source_path = tmp_path / "multi-year.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                "2024,100,200",
+                "2025,110,210",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="단일 연도"),
+    ):
+        null_spike(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            target_year=2026,
+        )
 
 
 def _row_count(
