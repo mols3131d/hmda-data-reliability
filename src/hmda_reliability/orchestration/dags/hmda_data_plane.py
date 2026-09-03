@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Final
 
 from airflow.sdk import Asset, Param, dag, get_current_context, task
-from airflow.sdk.exceptions import AirflowSkipException
+from airflow.sdk.exceptions import AirflowException, AirflowSkipException
 from pydantic.types import JsonValue
 
 from hmda_reliability.data_operations import (
@@ -17,6 +17,10 @@ from hmda_reliability.data_operations import (
     run_dbt_build,
 )
 from hmda_reliability.orchestration.config import data_operation_request_from_runtime
+from hmda_reliability.orchestration.quality_gate import (
+    QualityGateError,
+    evaluate_quality_gate,
+)
 
 log = logging.getLogger(__name__)
 
@@ -82,6 +86,32 @@ def load_raw_hmda_loans() -> None:
 
 
 @task(
+    task_id="evaluate_quality_gate",
+    retries=0,
+    do_xcom_push=False,
+)
+def evaluate_quality_gate_task() -> None:
+    """신뢰성 품질 게이트를 실행하고 이상 탐지 시 파이프라인을 실패시킨다."""
+
+    request = data_operation_request_from_runtime(_runtime_overrides())
+    try:
+        evaluate_quality_gate(request)
+    except QualityGateError as exc:
+        raise AirflowException(str(exc)) from exc
+    except Exception:
+        log.exception("품질 게이트 실행 중 예상치 못한 오류 발생")
+        raise AirflowException(
+            f"품질 게이트 평가 실패: source_year={request.source_year} "
+            f"asset={request.asset_name}"
+        ) from None
+    log.info(
+        "품질 게이트 통과: source_year=%s asset=%s status=clean",
+        request.source_year,
+        request.asset_name,
+    )
+
+
+@task(
     task_id="build_dbt_loan_analytics",
     outlets=[ANALYTICS_LOAN_ASSET],
     retries=0,
@@ -129,8 +159,9 @@ def _hmda_data_plane() -> None:
     """단일 수동 실행, 비재시도 raw-to-analytics 워크플로우를 정의한다."""
 
     raw_task = load_raw_hmda_loans()
+    gate_task = evaluate_quality_gate_task()
     analytics_task = build_dbt_loan_analytics()
-    raw_task >> analytics_task
+    raw_task >> gate_task >> analytics_task
 
 
 hmda_data_plane = _hmda_data_plane()

@@ -23,20 +23,25 @@ def test_airflow_dag_owns_the_ordered_data_plane() -> None:
     assert hmda_data_plane.max_active_runs == 1
     assert set(hmda_data_plane.task_ids) == {
         "load_raw_hmda_loans",
+        "evaluate_quality_gate",
         "build_dbt_loan_analytics",
     }
 
     raw_task = cast(Any, hmda_data_plane.get_task("load_raw_hmda_loans"))
+    gate_task = cast(Any, hmda_data_plane.get_task("evaluate_quality_gate"))
     analytics_task = cast(
         Any,
         hmda_data_plane.get_task("build_dbt_loan_analytics"),
     )
 
     assert raw_task.upstream_task_ids == set()
-    assert raw_task.downstream_task_ids == {"build_dbt_loan_analytics"}
-    assert analytics_task.upstream_task_ids == {"load_raw_hmda_loans"}
+    assert raw_task.downstream_task_ids == {"evaluate_quality_gate"}
+    assert gate_task.upstream_task_ids == {"load_raw_hmda_loans"}
+    assert gate_task.downstream_task_ids == {"build_dbt_loan_analytics"}
+    assert analytics_task.upstream_task_ids == {"evaluate_quality_gate"}
     assert analytics_task.downstream_task_ids == set()
     assert raw_task.retries == 0
+    assert gate_task.retries == 0
     assert analytics_task.retries == 0
 
 
