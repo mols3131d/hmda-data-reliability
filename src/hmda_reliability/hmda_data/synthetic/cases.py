@@ -55,6 +55,8 @@ def null_spike(
     target_column: str = "income",
     null_fraction: float = 0.2,
     sample_fraction: float = 1.0,
+    case_name: str = "null_spike",
+    target_year: int | None = None,
 ) -> Path:
     """Sampled non-null ``target_column`` 값을 결정적으로 Null로 만든다.
 
@@ -106,6 +108,9 @@ def null_spike(
             )
         )
     """
+    year_override_sql = (
+        ", CAST(? AS INTEGER) AS activity_year" if target_year is not None else ""
+    )
     case_query = f"""
         WITH sampled AS ({sampled_query}),
         year_stats AS (
@@ -139,21 +144,25 @@ def null_spike(
                     THEN NULL
                     ELSE {quoted_target}
                 END AS {quoted_target}
+                {year_override_sql}
             )
         FROM year_stats
     """
+    params: list[object] = [
+        *source_params,
+        sample_fraction,
+        null_fraction,
+        source_null_count,
+        source_count,
+    ]
+    if target_year is not None:
+        params.append(target_year)
     return write_case_file(
         connection=connection,
-        case_name="null_spike",
+        case_name=case_name,
         output_root=output_root,
         query=case_query,
-        params=[
-            *source_params,
-            sample_fraction,
-            null_fraction,
-            source_null_count,
-            source_count,
-        ],
+        params=params,
     )
 
 

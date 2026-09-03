@@ -395,6 +395,32 @@ def test_write_case_file_rejects_parent_directory_case_name(tmp_path: Path) -> N
     assert sentinel.exists()
 
 
+def test_null_spike_supports_target_year_override(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """합성 결함 생성 시 target_year를 지정하면 activity_year 파티션이 교체된다."""
+
+    case_root = tmp_path / "cases"
+    with DuckDBConnectionManager() as connection:
+        null_path = null_spike(
+            connection,
+            [hmda_csv_path],
+            case_root,
+            null_fraction=0.3,
+            target_year=2026,
+            case_name="null_spike_2026",
+        )
+        years = connection.execute(
+            "SELECT DISTINCT activity_year FROM read_parquet(?)",
+            [str(null_path)],
+        ).fetchall()
+        null_ratio = _null_ratio(connection, null_path, "income")
+
+    assert years == [(2026,)]
+    assert null_ratio >= 0.3
+
+
 def _row_count(
     connection: duckdb.DuckDBPyConnection,
     case_path: Path,

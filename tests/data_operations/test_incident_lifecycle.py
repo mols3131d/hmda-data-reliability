@@ -186,6 +186,62 @@ def test_lifecycle_has_no_recovery_or_evaluation_side_effects(
     assert "backfill_validation_passed" not in type(result).model_fields
 
 
+@pytest.mark.integration
+def test_lifecycle_evaluates_new_year_partition_synthetic_defect(
+    tmp_path: Path,
+) -> None:
+    """2026년 신규 파티션의 합성 결함 데이터에 대해서도
+    격리 환경에서 사고 탐지 및 계통 영향을 도출한다.
+    """
+
+    sandbox_db = tmp_path / "sandbox_2026.duckdb"
+    request = _prepare_request(tmp_path).model_copy(
+        update={
+            "database_path": sandbox_db,
+            "source_year": 2026,
+            "observed_at": datetime(2026, 9, 3, 0, 0, tzinfo=UTC),
+        }
+    )
+
+    with DuckDBConnectionManager(sandbox_db) as connection:
+        connection.execute("CREATE SCHEMA raw")
+        connection.execute(
+            """
+            CREATE TABLE raw.hmda_loans (
+                activity_year INTEGER,
+                loan_amount DOUBLE,
+                income DOUBLE,
+                source_year INTEGER,
+                source_file_name VARCHAR,
+                ingested_at TIMESTAMPTZ
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO raw.hmda_loans VALUES
+                (2026, 350000, NULL, 2026, 'year_2026.csv', TIMESTAMPTZ '2026-09-03'),
+                (2026, 400000, 150, 2026, 'year_2026.csv', TIMESTAMPTZ '2026-09-03'),
+                (2026, 500000, NULL, 2026, 'year_2026.csv', TIMESTAMPTZ '2026-09-03'),
+                (2026, 600000, 200, 2026, 'year_2026.csv', TIMESTAMPTZ '2026-09-03')
+            """
+        )
+
+    baseline = _baseline_snapshot(
+        request,
+        row_count=4,
+        null_rates={"income": 0.0, "loan_amount": 0.0},
+    )
+
+    result = run_incident_lifecycle(request, baseline)
+
+    assert result.current_row_count == 4
+    assert result.detected_incident_types == ["null_spike"]
+    assert "stg_hmda_loans" in result.affected_assets
+    assert "mart_hmda_loan_outcomes" in result.affected_assets
+    assert len(result.recommended_actions) > 0
+
+
 def _prepare_request(tmp_path: Path) -> DataOperationRequest:
     database_path = tmp_path / "hmda_reliability.duckdb"
     with DuckDBConnectionManager(database_path) as connection:
