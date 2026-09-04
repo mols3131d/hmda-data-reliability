@@ -80,7 +80,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
 - Markdown은 위치와 관계없이 runtime scope에서 제외하고, 현재 존재하는 changed Markdown file만 `rumdl check`한다.
-- Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check와 `ty check`를 실행한다.
+- Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check를 실행한다. Type dependency의 affected scope를 별도로 계산하지 않으므로 `ty check`는 project-wide로 실행한다.
 - Domain source는 own test와 현재 reverse dependency에 따른 consumer test directory를 선택한다.
 - Scoped domain test는 `unit`, `component`, `integration`을 유지하고 `memory`, `stress`만 제외한다.
 - 선택된 test directory가 3개 이상이면 xdist를 사용한다.
