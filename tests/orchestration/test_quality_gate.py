@@ -72,11 +72,10 @@ def test_quality_gate_passes_when_no_anomaly_detected(
 
     evaluate_quality_gate(request)
 
-    # Scenario: Quality gate evidence 검증
+    # Scenario: Quality gate evidence 검증 (통과 메시지와 clean 상태 동시 확인)
     assert any(
         "품질 게이트 통과" in record.message
-        and "status=clean" in record.message
-        or getattr(record, "status", None) == "clean"
+        and getattr(record, "status", None) == "clean"
         for record in caplog.records
     )
 
@@ -101,9 +100,10 @@ def test_quality_gate_raises_on_null_spike(
     assert exc_info.value.detected_incident_types == ["null_spike(income)"]
 
     # Scenario: Quality gate evidence 실패 로그 검증
+    # 메시지와 탐지 유형 메타데이터를 동시에 엄격히 확인한다.
     assert any(
         "품질 게이트 실패" in record.message
-        or "null_spike(income)" in str(getattr(record, "detected_incident_types", ""))
+        and getattr(record, "detected_incident_types", None) == ["null_spike(income)"]
         for record in caplog.records
     )
 
@@ -119,6 +119,29 @@ def test_quality_gate_ignores_volume_drop_by_design(tmp_path: Path) -> None:
     )
 
     evaluate_quality_gate(request)  # volume_drop으로 실패하지 않아야 함
+
+
+def test_quality_gate_raises_on_empty_partition(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """파티션에 적재된 행이 0건이면 QualityGateError를 발생시킨다."""
+
+    caplog.set_level(logging.WARNING)
+    db_path = _make_db_with_partition(tmp_path, null_rate=0.0, n_rows=0)
+    request = DataOperationRequest(
+        database_path=db_path,
+        source_year=2025,
+    )
+
+    with pytest.raises(QualityGateError, match="empty_partition") as exc_info:
+        evaluate_quality_gate(request)
+
+    assert exc_info.value.detected_incident_types == ["empty_partition"]
+    assert any(
+        "품질 게이트 실패: 빈 파티션 감지됨" in record.message
+        for record in caplog.records
+    )
 
 
 def test_quality_gate_rejects_unsupported_profile_columns(tmp_path: Path) -> None:

@@ -69,6 +69,8 @@ def null_spike(
     ``target_column``이 ``activity_year``인 경우 상호 모순으로 거부된다. 또한
     원천 데이터가 둘 이상의 서로 다른 ``activity_year``를 포함하면 파티션 왜곡을
     방지하기 위해 거부된다.
+    ``case_name``을 직접 지정할 때 ``target_year``가 주어지면 파티션 인제스션
+    호환성을 위해 ``case_name``에 지정된 ``target_year``가 포함되어 있어야 한다.
     ``case_name``을 생략하면 ``target_year`` 지정 시 ``null_spike_{target_year}``,
     미지정 시 ``null_spike``를 사용한다. Source file은 수정하지 않는다.
     """
@@ -91,6 +93,15 @@ def null_spike(
             raise SyntheticCaseError(
                 msg,
                 context={"target_column": target_column, "target_year": target_year},
+            )
+        if case_name is not None and str(target_year) not in case_name:
+            msg = (
+                f"target_year({target_year})가 지정된 경우 case_name에 해당 연도가 "
+                f"포함되어야 합니다: {case_name}"
+            )
+            raise SyntheticCaseError(
+                msg,
+                context={"case_name": case_name, "target_year": target_year},
             )
 
     require_columns(connection, source_paths, {target_column, "activity_year"})

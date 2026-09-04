@@ -50,6 +50,7 @@ class QualityGateError(Exception):
 def evaluate_quality_gate(request: DataOperationRequest) -> None:
     """적재된 파티션의 null_spike를 baseline과 비교해 이상 탐지 시 오류를 발생시킨다.
 
+    파티션에 적재된 행이 0건이거나 신뢰성 이상이 감지되면 QualityGateError를 발생시킨다.
     이상이 없으면 예외 없이 반환한다. Airflow 의존성을 가지지 않는다.
     """
 
@@ -74,6 +75,23 @@ def evaluate_quality_gate(request: DataOperationRequest) -> None:
 
     with DuckDBConnectionManager(request.database_path, read_only=True) as connection:
         current = create_profile_snapshot(connection, profile_request)
+
+    if current.row_count == 0:
+        unique_incidents = ["empty_partition"]
+        _LOGGER.warning(
+            "품질 게이트 실패: 빈 파티션 감지됨",
+            extra={
+                "source_year": request.source_year,
+                "asset_name": request.asset_name,
+                "detected_incident_types": unique_incidents,
+            },
+        )
+        msg = (
+            f"품질 게이트 실패: source_year={request.source_year} "
+            f"asset={request.asset_name} "
+            f"detected=[empty_partition] (적재된 행이 0건입니다)"
+        )
+        raise QualityGateError(msg, unique_incidents)
 
     baseline = _build_baseline(current)
 

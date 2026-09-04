@@ -440,6 +440,37 @@ def test_null_spike_rejects_activity_year_target_column_with_target_year(
         )
 
 
+def test_null_spike_rejects_case_name_without_target_year_when_target_year_is_set(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """target_year 지정 시 case_name에 해당 연도가 없거나 다른 연도면 거부된다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="case_name에 해당 연도가 포함"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="custom_spike",
+        )
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="case_name에 해당 연도가 포함"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="null_spike_2024",
+        )
+
+
 @pytest.mark.parametrize(
     "invalid_year",
     [1999, 2101, True, False, "2026", 0],

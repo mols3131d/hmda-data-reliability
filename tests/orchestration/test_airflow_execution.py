@@ -257,10 +257,10 @@ def test_quality_gate_failure_raises_airflow_exception(
     assert exc_info.value.__cause__ is gate_error
 
 
-def test_quality_gate_unexpected_error_is_masked_as_airflow_exception(
+def test_quality_gate_unexpected_error_is_preserved_as_airflow_exception(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Unexpected exceptions are masked without chaining to prevent internal leak."""
+    """Unexpected exceptions preserve PEP 3134 causal context in AirflowException."""
 
     _runtime_context(monkeypatch)
 
@@ -272,5 +272,6 @@ def test_quality_gate_unexpected_error_is_masked_as_airflow_exception(
     with pytest.raises(AirflowException, match="품질 게이트 평가 실패") as exc_info:
         airflow_dag.evaluate_quality_gate_task.function()
 
-    # PEP 3134 예외 체이닝이 끊겨 있어 __cause__가 None이어야 함
-    assert exc_info.value.__cause__ is None
+    # PEP 3134 예외 체이닝이 보존되어 __cause__가 원본 예외여야 함
+    assert exc_info.value.__cause__ is not None
+    assert "database connection lost" in str(exc_info.value.__cause__)

@@ -98,12 +98,12 @@ def evaluate_quality_gate_task() -> None:
         evaluate_quality_gate(request)
     except QualityGateError as exc:
         raise AirflowException(str(exc)) from exc
-    except Exception:
+    except Exception as exc:
         log.exception("품질 게이트 실행 중 예상치 못한 오류 발생")
         raise AirflowException(
             f"품질 게이트 평가 실패: source_year={request.source_year} "
-            f"asset={request.asset_name}"
-        ) from None
+            f"asset={request.asset_name}: {exc}"
+        ) from exc
     log.info(
         "품질 게이트 통과: source_year=%s asset=%s status=clean",
         request.source_year,
