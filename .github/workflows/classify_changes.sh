@@ -31,7 +31,9 @@ python=false
 lefthook=false
 routes=false
 full_unit=false
+full_type=false
 targets=()
+type_targets=()
 
 add_target() {
   local target="$1"
@@ -42,6 +44,23 @@ add_target() {
   targets+=("$target")
 }
 
+add_type_target() {
+  local target="$1"
+  local existing
+  for existing in "${type_targets[@]}"; do
+    [[ "$existing" == "$target" ]] && return
+  done
+  type_targets+=("$target")
+}
+
+add_domain_target() {
+  local domain="$1"
+  add_target "tests/$domain"
+  [[ -d "src/hmda_reliability/$domain" ]] && \
+    add_type_target "src/hmda_reliability/$domain"
+  [[ -d "tests/$domain" ]] && add_type_target "tests/$domain"
+}
+
 add_domain_closure() {
   local domain="$1"
   local target
@@ -50,40 +69,41 @@ add_domain_closure() {
       for target in \
         data_platform hmda_data reliability review_ai \
         data_operations orchestration dbt; do
-        add_target "tests/$target"
+        add_domain_target "$target"
       done
       ;;
     hmda_data)
       for target in \
         hmda_data reliability review_ai data_operations \
         orchestration dbt; do
-        add_target "tests/$target"
+        add_domain_target "$target"
       done
       ;;
     data_operations)
       for target in reliability data_operations orchestration; do
-        add_target "tests/$target"
+        add_domain_target "$target"
       done
       ;;
     reliability)
       for target in \
         reliability review_ai data_operations orchestration; do
-        add_target "tests/$target"
+        add_domain_target "$target"
       done
       ;;
     review_ai)
-      add_target tests/review_ai
+      add_domain_target review_ai
       ;;
     runtime_ai)
       for target in runtime_ai review_ai; do
-        add_target "tests/$target"
+        add_domain_target "$target"
       done
       ;;
     orchestration)
-      add_target tests/orchestration
+      add_domain_target orchestration
       ;;
     *)
       full_unit=true
+      full_type=true
       ;;
   esac
 }
@@ -140,6 +160,7 @@ while IFS= read -r path; do
     .python-version|pyproject.toml|uv.lock)
       tests=true
       full_unit=true
+      full_type=true
       ;;
     dbt/*.sql|dbt/*.yml|dbt/*.yaml)
       tests=true
@@ -154,38 +175,47 @@ while IFS= read -r path; do
     scripts/generate_agent_routes.py)
       tests=true
       add_target tests/test_generate_agent_routes.py
+      add_type_target tests/test_generate_agent_routes.py
       ;;
     scripts/agent_assets.py)
       tests=true
       add_target tests/test_agent_assets.py
+      add_type_target tests/test_agent_assets.py
       ;;
     scripts/_commands.py|scripts/bootstrap.py|scripts/biome.py|scripts/tombi.py)
       tests=true
       add_target tests/test_commands.py
+      add_type_target tests/test_commands.py
       ;;
     scripts/generate_docs_indexes.py)
       tests=true
       add_target tests/test_generate_docs_indexes.py
+      add_type_target tests/test_generate_docs_indexes.py
       ;;
     scripts/log_agent_event.py)
       tests=true
       add_target tests/test_log_agent_event.py
+      add_type_target tests/test_log_agent_event.py
       ;;
     scripts/run_actual_source.py)
       tests=true
       add_target tests/hmda_data/eda/test_eda_evidence.py
+      add_type_target tests/hmda_data/eda/test_eda_evidence.py
       ;;
     scripts/run_agentic_review_live.py)
       tests=true
       add_target tests/review_ai/test_live_harness.py
+      add_type_target tests/review_ai/test_live_harness.py
       ;;
     scripts/*.py)
       tests=true
       full_unit=true
+      full_type=true
       ;;
     src/hmda_reliability/logger.py)
       tests=true
       add_target tests/test_log_agent_event.py
+      full_type=true
       ;;
     src/hmda_reliability/*/*)
       tests=true
@@ -194,6 +224,7 @@ while IFS= read -r path; do
       case "$domain" in
         shared|configs|utils)
           full_unit=true
+          full_type=true
           ;;
         *)
           add_domain_closure "$domain"
@@ -216,12 +247,17 @@ while IFS= read -r path; do
           ;;
         *)
           full_unit=true
+          full_type=true
           ;;
       esac
       ;;
     src/hmda_reliability/*|tests/*)
       tests=true
       full_unit=true
+      full_type=true
+      ;;
+    *.py)
+      full_type=true
       ;;
   esac
 done < <(get_paths)
@@ -235,7 +271,11 @@ done < <(get_paths)
   echo "lefthook=$lefthook"
   echo "routes=$routes"
   echo "full_unit=$full_unit"
+  echo "full_type=$full_type"
   printf 'targets='
   printf '%s ' "${targets[@]}"
+  echo
+  printf 'type_targets='
+  printf '%s ' "${type_targets[@]}"
   echo
 } >> "$output_target"
