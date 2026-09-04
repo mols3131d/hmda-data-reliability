@@ -112,6 +112,9 @@ jobs:
 
       - name: Validate Python
         if: steps.scope.outputs.python == 'true'
+        env:
+          FULL_TYPE: ${{ steps.scope.outputs.full_type }}
+          TYPE_TARGETS: ${{ steps.scope.outputs.type_targets }}
         run: |
           set -euo pipefail
           mapfile -t files < <(
@@ -124,7 +127,17 @@ jobs:
             uv run --no-sync ruff check "${files[@]}"
             uv run --no-sync ruff format --check "${files[@]}"
           fi
-          uv run --no-sync ty check
+
+          if [[ "$FULL_TYPE" == true ]]; then
+            uv run --no-sync ty check
+            exit
+          fi
+
+          read -r -a type_targets <<< "$TYPE_TARGETS"
+          type_targets+=("${files[@]}")
+          if ((${#type_targets[@]})); then
+            uv run --no-sync ty check "${type_targets[@]}"
+          fi
 
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
