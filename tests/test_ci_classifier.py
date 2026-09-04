@@ -101,9 +101,7 @@ def test_unmapped_script_triggers_full_fallback() -> None:
 @pytest.mark.unit
 def test_source_domain_type_targets_include_reverse_consumers() -> None:
     """Domain source 수정은 own 및 reverse consumer의 source와 test를 type-check한다."""
-    out = run_classifier(
-        ["src/hmda_reliability/reliability/recovery/executor.py"]
-    )
+    out = run_classifier(["src/hmda_reliability/reliability/recovery/executor.py"])
 
     assert out["python"] == "true"
     assert out["full_type"] == "false"
