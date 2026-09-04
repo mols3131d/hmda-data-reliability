@@ -1,8 +1,9 @@
 ---
 type: review
 title: "PR 205 Review: 2026 Defect Evaluation and Orchestration Quality Gate"
-description: "PR 205 최신 헤드(77779b1)의 2026년 가상 합성 결함 평가 체계와 Airflow 품질 게이트를 종합 검토하고 발견된 결함 및 개선 사항을 기록한다."
+description: "PR 205 최신 구현 헤드(00cd3eb4)의 synthetic 2026 평가와 Airflow quality gate를 재검토하고 남은 architecture, contract, validation 이슈를 기록한다."
 status: completed
+reviewed_revision: "00cd3eb4bf5d3a41cb9e0fd32f978ab3a0799df6"
 tags:
   - reliability
   - orchestration
@@ -14,86 +15,119 @@ tags:
 # PR 205 Review: 2026 Defect Evaluation and Orchestration Quality Gate
 
 > [!NOTE]
-> PR 205는 2026년 가상 결함 생성(`null_spike`) 제약과 샌드박스 격리 수명주기 E2E 검증 체계를 충실히 완성하고 Airflow 품질 게이트를 추가했습니다. 그러나 **(1) 0-row 빈 파티션 인제스션 시 품질 게이트가 `status=clean`으로 침묵 통과하는 결함 은폐 위험**, **(2) `evaluate_quality_gate_task`에서 `raise ... from None`으로 인한 예외 인과 체인 절단**, **(3) 테스트 단언문의 불린 연산자 우선순위로 인한 느슨한 검증**, **(4) 단일 PR 내 2개 독립 OpenSpec 변경 번들링**이 확인되어 현재 판정은 **Revise**입니다.
+> 최신 구현을 다시 검토한 결과, 이전 리뷰의 0-row silent pass, 예외 chaining 단절, 느슨한 로그 assertion, OpenSpec task metadata, 단순 `case_name` 연도 누락 문제는 대부분 보완되었다. Airflow critical path에 `raw → quality gate → analytics`를 두는 방향도 유지하는 것이 적절하다. 다만 quality policy ownership, synthetic filename/ingestion contract, durable architecture 문서 정합성, tracked sandbox credential 및 현재 CI 상태가 남아 있어 판정은 **Revise**다.
 
 ## Overview
 
-| Target | Revision | Scope | Verdict |
+| Target | Reviewed revision | Scope | Verdict |
 | --- | --- | --- | --- |
-| PR #205 `feat(reliability): 2026년 가상 합성 결함 평가 체계 및 수명주기 검증 추가` | [77779b1](https://github.com/mols3131d/hmda-data-reliability/commit/77779b1df21a7576b73aab60fcb34535e606ee21) | [`src/hmda_reliability/hmda_data/synthetic/cases.py`](../../src/hmda_reliability/hmda_data/synthetic/cases.py), [`src/hmda_reliability/orchestration/quality_gate.py`](../../src/hmda_reliability/orchestration/quality_gate.py), [`src/hmda_reliability/orchestration/dags/hmda_data_plane.py`](../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py), [`tests/data_operations/test_incident_lifecycle.py`](../../tests/data_operations/test_incident_lifecycle.py), [`tests/orchestration/test_quality_gate.py`](../../tests/orchestration/test_quality_gate.py), [`tests/orchestration/test_airflow_execution.py`](../../tests/orchestration/test_airflow_execution.py), [`openspec/changes/`](../../openspec/changes/) | Revise |
+| PR #205 | `00cd3eb4bf5d3a41cb9e0fd32f978ab3a0799df6` | synthetic 2026 evaluation, Airflow quality gate, OpenSpec, orchestration tests, inbox operational guides | Revise |
+
+## Review Direction
+
+Quality gate 자체를 Airflow에서 제거하는 것은 권장하지 않는다. 실행 경계는 다음과 같이 유지하는 편이 적절하다.
+
+```text
+Bronze ingestion
+  ↓
+Airflow quality gate
+  ↓
+dbt analytics build
+  ↓
+validated artifact promotion
+```
+
+Airflow는 gate의 실행 시점, task state, downstream blocking을 소유하고, 실제 quality/reliability policy는 owning domain의 public boundary에 위임하는 방향을 기준으로 검토했다.
 
 ## Findings
 
-### F1. Silent Pass and Defect Masking on Empty Partition (0-Row) in Quality Gate
+### F1. Quality policy ownership이 orchestration domain에 남아 있음
 
-- **Severity** - Major
-- **Location** - [`src/hmda_reliability/orchestration/quality_gate.py`](../../src/hmda_reliability/orchestration/quality_gate.py#L60-L125)
-- **Evidence** - 적재된 파티션에 데이터가 없는(`row_count == 0`) 상태에서 `evaluate_quality_gate`를 실행하면 [`src/hmda_reliability/reliability/profiling/profile_snapshot_builder.py`](../../src/hmda_reliability/reliability/profiling/profile_snapshot_builder.py#L208-L210)에서 `_null_rate`가 `0.0`을 반환하고 `_build_baseline()`이 `row_count=0`을 그대로 복제합니다. 그 결과 [`src/hmda_reliability/reliability/detection/detector.py`](../../src/hmda_reliability/reliability/detection/detector.py#L40)의 `_detect_volume_drop`은 `baseline.row_count == 0` 가드에 걸려 이상을 감지하지 않고, `_detect_null_spike`는 `0.0 - 0.003 = -0.003 < 0.05`로 평가되어 탐지 결과가 0건이 됩니다. 이로 인해 `QualityGateError`가 발생하지 않고 `status=clean` 로그를 남기며 정상 통과합니다.
-- **Impact** - 소스 파일 누락이나 인제스션 필터 오류로 파티션이 0건 적재된 비정상 상태에서도 품질 게이트가 파이프라인을 실패시키지 못하고 downstream `build_dbt_loan_analytics` 태스크로 진행되는 False Negative가 발생합니다.
-- **Required Change** - [`src/hmda_reliability/orchestration/quality_gate.py`](../../src/hmda_reliability/orchestration/quality_gate.py)에서 스냅샷 생성 후 `current.row_count == 0`일 때 명시적으로 `QualityGateError`를 발생시키거나 최소 행 수 검증 가드를 추가하고, 관련 테스트 케이스를 작성해야 합니다.
+- **Severity** - 🟠 High
+- **Location** - [`src/hmda_reliability/orchestration/quality_gate.py`](../../src/hmda_reliability/orchestration/quality_gate.py), [`openspec/changes/orchestration-quality-gate/design.md`](../../openspec/changes/orchestration-quality-gate/design.md)
+- **Evidence** - `orchestration/quality_gate.py`가 `_BASELINE_NULL_RATES`, `_GATE_THRESHOLDS`, 활성 detector 범위, unsupported profile column 정책, `empty_partition` blocking 조건과 baseline 조립을 직접 소유한다. 반면 canonical [`openspec/specs/orchestration-pipeline/spec.md`](../../openspec/specs/orchestration-pipeline/spec.md)의 Domain delegation requirement는 orchestration이 reliability business rule을 중복 구현하지 않고 Reliability public boundary에 위임하도록 요구하고, [`docs/domains/reliability.md`](../../docs/domains/reliability.md)는 profile/detection을 Reliability 책임으로 둔다.
+- **Impact** - Airflow adapter와 reliability policy가 같은 orchestration package에 결합되어 threshold/baseline 변경이 orchestration 변경으로 번지고, 향후 dbt test 또는 다른 validation implementation을 gate에 조합할 때 ownership이 불명확해진다.
+- **Required Change** - `evaluate_quality_gate_task()`와 DAG dependency는 orchestration에 유지하되, baseline/threshold/detection policy는 Reliability 또는 해당 application composition boundary로 이동한다. Airflow task는 request 구성, gate 호출, `PASS/BLOCK`을 Airflow task state로 번역하는 thin adapter 역할만 갖게 한다.
 
-### F2. Exception Chaining Severed with `raise AirflowException(...) from None`
+### F2. `case_name` 연도 검증이 실제 ingestion parser semantics와 일치하지 않음
 
-- **Severity** - Major
-- **Location** - [`src/hmda_reliability/orchestration/dags/hmda_data_plane.py`](../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py#L98-L104), [`tests/orchestration/test_airflow_execution.py`](../../tests/orchestration/test_airflow_execution.py#L273-L288)
-- **Evidence** - `evaluate_quality_gate_task`에서 `QualityGateError` 외의 일반 예외(`except Exception:`)를 처리할 때 `raise AirflowException(...) from None`을 사용하여 PEP 3134 예외 인과 체인을 단절하고 있으며, 테스트([`tests/orchestration/test_airflow_execution.py`](../../tests/orchestration/test_airflow_execution.py#L287))에서도 `assert exc_info.value.__cause__ is None`을 강제하고 있습니다. 이는 저장소의 [`.github/instructions/python.instructions.md`](../../.github/instructions/python.instructions.md) 원칙("preserve causal context when translating exceptions") 및 narrow exception 처리 원칙과 충돌합니다.
-- **Impact** - DuckDB 파일 락 경합, I/O 오류, `ValueError`(지원되지 않는 baseline 프로파일 컬럼 요청 시 발생) 등 런타임 장애 발생 시 근본 원인(`__cause__`)이 유실되어 Sentry나 운영 모니터링 체계에서 장애 원인 식별이 지연됩니다.
-- **Required Change** - `raise AirflowException(f"품질 게이트 평가 실패: source_year={request.source_year} asset={request.asset_name}: {exc}") from exc` 형태로 원본 예외 체인을 보존하도록 수정하고, 테스트 단언문도 `assert exc_info.value.__cause__ is not None`으로 갱신해야 합니다.
+- **Severity** - 🟠 High
+- **Location** - [`src/hmda_reliability/hmda_data/synthetic/cases.py`](../../src/hmda_reliability/hmda_data/synthetic/cases.py), [`src/hmda_reliability/hmda_data/ingestion/_source_query.py`](../../src/hmda_reliability/hmda_data/ingestion/_source_query.py), [`tests/hmda_data/test_synthetic.py`](../../tests/hmda_data/test_synthetic.py)
+- **Evidence** - 현재 `null_spike()`는 `target_year` 문자열이 `case_name` 어디엔가 포함되어 있으면 허용한다. 그러나 ingestion의 `_source_year_sql()`은 filename에서 첫 번째 `\d{4}`를 추출한다. 따라서 `target_year=2026`, `case_name="null_spike_2025_2026"`은 synthetic validation을 통과하지만 ingestion에서는 `source_year=2025`로 해석된다.
+- **Impact** - synthetic output의 `activity_year`는 2026인데 ingestion partition discriminator는 2025가 되어 downstream `load_hmda_loans_partition(..., 2026)`에서 행이 선택되지 않거나 partition mismatch를 일으킬 수 있다. 즉 generator의 safety guard와 실제 ingestion contract가 서로 다른 성공 조건을 가진다.
+- **Required Change** - `case_name`에서 ingestion이 추출할 첫 번째 4자리 연도가 `target_year`와 정확히 일치하도록 검증하거나, generator가 output filename의 연도 부분을 canonical하게 구성한다. `case_name="null_spike_2025_2026"`, `target_year=2026` regression test를 추가하고 관련 synthetic OpenSpec delta에도 filename/partition contract를 명시한다.
 
-### F3. Loose Test Assertion Caused by Boolean Operator Precedence
+### F3. 3-stage DAG와 durable architecture 문서가 아직 동기화되지 않음
 
-- **Severity** - Minor
-- **Location** - [`tests/orchestration/test_quality_gate.py`](../../tests/orchestration/test_quality_gate.py#L70-L75)
-- **Evidence** - `test_quality_gate_passes_when_no_anomaly_detected`의 단언문이 다음과 같이 작성되어 있습니다:
+- **Severity** - 🟠 High
+- **Location** - [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md), [`docs/domains/orchestration.md`](../../docs/domains/orchestration.md), [`openspec/specs/orchestration-pipeline/spec.md`](../../openspec/specs/orchestration-pipeline/spec.md), [`openspec/changes/orchestration-quality-gate/specs/orchestration-pipeline/spec.md`](../../openspec/changes/orchestration-quality-gate/specs/orchestration-pipeline/spec.md)
+- **Evidence** - 구현과 active OpenSpec delta는 `raw → quality gate → analytics`를 정의하지만, durable architecture는 여전히 Airflow가 Bronze 적재 후 dbt 분석만 실행한다고 설명한다. `docs/domains/orchestration.md`는 DAG에 raw load와 analytics build 두 task만 등록된다고 명시한다. canonical orchestration spec도 workflow graph와 ordered execution을 raw/analytics 2-stage 기준으로 서술한다.
+- **Impact** - merge 후 implementation, domain guide, architecture guide, durable spec의 시스템 경계가 서로 다르게 읽힌다. 특히 `run_dbt_build=false`에서 gate는 실행하고 analytics만 skip할 것인지, gate failure가 DAG 전체를 실패시킬 것인지 durable contract가 명확하지 않다.
+- **Required Change** - quality gate를 허용하는 data-plane contract로 architecture를 갱신한다. 최소한 `docs/ARCHITECTURE.md`, `docs/domains/orchestration.md`, orchestration quality-gate OpenSpec delta가 `Bronze → read-only blocking admission gate → analytics`와 `run_dbt_build=false` semantics를 일관되게 설명해야 한다. Incident lifecycle, remediation, approval, recovery, evaluation은 계속 Airflow 자동 경로 밖에 둔다.
 
-  ```python
-  assert any(
-      "품질 게이트 통과" in record.message
-      and "status=clean" in record.message
-      or getattr(record, "status", None) == "clean"
-      for record in caplog.records
-  )
-  ```
+### F4. Sandbox guide에 generated Airflow credential literal이 tracked content로 포함됨
 
-  Python에서 `and`가 `or`보다 연산 우선순위가 높아 `(A and B) or C`로 결합됩니다. 그러나 실제 구현([`src/hmda_reliability/orchestration/quality_gate.py`](../../src/hmda_reliability/orchestration/quality_gate.py#L119-L126))의 로그 메시지에는 `"status=clean"` 문자열이 포함되지 않고 `extra` 필드로만 넘겨지므로, `(A and B)`는 항상 `False`가 되며 오직 `C` 조건만으로 단언문이 성립하고 있습니다.
-- **Impact** - 핵심 로그 메시지 문구인 `"품질 게이트 통과"` 검증이 실질적으로 무력화되어 있어, 로그 문구가 유실되거나 변조되어도 `extra` 필드만 존재하면 테스트가 통과하는 False Green 위험이 발생합니다.
-- **Required Change** - `assert any("품질 게이트 통과" in record.message and getattr(record, "status", None) == "clean" for record in caplog.records)` 형태로 단언문을 결합하여 메시지와 메타데이터를 모두 엄격히 검증해야 합니다.
+- **Severity** - 🟡 Medium
+- **Location** - [`inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md`](07-12-guide-orchestration-sandbox-dag-testing.md)
+- **Evidence** - 로컬 Airflow standalone이 생성한 admin password 값이 문서 본문에 literal로 기록되어 있다. 같은 문서는 해당 password를 local generated file에서 확인할 수 있다고도 안내한다.
+- **Impact** - local-only credential이라도 generated secret material을 repository history에 고정하며, 환경이 외부에서 접근 가능하게 구성될 경우 불필요한 credential reuse 위험을 만든다.
+- **Required Change** - 실제 password literal을 제거하고 local generated password file에서 확인하라는 안내만 남긴다. 이미 push된 history rewrite는 별도 승인 대상이며 이 리뷰의 required change에 포함하지 않는다.
 
-### F4. Scope Mismatch and Bundled Independent OpenSpec Changes
+### F5. 최신 head CI가 Markdown validation 단계에서 실패하여 Python/test validation이 수행되지 않음
 
-- **Severity** - Minor
-- **Location** - [`openspec/changes/reliability-synthetic-2026-evaluation/`](../../openspec/changes/reliability-synthetic-2026-evaluation/), [`openspec/changes/orchestration-quality-gate/`](../../openspec/changes/orchestration-quality-gate/), [`openspec/changes/orchestration-quality-gate/tasks.md`](../../openspec/changes/orchestration-quality-gate/tasks.md)
-- **Evidence** - PR 제목 및 설명은 `reliability` 도메인(2026년 합성 결함 평가 체계)에 국한되어 있으나, 커밋 [77779b1](https://github.com/mols3131d/hmda-data-reliability/commit/77779b1df21a7576b73aab60fcb34535e606ee21)에서 `orchestration` 도메인(Airflow 품질 게이트)의 신규 capability 및 OpenSpec 변경이 함께 추가되었습니다. 또한 [`openspec/changes/orchestration-quality-gate/tasks.md`](../../openspec/changes/orchestration-quality-gate/tasks.md) 프론트매터에 `title`, `description`, `tasks_completed`, `tasks_total` 메타데이터가 누락되어 있습니다.
-- **Impact** - OpenSpec 도메인 격리 원칙이 약화되고, 릴리즈 및 스펙 아카이빙 시 변경 추적성이 저하됩니다.
-- **Required Change** - PR을 두 개의 독립 PR로 분리(권장)하거나, 단일 PR 유지 시 PR 제목과 본문에 품질 게이트 작업을 명시하고 [`tasks.md`](../../openspec/changes/orchestration-quality-gate/tasks.md) 프론트매터를 표준에 맞게 보완해야 합니다.
+- **Severity** - 🟡 Medium
+- **Location** - CI Lite run `33840028830`, [`inbox/2026-09-04/14-02-proposal-orchestration-quality-gate-direction.md`](14-02-proposal-orchestration-quality-gate-direction.md), [`inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md`](07-12-guide-orchestration-sandbox-dag-testing.md)
+- **Evidence** - 최신 reviewed revision의 CI Lite는 `Validate changed Markdown`에서 실패했다. `14-02-proposal...`의 ordered-list style이 `rumdl fmt`에 의해 변경되고, sandbox guide에는 repository에 존재하지 않는 local DB/password 파일을 relative Markdown link로 둬 MD057이 발생한다. 이 단계 실패로 Python validation과 selected tests는 실행되지 않았다.
+- **Impact** - 현재 PR 본문의 `ruff`, `ty`, `rumdl`, tests 전체 통과 주장은 최신 head CI evidence와 일치하지 않으며, 코드 변경의 merge-candidate validation이 완료되지 않았다.
+- **Required Change** - changed Markdown을 repository rule에 맞게 수정하고 CI를 다시 통과시킨 뒤 PR Validation 섹션을 실제 최신 결과로 갱신한다. Local-only 경로는 Markdown link가 아니라 code span/path text로 표현하는 편이 적절하다.
 
-### F5. Partition Ingestion Risk When Custom `case_name` Lacks 4-Digit Year
+## Resolved Previous Findings
 
-- **Severity** - Minor
-- **Location** - [`src/hmda_reliability/hmda_data/synthetic/cases.py`](../../src/hmda_reliability/hmda_data/synthetic/cases.py#L210-L215), [`src/hmda_reliability/hmda_data/ingestion/_source_query.py`](../../src/hmda_reliability/hmda_data/ingestion/_source_query.py#L110-L117)
-- **Evidence** - 파티션 인제스션 엔진([`_source_year_sql`](../../src/hmda_reliability/hmda_data/ingestion/_source_query.py#L110-L117))은 파일명에서 `(\d{4})` 정규식으로 `source_year`를 추출합니다. `null_spike()`의 기본 파일명은 `null_spike_{target_year}.parquet`로 안전하지만, 호출자가 숫자가 없는 임의의 `case_name`(예: `case_name="custom_spike"`)을 전달하면 `source_year`가 `NULL`이 되어 `load_hmda_loans_partition` 실행 시 `HMDADataLoadError("HMDA 소스 파티션에 적재할 행이 없습니다.")`가 발생합니다.
-- **Impact** - 합성 결함 산출물을 파티션 인제스션 파이프라인으로 연계할 때 예기치 않은 런타임 적재 실패를 유발합니다.
-- **Required Change** - `target_year` 전달 시 `case_name`에 해당 연도 숫자가 포함되어 있는지 검증하거나, `case_name`에 자동으로 `_{target_year}` 접미사를 보장하도록 방어 가드를 추가하는 것을 권장합니다.
+최신 구현에서 다음 이전 finding은 보완된 것으로 확인했다.
+
+| Previous finding | Latest state |
+| --- | --- |
+| 0-row partition이 quality gate를 clean으로 통과 | `current.row_count == 0`에서 `QualityGateError` 발생으로 보완 |
+| unexpected error의 exception chaining 단절 | `raise AirflowException(...) from exc`로 causal context 보존 |
+| clean log assertion의 boolean precedence 문제 | message와 `status == clean`을 함께 검증하도록 보완 |
+| orchestration quality-gate `tasks.md` metadata 누락 | frontmatter와 task count 보완 |
+| 연도 없는 custom `case_name` 허용 | `target_year` 문자열 포함 guard 추가; 단 F2의 parser semantics mismatch는 잔존 |
+| 최초 synthetic 2026 F1~F6 | REPLACE 충돌, 다중 연도, target year validation, 실제 ingestion E2E, strict assertions 등 주요 항목 보완 확인 |
+
+## PR Scope Assessment
+
+Synthetic evaluation과 Airflow gate를 반드시 별도 PR로 분리해야 한다고 보지는 않는다. 다음 연결이 실제 구현에서 유지된다면 하나의 coherent change로 설명할 수 있다.
+
+```text
+synthetic defect evaluation
+  → detector behavior 검증
+  → 동일 reliability detection semantics 재사용
+  → production data-plane blocking gate
+```
+
+다만 현재 PR title/body는 여전히 synthetic 2026 평가를 중심으로 쓰여 있고 Boundaries에는 Airflow DAG 변경이 out of scope로 남아 있다. 단일 PR로 유지한다면 title, Summary, Changes, Boundaries를 실제 scope에 맞게 갱신해야 한다.
 
 ## Validation
 
 | Check | Evidence | Result |
 | --- | --- | --- |
-| 도메인 통합 회귀 테스트 | `pytest tests/orchestration/ tests/hmda_data/ tests/data_operations/` 131개 통과 | Pass |
-| Python 정적 린트 | `ruff check .` 전체 통과 | Pass |
-| Markdown 정적 린트 | `rumdl check .` 151개 파일 전체 통과 | Pass |
-| OpenSpec 스키마 검증 | `openspec validate` 20개 항목 통과 | Pass |
-| 이전 코드 리뷰(F1~F6) 개선 확인 | DuckDB `REPLACE` 절 충돌 방지, 다중 연도 가드, `target_year` 정수 범위 검증 확인 | Pass |
-| 빈 파티션(0-row) 게이트 방어 가드 | `current.row_count == 0`일 때 `QualityGateError` 미발생 및 clean 침묵 통과 (F1) | Fail |
-| 에러 체이닝 및 단언문 엄격성 | `raise ... from None` 사용 및 불린 결합 오라클 확인 (F2, F3) | Fail |
+| 최신 PR metadata/diff 확인 | head `00cd3eb4`, 5 commits, 23 changed files | Pass |
+| 이전 review remediation 정적 확인 | 0-row, chaining, assertion, tasks metadata, `case_name` guard | Pass |
+| quality gate implementation 정적 검토 | baseline/threshold/detector ownership 및 task adapter 확인 | Finding F1 |
+| synthetic filename/ingestion contract 대조 | `case_name` contains check vs first-4-digit parser | Finding F2 |
+| architecture/OpenSpec 대조 | 3-stage implementation vs durable 2-stage documentation | Finding F3 |
+| latest CI Lite | run `33840028830` | Fail at Markdown validation |
+| Python static analysis / selected tests on latest head | Markdown failure 때문에 해당 CI 단계 미실행 | Not validated |
+| independent subagent Quality + Adversarial review | 현재 runtime에서 subagent invocation unavailable | Not performed |
 
 ## Remaining Risks
 
-- **DuckDB 동시성 및 파일 잠금**: 멀티 프로세스 Airflow 환경에서 `retries=0` 태스크 실행 시 파일 경합으로 인한 간헐적 실패 위험이 남아 있으며, 이는 F2의 원본 예외 체인 보존을 통해 운영 관측성을 확보해야 합니다.
-- **기준선 고정값 편차**: `_BASELINE_NULL_RATES`가 2025년 기준 정적 매핑(`income: 0.003`, `loan_amount: 0.001`)으로 고정되어 있어 향후 실제 2026년 공공 데이터 유입 시 정상 데이터셋의 기본 결측률 변동에 대응하기 위한 동적 기준선 확장이 요구될 수 있습니다.
+- `_BASELINE_NULL_RATES`의 고정값은 MVP/synthetic proof에는 사용할 수 있으나 실제 2026 source 분포가 달라지면 false positive/negative 위험이 있다. F1 ownership을 정리할 때 baseline lifecycle도 같은 policy boundary에서 관리할 필요가 있다.
+- 모든 detector 결과를 blocking으로 확장할 경우 통계적 anomaly가 availability incident를 만들 수 있다. 현재 MVP는 null-spike 중심이므로 허용할 수 있지만, 장기적으로 `FAIL`, `WARN`, `OBSERVE` 같은 enforcement policy 분리를 검토할 가치가 있다.
+- Raw asset event는 gate보다 먼저 성공할 수 있으므로 향후 asset-driven downstream DAG를 추가한다면 raw/untrusted asset과 validated/trusted asset semantics를 분리해야 한다.
 
 ## Verdict
 
 | Decision | Rationale | Route |
 | --- | --- | --- |
-| Revise | 빈 파티션 무결함 침묵 통과(F1)와 예외 체이닝 단절(F2), 단언문 오라클 결함(F3) 등 신뢰성 및 운영 안정성 개선이 필요함 | PR #205 브랜치(`agent/feat/synthetic-2026-reliability-workflow`) 보완 커밋 반영 |
+| Revise | Airflow gate 방향은 유지 가능하지만 policy ownership(F1), filename/partition contract(F2), durable architecture 정합성(F3)과 현재 CI failure(F5)를 해결해야 함 | PR #205 브랜치에서 최소 수정 후 재검토 |
