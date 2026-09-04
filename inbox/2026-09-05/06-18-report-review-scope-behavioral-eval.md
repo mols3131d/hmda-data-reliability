@@ -64,7 +64,7 @@ new candidate
 이 구조에서 필요한 방어선은 두 곳이다.
 
 1. **Lead admission** — 어떤 candidate가 current blocking finding인지 구분한다.
-2. **Caller admission** — review assessment가 실제 mutation authority를 자동으로 만들지 못하게 한다.
+1. **Caller admission** — review assessment가 실제 mutation authority를 자동으로 만들지 못하게 한다.
 
 ## Behavioral Fixtures
 

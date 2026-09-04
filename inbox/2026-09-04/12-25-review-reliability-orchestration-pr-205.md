@@ -44,7 +44,7 @@ Airflow는 gate의 실행 시점, task state, downstream blocking을 소유하�
 ### F1. Quality policy ownership이 orchestration domain에 남아 있음
 
 - **Severity** - 🟠 High
-- **Location** - [`src/hmda_reliability/orchestration/quality_gate.py`](../../src/hmda_reliability/orchestration/quality_gate.py), [`openspec/changes/orchestration-quality-gate/design.md`](../../openspec/changes/orchestration-quality-gate/design.md)
+- **Location** - `src/hmda_reliability/orchestration/quality_gate.py`, [`openspec/changes/orchestration-quality-gate/design.md`](../../openspec/changes/orchestration-quality-gate/design.md)
 - **Evidence** - `orchestration/quality_gate.py`가 `_BASELINE_NULL_RATES`, `_GATE_THRESHOLDS`, 활성 detector 범위, unsupported profile column 정책, `empty_partition` blocking 조건과 baseline 조립을 직접 소유한다. 반면 canonical [`openspec/specs/orchestration-pipeline/spec.md`](../../openspec/specs/orchestration-pipeline/spec.md)의 Domain delegation requirement는 orchestration이 reliability business rule을 중복 구현하지 않고 Reliability public boundary에 위임하도록 요구하고, [`docs/domains/reliability.md`](../../docs/domains/reliability.md)는 profile/detection을 Reliability 책임으로 둔다.
 - **Impact** - Airflow adapter와 reliability policy가 같은 orchestration package에 결합되어 threshold/baseline 변경이 orchestration 변경으로 번지고, 향후 dbt test 또는 다른 validation implementation을 gate에 조합할 때 ownership이 불명확해진다.
 - **Required Change** - `evaluate_quality_gate_task()`와 DAG dependency는 orchestration에 유지하되, baseline/threshold/detection policy는 Reliability 또는 해당 application composition boundary로 이동한다. Airflow task는 request 구성, gate 호출, `PASS/BLOCK`을 Airflow task state로 번역하는 thin adapter 역할만 갖게 한다.

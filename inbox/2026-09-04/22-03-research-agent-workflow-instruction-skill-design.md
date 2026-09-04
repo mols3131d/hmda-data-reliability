@@ -23,10 +23,10 @@ PR #205에서 발생한 review-loop saturation을 재발 방지하려면 agent i
 특히 다음을 답한다.
 
 1. 반복되는 agent failure를 어떤 evidence로 복원해야 하는가.
-2. 문제를 `instruction`, `Skill`, `custom agent`, `workflow`, `tool/automation` 중 어디에 고쳐야 하는가.
-3. Scope drift와 review saturation을 막으면서 실제 causal regression detection은 유지하려면 어떤 contract가 필요한가.
-4. GitHub Copilot Chronicle은 이 개선 lifecycle에서 어떤 역할을 해야 하는가.
-5. 새 instruction/Skill을 만들거나 기존 자산을 수정한 뒤 어떤 eval과 runtime 검증이 필요한가.
+1. 문제를 `instruction`, `Skill`, `custom agent`, `workflow`, `tool/automation` 중 어디에 고쳐야 하는가.
+1. Scope drift와 review saturation을 막으면서 실제 causal regression detection은 유지하려면 어떤 contract가 필요한가.
+1. GitHub Copilot Chronicle은 이 개선 lifecycle에서 어떤 역할을 해야 하는가.
+1. 새 instruction/Skill을 만들거나 기존 자산을 수정한 뒤 어떤 eval과 runtime 검증이 필요한가.
 
 ### Scope
 
@@ -167,7 +167,7 @@ Synthetic Change도 `a32062b` 시점에는 generic 2026 deterministic `null_spik
 이 차이는 두 가지를 동시에 보여준다.
 
 1. 후속 review가 실제로 contract를 materially 발전시켰다.
-2. 그러므로 그 후속 work가 모두 "원래 scope 안의 단순 bug fix"였다고 소급해서 말할 수 없다.
+1. 그러므로 그 후속 work가 모두 "원래 scope 안의 단순 bug fix"였다고 소급해서 말할 수 없다.
 
 > [!NOTE]
 > 이 evidence는 후속 확장이 잘못됐다는 뜻이 아니다. 일부는 current Goal을 실제로 닫기 위해 필요한 **same-change scope gap**이었을 수 있다. 중요한 문제는 그러한 확장이 reviewer finding만으로 바로 implementation authority를 얻지 않고, **Scope Control / Research / owner decision**을 거쳐야 한다는 점이다.
@@ -354,7 +354,7 @@ Anthropic의 agent engineering guidance도 evaluator-optimizer loop는 **명확�
 따라서 PR #205 같은 review loop에는 두 종류의 stop control이 필요하다.
 
 1. **Hard ceiling:** runaway를 막는 안전 상한
-2. **Semantic completion:** 새로운 material in-scope evidence 또는 credible continuation이 없으면 종료
+1. **Semantic completion:** 새로운 material in-scope evidence 또는 credible continuation이 없으면 종료
 
 `2회면 무조건 종료` 같은 횟수 규칙만 사용하면 두 번째 review에서 발견되는 실제 regression을 놓칠 수 있다.
 
@@ -739,12 +739,12 @@ baseline period
 핵심 작성 순서:
 
 1. `name`
-2. routing-quality `description`
-3. responsibility / trigger / boundary
-4. minimal workflow
-5. completion / failure / handoff
-6. conditional references
-7. scripts/assets only when materially useful
+1. routing-quality `description`
+1. responsibility / trigger / boundary
+1. minimal workflow
+1. completion / failure / handoff
+1. conditional references
+1. scripts/assets only when materially useful
 
 Agent Skills open spec는 `description`이 what + when을 설명하고, agent가 relevant Skill을 찾는 데 도움이 되는 specific keyword를 포함하도록 권장한다.[^agent-skills-spec]
 
@@ -881,15 +881,15 @@ Reviewer asset과 workflow에서 "repository-native deterministic owner가 존�
 이번 조사에서 특히 피해야 할 수정 패턴은 다음이다.
 
 1. 모든 reviewer/Skill에 같은 `scope를 지켜라` 문장 복제
-2. PR #205 한 사건만 보고 모든 review를 changed-files-only로 제한
-3. 두 번 review하면 무조건 종료
-4. adversarial reviewer 제거
-5. reviewer tool을 넓혀 검증 못한 작업을 shell로 우회
-6. Chronicle suggestion을 검증 없이 바로 canonical instruction으로 채택
-7. `.github/agents` 같은 target surface를 canonical source 확인 없이 직접 수정
-8. eval 없이 prompt wording만 바꾸고 "개선됨"으로 종료
-9. success case만 테스트하고 unrelated/near-miss case를 빼기
-10. model behavior 문제를 deterministic automation으로 해결할 수 있는데 prose를 늘리기
+1. PR #205 한 사건만 보고 모든 review를 changed-files-only로 제한
+1. 두 번 review하면 무조건 종료
+1. adversarial reviewer 제거
+1. reviewer tool을 넓혀 검증 못한 작업을 shell로 우회
+1. Chronicle suggestion을 검증 없이 바로 canonical instruction으로 채택
+1. `.github/agents` 같은 target surface를 canonical source 확인 없이 직접 수정
+1. eval 없이 prompt wording만 바꾸고 "개선됨"으로 종료
+1. success case만 테스트하고 unrelated/near-miss case를 빼기
+1. model behavior 문제를 deterministic automation으로 해결할 수 있는데 prose를 늘리기
 
 ## Conclusion
 
@@ -898,8 +898,8 @@ PR #205 incident와 current agent assets를 함께 보면, 이번 개선의 핵�
 더 중요한 engineering problem은 다음 세 가지다.
 
 1. **Scope가 handoff 전체에서 보존되는가.**
-2. **Candidate finding이 current remediation authority를 얻는 admission 단계가 명확한가.**
-3. **State change → re-review loop가 새로운 material evidence가 없을 때 종료되는가.**
+1. **Candidate finding이 current remediation authority를 얻는 admission 단계가 명확한가.**
+1. **State change → re-review loop가 새로운 material evidence가 없을 때 종료되는가.**
 
 Agent instruction과 Skill을 만들 때도 같은 원칙을 적용해야 한다.
 
@@ -930,7 +930,7 @@ Observe
    - caller transition
    - resulting mutation
 
-2. **Review Scope Behavioral Eval Fixture Set**
+1. **Review Scope Behavioral Eval Fixture Set**
    - 이 보고서의 `R1~R12` case를 executable 또는 repeatable scenario로 구체화
    - current asset을 baseline으로 먼저 실행
    - 그 뒤 candidate change를 동일 fixture로 비교

@@ -315,14 +315,14 @@ flowchart TD
 
 ### 6. Loop-Termination Failure Candidates
 
-- **포화(Saturation) 감지 부재**: Cycle 6 이후부터는 더 이상 새로운 도메인 결함이 나오지 않고 극단적 엣지 케이스만 맴돌았으나, 에이전트가 "새로운 정보 획득이 없으므로 루프를 동결한다"는 [../../.agents/skills/mols-rpi/SKILL.md](../../.agents/skills/mols-rpi/SKILL.md) 원칙을 발동하지 못했습니다.
+- **포화(Saturation) 감지 부재**: Cycle 6 이후부터는 더 이상 새로운 도메인 결함이 나오지 않고 극단적 엣지 케이스만 맴돌았으나, 에이전트가 "새로운 정보 획득이 없으므로 루프를 동결한다"는 `mols-rpi` 원칙을 발동하지 못했습니다.
 - **사용자의 완료 확인 질문에 루프 재점화**: 사용자가 "이제 작업 마무리하면 되니?"라고 물었을 때, "네, 완료되었습니다"라고 마무리하지 않고 "마지막으로 독립 리뷰를 한 번 더 돌려 확인하겠습니다"라며 불필요한 Cycle 9를 시작했습니다.
 
 ---
 
 ## Required Evidence before Agent/Skill Modification
 
-향후 [../../.agents/skills/prj-load-context-review/SKILL.md](../../.agents/skills/prj-load-context-review/SKILL.md), [../../.agents/skills/prj-load-context-development/SKILL.md](../../.agents/skills/prj-load-context-development/SKILL.md), [../../.agents/skills/mols-rpi/SKILL.md](../../.agents/skills/mols-rpi/SKILL.md) 등의 에셋을 개선하기 전에 다음 3가지 추가 근거가 확보되어야 합니다:
+향후 [../../.rulesync/skills/prj-load-context-review/SKILL.md](../../.rulesync/skills/prj-load-context-review/SKILL.md), [../../.rulesync/skills/prj-load-context-development/SKILL.md](../../.rulesync/skills/prj-load-context-development/SKILL.md), `mols-rpi` 등의 에셋을 개선하기 전에 다음 3가지 추가 근거가 확보되어야 합니다:
 
 1. **Review Finding Admission Schema 정의 및 검증**:
    - `review-lead`의 출력을 `current_required` vs `out_of_scope_recommendation` vs `follow_up_candidate`로 구조화했을 때, 호출자 에이전트가 실제로 루프를 멈추는지에 대한 **Behavioral Eval Fixture (R1~R12)** 실행 결과.
