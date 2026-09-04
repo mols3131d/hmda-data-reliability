@@ -47,7 +47,31 @@ Reviewer output은 final evidence가 아니라 검증할 candidate claim이다.
 1. target 때문에 생긴 issue와 target 밖의 existing issue를 구분한다.
 1. 적용되는 severity convention이 있으면 사용하고, 없으면 임의의 severity taxonomy를 만들지 않는다.
 
-세 번째 full review를 새로 수행하지 않는다. Lead의 직접 분석은 candidate claim 검증, conflict resolution과 coverage 확인에 한정한다.
+Supporting context를 읽는 것은 review target 확장이 아니다. Caller, consumer, dependency 또는 adjacent artifact에서 발견한 문제는 current target과의 causal relation 또는 current contract/acceptance에 대한 material impact가 확인될 때만 current finding 후보가 된다.
+
+### Finding Admission
+
+Final assessment 전에 살아남은 candidate마다 `Scope relation`과 `Disposition`을 판정한다.
+
+| Disposition | Use when |
+| --- | --- |
+| `current_required` | explicit target의 결함, current change가 만든 reachable regression, 또는 current Goal/Acceptance를 만족하려면 반드시 닫아야 하는 contract/acceptance gap이다. |
+| `scope_decision` | 해결하려면 Goal, In Scope, Out of Scope, Acceptance 또는 owning contract를 변경해야 하며 그 변경 권한이 review에 없다. |
+| `follow_up` | 유용하거나 material할 수 있지만 current Goal을 완료하는 데 필수적이지 않은 독립 요구사항 또는 개선이다. |
+| `unrelated` | pre-existing issue이거나 current target과 causal/material relation이 없다. |
+| `unknown` | 필요한 evidence가 없어 current Goal과의 relation 또는 impact를 확정할 수 없다. |
+
+`Scope relation`은 가능한 경우 `explicit_target`, `direct_regression`, `contract_dependency`, `acceptance_gap`, `scope_change`, `independent_requirement`, `unrelated`, `unknown` 중 가장 가까운 하나로 기록한다.
+
+Admission 규칙은 다음과 같다.
+
+- `current_required`만 `changes_required`의 근거가 된다.
+- `scope_decision`은 review가 scope expansion을 승인하지 않는다. Current Goal이 그 결정 없이는 accept될 수 없을 때만 `blocked`의 근거가 되며, 그렇지 않으면 `follow_up`으로 낮춘다.
+- `follow_up`과 `unrelated`는 severity가 높아도 current remediation 권한을 만들거나 `clear`를 `changes_required`로 바꾸지 않는다.
+- `unknown`은 current Goal 판단에 필요한 evidence gap일 때만 `blocked`의 근거가 되며, 그렇지 않으면 limitation으로 남긴다.
+- Severity는 impact를 표현할 뿐 scope authority를 부여하지 않는다.
+
+세 번째 full review를 새로 수행하지 않는다. Lead의 직접 분석은 candidate claim 검증, conflict resolution, admission과 coverage 확인에 한정한다.
 
 ## Return
 
@@ -56,15 +80,24 @@ Caller가 review gate 상태를 다시 추론하지 않도록 다음을 먼저 �
 - **Reviewed:** target과 reviewed revision, version 또는 observable state
 - **Assessment:** `clear | changes_required | blocked`
 
-`clear`는 reviewed scope에서 material finding이 확인되지 않았다는 뜻이지 correctness의 완전한 증명이 아니다. `changes_required`는 확인된 material finding이 수정되어야 함을 뜻한다. `blocked`는 required specialist coverage나 assessment에 필요한 핵심 evidence가 부족해 independent review gate를 닫을 수 없음을 뜻한다.
+Assessment 의미는 다음과 같다.
 
-그 뒤 중요도가 높은 순서로 final findings를 반환한다. 각 material finding에는 가능한 범위에서 다음을 포함한다.
+- `clear` — `current_required` finding이 없고 current Goal 판단을 막는 `scope_decision`, evidence gap 또는 specialist coverage gap이 없다.
+- `changes_required` — 하나 이상의 confirmed `current_required` finding이 있다.
+- `blocked` — required specialist coverage, 핵심 evidence 또는 scope authority가 부족해 current Goal에 대한 independent review gate를 닫을 수 없다.
 
+그 뒤 중요도가 높은 순서로 admitted items를 반환한다. 각 material item에는 가능한 범위에서 다음을 포함한다.
+
+- `Disposition`과 `Scope relation`
 - location 또는 affected surface
 - confirmed problem과 root cause
 - evidence와 reachability
 - actual 또는 potential impact
-- required action 또는 필요한 판단
+- `current_required`이면 required action
+- `scope_decision`이면 필요한 decision과 그 owner
+- `follow_up`이면 current work와 분리되는 이유와 next owner가 material할 때만 그 owner
+
+`unrelated` item은 final finding으로 승격하지 않는다. Exclusion 판단 자체가 caller에게 중요할 때만 짧게 남긴다.
 
 마지막에 performed validation, not-run validation, specialist coverage gap과 unresolved unknown을 짧게 남긴다.
 
@@ -79,3 +112,4 @@ Material finding이 없으면 억지로 만들지 말고 reviewed scope와 확�
 - reviewer output, passing test 또는 automated check 하나만으로 correctness를 확정하지 않는다.
 - 실행하지 않은 command, reproduction, runtime behavior 또는 independent review를 수행했다고 주장하지 않는다.
 - 요청 범위 밖의 일반 정리, 선택적 redesign 또는 unrelated defect hunting으로 확대하지 않는다.
+- Review discovery를 scope expansion authority로 사용하거나 `scope_decision`, `follow_up`, `unrelated`를 required remediation으로 표현하지 않는다.
