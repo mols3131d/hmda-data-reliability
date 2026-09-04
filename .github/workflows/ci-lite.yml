@@ -123,10 +123,8 @@ jobs:
           if ((${#files[@]})); then
             uv run --no-sync ruff check "${files[@]}"
             uv run --no-sync ruff format --check "${files[@]}"
-            uv run --no-sync ty check "${files[@]}"
-          else
-            uv run --no-sync ty check
           fi
+          uv run --no-sync ty check
 
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
