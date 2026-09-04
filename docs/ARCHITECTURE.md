@@ -15,7 +15,7 @@ tags:
 
 # Architecture: Local HMDA Reliability Pipeline
 
-**핵심 경계는 분석과 위험한 상태 변경의 분리다.** 로컬 HMDA 데이터를 DuckDB Bronze에 적재하고 dbt로 Silver·Gold를 만든다. Reliability lifecycle은 raw table과 dbt artifact를 읽어 incident evidence와 `RemediationDraft`를 계산하지만, 상태 변경은 검증된 recovery proposal에 대한 외부 승인 뒤 별도 recovery API에서만 수행한다.
+**핵심 경계는 신뢰되지 않은 데이터의 분석 계층 진입 차단과 위험한 상태 변경의 분리다.** 로컬 HMDA 데이터를 DuckDB Bronze에 적재하고 dbt가 소비할 전체 Bronze 파티션이 read-only quality gate를 통과한 경우에만 Silver·Gold를 만든다. Analytics build는 database mutation lock 안에서 gate를 다시 확인한 뒤 같은 lock을 유지한 채 dbt를 시작한다. Reliability lifecycle은 raw table과 dbt artifact를 읽어 incident evidence와 `RemediationDraft`를 계산하지만, 상태 변경은 검증된 recovery proposal에 대한 외부 승인 뒤 별도 recovery API에서만 수행한다.
 
 ## System Flow
 
@@ -25,7 +25,9 @@ flowchart TB
 
     subgraph data_plane ["Data Plane · Apache Airflow"]
         ingest["Bronze Ingestion"] --> bronze[("Bronze")]
-        bronze --> dbt["dbt build"] --> analytics["Silver / Gold"]
+        bronze --> gate{"Read-Only Quality Gate"}
+        gate -->|pass| dbt["dbt build"] --> analytics["Silver / Gold"]
+        gate -->|block| failed(["Task Failure"])
         dbt -.->|run-scoped evidence| candidate_artifacts["Candidate dbt Artifact Pair"]
         candidate_artifacts -->|validated promotion| current_artifacts["Current Artifact Projection"]
     end
@@ -61,7 +63,8 @@ flowchart TB
 
 | Area | Rule |
 | --- | --- |
-| Pipeline | Airflow `hmda_data_plane` DAG은 Bronze 적재 후 dbt 분석만 실행한다. |
+| Pipeline | Airflow `hmda_data_plane` DAG은 Bronze 적재 후 read-only quality gate를 실행하고, 통과한 경우에만 dbt 분석을 실행한다. |
+| Quality gate | Data Operations가 전체 Bronze partition profile과 lock-bound dbt build를 조합하고 Reliability가 baseline, threshold, detector와 blocking 판정을 소유한다. Airflow는 task state만 조율한다. |
 | Reliability lifecycle | Read-only다. approval, recovery, evaluation 또는 report write를 수행하지 않는다. |
 | Review AI | Reliability evidence를 immutable input으로 받아 advisory review와 deterministic validation/provenance만 소유한다. |
 | Runtime AI | Review semantics를 알지 않고 provider-neutral settings, bounded invocation과 runtime error normalization만 소유한다. |
@@ -74,7 +77,7 @@ flowchart TB
 
 - lifecycle은 caller가 제공한 baseline을 받아 profile, detection, impact와 remediation draft만 계산한다.
 - `review_ai`는 `reliability`와 `runtime_ai`를 사용할 수 있지만, `reliability`는 AI package를 import하지 않고 `runtime_ai`는 review/Reliability semantics를 import하지 않는다.
-- Airflow는 data plane 실행만 담당하며 reliability lifecycle, approval, recovery 또는 evaluation을 자동으로 묶지 않는다.
+- Airflow는 raw → quality gate → analytics data-plane 순서만 담당하며 reliability lifecycle, approval, recovery 또는 evaluation을 자동으로 묶지 않는다.
 - `RemediationDraft`와 validated recovery proposal은 다른 역할이다. Draft는 권고이고 proposal은 승인 가능한 exact mutation contract다.
 - Partition/freshness recovery의 `RecoveryProposal`과 schema/table recovery의 `SchemaRecoveryProposal`은 각 scope의 state identity와 action을 독립적으로 고정한다.
 - approval은 lifecycle 외부에서 결정하며 proposal과 다른 candidate, target state 또는 action에 재사용할 수 없다.

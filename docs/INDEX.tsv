@@ -24,10 +24,10 @@ development/vcs-git/pull-request-review.md	Pull Request 변경의 correctness, r
 development/vcs-git/pull-request.md	Branch 변경을 검토하고 repository에 반영할지 결정하기 위한 Pull Request scope, description, validation, review와 lifecycle 기준을 정의합니다.
 domains/	HMDA Data Reliability의 domain별 책임, 경계와 reading path를 모아 탐색하는 docs/domains directory의 entrypoint입니다.
 domains/OVERVIEW.md	HMDA Data Reliability의 domain별 책임과 비책임, 주요 데이터 흐름과 목적별 reading path를 정리합니다.
-domains/data-operations.md	Application-level request, 실행 순서와 결과를 조합하는 Data Operations domain의 책임과 mutation/read-only 경계를 설명합니다.
+domains/data-operations.md	독립 application entry point의 request, 조합과 결과를 소유하는 Data Operations domain의 책임과 mutation/read-only 경계를 설명합니다.
 domains/data-platform.md	DuckDB 공통 primitive, dbt Bronze-to-Gold 구조와 dbt artifact projection을 소유하는 Data Platform domain의 경계와 contract를 설명합니다.
 domains/hmda-data.md	HMDA 원천의 발견·검증, DuckDB Bronze 적재, descriptive EDA와 deterministic synthetic defect 입력을 소유하는 HMDA Data domain을 설명합니다.
-domains/orchestration.md	Bronze 적재와 dbt 분석을 연결하는 Apache Airflow data plane의 scope, task graph, runtime configuration과 경계를 설명합니다.
+domains/orchestration.md	Bronze 적재, read-only quality gate와 dbt 분석을 연결하는 Apache Airflow data plane의 scope, task graph, runtime configuration과 경계를 설명합니다.
 domains/reliability.md	Deterministic evidence 기반 incident 판단, read-only lifecycle, approval-bound recovery와 replay/evaluation 경계를 설명합니다.
 domains/review-ai.md	Reliability evidence를 입력으로 제한된 AI advisory review를 만들고 deterministic validation과 invocation provenance를 보존하는 Review AI domain의 책임을 설명합니다.
 domains/runtime-ai.md	Review semantics와 분리된 provider-neutral AI message, settings, response contract와 OpenAI-compatible invocation adapter를 소유하는 Runtime AI domain을 설명합니다.

@@ -11,7 +11,7 @@ tags:
 
 ### Requirement: Null spike case
 
-시스템은 존재하는 target column에 지정 비율의 null 증가를 주입할 수 있어야 한다(SHALL). 유효한 null-spike 요청의 결과 target-column null 비율은 원본보다 검증 가능하게 커야 하며(MUST), 증가를 위해 기존 non-null target value를 `NULL`로 전환해야 한다(MUST). 호출자가 `target_year`를 지정한 경우 단일 연도 원천 데이터에 대해 결과 파티션 연도를 해당 값으로 교체해야 하며(SHALL), 유효 범위를 벗어난 연도나 `target_column == "activity_year"`인 요청은 거부해야 한다(MUST).
+시스템은 존재하는 target column에 지정 비율의 null 증가를 주입할 수 있어야 한다(SHALL). 유효한 null-spike 요청의 결과 target-column null 비율은 원본보다 검증 가능하게 커야 하며(MUST), 증가를 위해 기존 non-null target value를 `NULL`로 전환해야 한다(MUST). 호출자가 `target_year`를 지정한 경우 단일 연도 원천 데이터에 대해 결과 파티션 연도를 해당 값으로 교체해야 하며(SHALL), output filename에서 ingestion이 추출하는 첫 번째 ASCII 4자리 연도(`[0-9]{4}`)도 `target_year`와 일치해야 한다(MUST). 유효 범위를 벗어난 연도, `target_column == "activity_year"`인 요청, ASCII 연도 없는 이름 또는 목표 연도보다 앞선 다른 연도가 있는 사용자 지정 `case_name`은 거부해야 한다(MUST).
 
 #### Scenario: Income null spike
 
@@ -58,3 +58,15 @@ tags:
 - **GIVEN** 2개 이상의 서로 다른 `activity_year`를 포함한 원천 데이터가 주어졌을 때
 - **WHEN** `target_year`가 지정된 null_spike를 실행할 때
 - **THEN** 시스템은 단일 연도 원천이 필요함을 알리는 `SyntheticCaseError`를 발생시켜야 한다.
+
+#### Scenario: Reject conflicting filename year
+
+- **WHEN** `target_year=2026`과 `case_name="null_spike_2025_2026"`으로 null_spike를 실행할 때
+- **THEN** 시스템은 ingestion이 2025년 파티션으로 해석할 수 있는 이름을 `SyntheticCaseError`로 거부해야 한다.
+- **AND** synthetic output을 생성해서는 안 된다.
+
+#### Scenario: Reject non-ASCII filename year
+
+- **WHEN** `target_year=2026`과 `case_name="null_spike_２０２６"`으로 null_spike를 실행할 때
+- **THEN** 시스템은 ingestion이 연도로 추출하지 못하는 이름을 `SyntheticCaseError`로 거부해야 한다.
+- **AND** synthetic output을 생성해서는 안 된다.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -94,15 +95,31 @@ def null_spike(
                 msg,
                 context={"target_column": target_column, "target_year": target_year},
             )
-        if case_name is not None and str(target_year) not in case_name:
-            msg = (
-                f"target_year({target_year})가 지정된 경우 case_name에 해당 연도가 "
-                f"포함되어야 합니다: {case_name}"
-            )
-            raise SyntheticCaseError(
-                msg,
-                context={"case_name": case_name, "target_year": target_year},
-            )
+        if case_name is not None:
+            filename_year_match = re.search(r"[0-9]{4}", case_name)
+            if filename_year_match is None:
+                msg = (
+                    f"target_year({target_year})가 지정된 경우 case_name에 해당 "
+                    f"ASCII 4자리 연도가 포함되어야 합니다: {case_name}"
+                )
+                raise SyntheticCaseError(
+                    msg,
+                    context={"case_name": case_name, "target_year": target_year},
+                )
+            filename_year = int(filename_year_match.group())
+            if filename_year != target_year:
+                msg = (
+                    "case_name의 첫 번째 4자리 연도는 target_year와 "
+                    f"일치해야 합니다: case_name={case_name}, target_year={target_year}"
+                )
+                raise SyntheticCaseError(
+                    msg,
+                    context={
+                        "case_name": case_name,
+                        "filename_year": filename_year,
+                        "target_year": target_year,
+                    },
+                )
 
     require_columns(connection, source_paths, {target_column, "activity_year"})
     quoted_target = quote_identifier(target_column)

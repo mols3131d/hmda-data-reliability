@@ -12,7 +12,7 @@ tags:
 
 # Airflow Web UI 샌드박스 DAG 실행 및 파라미터 설정 가이드
 
-메인 데이터베이스([data/hmda_reliability.duckdb](../../data/hmda_reliability.duckdb))의 실데이터(1,354만 건)를 완벽히 보호하면서, Airflow Web UI에서 `hmda_data_plane` DAG을 격리된 샌드박스 환경으로 트리거하고 검증하는 방법을 상세히 안내한다.
+메인 데이터베이스 `data/hmda_reliability.duckdb`의 실데이터(1,354만 건)를 완벽히 보호하면서, Airflow Web UI에서 `hmda_data_plane` DAG을 격리된 샌드박스 환경으로 트리거하고 검증하는 방법을 상세히 안내한다.
 
 ---
 
@@ -34,7 +34,7 @@ uv run airflow standalone
 
 - **URL:** `http://localhost:8080`
 - **Username:** `admin`
-- **Password:** [.local/airflow/simple_auth_manager_passwords.json.generated](../../.local/airflow/simple_auth_manager_passwords.json.generated) 파일에 생성된 암호 사용 (`QKRKAfU5zGnDKCZ5`)
+- **Password:** 로컬 generated file인 `.local/airflow/simple_auth_manager_passwords.json.generated`에서 현재 암호를 확인해 사용
 
 ---
 
@@ -71,20 +71,61 @@ uv run airflow standalone
 ### 시나리오 1. 2026 합성 결함 데이터(`null_spike`) 적재 및 퀄리티 게이트 차단 테스트 [핵심]
 
 - **테스트 목표:** 2026년 합성 이상 데이터가 인제스션된 직후, `evaluate_quality_gate` 태스크가 이를 감지하여 파이프라인을 의도적으로 실패(`AirflowException`)시키고 다운스트림 `build_dbt_loan_analytics` 실행을 정상 차단하는지 검증한다.
+- **합성 파일 준비:** 최소 유효 HMDA CSV를 `.local`에 만들고 public `null_spike()` API로 Git에서 제외된 경로에 2026 결함 파일을 생성한다.
+
+  ```bash
+  uv run python - <<'PY'
+  from pathlib import Path
+
+  from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+  from hmda_reliability.hmda_data import null_spike
+
+  root = Path(".local/hmda-synthetic")
+  source_dir = root / "source"
+  source_dir.mkdir(parents=True, exist_ok=True)
+  source = source_dir / "year_2025.csv"
+  source.write_text(
+      "\n".join(
+          [
+              "activity_year,loan_amount,income,loan_purpose,action_taken,state_code,county_code,loan_type",
+              "2025,350000,120,1,1,CA,06001,1",
+              "2025,400000,150,1,1,CA,06001,1",
+              "2025,500000,180,1,1,CA,06001,1",
+              "2025,600000,200,1,1,CA,06001,1",
+          ]
+      ),
+      encoding="utf-8",
+  )
+
+  with DuckDBConnectionManager() as connection:
+      output = null_spike(
+          connection,
+          [source],
+          root,
+          target_column="income",
+          null_fraction=0.5,
+          target_year=2026,
+          case_name="null_spike_2026",
+      )
+      print(output)
+  PY
+  ```
+
+  생성 결과는 `.local/hmda-synthetic/null_spike_2026/null_spike_2026.parquet`다.
 - **UI Form 입력값:**
   - `database_path`: `data/sandbox_2026.duckdb`
-  - `source_root`: `data/raw/hmda`
+  - `source_root`: `.local/hmda-synthetic/null_spike_2026`
   - `source_year`: `2026`
-  - `source_file`: `null` (또는 해당 합성 파일명)
+  - `source_file`: `null_spike_2026.parquet`
   - `run_dbt_build`: `true` (체크 유지)
 - **Configuration JSON 붙여넣기:**
 
   ```json
   {
     "database_path": "data/sandbox_2026.duckdb",
-    "source_root": "data/raw/hmda",
+    "source_root": ".local/hmda-synthetic/null_spike_2026",
     "source_year": 2026,
-    "source_file": null,
+    "source_file": "null_spike_2026.parquet",
     "run_dbt_build": true
   }
   ```
@@ -99,20 +140,21 @@ uv run airflow standalone
 ### 시나리오 2. 2025 정상 데이터 샌드박스 전체 E2E 통과 테스트
 
 - **테스트 목표:** 격리된 샌드박스 DB에서 원천 적재부터 퀄리티 게이트 통과, dbt 마트 빌드 및 artifact 승격까지 전 과정이 정상 완료되는지 확인한다.
+- **사전 조건:** 시나리오 1의 합성 파일 준비 코드를 먼저 실행해 `.local/hmda-synthetic/source/year_2025.csv`를 생성한다.
 - **UI Form 입력값:**
   - `database_path`: `data/sandbox_2025.duckdb`
-  - `source_root`: `data/raw/hmda`
+  - `source_root`: `.local/hmda-synthetic/source`
   - `source_year`: `2025`
-  - `source_file`: `null`
+  - `source_file`: `year_2025.csv`
   - `run_dbt_build`: `true`
 - **Configuration JSON 붙여넣기:**
 
   ```json
   {
     "database_path": "data/sandbox_2025.duckdb",
-    "source_root": "data/raw/hmda",
+    "source_root": ".local/hmda-synthetic/source",
     "source_year": 2025,
-    "source_file": null,
+    "source_file": "year_2025.csv",
     "run_dbt_build": true
   }
   ```
@@ -126,12 +168,15 @@ uv run airflow standalone
 ### 시나리오 3. dbt 빌드 제외 빠른 단독 검증 (`run_dbt_build: false`)
 
 - **테스트 목표:** dbt 빌드 시간을 단축하고, 원천 적재와 퀄리티 게이트 통과 여부만 빠르게 단독 검증한다.
+- **사전 조건:** 시나리오 1의 합성 파일 준비 코드를 먼저 실행해 `.local/hmda-synthetic/source/year_2025.csv`를 생성한다.
 - **Configuration JSON 붙여넣기:**
 
   ```json
   {
     "database_path": "data/sandbox_fast.duckdb",
+    "source_root": ".local/hmda-synthetic/source",
     "source_year": 2025,
+    "source_file": "year_2025.csv",
     "run_dbt_build": false
   }
   ```
@@ -161,8 +206,8 @@ uv run airflow standalone
   - **원인:** DuckDB는 단일 프로세스 전용 락을 가집니다. CLI, DBeaver, marimo, Python 터미널 등이 해당 샌드박스 `.duckdb` 파일을 열어두고 있는 경우 발생합니다.
   - **해결:** 외부 프로그램의 DuckDB 연결을 닫은 후 Airflow 태스크를 재실행(`Clear`)합니다.
 - **`HMDADataLoadError: HMDA 소스 파티션에 적재할 행이 없습니다`**
-  - **원인:** `source_file`을 지정할 때 파일명에 연도 4자리(예: `2026`)가 들어있지 않으면 파티션 연도 추출 정규식이 실패합니다.
-  - **해결:** 원천 파일명이 `hmda_2026_null_spike.parquet`처럼 4자리 연도를 포함하도록 변경하거나 `source_file`을 `null`로 두고 디렉터리 기반으로 탐색하게 합니다.
+  - **원인:** `source_root`는 하위 디렉터리를 재귀 탐색하지 않으며, `source_file`의 파일명에 연도 4자리(예: `2026`)가 없으면 파티션 연도 추출도 실패합니다.
+  - **해결:** 파일이 직접 있는 디렉터리를 `source_root`로 지정하고, 원천 파일명이 `hmda_2026_null_spike.parquet`처럼 ASCII 4자리 연도를 포함하는지 확인합니다.
 - **테스트 종료 후 샌드박스 파일 정리:**
   - 샌드박스 검증이 완료된 임시 데이터베이스는 디스크 용량 관리를 위해 삭제할 수 있습니다:
 

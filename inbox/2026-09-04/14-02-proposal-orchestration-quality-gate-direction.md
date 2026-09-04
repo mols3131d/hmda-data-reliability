@@ -157,14 +157,14 @@ recovery
 구현 단계에서는 다음 제약을 유지하는 것을 권장한다.
 
 1. Airflow DAG task는 thin adapter로 유지한다.
-2. Quality policy나 detector business rule을 DAG 파일에 복제하지 않는다.
-3. Quality gate는 기본적으로 read-only validation이어야 한다.
-4. Gate 실패는 downstream analytics를 차단하되 raw Bronze evidence는 보존한다.
-5. Incident lifecycle, remediation, approval, recovery는 gate 성공/실패 path에 자동 결합하지 않는다.
-6. dbt test와 Reliability detector 중 어떤 validation mechanism을 사용할지는 rule의 성격에 따라 선택한다.
-7. 동일 rule을 dbt와 Reliability 양쪽에 중복 구현하지 않는다.
-8. 통계적 anomaly를 장기적으로 운영할 경우 `FAIL`, `WARN`, `OBSERVE` 같은 enforcement policy 분리를 검토한다.
-9. Hardcoded baseline은 synthetic/MVP proof에는 사용할 수 있으나 durable production contract로 간주하지 않는다.
+1. Quality policy나 detector business rule을 DAG 파일에 복제하지 않는다.
+1. Quality gate는 기본적으로 read-only validation이어야 한다.
+1. Gate 실패는 downstream analytics를 차단하되 raw Bronze evidence는 보존한다.
+1. Incident lifecycle, remediation, approval, recovery는 gate 성공/실패 path에 자동 결합하지 않는다.
+1. dbt test와 Reliability detector 중 어떤 validation mechanism을 사용할지는 rule의 성격에 따라 선택한다.
+1. 동일 rule을 dbt와 Reliability 양쪽에 중복 구현하지 않는다.
+1. 통계적 anomaly를 장기적으로 운영할 경우 `FAIL`, `WARN`, `OBSERVE` 같은 enforcement policy 분리를 검토한다.
+1. Hardcoded baseline은 synthetic/MVP proof에는 사용할 수 있으나 durable production contract로 간주하지 않는다.
 
 ## PR #205 Guidance
 

@@ -9,6 +9,7 @@ import pytest
 
 from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
 from hmda_reliability.hmda_data import (
+    load_hmda_loans_partition,
     null_spike,
     row_count_drop,
     schema_drift,
@@ -448,7 +449,7 @@ def test_null_spike_rejects_case_name_without_target_year_when_target_year_is_se
 
     with (
         DuckDBConnectionManager() as connection,
-        pytest.raises(SyntheticCaseError, match="case_name에 해당 연도가 포함"),
+        pytest.raises(SyntheticCaseError, match="ASCII 4자리 연도가 포함"),
     ):
         null_spike(
             connection,
@@ -460,7 +461,7 @@ def test_null_spike_rejects_case_name_without_target_year_when_target_year_is_se
 
     with (
         DuckDBConnectionManager() as connection,
-        pytest.raises(SyntheticCaseError, match="case_name에 해당 연도가 포함"),
+        pytest.raises(SyntheticCaseError, match="첫 번째 4자리 연도"),
     ):
         null_spike(
             connection,
@@ -469,6 +470,68 @@ def test_null_spike_rejects_case_name_without_target_year_when_target_year_is_se
             target_year=2026,
             case_name="null_spike_2024",
         )
+
+
+def test_null_spike_rejects_case_name_with_conflicting_first_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """Filename parser가 먼저 읽는 연도가 target_year와 다르면 거부한다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="첫 번째 4자리 연도"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="null_spike_2025_2026",
+        )
+
+
+def test_null_spike_rejects_case_name_with_non_ascii_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """Ingestion이 연도로 읽지 못하는 Unicode digit filename을 거부한다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="ASCII 4자리 연도"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="null_spike_２０２６",
+        )
+
+
+def test_null_spike_allows_case_name_with_matching_first_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """첫 번째 filename 연도가 target_year와 같으면 custom name을 허용한다."""
+
+    with DuckDBConnectionManager() as connection:
+        null_path = null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="null_spike_2026_revision_2025",
+        )
+        loaded_rows = load_hmda_loans_partition(connection, [null_path], 2026)
+        source_years = connection.execute(
+            "SELECT DISTINCT source_year FROM raw.hmda_loans"
+        ).fetchall()
+
+    assert null_path.name == "null_spike_2026_revision_2025.parquet"
+    assert loaded_rows > 0
+    assert source_years == [(2026,)]
 
 
 @pytest.mark.parametrize(

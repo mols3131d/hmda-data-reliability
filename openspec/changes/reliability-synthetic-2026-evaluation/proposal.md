@@ -17,14 +17,16 @@ tags:
 ## What Changes
 
 - 2026년 가상 결함(`income` 결측치 급증) 합성 데이터셋 생성 및 샌드박스 격리 적재 절차 정의
+- 사용자 지정 synthetic case 이름과 ingestion filename parser가 같은 목표 연도 파티션을 식별하도록 파일명 계약 강화
 - 2025년 정상 기준선(Baseline)과 2026년 현재(Current) 프로파일을 비교하는 신뢰성 수명주기 종단간 검증
-- dbt 모델 계통(`stg_hmda_loans`, `mart_hmda_loan_outcomes`)에 대한 영향도 분석 및 복구 권고안 도출 자동화 검증
+- 준비된 dbt artifact 계통(`stg_hmda_loans`, `mart_hmda_loan_outcomes`)을 사용한 영향도 분석 및 복구 권고안 도출 검증
 
 ## Boundaries
 
 - **In Scope:**
   - 2026년 파티션 대상 결정론적 `null_spike` 합성 결함 생성
-  - 샌드박스 DB 기반의 격리 적재 및 dbt 분석 마트 변환 검증
+  - synthetic output filename에서 ingestion이 추출하는 첫 연도와 `target_year` 일치 보장
+  - 샌드박스 DB 기반의 격리 적재 및 준비된 dbt artifact 기반 lineage impact 분석
   - 신뢰성 수명주기(`run_incident_lifecycle`)를 통한 사고 탐지, dbt 계통 영향 분석, 권고 조치 검증
 - **Out of Scope:**
   - 실제 외부 공공 포털의 2026년 HMDA 데이터 다운로드
@@ -37,7 +39,7 @@ tags:
 
 #### `hmda-data-synthetic-defects`
 
-- 특정 연도 파티션(`activity_year=2026`)을 지정하여 결정론적으로 `null_spike` 결함을 주입하고, 기존 원천을 수정하지 않는 합성 파일 산출물 계약을 명시합니다.
+- 특정 연도 파티션(`activity_year=2026`)을 지정하여 결정론적으로 `null_spike` 결함을 주입하고, ingestion이 같은 연도로 해석하는 파일명을 생성하며, 기존 원천을 수정하지 않는 합성 파일 산출물 계약을 명시합니다.
 
 #### `data-operations-incident-lifecycle`
 

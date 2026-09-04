@@ -18,13 +18,16 @@ tags:
 
 - `hmda_data_plane` DAG에 `evaluate_quality_gate` 태스크를 추가한다.
 - `load_raw_hmda_loans` 성공 후, `build_dbt_loan_analytics` 실행 전에 실행된다.
-- 게이트는 현재 적재된 파티션의 프로파일 스냅샷을 생성하고, 내장 baseline과 비교해 이상 유형을 탐지한다.
+- Data Operations는 dbt source가 소비할 전체 Bronze 파티션의 프로파일 스냅샷을 구성하고 Reliability public boundary에 평가를 위임한다.
+- Reliability는 baseline, threshold, 활성 detector와 blocking 판정을 소유한다.
 - 이상이 탐지되면 태스크를 명시적으로 실패시켜 다운스트림 analytics 빌드를 차단한다.
 - 이상이 없으면 태스크가 정상 완료되어 analytics 빌드로 진행한다.
+- Analytics build는 database mutation lock 안에서 전체 Bronze gate를 다시 평가한 뒤 같은 lock을 유지한 채 dbt subprocess를 시작한다.
+- durable architecture와 domain guide를 raw load → quality gate → analytics build 실행 계약으로 동기화한다.
 
 ## Boundaries
 
-- **In Scope:** DAG thin-adapter 태스크 추가, `detect_basic_incidents`를 통한 이상 탐지, 이상 탐지 시 `AirflowException` 발생
+- **In Scope:** DAG thin-adapter 태스크 추가, Reliability-owned quality policy, 전체 Bronze partition 평가, build 직전 lock-bound revalidation, Data Operations application composition, 이상 탐지 시 `AirflowException` 발생, 3-stage architecture 문서 동기화
 - **Out of Scope:** baseline 저장소 구현, 외부 알림(Slack, Email), Airflow Alert, 복구 자동화, baseline 동적 관리
 
 ## Capabilities
@@ -40,5 +43,8 @@ tags:
 ## Impact
 
 - `src/hmda_reliability/orchestration/dags/hmda_data_plane.py`: `evaluate_quality_gate` 태스크 추가
+- `src/hmda_reliability/reliability/`: baseline, threshold, detector와 blocking policy 소유
+- `src/hmda_reliability/data_operations/`: 전체 Bronze partition profile과 Reliability gate 호출을 조합하고 lock-bound quality-gated dbt build 제공
 - `openspec/specs/orchestration-pipeline/spec.md`: quality gate requirement 추가
+- `docs/ARCHITECTURE.md`, `docs/domains/orchestration.md`: 3-stage data-plane contract 반영
 - `tests/orchestration/`: 품질 게이트 통합 테스트 추가

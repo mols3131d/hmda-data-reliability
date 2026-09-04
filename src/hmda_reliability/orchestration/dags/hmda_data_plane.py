@@ -12,15 +12,13 @@ from airflow.sdk.exceptions import AirflowException, AirflowSkipException
 from pydantic.types import JsonValue
 
 from hmda_reliability.data_operations import (
+    evaluate_quality_gate,
     load_raw_data,
     promote_dbt_artifacts,
-    run_dbt_build,
+    run_quality_gated_dbt_build,
 )
 from hmda_reliability.orchestration.config import data_operation_request_from_runtime
-from hmda_reliability.orchestration.quality_gate import (
-    QualityGateError,
-    evaluate_quality_gate,
-)
+from hmda_reliability.reliability import QualityGateError
 
 log = logging.getLogger(__name__)
 
@@ -98,12 +96,6 @@ def evaluate_quality_gate_task() -> None:
         evaluate_quality_gate(request)
     except QualityGateError as exc:
         raise AirflowException(str(exc)) from exc
-    except Exception as exc:
-        log.exception("품질 게이트 실행 중 예상치 못한 오류 발생")
-        raise AirflowException(
-            f"품질 게이트 평가 실패: source_year={request.source_year} "
-            f"asset={request.asset_name}: {exc}"
-        ) from exc
     log.info(
         "품질 게이트 통과: source_year=%s asset=%s status=clean",
         request.source_year,
@@ -125,7 +117,10 @@ def build_dbt_loan_analytics() -> None:
         log.info("dbt build 건너뜀: run_dbt_build=false")
         raise AirflowSkipException("run_dbt_build=false")
 
-    result = run_dbt_build(request)
+    try:
+        result = run_quality_gated_dbt_build(request)
+    except QualityGateError as exc:
+        raise AirflowException(str(exc)) from exc
     promote_dbt_artifacts(result, request)
     _set_asset_evidence(
         ANALYTICS_LOAN_ASSET,

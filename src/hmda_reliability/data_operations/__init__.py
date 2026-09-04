@@ -9,6 +9,7 @@ Incident lifecycle은 분석만 수행하고 recovery나 evaluation을 실행하
 from hmda_reliability.data_operations.dbt_result import DbtBuildResult
 from hmda_reliability.data_operations.errors import DataOperationError
 from hmda_reliability.data_operations.lifecycle_result import LifecycleResult
+from hmda_reliability.data_operations.quality_gate import evaluate_quality_gate
 from hmda_reliability.data_operations.raw_result import RawLoadResult
 from hmda_reliability.data_operations.request import (
     DataOperationRequest,
@@ -19,6 +20,7 @@ from hmda_reliability.data_operations.runner import (
     promote_dbt_artifacts,
     run_dbt_build,
     run_incident_lifecycle,
+    run_quality_gated_dbt_build,
 )
 
 __all__ = [
@@ -27,9 +29,11 @@ __all__ = [
     "DataOperationError",
     "DataOperationRequest",
     "data_operation_request_from_environment",
+    "evaluate_quality_gate",
     "RawLoadResult",
     "load_raw_data",
     "promote_dbt_artifacts",
     "run_dbt_build",
+    "run_quality_gated_dbt_build",
     "run_incident_lifecycle",
 ]

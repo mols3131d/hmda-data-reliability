@@ -1,6 +1,6 @@
 ---
 title: "Data Operations: Application Execution Boundary"
-description: "Application-level request, 실행 순서와 결과를 조합하는 Data Operations domain의 책임과 mutation/read-only 경계를 설명합니다."
+description: "독립 application entry point의 request, 조합과 결과를 소유하는 Data Operations domain의 책임과 mutation/read-only 경계를 설명합니다."
 categories:
   - data-operations
   - data-engineering
@@ -13,7 +13,7 @@ tags:
 
 # Data Operations: Application Execution Boundary
 
-**`data_operations`는 application-level request, 실행 순서와 결과를 조합한다.** 파일 파싱, DuckDB primitive, dbt model과 reliability rule은 owning domain에 위임한다.
+**`data_operations`는 독립 application entry point의 request, domain 호출 조합과 결과를 소유한다.** 전체 pipeline 순서는 소유하지 않으며 파일 파싱, DuckDB primitive, dbt model과 reliability rule은 owning domain에 위임한다.
 
 > [!IMPORTANT]
 > Reliability lifecycle은 domain state를 변경하지 않는 read-only analysis다. Data-plane 실행과 artifact promotion은 별도 mutation boundary를 가진다.
@@ -23,21 +23,20 @@ tags:
 | In scope | Out of scope |
 | --- | --- |
 | `DataOperationRequest`와 실행 결과 model | HMDA parsing·validation algorithm |
-| raw load와 dbt build 호출 순서 | DuckDB helper와 dbt model 구현 |
+| raw load, quality gate와 dbt build의 application 호출 경계 | DuckDB helper와 dbt model 구현 |
 | candidate/current artifact adoption boundary | reliability detection/remediation rule |
-| read-only reliability lifecycle 조합 | approval, recovery와 evaluation 실행 |
+| read-only reliability lifecycle와 quality gate 실행 조합 | reliability policy, approval, recovery와 evaluation 실행 |
 
 Normative stage execution과 lifecycle contract는 [`data-operations-stage-execution`](../../openspec/specs/data-operations-stage-execution/spec.md)과 [`data-operations-incident-lifecycle`](../../openspec/specs/data-operations-incident-lifecycle/spec.md)이 소유한다.
 
 ## Flows
 
 ```mermaid
-flowchart LR
-    request["DataOperationRequest"] --> raw["Raw Load"]
-    raw --> build["dbt Build"]
-    build --> candidate["Candidate Artifacts"]
-    candidate --> promotion["Explicit Promotion"]
-    promotion --> current["Current Projection"]
+flowchart TB
+  request["DataOperationRequest"] --> raw["Raw Load"]
+  request --> gate["All Bronze Partition Profiles"] --> policy["Reliability Quality Policy"]
+  request --> locked["Mutation Lock"] --> recheck["Gate Revalidation"] --> build["dbt Build"] --> candidate["Candidate Artifacts"]
+  candidate --> promotion["Explicit Promotion"] --> current["Current Projection"]
 ```
 
 ```mermaid
@@ -49,15 +48,17 @@ flowchart LR
     impact --> draft["RemediationDraft"]
 ```
 
-Data plane과 reliability analysis는 서로 다른 side-effect 경계를 가진다. Incident lifecycle은 approval, recovery 또는 evaluation을 암묵적으로 연결하지 않는다.
+Data Operations의 각 entry point는 application 조합 경계이며 full-pipeline 순서는 소유하지 않는다. Data plane과 reliability analysis는 서로 다른 side-effect 경계를 가지고, quality gate와 incident lifecycle은 approval, recovery 또는 evaluation을 암묵적으로 연결하지 않는다.
 
 ## Public Entry Points
 
 | API | Role |
 | --- | --- |
 | `load_raw_data()` | HMDA ingestion owner를 호출하고 raw load result를 반환한다. |
-| `run_dbt_build()` | run-scoped candidate dbt build를 실행하고 artifact identity를 반환한다. |
+| `run_dbt_build()` | 독립 run-scoped candidate dbt build를 실행하고 artifact identity를 반환한다. |
+| `run_quality_gated_dbt_build()` | mutation lock 안에서 전체 Bronze gate를 재검증하고 같은 lock에서 dbt build를 실행한다. |
 | `promote_dbt_artifacts()` | 검증된 candidate를 current projection으로 명시적으로 채택한다. |
+| `evaluate_quality_gate()` | dbt source가 소비할 전체 Bronze partition profile을 구성하고 Reliability quality policy에 위임한다. |
 | `run_incident_lifecycle()` | baseline/current evidence를 연결해 read-only reliability analysis를 실행한다. |
 
 정확한 request field, return shape, threshold/default와 failure semantics는 canonical Spec과 public source를 확인한다.

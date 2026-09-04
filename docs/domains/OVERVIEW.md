@@ -16,19 +16,19 @@ tags:
 | Domain | Owns | Main input and output | Does not own |
 | --- | --- | --- | --- |
 | [HMDA Data](hmda-data.md) | 원천 파일 발견·검증, Bronze 적재, descriptive EDA, 합성 결함 파일 | CSV/Parquet → `raw.hmda_loans`, EDA evidence, synthetic Parquet | 실행 조합, dbt 변환, incident 판단 |
-| [Data Operations](data-operations.md) | 실행 request·순서·결과, dbt execution/promotion, 오류 경계 | request → raw load, dbt build, lifecycle result | 파일 파싱, DuckDB 세부 구현, incident 규칙 |
+| [Data Operations](data-operations.md) | 독립 application entry point의 request·domain 호출 조합·결과, 전체 Bronze quality profile, lock-bound dbt execution/promotion, 오류 경계 | request → stage별 result, quality gate, lifecycle result | full-pipeline 순서, 파일 파싱, DuckDB 세부 구현, incident/quality 규칙 |
 | [Data Platform](data-platform.md) | DuckDB helper, dbt source·model·test·lineage, artifact projection primitive | `raw.hmda_loans` → staging/mart, dbt artifact pair identity | 원천 적재, dbt subprocess 실행, promotion 결정, orchestration |
-| [Reliability](reliability.md) | profile, incident, 영향 분석, remediation, recovery, evaluation | raw table + dbt artifacts → lifecycle/recovery/evaluation result | AI review/provider runtime, 외부 approval 결정과 Airflow orchestration |
+| [Reliability](reliability.md) | profile, quality policy, incident, 영향 분석, remediation, recovery, evaluation | profile/raw table + dbt artifacts → gate/lifecycle/recovery/evaluation result | AI review/provider runtime, 외부 approval 결정과 Airflow orchestration |
 | [Review AI](review-ai.md) | review contract, prompt projection, deterministic validation, review provenance | Reliability evidence + remediation draft → advisory review result | deterministic truth, provider SDK mechanics, approval/recovery authority |
 | [Runtime AI](runtime-ai.md) | provider-neutral message/settings/response contract와 OpenAI-compatible adapter | rendered messages + explicit settings → provider response/typed runtime failure | review policy, Reliability contract, provenance meaning |
-| [Orchestration](orchestration.md) | Airflow DAG dependency와 config 변환 | `load_raw_hmda_loans` → `build_dbt_loan_analytics` | domain business logic, reliability control-plane |
+| [Orchestration](orchestration.md) | Airflow DAG dependency와 config 변환 | `load_raw_hmda_loans` → `evaluate_quality_gate` → `build_dbt_loan_analytics` | domain business logic, quality policy, reliability control-plane |
 
 ```mermaid
 flowchart TB
     orchestration["Orchestration<br/>Airflow DAG + config"] -->|delegates data-plane execution| operations["Data Operations<br/>request + execution boundary"]
     operations -->|source discovery + Bronze load| hmda["HMDA Data<br/>source + Bronze + EDA"]
     operations -->|dbt execution + projection use| platform["Data Platform<br/>DuckDB + dbt + artifact primitives"]
-    operations -->|read-only lifecycle only| reliability["Reliability<br/>incident + recovery + evaluation"]
+    operations -->|quality gate + read-only lifecycle| reliability["Reliability<br/>quality policy + incident + recovery + evaluation"]
     hmda -.->|Bronze state| reliability
     platform -.->|dbt artifacts + lineage| reliability
     reliability -.->|Incident + Evidence + RemediationDraft| review["Review AI<br/>advisory semantics + provenance"]

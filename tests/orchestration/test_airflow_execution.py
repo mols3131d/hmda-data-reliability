@@ -9,7 +9,7 @@ from hmda_reliability.data_operations import DataOperationError, DataOperationRe
 from hmda_reliability.data_operations.dbt_result import DbtBuildResult
 from hmda_reliability.data_operations.raw_result import RawLoadResult
 from hmda_reliability.orchestration.dags import hmda_data_plane as airflow_dag
-from hmda_reliability.orchestration.quality_gate import QualityGateError
+from hmda_reliability.reliability import QualityGateError
 
 pytestmark = pytest.mark.integration
 
@@ -88,7 +88,7 @@ def test_tasks_delegate_in_order_and_record_separate_update_evidence(
     )
     monkeypatch.setattr(
         airflow_dag,
-        "run_dbt_build",
+        "run_quality_gated_dbt_build",
         lambda _request: calls.append("dbt") or dbt_result,
     )
     monkeypatch.setattr(
@@ -136,7 +136,7 @@ def test_raw_failure_prevents_downstream_execution(
     monkeypatch.setattr(airflow_dag, "load_raw_data", fail_raw)
     monkeypatch.setattr(
         airflow_dag,
-        "run_dbt_build",
+        "run_quality_gated_dbt_build",
         lambda _request: calls.append("dbt"),
     )
 
@@ -159,7 +159,7 @@ def test_disabled_dbt_is_skipped_without_update_evidence(
     calls: list[str] = []
     monkeypatch.setattr(
         airflow_dag,
-        "run_dbt_build",
+        "run_quality_gated_dbt_build",
         lambda _request: calls.append("dbt"),
     )
     monkeypatch.setattr(
@@ -189,11 +189,15 @@ def test_analytics_failure_does_not_record_update_evidence(
     if failure == "build":
         monkeypatch.setattr(
             airflow_dag,
-            "run_dbt_build",
+            "run_quality_gated_dbt_build",
             lambda _request: (_ for _ in ()).throw(DataOperationError("dbt failed")),
         )
     else:
-        monkeypatch.setattr(airflow_dag, "run_dbt_build", lambda _request: result)
+        monkeypatch.setattr(
+            airflow_dag,
+            "run_quality_gated_dbt_build",
+            lambda _request: result,
+        )
         monkeypatch.setattr(
             airflow_dag,
             "promote_dbt_artifacts",
@@ -257,10 +261,10 @@ def test_quality_gate_failure_raises_airflow_exception(
     assert exc_info.value.__cause__ is gate_error
 
 
-def test_quality_gate_unexpected_error_is_preserved_as_airflow_exception(
+def test_quality_gate_unexpected_error_is_not_normalized(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Unexpected exceptions preserve PEP 3134 causal context in AirflowException."""
+    """Unexpected programming/infrastructure errors preserve their original type."""
 
     _runtime_context(monkeypatch)
 
@@ -269,9 +273,27 @@ def test_quality_gate_unexpected_error_is_preserved_as_airflow_exception(
 
     monkeypatch.setattr(airflow_dag, "evaluate_quality_gate", crash_gate)
 
-    with pytest.raises(AirflowException, match="품질 게이트 평가 실패") as exc_info:
+    with pytest.raises(RuntimeError, match="database connection lost"):
         airflow_dag.evaluate_quality_gate_task.function()
 
-    # PEP 3134 예외 체이닝이 보존되어 __cause__가 원본 예외여야 함
-    assert exc_info.value.__cause__ is not None
-    assert "database connection lost" in str(exc_info.value.__cause__)
+
+def test_analytics_quality_gate_failure_raises_airflow_exception(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Build 직전 재검증 실패도 동일한 Airflow failure contract를 사용한다."""
+
+    _runtime_context(monkeypatch, {"run_dbt_build": True})
+    gate_error = QualityGateError(
+        "품질 게이트 실패: detected=[null_spike(income)]",
+        ["null_spike(income)"],
+    )
+
+    def fail_gate(_request: DataOperationRequest) -> None:
+        raise gate_error
+
+    monkeypatch.setattr(airflow_dag, "run_quality_gated_dbt_build", fail_gate)
+
+    with pytest.raises(AirflowException, match="null_spike") as exc_info:
+        airflow_dag.build_dbt_loan_analytics.function()
+
+    assert exc_info.value.__cause__ is gate_error

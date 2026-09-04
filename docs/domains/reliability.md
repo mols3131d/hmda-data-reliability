@@ -26,7 +26,7 @@ tags:
 
 | In scope | Out of scope |
 | --- | --- |
-| metadata/profile evidence와 incident detection | source acquisition과 dbt model 작성 |
+| metadata/profile evidence, incident detection과 read-only quality policy | source acquisition과 dbt model 작성 |
 | dbt lineage impact와 deterministic remediation draft | Airflow data-plane orchestration |
 | validated recovery proposal과 approved recovery | AI review와 provider runtime |
 | deterministic recovery/replay evaluation | automatic approval, human approval UI와 production monitoring |
@@ -53,6 +53,8 @@ flowchart TB
 ```
 
 Detection은 volume, null, schema와 freshness 같은 deterministic rule을 다룬다. Freshness는 Bronze에서 실제로 측정 가능한 timestamp를 사용하며 측정 불가능한 상태를 fresh로 간주하지 않는다. Exact threshold와 evidence payload는 canonical Spec을 따른다.
+
+`evaluate_profile_quality_gate()`는 current profile에 MVP quality policy를 적용해 blocking 이상을 `QualityGateError`로 표현한다. Data Operations가 profile I/O를 조합하고 Airflow는 이 domain failure를 task state로 번역하므로 Reliability는 orchestration runtime에 의존하지 않는다.
 
 ## Recovery Path
 
