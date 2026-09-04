@@ -123,7 +123,7 @@ def test_source_domain_type_targets_include_reverse_consumers() -> None:
 
 @pytest.mark.unit
 def test_shared_source_triggers_full_type_fallback() -> None:
-    """Shared source는 consumer 범위를 좁히지 않고 project-wide type check로 fallback한다."""
+    """Shared source는 project-wide type check로 fallback한다."""
     out = run_classifier(["src/hmda_reliability/shared/example.py"])
     assert out["python"] == "true"
     assert out["full_unit"] == "true"
