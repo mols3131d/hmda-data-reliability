@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import runpy
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType
+from typing import cast
 
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BOOTSTRAP_SCRIPT = REPO_ROOT / "scripts" / "bootstrap.py"
+Step = tuple[str, Callable[[], int]]
 
 
 def _load_bootstrap(
@@ -69,8 +71,7 @@ def test_bootstrap_action_selects_expected_steps(
     """Each bootstrap action keeps its documented ordered operation set."""
     namespace = _load_bootstrap(monkeypatch, [])
 
-    steps = namespace["_steps"]
-    assert callable(steps)
+    steps = cast(Callable[[str], list[Step]], namespace["_steps"])
     assert tuple(label for label, _step in steps(action)) == expected_labels
 
 
@@ -84,8 +85,7 @@ def test_bootstrap_dependency_sync_uses_locked_uv(
     shutil_module = namespace["shutil"]
     monkeypatch.setattr(shutil_module, "which", lambda name: "/usr/bin/uv")
 
-    sync_dependencies = namespace["_sync_dependencies"]
-    assert callable(sync_dependencies)
+    sync_dependencies = cast(Callable[[], int], namespace["_sync_dependencies"])
     assert sync_dependencies() == 0
     assert calls == [("run", ("uv", "sync", "--locked"), REPO_ROOT)]
 
@@ -98,8 +98,7 @@ def test_bootstrap_openspec_sync_preserves_cli_contract(
     calls: list[tuple[object, ...]] = []
     namespace = _load_bootstrap(monkeypatch, calls)
 
-    sync_openspec = namespace["_sync_openspec"]
-    assert callable(sync_openspec)
+    sync_openspec = cast(Callable[[], int], namespace["_sync_openspec"])
     assert sync_openspec() == 0
     assert calls == [
         (
