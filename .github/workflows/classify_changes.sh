@@ -53,6 +53,13 @@ add_type_target() {
   type_targets+=("$target")
 }
 
+add_focused_test() {
+  local target="$1"
+  tests=true
+  add_target "$target"
+  add_type_target "$target"
+}
+
 add_domain_target() {
   local domain="$1"
   add_target "tests/$domain"
@@ -173,54 +180,36 @@ while IFS= read -r path; do
       add_target tests/test_ci_classifier.py
       ;;
     scripts/generate_agent_routes.py)
-      tests=true
-      add_target tests/test_generate_agent_routes.py
-      add_type_target tests/test_generate_agent_routes.py
+      add_focused_test tests/test_generate_agent_routes.py
       ;;
     scripts/agent_assets.py)
-      tests=true
-      add_target tests/test_agent_assets.py
-      add_type_target tests/test_agent_assets.py
+      add_focused_test tests/test_agent_assets.py
       ;;
     scripts/_commands.py)
-      tests=true
       for target in \
         tests/test_commands.py tests/test_tool_wrappers.py \
         tests/test_bootstrap.py tests/test_agent_assets.py; do
-        add_target "$target"
-        add_type_target "$target"
+        add_focused_test "$target"
       done
       add_type_target scripts
       ;;
     scripts/bootstrap.py)
-      tests=true
-      add_target tests/test_bootstrap.py
-      add_type_target tests/test_bootstrap.py
+      add_focused_test tests/test_bootstrap.py
       ;;
     scripts/biome.py|scripts/tombi.py)
-      tests=true
-      add_target tests/test_tool_wrappers.py
-      add_type_target tests/test_tool_wrappers.py
+      add_focused_test tests/test_tool_wrappers.py
       ;;
     scripts/generate_docs_indexes.py)
-      tests=true
-      add_target tests/test_generate_docs_indexes.py
-      add_type_target tests/test_generate_docs_indexes.py
+      add_focused_test tests/test_generate_docs_indexes.py
       ;;
     scripts/log_agent_event.py)
-      tests=true
-      add_target tests/test_log_agent_event.py
-      add_type_target tests/test_log_agent_event.py
+      add_focused_test tests/test_log_agent_event.py
       ;;
     scripts/run_actual_source.py)
-      tests=true
-      add_target tests/hmda_data/eda/test_eda_evidence.py
-      add_type_target tests/hmda_data/eda/test_eda_evidence.py
+      add_focused_test tests/hmda_data/eda/test_eda_evidence.py
       ;;
     scripts/run_agentic_review_live.py)
-      tests=true
-      add_target tests/review_ai/test_live_harness.py
-      add_type_target tests/review_ai/test_live_harness.py
+      add_focused_test tests/review_ai/test_live_harness.py
       ;;
     scripts/*.py)
       tests=true
