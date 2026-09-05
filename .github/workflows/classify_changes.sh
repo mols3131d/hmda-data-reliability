@@ -182,10 +182,25 @@ while IFS= read -r path; do
       add_target tests/test_agent_assets.py
       add_type_target tests/test_agent_assets.py
       ;;
-    scripts/_commands.py|scripts/bootstrap.py|scripts/biome.py|scripts/tombi.py)
+    scripts/_commands.py)
       tests=true
-      add_target tests/test_commands.py
-      add_type_target tests/test_commands.py
+      for target in \
+        tests/test_commands.py tests/test_tool_wrappers.py \
+        tests/test_bootstrap.py tests/test_agent_assets.py; do
+        add_target "$target"
+        add_type_target "$target"
+      done
+      add_type_target scripts
+      ;;
+    scripts/bootstrap.py)
+      tests=true
+      add_target tests/test_bootstrap.py
+      add_type_target tests/test_bootstrap.py
+      ;;
+    scripts/biome.py|scripts/tombi.py)
+      tests=true
+      add_target tests/test_tool_wrappers.py
+      add_type_target tests/test_tool_wrappers.py
       ;;
     scripts/generate_docs_indexes.py)
       tests=true
