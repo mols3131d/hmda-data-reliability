@@ -54,7 +54,7 @@ class ApprovalBackfillValidator:
         request: ApprovedBackfillRequest,
         proposal: RecoveryProposal,
         current_identity: PartitionContentIdentity,
-    ) -> tuple[str, str, tuple[str, ...]]:
+    ) -> tuple[str, str, list[str]]:
         """Proposal 바인딩 종류(content vs freshness)에 따라 목표 상태를 조정한다."""
         if proposal.freshness_binding is None:
             return _reconcile_content_state(current_identity, proposal)
