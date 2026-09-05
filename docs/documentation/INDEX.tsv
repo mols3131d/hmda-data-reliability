@@ -1,0 +1,4 @@
+path	description
+frontmatter.md	`docs/**` 일반 문서에 frontmatter를 적용하거나 `description`을 탐색·라우팅에 맞게 작성할 때 적용 범위와 선택 기준을 확인하는 정책입니다.
+principles.md	`docs/**` 일반 문서를 새로 만들거나 구조·내용·배치를 바꿀 때 목적, ownership, 정본, 탐색성, 현재성과 유지보수성을 판단하는 공통 원칙입니다.
+readme-authoring.md	`docs/**`의 디렉터리나 문서·파일 묶음에 README가 필요한지 판단하고 entrypoint의 범위, 첫 행동과 navigation을 설계할 때 사용하는 정책입니다.
