@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import scripts.generate_docs_indexes as docs_indexes
 from scripts.generate_docs_indexes import generate_docs_indexes
 
 
@@ -123,3 +124,26 @@ def test_generate_rejects_non_string_description(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="description must be a string"):
         generate_docs_indexes(docs)
+
+
+@pytest.mark.unit
+def test_main_check_forwards_check_mode_and_reports_drift(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """CLI --check preserves read-only mode and returns nonzero for drift."""
+    observed: list[bool] = []
+
+    def fake_generate_docs_indexes(*, check: bool = False) -> list[str]:
+        observed.append(check)
+        return ["outdated: docs/INDEX.tsv"]
+
+    monkeypatch.setattr(
+        docs_indexes,
+        "generate_docs_indexes",
+        fake_generate_docs_indexes,
+    )
+
+    assert docs_indexes.main(["--check"]) == 1
+    assert observed == [True]
+    assert "outdated: docs/INDEX.tsv" in capsys.readouterr().err
