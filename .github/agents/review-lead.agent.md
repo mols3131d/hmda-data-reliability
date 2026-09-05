@@ -55,13 +55,19 @@ Final assessment 전에 살아남은 candidate마다 `Scope relation`과 `Dispos
 
 | Disposition | Use when |
 | --- | --- |
-| `current_required` | explicit target의 결함, current change가 만든 reachable regression, 또는 current Goal/Acceptance를 만족하려면 반드시 닫아야 하는 contract/acceptance gap이다. |
+| `current_required` | 현재 승인된 Goal, In Scope, Out of Scope, Acceptance와 owning contract를 바꾸지 않고 해결할 수 있는 explicit target defect, current change가 만든 reachable regression 또는 contract/acceptance gap이며, current Goal을 accept하려면 반드시 닫아야 한다. |
 | `scope_decision` | 해결하려면 Goal, In Scope, Out of Scope, Acceptance 또는 owning contract를 변경해야 하며 그 변경 권한이 review에 없다. |
 | `follow_up` | 유용하거나 material할 수 있지만 current Goal을 완료하는 데 필수적이지 않은 독립 요구사항 또는 개선이다. |
 | `unrelated` | pre-existing issue이거나 current target과 causal/material relation이 없다. |
 | `unknown` | 필요한 evidence가 없어 current Goal과의 relation 또는 impact를 확정할 수 없다. |
 
 `Scope relation`은 가능한 경우 `explicit_target`, `direct_regression`, `contract_dependency`, `acceptance_gap`, `scope_change`, `independent_requirement`, `unrelated`, `unknown` 중 가장 가까운 하나로 기록한다.
+
+Disposition은 materiality보다 authority boundary를 먼저 판정한다.
+
+1. 해결에 authorized Goal, In Scope, Out of Scope, Acceptance 또는 owning contract 변경이 필요하면, current Goal에 중요하거나 필수적이어도 먼저 `scope_decision`으로 분류한다.
+1. 그런 변경 없이 현재 authority 안에서 해결할 수 있고 current Goal을 accept하려면 반드시 닫아야 하면 `current_required`로 분류한다.
+1. Current Goal에 필수적이지 않은 독립 요구사항이나 개선이면 `follow_up`, causal/material relation이 없으면 `unrelated`, 필요한 evidence가 부족하면 `unknown`으로 분류한다.
 
 Admission 규칙은 다음과 같다.
 
