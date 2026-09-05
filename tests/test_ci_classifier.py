@@ -68,10 +68,6 @@ def test_root_test_rename() -> None:
     [
         ("scripts/generate_agent_routes.py", "tests/test_generate_agent_routes.py"),
         ("scripts/agent_assets.py", "tests/test_agent_assets.py"),
-        ("scripts/_commands.py", "tests/test_commands.py"),
-        ("scripts/bootstrap.py", "tests/test_commands.py"),
-        ("scripts/biome.py", "tests/test_commands.py"),
-        ("scripts/tombi.py", "tests/test_commands.py"),
         ("scripts/generate_docs_indexes.py", "tests/test_generate_docs_indexes.py"),
         ("scripts/log_agent_event.py", "tests/test_log_agent_event.py"),
         ("scripts/run_actual_source.py", "tests/hmda_data/eda/test_eda_evidence.py"),
@@ -86,6 +82,50 @@ def test_explicitly_mapped_scripts(script_path: str, expected_target: str) -> No
     assert out["targets"].strip() == expected_target
     assert out["full_type"] == "false"
     assert expected_target in out["type_targets"]
+
+
+@pytest.mark.unit
+def test_shared_commands_expands_known_consumers() -> None:
+    """공용 command helper 수정은 현재 wrapper consumer와 계약 테스트를 함께 검증한다."""
+    out = run_classifier(["scripts/_commands.py"])
+    assert out["tests"] == "true"
+    assert out["full_unit"] == "false"
+    assert out["full_type"] == "false"
+
+    targets = set(out["targets"].split())
+    assert targets == {
+        "tests/test_commands.py",
+        "tests/test_tool_wrappers.py",
+        "tests/test_bootstrap.py",
+        "tests/test_agent_assets.py",
+    }
+
+    type_targets = set(out["type_targets"].split())
+    assert "scripts" in type_targets
+    assert targets <= type_targets
+
+
+@pytest.mark.unit
+def test_bootstrap_maps_to_bootstrap_contract_test() -> None:
+    """Bootstrap 수정은 bootstrap workflow contract test를 직접 실행한다."""
+    out = run_classifier(["scripts/bootstrap.py"])
+    assert out["tests"] == "true"
+    assert out["full_unit"] == "false"
+    assert out["full_type"] == "false"
+    assert out["targets"].strip() == "tests/test_bootstrap.py"
+    assert out["type_targets"].strip() == "tests/test_bootstrap.py"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("script_path", ["scripts/biome.py", "scripts/tombi.py"])
+def test_node_tool_wrapper_maps_to_forwarding_contract_test(script_path: str) -> None:
+    """Biome/Tombi wrapper 수정은 실제 CLI forwarding contract를 검증한다."""
+    out = run_classifier([script_path])
+    assert out["tests"] == "true"
+    assert out["full_unit"] == "false"
+    assert out["full_type"] == "false"
+    assert out["targets"].strip() == "tests/test_tool_wrappers.py"
+    assert out["type_targets"].strip() == "tests/test_tool_wrappers.py"
 
 
 @pytest.mark.unit
