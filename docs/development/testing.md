@@ -81,6 +81,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 - Markdown은 위치와 관계없이 runtime scope에서 제외하고, 현재 존재하는 changed Markdown file만 `rumdl check`한다.
 - Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check를 실행한다. Type check는 source domain의 current reverse dependency closure와 직접 대응 test까지 넓히고, shared/common/runtime config 또는 unknown Python path처럼 영향 범위를 안정적으로 좁히기 어려우면 project-wide `ty check`로 fallback한다.
+- Direct-mapped repository Python script는 해당 wrapper 또는 workflow contract test를 실행한다. 여러 wrapper가 소비하는 shared script helper는 consumer script까지 type-check하고 관련 contract test를 함께 실행하며, 미매핑 script는 전체 `unit` suite와 project-wide `ty check`로 fallback한다.
 - Domain source는 own test와 현재 reverse dependency에 따른 consumer test directory를 선택한다.
 - Scoped domain test는 `unit`, `component`, `integration`을 유지하고 `memory`, `stress`만 제외한다.
 - 선택된 test directory가 3개 이상이면 xdist를 사용한다.
