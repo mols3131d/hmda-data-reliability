@@ -20,7 +20,10 @@ def _load_script(
     commands_module: ModuleType,
 ) -> dict[str, object]:
     monkeypatch.setitem(sys.modules, "_commands", commands_module)
-    return runpy.run_path(str(SCRIPTS_DIR / script_name), run_name=f"test_{script_name}")
+    return runpy.run_path(
+        str(SCRIPTS_DIR / script_name),
+        run_name=f"test_{script_name}",
+    )
 
 
 @pytest.mark.unit
@@ -46,7 +49,7 @@ def test_local_node_wrapper_forwards_tool_and_cli_args(
         calls.append((tool, tuple(args), cwd))
         return 17
 
-    setattr(commands, "run_local_node_tool", fake_run_local_node_tool)
+    commands.__dict__["run_local_node_tool"] = fake_run_local_node_tool
     namespace = _load_script(monkeypatch, script_name, commands)
     monkeypatch.setattr(sys, "argv", [script_name, "check", "example.txt"])
 
@@ -74,7 +77,7 @@ def test_rulesync_wrapper_forwards_package_binary_and_args(
         calls.append((package, binary, tuple(args), cwd))
         return 23
 
-    setattr(commands, "run_npm_exec", fake_run_npm_exec)
+    commands.__dict__["run_npm_exec"] = fake_run_npm_exec
     namespace = _load_script(monkeypatch, "rulesync.py", commands)
 
     run = namespace["_run"]
