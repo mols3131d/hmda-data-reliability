@@ -43,13 +43,24 @@ Before declaring the implementation complete, when the runtime supports the repo
 
 1. delegate one bounded review to `review-lead` in a separate subagent context;
 1. pass only the target/revision or observable state, intended behavior, active scope, applicable contract, and validation already performed;
-1. let `review-lead` coordinate its own specialist reviewers and return the reconciled `Assessment`;
-1. handle the assessment without replacing it with implementation self-review:
+1. let `review-lead` coordinate its own specialist reviewers and return the reconciled `Assessment` plus finding dispositions;
+1. admit review output against the current task authority before any remediation:
+   - `current_required` — remediate only when the action stays inside the current user boundary and governing plan/contract;
+   - `scope_decision` — do not mutate. Route to the workflow that owns Scope Control when one exists; otherwise require the authority that owns the affected Goal, scope or contract;
+   - `follow_up` or `unrelated` — do not absorb into the current implementation;
+   - `unknown` — gather only evidence needed to decide the current Goal when that uncertainty blocks completion; otherwise preserve it as a limitation;
+1. handle the assessment after admission:
    - `clear` — the independent review gate is satisfied for the exact reviewed state, subject to reported limitations;
-   - `changes_required` — route findings to the implementation owner and obtain a fresh `review-lead` assessment after the affected state changes;
-   - `blocked` — do not declare the independent review gate satisfied; report the coverage or evidence blocker.
+   - `changes_required` — remediate admitted `current_required` findings, then obtain a fresh `review-lead` assessment only if the reviewed state materially changed;
+   - `blocked` — this assessment takes precedence over `changes_required`. Do not start automatic remediation from the review result; first resolve or route the identified evidence, coverage or scope-authority blocker, while preserving any confirmed `current_required` items for the next admissible implementation step.
 
-Any post-review change that can affect reviewed behavior, contract, validation evidence, or finding disposition invalidates the prior assessment for completion purposes.
+If a review output lacks an explicit disposition, the completion owner must classify each finding against the active scope and authority before mutation. `changes_required` alone is not permission to implement every returned item.
+
+A user-defined `Out of scope`, explicit no-expansion instruction, Goal or Acceptance boundary cannot be widened by reviewer discovery. Review may expose a necessary scope decision, but only the owning authority or workflow may admit that expansion.
+
+Any post-review change that can affect reviewed behavior, contract, validation evidence or finding disposition invalidates the prior assessment for completion purposes. Conversely, do not re-run independent review merely for additional confidence when no such material state change occurred.
+
+A repeated or rephrased candidate that adds no new material evidence, creates no admitted `current_required` finding and does not change the current blocker is not a reason for another remediation/re-review cycle. Preserve non-blocking follow-ups separately and stop the automatic review loop at the current gate state.
 
 Do not call `review-quality` or `review-adversarial` directly. In VS Code they are excluded from general model invocation and explicitly allowlisted by `review-lead`. If `review-lead`, its specialist delegation, or required nested subagent invocation is unavailable in the active runtime, report the independent-review coverage gap instead of presenting self-review as independent Review.
 
