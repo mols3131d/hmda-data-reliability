@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
+import scripts.run_actual_source as actual_source
 from scripts.run_actual_source import (
     EvidenceProvenanceError,
     _repository_revision,
@@ -176,3 +177,68 @@ def test_write_evidence_cleans_up_new_json_on_first_creation_second_replace_fail
 
     assert not json_path.exists()
     assert not md_path.exists()
+
+
+def test_main_preserves_actual_source_analysis_and_provenance_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """CLI main binds the configured source, analysis limits, and evidence metadata."""
+    source_path = tmp_path / "data" / "year_2025.csv"
+    json_path = tmp_path / "docs" / "reference.json"
+    markdown_path = tmp_path / "docs" / "reference.md"
+    observed: dict[str, object] = {}
+
+    monkeypatch.setattr(actual_source, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(actual_source, "SOURCE_PATH", source_path)
+    monkeypatch.setattr(actual_source, "JSON_PATH", json_path)
+    monkeypatch.setattr(actual_source, "MARKDOWN_PATH", markdown_path)
+
+    def fake_analyze_hmda_csv(**kwargs: object) -> dict[str, object]:
+        observed["analysis"] = kwargs
+        return {
+            "source": {
+                "scope": "full_file",
+                "csv_options": {"header": True},
+            }
+        }
+
+    def fake_write_evidence(
+        evidence: dict[str, object],
+        **kwargs: object,
+    ) -> None:
+        observed["evidence"] = evidence
+        observed["write"] = kwargs
+
+    monkeypatch.setattr(actual_source, "analyze_hmda_csv", fake_analyze_hmda_csv)
+    monkeypatch.setattr(actual_source, "_sha256", lambda _path: "source-sha")
+    monkeypatch.setattr(
+        actual_source,
+        "_repository_revision",
+        lambda _root: "revision-sha",
+    )
+    monkeypatch.setattr(actual_source, "write_evidence", fake_write_evidence)
+
+    actual_source.main()
+
+    assert observed["analysis"] == {
+        "source_path": source_path,
+        "memory_limit": "2GB",
+        "threads": 2,
+        "temp_directory": tmp_path / ".tmp",
+    }
+    assert observed["evidence"] == {
+        "source": {
+            "id": "data/year_2025.csv",
+            "scope": "full_file",
+            "csv_options": {"header": True},
+        }
+    }
+    write = observed["write"]
+    assert isinstance(write, dict)
+    assert write["json_path"] == json_path
+    assert write["markdown_path"] == markdown_path
+    assert write["source_id"] == "data/year_2025.csv"
+    assert write["source_sha256"] == "source-sha"
+    assert write["repository_revision"] == "revision-sha"
+    assert isinstance(write["observed_at"], str)
