@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -234,8 +235,7 @@ def test_main_preserves_actual_source_analysis_and_provenance_contract(
             "csv_options": {"header": True},
         }
     }
-    write = observed["write"]
-    assert isinstance(write, dict)
+    write = cast(dict[str, object], observed["write"])
     assert write["json_path"] == json_path
     assert write["markdown_path"] == markdown_path
     assert write["source_id"] == "data/year_2025.csv"
