@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import runpy
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType
+from typing import cast
 
 import pytest
 
@@ -53,8 +54,7 @@ def test_local_node_wrapper_forwards_tool_and_cli_args(
     namespace = _load_script(monkeypatch, script_name, commands)
     monkeypatch.setattr(sys, "argv", [script_name, "check", "example.txt"])
 
-    main = namespace["main"]
-    assert callable(main)
+    main = cast(Callable[[], int], namespace["main"])
     assert main() == 17
     assert calls == [(tool_name, ("check", "example.txt"), REPO_ROOT)]
 
@@ -80,8 +80,7 @@ def test_rulesync_wrapper_forwards_package_binary_and_args(
     commands.__dict__["run_npm_exec"] = fake_run_npm_exec
     namespace = _load_script(monkeypatch, "rulesync.py", commands)
 
-    run = namespace["_run"]
-    assert callable(run)
+    run = cast(Callable[[Sequence[str]], int], namespace["_run"])
     assert run(("generate", "--check")) == 23
     assert calls == [
         ("rulesync@latest", "rulesync", ("generate", "--check"), REPO_ROOT)
