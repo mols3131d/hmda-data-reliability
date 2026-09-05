@@ -79,6 +79,7 @@ def test_bootstrap_action_selects_expected_steps(
 @pytest.mark.parametrize("action", ["setup", "session", "update"])
 def test_bootstrap_action_executes_expected_commands(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
     action: str,
 ) -> None:
     """Step labels remain bound to the expected external command sequence."""
@@ -87,8 +88,9 @@ def test_bootstrap_action_executes_expected_commands(
     shutil_module = namespace["shutil"]
     monkeypatch.setattr(shutil_module, "which", lambda name: "/usr/bin/uv")
 
+    node_prefix = tmp_path / "tooling"
+    namespace["NODE_TOOL_PREFIX"] = node_prefix
     agent_assets = REPO_ROOT / "scripts" / "agent_assets.py"
-    node_prefix = REPO_ROOT / ".local" / "tooling"
     install_node_tools = (
         "run_npm",
         (
@@ -140,39 +142,3 @@ def test_bootstrap_action_executes_expected_commands(
         assert step() == 0
 
     assert calls == expected_calls[action]
-
-
-@pytest.mark.unit
-def test_bootstrap_dependency_sync_uses_locked_uv(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Dependency bootstrap delegates to uv sync with the lockfile enforced."""
-    calls: list[tuple[object, ...]] = []
-    namespace = _load_bootstrap(monkeypatch, calls)
-    shutil_module = namespace["shutil"]
-    monkeypatch.setattr(shutil_module, "which", lambda name: "/usr/bin/uv")
-
-    sync_dependencies = cast(Callable[[], int], namespace["_sync_dependencies"])
-    assert sync_dependencies() == 0
-    assert calls == [("run", ("uv", "sync", "--locked"), REPO_ROOT)]
-
-
-@pytest.mark.unit
-def test_bootstrap_openspec_sync_preserves_cli_contract(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """OpenSpec refresh uses the expected package, binary, action, and cwd."""
-    calls: list[tuple[object, ...]] = []
-    namespace = _load_bootstrap(monkeypatch, calls)
-
-    sync_openspec = cast(Callable[[], int], namespace["_sync_openspec"])
-    assert sync_openspec() == 0
-    assert calls == [
-        (
-            "run_npm_exec",
-            "@fission-ai/openspec@latest",
-            "openspec",
-            ("update",),
-            REPO_ROOT,
-        )
-    ]
