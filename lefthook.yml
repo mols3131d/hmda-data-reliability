@@ -3,52 +3,34 @@ glob_matcher: doublestar
 pre-commit:
   commands:
     json-fix:
-      files: git diff --cached --name-only --diff-filter=d
       glob:
         - "**/*.json"
         - "**/*.jsonc"
-      run: uv run --no-sync python scripts/biome.py format --write {files}
+      run: uv run --no-sync python scripts/biome.py format --write {staged_files}
       stage_fixed: true
     markdown-fix:
-      files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.md"
-      run: uv run --no-sync rumdl fmt {files}
+      run: uv run --no-sync rumdl fmt {staged_files}
       stage_fixed: true
     python-fix:
-      files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.py"
-      run: uv run --no-sync ruff check --fix {files} && uv run --no-sync ruff format {files}
+      run: uv run --no-sync ruff check --fix {staged_files} && uv run --no-sync ruff format {staged_files}
       stage_fixed: true
     toml-fix:
-      files: git diff --cached --name-only --diff-filter=d
       glob: "**/*.toml"
-      run: uv run --no-sync python scripts/tombi.py format {files}
+      run: uv run --no-sync python scripts/tombi.py format {staged_files}
       stage_fixed: true
 
 pre-push:
-  parallel: true
   commands:
     json-check:
       glob:
         - "**/*.json"
         - "**/*.jsonc"
-      run: |
-        set --
-        for file in {push_files}; do
-          [ -f "$file" ] && set -- "$@" "$file"
-        done
-        [ "$#" -eq 0 ] || uv run --no-sync python scripts/biome.py check "$@"
+      run: uv run --no-sync python scripts/biome.py check {push_files}
     python-check:
       glob: "**/*.py"
-      run: |
-        set --
-        for file in {push_files}; do
-          [ -f "$file" ] && set -- "$@" "$file"
-        done
-        [ "$#" -eq 0 ] || {
-          uv run --no-sync ruff check "$@" &&
-          uv run --no-sync ruff format --check "$@"
-        }
+      run: uv run --no-sync ruff check {push_files} && uv run --no-sync ruff format --check {push_files}
     pytest-affected:
       glob: "**/*.py"
       run: uv run --no-sync pytest --testmon --testmon-forceselect
@@ -60,12 +42,4 @@ pre-push:
       run: uv run --no-sync pytest tests/dbt
     toml-check:
       glob: "**/*.toml"
-      run: |
-        set --
-        for file in {push_files}; do
-          [ -f "$file" ] && set -- "$@" "$file"
-        done
-        [ "$#" -eq 0 ] || {
-          uv run --no-sync python scripts/tombi.py format --check "$@" &&
-          uv run --no-sync python scripts/tombi.py lint "$@"
-        }
+      run: uv run --no-sync python scripts/tombi.py format --check {push_files} && uv run --no-sync python scripts/tombi.py lint {push_files}

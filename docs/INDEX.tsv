@@ -22,6 +22,10 @@ development/vcs-git/branch.md	하나의 변경 목적을 격리하고 검토 가
 development/vcs-git/commit.md	하나의 논리적 변경을 review 가능한 history로 기록하기 위한 commit 단위, staging과 history 관리 기준을 정의합니다.
 development/vcs-git/pull-request-review.md	Pull Request 변경의 correctness, risk와 repository contract 일관성을 검토하고 evidence-backed finding을 기록하는 기준을 정의합니다.
 development/vcs-git/pull-request.md	Branch 변경을 검토하고 repository에 반영할지 결정하기 위한 Pull Request scope, description, validation, review와 lifecycle 기준을 정의합니다.
+documentation/	`docs/**` 일반 문서의 공통 원칙, frontmatter와 README 작성 기준을 확인하거나 문서 구조·탐색성을 설계할 때 사용하는 documentation policy entrypoint입니다.
+documentation/frontmatter.md	`docs/**` 일반 문서에 frontmatter를 적용하거나 `description`을 탐색·라우팅에 맞게 작성할 때 적용 범위와 선택 기준을 확인하는 정책입니다.
+documentation/principles.md	`docs/**` 일반 문서를 새로 만들거나 구조·내용·배치를 바꿀 때 목적, ownership, 정본, 탐색성, 현재성과 유지보수성을 판단하는 공통 원칙입니다.
+documentation/readme-authoring.md	`docs/**`의 디렉터리나 문서·파일 묶음에 README가 필요한지 판단하고 entrypoint의 범위, 첫 행동과 navigation을 설계할 때 사용하는 정책입니다.
 domains/	HMDA Data Reliability의 domain별 책임, 경계와 reading path를 모아 탐색하는 docs/domains directory의 entrypoint입니다.
 domains/OVERVIEW.md	HMDA Data Reliability의 domain별 책임과 비책임, 주요 데이터 흐름과 목적별 reading path를 정리합니다.
 domains/data-operations.md	독립 application entry point의 request, 조합과 결과를 소유하는 Data Operations domain의 책임과 mutation/read-only 경계를 설명합니다.
