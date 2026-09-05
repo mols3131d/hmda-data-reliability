@@ -41,10 +41,10 @@ def _load_bootstrap(
     def fake_local_node_tool_path(tool: str, *, cwd: Path) -> Path:
         return cwd / ".local" / "tooling" / tool
 
-    setattr(commands, "run", fake_run)
-    setattr(commands, "run_npm", fake_run_npm)
-    setattr(commands, "run_npm_exec", fake_run_npm_exec)
-    setattr(commands, "local_node_tool_path", fake_local_node_tool_path)
+    commands.__dict__["run"] = fake_run
+    commands.__dict__["run_npm"] = fake_run_npm
+    commands.__dict__["run_npm_exec"] = fake_run_npm_exec
+    commands.__dict__["local_node_tool_path"] = fake_local_node_tool_path
     monkeypatch.setitem(sys.modules, "_commands", commands)
     return runpy.run_path(str(BOOTSTRAP_SCRIPT), run_name="test_bootstrap")
 
@@ -53,7 +53,10 @@ def _load_bootstrap(
 @pytest.mark.parametrize(
     ("action", "expected_labels"),
     [
-        ("setup", ("dependencies", "git hooks", "agent assets", "node tools", "openspec")),
+        (
+            "setup",
+            ("dependencies", "git hooks", "agent assets", "node tools", "openspec"),
+        ),
         ("session", ("dependencies", "agent assets", "node tools")),
         ("update", ("agent assets", "openspec", "node tools")),
     ],
