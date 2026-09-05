@@ -86,7 +86,7 @@ def test_explicitly_mapped_scripts(script_path: str, expected_target: str) -> No
 
 @pytest.mark.unit
 def test_shared_commands_expands_known_consumers() -> None:
-    """공용 command helper 수정은 현재 wrapper consumer와 계약 테스트를 함께 검증한다."""
+    """공용 command helper는 wrapper consumer와 계약 테스트를 함께 검증한다."""
     out = run_classifier(["scripts/_commands.py"])
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
