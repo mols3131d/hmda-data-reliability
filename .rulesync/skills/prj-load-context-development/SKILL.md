@@ -52,7 +52,9 @@ Before declaring the implementation complete, when the runtime supports the repo
 1. handle the assessment after admission:
    - `clear` — the independent review gate is satisfied for the exact reviewed state, subject to reported limitations;
    - `changes_required` — remediate admitted `current_required` findings, then obtain a fresh `review-lead` assessment only if the reviewed state materially changed;
-   - `blocked` — this assessment takes precedence over `changes_required`. Do not start automatic remediation from the review result; first resolve or route the identified evidence, coverage or scope-authority blocker, while preserving any confirmed `current_required` items for the next admissible implementation step.
+   - `blocked` — this assessment takes precedence for completion, so the independent review gate remains unsatisfied. Resolve or route the identified evidence, coverage or scope-authority blocker. A confirmed `current_required` item may still receive bounded remediation before blocker resolution only when its validity does not depend on that blocker and the action stays fully inside current authority; otherwise preserve it for the next admissible implementation step.
+
+If bounded remediation occurs while the same blocker still prevents gate closure, do not re-run independent review solely because that state changed. Resolve the blocker first, then review the resulting state once when a current independent assessment can materially change the completion decision.
 
 If a review output lacks an explicit disposition, the completion owner must classify each finding against the active scope and authority before mutation. `changes_required` alone is not permission to implement every returned item.
 
