@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import importlib.util
 import json
 from pathlib import Path
@@ -178,3 +179,37 @@ def test_unsupported_event_is_ignored() -> None:
     module = load_logger_module()
 
     assert module.event_from({"hook_event_name": "PreToolUse"}) is None
+
+
+def test_main_writes_only_sanitized_event_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hook entrypoint drops raw tool input/output before appending the ledger."""
+    module = load_logger_module()
+    log_path = tmp_path / "agent-events.jsonl"
+    payload = {
+        "timestamp": "2026-08-05T10:00:00Z",
+        "session_id": "session-1",
+        "hook_event_name": "PostToolUse",
+        "tool_name": "runTerminalCommand",
+        "tool_use_id": "tool-1",
+        "tool_input": {"command": "secret"},
+        "tool_response": "secret output",
+    }
+
+    monkeypatch.setattr(module, "load_local_environment", lambda: None)
+    monkeypatch.setattr(module, "artifact_log_path", lambda: log_path)
+    monkeypatch.setattr(module.sys, "stdin", io.StringIO(json.dumps(payload)))
+
+    module.main()
+
+    written = json.loads(log_path.read_text(encoding="utf-8"))
+    assert written == {
+        "timestamp": "2026-08-05T10:00:00Z",
+        "event": "PostToolUse",
+        "status": "success",
+        "session_id": "session-1",
+        "tool_name": "runTerminalCommand",
+        "tool_use_id": "tool-1",
+    }
