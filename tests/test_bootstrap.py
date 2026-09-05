@@ -6,7 +6,7 @@ import runpy
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from types import ModuleType
+from types import FunctionType, ModuleType
 from typing import cast
 
 import pytest
@@ -19,6 +19,8 @@ Step = tuple[str, Callable[[], int]]
 def _load_bootstrap(
     monkeypatch: pytest.MonkeyPatch,
     calls: list[tuple[object, ...]],
+    *,
+    node_tool_prefix: Path | None = None,
 ) -> dict[str, object]:
     commands = ModuleType("_commands")
 
@@ -48,7 +50,11 @@ def _load_bootstrap(
     commands.__dict__["run_npm_exec"] = fake_run_npm_exec
     commands.__dict__["local_node_tool_path"] = fake_local_node_tool_path
     monkeypatch.setitem(sys.modules, "_commands", commands)
-    return runpy.run_path(str(BOOTSTRAP_SCRIPT), run_name="test_bootstrap")
+    namespace = runpy.run_path(str(BOOTSTRAP_SCRIPT), run_name="test_bootstrap")
+    if node_tool_prefix is not None:
+        install_node_tools = cast(FunctionType, namespace["_install_node_tools"])
+        install_node_tools.__globals__["NODE_TOOL_PREFIX"] = node_tool_prefix
+    return namespace
 
 
 @pytest.mark.unit
@@ -84,12 +90,15 @@ def test_bootstrap_action_executes_expected_commands(
 ) -> None:
     """Step labels remain bound to the expected external command sequence."""
     calls: list[tuple[object, ...]] = []
-    namespace = _load_bootstrap(monkeypatch, calls)
+    node_prefix = tmp_path / "tooling"
+    namespace = _load_bootstrap(
+        monkeypatch,
+        calls,
+        node_tool_prefix=node_prefix,
+    )
     shutil_module = namespace["shutil"]
     monkeypatch.setattr(shutil_module, "which", lambda name: "/usr/bin/uv")
 
-    node_prefix = tmp_path / "tooling"
-    namespace["NODE_TOOL_PREFIX"] = node_prefix
     agent_assets = REPO_ROOT / "scripts" / "agent_assets.py"
     install_node_tools = (
         "run_npm",
