@@ -121,9 +121,14 @@ CI를 추가하거나 바꿀 때는 다음 순서로 판단한다.
 
 ### Inbox Boundary
 
-일반 `inbox/` 산출물은 비정본 작업 기록이므로 formatting이나 문서 정리만을 이유로 관련 없는 CI를 실행하거나 병합을 막지 않는다.
+Inbox 전체를 매 PR마다 다시 검사하지 않는다. **현재 prospective change set에 포함된 Inbox artifact만** 현재 변경으로 취급한다.
 
-다만 `inbox/AGENTS.md`, `inbox/_guidelines/**`, `inbox/_templates/**`처럼 다른 작업의 동작을 정하는 기반 문서는 일반 저장소 변경과 동일하게 검증한다. Inbox 자체의 내용과 lifecycle은 [`inbox/AGENTS.md`](../../inbox/AGENTS.md)가 소유한다.
+- 현재 변경된 일반 Inbox Markdown에는 formatting과 lint처럼 가볍고 결정론적인 검증만 적용할 수 있다.
+- 현재 변경에 포함되지 않은 과거·완료·보관 artifact는 scan, reformat, migration 또는 재검증하지 않는다.
+- 일반 Inbox artifact 변경만으로 unrelated source test나 platform-specific runtime 검증을 실행하지 않는다.
+- `inbox/AGENTS.md`, `inbox/_guidelines/**`, `inbox/_templates/**`처럼 다른 작업의 동작을 정하는 기반 문서는 일반 저장소 변경과 동일하게 검증한다.
+
+Inbox 자체의 내용과 lifecycle은 [`inbox/AGENTS.md`](../../inbox/AGENTS.md)가 소유한다.
 
 ### Safety and Authority
 
