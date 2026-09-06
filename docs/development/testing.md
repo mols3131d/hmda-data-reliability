@@ -21,7 +21,7 @@ tags:
 
 가장 좁은 범위의 command부터 실행한다. 실패 원인이 현재 변경과 관련 있는지 빠르게 알 수 있고, 실행 시간도 짧다.
 
-| 상황 | Command |
+| Context | Command |
 | --- | --- |
 | 현재 suite 전체 | `uv run pytest` |
 | domain directory | `uv run pytest tests/data_platform` |
@@ -99,7 +99,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 `unit`, `component`, `integration`은 test가 연결하는 경계를 나타내는 primary level marker다. 일반 test는 requirement를 입증하는 가장 낮은 유효 경계 하나를 선택한다.
 
-| Marker | 언제 사용하나 |
+| Marker | Usage |
 | --- | --- |
 | `unit` | real I/O나 다른 component 연결 없이 isolated behavior를 검증할 때 |
 | `component` | 하나의 component를 real local I/O 또는 tool boundary와 함께 검증할 때 |
@@ -107,7 +107,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 `memory`와 `stress`는 test level을 대체하지 않는 resource marker다. 해당 contract를 검증하는 test의 primary level marker와 함께 사용할 수 있다.
 
-| Marker | 언제 사용하나 |
+| Marker | Usage |
 | --- | --- |
 | `memory` | 대표 input에서 process memory-budget contract를 검증할 때 |
 | `stress` | 의도적으로 고비용인 worst-case resource behavior를 검증할 때 |
