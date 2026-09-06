@@ -8,7 +8,7 @@ discussion:
   type: <explore | compare | debate | challenge | converge>
   exchange: <one-shot | cross-review | iterative>
   execution: <manual | scheduled | chatbot-active-session>
-  phase: <frame | evidence | dialectic | converge>
+  phase: <frame | evidence | dialectic | sublation>
   decision_authority: <human | owning-workflow>
   lead: A
   active_topic: <topic-id>
@@ -24,13 +24,13 @@ tags:
 <!--
 작성 규칙:
 - discuss artifact는 반드시 이 디렉터리를 루트로 하는 bundle이다.
-- README.md가 Goal, Scope, Decision Criteria, Roles, Topics, phase/current state, References와 기본 Synthesis를 소유한다.
+- README.md가 Goal, Scope, Decision Criteria, Roles, Topics, phase/current state, References와 기본 Final Synthesis를 소유한다.
 - participant contribution만 turns/에 분리한다.
 - turn 파일명은 <sequence>-<participant>.md만 사용한다.
 - 예: 001-a.md, 002-b.md, 003-a.md
 - 각 turn은 discuss.md의 phase contract와 Turn Workflow를 따른다.
 - Lead는 coordination을 소유하지만 truth, tie-break 또는 final decision을 소유하지 않는다.
-- Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
+- Final Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
 - scheduled/chatbot runtime metadata는 해당 discuss-*.md extension에서 실제로 요구할 때만 추가한다.
 - OPTIONAL 블록과 빈 placeholder를 남기지 않는다.
 - KISS, DRY 원칙을 지킨다.
@@ -76,7 +76,7 @@ tags:
 
 ## Current State
 
-- **Phase** - <frame | evidence | dialectic | converge>
+- **Phase** - <frame | evidence | dialectic | sublation>
 - **Working Hypothesis A** - <현재 가설 또는 unknown; evidence에 따라 변경 가능>
 - **Working Hypothesis B** - <현재 가설 또는 unknown; evidence에 따라 변경 가능>
 - **Material Uncertainty** - <현재 판단을 바꿀 수 있는 uncertainty>
@@ -93,7 +93,7 @@ tags:
 - **Thesis** - <현재 검증 중인 strongest proposition>
 - **Antithesis** - <strongest incompatible counter-proposition 또는 constraint>
 - **Conflict** - <정확한 contradiction 또는 competing assumption/criterion>
-- **Synthesis Candidate** - <없으면 생략; challenge 전에는 provisional>
+- **Sublation Candidate** - <없으면 생략; challenge 전에는 provisional>
 
 ## References
 
@@ -104,29 +104,37 @@ tags:
 - `turns/<sequence>-<participant>.md`
 - 예: `001-a.md`, `002-b.md`, `003-a.md`
 
-## Synthesis <!-- Converge에서 작성. 커지면 synthesis.md로 분리한다. -->
+## Final Synthesis <!-- Sublation에서 작성. 커지면 synthesis.md로 분리한다. -->
 
 ### Outcome
 
-<`synthesis` | `partial_agreement` | `bounded_disagreement` | `research_required` | `human_decision_required`>
+<`sublation` | `partial_agreement` | `bounded_disagreement` | `research_required` | `human_decision_required`>
 
-### Result
+### Sublated Result
 
-<현재 evidence와 criteria가 허용하는 결론 또는 남은 선택지. Lead의 개인 입장을 shared truth로 쓰지 않는다.>
+<현재 evidence와 criteria가 허용하는 승화된 결론 또는 승화가 불가능한 정확한 이유. Lead의 개인 입장을 shared truth로 쓰지 않는다.>
 
 ### Basis
 
-- <핵심 decision criterion과 그것에 대한 strongest evidence/counterevidence>
-- <thesis/antithesis에서 살아남거나 버려진 중요한 constraint와 이유>
+- <핵심 decision criterion과 strongest evidence/counterevidence>
+- <thesis/antithesis에서 보존·변형·폐기된 중요한 constraint와 이유>
+- <기존 contradiction을 어떤 새로운 framing, boundary 또는 mechanism으로 넘어섰는지>
 
 ### Agreement And Disagreement
 
 - **Agreement** - <persisted turns에서 확인되는 합의>
 - **Disagreement** - <남은 이견과 원인이 되는 fact, assumption, criterion, risk tolerance 또는 authority>
 
+### Residual Conditions
+
+- **Limits** - <이 결론이 증명하지 못한 것, 적용 범위 밖, 전제와 남은 uncertainty; 없으면 none identified>
+- **Trade-offs** - <얻는 것과 포기하는 것, 비용·복잡성·위험 이동; 없으면 none identified>
+- **Cautions** - <적용 전 확인 조건, 오용 가능성, 운영상 주의사항; 없으면 none identified>
+- **Reopen Conditions** - <어떤 새 evidence/failure/constraint 변화가 dialectic을 다시 열어야 하는지; 없으면 none identified>
+
 ### Review Status
 
-<non-lead가 synthesis omission/misrepresentation을 검토했는지와 남은 finding. 실제 review가 없으면 mutual agreement를 추정하지 않는다.>
+<non-lead가 final synthesis를 omitted constraint, hidden trade-off, understated limitation, misrepresentation 관점에서 검토했는지와 남은 finding. 실제 review가 없으면 shared sublation을 추정하지 않는다.>
 
 ### Next
 
