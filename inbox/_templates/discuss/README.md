@@ -5,7 +5,7 @@ description: <무엇을 왜 토론하는지와 최종 판단 대상을 짧게 �
 status: "draft" # draft | in_progress | completed | blocked | superseded
 discussion:
   id: <discussion-id>
-  type: <explore | compare | debate | challenge | converge>
+  type: <explore | compare | debate | challenge | sublate>
   exchange: <one-shot | cross-review | iterative>
   execution: <manual | scheduled | chatbot-active-session>
   phase: <frame | evidence | dialectic | sublation>
