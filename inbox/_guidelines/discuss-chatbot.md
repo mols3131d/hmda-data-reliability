@@ -163,7 +163,7 @@ Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 
 6. Publish 직전 persisted state를 다시 확인한다.
 7. Turn을 publish한 뒤 Active Research Loop로 돌아간다.
 
-Material delta는 새로운 또는 수정된 evidence, 반례, concession, 좁혀진 disagreement, recommendation 변경뿐 아니라 **convergence 또는 더 이상 material objection이 없다는 terminal signal**도 포함한다. Terminal signal을 썼다는 이유로 현재 response runtime을 종료하지 않는다.
+Material delta는 새로운 또는 수정된 evidence, 반례, concession, 좁혀진 disagreement, recommendation 변경뿐 아니라 **convergence signal 또는 더 이상 material objection이 없다는 no-finding signal**도 포함한다. 이런 signal은 현재 active session을 닫지 않으며, publish 뒤에도 Research와 상대 확인을 계속한다.
 
 각 turn은 가능하면 다음만 남긴다.
 
