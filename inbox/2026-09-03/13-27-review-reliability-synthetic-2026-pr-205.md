@@ -69,11 +69,11 @@ tags:
 ### F5. OpenSpec 델타 스펙 누락 및 문서 최신화 누락
 
 - **Severity** - Minor
-- **Location** - [`openspec/changes/reliability-synthetic-2026-evaluation/proposal.md`](../../openspec/changes/reliability-synthetic-2026-evaluation/proposal.md), [`openspec/changes/reliability-synthetic-2026-evaluation/specs/data-operations-incident-lifecycle/spec.md`](../../openspec/changes/reliability-synthetic-2026-evaluation/specs/data-operations-incident-lifecycle/spec.md), [`src/hmda_reliability/hmda_data/synthetic/cases.py`](../../src/hmda_reliability/hmda_data/synthetic/cases.py#L63-L68)
+- **Location** - [`openspec/changes/reliability-synthetic-2026-evaluation/proposal.md`](../../openspec/changes/reliability-synthetic-2026-evaluation/proposal.md), `openspec/changes/reliability-synthetic-2026-evaluation/specs/data-operations-incident-lifecycle/spec.md`, [`src/hmda_reliability/hmda_data/synthetic/cases.py`](../../src/hmda_reliability/hmda_data/synthetic/cases.py#L63-L68)
 - **Evidence** -
   1. `proposal.md`에서 `Modified Capabilities`로 `hmda-data-synthetic-defects`를 선언했으나, `specs/` 하위에는 `data-operations-incident-lifecycle/spec.md`만 존재하고 `hmda-data-synthetic-defects/spec.md` 델타 스펙이 누락되었습니다.
   1. [`src/hmda_reliability/hmda_data/synthetic/cases.py`](../../src/hmda_reliability/hmda_data/synthetic/cases.py#L63-L68)의 `null_spike` docstring에 신규 매개변수인 `case_name`과 `target_year`에 대한 설명이 갱신되지 않았습니다.
-  1. [`openspec/changes/reliability-synthetic-2026-evaluation/specs/data-operations-incident-lifecycle/spec.md`](../../openspec/changes/reliability-synthetic-2026-evaluation/specs/data-operations-incident-lifecycle/spec.md)에 명시된 시나리오 조건인 `AND 메인 데이터베이스 상태는 변경되지 않아야 한다.`를 검증하는 단언문이 통합 테스트 [`tests/data_operations/test_incident_lifecycle.py`](../../tests/data_operations/test_incident_lifecycle.py#L190-L245)에 누락되어 있습니다.
+  1. `openspec/changes/reliability-synthetic-2026-evaluation/specs/data-operations-incident-lifecycle/spec.md`에 명시된 시나리오 조건인 `AND 메인 데이터베이스 상태는 변경되지 않아야 한다.`를 검증하는 단언문이 통합 테스트 [`tests/data_operations/test_incident_lifecycle.py`](../../tests/data_operations/test_incident_lifecycle.py#L190-L245)에 누락되어 있습니다.
 - **Impact** - OpenSpec 스펙 시스템의 계약 일관성 훼손 및 API 문서 최신화 누락, 명세와 테스트 간 검증 단절이 발생합니다.
 - **Required Change** - `openspec/changes/reliability-synthetic-2026-evaluation/specs/hmda-data-synthetic-defects/spec.md` 델타 스펙을 작성하여 추가하고, `null_spike()` docstring에 매개변수 설명을 보강하며, 통합 테스트에 메인 DB 파일 변경 없음 단언문을 보강해야 합니다.
 
