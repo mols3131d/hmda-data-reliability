@@ -11,7 +11,7 @@ Discussion is non-canonical. Route substantial evidence gathering to `research`,
 | Mode | Extension |
 | --- | --- |
 | Scheduled asynchronous discussion | [`discuss-scheduled.md`](discuss-scheduled.md) |
-| Active single-response chatbot discussion | [`discuss-chatbot.md`](discuss-chatbot.md) |
+| Live single-response discussion | [`discuss-live.md`](discuss-live.md) |
 
 Extension을 사용할 때도 이 파일을 먼저 적용한다. Extension은 자신이 명시적으로 소유한 runtime/cadence 규칙만 추가하거나 대체하며, bundle, phase lifecycle, ownership, turn quality, topic scope, sublation, decision authority와 non-canonical boundary는 이 파일을 따른다.
 

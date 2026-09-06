@@ -12,7 +12,7 @@
 - scheduler/host가 participant를 나중에 다시 호출할 수 있다.
 - 각 invocation은 durable state를 읽고 한 번의 eligible contribution을 persist할 수 있다.
 
-Scheduler가 없거나 단일 response runtime 안에서 계속 토론해야 하면 이 extension을 사용하지 않는다. Active single-response 방식은 [`discuss-chatbot.md`](discuss-chatbot.md)를 사용한다.
+Scheduler가 없거나 단일 response runtime 안에서 계속 토론해야 하면 이 extension을 사용하지 않는다. Live single-response 방식은 [`discuss-live.md`](discuss-live.md)를 사용한다.
 
 ## Defaults
 
@@ -165,7 +165,7 @@ Scheduled protocol은 scheduler가 A/B를 호출할 수 있다는 것만 가정�
 ## Boundaries
 
 - 이 extension은 `discuss.md`의 phase lifecycle, bundle, ownership, turn quality, topic scope, sublation과 decision authority를 변경하지 않는다.
-- `discuss-chatbot.md`와 같은 participant 실행에 동시에 적용하지 않는다.
+- `discuss-live.md`와 같은 participant 실행에 동시에 적용하지 않는다.
 - Scheduling infrastructure 자체를 discussion artifact 안에서 구현하지 않는다.
 - Elapsed time, invocation 수 또는 scheduler order를 deeper reasoning이나 evidence quality의 대리값으로 사용하지 않는다.
 - Shared session expiry를 확인하지 못했으면 임의로 deadline을 만들지 않는다.

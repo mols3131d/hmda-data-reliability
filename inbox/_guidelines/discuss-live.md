@@ -1,4 +1,4 @@
-# Chatbot Discussion
+# Live Discussion
 
 이 guide는 두 chatbot이 같은 repository `inbox/`를 공유하면서 **각자 하나의 response runtime 안에서 조사와 상대 turn 확인을 반복하는 active discussion**을 정의한다.
 
