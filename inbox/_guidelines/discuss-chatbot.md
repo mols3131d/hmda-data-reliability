@@ -2,39 +2,46 @@
 
 이 guide는 두 개의 챗봇이 같은 repository의 `inbox/`를 공유하면서 **각자 하나의 response runtime 안에서 지속적으로 조사하고 상대 턴을 확인하며 토론하는 방식**을 정의한다.
 
-기본 bundle, turn ownership, immutable turn, synthesis와 discussion artifact 원칙은 [`discuss.md`](discuss.md)를 따른다. 다만 이 guide가 명시적으로 선택된 경우 **runtime cadence와 invocation lifecycle에 한해서는** `discuss.md`의 `One Invocation = One Turn` 규칙 대신 이 guide를 적용한다.
+기본 bundle, turn ownership, immutable turn, synthesis와 discussion artifact 원칙은 [`discuss.md`](discuss.md)를 따른다. 이 guide가 명시적으로 선택된 경우에만 **runtime cadence와 invocation lifecycle**에 한해 `discuss.md`의 `One Invocation = One Turn` 규칙 대신 이 guide를 적용한다.
+
+## Use When
+
+다음 조건을 모두 만족할 때 사용한다.
+
+- 두 chatbot이 같은 discussion bundle을 읽고 쓸 수 있다.
+- 각 chatbot이 하나의 response runtime 동안 여러 번 repository를 확인할 수 있다.
+- 상대를 기다리는 동안 idle하지 않고 관련 Research를 계속해야 한다.
+- caller가 active session duration을 지정했거나 기본 25분 session을 사용한다.
+
+이 조건을 만족하지 못하면 일반 `discuss.md`의 Manual 또는 Scheduled cadence를 사용한다.
 
 ## Core Contract
 
-하나의 chatbot response는 하나의 turn을 쓰고 끝나는 실행이 아니다. Response runtime이 살아 있는 동안 참가자는 다음 loop를 계속 수행한다.
+하나의 chatbot response는 하나의 turn을 쓰고 끝나는 실행이 아니다. Response runtime이 살아 있는 동안 다음 loop를 계속 수행한다.
 
 ```text
 상대 상태 확인
-→ 상대의 새 턴이 있으면 읽고 검증
-→ 내 차례이고 material delta가 있으면 내 턴 publish
-→ 관련 Research 수행
+→ 새 상대 turn이 있으면 읽고 필요한 최소 검증
+→ 내 차례이고 material delta가 있으면 내 turn publish
+→ bounded Research slice 1개 수행
 → 상대 상태 다시 확인
 → 반복
 ```
 
-다음 두 상황은 **절대 response 종료 사유가 아니다.**
+다음은 **response 종료 사유가 아니다.**
 
 1. 자신의 turn을 publish했다.
 2. 상대가 아직 새 turn을 publish하지 않았다.
+3. 현재 latest turn이 자신의 것이다.
+4. 잠정 convergence가 생겼다.
 
-자신의 turn을 publish한 뒤에도 Research를 계속하고 상대의 다음 turn을 확인한다. 상대 turn이 없을 때도 Research를 계속하고 조사 단위가 끝날 때마다 상대 상태를 다시 확인한다.
+자신의 turn을 publish한 뒤에도 Research와 상대 확인을 계속한다. 상대 turn이 없을 때도 Research를 계속하고 **Research slice 하나가 끝날 때마다 반드시 상대 상태를 다시 확인한다.**
 
 `sleep`, idle wait 또는 의미 없는 polling으로 시간을 소비하지 않는다. **대기 시간은 Research 시간이다.**
 
 ## Session
 
-Session은 두 chatbot response가 동시에 또는 겹치는 시간 동안 진행되는 active runtime window다.
-
-기본 session은 25분이며 caller가 다른 값을 명시하면 그 값을 사용한다. Session duration은 목표 시간이 아니라 maximum active window다. 다만 단순 convergence, 자신의 turn publish 또는 상대 turn 부재만으로 자발적으로 response를 종료하지 않는다.
-
-Platform이나 provider가 response runtime을 강제로 종료하는 경우는 피할 수 없는 예외다. 이 경우 가능한 마지막 시점에 현재 상태를 durable artifact에 남긴다.
-
-A가 session 시작 시 `README.md`에 최소한 다음을 기록한다.
+기본 session은 25분이며 caller가 다른 값을 명시하면 그 값을 사용한다. A는 session 시작 시 `README.md`에 최소한 다음을 기록한다.
 
 ```yaml
 mode: chatbot-active-session
@@ -42,6 +49,10 @@ started_at: <timestamp>
 ends_at: <timestamp>
 participants: [a, b]
 ```
+
+A와 B는 같은 `ends_at`을 따른다. 각 runtime은 매 loop에서 deadline을 확인한다.
+
+Deadline이 가까워지면 새 큰 Research question이나 새 topic을 시작하지 않는다. Platform이나 provider가 response runtime을 강제로 종료하는 경우 가능한 마지막 시점에 현재 상태를 durable artifact에 남긴다.
 
 ## Roles
 
@@ -61,6 +72,23 @@ B는 independent challenger다.
 
 A와 B는 고정된 찬반 진영이 아니다. 더 강한 evidence가 나오면 입장을 바꾼다.
 
+## Bootstrap
+
+A는 discussion bundle을 만든 뒤 첫 turn을 publish하고 즉시 Active Research Loop로 들어간다.
+
+B가 시작했을 때 bundle 또는 첫 A turn이 아직 없다면 **종료하지 않는다.** Caller가 제공한 topic과 repository context를 기준으로 bounded Research slice를 수행하고, slice가 끝날 때마다 bundle과 A turn 생성 여부를 다시 확인한다.
+
+```text
+B 시작
+→ bundle/A turn 확인
+→ 없음: Research slice
+→ 다시 확인
+→ 없음: 다음 Research slice
+→ 발견: 읽고 검증 후 eligible turn publish
+```
+
+B는 A보다 먼저 discussion bundle이나 B turn을 만들지 않는다.
+
 ## Turn Order
 
 Turn은 discussion-global sequence를 사용한다.
@@ -73,19 +101,19 @@ Turn은 discussion-global sequence를 사용한다.
 ...
 ```
 
-매 publish 직전에 `turns/`를 다시 읽어 현재 sequence와 eligibility를 확인한다.
+매 publish 직전에 `turns/`를 다시 읽어 current sequence와 eligibility를 확인한다.
 
 - turn이 없으면 A만 eligible하다.
 - latest valid turn이 A면 B만 eligible하다.
 - latest valid turn이 B면 A만 eligible하다.
 
-이미 소비한 상대 turn에 다시 답하지 않는다. 자신의 turn이 latest이면 새 self-turn을 만들지 않고 Research를 계속한다.
+이미 소비한 상대 turn에 다시 답하지 않는다. 자신의 turn이 latest이면 새 self-turn을 만들지 않고 Active Research Loop를 계속한다.
 
-이미 publish된 turn은 rewrite하지 않는다. Stale state나 write conflict가 발생하면 최신 persisted state를 다시 읽고 현재 sequence에서 계속한다.
+이미 publish된 turn은 rewrite하지 않는다. Stale state나 write conflict가 발생하면 최신 persisted state를 다시 읽고 current sequence에서 계속한다.
 
 ## Active Research Loop
 
-상대의 새 turn을 기다리는 동안 멈추지 않는다. 현재 topic의 결론을 바꿀 가능성이 있는 가장 작은 Research question을 하나 선택한다.
+상대의 새 turn을 기다리는 동안 현재 topic의 결론을 바꿀 가능성이 있는 **가장 작은 Research question 하나**를 선택한다.
 
 Research 우선순위는 다음과 같다.
 
@@ -94,21 +122,33 @@ Research 우선순위는 다음과 같다.
 3. 관련 inbox research/discussion
 4. 판단에 실제 도움이 될 때만 external authoritative source
 
-한 Research slice는 하나의 bounded question 또는 몇 개의 밀접한 evidence check만 다룬다. Repository 전체를 반복 탐색하거나 시간이 남는다는 이유로 주제를 넓히지 않는다.
-
-Research slice가 끝나면 반드시 상대의 최신 turn 상태를 다시 확인한다.
+한 Research slice는 하나의 bounded question 또는 몇 개의 밀접한 evidence check만 다룬다. **Research slice 두 개를 연속으로 수행하기 전에 반드시 상대 상태를 확인해야 한다.**
 
 ```text
 Research slice
 → check opponent
 → no new turn: next Research slice
-→ new turn: read + verify + respond when eligible
+→ new turn: read + minimal verify + respond when eligible
 → Research 계속
 ```
 
-새 상대 turn이 발견되면 기존 Research를 무한히 계속하지 않는다. 현재 판단에 필요한 최소 검증만 마친 뒤 상대 주장에 응답한다.
+새 상대 turn이 발견되면 새로운 Research slice를 시작하지 않는다. 상대 주장을 판정하는 데 필요한 최소 검증만 수행한 뒤 turn에 응답한다.
 
-Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 새 self-turn을 만들지 않는다. 해당 finding은 현재 runtime context에 유지하고 다음 eligible turn에서 반영한다.
+Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 새 self-turn을 만들지 않는다. 다음 eligible turn에서 반영한다.
+
+## Research Saturation
+
+새로운 자료를 찾는 것만 Research로 취급하지 않는다. 현재 topic에서 새로운 source가 더 이상 판단을 바꾸지 않는다면 범위를 넓히지 말고 다음 순서로 Research mode를 전환한다.
+
+1. 가장 강한 현재 근거를 다시 검증한다.
+2. 핵심 가정의 반례를 찾는다.
+3. 상충하는 evidence나 누락 조건을 확인한다.
+4. 상대의 최근 strongest claim을 adversarial하게 재검토한다.
+5. 이미 합의한 결론이 evidence를 실제로 견디는지 확인한다.
+
+이 과정에서도 각 bounded slice 뒤에는 상대 상태를 다시 확인한다.
+
+시간을 채우기 위해 unrelated source, 새 topic 또는 speculative architecture를 추가하지 않는다.
 
 ## Turn Workflow
 
@@ -116,7 +156,7 @@ Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 
 
 1. 상대 turn을 끝까지 읽는다.
 2. 가장 강한 claim, evidence 또는 objection을 식별한다.
-3. 필요한 repository/external evidence만 짧게 검증한다.
+3. 필요한 evidence만 짧게 검증한다.
 4. 자신의 기존 position이 틀렸으면 수정한다.
 5. 반복이 아닌 material delta가 있을 때만 turn을 작성한다.
 6. Publish 직후 종료하지 않고 Active Research Loop로 돌아간다.
@@ -149,21 +189,19 @@ Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 
 
 ## No Early Exit
 
-다음은 response 종료 사유가 아니다.
+다음 이유로 response를 끝내지 않는다.
 
 - 내 turn을 성공적으로 publish함
 - 상대가 아직 응답하지 않음
-- 현재 최신 turn이 내 것임
+- 현재 latest turn이 내 것임
 - 잠정적으로 합의함
-- 현재 반론이 바로 떠오르지 않음
+- 현재 새로운 반론이 바로 떠오르지 않음
 
-이 경우 모두 남은 runtime 동안 관련 Research와 상대 상태 확인을 계속한다.
-
-잠정 convergence가 발생하면 새로운 논쟁을 억지로 만들지 않는다. 대신 합의가 실제 evidence를 견디는지, 중요한 반례나 누락 조건이 없는지 검증하면서 상대 turn을 계속 확인한다.
+이 경우 남은 runtime 동안 Active Research Loop를 계속한다. 잠정 convergence가 발생하면 새로운 논쟁을 억지로 만들지 않고 Research Saturation 절차로 합의의 근거와 반례를 검증한다.
 
 ## Stop
 
-정상적인 종료는 session deadline에 도달했을 때다. Deadline이 가까워지면 새 큰 Research question이나 새 topic을 시작하지 않는다.
+정상적인 종료는 session deadline에 도달했을 때다.
 
 그 외에는 다음 경우에만 조기 종료할 수 있다.
 
@@ -188,6 +226,15 @@ Synthesis는 다음만 포함한다.
 - Recommended Next Action
 
 Discussion 결과는 proposal이다. Human 또는 owning workflow가 채택하기 전에는 canonical requirement나 project decision이 아니다.
+
+## Recovery
+
+- Missing opponent turn은 failure가 아니다. Research를 계속한다.
+- Missing bundle은 B의 종료 사유가 아니다. Bootstrap loop를 계속한다.
+- Duplicate invocation은 current persisted state를 읽고 eligible work만 수행한다.
+- Stale state나 write conflict는 refresh 후 current sequence에서 재시도한다.
+- 상대 turn을 읽은 뒤 write 전에 state가 바뀌면 최신 turn을 다시 확인하고 stale response를 publish하지 않는다.
+- Session deadline 이후에는 새 argumentative turn을 시작하지 않는다.
 
 ## Boundaries
 
