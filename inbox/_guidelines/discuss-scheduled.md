@@ -23,7 +23,7 @@ Scheduler가 없거나 단일 response runtime 안에서 계속 토론해야 하
 | Active topics | 1 |
 | Session | 6–12 hours |
 | Exchange | iterative |
-| Synthesis | A |
+| Synthesis | Lead |
 | Decision authority | human or owning workflow |
 
 Session window는 timebox이지 turn quota가 아니다. 더 긴 window나 추가 topic은 discussion goal에 필요한 이유가 있을 때만 사용한다.
@@ -32,16 +32,16 @@ Provider-specific task ID, recurrence syntax, model name, trigger interval과 no
 
 ## Scheduled State
 
-A는 시작 시 `README.md`에 scheduled mode와 확인 가능한 session state를 기록한다.
+Lead는 시작 시 `README.md`에 scheduled execution과 확인 가능한 session state를 기록한다.
 
 ```yaml
-mode: scheduled
+execution: scheduled
 participants: [a, b]
 ```
 
 Scheduler/host가 shared session start/end를 명시적으로 제공하면 해당 값을 기록할 수 있다. 제공되지 않은 deadline을 추정하지 않는다.
 
-Topic, scope, current state, references와 synthesis는 `discuss.md`의 common bundle contract를 따른다.
+Phase, topic, scope, decision criteria, current state, references와 synthesis는 `discuss.md`의 common bundle contract를 따른다.
 
 ## One Invocation = One Contribution
 
@@ -49,22 +49,51 @@ Topic, scope, current state, references와 synthesis는 `discuss.md`의 common b
 
 ```text
 read persisted state
-→ check eligibility
+→ check phase + eligibility
 → run common Turn Workflow
-→ persist one participant turn
+→ persist one participant turn or allowed shared-state update
 → exit
 ```
 
-또는 A가 synthesis eligible이면:
+Lead가 Converge phase에서 synthesis eligible이면:
 
 ```text
 read persisted state
-→ synthesize
+→ verify convergence state
+→ synthesize or revise synthesis
 → persist shared state
 → exit
 ```
 
-하나의 invocation 안에서 상대의 미래 turn을 기다리거나 delayed second turn을 시도하지 않는다. 다음 exchange는 scheduler/host의 다음 invocation이 진행한다.
+하나의 invocation 안에서 상대의 미래 turn을 기다리거나 delayed second participant turn을 시도하지 않는다. 다음 exchange는 scheduler/host의 다음 invocation이 진행한다.
+
+## Phase-Aware Scheduling
+
+Scheduler는 phase를 결정하지 않는다. Persisted discussion state와 `discuss.md`의 phase transition criteria가 다음 useful contribution을 결정한다.
+
+### Frame
+
+- Lead가 frame proposal을 작성한다.
+- 상대 participant가 framing bias, missing alternative, scope와 criteria를 검토할 invocation 기회를 가진다.
+- Material framing objection이 남으면 Lead invocation이 이를 무시하고 Evidence로 전환하지 않는다.
+
+### Evidence
+
+- 가능한 경우 A와 B 각각에게 independent evidence contribution 기회를 준다.
+- Scheduler가 같은 participant만 반복 호출해 evidence diversity를 대체하지 않는다.
+- Participant가 아직 자신의 independent evidence pass를 하지 않았다면 상대 recommendation에 대한 단순 반응보다 independent evidence를 우선한다.
+
+### Dialectic
+
+- Scheduler는 persisted move에 따라 next eligible participant를 호출한다.
+- Thesis, antithesis, synthesis authorship을 Lead에게 고정하지 않는다.
+- Synthesis candidate가 게시되면 상대 participant에게 adversarial challenge 기회를 먼저 준 뒤 Converge eligibility를 판단한다.
+
+### Converge
+
+- Lead가 synthesis를 작성할 수 있다.
+- Scheduler/host가 허용하면 non-lead에게 synthesis omission/misrepresentation review 기회를 제공한다.
+- Review 기회가 없었다면 synthesis는 persisted explicit agreement 이상을 mutual consensus로 표현하지 않는다.
 
 ## Eligibility
 
@@ -81,53 +110,58 @@ A1 → B1 → A2 → B2 → ...
 
 Invocation이 자신의 차례가 아니면 새 turn을 만들지 않는다. Missing prerequisite, duplicate invocation 또는 이미 소비한 state는 no-op으로 종료하고 다음 scheduled invocation에 맡긴다.
 
-## A Lead Workflow
+Phase transition을 위해 shared state를 갱신하는 Lead invocation도 persisted objections를 먼저 확인한다. Lead privilege는 turn eligibility나 phase criteria를 우회하지 않는다.
 
-A는 common participant role에 Moderator coordination을 추가로 맡는다.
+## Lead Workflow
 
-1. 첫 eligible invocation에서 active topic과 evidence baseline을 `README.md`에 정리한다.
-2. 이후 A turn에서는 B의 latest material claim과 strongest evidence를 먼저 검증한다.
-3. Topic transition과 shared Current State는 A가 관리한다.
-4. Common stop condition 또는 session expiry가 확인되면 새 argumentative turn 대신 synthesis를 수행한다.
+Lead는 common participant role에 coordination을 추가로 맡는다.
 
-A는 `README.md`, A turns와 synthesis를 소유한다.
+1. Frame에서 question, scope, criteria, role과 phase state를 제안한다.
+2. 상대의 material framing objection을 summary에 정확히 반영한다.
+3. Phase transition criteria를 충족한 경우에만 `README.md` phase를 갱신한다.
+4. Dialectic에서는 Lead 자신의 proposal을 shared truth로 취급하지 않는다.
+5. Converge에서는 persisted strongest case, agreement, disagreement와 evidence gap을 보존해 synthesis한다.
 
-## B Challenger Workflow
+Lead는 `README.md`, 자신의 turns와 synthesis authoring을 소유하지만 truth, tie-break 또는 decision authority를 소유하지 않는다.
 
-B는 common Turn Workflow를 독립적으로 수행한다.
+## Counterpart Workflow
 
-1. A의 framing을 기본 전제로 받아들이지 않고 중요한 evidence와 assumption을 확인한다.
-2. strongest counterexample, omitted alternative, trade-off 또는 reason to agree를 찾는다.
-3. B turn만 수정한다. Shared-state 변경은 `Next`에서 제안한다.
-4. Material objection이 없으면 convergence/no-finding signal을 한 번 남길 수 있다.
+Non-lead participant는 common Turn Workflow를 독립적으로 수행한다.
 
-B는 B turns만 소유한다.
+1. Frame에서 lead framing 자체를 challenge할 수 있다.
+2. Evidence에서 상대가 제시하지 않은 evidence path를 우선 탐색한다.
+3. Dialectic에서 반박 전에 상대 strongest claim을 steelman한다.
+4. Synthesis candidate를 challenge할 때 omitted constraint, unsupported assumption과 false compromise를 우선 확인한다.
+5. Material objection이 없으면 convergence/no-finding signal을 한 번 남길 수 있다.
+
+Non-lead는 자신의 turns만 소유한다. Shared-state 변경은 turn에서 제안한다.
 
 ## Session Window
 
 - 한 번에 하나의 topic만 active로 유지한다.
-- 시간이 남는다는 이유로 topic이나 turn을 추가하지 않는다.
-- Common stop condition이 먼저 충족되면 session window가 남아 있어도 synthesize할 수 있다.
+- 시간이 남는다는 이유로 topic, dialectic cycle 또는 turn을 추가하지 않는다.
+- Common stop condition이 먼저 충족되면 session window가 남아 있어도 Converge/synthesis로 이동할 수 있다.
 - Shared session expiry가 확인되면 새 argumentative turn을 시작하지 않는다.
-- Expiry 이후 A가 별도 synthesis invocation을 받을 수 있다면 persisted turns만 기준으로 synthesis한다.
+- Expiry 이후 Lead가 별도 synthesis invocation을 받을 수 있다면 persisted turns만 기준으로 synthesis한다.
 
-Scheduler가 호출을 놓쳤더라도 sequence를 건너뛰지 않는다. Latest valid persisted turn에서 다시 시작한다.
+Scheduler가 호출을 놓쳤더라도 sequence나 phase를 추측으로 건너뛰지 않는다. Latest valid persisted state에서 다시 시작한다.
 
 ## Recovery
 
 - Missing prerequisite 또는 duplicate invocation → no-op.
-- Stale state 또는 write conflict → refresh 후 current eligibility에서 재시도.
+- Stale state 또는 write conflict → refresh 후 current phase/eligibility에서 재시도.
 - Missed turn → latest valid turn에서 resume.
-- Missing material evidence → participant가 `Next: research`를 기록하고 필요한 경우 A가 topic을 blocked로 표시.
-- Session expiry → 새 argumentative turn 금지; 가능한 경우 A synthesis로 전환.
+- Phase state가 turn evidence와 모순 → turn evidence를 재검토하고 shared state를 정정한 뒤 계속.
+- Missing material evidence → participant가 `Next: research`를 기록하고 필요한 경우 Lead가 topic을 blocked/paused로 표시.
+- Session expiry → 새 argumentative turn 금지; 가능한 경우 Converge/synthesis로 전환.
 - Scheduler failure → discussion state를 추측으로 advance하지 않는다.
 
 Scheduled protocol은 scheduler가 A/B를 호출할 수 있다는 것만 가정한다. Scheduler-specific retry policy, recurrence expression, queue semantics와 notification은 외부 runtime이 소유한다.
 
 ## Boundaries
 
-- 이 extension은 `discuss.md`의 bundle, ownership, turn quality, topic scope, synthesis와 decision authority를 변경하지 않는다.
+- 이 extension은 `discuss.md`의 phase lifecycle, bundle, ownership, turn quality, topic scope, synthesis와 decision authority를 변경하지 않는다.
 - `discuss-chatbot.md`와 같은 participant 실행에 동시에 적용하지 않는다.
 - Scheduling infrastructure 자체를 discussion artifact 안에서 구현하지 않는다.
-- Elapsed time이나 invocation 수를 deeper reasoning의 증거로 취급하지 않는다.
+- Elapsed time, invocation 수 또는 scheduler order를 deeper reasoning이나 evidence quality의 대리값으로 사용하지 않는다.
 - Shared session expiry를 확인하지 못했으면 임의로 deadline을 만들지 않는다.
