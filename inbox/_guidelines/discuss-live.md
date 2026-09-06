@@ -46,19 +46,25 @@ shared phase + 상대 상태 확인
 
 두 participant는 반드시 같은 discussion bundle을 사용한다.
 
-Caller가 exact bundle path를 제공하면 topic/execution과 closed state를 확인한 뒤 사용한다. Mismatch 또는 closed discussion이면 임의 재사용하지 않는다.
+병렬 또는 duplicate invocation이 가능한 Live bootstrap에서는 caller가 **모든 participant에 같은 exact bundle path를 먼저 제공**한다. Path는 아직 존재하지 않아도 되지만 [`inbox/AGENTS.md`](../AGENTS.md)의 path/naming contract를 따라야 한다.
 
-Exact path가 없으면 **Lead와 Non-lead 모두 먼저** 같은 topic과 `execution: live`가 일치하는 active bundle을 찾는다.
+- exact path가 이미 존재함 → topic, `discussion.execution: live`와 closed state를 확인한 뒤 사용한다. Mismatch 또는 closed discussion이면 임의 재사용하지 않는다.
+- exact path가 아직 없음 → Lead만 그 exact path에 bundle을 만들 수 있다. Non-lead는 bounded Research 후 같은 path를 다시 확인한다.
+- 같은 exact path의 create/write가 충돌함 → refresh 후 기존 bundle을 검증하고 재사용한다. 새 path를 만들어 우회하지 않는다.
 
-- 후보 없음 → Lead만 [`inbox/AGENTS.md`](../AGENTS.md)의 path/naming contract와 `discuss.md`의 bundle contract에 따라 새 bundle을 만들 수 있다. Non-lead는 bounded Research 후 다시 확인한다.
-- 후보 하나 → Lead/Non-lead 모두 그 bundle을 사용한다. Lead도 새 competing bundle을 만들지 않는다.
-- 후보 둘 이상 → 임의 선택과 추가 생성 금지; Research와 확인은 계속할 수 있지만 join/write는 blocked다.
+Exact path 없이 시작해야 한다면 **동시에 여러 Lead bootstrap을 실행하지 않는다.** 단일 Lead bootstrap invocation이 먼저 같은 topic과 `discussion.execution: live`가 일치하는 active bundle을 찾는다.
 
-Lead는 `README.md`에 최소한 다음을 기록한다.
+- 후보 없음 → Lead가 path/naming contract와 `discuss.md`의 bundle contract에 따라 하나를 만들고 그 exact path를 후속 participant에 전달한다.
+- 후보 하나 → 그 bundle을 사용한다.
+- 후보 둘 이상 → 임의 선택과 추가 생성 금지; join/write는 blocked다.
+
+Topic 기반 검색은 recovery/discovery 수단이지 concurrent uniqueness primitive가 아니다.
+
+Lead는 `README.md`의 canonical execution field를 다음처럼 기록한다.
 
 ```yaml
-execution: live
-participants: [a, b]
+discussion:
+  execution: live
 ```
 
 ## Runtime Boundary
@@ -80,7 +86,7 @@ participants: [a, b]
 
 Lead는:
 
-- rendezvous 결과 새 bundle이 필요할 때 bundle과 `README.md` 생성
+- rendezvous 결과 새 bundle이 필요할 때 지정된 exact path에 bundle과 `README.md` 생성
 - Frame proposal과 shared phase/current state 관리
 - 자신의 participant turns 작성
 - 가능한 범위의 final synthesis authoring
@@ -98,9 +104,9 @@ A와 B는 고정된 찬반 진영이 아니다.
 Non-lead가 시작했을 때 bundle 또는 첫 Lead turn이 없다는 사실만으로 종료하지 않는다.
 
 ```text
-bundle/Lead turn 확인
+exact bundle/Lead turn 확인
 → 없음: bounded Research
-→ 다시 확인
+→ 같은 path 다시 확인
 → 반복
 → 발견: identity + phase 확인 + 읽기 + 검증
 → credible Research도 없고 final recheck에도 없음: participant-local checkpoint 후 종료 가능
@@ -242,7 +248,8 @@ Lead는 substantive state가 바뀔 때 `README.md` frontmatter의 canonical `di
 
 - Missing opponent turn/bundle **단독**은 종료 사유가 아니다. Bounded Research와 확인을 계속하되 saturation이면 participant-local 종료를 허용한다.
 - Ambiguous bundle identity는 임의 선택이나 추가 bundle 생성 사유가 아니다.
-- Duplicate Lead invocation도 rendezvous를 먼저 수행하며 matching active bundle이 있으면 재사용한다.
+- Concurrent Live bootstrap은 shared exact bundle path 없이 실행하지 않는다.
+- Same-path create/write conflict는 refresh 후 existing bundle을 검증하고 재사용한다.
 - Duplicate invocation은 persisted state에서 eligible work만 수행한다.
 - Stale phase/turn state 또는 write conflict는 refresh 후 재시도한다.
 - 한 participant의 runtime 종료는 다른 participant의 deadline을 만들지 않는다.
