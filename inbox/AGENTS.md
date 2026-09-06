@@ -62,6 +62,8 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 | `review` | [Review](_guidelines/review.md) |
 | `discuss` | [Discuss](_guidelines/discuss.md) |
 
+토론 participant prompt를 생성하거나 검토할 때는 [Discussion Prompt](_guidelines/discuss-prompt.md)도 함께 적용한다.
+
 그 밖의 type은 이 common contract만 따른다. Dedicated `inbox` branch delivery가 필요한 경우에는 [Inbox Branch Delivery](_guidelines/branch.md)를 따른다.
 
 ## Writing
