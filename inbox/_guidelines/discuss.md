@@ -52,6 +52,8 @@ Turn filename은 discussion-global sequence와 participant identity만 사용한
 
 Sequence는 lexical order와 discussion order가 일치하도록 zero-pad한다. Phase, cycle, topic과 다른 metadata는 filename이 아니라 turn content 또는 frontmatter에 둔다.
 
+각 topic은 stable lowercase kebab-case slug를 가진다. `README.md`는 현재 active topic slug를 `discussion.topic`에 저장하고, 각 turn은 자신이 다루는 동일 slug를 frontmatter `topic`에 저장한다. `T1` 같은 순번과 display title은 topic ID가 아니다.
+
 추가 파일은 readability가 실제로 좋아질 때만 만든다. 큰 final synthesis는 필요하면 `synthesis.md`로 분리하고 `README.md`에서 연결한다.
 
 Template: [`inbox/_templates/discuss/`](../_templates/discuss/).

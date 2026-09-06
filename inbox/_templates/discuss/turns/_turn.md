@@ -1,7 +1,7 @@
 ---
 type: discuss
 discussion: <discussion-id>
-topic: <topic-id>
+topic: <topic-slug>
 phase: <frame | evidence | dialectic | sublation>
 sequence: <global-sequence>
 participant: <A | B>
@@ -16,6 +16,8 @@ move: <frame-proposal | frame-review | evidence | thesis | antithesis | sublatio
 - 파일명: <sequence>-<participant>.md
 - 예: 001-a.md, 002-b.md, 003-a.md
 - sequence는 토론 전체의 persisted 시간 순서다.
+- topic은 README에서 정의한 stable lowercase kebab-case slug를 사용한다.
+- topic에 T1 같은 순번이나 display title을 넣지 않는다.
 - phase와 optional cycle/move는 filename이 아니라 frontmatter가 소유한다.
 - 이미 상대가 소비한 turn은 수정하지 않는다. 정정은 다음 eligible turn에 기록한다.
 - participant identity는 찬성/반대 진영을 의미하지 않는다.

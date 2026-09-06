@@ -9,9 +9,9 @@ discussion:
   exchange: <one-shot | cross-review | iterative>
   execution: <manual | scheduled | chatbot-active-session>
   phase: <frame | evidence | dialectic | sublation>
+  topic: <topic-slug>
   decision_authority: <human | owning-workflow>
   lead: A
-  active_topic: <topic-id>
   # OPTIONAL: dialectic phase에서 cycle을 구분할 가치가 있을 때만 유지한다.
   dialectic_cycle: <positive-integer>
 # OPTIONAL: 태그가 있을 때만 필드 전체를 유지한다.
@@ -28,6 +28,8 @@ tags:
 - participant contribution만 turns/에 분리한다.
 - turn 파일명은 <sequence>-<participant>.md만 사용한다.
 - 예: 001-a.md, 002-b.md, 003-a.md
+- discussion.topic은 현재 active topic의 stable lowercase kebab-case slug다.
+- 각 turn의 topic은 해당 topic slug를 그대로 사용한다. T1 같은 순번이나 display title을 넣지 않는다.
 - 각 turn은 discuss.md의 phase contract와 Turn Workflow를 따른다.
 - Lead는 coordination을 소유하지만 truth, tie-break 또는 final decision을 소유하지 않는다.
 - Final Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
@@ -62,13 +64,13 @@ tags:
 
 ## Topics
 
-### T1. <Topic title>
+### <topic-slug> — <Topic title>
 
 - **Status** - <pending | active | paused | blocked | completed>
 - **Question** - <이 Topic에서 답해야 할 질문>
 - **Done When** - <현재 phase lifecycle을 포함한 종료 또는 전환 조건>
 
-### T2. <Topic title> <!-- OPTIONAL -->
+### <topic-slug-2> — <Topic title> <!-- OPTIONAL -->
 
 - **Status** - <pending | active | paused | blocked | completed>
 - **Question** - <이 Topic에서 답해야 할 질문>
