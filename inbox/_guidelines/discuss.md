@@ -78,7 +78,7 @@ Shared-state summary가 participant turn과 다르면 persisted participant turn
 | `compare` | 알려진 alternatives 비교 | trade-offs and preferred options |
 | `debate` | proposition 검증 | strongest arguments and changed positions |
 | `challenge` | leading proposal stress-test | weak assumptions and acceptance conditions |
-| `converge` | 기존 논의를 더 높은 결론으로 승화 | sublation, bounded disagreement, decision points |
+| `sublate` | 기존 논의를 더 높은 결론으로 승화 | sublation, bounded disagreement, decision points |
 
 Types may transition when explicit. `explore`를 substantial Research의 대체물로 사용하지 않는다.
 
@@ -257,7 +257,7 @@ Material challenge가 남으면 candidate는 provisional로 유지하고 가장 
 
 #### Sublation Test
 
-`subllation` outcome을 기록하기 전에 다음을 모두 검토한다.
+`sublation` outcome을 기록하기 전에 다음을 모두 검토한다.
 
 - **Preservation** — thesis와 antithesis의 strongest valid constraints가 무엇인지 명시적으로 보존했다.
 - **Transformation** — contradiction을 단순 삭제하지 않고 새로운 framing, mechanism, boundary 또는 조건으로 재구성했다.
