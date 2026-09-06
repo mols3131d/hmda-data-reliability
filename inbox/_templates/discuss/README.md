@@ -33,7 +33,7 @@ tags:
 - 각 turn의 topic은 해당 topic slug를 그대로 사용한다. T1 같은 순번이나 display title을 넣지 않는다.
 - 각 turn은 discuss.md의 phase contract와 Turn Workflow를 따른다.
 - Lead는 coordination을 소유하지만 truth, tie-break 또는 final decision을 소유하지 않는다.
-- Final Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
+- Final Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다. 분리하면 README에는 synthesis.md link와 필요한 짧은 상태만 남기고 outcome과 synthesis 본문을 중복하지 않는다.
 - scheduled/live runtime metadata는 해당 discuss-*.md extension에서 실제로 요구할 때만 추가한다.
 - OPTIONAL 블록과 빈 placeholder를 남기지 않는다.
 - KISS, DRY 원칙을 지킨다.
@@ -106,7 +106,7 @@ tags:
 - `turns/<sequence>-<participant>.md`
 - 예: `001-a.md`, `002-b.md`, `003-a.md`
 
-## Final Synthesis <!-- Sublation에서 작성. 커지면 synthesis.md로 분리한다. -->
+## Final Synthesis <!-- Sublation에서 작성. 커지면 synthesis.md로 분리하고 이 section은 link/status만 남긴다. -->
 
 ### Outcome
 
