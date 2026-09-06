@@ -59,9 +59,9 @@ Response runtime이 살아 있는 동안 다음을 반복한다.
 
 두 participant는 반드시 같은 discussion bundle을 사용한다.
 
-Caller가 exact bundle path를 제공하면 그것만 사용한다. Exact path가 없으면 A가 `discuss.md` naming contract에 따라 bundle을 만든다.
+Caller가 exact bundle path를 제공하면 그 path를 우선하되, 현재 topic/mode와 맞고 closed discussion이 아닌지 확인한 뒤 쓴다. Mismatch 또는 closed state이면 임의로 재사용하지 않는다.
 
-B는 topic과 `mode: chatbot-active-session`이 일치하는 active bundle을 **정확히 하나** 식별할 수 있을 때만 합류한다.
+Exact path가 없으면 A가 `discuss.md` naming contract에 따라 bundle을 만든다. B는 topic과 `mode: chatbot-active-session`이 일치하는 active bundle을 **정확히 하나** 식별할 수 있을 때만 합류한다.
 
 - 후보 없음 → Research 후 다시 확인
 - 후보 하나 → 합류
@@ -199,18 +199,29 @@ Material objection이 없으면 억지로 반론을 만들지 않는다. 필요�
 
 ## Checkpoint And Termination
 
-정상 종료는 **각 participant 자신의 vendor/host response runtime boundary**다. 그 전에는 자신의 turn 완료, 상대 지연 또는 convergence만으로 종료하지 않는다.
+Participant-local runtime 종료와 shared discussion 종료를 구분한다.
 
-조기 종료는 다음 경우만 허용한다.
+### Participant Runtime End
 
-- 사용자가 해당 participant의 active runtime을 명시적으로 중단
-- safety, permission 또는 tool failure로 Research와 상대 상태 확인을 모두 더 이상 수행할 수 없음
+각 participant는 자신의 vendor/host response runtime boundary까지 active loop를 유지한다. 자신의 turn 완료, 상대 지연 또는 convergence만으로 종료하지 않는다.
 
-한 participant가 먼저 종료되어도 다른 participant는 자신의 runtime이 살아 있는 동안 Research와 shared-state 확인을 계속한다. 상대가 다시 응답할 수 있다고 추측하지 않는다.
+한 participant가 먼저 종료되어도 그것만으로 discussion/topic을 `closed`로 바꾸지 않는다. 남은 participant는 자신의 runtime이 살아 있는 동안 Research와 shared-state 확인을 계속한다.
 
-A는 substantive state가 바뀔 때 `README.md`의 Current State를 필요한 만큼 갱신한다. Final synthesis를 보장하기 위해 runtime을 임의로 일찍 끝내지는 않는다.
+### Shared Discussion End
 
-종료가 임박했다는 신뢰 가능한 신호가 있으면 A는 persisted turns를 다시 확인하고 synthesis를 갱신한다. 종료 예고 없이 runtime이 끝나 final synthesis가 없거나 stale하면 완료된 synthesis로 가장하지 않는다. Persisted turns와 마지막 Current State가 discussion evidence다.
+다음은 `discuss.md`의 shared stop authority를 그대로 따른다.
+
+- 사용자 또는 decision authority가 discussion/topic을 명시적으로 닫음
+- caller/host가 제공한 shared deadline에 도달함
+- safety/permission/tool failure로 토론 자체를 더 이상 신뢰 가능하게 진행할 수 없음
+
+Shared discussion이 닫히면 새 argumentative turn이나 새로운 Research topic을 시작하지 않는다. 가능한 checkpoint/synthesis만 처리한다.
+
+A는 substantive state가 바뀔 때 `README.md`의 Current State를 필요한 만큼 갱신한다. Final synthesis를 보장하기 위해 participant runtime을 임의로 일찍 끝내지는 않는다.
+
+종료가 임박했다는 신뢰 가능한 신호가 있으면 A는 persisted turns를 다시 확인하고 synthesis를 갱신한다. 종료 예고 없이 A runtime이 끝나 final synthesis가 없거나 stale하면 완료된 synthesis로 가장하지 않는다. Persisted turns와 마지막 Current State가 discussion evidence다.
+
+Participant-local runtime expiry를 이유로 A가 shared discussion을 닫거나 B의 남은 runtime을 종료시키지 않는다.
 
 Synthesis가 가능하면 `discuss.md` 계약에 따라 결과, 합의/불일치, 핵심 evidence, open question과 next action만 남긴다.
 
