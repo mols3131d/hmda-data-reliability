@@ -11,7 +11,7 @@
 - 두 chatbot이 같은 discussion bundle을 읽고 쓸 수 있다.
 - 각 chatbot이 하나의 response runtime 동안 shared state를 여러 번 새로 읽을 수 있다.
 - 상대를 기다리는 동안 idle하지 않고 관련 Research를 계속해야 한다.
-- caller가 active session duration을 지정했거나 기본 25분 session을 사용한다.
+- chatbot vendor 또는 host가 이 active response runtime을 지원한다.
 
 이 mode는 scheduler가 나중에 chatbot을 다시 호출하는 방식이 아니다. **각 chatbot이 현재 단일 response를 계속 실행하면서** Research와 shared-state refresh를 반복한다.
 
@@ -44,18 +44,28 @@ Response runtime이 살아 있는 동안 다음 loop를 계속 수행한다.
 
 ## Session
 
-기본 session은 25분이며 caller가 다른 값을 명시하면 그 값을 사용한다. A는 session 시작 시 `README.md`에 최소한 다음을 기록한다.
+Session duration은 이 guide가 정하지 않는다. **현재 chatbot vendor 또는 host가 제공하는 단일 response runtime/session limit를 authoritative하게 따른다.** 고정된 분 단위 기본값을 두거나 vendor limit를 추정해서는 안 된다.
+
+Vendor/host가 명시적인 deadline 또는 remaining runtime을 제공하면 그것을 사용한다. 제공하지 않으면 임의의 `ends_at`을 만들지 않고 response runtime이 실제로 유지되는 동안 Core Loop를 계속한다.
+
+A는 session 시작 시 `README.md`에 확인 가능한 runtime metadata만 기록한다.
 
 ```yaml
 mode: chatbot-active-session
 started_at: <timestamp>
-ends_at: <timestamp>
+runtime_source: <vendor-or-host>
 participants: [a, b]
 ```
 
-A와 B는 같은 `ends_at`을 따르고 각 loop에서 deadline을 확인한다.
+Vendor/host가 실제 deadline을 제공한 경우에만 다음을 추가한다.
 
-Deadline이 가까워지면 새 큰 Research question이나 새 topic을 시작하지 않는다. Platform이나 provider가 response runtime을 강제로 종료하는 경우 가능한 마지막 시점에 현재 상태를 durable artifact에 남긴다.
+```yaml
+ends_at: <vendor-provided-timestamp>
+```
+
+A와 B는 같은 vendor/host runtime boundary를 따른다. Deadline을 확인할 수 있으면 각 loop에서 확인하고, 종료가 가까우면 새 큰 Research question이나 새 topic을 시작하지 않는다.
+
+Platform이나 provider가 response runtime을 종료하는 것은 이 mode의 정상 runtime boundary다. 가능한 경우 종료 직전에 현재 상태를 durable artifact에 남긴다.
 
 ## Roles
 
@@ -193,19 +203,18 @@ Material delta는 새로운 또는 수정된 evidence, 반례, concession, 좁�
 
 ## Stop
 
-정상적인 종료는 session deadline에 도달했을 때다.
+정상적인 종료는 chatbot vendor 또는 host가 제공하는 현재 response runtime boundary에 도달했을 때다.
 
 그 외에는 다음 경우에만 조기 종료할 수 있다.
 
 - 사용자가 명시적으로 session을 중단했다.
 - safety, permission 또는 tool failure로 Research와 상대 상태 확인을 모두 더 이상 수행할 수 없다.
-- platform/provider가 response runtime을 강제로 종료한다.
 
 단순히 자신의 turn을 끝냈거나 상대가 늦거나 잠정 합의에 도달했다는 이유로 종료하지 않는다.
 
 ## Synthesis
 
-A는 session 종료 직전에 persisted turns와 중요한 Research 결과를 다시 확인하고 `README.md`에 synthesis를 작성한다. Synthesis 때문에 active loop를 너무 일찍 종료하지 않는다.
+A는 runtime boundary에 도달하기 전 가능한 마지막 시점에 persisted turns와 중요한 Research 결과를 다시 확인하고 `README.md`에 synthesis를 작성한다. Synthesis 때문에 active loop를 너무 일찍 종료하지 않는다.
 
 Synthesis는 다음만 포함한다.
 
@@ -226,7 +235,7 @@ Discussion 결과는 proposal이다. Human 또는 owning workflow가 채택하�
 - Duplicate invocation은 current persisted state를 읽고 eligible work만 수행한다.
 - Stale state나 write conflict는 refresh 후 current sequence에서 재시도한다.
 - 상대 turn을 읽은 뒤 write 전에 state가 바뀌면 최신 turn을 다시 확인하고 stale response를 publish하지 않는다.
-- Session deadline 이후에는 새 argumentative turn을 시작하지 않는다.
+- Vendor/host runtime boundary 이후에는 새 argumentative turn을 시작하지 않는다.
 
 ## Boundaries
 
