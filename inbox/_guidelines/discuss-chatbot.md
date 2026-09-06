@@ -35,7 +35,7 @@ shared phase + 상대 상태 확인
 - 자신의 turn을 publish함
 - 상대가 아직 응답하지 않음
 - latest turn이 자신의 것임
-- 잠정 convergence에 도달함
+- provisional sublation이 형성됨
 - 당장 새로운 반론이 없음
 
 `sleep`, idle wait, 의미 없는 polling으로 시간을 소비하지 않는다. **대기 시간은 Research 시간이다.**
@@ -72,7 +72,7 @@ participants: [a, b]
 - caller/host가 공통 shared deadline을 명시적으로 제공한 경우에만 discussion-level deadline으로 사용한다.
 - 한 participant의 runtime 종료는 다른 participant의 종료를 의미하지 않는다.
 
-종료가 임박했다는 신뢰 가능한 신호가 있을 때만 새 큰 Research를 시작하지 않고 checkpoint/synthesis로 전환한다. 종료 예고가 없으면 finalization 시간을 추측하기 위해 active loop를 일찍 끝내지 않는다.
+종료가 임박했다는 신뢰 가능한 신호가 있을 때만 새 큰 Research를 시작하지 않고 checkpoint/final synthesis로 전환한다. 종료 예고가 없으면 finalization 시간을 추측하기 위해 active loop를 일찍 끝내지 않는다.
 
 ## Roles And Bootstrap
 
@@ -83,7 +83,7 @@ Lead는:
 - bundle과 `README.md` 생성
 - Frame proposal과 shared phase/current state 관리
 - 자신의 participant turns 작성
-- 가능한 범위의 synthesis authoring
+- 가능한 범위의 final synthesis authoring
 
 Non-lead는:
 
@@ -126,13 +126,14 @@ Waiting-time Research도 current phase 목적을 따른다. 상대 turn이 없�
 ### Dialectic
 
 - Waiting-time Research는 current thesis/antithesis의 strongest evidence, counterexample와 hidden assumption에 집중한다.
-- 상대가 synthesis candidate를 게시하면 새 unrelated thesis를 만들기 전에 그 synthesis를 adversarially review한다.
-- Lead status는 thesis/synthesis authorship 우선권을 주지 않는다.
+- 상대가 sublation candidate를 게시하면 새 unrelated thesis를 만들기 전에 그 candidate를 adversarially review한다.
+- Lead status는 thesis/antithesis/sublation authorship 우선권을 주지 않는다.
 
-### Converge
+### Sublation
 
-- 잠정 convergence는 **새 논쟁을 만들지 말라는 신호**이지 participant runtime 종료 신호가 아니다.
-- 남은 runtime에서는 strongest evidence 재검증, 합의를 깨뜨릴 반례, omitted constraint, synthesis misrepresentation과 새 상대 turn을 확인한다.
+- Provisional sublation은 **새 논쟁을 억지로 만들지 말라는 신호**이지 participant runtime 종료 신호가 아니다.
+- 남은 runtime에서는 strongest evidence 재검증, sublation을 깨뜨릴 반례, omitted constraint, hidden trade-off, understated limitation과 새 상대 turn을 확인한다.
+- `Limits`, `Trade-offs`, `Cautions`, `Reopen Conditions`가 충분히 구체적인지 검증한다.
 - 새 material finding이 생기면 `discuss.md` 규칙에 따라 Dialectic/Evidence/Frame으로 되돌아간다.
 
 ## Turn State And Concurrency
@@ -190,20 +191,21 @@ Research slice
 - 핵심 assumption의 반례
 - 상충 evidence 또는 누락 조건
 - 상대 strongest claim의 steelman/adversarial 재검토
-- synthesis candidate의 constraint preservation 검사
-- 잠정 합의의 stress test
+- sublation candidate의 constraint preservation 검사
+- hidden trade-off 또는 unstated cost 탐색
+- limit와 reopen condition의 stress test
 
 각 slice 뒤에는 다시 shared phase와 상대 상태를 확인한다. 시간을 채우기 위해 unrelated source, 새 topic 또는 speculative architecture를 만들지 않는다.
 
-## Respond And Converge
+## Respond And Sublate
 
 새 상대 turn이 있고 자신이 eligible하면 common Turn Workflow와 current phase contract로 처리한 뒤 publish하고 즉시 active loop로 돌아간다.
 
-Material response는 framing correction, independent evidence, steelman, antithesis, conflict decomposition, synthesis candidate/challenge, concession 또는 narrowed disagreement처럼 후속 판단을 바꾸는 내용이다.
+Material response는 framing correction, independent evidence, steelman, antithesis, conflict decomposition, sublation candidate/challenge, explicit trade-off, limitation, caution, concession 또는 narrowed disagreement처럼 후속 판단을 바꾸는 내용이다.
 
-Material objection이 없으면 억지로 반론을 만들지 않는다. 필요하면 한 번의 no-finding/convergence signal로 검토 결과를 알릴 수 있다. 이 signal 자체는 상대의 또 다른 no-finding reply를 요구하지 않는다.
+Material objection이 없으면 억지로 반론을 만들지 않는다. 필요하면 한 번의 no-finding signal로 검토 결과를 알릴 수 있다. 이 signal 자체는 상대의 또 다른 no-finding reply를 요구하지 않는다.
 
-Final synthesis를 작성한 Lead도 자신의 runtime이 살아 있고 shared discussion이 아직 닫히지 않았다면 종료 사유로 삼지 않는다. 새 counterpart review가 나타나는지 확인하고, 나타나면 omission/misrepresentation finding을 처리한다.
+Final synthesis를 작성한 Lead도 자신의 runtime이 살아 있고 shared discussion이 아직 닫히지 않았다면 종료 사유로 삼지 않는다. 새 counterpart review가 나타나는지 확인하고, 나타나면 omission, hidden trade-off, understated limitation 또는 misrepresentation finding을 처리한다.
 
 ## Checkpoint And Termination
 
@@ -211,7 +213,7 @@ Participant-local runtime 종료와 shared discussion 종료를 구분한다.
 
 ### Participant Runtime End
 
-각 participant는 자신의 vendor/host response runtime boundary까지 active loop를 유지한다. 자신의 turn 완료, 상대 지연 또는 convergence만으로 종료하지 않는다.
+각 participant는 자신의 vendor/host response runtime boundary까지 active loop를 유지한다. 자신의 turn 완료, 상대 지연 또는 provisional sublation만으로 종료하지 않는다.
 
 한 participant가 먼저 종료되어도 discussion/topic을 `closed`로 바꾸지 않는다. 남은 participant는 자신의 runtime이 살아 있는 동안 Research와 shared-state 확인을 계속한다.
 
@@ -219,16 +221,16 @@ Participant-local runtime 종료와 shared discussion 종료를 구분한다.
 
 다음은 `discuss.md`의 shared stop authority를 따른다.
 
-- Converge outcome이 기록되고 execution mode상 필요한 synthesis/review가 완료됨
+- Sublation outcome과 mandatory residual conditions가 기록되고 execution mode상 필요한 final synthesis/review가 완료됨
 - 사용자 또는 decision authority가 discussion/topic을 명시적으로 닫음
 - caller/host가 제공한 shared deadline에 도달함
 - safety/permission/tool failure로 토론 자체를 더 이상 신뢰 가능하게 진행할 수 없음
 
-Shared discussion이 닫히면 새 argumentative turn이나 새로운 Research topic을 시작하지 않는다. 가능한 checkpoint/synthesis만 처리한다.
+Shared discussion이 닫히면 새 argumentative turn이나 새로운 Research topic을 시작하지 않는다. 가능한 checkpoint/final synthesis만 처리한다.
 
 Lead는 substantive state가 바뀔 때 `README.md`의 phase와 Current State를 필요한 만큼 갱신한다. Final synthesis를 보장하기 위해 participant runtime을 임의로 일찍 끝내지는 않는다.
 
-종료가 임박했다는 신뢰 가능한 신호가 있으면 Lead는 persisted turns를 다시 확인하고 synthesis를 갱신한다. 종료 예고 없이 Lead runtime이 끝나 final synthesis가 없거나 stale하면 완료된 synthesis로 가장하지 않는다. Persisted turns와 마지막 Current State가 discussion evidence다.
+종료가 임박했다는 신뢰 가능한 신호가 있으면 Lead는 persisted turns를 다시 확인하고 final synthesis를 갱신한다. 종료 예고 없이 Lead runtime이 끝나 final synthesis가 없거나 stale하면 완료된 결과로 가장하지 않는다. Persisted turns와 마지막 Current State가 discussion evidence다.
 
 ## Recovery And Boundaries
 
@@ -242,6 +244,6 @@ Lead는 substantive state가 바뀔 때 `README.md`의 phase와 Current State를
 - 상대가 없다는 이유로 독백형 artifact를 쌓지 않는다.
 - 상대 확인만 반복하는 polling loop를 만들지 않는다.
 - Research를 핑계로 새 상대 turn 응답을 과도하게 지연하지 않는다.
-- Lead가 자신의 position을 phase state나 synthesis에 shared truth로 승격하지 않는다.
-- 이 extension은 `discuss.md`의 phase lifecycle, topic, canonical boundary 또는 decision authority를 변경하지 않는다.
+- Lead가 자신의 position을 phase state나 final synthesis에 shared truth로 승격하지 않는다.
+- 이 extension은 `discuss.md`의 phase lifecycle, topic, sublation, canonical boundary 또는 decision authority를 변경하지 않는다.
 - `discuss-scheduled.md`와 같은 participant 실행에 동시에 적용하지 않는다.
