@@ -27,16 +27,10 @@ get_paths() {
   fi
 }
 
-is_markdown_admission_path() {
+is_markdown_validation_path() {
   local path="$1"
 
   case "$path" in
-    inbox/AGENTS.md|inbox/_guidelines/*|inbox/_templates/*)
-      return 0
-      ;;
-    inbox/*)
-      return 1
-      ;;
     *.md)
       return 0
       ;;
@@ -50,7 +44,7 @@ if [[ "$list_markdown_paths" == "true" ]]; then
   while IFS= read -r path; do
     [[ -z "$path" ]] && continue
     [[ -f "$path" ]] || continue
-    is_markdown_admission_path "$path" && printf '%s\n' "$path"
+    is_markdown_validation_path "$path" && printf '%s\n' "$path"
   done < <(get_paths)
   exit 0
 fi
@@ -62,6 +56,7 @@ toml=false
 python=false
 lefthook=false
 routes=false
+windows=false
 full_unit=false
 full_type=false
 targets=()
@@ -187,8 +182,14 @@ while IFS= read -r path; do
       ;;
   esac
 
+  case "$path" in
+    .github/workflows/ci-lite.yml|.github/workflows/classify_changes.sh|.python-version|pyproject.toml|uv.lock|scripts/_commands.py|tests/test_commands.py|tests/conftest.py)
+      windows=true
+      ;;
+  esac
+
   if [[ "$path" == *.md ]]; then
-    if [[ -f "$path" ]] && is_markdown_admission_path "$path"; then
+    if [[ -f "$path" ]] && is_markdown_validation_path "$path"; then
       markdown=true
     fi
     continue
@@ -308,6 +309,7 @@ done < <(get_paths)
   echo "python=$python"
   echo "lefthook=$lefthook"
   echo "routes=$routes"
+  echo "windows=$windows"
   echo "full_unit=$full_unit"
   echo "full_type=$full_type"
   printf 'targets='
