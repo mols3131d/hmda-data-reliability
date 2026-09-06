@@ -2,7 +2,23 @@
 
 이 guide는 두 개의 챗봇이 같은 repository의 `inbox/`를 공유하면서 **각자 하나의 response runtime 안에서 지속적으로 조사하고 상대 turn을 확인하며 토론하는 방식**을 정의한다.
 
-기본 bundle, turn ownership, immutable turn, turn quality, synthesis와 discussion artifact 원칙은 [`discuss.md`](discuss.md)를 따른다. 이 guide가 명시적으로 선택된 경우에만 **runtime cadence와 invocation lifecycle**에 한해 `discuss.md`의 `One Invocation = One Turn` 규칙 대신 이 guide를 적용한다.
+기본 bundle, turn ownership, immutable turn, turn quality, synthesis와 discussion artifact 원칙은 [`discuss.md`](discuss.md)를 따른다. 이 guide가 명시적으로 선택된 경우에만 아래 active-runtime 동작을 적용한다.
+
+## Precedence
+
+`discuss.md`가 기본 owner다. 이 guide는 다음 runtime 동작만 좁게 대체한다.
+
+| `discuss.md` 기본 동작 | Chatbot active-runtime 동작 |
+| --- | --- |
+| `Publish` 뒤 invocation 종료 | Publish 뒤 Research와 상대 확인 loop로 복귀 |
+| Manual/Scheduled invocation cadence | 현재 single response 안에서 active loop 수행 |
+| Manual iterative 최대 3 exchanges | 별도 turn-count 기본값 없음. Material delta와 실제 runtime boundary가 제한 |
+| Scheduled 6–12시간 session | 적용하지 않음. 각 participant의 vendor/host runtime을 따름 |
+| convergence/no-finding이 discussion stop 조건이 될 수 있음 | 새 논쟁은 멈추되 response runtime은 계속 Research와 상대 확인 수행 |
+| B terminal turn 뒤 synthesis handoff | convergence/no-finding signal은 runtime 종료를 요구하지 않음 |
+| `One Invocation = One Turn` | 하나의 response runtime에서 여러 상대 turn을 처리할 수 있음 |
+
+위 표에 없는 bundle 구조, A/B ownership, immutable turns, topic scope, turn-level RPI 품질, non-canonical boundary와 decision authority는 `discuss.md`를 그대로 따른다. 다른 충돌이 생기면 이 guide가 임의로 authority를 넓히지 않고 `discuss.md`를 따른다.
 
 ## Use When
 
@@ -148,7 +164,7 @@ Research 우선순위는 다음과 같다.
 3. 관련 inbox research/discussion
 4. 판단에 실제 도움이 될 때만 external authoritative source
 
-한 Research slice는 하나의 bounded question 또는 몇 개의 밀접한 evidence check만 다룬다. **Research slice 하나가 끝나면 다음 slice를 시작하기 전에 반드시 상대 상태를 확인한다.**
+한 Research slice는 하나의 bounded question 또는 몇 개의 밀접한 evidence check만 다룬다. **Research slice 하나가 끝나면 다음 slice를 시작하기 전에 반드시 상대 상태를 확인한다.** 하나의 question이 충분히 답해졌거나 다음 독립 question으로 넘어가야 하는 시점이면 현재 slice를 종료하고 먼저 상대 상태를 확인한다.
 
 ```text
 Research slice
@@ -168,6 +184,8 @@ Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 
 대기 중 Research는 기본적으로 **read-only evidence work**다. 토론을 명분으로 product code, canonical docs/spec, configuration, branch history 또는 다른 작업 artifact를 수정하지 않는다. Discussion bundle에 허용된 turn과 A-owned shared state만 이 protocol의 정상 write surface다.
 
 Research 중 새 구현 과제나 repository defect를 발견해도 바로 수정하지 않는다. 현재 topic의 evidence로만 사용하고, 필요하면 turn 또는 synthesis에서 별도 next action으로 제안한다.
+
+조사가 별도 research artifact를 요구할 만큼 커지면 active discussion 안에서 무한히 확장하지 않는다. 다음 eligible turn에서 `Next: research`를 제안하고, 현재 runtime에서는 토론 판단에 필요한 bounded verification과 상대 확인만 계속한다.
 
 ## Research Saturation
 
