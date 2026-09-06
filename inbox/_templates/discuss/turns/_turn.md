@@ -1,7 +1,7 @@
 ---
 type: discuss
 discussion: <discussion-id>
-topic: <topic-id>
+topic: <topic-slug>
 sequence: <global-sequence>
 participant: <A | B>
 status: completed
@@ -12,6 +12,8 @@ status: completed
 - 예: 001-a.md, 002-b.md, 003-a.md
 - sequence는 토론 전체의 시간 순서다.
 - sequence 값은 정렬이 안정되도록 0-padding한다.
+- topic은 README에서 정의한 stable lowercase kebab-case slug를 사용한다.
+- topic에 T1 같은 순번이나 display title을 넣지 않는다.
 - topic 등 부가 정보는 파일명이 아니라 frontmatter가 소유한다.
 - 이미 상대가 소비한 turn은 수정하지 않는다. 정정은 다음 turn에 기록한다.
 - 첫 turn에는 Response/Change가 필요 없으면 제거한다.

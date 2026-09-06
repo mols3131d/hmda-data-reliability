@@ -21,6 +21,8 @@ Default runtime shape:
 
 Turn filenames contain only the discussion-global sequence and participant identity. Example: `001-a.md`, `002-b.md`, `003-a.md`. Zero-pad the sequence so lexical order matches discussion order. Topic and other metadata belong in the turn content, not the filename.
 
+Each topic has a stable lowercase kebab-case slug. `README.md` stores the current active slug in `discussion.topic`, and each turn stores the slug of the topic it addresses in frontmatter `topic`. Sequence labels such as `T1` and display titles are not topic IDs.
+
 Split content into an additional file only when it materially improves readability. A large final synthesis may move to `synthesis.md`; link it from `README.md`. Do not create extension files preemptively.
 
 Template: [`inbox/_templates/discuss/`](../_templates/discuss/). `turns/_turn.md` and `_synthesis.md` are authoring templates, not required runtime files.
