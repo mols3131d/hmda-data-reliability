@@ -32,11 +32,11 @@ Provider-specific task ID, recurrence syntax, model name, trigger interval과 no
 
 ## Scheduled State
 
-Lead는 시작 시 `README.md`에 scheduled execution과 확인 가능한 session state를 기록한다.
+Lead는 시작 시 `README.md` frontmatter의 canonical execution field를 확인한다.
 
 ```yaml
-execution: scheduled
-participants: [a, b]
+discussion:
+  execution: scheduled
 ```
 
 Scheduler/host가 shared session start/end를 명시적으로 제공하면 해당 값을 기록할 수 있다. 제공되지 않은 deadline을 추정하지 않는다.

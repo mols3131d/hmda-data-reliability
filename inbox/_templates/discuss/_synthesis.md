@@ -7,7 +7,8 @@ outcome: <sublation | partial_agreement | bounded_disagreement | research_requir
 
 <!--
 README.md의 Final Synthesis가 너무 커져 가독성을 해칠 때만 이 템플릿을 `synthesis.md`로 사용한다.
-기본 discussion bundle은 README.md + turns/만 사용한다.
+기본 discussion bundle은 README.md + turns/만 사용한다. synthesis.md를 사용하면 README에는 link와 필요한 짧은 상태만 남기고 outcome과 synthesis 본문을 중복하지 않는다.
+Frontmatter의 outcome이 synthesis 결과의 canonical structured field이며 본문에서 별도 Outcome field를 반복하지 않는다.
 Lead는 final synthesis authoring을 소유할 수 있지만 truth, tie-break 또는 final decision을 소유하지 않는다.
 합의를 강제하지 말고 persisted turns에서 확인되는 실제 agreement와 remaining disagreement를 분리한다.
 Sublation candidate가 상대 challenge를 받지 못했다면 그 사실을 Review Status에 남기고 shared sublation을 추정하지 않는다.
@@ -16,11 +17,7 @@ Discussion 결과는 canonical decision이 아니다.
 -->
 
 > [!NOTE]
-> <현재 outcome, 승화된 결론 또는 승화가 불가능한 이유, 가장 중요한 evidence와 사람이 결정해야 할 사항을 한 문단으로 요약한다.>
-
-## Outcome
-
-<`sublation` | `partial_agreement` | `bounded_disagreement` | `research_required` | `human_decision_required`>
+> <승화된 결론 또는 승화가 불가능한 이유, 가장 중요한 evidence와 사람이 결정해야 할 사항을 한 문단으로 요약한다.>
 
 ## Sublated Result
 

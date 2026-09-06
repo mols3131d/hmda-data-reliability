@@ -31,7 +31,9 @@ Extension을 사용할 때도 이 파일을 먼저 적용한다. Extension은 �
 
 ## Bundle Contract
 
-Every `discuss` artifact **must be a bundle**. Do not create a single-file discussion artifact.
+새로 생성하는 모든 `discuss` artifact는 **bundle**이어야 한다. Single-file discussion artifact를 새로 만들지 않는다.
+
+이 bundle contract 도입 전에 생성된 single-file `type: discuss` artifact는 historical legacy로 둘 수 있다. 단지 현재 contract와 다르다는 이유로 자동 이동·변환·삭제하지 않으며, 새 discussion을 시작하거나 기존 discussion을 명시적으로 재개·migration할 때부터 현재 bundle contract를 적용한다.
 
 ```text
 <discuss-bundle>/
@@ -40,7 +42,9 @@ Every `discuss` artifact **must be a bundle**. Do not create a single-file discu
     └── <sequence>-<participant>.md
 ```
 
-`README.md`는 goal, scope, decision criteria, configuration, phase, topics, current state, references와 final result를 소유한다. `turns/`는 immutable participant turn을 담는다.
+`README.md`는 goal, scope, decision criteria, configuration, topics, current state, references와 final result를 소유한다. `turns/`는 immutable participant turn을 담는다.
+
+`README.md` frontmatter의 `discussion.phase`, `discussion.topic`, `discussion.execution`은 현재 shared machine state의 canonical field다. 본문 Current State는 working hypothesis, uncertainty, evidence와 dialectic summary만 보존하며 phase/topic/execution을 중복 기록하지 않는다.
 
 Turn filename은 discussion-global sequence와 participant identity만 사용한다.
 
@@ -115,7 +119,7 @@ Evidence  ── framing defect ─────> Frame
 Dialectic ── framing defect ─────> Frame
 ```
 
-Lead가 `README.md`의 shared phase를 기록하지만 **phase transition은 protocol criteria가 소유한다.** 상대 participant가 material framing defect, evidence gap 또는 unresolved contradiction을 제시하면 해당 finding이 해결되거나 명시적으로 bounded/blocked 처리되기 전에는 단순 lead preference로 다음 phase에 진입하지 않는다.
+Lead가 `README.md` frontmatter의 canonical shared phase를 기록하지만 **phase transition은 protocol criteria가 소유한다.** 상대 participant가 material framing defect, evidence gap 또는 unresolved contradiction을 제시하면 해당 finding이 해결되거나 명시적으로 bounded/blocked 처리되기 전에는 단순 lead preference로 다음 phase에 진입하지 않는다.
 
 ### Phase 1 — Frame
 
@@ -407,7 +411,7 @@ Final synthesis는 discussion result이지 canonical project decision이 아니�
 
 ## Boundaries
 
-- Do not create single-file `discuss` artifacts.
+- Do not create new single-file `discuss` artifacts. Historical legacy는 Bundle Contract를 따른다.
 - Discussion artifact가 canonical requirement, code/spec owner 또는 decision authority를 대체하지 않는다.
 - Lead 또는 participant가 자신의 권한을 discussion 결과로 확대하지 않는다.
 - Do not force opposition, equal turn counts, consensus, or elapsed-time-driven churn.
