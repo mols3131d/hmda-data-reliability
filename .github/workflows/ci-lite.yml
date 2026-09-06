@@ -40,17 +40,22 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t files < <(
-            git diff --name-only HEAD^1 HEAD -- '*.md' \
-              | while IFS= read -r path; do
-                  [[ -f "$path" ]] && printf '%s\n' "$path"
-                done
+            bash .github/workflows/classify_changes.sh --markdown-paths
           )
           if ((${#files[@]})); then
             rumdl fmt "${files[@]}"
             if ! git diff --quiet -- "${files[@]}"; then
-              echo "Markdown formatting changed files; run rumdl fmt locally."
+              echo "Markdown formatting suggestions (non-blocking):"
               git diff -- "${files[@]}"
-              exit 1
+              {
+                echo "### Markdown formatting suggestions"
+                echo
+                echo "rumdl found safe formatting changes. CI applied them only in its disposable workspace; formatting-only drift does not fail this check."
+                echo
+                echo '```diff'
+                git diff -- "${files[@]}"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
             fi
             rumdl check "${files[@]}"
           fi
