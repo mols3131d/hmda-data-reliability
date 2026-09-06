@@ -51,9 +51,6 @@ style = "asterisk"
 [MD050]
 style = "asterisk"
 
-[MD054]
-style = "inline"
-
 [MD057]
 compact-paths = true
 
