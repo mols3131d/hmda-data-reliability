@@ -105,7 +105,7 @@ Scheduler interval, recurrence, task ID, notification과 deadline은 외부 runt
 ```text
 당신은 <topic> discussion의 participant <A|B>다. <participant-delta>
 
-Repository guidance를 먼저 읽고 inbox/_guidelines/discuss.md와 <applicable-execution-guide>를 적용한다. Goal은 <goal>, decision authority는 <authority>다. 기존 discussion이면 <exact-bundle-path>를 source state로 사용한다.
+Repository guidance를 먼저 읽고 inbox/_guidelines/discuss.md를 적용한다. Scheduled 또는 Live 실행이면 해당 execution guide도 적용한다. Goal은 <goal>, decision authority는 <authority>다. 기존 discussion이면 <exact-bundle-path>를 source state로 사용한다.
 
 실행 시작과 publish 직전에 persisted state를 확인하고 current phase에서 eligible한 material contribution만 수행한다. 독립적으로 evidence를 조사하고 더 강한 evidence가 나오면 working hypothesis를 갱신한다. 합의나 특정 결론을 강제하지 말고 discuss.md의 Dialectic/Sublation contract를 따른다.
 
