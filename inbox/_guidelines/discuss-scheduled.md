@@ -118,11 +118,11 @@ Phase transition을 위해 shared state를 갱신하는 Lead invocation도 persi
 Lead는 common participant role에 coordination을 추가로 맡는다.
 
 1. Frame에서 question, scope, criteria, role과 phase state를 제안한다.
-2. 상대의 material framing objection을 summary에 정확히 반영한다.
-3. Phase transition criteria를 충족한 경우에만 `README.md` phase를 갱신한다.
-4. Dialectic에서는 Lead 자신의 proposal을 shared truth로 취급하지 않는다.
-5. Sublation에서는 persisted strongest case, preserved constraints, transformed conflict, disagreement와 evidence gap을 보존해 final synthesis한다.
-6. Final synthesis에 limits, trade-offs, cautions와 reopen conditions를 빠뜨리지 않는다.
+1. 상대의 material framing objection을 summary에 정확히 반영한다.
+1. Phase transition criteria를 충족한 경우에만 `README.md` phase를 갱신한다.
+1. Dialectic에서는 Lead 자신의 proposal을 shared truth로 취급하지 않는다.
+1. Sublation에서는 persisted strongest case, preserved constraints, transformed conflict, disagreement와 evidence gap을 보존해 final synthesis한다.
+1. Final synthesis에 limits, trade-offs, cautions와 reopen conditions를 빠뜨리지 않는다.
 
 Lead는 `README.md`, 자신의 turns와 final synthesis authoring을 소유하지만 truth, tie-break 또는 decision authority를 소유하지 않는다.
 
@@ -131,11 +131,11 @@ Lead는 `README.md`, 자신의 turns와 final synthesis authoring을 소유하�
 Non-lead participant는 common Turn Workflow를 독립적으로 수행한다.
 
 1. Frame에서 lead framing 자체를 challenge할 수 있다.
-2. Evidence에서 상대가 제시하지 않은 evidence path를 우선 탐색한다.
-3. Dialectic에서 반박 전에 상대 strongest claim을 steelman한다.
-4. Sublation candidate를 challenge할 때 omitted constraint, unsupported assumption, false compromise와 hidden trade-off를 우선 확인한다.
-5. Final synthesis review에서는 limits와 cautions가 실제 residual risk를 과소표현하지 않는지 확인한다.
-6. Material objection이 없으면 no-finding signal을 한 번 남길 수 있다.
+1. Evidence에서 상대가 제시하지 않은 evidence path를 우선 탐색한다.
+1. Dialectic에서 반박 전에 상대 strongest claim을 steelman한다.
+1. Sublation candidate를 challenge할 때 omitted constraint, unsupported assumption, false compromise와 hidden trade-off를 우선 확인한다.
+1. Final synthesis review에서는 limits와 cautions가 실제 residual risk를 과소표현하지 않는지 확인한다.
+1. Material objection이 없으면 no-finding signal을 한 번 남길 수 있다.
 
 Non-lead는 자신의 turns만 소유한다. Shared-state 변경은 turn에서 제안한다.
 

@@ -319,10 +319,10 @@ Research → Plan → Implement → Review → publish
 ```
 
 1. **Research** — `README.md`, current phase, latest relevant turn, applicable repository guidance와 decision-relevant evidence를 읽는다. 현재 phase와 claim을 바꿀 수 있는 근거만 refresh한다.
-2. **Plan** — 이번 turn이 수행할 가장 작은 phase move, claim, challenge, correction 또는 transition을 정한다.
-3. **Implement** — participant-owned discussion contribution만 작성한다. 여기서 Implement는 source code 변경이 아니라 discussion artifact 작성이다. Lead는 허용된 shared state도 갱신할 수 있다.
-4. **Review** — correctness, evidence, strongest counterargument, steelman fidelity, repetition, phase eligibility와 scope를 self-review한다. Sublation 관련 turn이면 hidden trade-off, omitted limitation과 false compromise도 확인한다. Material finding이 남으면 earliest stale prerequisite에서 다시 수행한다.
-5. **Publish** — current repository workflow로 turn을 persist한다. Publish 이후 invocation lifecycle은 선택된 execution extension 또는 caller가 소유한다.
+1. **Plan** — 이번 turn이 수행할 가장 작은 phase move, claim, challenge, correction 또는 transition을 정한다.
+1. **Implement** — participant-owned discussion contribution만 작성한다. 여기서 Implement는 source code 변경이 아니라 discussion artifact 작성이다. Lead는 허용된 shared state도 갱신할 수 있다.
+1. **Review** — correctness, evidence, strongest counterargument, steelman fidelity, repetition, phase eligibility와 scope를 self-review한다. Sublation 관련 turn이면 hidden trade-off, omitted limitation과 false compromise도 확인한다. Material finding이 남으면 earliest stale prerequisite에서 다시 수행한다.
+1. **Publish** — current repository workflow로 turn을 persist한다. Publish 이후 invocation lifecycle은 선택된 execution extension 또는 caller가 소유한다.
 
 Default refinement bounds:
 

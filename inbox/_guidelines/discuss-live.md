@@ -163,9 +163,9 @@ Lead가 phase를 갱신할 때도 같은 persisted state refresh를 수행한다
 우선순위는 다음과 같다.
 
 1. canonical repository contract와 applicable guidance
-2. current implementation, tests와 runtime evidence
-3. 관련 inbox research/discussion
-4. 필요할 때만 external authoritative source
+1. current implementation, tests와 runtime evidence
+1. 관련 inbox research/discussion
+1. 필요할 때만 external authoritative source
 
 한 slice는 하나의 question 또는 밀접한 evidence check만 다룬다. Question이 답해졌거나 다른 독립 question으로 넘어가야 하면 slice를 끝내고 **반드시 먼저 shared phase와 상대 상태를 확인한다.**
 
