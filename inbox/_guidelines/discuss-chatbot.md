@@ -2,31 +2,35 @@
 
 이 guide는 두 개의 챗봇이 같은 repository의 `inbox/`를 공유하면서 **각자 하나의 response runtime 안에서 지속적으로 조사하고 상대 턴을 확인하며 토론하는 방식**을 정의한다.
 
-기본 bundle, turn ownership, immutable turn, synthesis와 discussion artifact 원칙은 [`discuss.md`](discuss.md)를 따른다. 이 guide가 명시적으로 선택된 경우에만 **runtime cadence와 invocation lifecycle**에 한해 `discuss.md`의 `One Invocation = One Turn` 규칙 대신 이 guide를 적용한다.
+기본 bundle, turn ownership, immutable turn, turn quality, synthesis와 discussion artifact 원칙은 [`discuss.md`](discuss.md)를 따른다. 이 guide가 명시적으로 선택된 경우에만 **runtime cadence와 invocation lifecycle**에 한해 `discuss.md`의 `One Invocation = One Turn` 규칙 대신 이 guide를 적용한다.
 
 ## Use When
 
 다음 조건을 모두 만족할 때 사용한다.
 
 - 두 chatbot이 같은 discussion bundle을 읽고 쓸 수 있다.
-- 각 chatbot이 하나의 response runtime 동안 여러 번 repository를 확인할 수 있다.
+- 각 chatbot이 하나의 response runtime 동안 shared state를 여러 번 새로 읽을 수 있다.
 - 상대를 기다리는 동안 idle하지 않고 관련 Research를 계속해야 한다.
 - caller가 active session duration을 지정했거나 기본 25분 session을 사용한다.
 
-이 조건을 만족하지 못하면 일반 `discuss.md`의 Manual 또는 Scheduled cadence를 사용한다.
+이 mode는 scheduler가 나중에 chatbot을 다시 호출하는 방식이 아니다. **각 chatbot이 현재 단일 response를 계속 실행하면서** Research와 shared-state refresh를 반복한다.
 
-## Core Contract
+환경이 이 실행 모델을 지원하지 않으면 active session을 수행했다고 가장하지 않고 일반 `discuss.md`의 Manual 또는 Scheduled cadence를 사용한다.
 
-하나의 chatbot response는 하나의 turn을 쓰고 끝나는 실행이 아니다. Response runtime이 살아 있는 동안 다음 loop를 계속 수행한다.
+## Core Loop
+
+Response runtime이 살아 있는 동안 다음 loop를 계속 수행한다.
 
 ```text
 상대 상태 확인
 → 새 상대 turn이 있으면 읽고 필요한 최소 검증
-→ 내 차례이고 material delta가 있으면 내 turn publish
-→ bounded Research slice 1개 수행
+→ 내 차례이면 response turn publish
+→ bounded Research slice 1개
 → 상대 상태 다시 확인
 → 반복
 ```
+
+### Non-Termination Invariants
 
 다음은 **response 종료 사유가 아니다.**
 
@@ -34,10 +38,9 @@
 2. 상대가 아직 새 turn을 publish하지 않았다.
 3. 현재 latest turn이 자신의 것이다.
 4. 잠정 convergence가 생겼다.
+5. 당장 새로운 반론이 떠오르지 않는다.
 
-자신의 turn을 publish한 뒤에도 Research와 상대 확인을 계속한다. 상대 turn이 없을 때도 Research를 계속하고 **Research slice 하나가 끝날 때마다 반드시 상대 상태를 다시 확인한다.**
-
-`sleep`, idle wait 또는 의미 없는 polling으로 시간을 소비하지 않는다. **대기 시간은 Research 시간이다.**
+이 경우에도 Research와 상대 상태 확인을 계속한다. `sleep`, idle wait 또는 의미 없는 polling으로 시간을 소비하지 않는다. **대기 시간은 Research 시간이다.**
 
 ## Session
 
@@ -50,7 +53,7 @@ ends_at: <timestamp>
 participants: [a, b]
 ```
 
-A와 B는 같은 `ends_at`을 따른다. 각 runtime은 매 loop에서 deadline을 확인한다.
+A와 B는 같은 `ends_at`을 따르고 각 loop에서 deadline을 확인한다.
 
 Deadline이 가까워지면 새 큰 Research question이나 새 topic을 시작하지 않는다. Platform이나 provider가 response runtime을 강제로 종료하는 경우 가능한 마지막 시점에 현재 상태를 durable artifact에 남긴다.
 
@@ -74,7 +77,7 @@ A와 B는 고정된 찬반 진영이 아니다. 더 강한 evidence가 나오면
 
 ## Bootstrap
 
-A는 discussion bundle을 만든 뒤 첫 turn을 publish하고 즉시 Active Research Loop로 들어간다.
+A는 discussion bundle과 session metadata를 만든 뒤 `discuss.md`의 공통 Turn Workflow에 따라 **초기 Research → Plan → Implement → Review**를 수행하고 첫 turn을 publish한다. Publish 직후 종료하지 않고 Active Research Loop로 들어간다.
 
 B가 시작했을 때 bundle 또는 첫 A turn이 아직 없다면 **종료하지 않는다.** Caller가 제공한 topic과 repository context를 기준으로 bounded Research slice를 수행하고, slice가 끝날 때마다 bundle과 A turn 생성 여부를 다시 확인한다.
 
@@ -107,7 +110,7 @@ Turn은 discussion-global sequence를 사용한다.
 - latest valid turn이 A면 B만 eligible하다.
 - latest valid turn이 B면 A만 eligible하다.
 
-이미 소비한 상대 turn에 다시 답하지 않는다. 자신의 turn이 latest이면 새 self-turn을 만들지 않고 Active Research Loop를 계속한다.
+이미 소비한 상대 turn에 다시 답하지 않는다. 자신의 turn이 latest이면 새 self-turn을 만들지 않고 Research를 계속한다.
 
 이미 publish된 turn은 rewrite하지 않는다. Stale state나 write conflict가 발생하면 최신 persisted state를 다시 읽고 current sequence에서 계속한다.
 
@@ -122,7 +125,7 @@ Research 우선순위는 다음과 같다.
 3. 관련 inbox research/discussion
 4. 판단에 실제 도움이 될 때만 external authoritative source
 
-한 Research slice는 하나의 bounded question 또는 몇 개의 밀접한 evidence check만 다룬다. **Research slice 두 개를 연속으로 수행하기 전에 반드시 상대 상태를 확인해야 한다.**
+한 Research slice는 하나의 bounded question 또는 몇 개의 밀접한 evidence check만 다룬다. **Research slice 하나가 끝나면 다음 slice를 시작하기 전에 반드시 상대 상태를 확인한다.**
 
 ```text
 Research slice
@@ -138,17 +141,15 @@ Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 
 
 ## Research Saturation
 
-새로운 자료를 찾는 것만 Research로 취급하지 않는다. 현재 topic에서 새로운 source가 더 이상 판단을 바꾸지 않는다면 범위를 넓히지 말고 다음 순서로 Research mode를 전환한다.
+새로운 자료를 찾는 것만 Research로 취급하지 않는다. 새 source가 더 이상 현재 topic의 판단을 바꾸지 않는다면 범위를 넓히지 말고 다음 방향으로 전환한다.
 
 1. 가장 강한 현재 근거를 다시 검증한다.
 2. 핵심 가정의 반례를 찾는다.
 3. 상충하는 evidence나 누락 조건을 확인한다.
-4. 상대의 최근 strongest claim을 adversarial하게 재검토한다.
-5. 이미 합의한 결론이 evidence를 실제로 견디는지 확인한다.
+4. 상대의 strongest claim을 adversarial하게 재검토한다.
+5. 잠정 합의가 evidence와 반례를 견디는지 확인한다.
 
-이 과정에서도 각 bounded slice 뒤에는 상대 상태를 다시 확인한다.
-
-시간을 채우기 위해 unrelated source, 새 topic 또는 speculative architecture를 추가하지 않는다.
+각 bounded slice 뒤에는 상대 상태를 다시 확인한다. 시간을 채우기 위해 unrelated source, 새 topic 또는 speculative architecture를 추가하지 않는다.
 
 ## Turn Workflow
 
@@ -158,8 +159,11 @@ Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 
 2. 가장 강한 claim, evidence 또는 objection을 식별한다.
 3. 필요한 evidence만 짧게 검증한다.
 4. 자신의 기존 position이 틀렸으면 수정한다.
-5. 반복이 아닌 material delta가 있을 때만 turn을 작성한다.
-6. Publish 직후 종료하지 않고 Active Research Loop로 돌아간다.
+5. 자신의 response가 material delta인지 확인한다.
+6. Publish 직전 persisted state를 다시 확인한다.
+7. Turn을 publish한 뒤 Active Research Loop로 돌아간다.
+
+Material delta는 새로운 또는 수정된 evidence, 반례, concession, 좁혀진 disagreement, recommendation 변경뿐 아니라 **convergence 또는 더 이상 material objection이 없다는 terminal signal**도 포함한다. Terminal signal을 썼다는 이유로 현재 response runtime을 종료하지 않는다.
 
 각 turn은 가능하면 다음만 남긴다.
 
@@ -187,18 +191,6 @@ Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 
 
 필요 없는 section은 생략한다. 이미 합의된 내용을 반복하지 않는다.
 
-## No Early Exit
-
-다음 이유로 response를 끝내지 않는다.
-
-- 내 turn을 성공적으로 publish함
-- 상대가 아직 응답하지 않음
-- 현재 latest turn이 내 것임
-- 잠정적으로 합의함
-- 현재 새로운 반론이 바로 떠오르지 않음
-
-이 경우 남은 runtime 동안 Active Research Loop를 계속한다. 잠정 convergence가 발생하면 새로운 논쟁을 억지로 만들지 않고 Research Saturation 절차로 합의의 근거와 반례를 검증한다.
-
 ## Stop
 
 정상적인 종료는 session deadline에 도달했을 때다.
@@ -209,7 +201,7 @@ Research 결과가 중요하지만 아직 자신의 turn 차례가 아니라면 
 - safety, permission 또는 tool failure로 Research와 상대 상태 확인을 모두 더 이상 수행할 수 없다.
 - platform/provider가 response runtime을 강제로 종료한다.
 
-단순히 할 말을 다 했거나 상대가 늦는다는 이유로 종료하지 않는다.
+단순히 자신의 turn을 끝냈거나 상대가 늦거나 잠정 합의에 도달했다는 이유로 종료하지 않는다.
 
 ## Synthesis
 
