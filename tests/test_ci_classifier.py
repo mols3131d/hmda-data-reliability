@@ -29,6 +29,19 @@ def run_classifier(paths: list[str]) -> dict[str, str]:
     return result
 
 
+def run_markdown_paths(paths: list[str]) -> list[str]:
+    """Return Markdown paths selected for admission validation."""
+    proc = subprocess.run(
+        ["bash", str(CLASSIFIER_SCRIPT), "--stdin", "--markdown-paths"],
+        input="\n".join(paths) + "\n",
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=REPO_ROOT,
+    )
+    return proc.stdout.splitlines()
+
+
 @pytest.mark.unit
 def test_root_test_modify() -> None:
     """존재하는 루트 테스트 파일 수정 시 해당 테스트만 targets에 추가된다."""
@@ -60,6 +73,53 @@ def test_root_test_rename() -> None:
     assert out["full_unit"] == "false"
     assert out["targets"].strip() == "tests/test_commands.py"
     assert out["full_type"] == "false"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "README.md",
+        "docs/development/ci.md",
+        "inbox/AGENTS.md",
+        "inbox/_guidelines/research.md",
+        "inbox/_templates/research.md",
+    ],
+)
+def test_markdown_admission_paths_are_selected(path: str) -> None:
+    """Canonical Markdown과 Inbox 기반 문서는 admission 검증 대상이다."""
+    out = run_classifier([path])
+    assert out["markdown"] == "true"
+    assert run_markdown_paths([path]) == [path]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "inbox/README.md",
+        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
+    ],
+)
+def test_noncanonical_inbox_markdown_skips_admission(path: str) -> None:
+    """일반 Inbox 산출물은 Markdown admission 검증을 활성화하지 않는다."""
+    out = run_classifier([path])
+    assert out["markdown"] == "false"
+    assert run_markdown_paths([path]) == []
+
+
+@pytest.mark.unit
+def test_markdown_path_selection_preserves_only_admission_scope() -> None:
+    """Mixed Markdown 변경에서도 admission 대상만 workflow에 전달한다."""
+    paths = [
+        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
+        "docs/development/ci.md",
+        "inbox/AGENTS.md",
+    ]
+    assert run_markdown_paths(paths) == [
+        "docs/development/ci.md",
+        "inbox/AGENTS.md",
+    ]
 
 
 @pytest.mark.unit
