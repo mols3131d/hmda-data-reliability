@@ -74,6 +74,11 @@ from hmda_reliability.reliability.profiling import (
     create_profile_snapshot,
     create_table_state_identity,
 )
+from hmda_reliability.reliability.quality_gate import (
+    QualityGateError,
+    evaluate_profile_quality_gate,
+    reject_missing_partition_discriminator,
+)
 from hmda_reliability.reliability.recovery import (
     ApprovalBackfillValidator,
     ApprovedBackfillRequest,
@@ -131,6 +136,7 @@ __all__ = [
     "ProfileSnapshot",
     "ProfileSnapshotError",
     "ProfileSnapshotRequest",
+    "QualityGateError",
     "RecoveryProposal",
     "RemediationDraft",
     "RemediationDraftRequest",
@@ -161,11 +167,13 @@ __all__ = [
     "detect_basic_incidents",
     "evaluate_freshness_delay_vertical_slice",
     "evaluate_null_spike_vertical_slice",
+    "evaluate_profile_quality_gate",
     "evaluate_schema_drift_vertical_slice",
     "evaluate_volume_drop_vertical_slice",
     "execute_approved_backfill",
     "execute_approved_schema_recovery",
     "preflight_schema_recovery_candidate",
+    "reject_missing_partition_discriminator",
     "render_evaluation_report_markdown",
     "stage_approved_schema_recovery_candidate",
     "validate_contract",

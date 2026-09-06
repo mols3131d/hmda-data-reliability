@@ -986,7 +986,7 @@ def test_null_spike_replay_profile_failure_preserves_first_recovery(
             (
                 active_execution,
                 profile_request.table_name,
-                profile_request.partition,
+                str(profile_request.partition),
                 profile_request.observed_at.isoformat(),
             )
         )

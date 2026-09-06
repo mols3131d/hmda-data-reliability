@@ -9,6 +9,7 @@ import pytest
 
 from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
 from hmda_reliability.hmda_data import (
+    load_hmda_loans_partition,
     null_spike,
     row_count_drop,
     schema_drift,
@@ -393,6 +394,200 @@ def test_write_case_file_rejects_parent_directory_case_name(tmp_path: Path) -> N
         )
 
     assert sentinel.exists()
+
+
+def test_null_spike_supports_target_year_override(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """합성 결함 생성 시 target_year를 지정하면 activity_year 파티션이 교체된다."""
+
+    case_root = tmp_path / "cases"
+    with DuckDBConnectionManager() as connection:
+        null_path = null_spike(
+            connection,
+            [hmda_csv_path],
+            case_root,
+            null_fraction=0.3,
+            target_year=2026,
+        )
+        years = connection.execute(
+            "SELECT DISTINCT activity_year FROM read_parquet(?)",
+            [str(null_path)],
+        ).fetchall()
+        null_ratio = _null_ratio(connection, null_path, "income")
+
+    assert null_path.name == "null_spike_2026.parquet"
+    assert years == [(2026,)]
+    assert null_ratio >= 0.3
+
+
+def test_null_spike_rejects_activity_year_target_column_with_target_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """target_year와 target_column='activity_year'의 동시 지정은 거부된다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="activity_year"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_column="activity_year",
+            target_year=2026,
+        )
+
+
+def test_null_spike_rejects_case_name_without_target_year_when_target_year_is_set(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """target_year 지정 시 case_name에 해당 연도가 없거나 다른 연도면 거부된다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="ASCII 4자리 연도가 포함"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="custom_spike",
+        )
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="첫 번째 4자리 연도"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="null_spike_2024",
+        )
+
+
+def test_null_spike_rejects_case_name_with_conflicting_first_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """Filename parser가 먼저 읽는 연도가 target_year와 다르면 거부한다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="첫 번째 4자리 연도"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="null_spike_2025_2026",
+        )
+
+
+def test_null_spike_rejects_case_name_with_non_ascii_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """Ingestion이 연도로 읽지 못하는 Unicode digit filename을 거부한다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="ASCII 4자리 연도"),
+    ):
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="null_spike_２０２６",
+        )
+
+
+def test_null_spike_allows_case_name_with_matching_first_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    """첫 번째 filename 연도가 target_year와 같으면 custom name을 허용한다."""
+
+    with DuckDBConnectionManager() as connection:
+        null_path = null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=2026,
+            case_name="null_spike_2026_revision_2025",
+        )
+        loaded_rows = load_hmda_loans_partition(connection, [null_path], 2026)
+        source_years = connection.execute(
+            "SELECT DISTINCT source_year FROM raw.hmda_loans"
+        ).fetchall()
+
+    assert null_path.name == "null_spike_2026_revision_2025.parquet"
+    assert loaded_rows > 0
+    assert source_years == [(2026,)]
+
+
+@pytest.mark.parametrize(
+    "invalid_year",
+    [1999, 2101, True, False, "2026", 0],
+)
+def test_null_spike_rejects_invalid_target_year(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+    invalid_year: object,
+) -> None:
+    """유효하지 않은 target_year(범위 밖, bool, 비정수)는 거부된다."""
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="target_year"),
+    ):
+        from typing import cast
+
+        null_spike(
+            connection,
+            [hmda_csv_path],
+            tmp_path / "cases",
+            target_year=cast(int, invalid_year),
+        )
+
+
+def test_null_spike_rejects_multi_year_source_with_target_year(
+    tmp_path: Path,
+) -> None:
+    """다중 연도 원천 데이터에 target_year 지정 시
+    파티션 붕괴를 방지하기 위해 거부된다.
+    """
+
+    source_path = tmp_path / "multi-year.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                "2024,100,200",
+                "2025,110,210",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="단일 연도"),
+    ):
+        null_spike(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            target_year=2026,
+        )
 
 
 def _row_count(

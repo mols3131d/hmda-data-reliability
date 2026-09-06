@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -55,20 +56,99 @@ def null_spike(
     target_column: str = "income",
     null_fraction: float = 0.2,
     sample_fraction: float = 1.0,
+    case_name: str | None = None,
+    target_year: int | None = None,
 ) -> Path:
     """Sampled non-null ``target_column`` 값을 결정적으로 Null로 만든다.
 
     결과 null rate는 source보다 항상 커야 한다. 각 fraction은 ``0 < value <= 1``이어야
     하고 target column이 없거나 모든 값이 이미 Null이면 ``SyntheticCaseError``를
-    발생시킨다. Source file은 수정하지 않는다.
+    발생시킨다.
+
+    ``target_year``가 지정되면 결과의 ``activity_year``를 해당 연도로 교체한다.
+    ``target_year``는 2000 이상 2100 이하의 정수여야 하며(``bool`` 제외),
+    ``target_column``이 ``activity_year``인 경우 상호 모순으로 거부된다. 또한
+    원천 데이터가 둘 이상의 서로 다른 ``activity_year``를 포함하면 파티션 왜곡을
+    방지하기 위해 거부된다.
+    ``case_name``을 직접 지정할 때 ``target_year``가 주어지면 파티션 인제스션
+    호환성을 위해 ``case_name``에 지정된 ``target_year``가 포함되어 있어야 한다.
+    ``case_name``을 생략하면 ``target_year`` 지정 시 ``null_spike_{target_year}``,
+    미지정 시 ``null_spike``를 사용한다. Source file은 수정하지 않는다.
     """
 
     _validate_fraction(null_fraction, "null_fraction")
     _validate_fraction(sample_fraction, "sample_fraction")
-    require_columns(connection, source_paths, {target_column})
+    if target_year is not None:
+        if (
+            not isinstance(target_year, int)
+            or isinstance(target_year, bool)
+            or not (2000 <= target_year <= 2100)
+        ):
+            msg = f"target_year는 2000 이상 2100 이하의 정수여야 합니다: {target_year}"
+            raise SyntheticCaseError(msg, context={"target_year": target_year})
+        if target_column == "activity_year":
+            msg = (
+                "target_year와 target_column='activity_year'는 "
+                "동시에 지정할 수 없습니다."
+            )
+            raise SyntheticCaseError(
+                msg,
+                context={"target_column": target_column, "target_year": target_year},
+            )
+        if case_name is not None:
+            filename_year_match = re.search(r"[0-9]{4}", case_name)
+            if filename_year_match is None:
+                msg = (
+                    f"target_year({target_year})가 지정된 경우 case_name에 해당 "
+                    f"ASCII 4자리 연도가 포함되어야 합니다: {case_name}"
+                )
+                raise SyntheticCaseError(
+                    msg,
+                    context={"case_name": case_name, "target_year": target_year},
+                )
+            filename_year = int(filename_year_match.group())
+            if filename_year != target_year:
+                msg = (
+                    "case_name의 첫 번째 4자리 연도는 target_year와 "
+                    f"일치해야 합니다: case_name={case_name}, target_year={target_year}"
+                )
+                raise SyntheticCaseError(
+                    msg,
+                    context={
+                        "case_name": case_name,
+                        "filename_year": filename_year,
+                        "target_year": target_year,
+                    },
+                )
+
+    require_columns(connection, source_paths, {target_column, "activity_year"})
     quoted_target = quote_identifier(target_column)
     source_query = source_union_sql(source_paths)
     source_params = source_paths_parameter(source_paths)
+
+    if target_year is not None:
+        try:
+            year_query = (
+                f"SELECT count(*) FROM (SELECT DISTINCT activity_year "
+                f"FROM ({source_query}))"
+            )
+            distinct_year_rows = connection.execute(
+                year_query,
+                source_params,
+            ).fetchone()
+        except duckdb.Error as exc:
+            msg = "HMDA 합성 원천 연도 통계 조회에 실패했습니다."
+            raise SyntheticCaseError(msg) from exc
+        if distinct_year_rows and distinct_year_rows[0] > 1:
+            msg = "target_year는 단일 연도 원천 데이터에 대해서만 지정할 수 있습니다."
+            raise SyntheticCaseError(
+                msg,
+                context={
+                    "distinct_years": int(distinct_year_rows[0]),
+                    "target_year": target_year,
+                },
+            )
+
     source_count, source_non_null_count = _target_value_counts(
         connection,
         query=source_query,
@@ -106,6 +186,9 @@ def null_spike(
             )
         )
     """
+    year_override_sql = (
+        ", CAST(? AS INTEGER) AS activity_year" if target_year is not None else ""
+    )
     case_query = f"""
         WITH sampled AS ({sampled_query}),
         year_stats AS (
@@ -139,21 +222,30 @@ def null_spike(
                     THEN NULL
                     ELSE {quoted_target}
                 END AS {quoted_target}
+                {year_override_sql}
             )
         FROM year_stats
     """
+    params: list[object] = [
+        *source_params,
+        sample_fraction,
+        null_fraction,
+        source_null_count,
+        source_count,
+    ]
+    if target_year is not None:
+        params.append(target_year)
+    resolved_case_name = (
+        case_name
+        if case_name is not None
+        else (f"null_spike_{target_year}" if target_year is not None else "null_spike")
+    )
     return write_case_file(
         connection=connection,
-        case_name="null_spike",
+        case_name=resolved_case_name,
         output_root=output_root,
         query=case_query,
-        params=[
-            *source_params,
-            sample_fraction,
-            null_fraction,
-            source_null_count,
-            source_count,
-        ],
+        params=params,
     )
 
 

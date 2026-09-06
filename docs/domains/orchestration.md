@@ -1,6 +1,6 @@
 ---
 title: "Orchestration: Apache Airflow Data Plane"
-description: "Bronze 적재와 dbt 분석을 연결하는 Apache Airflow data plane의 scope, task graph, runtime configuration과 경계를 설명합니다."
+description: "Bronze 적재, read-only quality gate와 dbt 분석을 연결하는 Apache Airflow data plane의 scope, task graph, runtime configuration과 경계를 설명합니다."
 categories:
   - orchestration
   - data-engineering
@@ -12,7 +12,7 @@ tags:
 
 # Orchestration: Apache Airflow Data Plane
 
-**`orchestration`은 Bronze 적재와 dbt 분석만 연결한다.** Domain business logic은 공개 API로 위임하며, reliability lifecycle과 recovery/evaluation은 Airflow DAG에 넣지 않는다.
+**`orchestration`은 Bronze 적재, read-only quality gate와 dbt 분석의 실행 순서만 연결한다.** Domain business logic은 공개 API로 위임하며, reliability lifecycle과 recovery/evaluation은 Airflow DAG에 넣지 않는다.
 
 > [!IMPORTANT]
 > **`hmda_data_plane`은 수동 data-plane 실행 전용이다.** Schedule과 automatic retry를 사용하지 않으며 approval이나 승인된 side effect를 암묵적으로 실행하지 않는다.
@@ -23,32 +23,39 @@ tags:
 | --- | --- |
 | Airflow `DAG`, TaskFlow task와 logical `Asset` 등록 | 원천 파일 파싱과 DuckDB 적재 구현 |
 | 지원된 runtime override를 `DataOperationRequest`로 변환 | dbt 모델 구현과 artifact 검증 |
-| task dependency, task state와 asset update evidence | reliability lifecycle, approval, backfill, evaluation |
-| Bronze → Silver/Gold 실행 순서 | schedule, automatic retry, sensor, dynamic mapping, custom operator/plugin/executor |
+| task dependency, task state와 asset update evidence | quality policy, reliability lifecycle, approval, backfill, evaluation |
+| Bronze → quality gate → Silver/Gold 실행 순서 | schedule, automatic retry, sensor, dynamic mapping, custom operator/plugin/executor |
 
 데이터 실행의 application boundary는 [`data-operations.md`](data-operations.md)다. data 계약은 [`hmda-data.md`](hmda-data.md), [`data-platform.md`](data-platform.md)에 있다.
 
 ## Entry Point And Workflow Graph
 
-[`hmda_data_plane.py`](../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py)가 유일한 active Airflow DAG entry point다. DAG에는 raw load와 analytics build 두 task만 등록된다.
+[`hmda_data_plane.py`](../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py)가 유일한 active Airflow DAG entry point다. DAG에는 raw load, quality gate와 analytics build 세 task만 등록된다.
 
 ```mermaid
 flowchart TB
     config["Airflow Params / environment"] --> request["DataOperationRequest"]
 
     subgraph airflow ["Apache Airflow · hmda_data_plane"]
-        raw["load_raw_hmda_loans"] --> analytics["build_dbt_loan_analytics"]
+      raw["load_raw_hmda_loans"] --> gate["evaluate_quality_gate"] --> analytics["build_dbt_loan_analytics"]
         analytics -->|run_dbt_build=false| skipped(["SKIPPED"])
     end
 
     subgraph application ["Data Operations API"]
         load["load_raw_data()"]
-        build["run_dbt_build()"] -->|successful candidate| promote["promote_dbt_artifacts()"]
+      evaluate["evaluate_quality_gate()"]
+        build["run_quality_gated_dbt_build()"] -->|successful candidate| promote["promote_dbt_artifacts()"]
+    end
+
+    subgraph reliability ["Reliability Policy"]
+      policy["evaluate_profile_quality_gate()"]
     end
 
     request -.-> raw
+    request -.-> gate
     request -.-> analytics
     raw -->|delegates| load
+    gate -->|delegates| evaluate -->|profile policy| policy
     analytics -->|run_dbt_build=true| build
 ```
 
@@ -59,11 +66,12 @@ Airflow가 전체 data-plane 순서를 유일하게 소유한다. `DataOperation
 | Task | Delegated API | Successful asset evidence |
 | --- | --- | --- |
 | `load_raw_hmda_loans` | `load_raw_data()` | database path, source root, file count, year, HMDA row count |
-| `build_dbt_loan_analytics` | `run_dbt_build()` → `promote_dbt_artifacts()` | return code, manifest path, run results path, projection identity |
+| `evaluate_quality_gate` | `evaluate_quality_gate()` → `evaluate_profile_quality_gate()` | `status: clean` log; blocking incident는 task failure와 detected incident log |
+| `build_dbt_loan_analytics` | `run_quality_gated_dbt_build()` → `promote_dbt_artifacts()` | return code, manifest path, run results path, projection identity |
 
 Task execution state와 data update evidence는 별개다. 성공한 raw task는 raw logical asset event를 기록하고, analytics task는 dbt candidate가 promotion된 뒤에만 analytics asset event를 기록한다. 실패하거나 skip된 analytics task는 성공 update evidence를 남기지 않는다.
 
-`run_dbt_build=False`이면 analytics task는 명시적으로 `SKIPPED`가 된다. raw task 성공은 보존되고 candidate promotion은 실행되지 않는다.
+`run_dbt_build=False`여도 raw load와 quality gate는 실행된다. Gate가 통과하면 analytics task만 명시적으로 `SKIPPED`가 되고, raw 및 gate 성공은 보존되며 candidate promotion은 실행되지 않는다.
 
 ## Runtime Configuration
 
@@ -79,7 +87,7 @@ Airflow trigger surface는 다음 runtime override만 노출한다.
 
 Exact default와 validation rule은 `DataOperationRequest`가 소유하며 Airflow adapter는 이를 복제하지 않는다.
 
-Airflow adapter는 file discovery, ingestion, dbt subprocess, artifact validation/promotion, 오류 변환을 직접 구현하지 않는다.
+Airflow adapter는 file discovery, ingestion, profile 생성, quality baseline/threshold/detector 선택, dbt subprocess 또는 artifact validation/promotion을 직접 구현하지 않는다. Quality gate task는 Data Operations API를 호출하고 domain failure를 Airflow task failure로 번역한다.
 
 ## Graph Boundaries
 

@@ -20,6 +20,7 @@ from hmda_reliability.data_operations.errors import DataOperationError
 from hmda_reliability.data_operations.incident_lifecycle import (
     run_incident_lifecycle as run_incident_lifecycle,
 )
+from hmda_reliability.data_operations.quality_gate import evaluate_quality_gate
 from hmda_reliability.data_operations.raw_result import RawLoadResult
 from hmda_reliability.data_operations.request import DataOperationRequest
 from hmda_reliability.data_platform.artifacts import (
@@ -38,6 +39,10 @@ from hmda_reliability.logger import get_logger
 
 _LOGGER = get_logger(__name__)
 _DBT_BUILD_TIMEOUT_SECONDS = 300
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+_CANONICAL_DBT_PROJECT_DIR = _REPOSITORY_ROOT / "dbt"
+_CANONICAL_DBT_PROFILES_DIR = _REPOSITORY_ROOT / "dbt"
+_DEFAULT_DBT_DIRECTORY = Path("dbt")
 
 
 @dataclass(frozen=True)
@@ -101,10 +106,59 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
     별도로 호출해야 한다.
     """
 
+    return _run_dbt_build(request, quality_gate_required=False)
+
+
+def run_quality_gated_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
+    """전체 Bronze gate를 lock 안에서 재검증한 뒤 dbt build를 실행한다."""
+
+    canonical_request = _canonicalize_quality_gated_dbt_configuration(request)
+    return _run_dbt_build(canonical_request, quality_gate_required=True)
+
+
+def _canonicalize_quality_gated_dbt_configuration(
+    request: DataOperationRequest,
+) -> DataOperationRequest:
+    project_dir = _canonical_dbt_directory(
+        request.dbt_project_dir,
+        _CANONICAL_DBT_PROJECT_DIR,
+    )
+    profiles_dir = _canonical_dbt_directory(
+        request.dbt_profiles_dir,
+        _CANONICAL_DBT_PROFILES_DIR,
+    )
+    if project_dir is None or profiles_dir is None:
+        message = (
+            "quality-gated build는 canonical dbt configuration을 사용해야 합니다: "
+            f"project_dir={_CANONICAL_DBT_PROJECT_DIR}, "
+            f"profiles_dir={_CANONICAL_DBT_PROFILES_DIR}"
+        )
+        raise ValueError(message)
+    return request.model_copy(
+        update={
+            "dbt_project_dir": project_dir,
+            "dbt_profiles_dir": profiles_dir,
+        }
+    )
+
+
+def _canonical_dbt_directory(path: Path, canonical_path: Path) -> Path | None:
+    if path == _DEFAULT_DBT_DIRECTORY or path.resolve() == canonical_path:
+        return canonical_path
+    return None
+
+
+def _run_dbt_build(
+    request: DataOperationRequest,
+    *,
+    quality_gate_required: bool,
+) -> DbtBuildResult:
     run_target_path = _create_run_target(request.dbt_run_target_path)
     command = _build_dbt_command(request, run_target_path)
     try:
         with database_mutation_lock(request.database_path):
+            if quality_gate_required:
+                evaluate_quality_gate(request)
             result = _run_dbt_command(command, request, run_target_path)
     except DuckDBMutationLockError as exc:
         raise DataOperationError(

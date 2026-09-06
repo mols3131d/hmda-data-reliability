@@ -8,15 +8,17 @@ from datetime import datetime
 from typing import Final
 
 from airflow.sdk import Asset, Param, dag, get_current_context, task
-from airflow.sdk.exceptions import AirflowSkipException
+from airflow.sdk.exceptions import AirflowException, AirflowSkipException
 from pydantic.types import JsonValue
 
 from hmda_reliability.data_operations import (
+    evaluate_quality_gate,
     load_raw_data,
     promote_dbt_artifacts,
-    run_dbt_build,
+    run_quality_gated_dbt_build,
 )
 from hmda_reliability.orchestration.config import data_operation_request_from_runtime
+from hmda_reliability.reliability import QualityGateError
 
 log = logging.getLogger(__name__)
 
@@ -82,6 +84,26 @@ def load_raw_hmda_loans() -> None:
 
 
 @task(
+    task_id="evaluate_quality_gate",
+    retries=0,
+    do_xcom_push=False,
+)
+def evaluate_quality_gate_task() -> None:
+    """신뢰성 품질 게이트를 실행하고 이상 탐지 시 파이프라인을 실패시킨다."""
+
+    request = data_operation_request_from_runtime(_runtime_overrides())
+    try:
+        evaluate_quality_gate(request)
+    except QualityGateError as exc:
+        raise AirflowException(str(exc)) from exc
+    log.info(
+        "품질 게이트 통과: source_year=%s asset=%s status=clean",
+        request.source_year,
+        request.asset_name,
+    )
+
+
+@task(
     task_id="build_dbt_loan_analytics",
     outlets=[ANALYTICS_LOAN_ASSET],
     retries=0,
@@ -95,7 +117,10 @@ def build_dbt_loan_analytics() -> None:
         log.info("dbt build 건너뜀: run_dbt_build=false")
         raise AirflowSkipException("run_dbt_build=false")
 
-    result = run_dbt_build(request)
+    try:
+        result = run_quality_gated_dbt_build(request)
+    except QualityGateError as exc:
+        raise AirflowException(str(exc)) from exc
     promote_dbt_artifacts(result, request)
     _set_asset_evidence(
         ANALYTICS_LOAN_ASSET,
@@ -129,8 +154,9 @@ def _hmda_data_plane() -> None:
     """단일 수동 실행, 비재시도 raw-to-analytics 워크플로우를 정의한다."""
 
     raw_task = load_raw_hmda_loans()
+    gate_task = evaluate_quality_gate_task()
     analytics_task = build_dbt_loan_analytics()
-    raw_task >> analytics_task
+    raw_task >> gate_task >> analytics_task
 
 
 hmda_data_plane = _hmda_data_plane()
