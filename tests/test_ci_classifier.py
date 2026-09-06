@@ -30,7 +30,7 @@ def run_classifier(paths: list[str]) -> dict[str, str]:
 
 
 def run_markdown_paths(paths: list[str]) -> list[str]:
-    """Return Markdown paths selected for admission validation."""
+    """Return changed Markdown paths selected for validation."""
     proc = subprocess.run(
         ["bash", str(CLASSIFIER_SCRIPT), "--stdin", "--markdown-paths"],
         input="\n".join(paths) + "\n",
@@ -84,42 +84,62 @@ def test_root_test_rename() -> None:
         "inbox/AGENTS.md",
         "inbox/_guidelines/research.md",
         "inbox/_templates/research.md",
+        "inbox/README.md",
+        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
     ],
 )
-def test_markdown_admission_paths_are_selected(path: str) -> None:
-    """Canonical Markdown과 Inbox 기반 문서는 admission 검증 대상이다."""
+def test_changed_markdown_paths_are_selected(path: str) -> None:
+    """현재 change set의 Markdown만 lightweight 검증 대상으로 선택한다."""
     out = run_classifier([path])
     assert out["markdown"] == "true"
     assert run_markdown_paths([path]) == [path]
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize(
-    "path",
-    [
-        "inbox/README.md",
-        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
-    ],
-)
-def test_noncanonical_inbox_markdown_skips_admission(path: str) -> None:
-    """일반 Inbox 산출물은 Markdown admission 검증을 활성화하지 않는다."""
-    out = run_classifier([path])
-    assert out["markdown"] == "false"
-    assert run_markdown_paths([path]) == []
-
-
-@pytest.mark.unit
-def test_markdown_path_selection_preserves_only_admission_scope() -> None:
-    """Mixed Markdown 변경에서도 admission 대상만 workflow에 전달한다."""
+def test_markdown_path_selection_stays_within_changed_scope() -> None:
+    """Mixed Markdown에서도 입력된 changed path만 workflow에 전달한다."""
     paths = [
         "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
         "docs/development/ci.md",
         "inbox/AGENTS.md",
     ]
-    assert run_markdown_paths(paths) == [
+    assert run_markdown_paths(paths) == paths
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "scripts/_commands.py",
+        "tests/test_commands.py",
+        "tests/conftest.py",
+        ".python-version",
+        "pyproject.toml",
+        "uv.lock",
+        ".github/workflows/ci-lite.yml",
+        ".github/workflows/classify_changes.sh",
+    ],
+)
+def test_windows_boundary_selects_only_owning_changes(path: str) -> None:
+    """Windows process boundary에 영향을 주는 변경만 Windows 검증을 활성화한다."""
+    out = run_classifier([path])
+    assert out["windows"] == "true"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "README.md",
         "docs/development/ci.md",
-        "inbox/AGENTS.md",
-    ]
+        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
+        "src/hmda_reliability/reliability/recovery/executor.py",
+    ],
+)
+def test_windows_boundary_skips_unrelated_changes(path: str) -> None:
+    """Windows process boundary와 무관한 변경은 무거운 Windows 검증을 생략한다."""
+    out = run_classifier([path])
+    assert out["windows"] == "false"
 
 
 @pytest.mark.unit
@@ -287,3 +307,4 @@ def test_workflow_change_targets_classifier_test() -> None:
     out = run_classifier([".github/workflows/ci-lite.yml"])
     assert out["tests"] == "true"
     assert "tests/test_ci_classifier.py" in out["targets"]
+    assert out["windows"] == "true"
