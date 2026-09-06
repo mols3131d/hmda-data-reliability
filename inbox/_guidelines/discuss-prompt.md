@@ -14,7 +14,7 @@ Prompt를 만들기 전에 필요한 값만 확정한다.
 | `topic` | stable lowercase kebab-case slug를 사용한다. |
 | `participant` | `A` 또는 `B`다. |
 | `lead` | persisted discussion state를 따른다. |
-| `execution` | 실제 `manual`, `scheduled`, `chatbot-active-session`과 일치시킨다. |
+| `execution` | 실제 `manual`, `scheduled`, `live`와 일치시킨다. |
 | `bundle` | 기존 discussion이면 exact path를 사용한다. |
 | `decision_authority` | `human` 또는 owning workflow를 명시한다. |
 | `scope`, `decision_criteria` | 알려진 경우 양쪽 prompt에 같은 값을 전달한다. |
@@ -89,8 +89,8 @@ Scheduler interval, recurrence, task ID, notification과 deadline은 외부 runt
 [`discuss-live.md`](discuss-live.md)를 적용하고 다음 delta만 명시한다.
 
 ```text
-자신의 turn 완료나 상대 turn 부재를 response 종료 사유로 삼지 않는다.
-자신의 response runtime이 살아 있는 동안 current phase에 맞는 bounded Research 후 shared state와 상대 turn을 다시 확인한다.
+자신의 turn 완료나 상대 turn 부재만으로 response를 끝내지 않는다.
+Current phase에서 credible information gain이 있는 동안 bounded Research와 shared-state recheck를 반복하고, saturation과 participant-local 종료는 discuss-live.md를 따른다.
 고정 runtime이나 shared deadline을 추측하지 않는다.
 ```
 
@@ -98,7 +98,7 @@ Scheduler interval, recurrence, task ID, notification과 deadline은 외부 runt
 
 기존 discussion이면 exact bundle path를 prompt에 넣는 것을 우선한다. Participant는 prompt의 요약보다 persisted bundle을 source state로 사용한다.
 
-새 discussion은 기본적으로 Lead가 bundle을 bootstrap한다. Non-lead에게 exact identity가 없으면 competing bundle을 만들게 하지 않고 applicable execution guide의 rendezvous 또는 caller-owned handoff를 따른다.
+새 discussion은 applicable execution guide의 rendezvous를 먼저 따른다. Lead라도 matching active bundle을 확인하지 않고 competing bundle을 만들게 하지 않는다.
 
 ## Minimal Template
 

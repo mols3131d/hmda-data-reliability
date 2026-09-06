@@ -7,7 +7,7 @@ discussion:
   id: <discussion-id>
   type: <explore | compare | debate | challenge | sublate>
   exchange: <one-shot | cross-review | iterative>
-  execution: <manual | scheduled | chatbot-active-session>
+  execution: <manual | scheduled | live>
   phase: <frame | evidence | dialectic | sublation>
   topic: <topic-slug>
   decision_authority: <human | owning-workflow>
@@ -23,8 +23,9 @@ tags:
 
 <!--
 작성 규칙:
-- discuss artifact는 반드시 이 디렉터리를 루트로 하는 bundle이다.
-- README.md가 Goal, Scope, Decision Criteria, Roles, Topics, phase/current state, References와 기본 Final Synthesis를 소유한다.
+- 새 discuss artifact는 반드시 이 디렉터리를 루트로 하는 bundle이다.
+- README.md frontmatter의 discussion.phase, discussion.topic, discussion.execution이 현재 shared machine state의 canonical field다.
+- README.md 본문은 Goal, Scope, Decision Criteria, Roles, Topics, working state summary, References와 기본 Final Synthesis를 소유하며 canonical phase/topic/execution을 중복 기록하지 않는다.
 - participant contribution만 turns/에 분리한다.
 - turn 파일명은 <sequence>-<participant>.md만 사용한다.
 - 예: 001-a.md, 002-b.md, 003-a.md
@@ -33,13 +34,13 @@ tags:
 - 각 turn은 discuss.md의 phase contract와 Turn Workflow를 따른다.
 - Lead는 coordination을 소유하지만 truth, tie-break 또는 final decision을 소유하지 않는다.
 - Final Synthesis가 커져 README 가독성을 해칠 때만 _synthesis.md를 사용해 synthesis.md로 분리한다.
-- scheduled/chatbot runtime metadata는 해당 discuss-*.md extension에서 실제로 요구할 때만 추가한다.
+- scheduled/live runtime metadata는 해당 discuss-*.md extension에서 실제로 요구할 때만 추가한다.
 - OPTIONAL 블록과 빈 placeholder를 남기지 않는다.
 - KISS, DRY 원칙을 지킨다.
 -->
 
 > [!NOTE]
-> <현재 토론 목적, 현재 phase와 사람이 최종적으로 결정해야 할 사항을 한 문단으로 요약한다.>
+> <현재 토론 목적, 핵심 상태와 사람이 최종적으로 결정해야 할 사항을 한 문단으로 요약한다.>
 
 ## Goal
 
@@ -78,7 +79,6 @@ tags:
 
 ## Current State
 
-- **Phase** - <frame | evidence | dialectic | sublation>
 - **Working Hypothesis A** - <현재 가설 또는 unknown; evidence에 따라 변경 가능>
 - **Working Hypothesis B** - <현재 가설 또는 unknown; evidence에 따라 변경 가능>
 - **Material Uncertainty** - <현재 판단을 바꿀 수 있는 uncertainty>
