@@ -23,7 +23,7 @@ Scheduler가 없거나 단일 response runtime 안에서 계속 토론해야 하
 | Active topics | 1 |
 | Session | 6–12 hours |
 | Exchange | iterative |
-| Synthesis | Lead |
+| Final synthesis | Lead |
 | Decision authority | human or owning workflow |
 
 Session window는 timebox이지 turn quota가 아니다. 더 긴 window나 추가 topic은 discussion goal에 필요한 이유가 있을 때만 사용한다.
@@ -41,7 +41,7 @@ participants: [a, b]
 
 Scheduler/host가 shared session start/end를 명시적으로 제공하면 해당 값을 기록할 수 있다. 제공되지 않은 deadline을 추정하지 않는다.
 
-Phase, topic, scope, decision criteria, current state, references와 synthesis는 `discuss.md`의 common bundle contract를 따른다.
+Phase, topic, scope, decision criteria, current state, references와 final result는 `discuss.md`의 common bundle contract를 따른다.
 
 ## One Invocation = One Contribution
 
@@ -55,12 +55,12 @@ read persisted state
 → exit
 ```
 
-Lead가 Converge phase에서 synthesis eligible이면:
+Lead가 Sublation phase에서 final synthesis eligible이면:
 
 ```text
 read persisted state
-→ verify convergence state
-→ synthesize or revise synthesis
+→ verify sublation state + residual conditions
+→ synthesize or revise final result
 → persist shared state
 → exit
 ```
@@ -86,14 +86,15 @@ Scheduler는 phase를 결정하지 않는다. Persisted discussion state와 `dis
 ### Dialectic
 
 - Scheduler는 persisted move에 따라 next eligible participant를 호출한다.
-- Thesis, antithesis, synthesis authorship을 Lead에게 고정하지 않는다.
-- Synthesis candidate가 게시되면 상대 participant에게 adversarial challenge 기회를 먼저 준 뒤 Converge eligibility를 판단한다.
+- Thesis, antithesis, sublation authorship을 Lead에게 고정하지 않는다.
+- Sublation candidate가 게시되면 상대 participant에게 adversarial challenge 기회를 먼저 준 뒤 Sublation eligibility를 판단한다.
 
-### Converge
+### Sublation
 
-- Lead가 synthesis를 작성할 수 있다.
-- Scheduler/host가 허용하면 non-lead에게 synthesis omission/misrepresentation review 기회를 제공한다.
-- Review 기회가 없었다면 synthesis는 persisted explicit agreement 이상을 mutual consensus로 표현하지 않는다.
+- Lead가 final synthesis를 작성할 수 있다.
+- Final result는 `Limits`, `Trade-offs`, `Cautions`, `Reopen Conditions`를 반드시 포함한다.
+- Scheduler/host가 허용하면 non-lead에게 omitted constraint, hidden trade-off, understated limitation과 misrepresentation review 기회를 제공한다.
+- Review 기회가 없었다면 final result는 persisted explicit agreement 이상을 shared sublation으로 표현하지 않는다.
 
 ## Eligibility
 
@@ -120,9 +121,10 @@ Lead는 common participant role에 coordination을 추가로 맡는다.
 2. 상대의 material framing objection을 summary에 정확히 반영한다.
 3. Phase transition criteria를 충족한 경우에만 `README.md` phase를 갱신한다.
 4. Dialectic에서는 Lead 자신의 proposal을 shared truth로 취급하지 않는다.
-5. Converge에서는 persisted strongest case, agreement, disagreement와 evidence gap을 보존해 synthesis한다.
+5. Sublation에서는 persisted strongest case, preserved constraints, transformed conflict, disagreement와 evidence gap을 보존해 final synthesis한다.
+6. Final synthesis에 limits, trade-offs, cautions와 reopen conditions를 빠뜨리지 않는다.
 
-Lead는 `README.md`, 자신의 turns와 synthesis authoring을 소유하지만 truth, tie-break 또는 decision authority를 소유하지 않는다.
+Lead는 `README.md`, 자신의 turns와 final synthesis authoring을 소유하지만 truth, tie-break 또는 decision authority를 소유하지 않는다.
 
 ## Counterpart Workflow
 
@@ -131,8 +133,9 @@ Non-lead participant는 common Turn Workflow를 독립적으로 수행한다.
 1. Frame에서 lead framing 자체를 challenge할 수 있다.
 2. Evidence에서 상대가 제시하지 않은 evidence path를 우선 탐색한다.
 3. Dialectic에서 반박 전에 상대 strongest claim을 steelman한다.
-4. Synthesis candidate를 challenge할 때 omitted constraint, unsupported assumption과 false compromise를 우선 확인한다.
-5. Material objection이 없으면 convergence/no-finding signal을 한 번 남길 수 있다.
+4. Sublation candidate를 challenge할 때 omitted constraint, unsupported assumption, false compromise와 hidden trade-off를 우선 확인한다.
+5. Final synthesis review에서는 limits와 cautions가 실제 residual risk를 과소표현하지 않는지 확인한다.
+6. Material objection이 없으면 no-finding signal을 한 번 남길 수 있다.
 
 Non-lead는 자신의 turns만 소유한다. Shared-state 변경은 turn에서 제안한다.
 
@@ -140,9 +143,9 @@ Non-lead는 자신의 turns만 소유한다. Shared-state 변경은 turn에서 �
 
 - 한 번에 하나의 topic만 active로 유지한다.
 - 시간이 남는다는 이유로 topic, dialectic cycle 또는 turn을 추가하지 않는다.
-- Common stop condition이 먼저 충족되면 session window가 남아 있어도 Converge/synthesis로 이동할 수 있다.
+- Common stop condition이 먼저 충족되면 session window가 남아 있어도 Sublation/final synthesis로 이동할 수 있다.
 - Shared session expiry가 확인되면 새 argumentative turn을 시작하지 않는다.
-- Expiry 이후 Lead가 별도 synthesis invocation을 받을 수 있다면 persisted turns만 기준으로 synthesis한다.
+- Expiry 이후 Lead가 별도 synthesis invocation을 받을 수 있다면 persisted turns만 기준으로 final result를 작성한다.
 
 Scheduler가 호출을 놓쳤더라도 sequence나 phase를 추측으로 건너뛰지 않는다. Latest valid persisted state에서 다시 시작한다.
 
@@ -153,14 +156,15 @@ Scheduler가 호출을 놓쳤더라도 sequence나 phase를 추측으로 건너�
 - Missed turn → latest valid turn에서 resume.
 - Phase state가 turn evidence와 모순 → turn evidence를 재검토하고 shared state를 정정한 뒤 계속.
 - Missing material evidence → participant가 `Next: research`를 기록하고 필요한 경우 Lead가 topic을 blocked/paused로 표시.
-- Session expiry → 새 argumentative turn 금지; 가능한 경우 Converge/synthesis로 전환.
+- Sublation의 residual conditions가 누락됨 → finalization하지 않고 보강.
+- Session expiry → 새 argumentative turn 금지; 가능한 경우 persisted state 기반 checkpoint/final synthesis로 전환.
 - Scheduler failure → discussion state를 추측으로 advance하지 않는다.
 
 Scheduled protocol은 scheduler가 A/B를 호출할 수 있다는 것만 가정한다. Scheduler-specific retry policy, recurrence expression, queue semantics와 notification은 외부 runtime이 소유한다.
 
 ## Boundaries
 
-- 이 extension은 `discuss.md`의 phase lifecycle, bundle, ownership, turn quality, topic scope, synthesis와 decision authority를 변경하지 않는다.
+- 이 extension은 `discuss.md`의 phase lifecycle, bundle, ownership, turn quality, topic scope, sublation과 decision authority를 변경하지 않는다.
 - `discuss-chatbot.md`와 같은 participant 실행에 동시에 적용하지 않는다.
 - Scheduling infrastructure 자체를 discussion artifact 안에서 구현하지 않는다.
 - Elapsed time, invocation 수 또는 scheduler order를 deeper reasoning이나 evidence quality의 대리값으로 사용하지 않는다.
