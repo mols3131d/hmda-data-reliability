@@ -8,7 +8,7 @@
 
 ### Requirement: Data quality gate execution
 
-시스템은 raw load 성공 후 analytics build 이전에 신뢰성 품질 게이트를 실행해야 한다(SHALL). Gate는 canonical dbt source relation과 partition column을 사용해 dbt가 소비할 전체 Bronze population을 평가해야 하며(MUST), quality-gated analytics build는 bundled canonical dbt project/profile configuration을 사용해야 한다(MUST). Analytics build는 database mutation lock 안에서 같은 전체 gate를 재검증한 뒤 동일한 lock을 유지한 채 dbt subprocess를 시작해야 한다(MUST). Orchestration은 task dependency와 task state만 조율하고, profile 구성과 lock-bound build 조합은 Data Operations에, baseline, threshold, detector와 blocking 판정은 Reliability public boundary에 위임해야 한다(MUST).
+시스템은 raw load 성공 후 analytics build 이전에 신뢰성 품질 게이트를 실행해야 한다(SHALL). Gate는 canonical dbt source relation과 partition column을 사용해 dbt가 소비할 전체 Bronze population을 평가해야 하며(MUST), quality-gated analytics build는 bundled canonical dbt project/profile configuration을 사용해야 한다(MUST). Analytics build는 database mutation lock 안에서 같은 전체 gate를 재검증한 뒤 동일한 lock을 유지한 채 dbt subprocess를 시작해야 한다(MUST). Orchestration은 task dependency와 task state만 조율하고, profile 구성과 lock-bound build 조합은 Data Operations에, baseline, threshold, detector와 blocking 판정은 Reliability public boundary에 위임해야 한다(MUST). 품질 게이트는 structural validation failure(파티션 식별자 누락, 프로파일 컬럼 계약 불일치)와 detector incident(통계적 이상 탐지)를 구분해 평가해야 하며(MUST), detector incident 중에서는 null spike와 empty partition만 pipeline을 차단해야 한다(SHALL).
 
 #### Scenario: Quality gate passes – no anomaly detected
 
@@ -87,9 +87,10 @@
 
 #### Scenario: MVP blocking incident scope
 
-- **WHEN** Reliability quality gate가 detector 결과를 blocking policy에 적용할 때
-- **THEN** null spike와 empty partition만 pipeline을 차단해야 함
+- **WHEN** Reliability quality gate가 detector incident 결과를 blocking policy에 적용할 때
+- **THEN** detector incident 중에서는 null spike와 empty partition만 pipeline을 차단해야 함
 - **AND** volume drop, schema drift 또는 freshness delay 결과만으로는 gate가 실패해서는 안 됨
+- **AND** missing partition discriminator 또는 profile coverage failure와 같은 structural validation failure는 detector incident와 구분되어 gate를 차단하거나 거부를 유발해야 함
 
 #### Scenario: Accepted 2025 normal profile
 

@@ -2,7 +2,7 @@
 type: openspec-spec-driven-tdd-design
 category: design
 title: 2026년 가상 합성 데이터 평가 설계
-description: 메인 DB 격리를 위한 샌드박스 경로 오버라이드와 연도 간 프로파일 기준선 비교 메커니즘을 정의한다.
+description: 메인 DB 격리를 위한 샌드박스 경로 오버라이드와 2026년 파티션 프로파일 기준선 비교 메커니즘을 정의한다.
 ---
 
 ## Technical Delta
@@ -12,10 +12,10 @@ description: 메인 DB 격리를 위한 샌드박스 경로 오버라이드와 �
 - **Decision:** 가상 2026년 합성 결함 데이터를 평가할 때 메인 데이터베이스(`data/hmda_reliability.duckdb`)를 직접 사용하지 않고, `DataOperationRequest`의 `database_path` 오버라이드를 통해 격리된 샌드박스 DB(예: `data/sandbox_2026.duckdb` 또는 pytest의 `tmp_path`)에서 실행한다.
 - **Rationale:** 1,354만 건의 실제 2025년 메인 데이터를 무결하게 보존하면서, 2026년 파티션 적재와 준비된 dbt artifact를 이용한 신뢰성 수명주기 및 lineage impact 분석을 독립된 환경에서 안전하게 검증하기 위함이다.
 
-### D2. 연도 파티션 간 프로파일 스냅샷 및 기준선 비교 메커니즘
+### D2. 2026년 파티션 프로파일 스냅샷 및 기준선 비교 메커니즘
 
-- **Decision:** 2026년 결함 데이터의 프로파일 스냅샷(`ProfileSnapshot`)을 측정한 뒤, 정상 통계치(`null_rates={'income': 0.002}`)를 갖춘 기준선 스냅샷과 결합하여 `run_incident_lifecycle()`에 전달한다.
-- **Rationale:** `run_incident_lifecycle()`은 동일한 asset과 partition 구조를 가진 baseline과 current의 통계 차이를 결정론적으로 비교하므로, 2026년 파티션 맥락에 맞춘 정상 기준선을 공급하여 `null_spike` 사고와 downstream dbt 계통(`stg_hmda_loans`, `mart_hmda_loan_outcomes`) 영향도를 정확히 도출하기 위함이다.
+- **Decision:** 2026년 결함 데이터의 프로파일 스냅샷(`ProfileSnapshot`)을 측정한 뒤, 동일한 파티션 식별자(`partition=2026`)와 정상 통계치(`null_rates={'income': 0.0}`)를 갖춘 2026 파티션 기준선 스냅샷과 결합하여 `run_incident_lifecycle()`에 전달한다.
+- **Rationale:** `run_incident_lifecycle()`의 프로파일 호환성 계약(`_validate_profile_compatibility`)은 baseline과 current의 asset_name 및 partition 일치를 필수로 요구하므로, 서로 다른 연도 간(예: 2025 baseline vs 2026 current) 직접 비교가 아닌 2026년 파티션 맥락에 맞춘 정상 기준선을 공급하여 `null_spike` 사고와 downstream dbt 계통(`stg_hmda_loans`, `mart_hmda_loan_outcomes`) 영향도를 정확히 도출하기 위함이다. 이는 기존 generic lifecycle 계약을 그대로 충족하는 검증 사례이며, `data-operations-incident-lifecycle`에 대한 별도의 durable capability 확장은 필요하지 않다.
 
 ### D3. target_year 매개변수 유효성 검증 및 단일 연도 파티션 보장
 
