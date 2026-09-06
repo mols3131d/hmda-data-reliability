@@ -3,11 +3,15 @@ set -euo pipefail
 
 output_target="/dev/stdout"
 use_stdin=false
+list_markdown_paths=false
 
 for arg in "$@"; do
   case "$arg" in
     --stdin)
       use_stdin=true
+      ;;
+    --markdown-paths)
+      list_markdown_paths=true
       ;;
     *)
       output_target="$arg"
@@ -22,6 +26,34 @@ get_paths() {
     git diff --name-only HEAD^1 HEAD
   fi
 }
+
+is_markdown_admission_path() {
+  local path="$1"
+
+  case "$path" in
+    inbox/AGENTS.md|inbox/_guidelines/*|inbox/_templates/*)
+      return 0
+      ;;
+    inbox/*)
+      return 1
+      ;;
+    *.md)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+if [[ "$list_markdown_paths" == "true" ]]; then
+  while IFS= read -r path; do
+    [[ -z "$path" ]] && continue
+    [[ -f "$path" ]] || continue
+    is_markdown_admission_path "$path" && printf '%s\n' "$path"
+  done < <(get_paths)
+  exit 0
+fi
 
 json=false
 markdown=false
@@ -156,7 +188,9 @@ while IFS= read -r path; do
   esac
 
   if [[ "$path" == *.md ]]; then
-    [[ -f "$path" ]] && markdown=true
+    if [[ -f "$path" ]] && is_markdown_admission_path "$path"; then
+      markdown=true
+    fi
     continue
   fi
 
