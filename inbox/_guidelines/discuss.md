@@ -65,7 +65,7 @@ Structured discussion은 다음 logical role을 가진다.
 
 Lead가 participant를 겸해도 lead 권한은 coordination에만 적용된다. Lead는 자신의 participant position을 shared truth로 기록하거나, material objection이 남아 있는데 phase를 강제로 전환하거나, 자신의 synthesis candidate를 승인된 결론으로 표시할 수 없다.
 
-Shared-state summary가 participant turn과 다르면 persisted participant turn이 그 participant의 실제 입장을 소유한다. Lead가 summary를 수정할 수 있지만 상대의 disagreement를 삭제하거나 약화해서는 안 된다.
+Shared-state summary가 participant turn과 다르면 persisted participant turn이 그 participant의 실제 입장을 소유한다. Lead가 summary를 수정할 수 있지만 상대의 disagreement를 삭제하거나 약화해서는 안 된다. 상대 participant가 아직 입장을 publish하지 않았다면 Lead는 그 입장을 추정하지 않고 `unknown` 또는 `not_observed`로 둔다.
 
 ## Discussion Type
 
@@ -83,11 +83,11 @@ Types may transition when explicit. `explore`를 substantial Research의 대체�
 
 Exchange pattern은 필요한 깊이만 선택한다.
 
-- **One-shot**: A와 B가 최소한의 phase contract를 한 번씩 충족한 뒤 synthesize.
-- **Cross-review**: 서로의 strongest case를 한 번씩 검토. Consequential decision의 기본값.
-- **Iterative**: 추가 cycle이 material하게 결과를 바꿀 수 있는 동안 반복.
+- **One-shot**: A와 B가 한 번씩 contribution한다. Low-consequence exploration이나 evidence/position snapshot에 적합하다. Counterpart가 synthesis candidate를 실제로 challenge하지 않았다면 `synthesis` outcome을 claimed agreement로 표시하지 않는다.
+- **Cross-review**: initial contribution 뒤 서로의 strongest case를 한 번씩 검토한다. Consequential decision과 challenged synthesis의 기본 최소값이다.
+- **Iterative**: 추가 dialectic cycle이 material하게 결과를 바꿀 수 있는 동안 반복한다.
 
-Exchange pattern은 phase lifecycle을 제거하지 않는다. 짧은 discussion은 여러 phase를 한 turn에 압축할 수 있지만, 해당 phase가 요구하는 독립성·evidence·challenge 조건을 생략해서는 안 된다.
+Exchange pattern은 phase lifecycle을 제거하지 않는다. 짧은 discussion은 여러 phase를 한 turn에 압축할 수 있지만, 해당 phase가 요구하는 독립성·evidence·challenge 조건을 생략해서는 안 된다. 특히 `synthesis` outcome은 실제 counterpart challenge opportunity 없이 압축해서 만들지 않는다.
 
 ## Phase Lifecycle
 
@@ -126,7 +126,7 @@ Frame에는 최소한 다음이 있어야 한다.
 - participant/lead role
 - known alternatives 또는 중요한 tension
 - material uncertainty
-- 각 participant의 working hypothesis가 필요하다면 그것이 잠정적이라는 명시
+- 각 participant의 initial working hypothesis 또는 `unknown`
 
 A가 기본 lead인 경우 A는 먼저 **frame proposal**을 작성하되 substantive recommendation을 frame 자체에 숨기지 않는다. B는 frame을 받아들이기 전에 다음을 검토한다.
 
@@ -136,9 +136,11 @@ A가 기본 lead인 경우 A는 먼저 **frame proposal**을 작성하되 substa
 - 중요한 alternative 또는 constraint가 빠졌는가
 - role이 `A=찬성`, `B=반대`처럼 participant identity를 고정 진영으로 만들고 있는가
 
-Initial position은 고정 입장이 아니라 evidence에 따라 바뀌는 working hypothesis다. 가능한 경우 participant는 상대의 substantive advocacy에 동조하기 전에 자신의 초기 hypothesis와 uncertainty를 독립적으로 형성한다.
+Initial position은 고정 입장이 아니라 evidence에 따라 바뀌는 working hypothesis다. 가능한 경우 participant는 상대의 substantive advocacy에 동조하기 전에 자신의 초기 hypothesis와 uncertainty를 독립적으로 형성한다. Role을 다르게 둘 필요가 있으면 원하는 결론이 아니라 **서로 다른 evidence-search lens 또는 responsibility**를 배정한다.
 
-**Done when:** decision question, scope, criteria, roles와 material framing objection이 명확하고, 남은 framing disagreement가 있으면 그대로 기록되어 있다.
+Frame 종료 전에 양쪽 participant의 working hypothesis 또는 `unknown/not_observed` 상태가 observable해야 한다. Counterpart의 frame review가 실제로 관찰되지 않았다면 Lead는 frame이 상호 합의됐다고 표시하지 않는다.
+
+**Done when:** decision question, scope, criteria, roles, 양쪽 working-hypothesis state와 material framing objection이 명확하고, 남은 framing disagreement가 있으면 그대로 기록되어 있다.
 
 ### Phase 2 — Evidence
 
@@ -160,6 +162,8 @@ Evidence phase에서는 상대를 이기기 위한 advocacy보다 **unique evide
 한 participant가 material evidence를 contested라고 판단하면 lead가 임의로 삭제하거나 resolved로 표시하지 않는다. Source authority, deterministic verification 또는 후속 Research로 해결되지 않으면 contested/unknown 상태를 보존한다.
 
 Evidence gathering이 discussion turn 범위를 넘어가면 별도 `research` artifact로 route하고 topic을 필요에 따라 blocked/paused 처리한다.
+
+Counterpart의 independent evidence contribution이 실제로 관찰되지 않았다면 Lead는 evidence landscape가 양쪽 관점을 충분히 대표한다고 추정하지 않는다. Participant unavailable 또는 runtime limitation은 limitation으로 남긴다.
 
 **Done when:** 양쪽이 독립적인 evidence를 제출할 합리적 기회를 가졌고, 핵심 supporting/counter evidence, conflicts와 evidence gaps가 드러나 실제 dialectic을 시작할 수 있다.
 
