@@ -13,7 +13,7 @@ tags:
 
 Lefthook 자체의 설치 방법, configuration option과 command reference는 [Lefthook 공식 문서](https://lefthook.dev/)를 따른다. 이 repository에서는 [`lefthook.yml`](../../../lefthook.yml)이 hook 동작을 소유하고 [`scripts/bootstrap.py`](../../../scripts/bootstrap.py)의 `setup`이 hook 설치를 담당한다.
 
-Git hook은 개발 흐름에서 빠른 feedback을 주는 local guard다. Hook을 확장할 때는 검사 수를 늘리는 것보다 **commit과 push 시점에 필요한 최소 품질 경계를 낮은 마찰로 유지하는 것**을 우선한다.
+Git hook은 local Git runtime을 사용할 수 있는 기여자에게 빠른 feedback을 주는 local guard다. 모든 기여 환경이 hook을 실행할 수 있다고 가정하지 않는다. Hook을 확장할 때는 검사 수를 늘리는 것보다 **commit과 push 시점에 필요한 최소 품질 경계를 낮은 마찰로 유지하는 것**을 우선한다.
 
 ## Setup
 
@@ -63,7 +63,9 @@ Hook 내부 command를 문서에 전체 복제하지 않는다. Formatter와 lin
 
 ## Boundary
 
-Lefthook은 빠른 local feedback을 제공하지만 repository validation 전체를 대체하지 않는다. Hook 통과는 CI 또는 matching revision의 validation evidence를 대신하지 않는다.
+Lefthook은 local runtime이 있는 환경의 빠른 feedback과 자동 수정을 최적화하지만 repository validation 전체를 대체하지 않는다. Hook을 사용할 수 없는 기여자에게 hook 실행을 필수 기여 절차로 요구하지 않는다.
+
+Hook 통과는 CI 또는 matching revision의 validation evidence를 대신하지 않는다. 반대로 hook을 실행할 수 없다는 이유만으로 병합 필수 검증이 빠져서는 안 되며, 해당 책임은 [Continuous Integration](../ci.md)의 admission boundary를 따른다.
 
 Test 설계와 pytest 실행 기준은 [Testing Guide](../testing.md), Git/GitHub workflow는 [Version Control and GitHub](../vcs-git/README.md)가 소유한다.
 
