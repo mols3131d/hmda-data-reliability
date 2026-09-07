@@ -264,7 +264,7 @@ def test_unknown_python_path_triggers_full_type_fallback() -> None:
         "rulesync.lock",
         "skills-lock.json",
         ".rulesync/rules/markdown.md",
-        ".rulesync/skills/mols-rpi/SKILL.md",
+        ".rulesync/skills/mols-loops/SKILL.md",
     ],
 )
 def test_route_only_change_isolates_heavy_execution(route_path: str) -> None:
