@@ -8,9 +8,9 @@
 
 다음이 모두 가능할 때 사용한다.
 
-- A와 B가 같은 persisted discussion bundle을 읽고 쓸 수 있다.
+- A와 B가 같은 writable owning ref와 exact path의 persisted discussion bundle을 읽고 쓸 수 있다.
 - scheduler/host가 participant를 나중에 다시 호출할 수 있다.
-- 각 invocation은 durable state를 읽고 한 번의 eligible contribution을 persist할 수 있다.
+- 각 invocation은 같은 source identity의 durable state를 읽고 한 번의 eligible contribution을 persist할 수 있다.
 
 Scheduler가 없거나 단일 response runtime 안에서 계속 토론해야 하면 이 extension을 사용하지 않는다. Live single-response 방식은 [`discuss-live.md`](discuss-live.md)를 사용한다.
 
@@ -32,7 +32,7 @@ Provider-specific task ID, recurrence syntax, model name, trigger interval과 no
 
 ## Scheduled State
 
-Lead는 시작 시 `README.md` frontmatter의 canonical execution field를 확인한다.
+Lead는 시작 시 같은 owning ref의 `README.md` frontmatter canonical execution field를 확인한다.
 
 ```yaml
 discussion:
@@ -48,7 +48,7 @@ Phase, topic, scope, decision criteria, current state, references와 final resul
 각 scheduled invocation은 다음 중 하나만 수행한다.
 
 ```text
-read persisted state
+read same-ref persisted state
 → check phase + eligibility
 → run common Turn Workflow
 → persist one participant turn or allowed shared-state update
@@ -58,7 +58,7 @@ read persisted state
 Lead가 Sublation phase에서 final synthesis eligible이면:
 
 ```text
-read persisted state
+read same-ref persisted state
 → verify sublation state + residual conditions
 → synthesize or revise final result
 → persist shared state
@@ -152,7 +152,7 @@ Scheduler가 호출을 놓쳤더라도 sequence나 phase를 추측으로 건너�
 ## Recovery
 
 - Missing prerequisite 또는 duplicate invocation → no-op.
-- Stale state 또는 write conflict → refresh 후 current phase/eligibility에서 재시도.
+- Stale state 또는 write conflict → 같은 source identity를 refresh한 뒤 current phase/eligibility에서 재시도.
 - Missed turn → latest valid turn에서 resume.
 - Phase state가 turn evidence와 모순 → turn evidence를 재검토하고 shared state를 정정한 뒤 계속.
 - Missing material evidence → participant가 `Next: research`를 기록하고 필요한 경우 Lead가 topic을 blocked/paused로 표시.
@@ -165,6 +165,7 @@ Scheduled protocol은 scheduler가 A/B를 호출할 수 있다는 것만 가정�
 ## Boundaries
 
 - 이 extension은 `discuss.md`의 phase lifecycle, bundle, ownership, turn quality, topic scope, sublation과 decision authority를 변경하지 않는다.
+- 같은 discussion의 invocation 사이에 owning ref나 exact bundle path를 임의로 바꾸지 않는다.
 - `discuss-live.md`와 같은 participant 실행에 동시에 적용하지 않는다.
 - Scheduling infrastructure 자체를 discussion artifact 안에서 구현하지 않는다.
 - Elapsed time, invocation 수 또는 scheduler order를 deeper reasoning이나 evidence quality의 대리값으로 사용하지 않는다.
