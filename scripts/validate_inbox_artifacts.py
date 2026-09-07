@@ -19,7 +19,11 @@ def _frontmatter_fields(path: Path) -> dict[str, str]:
         raise ValueError("missing YAML frontmatter opening delimiter")
 
     try:
-        end = next(index for index, line in enumerate(lines[1:], 1) if line.strip() == "---")
+        end = next(
+            index
+            for index, line in enumerate(lines[1:], 1)
+            if line.strip() == "---"
+        )
     except StopIteration as exc:
         raise ValueError("missing YAML frontmatter closing delimiter") from exc
 
@@ -55,12 +59,17 @@ def _validate_root(path: Path, artifact_name: str) -> list[str]:
     for field in REQUIRED_FIELDS:
         value = fields.get(field)
         if value is None or not _has_value(value):
-            errors.append(f"{path}: required frontmatter field '{field}' is missing or empty")
+            errors.append(
+                f"{path}: required frontmatter field '{field}' is missing or empty"
+            )
 
     raw_type = fields.get("type", "")
     artifact_type = _unquote(raw_type.strip())
     if artifact_type and not TYPE_RE.fullmatch(artifact_type):
-        errors.append(f"{path}: frontmatter type must be lowercase kebab-case: {artifact_type!r}")
+        errors.append(
+            f"{path}: frontmatter type must be lowercase kebab-case: "
+            f"{artifact_type!r}"
+        )
         return errors
 
     match = ARTIFACT_RE.fullmatch(artifact_name)
@@ -76,12 +85,16 @@ def _validate_root(path: Path, artifact_name: str) -> list[str]:
         expected_prefix = f"{match.group('time')}-{artifact_type}-"
         if not artifact_name.startswith(expected_prefix):
             errors.append(
-                f"{path}: artifact name must start with {expected_prefix!r} to match frontmatter type"
+                f"{path}: artifact name must start with {expected_prefix!r} "
+                "to match frontmatter type"
             )
     return errors
 
 
-def _artifact_root_for_changed_path(repo_root: Path, changed_path: Path) -> tuple[Path, str] | None:
+def _artifact_root_for_changed_path(
+    repo_root: Path,
+    changed_path: Path,
+) -> tuple[Path, str] | None:
     """Resolve a changed Inbox path to the standalone file or bundle README root."""
     try:
         relative = changed_path.relative_to("inbox")
