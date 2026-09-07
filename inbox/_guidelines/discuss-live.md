@@ -268,7 +268,9 @@ Final synthesis를 작성한 Lead도 shared discussion이 아직 닫히지 않�
 
 ## Response Exit Gate
 
-Participant가 **user-facing final response를 반환하기 직전**에는 반드시 같은 source identity를 다시 확인하고 exit reason을 positive evidence로 분류한다.
+Participant가 **user-facing final response를 반환하기 직전**에는 가능한 한 같은 source identity의 persisted state를 다시 확인하고 exit reason을 positive evidence로 분류한다.
+
+Final refresh 자체가 safety, permission, tool failure 또는 실제 runtime boundary 때문에 불가능하면 그 실패/경계가 직접 관찰된 경우에만 마지막 verified state를 기준으로 `blocked` 또는 `runtime_boundary` exit을 사용할 수 있다. 이때 current persisted state를 확인했다고 가장하지 않고 stale-state limitation을 checkpoint에 남긴다.
 
 허용되는 participant-local exit reason은 다음뿐이다.
 
@@ -282,13 +284,15 @@ Participant가 **user-facing final response를 반환하기 직전**에는 반�
 Exit Gate 절차:
 
 ```text
-final persisted-state refresh
-→ new counterpart turn / phase change / eligible work?
-   ├─ yes → exit 금지, watchdog loop 복귀
-   └─ no
-      → exit reason을 위 네 종류 중 하나로 증명 가능한가?
-         ├─ no → exit 금지, watchdog loop 복귀
-         └─ yes → participant-local checkpoint/final response 허용
+final persisted-state refresh 시도
+→ refresh 성공
+   → new counterpart turn / phase change / eligible work?
+      ├─ yes → exit 금지, watchdog loop 복귀
+      └─ no → exit reason 증명
+→ refresh 불가
+   → 직접 관찰된 runtime boundary / blocker인가?
+      ├─ no → exit reason으로 추정하지 않음
+      └─ yes → last verified state + stale limitation으로 boundary/blocked checkpoint
 ```
 
 다음은 exit reason이 아니다.
