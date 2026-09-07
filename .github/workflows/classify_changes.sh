@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-output_target="/dev/stdout"
+output_target=""
 use_stdin=false
 list_markdown_paths=false
 
@@ -301,7 +301,7 @@ while IFS= read -r path; do
   esac
 done < <(get_paths)
 
-{
+write_outputs() {
   echo "json=$json"
   echo "markdown=$markdown"
   echo "tests=$tests"
@@ -318,4 +318,10 @@ done < <(get_paths)
   printf 'type_targets='
   printf '%s ' "${type_targets[@]}"
   echo
-} >> "$output_target"
+}
+
+if [[ -n "$output_target" ]]; then
+  write_outputs >> "$output_target"
+else
+  write_outputs
+fi
