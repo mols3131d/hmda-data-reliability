@@ -11,7 +11,7 @@ from typing import cast
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 BOOTSTRAP_SCRIPT = REPO_ROOT / "scripts" / "bootstrap.py"
 Step = tuple[str, Callable[[], int]]
 

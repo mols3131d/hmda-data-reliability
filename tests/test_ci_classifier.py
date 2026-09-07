@@ -29,13 +29,26 @@ def run_classifier(paths: list[str]) -> dict[str, str]:
     return result
 
 
+def run_markdown_paths(paths: list[str]) -> list[str]:
+    """Return changed Markdown paths selected for validation."""
+    proc = subprocess.run(
+        ["bash", str(CLASSIFIER_SCRIPT), "--stdin", "--markdown-paths"],
+        input="\n".join(paths) + "\n",
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=REPO_ROOT,
+    )
+    return proc.stdout.splitlines()
+
+
 @pytest.mark.unit
 def test_root_test_modify() -> None:
     """존재하는 루트 테스트 파일 수정 시 해당 테스트만 targets에 추가된다."""
-    out = run_classifier(["tests/test_commands.py"])
+    out = run_classifier(["tests/test_ci_classifier.py"])
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
-    assert out["targets"].strip() == "tests/test_commands.py"
+    assert out["targets"].strip() == "tests/test_ci_classifier.py"
     assert out["python"] == "true"
     assert out["full_type"] == "false"
 
@@ -55,21 +68,77 @@ def test_root_test_delete() -> None:
 @pytest.mark.unit
 def test_root_test_rename() -> None:
     """루트 테스트 이름 변경 시 존재하는 신규 파일만 targets에 추가된다."""
-    out = run_classifier(["tests/test_nonexistent_old.py", "tests/test_commands.py"])
+    out = run_classifier(
+        ["tests/test_nonexistent_old.py", "tests/test_ci_classifier.py"]
+    )
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
-    assert out["targets"].strip() == "tests/test_commands.py"
+    assert out["targets"].strip() == "tests/test_ci_classifier.py"
     assert out["full_type"] == "false"
+
+
+@pytest.mark.unit
+def test_script_test_modify_targets_only_changed_test() -> None:
+    """scripts 전용 테스트 수정은 해당 테스트만 실행 대상으로 선택한다."""
+    path = "tests/scripts/test_commands.py"
+    out = run_classifier([path])
+    assert out["tests"] == "true"
+    assert out["full_unit"] == "false"
+    assert out["targets"].strip() == path
+    assert out["python"] == "true"
+    assert out["full_type"] == "false"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "README.md",
+        "docs/development/ci.md",
+        "inbox/AGENTS.md",
+        "inbox/_guidelines/research.md",
+        "inbox/_templates/research.md",
+        "inbox/README.md",
+        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
+    ],
+)
+def test_changed_markdown_paths_are_selected(path: str) -> None:
+    """현재 change set의 Markdown만 lightweight 검증 대상으로 선택한다."""
+    out = run_classifier([path])
+    assert out["markdown"] == "true"
+    assert out["inbox"] == str(path.startswith("inbox/")).lower()
+    assert run_markdown_paths([path]) == [path]
+
+
+@pytest.mark.unit
+def test_markdown_path_selection_stays_within_changed_scope() -> None:
+    """Mixed Markdown에서도 입력된 changed path만 workflow에 전달한다."""
+    paths = [
+        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
+        "docs/development/ci.md",
+        "inbox/AGENTS.md",
+    ]
+    assert run_markdown_paths(paths) == paths
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
     ("script_path", "expected_target"),
     [
-        ("scripts/generate_agent_routes.py", "tests/test_generate_agent_routes.py"),
-        ("scripts/agent_assets.py", "tests/test_agent_assets.py"),
-        ("scripts/generate_docs_indexes.py", "tests/test_generate_docs_indexes.py"),
-        ("scripts/log_agent_event.py", "tests/test_log_agent_event.py"),
+        (
+            "scripts/generate_agent_routes.py",
+            "tests/scripts/test_generate_agent_routes.py",
+        ),
+        ("scripts/agent_assets.py", "tests/scripts/test_agent_assets.py"),
+        (
+            "scripts/generate_docs_indexes.py",
+            "tests/scripts/test_generate_docs_indexes.py",
+        ),
+        (
+            "scripts/validate_inbox_artifacts.py",
+            "tests/scripts/test_validate_inbox_artifacts.py",
+        ),
+        ("scripts/log_agent_event.py", "tests/scripts/test_log_agent_event.py"),
         ("scripts/run_actual_source.py", "tests/hmda_data/eda/test_eda_evidence.py"),
         ("scripts/run_agentic_review_live.py", "tests/review_ai/test_live_harness.py"),
     ],
@@ -94,10 +163,10 @@ def test_shared_commands_expands_known_consumers() -> None:
 
     targets = set(out["targets"].split())
     assert targets == {
-        "tests/test_commands.py",
-        "tests/test_tool_wrappers.py",
-        "tests/test_bootstrap.py",
-        "tests/test_agent_assets.py",
+        "tests/scripts/test_commands.py",
+        "tests/scripts/test_tool_wrappers.py",
+        "tests/scripts/test_bootstrap.py",
+        "tests/scripts/test_agent_assets.py",
     }
 
     type_targets = set(out["type_targets"].split())
@@ -112,8 +181,8 @@ def test_bootstrap_maps_to_bootstrap_contract_test() -> None:
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
     assert out["full_type"] == "false"
-    assert out["targets"].strip() == "tests/test_bootstrap.py"
-    assert out["type_targets"].strip() == "tests/test_bootstrap.py"
+    assert out["targets"].strip() == "tests/scripts/test_bootstrap.py"
+    assert out["type_targets"].strip() == "tests/scripts/test_bootstrap.py"
 
 
 @pytest.mark.unit
@@ -124,8 +193,8 @@ def test_node_tool_wrapper_maps_to_forwarding_contract_test(script_path: str) ->
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
     assert out["full_type"] == "false"
-    assert out["targets"].strip() == "tests/test_tool_wrappers.py"
-    assert out["type_targets"].strip() == "tests/test_tool_wrappers.py"
+    assert out["targets"].strip() == "tests/scripts/test_tool_wrappers.py"
+    assert out["type_targets"].strip() == "tests/scripts/test_tool_wrappers.py"
 
 
 @pytest.mark.unit

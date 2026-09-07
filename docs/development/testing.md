@@ -15,13 +15,13 @@ tags:
 
 # Testing Guide
 
-이 문서는 사람이 local terminal에서 pytest를 선택하고 실행하는 방법을 설명한다. 어떤 behavior를 test로 설계할지는 [Test Design](test-design.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
+이 문서는 local runtime에서 pytest를 선택하고 실행하는 방법을 설명한다. 사람과 local runtime을 사용할 수 있는 agent 모두에 적용할 수 있다. Local runtime을 사용할 수 없는 기여자는 이 command를 필수 절차로 간주하지 않고, 병합에 필요한 repository-side evidence는 [Continuous Integration](ci.md)을 따른다. 어떤 behavior를 test로 설계할지는 [Test Design](test-design.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
 
 ## Start Here
 
 가장 좁은 범위의 command부터 실행한다. 실패 원인이 현재 변경과 관련 있는지 빠르게 알 수 있고, 실행 시간도 짧다.
 
-| 상황 | Command |
+| Context | Command |
 | --- | --- |
 | 현재 suite 전체 | `uv run pytest` |
 | domain directory | `uv run pytest tests/data_platform` |
@@ -58,7 +58,7 @@ flowchart TB
 
 ## Git Hooks
 
-Lefthook은 local feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. `main` admission에서 CI가 소유하는 책임 경계는 [Continuous Integration](ci.md)을 따른다.
+Lefthook은 local Git hook을 실행할 수 있는 환경에서 빠른 feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. Hook을 사용할 수 없는 기여자에게 이를 병합 필수 검증의 유일한 실행 경로로 요구하지 않는다. `main` admission에서 CI가 소유하는 책임 경계는 [Continuous Integration](ci.md)을 따른다.
 
 | Hook | Trigger | Action |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
-- Markdown은 위치와 관계없이 runtime scope에서 제외하고, 현재 존재하는 changed Markdown file만 `rumdl check`한다.
+- Markdown은 prospective change set에 포함된 현재 존재하는 changed file만 검증한다. 일반 Inbox artifact도 변경된 파일만 lightweight Markdown 검증을 받고, 변경되지 않은 과거 artifact를 다시 scan하지 않는다.
 - Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check를 실행한다. Type check는 source domain의 current reverse dependency closure와 직접 대응 test까지 넓히고, shared/common/runtime config 또는 unknown Python path처럼 영향 범위를 안정적으로 좁히기 어려우면 project-wide `ty check`로 fallback한다.
 - Direct-mapped repository Python script는 해당 wrapper 또는 workflow contract test를 실행한다. 여러 wrapper가 소비하는 shared script helper는 consumer script까지 type-check하고 관련 contract test를 함께 실행하며, 미매핑 script는 전체 `unit` suite와 project-wide `ty check`로 fallback한다.
 - Domain source는 own test와 현재 reverse dependency에 따른 consumer test directory를 선택한다.
@@ -91,7 +91,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 - Lefthook 설정 변경은 `lefthook validate`로 configuration을 확인한다.
 - Python dependency setup은 Python/test validation이 필요할 때만 수행하고 uv cache를 재사용한다.
 
-`CI Lite`는 Markdown을 자동 수정하지 않는다. Formatting 변경이 필요하면 PR에서 실패하며, 별도의 post-merge Markdown autofix workflow는 현재 두지 않는다.
+Markdown 검증은 `rumdl fmt`를 CI의 disposable workspace에 적용한 뒤 `rumdl check`를 실행한다. 자동 수정 가능한 formatting 차이만 있으면 병합을 막지 않고 diff를 log와 step summary에 남긴다. `rumdl fmt` 이후에도 남는 lint 위반은 실패한다. CI는 이 수정 결과를 branch에 write-back하지 않으며 별도의 post-merge Markdown autofix workflow도 두지 않는다. Local runtime이 없는 기여자도 출력된 diff를 수정 근거로 사용할 수 있다.
 
 ## Select Tests
 
@@ -99,7 +99,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 `unit`, `component`, `integration`은 test가 연결하는 경계를 나타내는 primary level marker다. 일반 test는 requirement를 입증하는 가장 낮은 유효 경계 하나를 선택한다.
 
-| Marker | 언제 사용하나 |
+| Marker | Usage |
 | --- | --- |
 | `unit` | real I/O나 다른 component 연결 없이 isolated behavior를 검증할 때 |
 | `component` | 하나의 component를 real local I/O 또는 tool boundary와 함께 검증할 때 |
@@ -107,7 +107,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 `memory`와 `stress`는 test level을 대체하지 않는 resource marker다. 해당 contract를 검증하는 test의 primary level marker와 함께 사용할 수 있다.
 
-| Marker | 언제 사용하나 |
+| Marker | Usage |
 | --- | --- |
 | `memory` | 대표 input에서 process memory-budget contract를 검증할 때 |
 | `stress` | 의도적으로 고비용인 worst-case resource behavior를 검증할 때 |
