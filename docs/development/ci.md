@@ -123,7 +123,8 @@ CI를 추가하거나 바꿀 때는 다음 순서로 판단한다.
 
 Inbox 전체를 매 PR마다 다시 검사하지 않는다. **현재 prospective change set에 포함된 Inbox artifact만** 현재 변경으로 취급한다.
 
-- 현재 변경된 일반 Inbox Markdown에는 formatting과 lint처럼 가볍고 결정론적인 검증만 적용할 수 있다.
+- 현재 변경된 일반 Inbox Markdown에는 formatting/lint와 common artifact root의 required frontmatter·이름 정합성처럼 가볍고 결정론적인 검증만 적용한다.
+- Standalone artifact와 변경된 bundle에서 도달 가능한 `README.md` root는 `type`, `title`, `description`과 artifact name의 `type` 정합성을 확인한다.
 - 현재 변경에 포함되지 않은 과거·완료·보관 artifact는 scan, reformat, migration 또는 재검증하지 않는다.
 - 일반 Inbox artifact 변경만으로 unrelated source test나 platform-specific runtime 검증을 실행하지 않는다.
 - `inbox/AGENTS.md`, `inbox/_guidelines/**`, `inbox/_templates/**`처럼 다른 작업의 동작을 정하는 기반 문서는 일반 저장소 변경과 동일하게 검증한다.
