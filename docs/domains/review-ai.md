@@ -25,6 +25,8 @@ tags:
 | deterministic output validation | approval 또는 mutation authority |
 | review orchestration과 invocation provenance | 범용 AI gateway, routing, agent framework |
 
+Current capability의 normative behavior는 [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec이 소유한다. Source는 current implementation을, tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
+
 ## Dependency Boundary
 
 ```mermaid
@@ -38,9 +40,9 @@ Source dependency는 `review_ai -> reliability`와 `review_ai -> runtime_ai`만 
 
 ## Review Boundary
 
-`review_null_spike()`는 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider output은 canonical identity, numeric facts와 provided evidence reference의 structured facts에 대조된다. Validation result는 structured-fact policy identity를 사용하며, 기존 forbidden-action evidence는 historical provenance로 보존된다. 결과는 acceptance, preflight rejection, provider unavailability, validation failure와 provenance failure를 typed result로 구분하며 exact status/failure mapping은 source와 executable specification이 소유한다.
+`review_null_spike()`는 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider output은 canonical identity, numeric facts와 provided evidence reference의 structured facts에 대조된다. Validation result는 structured-fact policy identity를 사용하며, 기존 forbidden-action evidence는 historical provenance로 보존된다. 결과는 acceptance, preflight rejection, provider unavailability, validation failure와 provenance failure를 typed result로 구분하며 exact input/output, status/failure mapping과 validation contract는 canonical Spec이 소유한다.
 
-Provider가 실제로 호출된 logical review는 sanitized invocation evidence를 남긴다. Credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다. Exact storage layout과 record field는 source와 tests에서 확인한다.
+Provider가 실제로 호출된 logical review는 sanitized invocation evidence를 남긴다. Credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다. Durable provenance의 required behavior와 record contract는 canonical Spec이 소유하고, exact implementation은 source에서 확인하며 tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
 ## Package Root API
 
@@ -60,9 +62,16 @@ Prompt rendering, deterministic validation, provenance contract/store와 storage
 - Provider 호출 전 거부된 input은 invocation provenance를 만들지 않는다.
 - Review-specific provenance store는 두 번째 독립 consumer가 생기기 전까지 이 domain이 소유한다.
 
+## Contracts And Evidence
+
+- Canonical capability contract: [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md)
+- Current implementation: [`review_ai`](../../src/hmda_reliability/review_ai/)
+- Executable specification: [`tests/review_ai`](../../tests/review_ai/)
+
 ## Reading Order
 
-1. [`review_ai/__init__.py`](../../src/hmda_reliability/review_ai/__init__.py)에서 public surface를 확인한다.
-1. [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py)와 [`prompt.py`](../../src/hmda_reliability/review_ai/prompt.py)에서 review input과 provider boundary를 확인한다.
-1. [`validator.py`](../../src/hmda_reliability/review_ai/validator.py)와 [`service.py`](../../src/hmda_reliability/review_ai/service.py)에서 deterministic guard와 orchestration을 확인한다.
+1. Exact review requirement를 판단할 때는 canonical [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec을 확인한다.
+1. [`review_ai/__init__.py`](../../src/hmda_reliability/review_ai/__init__.py)에서 current public surface를 확인한다.
+1. [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py)와 [`prompt.py`](../../src/hmda_reliability/review_ai/prompt.py)에서 current review input과 provider boundary 구현을 확인한다.
+1. [`validator.py`](../../src/hmda_reliability/review_ai/validator.py)와 [`service.py`](../../src/hmda_reliability/review_ai/service.py)에서 current deterministic guard와 orchestration 구현을 확인한다.
 1. Provider mechanics가 필요하면 [Runtime AI](runtime-ai.md)로 이동한다.

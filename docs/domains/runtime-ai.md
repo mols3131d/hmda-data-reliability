@@ -23,6 +23,8 @@ tags:
 | OpenAI-compatible invocation adapter | approval, recovery 또는 mutation |
 | timeout, bounded retry, output limit, usage/trace metadata | 범용 model router, fallback graph, agent orchestration |
 
+Current provider-compatible bounded invocation의 normative behavior는 [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec이 소유한다. Source는 current adapter와 configuration implementation을, tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
+
 ## Dependency Boundary
 
 `runtime_ai`는 `reliability`와 `review_ai`를 import하지 않는다. Runtime contract는 package-local Pydantic base를 사용하며 review-specific identity, validation, provenance 의미를 포함하지 않는다.
@@ -31,7 +33,7 @@ tags:
 
 ## Runtime Contract
 
-`RuntimeAISettings`는 environment를 암묵적으로 읽지 않는다. Caller가 provider identity와 필요한 runtime limit을 명시적으로 전달한다. Adapter는 deterministic한 bounded request profile과 자체 retry/error normalization을 적용하며 exact wire field, default와 limit은 [`runtime_ai`](../../src/hmda_reliability/runtime_ai/) source와 [`tests/runtime_ai`](../../tests/runtime_ai/)가 소유한다.
+`RuntimeAISettings`는 environment를 암묵적으로 읽지 않는다. Caller가 provider identity와 필요한 runtime limit을 명시적으로 전달한다. Adapter는 deterministic한 bounded request profile과 자체 retry/error normalization을 적용하며 provider-compatible request, timeout/retry와 no-hidden-retry behavior의 normative contract는 canonical Spec을 따른다. Exact current implementation detail은 [`runtime_ai`](../../src/hmda_reliability/runtime_ai/) source에서 확인하고 [`tests/runtime_ai`](../../tests/runtime_ai/)는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
 현재 concrete integration은 OpenAI Python SDK를 사용하는 OpenAI-compatible chat-completions adapter 하나다. Provider routing이나 새로운 abstraction은 두 번째 concrete need가 생기기 전까지 추가하지 않는다.
 
@@ -41,9 +43,16 @@ tags:
 
 이 경계는 provider implementation detail을 public API로 고정하지 않으면서 `review_ai`가 필요한 runtime mechanics를 직접 module dependency로 사용할 수 있게 한다.
 
+## Contracts And Evidence
+
+- Canonical bounded invocation contract: [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md)
+- Current implementation: [`runtime_ai`](../../src/hmda_reliability/runtime_ai/)
+- Executable specification: [`tests/runtime_ai`](../../tests/runtime_ai/)
+
 ## Reading Order
 
-1. [`runtime_ai/__init__.py`](../../src/hmda_reliability/runtime_ai/__init__.py)에서 package root API를 확인한다.
-1. [`contracts.py`](../../src/hmda_reliability/runtime_ai/contracts.py)와 [`settings.py`](../../src/hmda_reliability/runtime_ai/settings.py)에서 provider-neutral boundary를 확인한다.
-1. [`provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)에서 OpenAI-compatible adapter와 retry/error normalization을 확인한다.
+1. Exact provider-compatible invocation requirement를 판단할 때는 canonical [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec을 확인한다.
+1. [`runtime_ai/__init__.py`](../../src/hmda_reliability/runtime_ai/__init__.py)에서 current package root API를 확인한다.
+1. [`contracts.py`](../../src/hmda_reliability/runtime_ai/contracts.py)와 [`settings.py`](../../src/hmda_reliability/runtime_ai/settings.py)에서 current provider-neutral boundary 구현을 확인한다.
+1. [`provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)에서 current OpenAI-compatible adapter와 retry/error normalization 구현을 확인한다.
 1. Review semantics가 필요하면 [Review AI](review-ai.md)로 이동한다.
