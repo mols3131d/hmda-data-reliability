@@ -24,8 +24,7 @@
         "mols-markdown-for-human",
         "mols-markdown-maintenance",
         "mols-mermaid-chart",
-        "mols-mermaid-diagram",
-        "mols-loops"
+        "mols-mermaid-diagram"
       ],
       "transport": "github",
       "ref": "main",
