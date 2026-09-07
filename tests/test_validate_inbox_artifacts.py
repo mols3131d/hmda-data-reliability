@@ -9,7 +9,12 @@ import pytest
 from scripts.validate_inbox_artifacts import validate_changed_paths
 
 
-def write_artifact(path: Path, *, artifact_type: str = "review", description: str = "설명") -> None:
+def write_artifact(
+    path: Path,
+    *,
+    artifact_type: str = "review",
+    description: str = "설명",
+) -> None:
     """Write a minimal valid Inbox artifact."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -64,9 +69,11 @@ def test_filename_type_mismatch_fails(tmp_path: Path) -> None:
 
     errors = validate_changed_paths([relative.as_posix()], repo_root=tmp_path)
 
-    assert errors == [
-        f"{tmp_path / relative}: artifact name must start with '09-30-research-' to match frontmatter type"
-    ]
+    expected = (
+        f"{tmp_path / relative}: artifact name must start with '09-30-research-' "
+        "to match frontmatter type"
+    )
+    assert errors == [expected]
 
 
 @pytest.mark.unit
@@ -79,7 +86,8 @@ def test_changed_bundle_member_validates_bundle_readme(tmp_path: Path) -> None:
     turn.parent.mkdir(parents=True)
     turn.write_text("# Turn\n", encoding="utf-8")
 
-    errors = validate_changed_paths([(bundle / "turns/001-a.md").as_posix()], repo_root=tmp_path)
+    changed = (bundle / "turns/001-a.md").as_posix()
+    errors = validate_changed_paths([changed], repo_root=tmp_path)
 
     assert errors == [
         f"{readme}: required frontmatter field 'description' is missing or empty"
@@ -107,6 +115,8 @@ def test_inbox_infrastructure_is_not_artifact_validated(tmp_path: Path) -> None:
     guideline.parent.mkdir(parents=True)
     guideline.write_text("# Review\n", encoding="utf-8")
 
-    assert (
-        validate_changed_paths(["inbox/_guidelines/review.md"], repo_root=tmp_path) == []
+    errors = validate_changed_paths(
+        ["inbox/_guidelines/review.md"],
+        repo_root=tmp_path,
     )
+    assert errors == []
