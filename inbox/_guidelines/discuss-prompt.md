@@ -99,7 +99,7 @@ Current phase에서 credible information gain이 있는 동안 bounded Research�
 
 Discussion source identity는 **writable owning `ref` + exact bundle path**다. 기존 discussion이면 둘 다 prompt에 넣고, participant는 prompt의 요약보다 해당 ref의 persisted bundle을 source state로 사용한다. 같은 path가 다른 ref에 있어도 같은 active discussion state로 간주하지 않는다.
 
-`ref`는 repository delivery context이므로 `README.md`의 shared machine state에 복제하지 않는다. Branch 또는 Pull Request head가 바뀌면 caller나 owning workflow가 새 source identity를 명시한다.
+`ref`는 repository delivery context이므로 `README.md`의 shared machine state에 복제하지 않는다. Owning branch 또는 Pull Request head ref 자체가 바뀌면 caller나 owning workflow가 새 source identity를 명시한다.
 
 Live discussion을 병렬로 시작할 때는 [`discuss-live.md`](discuss-live.md)의 rendezvous contract에 맞는 **하나의 shared ref와 exact bundle path를 A/B prompt에 동일하게 넣는다.** Path는 아직 존재하지 않아도 된다. Exact path를 미리 고정할 수 없으면 Lead bootstrap invocation 하나를 먼저 실행해 같은 ref에 bundle을 만든 뒤, 그 ref와 exact path를 후속 participant prompt에 전달한다.
 
