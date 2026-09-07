@@ -2,12 +2,14 @@
 type: discuss
 title: "Minimum Criteria for Working LLMOps"
 description: "LLMOps가 정상 작동한다고 판단하기 위한 최소 feedback loop와 완료 기준을 토론한다."
-status: "in_progress"
+status: "completed"
 discussion:
   id: "2026-09-06-llmops-minimum-operational-criteria"
   type: explore
   exchange: iterative
   cadence: manual
+  execution: live
+  phase: sublation
   decision_authority: human
   topic: blocked-and-inconclusive-evaluation
 tags:
@@ -23,7 +25,7 @@ tags:
 
 - **Initial** - 2026-09-06 15:30–15:55 KST, 25 minutes
 - **Continuation** - 2026-09-06 16:11–16:25 KST
-- **Continuation 2** - 2026-09-06 16:30 KST–open
+- **Continuation 2** - 2026-09-06 16:30 KST–2026-09-07 T7 closure
 - **Reopen reason** - 사용자가 첫 수렴 이후에도 같은 session에서 토론을 계속하도록 명시해 T1 결과를 유지한 채 최소 proof와 ongoing operation을 계속 stress-test한다.
 
 ## Topic
@@ -60,21 +62,21 @@ tags:
 
 ### T7. Blocked And Inconclusive Evaluation
 
-- **Status** - active
+- **Status** - completed
 - **Question** - applicable candidate인데 provider invocation, case replay 또는 quality judgment가 비교 가능한 evidence를 만들지 못했을 때 최소 운영 gate는 어떻게 동작해야 하는가?
-- **Starting position** - A는 evidence가 성립하지 않은 상태를 `accept/reject/no-change`로 억지 압축하지 않고 `blocked/inconclusive`로 구분해야 하며, 비교 evidence 없이 applicable candidate를 accept해서는 안 된다고 제안한다. Candidate 자체가 provider failure를 유발했다는 증거가 명확하면 그 failure는 reject 근거가 될 수 있다.
+- **Result** - Applicable candidate는 admissible quality decision evidence 없이 accept할 수 없다. Candidate-caused material regression이라는 admissible attribution evidence가 있으면 human `reject`의 근거가 될 수 있고, comparison validity 또는 attribution이 성립하지 않으면 `blocked/inconclusive`로 acceptance와 baseline promotion을 멈춘다. Blocker evidence는 candidate/applicability, case/basis, failure/attribution, baseline continuity와 revisit condition을 직접 또는 durable evidence chain으로 유일하게 재구성할 수 있어야 한다. Blocker 해소 후 같은 candidate를 다시 평가할 수 있지만 current comparability는 새로 성립시켜야 한다.
 
 ## Current State
 
 최소 기준은 **readiness proof**와 **ongoing operational discipline**으로 구분된다.
 
-Readiness는 retained case/validated quality basis를 이용한 traced baseline/candidate compare와 durable human decision 한 사이클로 증명한다. Ongoing operation은 candidate acceptance applicability gate와 known-failure intake를 통해 quality evidence가 다음 변경에서 재사용되도록 한다.
+Readiness는 retained case/validated quality basis를 이용한 traced baseline/candidate compare와 durable human decision 한 사이클로 증명한다. Ongoing operation은 candidate acceptance applicability gate, blocked/inconclusive fail-closed 처리와 known-failure intake를 통해 quality evidence가 다음 변경에서 재사용되도록 한다.
 
 Failure intake는 failure occurrence와 case를 1:1로 만들지 않는다. Existing coverage가 있으면 원 failure evidence를 그 case와 연결한다. Coverage gap만 새 case/dependency로 승격한다. Deferral은 영구 면제가 아니며 동일 failure 재발 또는 관련 quality-basis/input-boundary 변경 때 다시 검토한다.
 
-T5 consistency gap도 반영한다. `accept`된 candidate는 다음 comparison의 baseline이 되고, `reject/no-change`이면 기존 accepted baseline이 유지된다. 별도 mutable baseline registry는 필수가 아니며 durable decision chain과 invocation identities로 현재 baseline을 유일하게 재구성할 수 있으면 충분하다.
+`accept`된 candidate만 다음 comparison의 baseline이 된다. `reject/no-change`와 `blocked/inconclusive`에서는 기존 accepted baseline lineage가 유지된다. 별도 mutable baseline registry는 필수가 아니며 durable decision chain과 invocation identities로 current accepted baseline을 유일하게 재구성할 수 있으면 충분하다. Blocked 동안 다른 candidate가 accept됐다면 재평가 시 current accepted baseline을 다시 resolve한다.
 
-T7에서는 quality comparison 자체가 성립하지 않았을 때 false decision evidence를 만들지 않는 최소 fail-closed 의미를 검토한다.
+`blocked/inconclusive`는 waiver가 아니다. Applicable candidate는 blocker 해소와 current valid comparable evidence 확보 전 accept할 수 없다. Baseline retention은 기존 baseline의 현재 quality 또는 operational availability를 보증하지 않는다.
 
 ## References
 
@@ -104,6 +106,11 @@ T7에서는 quality comparison 자체가 성립하지 않았을 때 false decisi
 - [`turns/013-a.md`](turns/013-a.md)
 - [`turns/014-b.md`](turns/014-b.md)
 - [`turns/015-a.md`](turns/015-a.md)
+- [`turns/016-b.md`](turns/016-b.md)
+- [`turns/017-a.md`](turns/017-a.md)
+- [`turns/018-b.md`](turns/018-b.md)
+- [`turns/019-a.md`](turns/019-a.md)
+- [`turns/020-b.md`](turns/020-b.md)
 
 ## Synthesis
 
@@ -121,8 +128,15 @@ candidate acceptance event
 → material-output applicability determination
 → applicable:
      retained case + current quality basis
-     → replay / compare
-     → durable human decision before acceptance
+     → admissible candidate-caused material regression evidence?
+          → yes: human reject is permitted
+          → no:
+               valid comparable quality evidence available?
+               → yes: compare → accept / reject / no-change
+               → no: blocked/inconclusive
+                    → acceptance stop
+                    → no baseline promotion
+                    → durable blocker evidence + revisit condition
 → not applicable:
      reconstructable non-applicability basis
 
@@ -134,7 +148,11 @@ known material failure / edge
 → not reproducible: durable deferral + revisit condition
 ```
 
-Quality basis가 materially 바뀌면 새 basis의 bounded control discrimination을 다시 검증한다. 동일한 basis라면 controls를 매 candidate마다 다시 실행하지 않는다.
+Failure status 이름 자체는 `reject` 또는 `blocked`를 결정하지 않는다. Candidate attribution은 causal mechanism 또는 materially equivalent conditions의 bounded evidence와 material quality/operational expectation violation으로 뒷받침해야 한다. Shared/stochastic cause가 plausible한 one-shot asymmetric failure는 attribution이 충분하지 않다면 `blocked/inconclusive`로 둔다.
+
+Quality basis가 materially 바뀌면 새 basis의 bounded control discrimination을 다시 검증한다. 동일한 basis라면 controls를 매 candidate마다 다시 실행하지 않는다. `independent oracle`은 최소 요구가 아니며 human rubric/judgment도 admissible quality judgment basis가 될 수 있다.
+
+Blocker가 해소되어 같은 candidate를 재평가하더라도 이전 blocked attempt의 partial evidence를 이어붙이지 않는다. Current retained case/basis, current accepted baseline과 candidate 조건, provider/model/config/environment를 기준으로 valid comparable evidence를 새로 성립시킨다.
 
 ### Artifact Ownership
 
@@ -143,6 +161,7 @@ Quality basis가 materially 바뀌면 새 basis의 bounded control discriminatio
 - **Invocation evidence** - actual run/provenance/output/operations
 - **Decision evidence** - comparison + change-under-test + human decision/rationale
 - **Failure intake evidence** - original failure reference + coverage disposition 또는 deferral rationale/revisit condition
+- **Blocker evidence** - candidate/applicability + case/basis + available evaluation attempt reference + failure/attribution evidence and uncertainty + revisit condition + baseline continuity/no-promotion. Baseline/disposition은 기존 durable decision chain에서 유일하게 복원되면 별도 중복 field가 필요 없다.
 
 ### Excluded From Minimum
 
@@ -159,6 +178,9 @@ Quality basis가 materially 바뀌면 새 basis의 bounded control discriminatio
 - recovery `Approval` 또는 delegation authority와 quality decision record를 합치는 구조
 - approver identity, RBAC, 서명, issue/PR workflow, deployment state
 - 별도 case/rubric/failure taxonomy registry를 필수화하는 구조
+- blocked evaluation을 위한 별도 scheduler, retry queue 또는 incident workflow
+- 별도 mutable baseline registry
+- mandatory independent oracle 또는 fixed statistical attribution threshold
 
 ### Current Project State
 
@@ -168,7 +190,30 @@ Quality basis가 materially 바뀌면 새 basis의 bounded control discriminatio
 | **Quality-evaluable** | 미충족 | Review AI usefulness를 판단하는 authored task-quality case/rubric과 bounded control validation evidence가 없다. |
 | **Replayable** | 부분 충족 | provenance replay는 있으나 retained quality case를 candidate에서 같은 rubric으로 재평가한 proof는 없다. |
 | **Feedback-consumed** | 미충족 | comparison을 human decision에 소비하고 retained case와 연결한 durable record가 없다. |
-| **Ongoing applicability gate** | 미충족 | output-affecting candidate acceptance와 quality replay를 연결하는 durable operational proof가 없다. |
+| **Ongoing applicability gate** | 미충족 | output-affecting candidate acceptance를 applicability, quality replay/compare, blocked/inconclusive fail-closed 처리와 durable decision 또는 blocker evidence에 연결한 operational proof가 없다. |
 | **Failure intake** | 미충족 | known material AI failure를 retained regression coverage 또는 durable deferral로 연결하는 운영 proof가 없다. |
 
-T7가 수렴하면 evaluation evidence가 unavailable/inconclusive일 때 candidate acceptance를 어떻게 제한할지 반영한다.
+### T7 Final Result
+
+Outcome은 `sublation`이다. `reject vs blocked`를 runtime failure taxonomy가 아니라 **admissible candidate attribution × comparison validity**로 재구성함으로써 A의 fail-closed constraint와 B의 false-reject 방지 constraint를 함께 보존했다.
+
+- `not-applicable` - quality evaluation obligation이 발생하지 않으며 non-applicability basis가 재구성 가능해야 한다.
+- `blocked/inconclusive` - applicable하지만 admissible decision evidence가 아직 없으며 acceptance와 baseline promotion을 멈춘다. 실행 불가, evidence invalid, quality judgment insufficiency 같은 차이는 reason에서 보존한다.
+- candidate-attributable material failure - causal 또는 bounded attribution evidence가 있으면 human `reject`의 근거가 될 수 있다. Failure status 이름이나 one-shot asymmetric observation 자체는 충분하지 않다.
+- blocked baseline - 마지막 accepted baseline lineage가 유지되지만 해당 baseline의 current quality 또는 operational availability를 보증하지 않는다.
+- resume - 같은 candidate identity를 유지할 수 있어도 current comparability를 새로 성립시켜야 하며, blocked 동안 baseline이 바뀌었으면 current accepted baseline을 다시 resolve한다.
+
+### Residual Conditions
+
+- **Limits** - stochastic provider behavior의 attribution sufficiency에 fixed repetition/statistical rule을 두지 않는다. Human judgment variability가 남는다. Emergency override semantics와 operational availability policy는 T7 범위 밖이다.
+- **Trade-offs** - false reject를 줄이는 대신 ambiguous candidate regression이 blocked로 오래 남아 acceptance latency가 증가할 수 있다.
+- **Cautions** - `blocked`는 waiver가 아니다. Human이 candidate 작업을 포기할 수는 있지만 invalid comparison을 LLMOps quality `reject` evidence로 위장하면 안 된다. Baseline retention을 current quality/availability 보증으로 해석하지 않으며, resume 시 과거 partial evidence를 재사용해 false comparability를 만들지 않는다.
+- **Reopen Conditions** - emergency override가 실제 requirement가 되거나, provider/model nondeterminism 때문에 attribution이 반복적으로 불가능해 gate가 operational deadlock을 만들거나, decision baseline과 operational-use baseline을 별도 정책으로 관리해야 하거나, current comparability 재성립 규칙이 실제 운영에서 불충분하다는 failure evidence가 생기면 T7을 다시 연다.
+
+### Review Status
+
+B의 `020-b` final review에서 T7 semantic material finding은 없었다. Closure-integrity finding으로 legacy README에 빠져 있던 `discussion.execution`과 `discussion.phase`, T7 completed state, blocked path, blocker evidence ownership과 continuation turn references를 final shared state에 반영했다.
+
+### Human Decision
+
+이 synthesis와 T7 결과는 non-canonical discussion result다. Human decision authority가 채택하기 전에는 canonical project decision이 아니며, 채택 시에도 owning spec/document/workflow에 필요한 내용만 별도 정상 change로 반영한다.
