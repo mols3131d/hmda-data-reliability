@@ -60,6 +60,20 @@ jobs:
             rumdl check "${files[@]}"
           fi
 
+      - name: Validate changed Inbox artifacts
+        if: steps.scope.outputs.inbox == 'true'
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(
+            git diff --name-only HEAD^1 HEAD -- inbox/ \
+              | while IFS= read -r path; do
+                  [[ "$path" == *.md && -f "$path" ]] && printf '%s\n' "$path"
+                done
+          )
+          if ((${#files[@]})); then
+            python3 scripts/validate_inbox_artifacts.py "${files[@]}"
+          fi
+
       - name: Set up Python
         if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true'
         uses: actions/setup-python@v6.2.0
