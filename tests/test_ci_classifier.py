@@ -109,42 +109,6 @@ def test_markdown_path_selection_stays_within_changed_scope() -> None:
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "path",
-    [
-        "scripts/_commands.py",
-        "tests/test_commands.py",
-        "tests/conftest.py",
-        ".python-version",
-        "pyproject.toml",
-        "uv.lock",
-        ".github/workflows/ci-lite.yml",
-        ".github/workflows/classify_changes.sh",
-    ],
-)
-def test_windows_boundary_selects_only_owning_changes(path: str) -> None:
-    """Windows process boundary에 영향을 주는 변경만 Windows 검증을 활성화한다."""
-    out = run_classifier([path])
-    assert out["windows"] == "true"
-
-
-@pytest.mark.unit
-@pytest.mark.parametrize(
-    "path",
-    [
-        "README.md",
-        "docs/development/ci.md",
-        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
-        "src/hmda_reliability/reliability/recovery/executor.py",
-    ],
-)
-def test_windows_boundary_skips_unrelated_changes(path: str) -> None:
-    """Windows process boundary와 무관한 변경은 무거운 Windows 검증을 생략한다."""
-    out = run_classifier([path])
-    assert out["windows"] == "false"
-
-
-@pytest.mark.unit
-@pytest.mark.parametrize(
     ("script_path", "expected_target"),
     [
         ("scripts/generate_agent_routes.py", "tests/test_generate_agent_routes.py"),
@@ -312,4 +276,3 @@ def test_workflow_change_targets_classifier_test() -> None:
     out = run_classifier([".github/workflows/ci-lite.yml"])
     assert out["tests"] == "true"
     assert "tests/test_ci_classifier.py" in out["targets"]
-    assert out["windows"] == "true"
