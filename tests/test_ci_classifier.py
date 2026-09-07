@@ -150,7 +150,10 @@ def test_windows_boundary_skips_unrelated_changes(path: str) -> None:
         ("scripts/generate_agent_routes.py", "tests/test_generate_agent_routes.py"),
         ("scripts/agent_assets.py", "tests/test_agent_assets.py"),
         ("scripts/generate_docs_indexes.py", "tests/test_generate_docs_indexes.py"),
-        ("scripts/validate_inbox_artifacts.py", "tests/test_validate_inbox_artifacts.py"),
+        (
+            "scripts/validate_inbox_artifacts.py",
+            "tests/test_validate_inbox_artifacts.py",
+        ),
         ("scripts/log_agent_event.py", "tests/test_log_agent_event.py"),
         ("scripts/run_actual_source.py", "tests/hmda_data/eda/test_eda_evidence.py"),
         ("scripts/run_agentic_review_live.py", "tests/review_ai/test_live_harness.py"),
