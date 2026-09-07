@@ -4,4 +4,4 @@
 
 내용은 필요할 때 직접 찾고 확인한다. 이 README는 artifact index나 project status projection으로 갱신하지 않는다.
 
-Artifact의 내용·구조·lifecycle은 [`AGENTS.md`](AGENTS.md)를 따른다. 일반 Git/Pull Request workflow는 [`docs/development/vcs-git/`](../docs/development/vcs-git/README.md), Inbox 전용 dedicated branch delivery 예외는 [Inbox Branch Delivery](_guidelines/branch.md)를 따른다.
+Artifact의 내용·구조·lifecycle은 [`AGENTS.md`](AGENTS.md)를 따른다. 일반 Git/Pull Request workflow는 [`docs/development/vcs-git/`](../docs/development/vcs-git/README.md)를 따른다.

@@ -15,11 +15,12 @@ Prompt를 만들기 전에 필요한 값만 확정한다.
 | `participant` | `A` 또는 `B`다. |
 | `lead` | persisted discussion state를 따른다. |
 | `execution` | 실제 `manual`, `scheduled`, `live`와 일치시킨다. |
-| `bundle` | 기존 discussion은 exact path를 사용한다. Live 병렬 bootstrap은 아직 존재하지 않아도 shared exact path를 먼저 고정한다. |
+| `ref` | discussion change unit을 소유하는 writable branch 또는 Pull Request head ref를 사용한다. 모든 participant와 후속 invocation은 같은 ref를 사용한다. |
+| `bundle` | `ref` 안의 exact path를 사용한다. Live 병렬 bootstrap은 아직 존재하지 않아도 shared exact path를 먼저 고정한다. |
 | `decision_authority` | `human` 또는 owning workflow를 명시한다. |
 | `scope`, `decision_criteria` | 알려진 경우 양쪽 prompt에 같은 값을 전달한다. |
 
-모르는 값은 추측하지 않는다. 특히 expected result, 상대의 현재 입장, runtime duration과 shared deadline을 임의로 만들지 않는다.
+모르는 값은 추측하지 않는다. 특히 expected result, 상대의 현재 입장, runtime duration과 shared deadline을 임의로 만들지 않는다. Persisted discussion을 쓰거나 이어가려면 `ref`와 `bundle`을 함께 확정한다.
 
 ## Authoring Rules
 
@@ -96,9 +97,11 @@ Current phase에서 credible information gain이 있는 동안 bounded Research�
 
 ## Bundle Identity
 
-기존 discussion이면 exact bundle path를 prompt에 넣는다. Participant는 prompt의 요약보다 persisted bundle을 source state로 사용한다.
+Discussion source identity는 **writable owning `ref` + exact bundle path**다. 기존 discussion이면 둘 다 prompt에 넣고, participant는 prompt의 요약보다 해당 ref의 persisted bundle을 source state로 사용한다. 같은 path가 다른 ref에 있어도 같은 active discussion state로 간주하지 않는다.
 
-Live discussion을 병렬로 시작할 때는 [`discuss-live.md`](discuss-live.md)의 path/naming contract에 맞는 **하나의 shared exact bundle path를 A/B prompt에 동일하게 넣는다.** Path는 아직 존재하지 않아도 된다. Exact path를 미리 고정할 수 없으면 Lead bootstrap invocation 하나를 먼저 실행해 bundle을 만든 뒤, 그 exact path를 후속 participant prompt에 전달한다.
+`ref`는 repository delivery context이므로 `README.md`의 shared machine state에 복제하지 않는다. Owning branch 또는 Pull Request head ref 자체가 바뀌면 caller나 owning workflow가 새 source identity를 명시한다.
+
+Live discussion을 병렬로 시작할 때는 [`discuss-live.md`](discuss-live.md)의 rendezvous contract에 맞는 **하나의 shared ref와 exact bundle path를 A/B prompt에 동일하게 넣는다.** Path는 아직 존재하지 않아도 된다. Exact path를 미리 고정할 수 없으면 Lead bootstrap invocation 하나를 먼저 실행해 같은 ref에 bundle을 만든 뒤, 그 ref와 exact path를 후속 participant prompt에 전달한다.
 
 Topic 검색만으로 concurrent bootstrap uniqueness를 보장한다고 가정하지 않는다.
 
@@ -107,9 +110,9 @@ Topic 검색만으로 concurrent bootstrap uniqueness를 보장한다고 가정�
 ```text
 당신은 <topic> discussion의 participant <A|B>다. <participant-delta>
 
-Repository guidance를 먼저 읽고 inbox/_guidelines/discuss.md를 적용한다. Scheduled 또는 Live 실행이면 해당 execution guide도 적용한다. Goal은 <goal>, decision authority는 <authority>다. 기존 discussion 또는 Live shared bootstrap이면 <exact-bundle-path>를 source identity로 사용한다.
+Repository guidance를 먼저 읽고 inbox/_guidelines/discuss.md를 적용한다. Scheduled 또는 Live 실행이면 해당 execution guide도 적용한다. Goal은 <goal>, decision authority는 <authority>다. Owning ref는 <ref>, bundle은 <exact-bundle-path>이며 이 조합을 source identity로 사용한다.
 
-실행 시작과 publish 직전에 persisted state를 확인하고 current phase에서 eligible한 material contribution만 수행한다. 독립적으로 evidence를 조사하고 더 강한 evidence가 나오면 working hypothesis를 갱신한다. 합의나 특정 결론을 강제하지 말고 discuss.md의 Dialectic/Sublation contract를 따른다.
+실행 시작과 publish 직전에 같은 ref의 persisted state를 확인하고 current phase에서 eligible한 material contribution만 수행한다. 독립적으로 evidence를 조사하고 더 강한 evidence가 나오면 working hypothesis를 갱신한다. 합의나 특정 결론을 강제하지 말고 discuss.md의 Dialectic/Sublation contract를 따른다.
 
 Discussion 외 mutation은 별도 권한이 없으면 수행하지 않는다. <execution-delta>
 ```
@@ -123,8 +126,9 @@ Prompt를 전달하기 전에 다음만 확인한다.
 - A/B의 goal, scope, criteria와 authority가 대칭인가.
 - fixed side, expected answer 또는 forced consensus가 없는가.
 - Lead의 추가 권한이 coordination으로만 제한되는가.
-- persisted state를 읽고 refresh하게 하는가.
-- Live 병렬 bootstrap이면 양쪽에 같은 exact bundle path가 있는가.
+- A/B와 후속 invocation이 같은 writable owning ref와 exact bundle path를 사용하는가.
+- persisted state를 같은 ref에서 읽고 refresh하게 하는가.
+- Live 병렬 bootstrap이면 양쪽에 같은 ref와 exact bundle path가 있는가.
 - execution mode와 delta가 실제 runtime과 일치하는가.
 - 제공되지 않은 runtime/deadline/capability를 가정하지 않는가.
 - prompt가 discussion 외 mutation 권한을 새로 만들지 않는가.
