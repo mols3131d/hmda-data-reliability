@@ -226,12 +226,13 @@ Quiescence candidate를 선언하기 전에 current phase에 맞는 다음 lens�
 - 이미 충분한 evidence로 닫힘
 - current phase/claim에 적용되지 않음
 - 같은 evidence를 반복할 뿐 information gain이 없음
-- 별도 substantial Research가 필요해 현재 discussion turn 범위를 넘어감
+- 별도 substantial Research가 필요하며 `discuss.md` 계약에 따라 `research_required`/blocked 상태 또는 정확한 next action으로 persisted됨
 - 다음 material progress가 counterpart contribution에 의존함
 
 Quiescence Proof는 다음을 모두 만족해야 한다.
 
 1. current phase의 material unresolved claim, objection, evidence gap과 review obligation을 다시 확인했다.
+1. 각 material gap이 `resolved`, `bounded`, `counterpart_pending`, `research_required`/blocked 또는 다른 common-contract outcome 중 하나로 disposition되어 있으며 조용히 누락된 gap이 없다.
 1. 자신이 현재 eligible한 material turn 또는 Lead shared-state work가 없다.
 1. 적용 가능한 watchdog lens에서 현재 response 안에 수행할 bounded high-value check가 남지 않았다.
 1. 자신의 마지막 publish가 있었다면 post-publish refresh를 이미 수행했다.
