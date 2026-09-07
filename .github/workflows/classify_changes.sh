@@ -57,7 +57,6 @@ toml=false
 python=false
 lefthook=false
 routes=false
-windows=false
 full_unit=false
 full_type=false
 targets=()
@@ -180,12 +179,6 @@ while IFS= read -r path; do
   case "$path" in
     *.py|.python-version|pyproject.toml|uv.lock)
       python=true
-      ;;
-  esac
-
-  case "$path" in
-    .github/workflows/ci-lite.yml|.github/workflows/classify_changes.sh|.python-version|pyproject.toml|uv.lock|scripts/_commands.py|tests/test_commands.py|tests/conftest.py)
-      windows=true
       ;;
   esac
 
@@ -315,7 +308,6 @@ write_outputs() {
   echo "python=$python"
   echo "lefthook=$lefthook"
   echo "routes=$routes"
-  echo "windows=$windows"
   echo "full_unit=$full_unit"
   echo "full_type=$full_type"
   printf 'targets='
