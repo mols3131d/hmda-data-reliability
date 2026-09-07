@@ -11,7 +11,7 @@ from types import ModuleType
 import pytest
 
 pytestmark = pytest.mark.component
-REPOSITORY_ROOT = Path(__file__).parents[1]
+REPOSITORY_ROOT = Path(__file__).parents[2]
 
 
 def load_logger_module() -> ModuleType:
