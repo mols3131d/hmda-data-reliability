@@ -92,6 +92,7 @@ def test_changed_markdown_paths_are_selected(path: str) -> None:
     """현재 change set의 Markdown만 lightweight 검증 대상으로 선택한다."""
     out = run_classifier([path])
     assert out["markdown"] == "true"
+    assert out["inbox"] == str(path.startswith("inbox/")).lower()
     assert run_markdown_paths([path]) == [path]
 
 
@@ -149,6 +150,7 @@ def test_windows_boundary_skips_unrelated_changes(path: str) -> None:
         ("scripts/generate_agent_routes.py", "tests/test_generate_agent_routes.py"),
         ("scripts/agent_assets.py", "tests/test_agent_assets.py"),
         ("scripts/generate_docs_indexes.py", "tests/test_generate_docs_indexes.py"),
+        ("scripts/validate_inbox_artifacts.py", "tests/test_validate_inbox_artifacts.py"),
         ("scripts/log_agent_event.py", "tests/test_log_agent_event.py"),
         ("scripts/run_actual_source.py", "tests/hmda_data/eda/test_eda_evidence.py"),
         ("scripts/run_agentic_review_live.py", "tests/review_ai/test_live_harness.py"),
