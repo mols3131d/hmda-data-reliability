@@ -23,7 +23,7 @@ tags:
 | OpenAI-compatible invocation adapter | approval, recovery 또는 mutation |
 | timeout, bounded retry, output limit, usage/trace metadata | 범용 model router, fallback graph, agent orchestration |
 
-Current provider-compatible bounded invocation의 normative behavior는 [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec이 소유한다. Source는 current adapter와 configuration implementation을, tests는 executable expectation과 matching-revision validation evidence를 제공한다.
+Current provider-compatible bounded invocation의 normative behavior는 [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec이 소유한다. Source는 current adapter와 configuration implementation을, tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
 ## Dependency Boundary
 
@@ -33,7 +33,7 @@ Current provider-compatible bounded invocation의 normative behavior는 [`reliab
 
 ## Runtime Contract
 
-`RuntimeAISettings`는 environment를 암묵적으로 읽지 않는다. Caller가 provider identity와 필요한 runtime limit을 명시적으로 전달한다. Adapter는 deterministic한 bounded request profile과 자체 retry/error normalization을 적용하며 provider-compatible request, timeout/retry와 no-hidden-retry behavior의 normative contract는 canonical Spec을 따른다. Exact current implementation detail은 [`runtime_ai`](../../src/hmda_reliability/runtime_ai/) source에서 확인하고 [`tests/runtime_ai`](../../tests/runtime_ai/)는 executable expectation과 validation evidence로 사용한다.
+`RuntimeAISettings`는 environment를 암묵적으로 읽지 않는다. Caller가 provider identity와 필요한 runtime limit을 명시적으로 전달한다. Adapter는 deterministic한 bounded request profile과 자체 retry/error normalization을 적용하며 provider-compatible request, timeout/retry와 no-hidden-retry behavior의 normative contract는 canonical Spec을 따른다. Exact current implementation detail은 [`runtime_ai`](../../src/hmda_reliability/runtime_ai/) source에서 확인하고 [`tests/runtime_ai`](../../tests/runtime_ai/)는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
 현재 concrete integration은 OpenAI Python SDK를 사용하는 OpenAI-compatible chat-completions adapter 하나다. Provider routing이나 새로운 abstraction은 두 번째 concrete need가 생기기 전까지 추가하지 않는다.
 
