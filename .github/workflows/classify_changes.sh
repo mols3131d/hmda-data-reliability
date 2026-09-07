@@ -51,6 +51,7 @@ fi
 
 json=false
 markdown=false
+inbox=false
 tests=false
 toml=false
 python=false
@@ -191,6 +192,7 @@ while IFS= read -r path; do
   if [[ "$path" == *.md ]]; then
     if [[ -f "$path" ]] && is_markdown_validation_path "$path"; then
       markdown=true
+      [[ "$path" == inbox/* ]] && inbox=true
     fi
     continue
   fi
@@ -236,6 +238,9 @@ while IFS= read -r path; do
       ;;
     scripts/generate_docs_indexes.py)
       add_focused_test tests/test_generate_docs_indexes.py
+      ;;
+    scripts/validate_inbox_artifacts.py)
+      add_focused_test tests/test_validate_inbox_artifacts.py
       ;;
     scripts/log_agent_event.py)
       add_focused_test tests/test_log_agent_event.py
@@ -304,6 +309,7 @@ done < <(get_paths)
 write_outputs() {
   echo "json=$json"
   echo "markdown=$markdown"
+  echo "inbox=$inbox"
   echo "tests=$tests"
   echo "toml=$toml"
   echo "python=$python"
