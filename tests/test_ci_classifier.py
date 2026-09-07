@@ -45,10 +45,10 @@ def run_markdown_paths(paths: list[str]) -> list[str]:
 @pytest.mark.unit
 def test_root_test_modify() -> None:
     """존재하는 루트 테스트 파일 수정 시 해당 테스트만 targets에 추가된다."""
-    out = run_classifier(["tests/test_commands.py"])
+    out = run_classifier(["tests/test_ci_classifier.py"])
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
-    assert out["targets"].strip() == "tests/test_commands.py"
+    assert out["targets"].strip() == "tests/test_ci_classifier.py"
     assert out["python"] == "true"
     assert out["full_type"] == "false"
 
@@ -68,10 +68,24 @@ def test_root_test_delete() -> None:
 @pytest.mark.unit
 def test_root_test_rename() -> None:
     """루트 테스트 이름 변경 시 존재하는 신규 파일만 targets에 추가된다."""
-    out = run_classifier(["tests/test_nonexistent_old.py", "tests/test_commands.py"])
+    out = run_classifier(
+        ["tests/test_nonexistent_old.py", "tests/test_ci_classifier.py"]
+    )
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
-    assert out["targets"].strip() == "tests/test_commands.py"
+    assert out["targets"].strip() == "tests/test_ci_classifier.py"
+    assert out["full_type"] == "false"
+
+
+@pytest.mark.unit
+def test_script_test_modify_targets_only_changed_test() -> None:
+    """scripts 전용 테스트 수정은 해당 테스트만 실행 대상으로 선택한다."""
+    path = "tests/scripts/test_commands.py"
+    out = run_classifier([path])
+    assert out["tests"] == "true"
+    assert out["full_unit"] == "false"
+    assert out["targets"].strip() == path
+    assert out["python"] == "true"
     assert out["full_type"] == "false"
 
 
@@ -111,14 +125,20 @@ def test_markdown_path_selection_stays_within_changed_scope() -> None:
 @pytest.mark.parametrize(
     ("script_path", "expected_target"),
     [
-        ("scripts/generate_agent_routes.py", "tests/test_generate_agent_routes.py"),
-        ("scripts/agent_assets.py", "tests/test_agent_assets.py"),
-        ("scripts/generate_docs_indexes.py", "tests/test_generate_docs_indexes.py"),
+        (
+            "scripts/generate_agent_routes.py",
+            "tests/scripts/test_generate_agent_routes.py",
+        ),
+        ("scripts/agent_assets.py", "tests/scripts/test_agent_assets.py"),
+        (
+            "scripts/generate_docs_indexes.py",
+            "tests/scripts/test_generate_docs_indexes.py",
+        ),
         (
             "scripts/validate_inbox_artifacts.py",
-            "tests/test_validate_inbox_artifacts.py",
+            "tests/scripts/test_validate_inbox_artifacts.py",
         ),
-        ("scripts/log_agent_event.py", "tests/test_log_agent_event.py"),
+        ("scripts/log_agent_event.py", "tests/scripts/test_log_agent_event.py"),
         ("scripts/run_actual_source.py", "tests/hmda_data/eda/test_eda_evidence.py"),
         ("scripts/run_agentic_review_live.py", "tests/review_ai/test_live_harness.py"),
     ],
@@ -143,10 +163,10 @@ def test_shared_commands_expands_known_consumers() -> None:
 
     targets = set(out["targets"].split())
     assert targets == {
-        "tests/test_commands.py",
-        "tests/test_tool_wrappers.py",
-        "tests/test_bootstrap.py",
-        "tests/test_agent_assets.py",
+        "tests/scripts/test_commands.py",
+        "tests/scripts/test_tool_wrappers.py",
+        "tests/scripts/test_bootstrap.py",
+        "tests/scripts/test_agent_assets.py",
     }
 
     type_targets = set(out["type_targets"].split())
@@ -161,8 +181,8 @@ def test_bootstrap_maps_to_bootstrap_contract_test() -> None:
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
     assert out["full_type"] == "false"
-    assert out["targets"].strip() == "tests/test_bootstrap.py"
-    assert out["type_targets"].strip() == "tests/test_bootstrap.py"
+    assert out["targets"].strip() == "tests/scripts/test_bootstrap.py"
+    assert out["type_targets"].strip() == "tests/scripts/test_bootstrap.py"
 
 
 @pytest.mark.unit
@@ -173,8 +193,8 @@ def test_node_tool_wrapper_maps_to_forwarding_contract_test(script_path: str) ->
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
     assert out["full_type"] == "false"
-    assert out["targets"].strip() == "tests/test_tool_wrappers.py"
-    assert out["type_targets"].strip() == "tests/test_tool_wrappers.py"
+    assert out["targets"].strip() == "tests/scripts/test_tool_wrappers.py"
+    assert out["type_targets"].strip() == "tests/scripts/test_tool_wrappers.py"
 
 
 @pytest.mark.unit
