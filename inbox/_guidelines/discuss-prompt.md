@@ -20,7 +20,7 @@ Prompt를 만들기 전에 필요한 값만 확정한다.
 | `decision_authority` | `human` 또는 owning workflow를 명시한다. |
 | `scope`, `decision_criteria` | 알려진 경우 양쪽 prompt에 같은 값을 전달한다. |
 
-모르는 값은 추측하지 않는다. 특히 expected result, 상대의 현재 입장, runtime duration과 shared deadline을 임의로 만들지 않는다. Persisted discussion을 쓰거나 이어가려면 `ref`와 `bundle`을 함께 확정한다.
+모르는 값은 추측하지 않는다. 특히 expected result, 상대의 현재 입장, runtime duration, shared deadline, event wait와 wakeup capability를 임의로 만들지 않는다. Persisted discussion을 쓰거나 이어가려면 `ref`와 `bundle`을 함께 확정한다.
 
 ## Authoring Rules
 
@@ -29,6 +29,7 @@ Prompt를 만들기 전에 필요한 값만 확정한다.
 - **Do not assign conclusions.** `A=찬성`, `B=반대`, expected winner, preferred answer 또는 forced consensus를 주입하지 않는다. 서로 다른 관점이 필요하면 결론이 아니라 evidence-search lens를 다르게 둔다.
 - **Lead adds coordination only.** Lead 여부는 bootstrap, shared-state authoring과 final synthesis coordination의 차이만 만든다. Evidence weight, tie-break, phase override 또는 final decision 권한을 추가하지 않는다.
 - **Persisted state outranks prompt summary.** 기존 bundle에서는 실행 시작, publish 직전과 execution guide가 요구하는 exit gate 직전에 `README.md`와 relevant turns를 읽어 current phase, topic, eligibility와 latest state를 확인하게 한다.
+- **Runtime capability is observed, not prompted into existence.** Live prompt가 `wait-capable` behavior를 요구할 수는 있지만 host가 실제 제공하지 않는 event wait, wakeup, deadline 또는 persistent session capability를 부여했다고 간주하지 않는다.
 - **Prompt does not grant authority.** Discussion 외 repository mutation, Git/GitHub action, external action 또는 노출되지 않은 runtime capability를 새로 허용하지 않는다.
 
 합의 자체를 성공 조건으로 두지 않는다. Participant는 `discuss.md`의 Dialectic/Sublation contract를 따르며, 승화가 불가능하면 해당 guide가 허용하는 disagreement, research 또는 human-decision outcome을 그대로 남긴다.
@@ -38,7 +39,7 @@ Prompt를 만들기 전에 필요한 값만 확정한다.
 1. **Shared core** — discussion identity, goal, scope, criteria, decision authority와 authoritative guides를 적는다.
 1. **Participant delta** — A/B identity와 Lead 여부에 필요한 차이만 추가한다.
 1. **Execution delta** — 실제 execution mode의 invocation lifecycle만 추가한다.
-1. **Review** — fixed side, expected answer, forced consensus, asymmetric authority, stale-state assumption, premature exit 또는 unauthorized mutation이 생기지 않았는지 확인한다.
+1. **Review** — fixed side, expected answer, forced consensus, asymmetric authority, stale-state assumption, premature exit, invented runtime capability 또는 unauthorized mutation이 생기지 않았는지 확인한다.
 
 A/B prompt를 별도로 작성해도 shared core의 의미가 달라지면 안 된다.
 
@@ -90,17 +91,20 @@ Scheduler interval, recurrence, task ID, notification과 deadline은 외부 runt
 [`discuss-live.md`](discuss-live.md)를 적용하고 다음 delta만 명시한다.
 
 ```text
-이번 response는 single-response watchdog으로 동작한다.
+이번 response는 single-response active discussion으로 동작한다.
 자신의 turn을 publish했거나 상대 turn이 아직 없다는 이유만으로 response를 끝내지 않는다.
-Publish 뒤에는 실제 runtime boundary 또는 tool failure가 없는 한 같은 source identity를 다시 refresh하고 watchdog loop로 복귀한다.
-Research saturation은 discuss-live.md의 Quiescence Proof 없이 선언하지 않는다.
-User-facing response를 반환하기 직전에는 discuss-live.md의 Response Exit Gate를 반드시 통과한다.
-Exit Gate가 실패하면 완료 응답을 만들지 말고 persisted state에서 watchdog loop로 복귀한다.
-`counterpart_pending`은 shared completion이 아니며, local checkpoint로 끝나더라도 토론 완료로 표현하지 않는다.
+Publish 뒤에는 실제 runtime boundary 또는 tool failure가 없는 한 같은 source identity를 다시 refresh하고 active loop로 복귀한다.
+실제 host capability를 discuss-live.md의 active-only 또는 wait-capable profile로 구분하고, 제공되지 않은 wait/wakeup capability를 추측하지 않는다.
+Local work가 없다는 판단은 discuss-live.md의 Local No-Work Proof를 따른다.
+다음 progress가 counterpart에 의존하면 counterpart_dependency를 먼저 식별한 뒤 proof를 수행한다.
+wait-capable이면 counterpart_pending에서 non-busy wait 후 refresh하고, active-only이면 정확한 remaining dependency를 checkpoint에 남긴 뒤에만 local exit을 검토한다.
+User-facing response를 반환하기 직전에는 discuss-live.md의 Response Exit Gate를 반드시 적용한다.
+`counterpart_pending`이나 provisional sublation은 shared completion이 아니다.
+Caller가 persistent watchdog을 요구하지만 runtime이 active-only라면 완료한 것처럼 가장하지 말고 scheduled/event-driven orchestration 필요성을 남긴다.
 고정 runtime이나 shared deadline을 추측하지 않는다.
 ```
 
-Live prompt는 watchdog semantics를 **연결**해야 하지만 `Quiescence Proof`나 `Response Exit Gate`의 세부 checklist를 prompt에 복제하지 않는다. 세부 계약은 `discuss-live.md`를 authority로 남긴다.
+Live prompt는 runtime profile과 exit semantics를 연결해야 하지만 `Local No-Work Proof`나 `Response Exit Gate`의 세부 checklist를 prompt에 복제하지 않는다. 세부 계약은 `discuss-live.md`를 authority로 남긴다.
 
 ## Bundle Identity
 
@@ -137,7 +141,9 @@ Prompt를 전달하기 전에 다음만 확인한다.
 - persisted state를 같은 ref에서 읽고 refresh하게 하는가.
 - Live 병렬 bootstrap이면 양쪽에 같은 ref와 exact bundle path가 있는가.
 - execution mode와 delta가 실제 runtime과 일치하는가.
-- Live prompt가 publish 후 watchdog continuation과 `Response Exit Gate`를 명시적으로 연결하는가.
+- Live prompt가 publish 후 active continuation과 `Response Exit Gate`를 명시적으로 연결하는가.
+- Live prompt가 runtime profile을 관찰하게 하고 wait/wakeup capability를 발명하지 않는가.
+- Persistent watchdog이 요구될 때 `active-only` runtime을 watchdog처럼 표현하지 않는가.
 - Live prompt가 `counterpart_pending`이나 provisional sublation을 shared completion으로 오해하게 만들지 않는가.
 - 제공되지 않은 runtime/deadline/capability를 가정하지 않는가.
 - prompt가 discussion 외 mutation 권한을 새로 만들지 않는가.
