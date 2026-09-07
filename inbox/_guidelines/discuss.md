@@ -339,7 +339,7 @@ stop_condition: review_has_no_findings
 - Later loop는 unresolved finding 또는 new evidence에서 시작한다.
 - 반복 표현이나 mechanical rewrite는 loop가 아니다.
 - Loop 10에서도 unresolved material finding을 숨기지 않는다.
-- `mols-rpi`가 available하면 이 refinement contract에 사용하고, 아니면 같은 의미를 locally 따른다.
+- `mols-loops`가 available하면 이 refinement contract에 사용하고, 아니면 같은 의미를 locally 따른다.
 
 ## Material Delta
 
