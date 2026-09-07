@@ -210,33 +210,33 @@ while IFS= read -r path; do
       add_target tests/test_ci_classifier.py
       ;;
     scripts/generate_agent_routes.py)
-      add_focused_test tests/test_generate_agent_routes.py
+      add_focused_test tests/scripts/test_generate_agent_routes.py
       ;;
     scripts/agent_assets.py)
-      add_focused_test tests/test_agent_assets.py
+      add_focused_test tests/scripts/test_agent_assets.py
       ;;
     scripts/_commands.py)
       for target in \
-        tests/test_commands.py tests/test_tool_wrappers.py \
-        tests/test_bootstrap.py tests/test_agent_assets.py; do
+        tests/scripts/test_commands.py tests/scripts/test_tool_wrappers.py \
+        tests/scripts/test_bootstrap.py tests/scripts/test_agent_assets.py; do
         add_focused_test "$target"
       done
       add_type_target scripts
       ;;
     scripts/bootstrap.py)
-      add_focused_test tests/test_bootstrap.py
+      add_focused_test tests/scripts/test_bootstrap.py
       ;;
     scripts/biome.py|scripts/tombi.py)
-      add_focused_test tests/test_tool_wrappers.py
+      add_focused_test tests/scripts/test_tool_wrappers.py
       ;;
     scripts/generate_docs_indexes.py)
-      add_focused_test tests/test_generate_docs_indexes.py
+      add_focused_test tests/scripts/test_generate_docs_indexes.py
       ;;
     scripts/validate_inbox_artifacts.py)
-      add_focused_test tests/test_validate_inbox_artifacts.py
+      add_focused_test tests/scripts/test_validate_inbox_artifacts.py
       ;;
     scripts/log_agent_event.py)
-      add_focused_test tests/test_log_agent_event.py
+      add_focused_test tests/scripts/test_log_agent_event.py
       ;;
     scripts/run_actual_source.py)
       add_focused_test tests/hmda_data/eda/test_eda_evidence.py
@@ -251,7 +251,7 @@ while IFS= read -r path; do
       ;;
     src/hmda_reliability/logger.py)
       tests=true
-      add_target tests/test_log_agent_event.py
+      add_target tests/scripts/test_log_agent_event.py
       full_type=true
       ;;
     src/hmda_reliability/*/*)
@@ -269,6 +269,12 @@ while IFS= read -r path; do
       esac
       ;;
     tests/test_*.py)
+      [[ -f "$path" ]] && {
+        tests=true
+        add_target "$path"
+      }
+      ;;
+    tests/scripts/test_*.py)
       [[ -f "$path" ]] && {
         tests=true
         add_target "$path"
