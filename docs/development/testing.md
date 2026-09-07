@@ -79,7 +79,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
-- Markdown은 prospective change set에 포함된 현재 존재하는 changed file만 검증한다. 일반 Inbox artifact도 변경된 파일만 `rumdl` 검증을 받고, standalone artifact와 변경된 bundle의 root는 common required frontmatter와 artifact name/type 정합성을 추가로 확인한다. 변경되지 않은 과거 artifact는 다시 scan하지 않는다.
+- Markdown은 prospective change set에 포함된 현재 존재하는 changed file만 검증한다. 일반 Inbox artifact도 변경된 파일만 lightweight Markdown 검증을 받고, 변경되지 않은 과거 artifact를 다시 scan하지 않는다.
 - Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check를 실행한다. Type check는 source domain의 current reverse dependency closure와 직접 대응 test까지 넓히고, shared/common/runtime config 또는 unknown Python path처럼 영향 범위를 안정적으로 좁히기 어려우면 project-wide `ty check`로 fallback한다.
 - Direct-mapped repository Python script는 해당 wrapper 또는 workflow contract test를 실행한다. 여러 wrapper가 소비하는 shared script helper는 consumer script까지 type-check하고 관련 contract test를 함께 실행하며, 미매핑 script는 전체 `unit` suite와 project-wide `ty check`로 fallback한다.
 - Domain source는 own test와 현재 reverse dependency에 따른 consumer test directory를 선택한다.
@@ -90,7 +90,6 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 - shared package, 공통 package surface, Python/dependency runtime config처럼 영향 범위를 안정적으로 좁히기 어려운 변경은 전체 `unit` suite로 fallback한다.
 - Lefthook 설정 변경은 `lefthook validate`로 configuration을 확인한다.
 - Python dependency setup은 Python/test validation이 필요할 때만 수행하고 uv cache를 재사용한다.
-- `windows-command-boundary`는 별도 `windows-latest` runner에서 실제 Windows process argument 경계를 검증한다. `_commands.py`, 해당 test, Python runtime/dependency config 또는 CI selector처럼 이 경계에 영향을 주는 변경에서만 Python/uv setup과 Windows test를 실행한다.
 
 Markdown 검증은 `rumdl fmt`를 CI의 disposable workspace에 적용한 뒤 `rumdl check`를 실행한다. 자동 수정 가능한 formatting 차이만 있으면 병합을 막지 않고 diff를 log와 step summary에 남긴다. `rumdl fmt` 이후에도 남는 lint 위반은 실패한다. CI는 이 수정 결과를 branch에 write-back하지 않으며 별도의 post-merge Markdown autofix workflow도 두지 않는다. Local runtime이 없는 기여자도 출력된 diff를 수정 근거로 사용할 수 있다.
 
