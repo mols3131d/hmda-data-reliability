@@ -20,9 +20,7 @@ def _frontmatter_fields(path: Path) -> dict[str, str]:
 
     try:
         end = next(
-            index
-            for index, line in enumerate(lines[1:], 1)
-            if line.strip() == "---"
+            index for index, line in enumerate(lines[1:], 1) if line.strip() == "---"
         )
     except StopIteration as exc:
         raise ValueError("missing YAML frontmatter closing delimiter") from exc
@@ -67,8 +65,7 @@ def _validate_root(path: Path, artifact_name: str) -> list[str]:
     artifact_type = _unquote(raw_type.strip())
     if artifact_type and not TYPE_RE.fullmatch(artifact_type):
         errors.append(
-            f"{path}: frontmatter type must be lowercase kebab-case: "
-            f"{artifact_type!r}"
+            f"{path}: frontmatter type must be lowercase kebab-case: {artifact_type!r}"
         )
         return errors
 
