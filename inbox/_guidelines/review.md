@@ -62,6 +62,8 @@ Template의 기본 순서는 다음과 같다.
 
 Overall verdict는 leading callout이 한 번만 소유한다. 같은 verdict를 별도 summary나 closing section에서 반복하지 않는다.
 
+Target context는 `Target`, `Revision`, `Scope`의 고정 3-item bullet list로 표현한다. 서로 다른 metadata field를 한 row의 table로 묶지 않는다.
+
 ### Findings Summary
 
 Finding이 있으면 fixed `ID | Severity | Finding | Action` table을 사용한다. 각 row는 빠르게 훑을 수 있게 짧게 유지하고, 판단에 필요한 설명만 `Details`에서 확장한다.
