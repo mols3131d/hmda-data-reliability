@@ -4,10 +4,16 @@
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
       "resolvedRef": "74b56fa52a3e02a25f727a6841b4c4201d028eec",
-      "resolvedAt": "2026-09-07T13:11:30.506Z",
+      "resolvedAt": "2026-09-07T23:44:36.995Z",
       "skills": {
+        "mols-agent-asset-find": {
+          "integrity": "sha256-6ace67d927da8eedcdd359593ddcbd7a80d97a2fa9cab42288f634116382aef6"
+        },
         "mols-agent-asset": {
           "integrity": "sha256-ba10320d7fadba56e9619c4336d3d6adb57c52fcd2f2a45b8347ffe5d8b84d59"
+        },
+        "mols-ci-design": {
+          "integrity": "sha256-d1e45b38bab766af738f50b2828ce615eacf2ec4d63b5c8cd9b83b31344161b5"
         },
         "mols-clarify-code": {
           "integrity": "sha256-b472713479ed4a45d2d7b9f83f8dcf6a5d82b1e66a3988166e75b1a68585fc10"
@@ -23,6 +29,9 @@
         },
         "mols-coding-context": {
           "integrity": "sha256-59121561dbc5b1bd045b25423462350accac559a538edca425c9ad9c4a0db7c8"
+        },
+        "mols-documentation": {
+          "integrity": "sha256-1f7ec4eb7ee2c3597e0fda64c6a224e58e0cf1bb3c4be33c53e5a5cae3dff8dc"
         },
         "mols-loops": {
           "integrity": "sha256-f3f3de0ae4d899fe029748440d537b2a0624074e238a575dce7565916efa5c9f"
@@ -41,6 +50,9 @@
         },
         "mols-mermaid-diagram": {
           "integrity": "sha256-da671d353ab39b2bbd5ec6675e7c0bf67e2937c5bf1f71a028b4b74923edf76e"
+        },
+        "mols-openspec-customize": {
+          "integrity": "sha256-4debe7ef0e25d69f38dca4a4617989d5cd5b9312c26625e2b493abcdaac07429"
         }
       }
     }

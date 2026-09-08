@@ -14,17 +14,21 @@
       "source": "mols3131d/mols-agent-assets",
       "skills": [
         "mols-agent-asset",
+        "mols-agent-asset-find",
+        "mols-ci-design",
         "mols-clarify-code",
         "mols-clarify-runtime",
         "mols-code-comprehension-refactor",
         "mols-coding-context",
         "mols-coding-context-python",
+        "mols-documentation",
         "mols-loops",
         "mols-markdown-dashboard",
         "mols-markdown-for-human",
         "mols-markdown-maintenance",
         "mols-mermaid-chart",
-        "mols-mermaid-diagram"
+        "mols-mermaid-diagram",
+        "mols-openspec-customize"
       ],
       "transport": "github",
       "ref": "main",
