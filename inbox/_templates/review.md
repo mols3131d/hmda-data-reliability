@@ -14,9 +14,9 @@ tags:
 > [!IMPORTANT]
 > **<Pass | Revise | Blocked>** — <핵심 판정과 가장 중요한 이유, 필요한 다음 조치를 1~3문장으로 요약한다.>
 
-| Target | Revision | Scope |
-| --- | --- | --- |
-| <linked target> | `<revision>` | <실제로 검토한 범위> |
+- **Target** — <linked target>
+- **Revision** — `<revision>`
+- **Scope** — <실제로 검토한 범위>
 
 ## Findings
 
