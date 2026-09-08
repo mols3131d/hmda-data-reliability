@@ -27,10 +27,11 @@ Do not add `status`, `target`, `revision`, `scope`, or `verdict` to review front
 
 `tags` is optional. Keep it only when classification materially improves search or retrieval. Namespaced and plain tags may be combined:
 
-- `domain:<value>` for a broad domain
-- `subdomain:<value>` for a meaningful subdivision
+- `domain:<value>` for a broad domain or ownership context
 - `capability:<value>` for a specific capability
 - `<tag>` for a cross-cutting search term that does not need a namespace
+
+Do not encode parent-child taxonomy with standalone `subdomain:<value>` tags. If hierarchical classification becomes necessary, define that relationship in a canonical taxonomy instead of relying on an implicit tag pairing.
 
 Use lowercase kebab-case tag values. Keep only applicable tags and remove unused placeholders.
 
