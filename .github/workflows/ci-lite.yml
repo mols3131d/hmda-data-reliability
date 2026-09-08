@@ -35,7 +35,7 @@ jobs:
           install-only: true
           version: "0.2.48"
 
-      - name: Validate changed Markdown
+      - name: Format changed Markdown and validate docs
         if: steps.scope.outputs.markdown == 'true'
         run: |
           set -euo pipefail
@@ -57,7 +57,14 @@ jobs:
                 echo '```'
               } >> "$GITHUB_STEP_SUMMARY"
             fi
-            rumdl check "${files[@]}"
+
+            docs=()
+            for path in "${files[@]}"; do
+              [[ "$path" == docs/* ]] && docs+=("$path")
+            done
+            if ((${#docs[@]})); then
+              rumdl check "${docs[@]}"
+            fi
           fi
 
       - name: Validate changed Inbox artifacts
