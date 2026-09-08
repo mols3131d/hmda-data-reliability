@@ -46,6 +46,8 @@ tags:
 
 - `generate` 호출 전 stale 후보를 관찰하고 호출 후 다시 관찰한다.
 - generate 성공 시 두 관찰 결과의 union만 삭제한다. generate failure, unreadable config/lock/source 또는 symlink boundary에서는 삭제하지 않는다.
+- optional `skills-lock.json`의 valid external Skill names는 expected set에 포함하고, 그 lock이 invalid하거나 unsafe하면 삭제하지 않는다.
+- projection root와 canonical source의 symlink/junction ancestor는 안전한 repository boundary로 인정하지 않는다.
 - 기존 `_sync_sources`, Claude bridge와 `_validate` return-code ordering은 유지한다.
 
 ## Test Matrix
@@ -55,6 +57,23 @@ tags:
 - non-Skill directory와 symlink는 보존된다.
 - generate failure에서는 stale directory가 보존되고 failure code가 전달된다.
 - generate 전후 detection과 `install/update → generate` forwarding 순서를 검증한다.
+- projection root ancestor symlink, canonical source symlink/non-directory/child symlink와 Skills CLI lock ownership을 검증한다.
+
+## Loop Progress
+
+| Loop | Transition | Result |
+| ---: | --- | --- |
+| 1 | Review → artifact | 세 material safety/ownership findings를 `review` artifact에 기록 |
+| 2 | Apply → focused Review | boundary/source/Skills CLI 보강과 회귀 테스트 적용; focused tests 17 passed |
+| 3 | Validate → safety refinement | `tests/scripts` 66 passed, artifact validator 통과; `lstat()` 기반 fail-closed refinement 추가 |
+| 4 | Apply → final Review | non-directory source regression 추가; 정적 검사와 전체 scripts suite 재통과 |
+
+## Current Handoff
+
+- Implementation: local working tree에 safety/ownership remediation과 regression tests가 반영됐다.
+- Validation: `tests/scripts` 66 passed, 1 Windows-only test skipped; changed files의 Ruff/format/ty/diff check 통과.
+- Artifact: `17-48-review-rulesync-auto-prune.md`에 최종 verdict와 remaining risks 기록.
+- Delivery: 명시적 push 요청 전까지 commit/push하지 않으며, 현재 PR #223 remote head는 plan-only 상태다.
 
 ## Acceptance
 
