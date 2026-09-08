@@ -5,7 +5,6 @@ description: <검토 대상과 검토 목적을 한 문장으로 설명한다.>
 # OPTIONAL: 검색·회수에 실제 도움이 되는 분류만 유지한다.
 tags:
   - "domain:<domain>"
-  - "subdomain:<subdomain>"
   - "capability:<capability>"
   - "<tag>"
 ---
