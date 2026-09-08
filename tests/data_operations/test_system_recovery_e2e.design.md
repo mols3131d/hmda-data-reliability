@@ -2,7 +2,7 @@
 
 ## Contract
 
-The deterministic system recovery E2E verification proves the complete loop across the Data Plane (Bronze partition ingestion, read-only quality gate, quality-gated real dbt build, artifact promotion) and the Reliability Control Plane (read-only incident lifecycle, candidate validation via real dbt, exact proposal binding, approval gate, partition recovery backfill, post-recovery re-validation, and replay reconciliation) without external model or network dependency.
+The deterministic system recovery E2E verification proves the complete integration core across Data Operations (Bronze partition ingestion, read-only quality gate, quality-gated real dbt build, artifact promotion) and the Reliability Control Plane (read-only incident lifecycle, candidate validation via real dbt, exact proposal binding, approval gate, partition recovery backfill, post-recovery re-validation, and replay reconciliation) via direct sequential Python API execution, without external model, network, or Apache Airflow scheduler/DAG runtime dependencies.
 
 ## Scenarios
 
@@ -22,6 +22,7 @@ The deterministic system recovery E2E verification proves the complete loop acro
 
 ## Exclusions
 
+- Apache Airflow DAG scheduling, task-level retry, runtime request adaptation, and workflow orchestration boundaries are excluded from this direct Python API integration core.
 - Human review, Agentic review, live LLM API calls, and provider routing are excluded from this deterministic core.
 - Modifying Airflow DAG definitions to add recovery or incident lifecycle tasks is forbidden.
 - Test-only bypasses or mock authorizations are strictly prohibited.

@@ -1,7 +1,7 @@
 """Deterministic System Recovery End-to-End Integration Tests.
 
-Validates the complete closed loop between Data Plane and Reliability Control Plane:
-    S0: Clean Data Plane execution (ingestion, quality gate, real dbt build, promotion)
+Validates the complete loop across Data Operations and Reliability Control Plane:
+    S0: Clean execution (ingestion, quality gate, real dbt build, promotion)
     S1: Controlled null_spike defect injection, partition preservation, gate block
     S2: Read-only incident lifecycle analysis and zero-mutation preservation
     S3: Clean candidate validation via real dbt build and exact proposal binding
@@ -31,6 +31,7 @@ from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
     load_hmda_loans_partition,
     partition_content_identity,
+    partition_max_ingested_at,
 )
 from hmda_reliability.hmda_data.synthetic.cases import null_spike
 from hmda_reliability.reliability import (
@@ -117,11 +118,17 @@ def _assert_analytics_outputs(database_path: Path, expected_rows: int = 10) -> N
         assert staging_count is not None
         assert int(staging_count[0]) == expected_rows
 
+        staging_null_income = connection.execute(
+            "SELECT count(*) FROM staging.stg_hmda_loans WHERE income IS NULL"
+        ).fetchone()
+        assert staging_null_income is not None
+        assert int(staging_null_income[0]) == 0
+
         mart_count = connection.execute(
             "SELECT count(*) FROM marts.mart_hmda_loan_outcomes"
         ).fetchone()
         assert mart_count is not None
-        assert int(mart_count[0]) > 0
+        assert int(mart_count[0]) == 2
 
 
 def _build_approval(proposal: RecoveryProposal) -> Approval:
@@ -330,6 +337,7 @@ def test_deterministic_system_recovery_e2e(tmp_path: Path) -> None:
     assert lifecycle_result.detected_incident_types == ["null_spike"]
     assert len(lifecycle_result.detected_incident_ids) == 1
     assert len(lifecycle_result.affected_assets) > 0
+    assert lifecycle_result.target_content_identity == dirty_identity
 
     with DuckDBConnectionManager(target_db, read_only=True) as connection:
         observed_target_identity = partition_content_identity(
@@ -362,7 +370,7 @@ def test_deterministic_system_recovery_e2e(tmp_path: Path) -> None:
         proposal_id=f"recovery_{incident_id}",
         incident_id=incident_id,
         candidate_identity=candidate_identity,
-        approved_before_identity=dirty_identity,
+        approved_before_identity=lifecycle_result.target_content_identity,
         expected_after_identity=clean_identity,
         dbt_projection_id=candidate_projection_id,
     )
@@ -392,9 +400,21 @@ def test_deterministic_system_recovery_e2e(tmp_path: Path) -> None:
     _assert_analytics_outputs(target_db, expected_rows=10)
 
     # S7: Replay Reconciliation
+    with DuckDBConnectionManager(target_db, read_only=True) as connection:
+        before_replay_max_ingested = partition_max_ingested_at(
+            connection, source_year=2025, table_name="raw.hmda_loans"
+        )
+    assert before_replay_max_ingested is not None
+
     with DuckDBConnectionManager(target_db) as connection:
         replay_result = execute_approved_backfill(connection, backfill_request)
 
+    with DuckDBConnectionManager(target_db, read_only=True) as connection:
+        after_replay_max_ingested = partition_max_ingested_at(
+            connection, source_year=2025, table_name="raw.hmda_loans"
+        )
+
+    assert after_replay_max_ingested == before_replay_max_ingested
     assert replay_result.mutation_state == "already_recovered"
     assert replay_result.validation_passed is True
     assert replay_result.actual_identity == clean_identity
@@ -452,6 +472,9 @@ def test_null_spike_evaluator_real_dbt_e2e(tmp_path: Path) -> None:
     assert result.recovery is not None
     assert result.recovery.mutation_state == "partition_changed"
     assert result.recovery.validation_passed is True
+    assert result.replay is not None
+    assert result.replay.mutation_state == "already_recovered"
+    assert result.target_dbt_failure is None
     assert result.post_recovery_case.detected_incident_types == []
     assert result.target_dbt_projection_id is not None
     assert result.target_dbt_projection_id.startswith("sha256:")
@@ -523,7 +546,7 @@ def test_pre_approval_safety_mismatched_identity_zero_mutation(tmp_path: Path) -
         target_request=target_request,
         backfill_request=backfill_request,
         dirty_identity=dirty_identity,
-        expected_error_match="diverged|일치",
+        expected_error_match=r"diverged state입니다",
     )
 
 
@@ -559,5 +582,5 @@ def test_pre_approval_safety_mismatched_actions_zero_mutation(tmp_path: Path) ->
         target_request=target_request,
         backfill_request=backfill_request,
         dirty_identity=dirty_identity,
-        expected_error_match="action",
+        expected_error_match=r"backfill 승인에 필요한 action이 없습니다",
     )
