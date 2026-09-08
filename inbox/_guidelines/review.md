@@ -17,6 +17,23 @@ If another workflow defines an owning review artifact, such as an OpenSpec `plan
 - Record performed validation, omitted validation, and remaining risk.
 - Prefer a small number of well-supported findings over speculative volume.
 
+## Frontmatter
+
+Keep review frontmatter minimal. The Inbox common contract requires `type`, `title`, and `description`; review artifacts use `type: review`.
+
+Use `description` to identify the review target and purpose or scope. Do not duplicate the verdict there because the leading result callout owns the current verdict.
+
+Do not add `status`, `target`, `revision`, `scope`, or `verdict` to review frontmatter by default. Those concepts are already represented in the body and duplicated metadata can become stale. Add extra fields only when another applicable owner contract requires them.
+
+`tags` is optional. Keep it only when classification materially improves search or retrieval. Namespaced and plain tags may be combined:
+
+- `domain:<value>` for a broad domain
+- `subdomain:<value>` for a meaningful subdivision
+- `capability:<value>` for a specific capability
+- `<tag>` for a cross-cutting search term that does not need a namespace
+
+Use lowercase kebab-case tag values. Keep only applicable tags and remove unused placeholders.
+
 ## Severity
 
 Use one severity vocabulary consistently within the review.
@@ -37,10 +54,10 @@ Optimize the artifact for repeated human review. A reader should be able to dete
 Use the template's structure in this order:
 
 1. result callout and target context
-2. `Findings` summary
-3. optional `Details`
-4. `Validation`
-5. optional `Risks and Limits`
+1. `Findings` summary
+1. optional `Details`
+1. `Validation`
+1. optional `Risks and Limits`
 
 State the overall verdict once in the leading callout. Do not repeat the same verdict in a second summary or closing verdict section.
 
