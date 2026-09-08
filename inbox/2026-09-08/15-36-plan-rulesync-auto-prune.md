@@ -73,7 +73,7 @@ tags:
 - Implementation: local working tree에 safety/ownership remediation과 regression tests가 반영됐다.
 - Validation: `tests/scripts` 66 passed, 1 Windows-only test skipped; changed files의 Ruff/format/ty/diff check 통과.
 - Artifact: `17-48-review-rulesync-auto-prune.md`에 최종 verdict와 remaining risks 기록.
-- Delivery: 명시적 push 요청 전까지 commit/push하지 않으며, 현재 PR #223 remote head는 plan-only 상태다.
+- Delivery: commit `60ea6bd`를 branch와 PR #223에 publish했고, PR 제목/본문을 implementation·validation 상태로 갱신했다. PR은 Draft로 유지한다.
 
 ## Acceptance
 
