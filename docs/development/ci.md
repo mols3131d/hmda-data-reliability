@@ -119,15 +119,24 @@ CI를 추가하거나 바꿀 때는 다음 순서로 판단한다.
 - `main` 대상 PR에는 required workflow가 항상 생성되어야 한다. 불필요한 검증은 workflow 내부에서 선택적으로 생략한다.
 - 영향 범위를 결정할 수 없으면 검증을 넓히거나 실패시킨다. 불완전한 검증을 정상 결과로 처리하지 않는다.
 
+### Markdown Boundary
+
+Markdown formatting과 merge-blocking lint를 분리한다.
+
+- 현재 prospective change set에 포함된 모든 Markdown은 CI의 disposable workspace에서 `rumdl fmt`를 실행한다. Formatting 차이는 수정 제안으로 제공하되 병합을 막지 않으며 branch에 write-back하지 않는다.
+- `docs/**`의 변경된 Markdown만 formatting 이후 `rumdl check`를 실행한다. 이 범위에서 formatter 이후에도 남는 lint 위반은 병합을 막는다.
+- `docs/**` 밖의 Markdown에는 `rumdl check`를 실행하지 않으며 Markdown lint 자체를 merge admission 조건으로 사용하지 않는다.
+- Frontmatter, artifact naming, generated-state consistency처럼 Markdown 표현 형식과 별개의 repository contract가 있으면 해당 deterministic validator가 독립적으로 검증할 수 있다.
+
 ### Inbox Boundary
 
 Inbox 전체를 매 PR마다 다시 검사하지 않는다. **현재 prospective change set에 포함된 Inbox artifact만** 현재 변경으로 취급한다.
 
-- 현재 변경된 일반 Inbox Markdown에는 formatting/lint와 common artifact root의 required frontmatter·이름 정합성처럼 가볍고 결정론적인 검증만 적용한다.
+- 현재 변경된 일반 Inbox Markdown은 [Markdown Boundary](#markdown-boundary)의 non-blocking formatting만 적용하고, common artifact root의 required frontmatter·이름 정합성처럼 명시적인 Inbox contract만 별도로 검증한다.
 - Standalone artifact와 변경된 bundle에서 도달 가능한 `README.md` root는 `type`, `title`, `description`과 artifact name의 `type` 정합성을 확인한다.
 - 현재 변경에 포함되지 않은 과거·완료·보관 artifact는 scan, reformat, migration 또는 재검증하지 않는다.
 - 일반 Inbox artifact 변경만으로 unrelated source test나 platform-specific runtime 검증을 실행하지 않는다.
-- `inbox/AGENTS.md`, `inbox/_guidelines/**`, `inbox/_templates/**`처럼 다른 작업의 동작을 정하는 기반 문서는 일반 저장소 변경과 동일하게 검증한다.
+- `inbox/AGENTS.md`, `inbox/_guidelines/**`, `inbox/_templates/**`도 Markdown lint 자체로 병합을 막지 않는다. 해당 path가 소유하는 별도 deterministic contract가 있으면 그 검증은 유지한다.
 
 Inbox 자체의 내용과 lifecycle은 [`inbox/AGENTS.md`](../../inbox/AGENTS.md)가 소유한다.
 
