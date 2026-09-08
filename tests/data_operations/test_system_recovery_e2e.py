@@ -140,6 +140,77 @@ def _build_approval(proposal: RecoveryProposal) -> Approval:
     )
 
 
+def _build_proposal(
+    proposal_id: str,
+    incident_id: str,
+    candidate_identity: PartitionContentIdentity,
+    approved_before_identity: PartitionContentIdentity,
+    expected_after_identity: PartitionContentIdentity,
+    dbt_projection_id: str,
+) -> RecoveryProposal:
+    """Construct an exact RecoveryProposal fixture for partition null-spike."""
+    return RecoveryProposal(
+        proposal_id=proposal_id,
+        incident_id=incident_id,
+        incident_type="null_spike",
+        table_name="raw.hmda_loans",
+        source_year=2025,
+        source_file=None,
+        candidate_identity=candidate_identity,
+        approved_before_identity=approved_before_identity,
+        expected_after_identity=expected_after_identity,
+        validation_evidence_refs=(candidate_identity.digest, dbt_projection_id),
+        dbt_projection_id=dbt_projection_id,
+        target_actions=("overwrite_partition", "rerun_profile_snapshot"),
+    )
+
+
+def _build_backfill_request(
+    request: DataOperationRequest,
+    approval: Approval,
+    proposal: RecoveryProposal,
+    source_path: Path,
+) -> ApprovedBackfillRequest:
+    """Construct an ApprovedBackfillRequest bound to the request's partition."""
+    return ApprovedBackfillRequest(
+        approval=approval,
+        proposal=proposal,
+        source_paths=(source_path,),
+        source_year=request.source_year,
+        source_file=request.source_file,
+        table_name=request.raw_table_name,
+        profile_request=_profile_request(request),
+    )
+
+
+def _assert_pre_approval_zero_mutation(
+    *,
+    target_db: Path,
+    target_request: DataOperationRequest,
+    backfill_request: ApprovedBackfillRequest,
+    dirty_identity: PartitionContentIdentity,
+    expected_error_match: str,
+) -> None:
+    """Assert that unapproved or invalid backfill blocks with zero target mutation."""
+    with (
+        DuckDBConnectionManager(target_db) as connection,
+        pytest.raises(ApprovalGateError, match=expected_error_match),
+    ):
+        execute_approved_backfill(connection, backfill_request)
+
+    with DuckDBConnectionManager(target_db, read_only=True) as connection:
+        post_attempt_identity = partition_content_identity(
+            connection, table_name="raw.hmda_loans", source_year=2025
+        )
+        post_attempt_profile = create_profile_snapshot(
+            connection,
+            _profile_request(target_request),
+        )
+
+    assert post_attempt_identity == dirty_identity
+    assert post_attempt_profile.null_rates["income"] == 0.50
+
+
 def _setup_dirty_target(
     tmp_path: Path,
 ) -> tuple[
@@ -287,31 +358,19 @@ def test_deterministic_system_recovery_e2e(tmp_path: Path) -> None:
     candidate_projection_id = candidate_dbt_result.projection_id
 
     incident_id = lifecycle_result.detected_incident_ids[0]
-    proposal = RecoveryProposal(
+    proposal = _build_proposal(
         proposal_id=f"recovery_{incident_id}",
         incident_id=incident_id,
-        incident_type="null_spike",
-        table_name="raw.hmda_loans",
-        source_year=2025,
-        source_file=None,
         candidate_identity=candidate_identity,
         approved_before_identity=dirty_identity,
         expected_after_identity=clean_identity,
-        validation_evidence_refs=(candidate_identity.digest, candidate_projection_id),
         dbt_projection_id=candidate_projection_id,
-        target_actions=("overwrite_partition", "rerun_profile_snapshot"),
     )
 
     # S5: Approved Recovery Execution
     approval = _build_approval(proposal)
-    backfill_request = ApprovedBackfillRequest(
-        approval=approval,
-        proposal=proposal,
-        source_paths=(clean_csv,),
-        source_year=2025,
-        source_file=None,
-        table_name="raw.hmda_loans",
-        profile_request=_profile_request(target_request),
+    backfill_request = _build_backfill_request(
+        target_request, approval, proposal, clean_csv
     )
 
     with DuckDBConnectionManager(target_db) as connection:
@@ -404,20 +463,13 @@ def test_pre_approval_safety_rejected_approval_zero_mutation(tmp_path: Path) -> 
     clean_csv, target_db, target_request, clean_identity, dirty_identity = (
         _setup_dirty_target(tmp_path)
     )
-
-    proposal = RecoveryProposal(
+    proposal = _build_proposal(
         proposal_id="proposal_rejected",
         incident_id="incident_rejected",
-        incident_type="null_spike",
-        table_name="raw.hmda_loans",
-        source_year=2025,
-        source_file=None,
         candidate_identity=clean_identity,
         approved_before_identity=dirty_identity,
         expected_after_identity=clean_identity,
-        validation_evidence_refs=(clean_identity.digest, "sha256:dummy"),
         dbt_projection_id="sha256:dummy",
-        target_actions=("overwrite_partition", "rerun_profile_snapshot"),
     )
     rejected_approval = Approval(
         approval_id="approval_rejected",
@@ -430,33 +482,16 @@ def test_pre_approval_safety_rejected_approval_zero_mutation(tmp_path: Path) -> 
         requested_actions=proposal.target_actions,
         recovery_proposal=proposal,
     )
-    backfill_request = ApprovedBackfillRequest(
-        approval=rejected_approval,
-        proposal=proposal,
-        source_paths=(clean_csv,),
-        source_year=2025,
-        source_file=None,
-        table_name="raw.hmda_loans",
-        profile_request=_profile_request(target_request),
+    backfill_request = _build_backfill_request(
+        target_request, rejected_approval, proposal, clean_csv
     )
-
-    with (
-        DuckDBConnectionManager(target_db) as connection,
-        pytest.raises(ApprovalGateError, match=r"승인되지 않은 backfill 요청입니다"),
-    ):
-        execute_approved_backfill(connection, backfill_request)
-
-    with DuckDBConnectionManager(target_db, read_only=True) as connection:
-        post_attempt_identity = partition_content_identity(
-            connection, table_name="raw.hmda_loans", source_year=2025
-        )
-        post_attempt_profile = create_profile_snapshot(
-            connection,
-            _profile_request(target_request),
-        )
-
-    assert post_attempt_identity == dirty_identity
-    assert post_attempt_profile.null_rates["income"] == 0.50
+    _assert_pre_approval_zero_mutation(
+        target_db=target_db,
+        target_request=target_request,
+        backfill_request=backfill_request,
+        dirty_identity=dirty_identity,
+        expected_error_match=r"승인되지 않은 backfill 요청입니다",
+    )
 
 
 def test_pre_approval_safety_mismatched_identity_zero_mutation(tmp_path: Path) -> None:
@@ -464,7 +499,6 @@ def test_pre_approval_safety_mismatched_identity_zero_mutation(tmp_path: Path) -
     clean_csv, target_db, target_request, clean_identity, dirty_identity = (
         _setup_dirty_target(tmp_path)
     )
-
     mismatched_before_identity = PartitionContentIdentity(
         table_name="raw.hmda_loans",
         source_year=2025,
@@ -472,42 +506,25 @@ def test_pre_approval_safety_mismatched_identity_zero_mutation(tmp_path: Path) -
         row_count=10,
         digest="sha256:0000000000000000000000000000000000000000000000000000000000000000",
     )
-    proposal = RecoveryProposal(
+    proposal = _build_proposal(
         proposal_id="proposal_mismatched",
         incident_id="incident_mismatched",
-        incident_type="null_spike",
-        table_name="raw.hmda_loans",
-        source_year=2025,
-        source_file=None,
         candidate_identity=clean_identity,
         approved_before_identity=mismatched_before_identity,
         expected_after_identity=clean_identity,
-        validation_evidence_refs=(clean_identity.digest, "sha256:dummy"),
         dbt_projection_id="sha256:dummy",
-        target_actions=("overwrite_partition", "rerun_profile_snapshot"),
     )
     approval = _build_approval(proposal)
-    backfill_request = ApprovedBackfillRequest(
-        approval=approval,
-        proposal=proposal,
-        source_paths=(clean_csv,),
-        source_year=2025,
-        source_file=None,
-        table_name="raw.hmda_loans",
-        profile_request=_profile_request(target_request),
+    backfill_request = _build_backfill_request(
+        target_request, approval, proposal, clean_csv
     )
-
-    with (
-        DuckDBConnectionManager(target_db) as connection,
-        pytest.raises(ApprovalGateError, match="diverged|일치"),
-    ):
-        execute_approved_backfill(connection, backfill_request)
-
-    with DuckDBConnectionManager(target_db, read_only=True) as connection:
-        post_attempt_identity = partition_content_identity(
-            connection, table_name="raw.hmda_loans", source_year=2025
-        )
-    assert post_attempt_identity == dirty_identity
+    _assert_pre_approval_zero_mutation(
+        target_db=target_db,
+        target_request=target_request,
+        backfill_request=backfill_request,
+        dirty_identity=dirty_identity,
+        expected_error_match="diverged|일치",
+    )
 
 
 def test_pre_approval_safety_mismatched_actions_zero_mutation(tmp_path: Path) -> None:
@@ -515,22 +532,14 @@ def test_pre_approval_safety_mismatched_actions_zero_mutation(tmp_path: Path) ->
     clean_csv, target_db, target_request, clean_identity, dirty_identity = (
         _setup_dirty_target(tmp_path)
     )
-
-    proposal = RecoveryProposal(
+    proposal = _build_proposal(
         proposal_id="proposal_actions",
         incident_id="incident_actions",
-        incident_type="null_spike",
-        table_name="raw.hmda_loans",
-        source_year=2025,
-        source_file=None,
         candidate_identity=clean_identity,
         approved_before_identity=dirty_identity,
         expected_after_identity=clean_identity,
-        validation_evidence_refs=(clean_identity.digest, "sha256:dummy"),
         dbt_projection_id="sha256:dummy",
-        target_actions=("overwrite_partition", "rerun_profile_snapshot"),
     )
-    # Tamper requested actions to omit rerun_profile_snapshot
     tampered_approval = Approval(
         approval_id="approval_actions",
         incident_id=proposal.incident_id,
@@ -542,24 +551,13 @@ def test_pre_approval_safety_mismatched_actions_zero_mutation(tmp_path: Path) ->
         requested_actions=("overwrite_partition",),
         recovery_proposal=proposal,
     )
-    backfill_request = ApprovedBackfillRequest(
-        approval=tampered_approval,
-        proposal=proposal,
-        source_paths=(clean_csv,),
-        source_year=2025,
-        source_file=None,
-        table_name="raw.hmda_loans",
-        profile_request=_profile_request(target_request),
+    backfill_request = _build_backfill_request(
+        target_request, tampered_approval, proposal, clean_csv
     )
-
-    with (
-        DuckDBConnectionManager(target_db) as connection,
-        pytest.raises(ApprovalGateError, match="action"),
-    ):
-        execute_approved_backfill(connection, backfill_request)
-
-    with DuckDBConnectionManager(target_db, read_only=True) as connection:
-        post_attempt_identity = partition_content_identity(
-            connection, table_name="raw.hmda_loans", source_year=2025
-        )
-    assert post_attempt_identity == dirty_identity
+    _assert_pre_approval_zero_mutation(
+        target_db=target_db,
+        target_request=target_request,
+        backfill_request=backfill_request,
+        dirty_identity=dirty_identity,
+        expected_error_match="action",
+    )
