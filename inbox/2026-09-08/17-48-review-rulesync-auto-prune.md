@@ -17,7 +17,7 @@ tags:
 
 | Target | Revision | Scope | Verdict |
 | --- | --- | --- | --- |
-| `scripts/rulesync.py`와 `tests/scripts/test_tool_wrappers.py` | commit `60ea6bd`, branch `agents/rulesync-auto-prune-script-addition`, PR #223 | `generate` 전후 stale target Skill detection/prune, source/lock parsing, target boundary, adjacent asset ownership | Pass |
+| `scripts/rulesync.py`와 `tests/scripts/test_tool_wrappers.py` | implementation commit `60ea6bd`, delivery head `4b6a0ac`, PR #223 | `generate` 전후 stale target Skill detection/prune, source/lock parsing, target boundary, adjacent asset ownership | Pass |
 
 ## Findings
 
@@ -61,11 +61,11 @@ tags:
 
 ## Remaining Risks
 
-- GitHub PR #223 remote head는 `60ea6bd`이며 제목/본문과 validation evidence가 갱신됐다. PR은 Draft 상태다.
+- GitHub PR #223 delivery head는 `4b6a0ac`이며 제목/본문과 validation evidence가 갱신됐다. PR은 Draft/MERGEABLE 상태이고 CI Lite `check`가 SUCCESS다.
 - Windows junction와 permission-denied source behavior는 Linux local environment에서 직접 실행하지 않았다. `Path.is_junction()`과 `lstat()` 경로는 정적 검증만 수행했다.
 
 ## Verdict
 
 | Decision | Rationale | Route |
 | --- | --- | --- |
-| Pass | destructive prune boundary, unknown source fail-closed behavior와 별도 Skill ownership을 보강했고 local validation 및 PR CI check를 통과했다. | PR #223 Draft; human review/approval/merge pending |
+| Pass | destructive prune boundary, unknown source fail-closed behavior와 별도 Skill ownership을 보강했고 local validation 및 delivery head CI check를 통과했다. | PR #223 Draft; human review/approval/merge pending |
