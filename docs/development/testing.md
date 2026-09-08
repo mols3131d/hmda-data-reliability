@@ -107,9 +107,9 @@ Markdown formatting은 `rumdl fmt`를 현재 changed Markdown 전체에 대해 C
 
 `memory`와 `stress`는 test level을 대체하지 않는 resource marker다. 해당 contract를 검증하는 test의 primary level marker와 함께 사용할 수 있다.
 
-| Resource marker | Best for |
+| Marker | Usage |
 | --- | --- |
-| `memory` | 대표 input의 process memory-budget contract를 검증할 때 |
+| `memory` | 대표 input에서 process memory-budget contract를 검증할 때 |
 | `stress` | 의도적으로 고비용인 worst-case resource behavior를 검증할 때 |
 
 ```bash
@@ -207,5 +207,5 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 - [Continuous Integration](ci.md): `main` merge admission과 CI validation responsibility
 - [Test Design](test-design.md): requirement를 scenario와 oracle로 바꾸는 방법
 - [`tests/AGENTS.md`](../../tests/AGENTS.md): `tests/` 파일을 수정할 때의 agent context
-- [`pyproject.toml`](../../pyproject.toml): pytest defaults와 marker 등록
+- [`pyproject.toml`](../../pyproject.toml): pytest correctness/safety defaults와 marker 등록
 - [`lefthook.yml`](../../lefthook.yml): commit/push 실행 정책
