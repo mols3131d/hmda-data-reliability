@@ -1,10 +1,12 @@
 ---
 type: review
 title: <title>
-description: <검토 대상, 범위와 핵심 결과를 한 문장으로 설명한다.>
-status: "<pending | in_progress | completed | blocked>"
-# OPTIONAL: 필요한 경우에만 유지한다.
+description: <검토 대상과 검토 목적을 한 문장으로 설명한다.>
+# OPTIONAL: 검색·회수에 실제 도움이 되는 분류만 유지한다.
 tags:
+  - "domain:<domain>"
+  - "subdomain:<subdomain>"
+  - "capability:<capability>"
   - "<tag>"
 ---
 
@@ -15,7 +17,7 @@ tags:
 
 | Target | Revision | Scope |
 | --- | --- | --- |
-| [<target>](<link>) | `<revision>` | <실제로 검토한 범위> |
+| <linked target> | `<revision>` | <실제로 검토한 범위> |
 
 ## Findings
 
@@ -33,7 +35,7 @@ tags:
 
 #### Locations
 
-- [<file or artifact>](<path-or-url>)
+- <linked file or artifact>
   - `<symbol, test, requirement 또는 section>`
 
 #### Evidence
