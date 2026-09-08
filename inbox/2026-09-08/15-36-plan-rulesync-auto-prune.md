@@ -33,6 +33,29 @@ tags:
 - Base: `origin/main` at `6340fe4fc7f671f7d6ae3a67dbe921a956de1111`
 - PR-first: 이 artifact를 initial commit으로 게시한 뒤 Draft PR을 생성한다.
 
+## Research
+
+- `scripts/rulesync.py`는 Rulesync `generate`를 직접 호출하며, `install/update`도 내부에서 같은 generate 경로를 재사용한다.
+- repository generated Skill roots는 `.agents/skills`, `.claude/skills`, `.github/skills`다. 각 root의 직접 자식 중 `SKILL.md`를 가진 실제 directory만 prune 후보로 본다.
+- 보존 이름은 canonical local `.rulesync/skills/<name>/SKILL.md`(외부 curated subtree 제외), `rulesync.jsonc` source skill names와 `rulesync.lock` source skill keys의 union으로 계산한다.
+- name 비교는 target filesystem 차이를 고려해 case-insensitive로 한다. symlink와 `SKILL.md`가 없는 directory는 보존한다.
+- `preview`와 `check`는 inspection-oriented public action이므로 prune하지 않는다. generate가 실패하면 after-prune도 실행하지 않는다.
+- Current Rulesync documentation도 `generate --delete`를 설명하지만, 이 작업은 version-sensitive CLI flag에 의존하지 않고 repository가 소유한 narrow target-root boundary를 유지한다.
+
+## Plan
+
+- `generate` 호출 전 stale 후보를 관찰하고 호출 후 다시 관찰한다.
+- generate 성공 시 두 관찰 결과의 union만 삭제한다. generate failure, unreadable config/lock/source 또는 symlink boundary에서는 삭제하지 않는다.
+- 기존 `_sync_sources`, Claude bridge와 `_validate` return-code ordering은 유지한다.
+
+## Test Matrix
+
+- stale Skill directory는 세 generated roots에서 제거된다.
+- local/config/lock에 선언된 Skill은 보존된다.
+- non-Skill directory와 symlink는 보존된다.
+- generate failure에서는 stale directory가 보존되고 failure code가 전달된다.
+- generate 전후 detection과 `install/update → generate` forwarding 순서를 검증한다.
+
 ## Acceptance
 
 - configured target Skill directory는 보존한다.
