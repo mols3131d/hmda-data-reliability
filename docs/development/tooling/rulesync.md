@@ -71,3 +71,18 @@ Repository wrapper가 Rulesync와 Skills CLI의 package invocation을 소유하�
 일반 작업 시작에는 [Bootstrap](bootstrap.md)의 `session`을 사용해 현재 lock 상태를 복원한다. External source를 실제로 갱신하려는 경우에만 `bootstrap.py update` 또는 `agent_assets.py update`를 사용한다.
 
 `skills-lock.json`이 없으면 repository script는 Skills CLI 단계를 건너뛴다. Skills CLI는 Rulesync의 대체 관리 경로가 아니라 **Rulesync로 관리하지 않는 agentskills.io 호환 external Skill만 보완하는 경로**다.
+
+## Stale Projection Review
+
+Rulesync는 소스 선언을 기반으로 대상 파일들을 덮어쓰는(overwrite) 방식으로 동작하며, `rulesync.jsonc`에서 제거된 이전 스킬 디렉터리를 자동으로 삭제하지 않는다.
+
+또한 `.agents/skills`, `.claude/skills` 등의 타깃 경로는 Rulesync뿐 아니라 **OpenSpec CLI(`openspec-*`), Skills CLI 등 다양한 에이전트 도구가 함께 사용하는 공유 네임스페이스**다. 따라서 디렉터리 전체를 임의로 초기화하거나 일괄 삭제해서는 안 되며, 스킬 제거 시 다음과 같이 검토하고 선별 정리한다.
+
+1. **제거 대상 확인**: `rulesync.jsonc` 또는 `rulesync.lock`에서 제거한 스킬 이름을 확인한다.
+1. **타 도구 스킬 보존**: OpenSpec CLI 소유 스킬(`.openspec-target` 및 `openspec-*`), Skills CLI 소유 스킬(`skills-lock.json`)은 건드리지 않는다.
+1. **선별 삭제**: Rulesync에서 제거된 특정 스킬 디렉터리만 명시적으로 삭제한다.
+
+```bash
+# 예시: 특정 스킬(removed-skill)만 선별 삭제
+rm -rf .agents/skills/<removed-skill> .claude/skills/<removed-skill> .github/skills/<removed-skill>
+```

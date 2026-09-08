@@ -85,3 +85,28 @@ def test_rulesync_wrapper_forwards_package_binary_and_args(
     assert calls == [
         ("rulesync@latest", "rulesync", ("generate", "--check"), REPO_ROOT)
     ]
+
+
+@pytest.mark.unit
+def test_rulesync_generate_emits_stale_projection_notice(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Rulesync generate prints stale projection review notice to stderr."""
+    commands = ModuleType("_commands")
+    commands.__dict__["run_npm_exec"] = lambda *_args, **_kwargs: 0
+    namespace = _load_script(monkeypatch, "rulesync.py", commands)
+
+    monkeypatch.setattr(
+        namespace["_write_claude_bridges"],
+        "__code__",
+        (lambda: None).__code__,
+    )
+    monkeypatch.setattr(sys, "argv", ["rulesync.py", "generate"])
+
+    main = cast(Callable[[], int], namespace["main"])
+    assert main() == 0
+
+    captured = capsys.readouterr()
+    assert "Rulesync preserves existing projections on generate" in captured.err
+    assert "review and prune stale target directories manually" in captured.err
