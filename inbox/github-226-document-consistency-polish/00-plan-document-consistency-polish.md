@@ -1,18 +1,19 @@
 ---
 type: plan
-title: "Core Documentation Consistency Plan"
-description: "Use when coordinating PR #226 scope, document ownership, inspection order, and completion criteria."
+title: "Core Documentation Consistency and Readability Plan"
+description: "Use when coordinating PR #226 scope, ownership, four-stage execution order, and completion criteria."
 tags:
   - consistency
   - documentation
   - maintenance
+  - readability
 ---
 
-# Core Documentation Consistency Plan
+# Core Documentation Consistency and Readability Plan
 
 ## Goal
 
-PR #226은 핵심 문서가 같은 프로젝트를 서로 다른 책임 수준에서 일관되게 설명하도록 정리한다. 장기 방향, 현재 MVP, architecture, 개발 환경의 canonical ownership은 유지하고, 실제 의미 충돌·용어 불일치·불필요한 중복·읽기 비용이 확인된 부분만 최소 범위로 수정한다.
+PR #226은 핵심 문서가 같은 프로젝트를 서로 다른 책임 수준에서 일관되게 설명하도록 정리한 뒤, 그 의미를 보존하면서 가독성을 개선한다. 장기 방향, 현재 MVP, architecture, 개발 환경의 canonical ownership은 유지하고 실제 의미 충돌·용어 불일치·불필요한 중복·읽기 비용이 확인된 부분만 최소 범위로 수정한다.
 
 새로운 제품 요구사항이나 capability contract를 만드는 작업이 아니다. 현재 capability의 normative contract는 계속 `openspec/specs/**`, 실제 구현 상태는 source와 configuration이 소유한다.
 
@@ -25,15 +26,19 @@ PR #226은 핵심 문서가 같은 프로젝트를 서로 다른 책임 수준�
 - `ARCHITECTURE.md`에 exact capability requirement를 복제하지 않는다.
 - `README.md`와 `DEVELOPMENT.md`는 진입점과 개발 context에 필요한 수준만 유지한다.
 - 문서 정리를 이유로 source, test, OpenSpec, workflow 또는 unrelated Inbox artifact를 변경하지 않는다.
+- 정합성 수정과 readability-only edit를 같은 단계에서 섞지 않는다.
+- 가독성보다 semantic fidelity와 canonical ownership을 우선한다.
 
 ## Execution Model
 
-전체 문서를 한 번에 수정하지 않는다. 실제 실행 순서, folder별 done gate, cross-folder queue와 최종 logical validation은 [`02-plan-folder-and-logical-validation-todo.md`](02-plan-folder-and-logical-validation-todo.md)를 따른다.
+실제 실행 순서와 folder별 checklist는 [`02-plan-folder-and-logical-validation-todo.md`](02-plan-folder-and-logical-validation-todo.md)를 따른다. 작업은 다음 네 단계를 순서대로 완료한다.
 
-- 한 번에 하나의 folder unit만 writable scope로 둔다.
-- 현재 folder를 완료하고 검증한 뒤에만 다음 unit으로 이동한다.
-- 다른 folder의 독립 문제는 즉시 수정하지 않고 queue에 남긴다.
-- folder 작업이 모두 끝나면 data flow, recovery authority, AI delegation, development workflow처럼 의미 단위로 다시 검증한다.
+1. **Consistency Review** — folder 단위로 정합성 문제와 protected non-finding을 확인한다. 원칙적으로 canonical 문서를 수정하지 않는다.
+1. **Consistency Improvement** — Stage 1에서 확정된 finding만 folder 단위로 수정하고 logical unit별로 다시 검증한다. 완료 시점의 의미를 semantic baseline으로 고정한다.
+1. **Readability Polish** — semantic baseline을 변경하지 않고 정보 구조, navigation, 문장과 Markdown 표현만 다듬는다.
+1. **Integrity Review** — Stage 2 semantic baseline과 Stage 3 결과를 비교해 의미·계약·권한·조건이 파괴되지 않았는지 검증한다.
+
+각 단계 안에서도 한 번에 하나의 folder unit만 다룬다. 현재 folder gate를 닫기 전에는 다음 folder로 이동하지 않고, 다른 folder의 독립 문제는 `Cross-Folder Queue`에 기록한다.
 
 ## Target Set
 
@@ -45,18 +50,7 @@ PR #226은 핵심 문서가 같은 프로젝트를 서로 다른 책임 수준�
 | [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) | execution boundary, recovery abstraction과 domain terminology |
 | [`DEVELOPMENT.md`](../../DEVELOPMENT.md) | active tool/layer naming과 architecture 표현의 정합성 |
 
-위 핵심 문서를 중심축으로 유지하되 실제 정합성 검증은 checklist의 folder unit에 따라 `docs/**` human documentation을 단계적으로 확인한다. `docs/domains/**`, `docs/development/**` 등은 해당 unit 차례에만 writable scope가 되며, OpenSpec, source와 test는 supporting evidence로만 사용한다.
-
-## Work Sequence
-
-1. 각 반복 개념의 canonical owner와 abstraction level을 고정한다.
-1. 현재 folder unit 안에서 같은 개념을 표현하는 용어와 boundary를 비교한다.
-1. 실제 contradiction, 누락된 mapping, 의도적인 abstraction 차이, 단순 prose 문제를 구분한다.
-1. 독자의 판단을 바꾸는 문제만 가장 작은 coherent edit로 수정한다.
-1. 해당 folder의 done gate를 통과하고 cross-folder candidate를 queue에 기록한다.
-1. 모든 folder unit 완료 후 logical validation checklist로 cross-document consistency를 다시 검증한다.
-1. 수정 후 관련 owner와 다시 대조하고 changed Markdown에 repository-owned validation을 적용한다.
-1. PR description에는 최종 변화와 실제 validation 결과만 반영하고 상세 작업 과정은 Inbox artifact에 남긴다.
+`docs/**`의 다른 human-authored 문서는 folder unit별 검토에서 관련성이 확인되면 동일한 네 단계에 포함한다. `docs/domains/**`, `openspec/specs/**`, source와 test는 문서 표현이 실제 owner와 맞는지 확인하는 supporting evidence로 읽을 수 있지만, 별도 scope가 확인되기 전에는 구현·contract 수정 대상으로 확장하지 않는다.
 
 ## Acceptance
 
@@ -64,8 +58,9 @@ PR #226은 핵심 문서가 같은 프로젝트를 서로 다른 책임 수준�
 - 서로 다른 layer naming을 유지해야 한다면 대응 관계를 독자가 별도 추론 없이 이해할 수 있다.
 - recovery와 AI delegation 설명은 문서별 abstraction을 지키며 concrete contract를 잘못 일반화하지 않는다.
 - canonical owner가 분명한 반복 설명은 필요한 맥락만 남기고 재정의하지 않는다.
-- 의미를 바꾸지 않는 prose 다듬기는 중요한 조건·예외·관계를 보존한다.
-- 각 folder unit의 완료가 독립적으로 검증되고, 마지막 logical validation에서 cross-folder contradiction이 남지 않는다.
+- 정합성 개선은 Stage 1에서 확인된 문제에 근거하고 logical validation을 통과한다.
+- 가독성 개선은 Stage 2 semantic baseline의 사실, 관계, 조건, 예외와 authority를 보존한다.
+- Stage 4에서 readability edit로 인한 semantic regression이 없음을 다시 검증한다.
 - 변경된 문서의 Markdown, link, metadata와 repository-specific validation 결과가 확인된다.
 
 ## Out of Scope
@@ -74,4 +69,4 @@ PR #226은 핵심 문서가 같은 프로젝트를 서로 다른 책임 수준�
 - OpenSpec requirement 추가·수정
 - 새로운 architecture 또는 delegation policy 결정
 - 완료 여부, roadmap 또는 dashboard 갱신
-- 이번 정합성 작업과 직접 연결되지 않은 문서 전면 rewrite
+- 이번 정합성·가독성 작업과 직접 연결되지 않은 문서 전면 rewrite
