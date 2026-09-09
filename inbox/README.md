@@ -13,7 +13,7 @@ inbox/github-230-inbox-github-work-directories/
 
 같은 디렉터리 안에서는 file과 bundle을 함께 순서대로 두고, 새 항목은 가장 큰 번호 다음으로 이어 쓴다. GitHub work unit에 속하지 않는 작업은 기존처럼 `inbox/YYYY-MM-DD/` 아래에 둔다.
 
-이 README는 사람이 Inbox 구조를 빠르게 파악하기 위한 안내서다. Agent가 따라야 하는 세부 contract는 [`AGENTS.md`](AGENTS.md)에 둔다.
+이 README는 사람이 Inbox 구조를 빠르게 파악하기 위한 안내서다. Agent용 세부 contract는 [`AGENTS.md`](AGENTS.md)에 둔다.
 
 내용은 필요할 때 직접 찾고 확인한다. 이 README는 artifact index나 project status projection으로 갱신하지 않는다.
 
