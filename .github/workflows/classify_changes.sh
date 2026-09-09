@@ -123,6 +123,43 @@ is_valid_openspec_name() {
   [[ "$1" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]
 }
 
+add_related_openspec_changes() {
+  local capability="$1"
+  local change_dir
+  local change
+  local related_path
+
+  if [[ ! -d openspec/changes || -L openspec/changes ]]; then
+    mark_full_test_scope
+    return
+  fi
+
+  for change_dir in openspec/changes/*; do
+    [[ -e "$change_dir" || -L "$change_dir" ]] || continue
+    if [[ -L "$change_dir" ]]; then
+      mark_full_test_scope
+      continue
+    fi
+    [[ -d "$change_dir" ]] || continue
+
+    change="${change_dir##*/}"
+    [[ "$change" == archive ]] && continue
+    related_path="$change_dir/specs/$capability"
+
+    if [[ -L "$related_path" ]]; then
+      mark_full_test_scope
+    elif [[ -e "$related_path" && ! -d "$related_path" ]]; then
+      mark_full_test_scope
+    elif [[ -d "$related_path" ]]; then
+      if is_valid_openspec_name "$change"; then
+        add_openspec_change_name "$change"
+      else
+        mark_full_test_scope
+      fi
+    fi
+  done
+}
+
 add_openspec_spec_target() {
   local capability="$1"
 
@@ -157,6 +194,8 @@ add_openspec_spec_target() {
       mark_full_test_scope
       ;;
   esac
+
+  [[ "$openspec_bulk" == true ]] || add_related_openspec_changes "$capability"
 }
 
 add_domain_target() {

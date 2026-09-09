@@ -396,3 +396,35 @@ def test_dependency_changes_request_runtime_boundary_smoke(
     assert out["runtime_smoke"] == "true"
     assert out["full_unit"] == "true"
     assert out["full_type"] == "true"
+
+
+@pytest.mark.unit
+def test_canonical_spec_selects_direct_active_change_validation() -> None:
+    """Canonical Spec 변경은 같은 capability의 active Change도 검증한다."""
+    out = run_classifier(["openspec/specs/orchestration-pipeline/spec.md"])
+
+    assert out["openspec_spec_targets"].strip() == "orchestration-pipeline"
+    assert out["openspec_change_targets"].strip() == "orchestration-quality-gate"
+
+
+@pytest.mark.unit
+def test_canonical_spec_without_active_delta_keeps_change_targets_empty() -> None:
+    """직접 연결된 active Change가 없으면 affected Spec만 유지한다."""
+    out = run_classifier(["openspec/specs/reliability-data-contracts/spec.md"])
+
+    assert out["openspec_spec_targets"].strip() == "reliability-data-contracts"
+    assert out["openspec_change_targets"].strip() == ""
+
+
+@pytest.mark.unit
+def test_mixed_canonical_spec_and_active_change_preserves_both_targets() -> None:
+    """같은 change set의 Spec와 active Change target을 모두 중복 없이 보존한다."""
+    out = run_classifier(
+        [
+            "openspec/specs/orchestration-pipeline/spec.md",
+            "openspec/changes/orchestration-quality-gate/proposal.md",
+        ]
+    )
+
+    assert out["openspec_spec_targets"].strip() == "orchestration-pipeline"
+    assert out["openspec_change_targets"].strip() == "orchestration-quality-gate"
