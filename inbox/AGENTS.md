@@ -40,20 +40,29 @@ tags: [] # Optional
 ---
 ```
 
-`type`, `title`, `description`은 required이며 filename과 frontmatter의 type은 같아야 한다.
+`type`, `title`, `description`은 required다. 날짜 기반 artifact는 filename의 type과 frontmatter의 type이 같아야 한다. GitHub work unit에서는 filename의 type component를 생략할 수 있다.
 
 GitHub Issue 또는 Pull Request와 직접 연결된 작업은 해당 GitHub work unit을 하나의 디렉터리로 묶는다.
 
 ```text
-inbox/github-<number>-<short-name>/<NN>-<type>-<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>].md
-inbox/github-<number>-<short-name>/<NN>-<type>-<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]/*
+inbox/github-<number>-<short-name>/<NN>-[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>].md
+inbox/github-<number>-<short-name>/<NN>-[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]/*
+```
+
+파일 또는 bundle 이름에서 sequence 뒤의 naming core는 다음과 같다.
+
+```text
+[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]
 ```
 
 - `number`는 이 repository의 GitHub Issue 또는 Pull Request number다.
 - `short-name`은 work unit을 식별하는 짧은 lowercase kebab-case 이름이다.
-- `NN`은 `00`부터 시작하는 two-digit zero-padded sequence다. 새 top-level artifact 또는 bundle에는 현재 디렉터리에서 다음 사용 가능한 번호를 사용한다.
-- Sequence는 artifact의 읽기·진행 순서를 표현한다. 기존 번호를 다시 매기지 않으며 삭제나 정리로 생긴 gap은 허용한다.
+- `NN`은 `00`부터 시작하는 two-digit zero-padded sequence다.
+- 디렉터리가 비어 있으면 첫 top-level artifact 또는 bundle은 `00`을 사용한다. 이후 새 항목은 항상 현재 존재하는 가장 큰 sequence 값에 `1`을 더한 번호를 사용한다.
+- Sequence gap을 채우지 않는다. 예를 들어 `01`, `03`이 존재하면 다음 신규 항목은 `04`이며 `02`를 새로 만드는 것은 invalid다.
+- 기존 artifact 또는 bundle을 수정할 때는 기존 sequence를 유지한다. 삭제나 과거 정리로 생긴 gap도 다시 사용하지 않는다.
 - File과 bundle은 같은 sequence namespace를 공유한다. `00-00-...` 같은 추가 sequence level을 만들지 않고 세부 산출물은 bundle 내부 구조로 관리한다.
+- `type` component는 optional이다. 포함하면 frontmatter의 `type`과 같은 값을 사용하고, 생략해도 frontmatter의 `type`은 required다.
 - `github-<number>-<short-name>`은 work unit 식별자일 뿐 owning ref나 authority를 바꾸지 않는다. Artifact ownership은 `Boundary`의 change-unit 규칙을 그대로 따른다.
 
 특정 GitHub Issue 또는 Pull Request에 속하지 않는 작업은 날짜와 시각 기반 경로를 사용한다.
