@@ -15,7 +15,11 @@ tags:
 
 # Architecture: Local HMDA Reliability Pipeline
 
-**핵심 경계는 신뢰되지 않은 데이터의 분석 계층 진입 차단과 위험한 상태 변경의 분리다.** 로컬 HMDA 데이터를 DuckDB Bronze에 적재하고 dbt가 소비할 전체 Bronze 파티션이 read-only quality gate를 통과한 경우에만 Silver·Gold를 만든다. Analytics build는 database mutation lock 안에서 gate를 다시 확인한 뒤 같은 lock을 유지한 채 dbt를 시작한다. Reliability lifecycle은 raw table과 dbt artifact를 읽어 incident evidence와 `RemediationDraft`를 계산하지만, 상태 변경은 검증된 recovery proposal에 대한 외부 승인 뒤 별도 recovery API에서만 수행한다.
+**핵심 경계는 신뢰되지 않은 데이터의 분석 계층 진입 차단과 위험한 상태 변경의 분리다.**
+
+로컬 HMDA 데이터를 DuckDB Bronze에 적재하고 dbt가 소비할 전체 Bronze 파티션이 read-only quality gate를 통과한 경우에만 Silver·Gold를 만든다. Analytics build는 database mutation lock 안에서 gate를 다시 확인한 뒤 같은 lock을 유지한 채 dbt를 시작한다.
+
+Reliability lifecycle은 raw table과 dbt artifact를 읽어 incident evidence와 `RemediationDraft`를 계산하지만, 상태 변경은 검증된 recovery proposal에 대한 외부 승인 뒤 별도 recovery API에서만 수행한다.
 
 ## System Flow
 
@@ -57,7 +61,9 @@ flowchart TB
     approval -->|authorize same proposal| recovery
 ```
 
-`RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Review AI output도 approval 또는 Reliability truth가 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다. Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
+`RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Review AI output도 approval 또는 Reliability truth가 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다.
+
+Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
 
 ## Execution Boundaries
 
