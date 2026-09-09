@@ -1,7 +1,7 @@
 ---
 type: status
 title: "Mols Loops Run Status"
-description: "Use when resuming PR #226 after a session boundary; records the active mols-loops scope, validated progress, current stage, and next transition."
+description: "Use when resuming PR #226 after a session boundary; records the completed mols-loops scope, validated outcome, and terminal state."
 tags:
   - documentation
   - loops
@@ -10,7 +10,7 @@ tags:
 
 # Mols Loops Run Status
 
-이 artifact는 PR #226 작업 재개용 checkpoint다. Detailed findings, fixes와 review는 sibling artifact를 참조하고 여기서는 마지막으로 검증된 진행 상태와 terminal transition만 유지한다.
+이 artifact는 PR #226 작업 재개용 terminal checkpoint다. Detailed findings, fixes와 review는 sibling artifact를 참조하고 여기서는 마지막으로 검증된 완료 상태를 유지한다.
 
 ## Active Scope
 
@@ -22,7 +22,7 @@ tags:
 ## Orchestration
 
 - Orchestrator: `mols-loops`
-- Run state: **Finalize**
+- Terminal state: **COMPLETE**
 - Intensity: `standard`
 - Effective loop ceiling: default `30`
 - `loops_used`: `5`
@@ -36,7 +36,7 @@ Substantive outer Review checkpoint는 초기 F0/F1 reconciliation, Stage 1 fina
 - **Stage 2 — Consistency Improvement:** complete. C1–C3만 최소 수정하고 semantic baseline `bc0914b7db4061fcb0aa6b89769324abd40cbe06`을 고정했다.
 - **Stage 3 — Readability Polish:** complete. Canonical delta는 `docs/mvp.md` manual wrapping 제거, `docs/ARCHITECTURE.md` paragraph split, `docs/domains/README.md` link order 변경뿐이다.
 - **Stage 4 — Integrity Review:** complete. Material semantic regression, authority drift, lost contract distinction 또는 scope expansion finding 없음.
-- **CI evidence:** Stage 3 reviewed head `fa6c5eb13779eb39d5f388559350692e1cfe9402`의 CI Lite run #841 성공. Changed docs Markdown validation과 changed Inbox artifact validation step이 모두 success였다.
+- **CI evidence:** Stage 3 reviewed head `fa6c5eb13779eb39d5f388559350692e1cfe9402`의 CI Lite #841 성공. Terminal checkpoint 전 head `86c0198e6110a1ab11dee937d13afa028b6f0f0c`의 CI Lite #845도 성공했다.
 - **Generated index:** generator는 document path와 frontmatter `description`만 입력으로 사용한다. Authored doc path/frontmatter를 변경하지 않았으므로 이번 작업은 docs index projection input을 변경하지 않았다. Explicit generator execution은 별도로 수행하지 않았다.
 
 ## Confirmed Outcomes
@@ -45,6 +45,7 @@ Substantive outer Review checkpoint는 초기 F0/F1 reconciliation, Stage 1 fina
 - Domain entrypoint에 current Review AI와 Runtime AI guide를 복구했다.
 - Root Toolchain에서 LangGraph/remediation과 OpenAI SDK/runtime ownership을 바로잡았다.
 - Readability polish는 Stage 2 semantic baseline의 AI authority, approval, Airflow와 recovery contract boundary를 보존했다.
+- Final PR scope는 canonical docs 네 파일과 PR-specific Inbox artifacts로 제한됐으며 unrelated implementation/spec/test/dashboard/instruction surface는 변경하지 않았다.
 
 ## References
 
@@ -56,6 +57,6 @@ Substantive outer Review checkpoint는 초기 F0/F1 reconciliation, Stage 1 fina
 - `06-report-stage3-readability-polish.md`
 - `07-review-stage4-integrity.md`
 
-## Next Transition
+## Terminal Handoff
 
-`mols-loops` Finalize의 남은 action은 **이 status checkpoint가 포함된 current PR head의 CI Lite 재확인과 PR description 동기화**뿐이다. Canonical documentation 작업과 네 단계 review는 완료됐으며 새 finding이 없으면 추가 edit를 만들지 않는다.
+`mols-loops` Run은 **COMPLETE**다. 이 PR에서 추가 canonical edit를 자동으로 이어가지 않는다. 다음 repository transition은 Draft PR #226의 인간 검토이며 Ready 전환, merge 또는 후속 scope 확장은 별도 명시적 요청이 필요하다.
