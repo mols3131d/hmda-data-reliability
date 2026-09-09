@@ -18,8 +18,7 @@ tags:
 
 # MVP
 
-> **Active goal:** 로컬 HMDA 데이터로 최소 Data Lake를 end-to-end로 실행하고,
-> 그 위에서 evidence-first Reliability와 제한된 Agentic review가 안전하게 동작함을 증명한다.
+> **Active goal:** 로컬 HMDA 데이터로 최소 Data Lake를 end-to-end로 실행하고, 그 위에서 evidence-first Reliability와 제한된 Agentic review가 안전하게 동작함을 증명한다.
 
 이 문서는 **현재 MVP의 목표, scope와 acceptance만 소유한다.** 현재 구현 상태, validation 결과와 blocker는 여기서 관리하지 않는다.
 
