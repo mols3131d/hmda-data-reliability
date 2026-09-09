@@ -127,10 +127,6 @@ def _artifact_root_for_changed_path(
         return repo_root / changed_path, changed_path.stem, sequenced
 
     bundle_name = parts[1]
-    pattern = SEQUENCED_ARTIFACT_RE if sequenced else TIMED_ARTIFACT_RE
-    if not pattern.fullmatch(bundle_name):
-        return None
-
     readme = repo_root / "inbox" / container / bundle_name / "README.md"
     if readme.is_file():
         return readme, bundle_name, sequenced
