@@ -44,6 +44,47 @@ def test_changed_standalone_artifact_passes(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_changed_github_work_artifact_passes(tmp_path: Path) -> None:
+    """GitHub work directory의 zero-padded sequence artifact를 검증한다."""
+    relative = Path(
+        "inbox/github-226-document-consistency-polish/00-review-consistency.md"
+    )
+    write_artifact(tmp_path / relative)
+
+    assert validate_changed_paths([relative.as_posix()], repo_root=tmp_path) == []
+
+
+@pytest.mark.unit
+def test_github_work_artifact_requires_two_digit_sequence(tmp_path: Path) -> None:
+    """GitHub work artifact는 two-digit sequence prefix를 사용해야 한다."""
+    relative = Path(
+        "inbox/github-226-document-consistency-polish/0-review-consistency.md"
+    )
+    write_artifact(tmp_path / relative)
+
+    errors = validate_changed_paths([relative.as_posix()], repo_root=tmp_path)
+
+    assert errors == [f"{tmp_path / relative}: artifact name must start with NN-"]
+
+
+@pytest.mark.unit
+def test_github_work_filename_type_mismatch_fails(tmp_path: Path) -> None:
+    """GitHub work sequence 뒤 filename type과 frontmatter type을 맞춘다."""
+    relative = Path(
+        "inbox/github-226-document-consistency-polish/02-review-consistency.md"
+    )
+    write_artifact(tmp_path / relative, artifact_type="research")
+
+    errors = validate_changed_paths([relative.as_posix()], repo_root=tmp_path)
+
+    expected = (
+        f"{tmp_path / relative}: artifact name must start with '02-research-' "
+        "to match frontmatter type"
+    )
+    assert errors == [expected]
+
+
+@pytest.mark.unit
 def test_missing_required_frontmatter_fails(tmp_path: Path) -> None:
     """Required frontmatter 누락은 changed artifact에서 실패한다."""
     relative = Path("inbox/2026-09-07/09-30-review-ci-check.md")
@@ -80,6 +121,24 @@ def test_filename_type_mismatch_fails(tmp_path: Path) -> None:
 def test_changed_bundle_member_validates_bundle_readme(tmp_path: Path) -> None:
     """Bundle 내부 변경은 해당 active bundle의 README root만 검증한다."""
     bundle = Path("inbox/2026-09-07/09-30-discuss-ci-policy")
+    readme = tmp_path / bundle / "README.md"
+    write_artifact(readme, artifact_type="discuss", description="")
+    turn = tmp_path / bundle / "turns/001-a.md"
+    turn.parent.mkdir(parents=True)
+    turn.write_text("# Turn\n", encoding="utf-8")
+
+    changed = (bundle / "turns/001-a.md").as_posix()
+    errors = validate_changed_paths([changed], repo_root=tmp_path)
+
+    assert errors == [
+        f"{readme}: required frontmatter field 'description' is missing or empty"
+    ]
+
+
+@pytest.mark.unit
+def test_changed_github_bundle_member_validates_bundle_readme(tmp_path: Path) -> None:
+    """GitHub work bundle 내부 변경도 sequence root의 README를 검증한다."""
+    bundle = Path("inbox/github-226-document-consistency-polish/03-discuss-ci-policy")
     readme = tmp_path / bundle / "README.md"
     write_artifact(readme, artifact_type="discuss", description="")
     turn = tmp_path / bundle / "turns/001-a.md"
