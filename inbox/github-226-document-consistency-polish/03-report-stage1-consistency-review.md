@@ -79,13 +79,46 @@ Protected non-findings:
 - `language.md`는 current Markdown/documentation surface와 충돌하지 않는다.
 - Airflow를 data-plane orchestration으로 제한하는 설명은 `mvp.md`와 `ARCHITECTURE.md`가 일치한다.
 
-Next: F2 `docs/domains/`.
+## F2 — `docs/domains/`
+
+Status: **Complete — one material finding**
+
+Reviewed:
+
+- `docs/domains/README.md`
+- `docs/domains/OVERVIEW.md`
+- `docs/domains/hmda-data.md`
+- `docs/domains/data-platform.md`
+- `docs/domains/data-operations.md`
+- `docs/domains/reliability.md`
+- `docs/domains/review-ai.md`
+- `docs/domains/runtime-ai.md`
+- `docs/domains/orchestration.md`
+
+Confirmed finding:
+
+### C2 — Domain entrypoint omits current Review AI and Runtime AI guides
+
+`docs/domains/README.md`는 directory entrypoint이지만 목록에 `Review AI`와 `Runtime AI`를 포함하지 않는다. 같은 directory의 `OVERVIEW.md`, Architecture와 MVP domain map은 두 domain을 현재 ownership map에 포함한다. README의 역할이 navigation이므로 이는 current domain surface를 불완전하게 제시하는 navigation/consistency drift다.
+
+Stage 2에서는 `docs/domains/README.md`의 navigation list에 두 guide만 추가한다. `OVERVIEW.md`의 ownership map을 README에 복제하지 않는다.
+
+Protected non-findings:
+
+- `data_operations`의 application call boundary와 `orchestration`의 full data-plane ordering은 서로 다른 responsibility이며 충돌하지 않는다.
+- Reliability가 recovery/evaluation semantics를 소유하고 Orchestration이 reliability lifecycle/recovery/evaluation을 DAG에서 제외하는 설명은 일치한다.
+- Review AI가 review semantics/provenance를, Runtime AI가 provider mechanics를 소유하는 dependency boundary는 Architecture와 일치한다.
+- HMDA Data와 Orchestration에서 `Silver / Gold`를 사용하고 Data Platform에서 staging/mart object를 사용하는 것은 F1에서 확인한 abstraction mapping의 일부이며 contradiction이 아니다.
+- Reliability guide는 generic recovery 원칙과 concrete `RecoveryProposal` / `SchemaRecoveryProposal` 계열을 명시적으로 구분하므로 C1의 fixing evidence로 사용한다.
+
+Next: F3 `docs/development/ai-agent/`.
 
 ## Confirmed Findings
 
 | ID | Owner / target | Finding | Planned Stage 2 action |
 | --- | --- | --- | --- |
 | C1 | `docs/mvp.md` | Generic recovery concept가 concrete `RecoveryProposal` type으로 과도하게 표현됨 | recovery-wide 문구만 generic validated recovery proposal로 최소 정리 |
+| C2 | `docs/domains/README.md` | Current domain entrypoint에서 Review AI와 Runtime AI guide 누락 | navigation list에 두 guide만 추가 |
 
 ## Cross-Folder Queue
 
