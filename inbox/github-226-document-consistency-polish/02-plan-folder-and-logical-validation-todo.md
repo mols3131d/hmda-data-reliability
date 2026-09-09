@@ -213,7 +213,7 @@ Targets:
 Todo:
 
 - [ ] human-facing Skill documentation entrypoint가 실제 Skill runtime contract를 복제하지 않는지 확인한다.
-- [ ] repository에서 Skill을 찾고 사용하는 다음 경로가 현재 routing/tooling과 맞는지 확인한다.
+- [ ] repository에서 Skill을 찾고 사용하는 다음 경로가 current routing/tooling과 맞는지 확인한다.
 - [ ] 별도 README가 필요한 responsibility를 실제로 갖는지 확인한다.
 - [ ] `Folder Done Gate`를 통과한다.
 
