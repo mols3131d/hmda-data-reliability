@@ -47,7 +47,45 @@ Protected non-findings:
 - README와 세부 policy 사이의 짧은 요약·link는 navigation context이며 competing source of truth로 보지 않는다.
 - generated `INDEX.tsv` 언급은 ownership boundary 설명이며 중복 policy가 아니다.
 
-Next: F1 `docs/` root documents.
+## F1 — `docs/` Root Documents
+
+Status: **Complete — one material finding**
+
+Reviewed:
+
+- `docs/README.md`
+- `docs/VISION.md`
+- `docs/mvp.md`
+- `docs/ARCHITECTURE.md`
+- `docs/language.md`
+- supporting `docs/AGENTS.md`
+- supporting `DEVELOPMENT.md`
+- supporting `docs/domains/data-platform.md`
+- supporting Reliability contract/source evidence
+
+Confirmed finding:
+
+### C1 — MVP overuses concrete `RecoveryProposal` as the generic recovery proposal concept
+
+`docs/mvp.md`의 System Proof, invariant와 Scope 일부는 recovery 전체의 승인 대상을 concrete `RecoveryProposal` 타입으로 표현한다. 그러나 `docs/ARCHITECTURE.md`, `docs/domains/reliability.md`와 implementation은 partition/freshness용 `RecoveryProposal`과 schema/table용 `SchemaRecoveryProposal`을 별도 contract 계열로 유지한다.
+
+MVP는 current goal/scope/acceptance owner이지 exact contract type owner가 아니므로, recovery scope 전체를 설명하는 위치에서는 generic `validated recovery proposal` 수준으로 표현하고 concrete type을 하나로 일반화하지 않는 편이 owning boundary와 일치한다. Stage 2에서는 `mvp.md` 안에서 이 추상화 drift만 최소 수정한다.
+
+Protected non-findings:
+
+- `Silver / Gold`와 `dbt staging / marts`는 서로 모순된 layer 정의가 아니다. `DEVELOPMENT.md`가 `Silver / Gold`의 책임을 staging/mart로 명시하고 `docs/domains/data-platform.md`도 dbt Bronze-to-Gold 구조 안에서 staging/mart object를 설명한다. 필요하면 Stage 3 readability에서 mapping을 더 쉽게 보이게 할 수 있지만 Stage 2 consistency fix는 요구하지 않는다.
+- `VISION.md`의 장기 delegation 확대 가능성과 `mvp.md`의 advisory-only Agentic boundary는 lifecycle/abstraction 차이다. 현재 MVP가 장기 vision을 위반하지 않는다.
+- `docs/README.md`는 navigation과 ownership summary에 머물고 capability contract를 재정의하지 않는다.
+- `language.md`는 current Markdown/documentation surface와 충돌하지 않는다.
+- Airflow를 data-plane orchestration으로 제한하는 설명은 `mvp.md`와 `ARCHITECTURE.md`가 일치한다.
+
+Next: F2 `docs/domains/`.
+
+## Confirmed Findings
+
+| ID | Owner / target | Finding | Planned Stage 2 action |
+| --- | --- | --- | --- |
+| C1 | `docs/mvp.md` | Generic recovery concept가 concrete `RecoveryProposal` type으로 과도하게 표현됨 | recovery-wide 문구만 generic validated recovery proposal로 최소 정리 |
 
 ## Cross-Folder Queue
 
