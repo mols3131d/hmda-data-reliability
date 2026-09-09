@@ -63,11 +63,14 @@ def test_github_work_artifact_with_type_passes(tmp_path: Path) -> None:
     )
     write_artifact(tmp_path / relative)
 
-    assert validate_changed_paths(
-        [relative.as_posix()],
-        repo_root=tmp_path,
-        added_paths=[relative.as_posix()],
-    ) == []
+    assert (
+        validate_changed_paths(
+            [relative.as_posix()],
+            repo_root=tmp_path,
+            added_paths=[relative.as_posix()],
+        )
+        == []
+    )
 
 
 @pytest.mark.unit
@@ -78,11 +81,14 @@ def test_github_work_artifact_without_type_passes(tmp_path: Path) -> None:
     )
     write_artifact(tmp_path / relative, artifact_type="plan")
 
-    assert validate_changed_paths(
-        [relative.as_posix()],
-        repo_root=tmp_path,
-        added_paths=[relative.as_posix()],
-    ) == []
+    assert (
+        validate_changed_paths(
+            [relative.as_posix()],
+            repo_root=tmp_path,
+            added_paths=[relative.as_posix()],
+        )
+        == []
+    )
 
 
 @pytest.mark.unit
@@ -128,11 +134,14 @@ def test_new_github_sequence_maximum_plus_one_passes(tmp_path: Path) -> None:
     added = container / "04-plan-next.md"
     write_artifact(tmp_path / added, artifact_type="plan")
 
-    assert validate_changed_paths(
-        [added.as_posix()],
-        repo_root=tmp_path,
-        added_paths=[added.as_posix()],
-    ) == []
+    assert (
+        validate_changed_paths(
+            [added.as_posix()],
+            repo_root=tmp_path,
+            added_paths=[added.as_posix()],
+        )
+        == []
+    )
 
 
 @pytest.mark.unit
@@ -146,11 +155,14 @@ def test_multiple_new_github_sequences_are_consecutive(tmp_path: Path) -> None:
     write_artifact(tmp_path / second, artifact_type="report")
 
     paths = [first.as_posix(), second.as_posix()]
-    assert validate_changed_paths(
-        paths,
-        repo_root=tmp_path,
-        added_paths=paths,
-    ) == []
+    assert (
+        validate_changed_paths(
+            paths,
+            repo_root=tmp_path,
+            added_paths=paths,
+        )
+        == []
+    )
 
 
 @pytest.mark.unit
@@ -221,11 +233,14 @@ def test_new_github_bundle_shares_top_level_sequence(tmp_path: Path) -> None:
     write_bundle(tmp_path, added_bundle)
     readme = added_bundle / "README.md"
 
-    assert validate_changed_paths(
-        [readme.as_posix()],
-        repo_root=tmp_path,
-        added_paths=[readme.as_posix()],
-    ) == []
+    assert (
+        validate_changed_paths(
+            [readme.as_posix()],
+            repo_root=tmp_path,
+            added_paths=[readme.as_posix()],
+        )
+        == []
+    )
 
 
 @pytest.mark.unit
