@@ -36,7 +36,7 @@ Substantive outer Review checkpoint는 초기 F0/F1 reconciliation, Stage 1 fina
 - **Stage 2 — Consistency Improvement:** complete. C1–C3만 최소 수정하고 semantic baseline `bc0914b7db4061fcb0aa6b89769324abd40cbe06`을 고정했다.
 - **Stage 3 — Readability Polish:** complete. Canonical delta는 `docs/mvp.md` manual wrapping 제거, `docs/ARCHITECTURE.md` paragraph split, `docs/domains/README.md` link order 변경뿐이다.
 - **Stage 4 — Integrity Review:** complete. Material semantic regression, authority drift, lost contract distinction 또는 scope expansion finding 없음.
-- **CI evidence:** 여러 status-only checkpoint를 포함해 CI Lite가 반복 성공했다. Latest recorded validation은 head `3e81a2ca35a893e7e0024401b38a3bda33321e2b`의 CI Lite #855 성공이며 changed Markdown/docs validation과 changed Inbox artifact validation step이 모두 success였다.
+- **CI evidence:** latest recorded validation은 head `3e81a2ca35a893e7e0024401b38a3bda33321e2b`의 CI Lite #855 성공이다. 이후 commit은 이 terminal status artifact의 evidence wording만 정리한 non-canonical status-only change다.
 - **Generated index:** generator는 document path와 frontmatter `description`만 입력으로 사용한다. Authored doc path/frontmatter를 변경하지 않았으므로 이번 작업은 docs index projection input을 변경하지 않았다. Explicit generator execution은 별도로 수행하지 않았다.
 
 ## Confirmed Outcomes
