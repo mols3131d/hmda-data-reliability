@@ -52,7 +52,7 @@ flowchart TB
     incident --> agent["Bounded Agentic Review"]
     agent --> guard["Deterministic Review Validation"]
 
-    incident --> proposal["Validated RecoveryProposal"]
+    incident --> proposal["Validated Recovery Proposal"]
     proposal --> human["Human Approval"]
     guard -. advisory .-> human
     human --> recovery["Approved Recovery"]
@@ -62,13 +62,13 @@ flowchart TB
     airflow -. data plane .-> analytical
 ```
 
-Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-plane, Agentic review와 approval을 data plane에 암묵적으로 자동 결합하지 않는다. Agentic review는 MVP proof에는 필요하지만 기존 deterministic `RecoveryProposal` / approval / recovery contract의 authority를 대체하거나 새로운 authorization prerequisite를 만들지 않는다.
+Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-plane, Agentic review와 approval을 data plane에 암묵적으로 자동 결합하지 않는다. Agentic review는 MVP proof에는 필요하지만 기존 deterministic recovery proposal / approval / recovery contract의 authority를 대체하거나 새로운 authorization prerequisite를 만들지 않는다.
 
 ## System Invariants
 
 1. **Deterministic truth first** — detection과 핵심 safety 판단을 LLM에 맡기지 않는다.
 1. **Evidence-bound AI** — Agentic 판단은 저장소가 제공한 evidence와 deterministic `RemediationDraft`를 근거로 한다.
-1. **Proposal-bound approval** — human approval은 검증된 `RecoveryProposal`에 결합된다.
+1. **Proposal-bound approval** — human approval은 검증된 recovery proposal에 결합된다.
 1. **Advisory, not authoritative** — Agentic review는 human decision을 보조하지만 approval/recovery authority를 획득하거나 변경하지 않는다.
 1. **Human-controlled mutation** — AI output만으로 데이터 state를 변경할 수 없다.
 1. **Locally reproducible core** — Data Lake, Reliability와 safety contract는 외부 model 호출 없이 반복 검증할 수 있다.
@@ -110,7 +110,7 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 - deterministic profiling, incident, impact, `RemediationDraft`, recovery와 evaluation
 - 대표 synthetic incident를 사용하는 최소 Agentic review
 - Agentic contract evaluation과 최소 한 번의 observable live model proof
-- validated `RecoveryProposal`, human approval, recovery와 re-validation
+- validated recovery proposal, human approval, recovery와 re-validation
 
 ### Out of Scope
 
