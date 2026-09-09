@@ -1,17 +1,19 @@
 ---
 type: research
-title: "Actual Airflow DAGRun Proof Planning Research"
+title: "Actual Airflow DAGRun Proof Planning Research (PR #229)"
 description: "OpenSpec planning 전에 현재 orchestration verification gap, runtime isolation feasibility와 actual DAGRun proof 접근 선택에 필요한 근거를 조사한다."
 tags:
   - orchestration
   - airflow
   - runtime-proof
   - mvp
+  - pr-229
 ---
 
-# Actual Airflow DAGRun Proof Planning Research
+# Actual Airflow DAGRun Proof Planning Research (PR #229)
 
 > [!NOTE]
+> 본 조사는 GitHub Pull Request [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) 작업의 일환으로 진행되었습니다.
 > 현재 repository는 Airflow DAG structure와 task wrapper behavior는 검증하지만 scheduler가 실제로 만든 DAGRun, TaskInstance lifecycle, Asset event와 DuckDB/dbt side effect의 정합성까지는 증명하지 않는다. Actual runtime proof를 시작하기 전 가장 중요한 planning risk는 **runtime artifact isolation**이며, 현재 evidence만 보면 disposable worktree 또는 temporary checkout이 production contract를 넓히지 않고 이를 해결할 가능성이 가장 높다. 다만 기존 Airflow CLI/runtime만으로 reproducible proof와 evidence retrieval이 충분한지는 local execution으로 확인해야 한다.
 
 ## Question
@@ -42,12 +44,12 @@ OpenSpec planning을 시작하기 전에 actual Airflow DAGRun proof에 관해 �
 
 이 차이는 actual runtime proof가 기존 test를 반복하는 작업이 아니라는 근거다. Local agent는 먼저 현재 test가 이미 소유하는 behavior와 runtime-only observation을 분리해야 한다.
 
-#### Evidence
+#### Verification Evidence
 
-- [`tests/orchestration/test_airflow_execution.py`](../../tests/orchestration/test_airflow_execution.py)
+- [`tests/orchestration/test_airflow_execution.py`](../../../tests/orchestration/test_airflow_execution.py)
   - `airflow_dag.load_raw_hmda_loans.function()` 등 task function 직접 실행.
   - `_runtime_context()`가 `get_current_context()`를 monkeypatch해 outlet evidence를 local object로 대체.
-- [`tests/orchestration/test_airflow_dag.py`](../../tests/orchestration/test_airflow_dag.py)
+- [`tests/orchestration/test_airflow_dag.py`](../../../tests/orchestration/test_airflow_dag.py)
   - DAG graph, parameter와 framework declaration 수준 검증.
 
 ### Canonical behavior is already defined, so the work starts as proof rather than feature definition
@@ -56,11 +58,11 @@ OpenSpec planning을 시작하기 전에 actual Airflow DAGRun proof에 관해 �
 
 Runtime reconnaissance에서 현재 contract와 실제 behavior가 일치하면 OpenSpec은 behavior delta 없이 proof/tooling/documentation 성격의 change로 계획할 수 있다. 반대로 actual DAGRun에서 contract violation이 확인되면 그 시점부터 behavior delta가 별도 planning 대상이 된다. Inbox research가 어느 쪽의 requirement를 미리 작성해서는 안 된다.
 
-#### Evidence
+#### Canonical Behavior Evidence
 
-- [`openspec/specs/orchestration-pipeline/spec.md`](../../openspec/specs/orchestration-pipeline/spec.md)
+- [`openspec/specs/orchestration-pipeline/spec.md`](../../../openspec/specs/orchestration-pipeline/spec.md)
   - ordered stage execution, quality gate failure, execution/data-update evidence, runtime policy와 disabled analytics semantics를 이미 소유.
-- [`openspec/schemas/spec-driven-tdd/README.md`](../../openspec/schemas/spec-driven-tdd/README.md)
+- [`openspec/schemas/spec-driven-tdd/README.md`](../../../openspec/schemas/spec-driven-tdd/README.md)
   - Proposal → Specs → Design → Tasks ownership을 분리하고, spec-level behavior가 바뀌지 않는 change는 `skip_specs`를 사용할 수 있음을 정의.
 
 ### Database-only sandboxing is insufficient for a clean analytics proof
@@ -69,11 +71,11 @@ Runtime reconnaissance에서 현재 contract와 실제 behavior가 일치하면 
 
 따라서 main working tree에서 `database_path`만 분리해 clean analytics run을 수행하면 DuckDB는 안전해도 기존 dbt current artifact와 run artifact를 변경할 수 있다. Actual DAGRun proof의 첫 기술적 unknown은 “어떤 시나리오를 돌릴 것인가”보다 **기존 작업 state와 artifact surface를 완전히 분리할 수 있는가**다.
 
-#### Evidence
+#### Sandbox Isolation Evidence
 
-- [`src/hmda_reliability/orchestration/dags/hmda_data_plane.py`](../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py)
+- [`src/hmda_reliability/orchestration/dags/hmda_data_plane.py`](../../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py)
   - `_RUNTIME_OVERRIDE_FIELDS`는 다섯 runtime parameter만 허용.
-- [`inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md`](../2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md)
+- [`inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md`](../../2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md)
   - sandbox DB와 `AIRFLOW_HOME` 중심의 기존 수동 실행 절차.
 - Notion `Actual Airflow DAGRun Proof Plan`
   - dbt current/run artifact와 worktree까지 분리해야 한다는 planning source.

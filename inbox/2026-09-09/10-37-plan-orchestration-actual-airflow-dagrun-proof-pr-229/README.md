@@ -1,18 +1,25 @@
 ---
 type: plan
-title: "Actual Airflow DAGRun Proof Preparation"
-description: "OpenSpec planning 전에 actual Airflow DAGRun proof의 repository evidence, isolation feasibility와 runtime unknown을 정리하기 위한 사전 기획."
+title: "Actual Airflow DAGRun Proof Work Plan (PR #229)"
+description: "OpenSpec planning 전에 actual Airflow DAGRun proof의 repository evidence, isolation feasibility와 runtime unknown을 정리하고 검증을 관리하는 작업 번들 (PR #229)."
 tags:
   - orchestration
   - airflow
   - runtime-proof
   - mvp
+  - pr-229
 ---
 
-# Actual Airflow DAGRun Proof Preparation
+# Actual Airflow DAGRun Proof Work Plan (PR #229)
 
 > [!NOTE]
-> 이 문서는 OpenSpec artifact를 미리 작성하는 계획서가 아니다. Requirement, observable scenario, technical delta, implementation task와 acceptance는 해당 작업이 OpenSpec으로 진입한 뒤 OpenSpec이 소유한다. 여기서는 그 판단에 필요한 **사전 조사 범위와 decision input**만 정리한다.
+> 본 번들은 GitHub Pull Request [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)에서 진행되는 실제 Airflow DAGRun 동작 증명(Proof)의 사전 조사, 런타임 격리 검증, 태스크 추적 및 OpenSpec 연계를 관리하는 작업 공간입니다.
+> 이 문서는 OpenSpec artifact를 미리 작성하는 계획서가 아니며, Requirement, observable scenario, technical delta, implementation task와 acceptance는 OpenSpec으로 진입한 뒤 OpenSpec이 소유합니다.
+
+## Navigation
+
+- [01-research-orchestration-actual-airflow-dagrun-planning.md](01-research-orchestration-actual-airflow-dagrun-planning.md): 실제 DAGRun 검증 사전 조사 보고서
+- [tasks.md](tasks.md): 단계별 사전 정찰 및 계획 태스크 체크리스트
 
 ## Context
 
@@ -22,11 +29,11 @@ tags:
 
 주요 source는 다음과 같다.
 
-- `openspec/specs/orchestration-pipeline/spec.md` — 현재 canonical orchestration behavior.
-- `src/hmda_reliability/orchestration/dags/hmda_data_plane.py` — active Airflow DAG/runtime surface.
-- `tests/orchestration/test_airflow_dag.py`와 `tests/orchestration/test_airflow_execution.py` — 현재 automated verification boundary.
-- `inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md` — 기존 sandbox 실행 경험과 한계.
-- `openspec/schemas/spec-driven-tdd/README.md` — OpenSpec artifact ownership과 planning dependency.
+- [openspec/specs/orchestration-pipeline/spec.md](../../../openspec/specs/orchestration-pipeline/spec.md) — 현재 canonical orchestration behavior.
+- [src/hmda_reliability/orchestration/dags/hmda_data_plane.py](../../../src/hmda_reliability/orchestration/dags/hmda_data_plane.py) — active Airflow DAG/runtime surface.
+- [tests/orchestration/test_airflow_dag.py](../../../tests/orchestration/test_airflow_dag.py)와 [tests/orchestration/test_airflow_execution.py](../../../tests/orchestration/test_airflow_execution.py) — 현재 automated verification boundary.
+- [inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md](../../2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md) — 기존 sandbox 실행 경험과 한계.
+- [openspec/schemas/spec-driven-tdd/README.md](../../../openspec/schemas/spec-driven-tdd/README.md) — OpenSpec artifact ownership과 planning dependency.
 
 ## Planning Boundary
 
