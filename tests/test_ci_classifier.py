@@ -296,3 +296,43 @@ def test_workflow_change_targets_classifier_test() -> None:
     out = run_classifier([".github/workflows/ci-lite.yml"])
     assert out["tests"] == "true"
     assert "tests/test_ci_classifier.py" in out["targets"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("openspec_path", "expected_archived"),
+    [
+        ("openspec/config.yaml", False),
+        ("openspec/schemas/spec-driven-tdd/schema.yaml", False),
+        ("openspec/schemas/spec-driven-tdd/templates/spec.md", False),
+        ("openspec/specs/orchestration-pipeline/spec.md", False),
+        ("openspec/changes/orchestration-quality-gate/proposal.md", False),
+        (
+            "openspec/changes/archive/2026-08-26-data-operations-rename-runtime-settings/tasks.md",
+            True,
+        ),
+        (
+            "openspec/changes/archive/2026-06-10-complete-foundation-baseline/proposal.md",
+            True,
+        ),
+    ],
+)
+def test_openspec_paths_trigger_openspec_validation(
+    openspec_path: str, expected_archived: bool
+) -> None:
+    """OpenSpec 설정, 스키마, 규격, 변경 수정 시 openspec 검증이 활성화된다."""
+    out = run_classifier([openspec_path])
+    assert out["openspec"] == "true"
+    assert out["openspec_archived"] == str(expected_archived).lower()
+    assert out["python"] == "false"
+    assert out["tests"] == "false"
+
+
+@pytest.mark.unit
+def test_non_openspec_paths_keep_openspec_disabled() -> None:
+    """OpenSpec과 무관한 파일 변경 시 openspec 플래그가 비활성화 상태를 유지한다."""
+    out = run_classifier(
+        ["README.md", "src/hmda_reliability/logger.py", "pyproject.toml"]
+    )
+    assert out["openspec"] == "false"
+    assert out["openspec_archived"] == "false"

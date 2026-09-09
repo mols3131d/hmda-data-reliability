@@ -28,6 +28,9 @@ pre-push:
         - "**/*.json"
         - "**/*.jsonc"
       run: uv run --no-sync python scripts/biome.py check {push_files}
+    openspec-check:
+      glob: "openspec/**"
+      run: npx --yes @fission-ai/openspec@1.12.0 validate --all --strict
     python-check:
       glob: "**/*.py"
       run: uv run --no-sync ruff check {push_files} && uv run --no-sync ruff format --check {push_files}

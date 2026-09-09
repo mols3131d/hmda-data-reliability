@@ -81,6 +81,17 @@ jobs:
             python3 scripts/validate_inbox_artifacts.py "${files[@]}"
           fi
 
+      - name: Validate OpenSpec
+        if: steps.scope.outputs.openspec == 'true'
+        env:
+          ARCHIVED: ${{ steps.scope.outputs.openspec_archived }}
+        run: |
+          set -euo pipefail
+          npx --yes @fission-ai/openspec@1.12.0 validate --all --strict
+          if [[ "$ARCHIVED" == 'true' ]]; then
+            npx --yes @fission-ai/openspec@1.12.0 validate --archived
+          fi
+
       - name: Set up Python
         if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true'
         uses: actions/setup-python@v6.2.0
@@ -132,9 +143,17 @@ jobs:
             pyproject.toml
             uv.lock
 
+      - name: Verify dependency lock
+        if: steps.scope.outputs.python == 'true'
+        run: uv lock --check
+
       - name: Sync dependencies
         if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true'
         run: uv sync --locked
+
+      - name: Verify package build
+        if: steps.scope.outputs.python == 'true'
+        run: uv build --wheel --out-dir /tmp/dist
 
       - name: Validate Python
         if: steps.scope.outputs.python == 'true'

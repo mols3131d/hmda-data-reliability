@@ -52,6 +52,8 @@ fi
 json=false
 markdown=false
 inbox=false
+openspec=false
+openspec_archived=false
 tests=false
 toml=false
 python=false
@@ -182,6 +184,16 @@ while IFS= read -r path; do
       ;;
   esac
 
+  case "$path" in
+    openspec/changes/archive/*)
+      openspec=true
+      openspec_archived=true
+      ;;
+    openspec/*)
+      openspec=true
+      ;;
+  esac
+
   if [[ "$path" == *.md ]]; then
     if [[ -f "$path" ]] && is_markdown_validation_path "$path"; then
       markdown=true
@@ -309,6 +321,8 @@ write_outputs() {
   echo "json=$json"
   echo "markdown=$markdown"
   echo "inbox=$inbox"
+  echo "openspec=$openspec"
+  echo "openspec_archived=$openspec_archived"
   echo "tests=$tests"
   echo "toml=$toml"
   echo "python=$python"
