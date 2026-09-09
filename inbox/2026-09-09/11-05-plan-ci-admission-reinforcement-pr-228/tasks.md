@@ -26,6 +26,6 @@
   - `uv run pytest tests/test_ci_classifier.py` 실행 및 통과 확인 (44 passed)
   - `bash .github/workflows/classify_changes.sh` 로컬 동작 테스트 통과
   - `inbox` 아티팩트 유효성 검증 (`scripts/validate_inbox_artifacts.py`) 통과
-- [ ] **3.2 커밋 및 푸시**
+- [x] **3.2 커밋 및 푸시**
   - 규약 준수 커밋 메시지 작성 후 `agent/ci/openspec-and-dependency-admission`에 푸시
-- [ ] **3.3 PR [#228](https://github.com/mols3131d/hmda-data-reliability/pull/228) 설명 갱신 및 검증 결과 반영**
+- [x] **3.3 PR [#228](https://github.com/mols3131d/hmda-data-reliability/pull/228) 설명 갱신 및 검증 결과 반영**
