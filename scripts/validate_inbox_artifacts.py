@@ -202,9 +202,7 @@ def _validate_new_github_sequences(
             for name in new_names
             if (value := _sequence_value(name)) is not None
         )
-        expected_values = list(
-            range(expected_start, expected_start + len(ordered_new))
-        )
+        expected_values = list(range(expected_start, expected_start + len(ordered_new)))
         actual_values = [value for value, _name in ordered_new]
         if actual_values == expected_values:
             continue
