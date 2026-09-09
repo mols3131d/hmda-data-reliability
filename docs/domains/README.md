@@ -12,10 +12,10 @@ tags:
 각 guide는 domain의 책임과 경계를 설명한다. Normative capability contract는 [`../../openspec/specs/`](../../openspec/specs/)가 소유한다.
 
 - [Overview](OVERVIEW.md)
+- [HMDA Data](hmda-data.md)
 - [Data Operations](data-operations.md)
 - [Data Platform](data-platform.md)
-- [HMDA Data](hmda-data.md)
-- [Orchestration](orchestration.md)
 - [Reliability](reliability.md)
 - [Review AI](review-ai.md)
 - [Runtime AI](runtime-ai.md)
+- [Orchestration](orchestration.md)
