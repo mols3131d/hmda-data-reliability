@@ -1,7 +1,7 @@
 ---
 type: plan
-title: "Actual Airflow DAGRun Proof"
-description: "실제 Apache Airflow runtime에서 hmda_data_plane의 실행 순서, failure containment, data/artifact/Asset evidence와 isolation을 검증하기 위한 구현 및 검증 계획."
+title: "Actual Airflow DAGRun Proof Preparation"
+description: "OpenSpec planning 전에 actual Airflow DAGRun proof의 repository evidence, isolation feasibility와 runtime unknown을 정리하기 위한 사전 기획."
 tags:
   - orchestration
   - airflow
@@ -9,145 +9,94 @@ tags:
   - mvp
 ---
 
-# Actual Airflow DAGRun Proof
+# Actual Airflow DAGRun Proof Preparation
 
-이 작업은 Airflow 기능을 확대하는 PR이 아니다. 현재 `hmda_data_plane`이 실제 Apache Airflow runtime에서도 `raw load → quality gate → analytics build` 계약을 보존하는지, 특히 blocking dirty input에서 analytics 승격을 실제로 차단하는지를 증명한다.
+> [!NOTE]
+> 이 문서는 OpenSpec artifact를 미리 작성하는 계획서가 아니다. Requirement, observable scenario, technical delta, implementation task와 acceptance는 해당 작업이 OpenSpec으로 진입한 뒤 OpenSpec이 소유한다. 여기서는 그 판단에 필요한 **사전 조사 범위와 decision input**만 정리한다.
 
-현재 repository는 DAG 구조와 task function 수준의 계약을 이미 검증하지만 실제 scheduler가 만든 DAGRun, TaskInstance state, Asset event와 DuckDB/dbt side effect가 함께 일치한다는 proof는 아직 없다. 따라서 이번 변경의 완료 조건은 새 기능 수가 아니라 **실제 runtime evidence가 canonical orchestration contract와 일치하는가**다.
+## Context
 
-## Basis
+이 branch는 실제 Apache Airflow runtime에서 `hmda_data_plane`의 DAGRun-level behavior를 검증하기 위한 작업을 준비한다. 현재 planning source는 Notion의 `Actual Airflow DAGRun Proof Plan`이며, repository 기준점은 `main@f098190b75df5ae359ab6fc2bb4646cbcddde8bd`다.
 
-- **Branch base:** `main@f098190b75df5ae359ab6fc2bb4646cbcddde8bd`
-- **Canonical contract:** `openspec/specs/orchestration-pipeline/spec.md`
-- **Architecture guide:** `docs/domains/orchestration.md`
-- **MVP boundary:** `docs/mvp.md`
-- **Planning source:** `Actual Airflow DAGRun Proof Plan` Notion page
-- **Prior working note:** `inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md`
+사전 준비의 목적은 이미 존재하는 orchestration contract를 Inbox에서 다시 정의하는 것이 아니다. Local agent가 OpenSpec planning을 시작하기 전에 현재 repository가 무엇을 이미 증명하고 무엇을 아직 증명하지 못했는지, actual runtime proof를 안전하게 수행할 수 있는지, 그리고 이 작업이 behavior change인지 proof/tooling change인지 판단할 수 있게 만드는 것이 목적이다.
 
-기존 working note의 DB 경로 격리만으로는 충분하지 않다. Airflow trigger surface는 `database_path`, `source_root`, `source_year`, `source_file`, `run_dbt_build`만 override하며 dbt candidate/current artifact는 repository-relative `dbt/target` surface를 사용한다. Clean analytics run이 기존 current projection을 바꾸지 않게 하려면 proof root 전체를 격리해야 한다.
+주요 source는 다음과 같다.
 
-## Goal
+- `openspec/specs/orchestration-pipeline/spec.md` — 현재 canonical orchestration behavior.
+- `src/hmda_reliability/orchestration/dags/hmda_data_plane.py` — active Airflow DAG/runtime surface.
+- `tests/orchestration/test_airflow_dag.py`와 `tests/orchestration/test_airflow_execution.py` — 현재 automated verification boundary.
+- `inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md` — 기존 sandbox 실행 경험과 한계.
+- `openspec/schemas/spec-driven-tdd/README.md` — OpenSpec artifact ownership과 planning dependency.
 
-실제 Airflow runtime에서 다음을 하나의 target revision 기준으로 증명한다.
+## Planning Boundary
 
-1. `hmda_data_plane`이 정상 parse되고 실제 DAGRun을 생성한다.
-1. Clean input은 raw → gate → analytics 순서로 실제 TaskInstance `success`를 만들고 DuckDB, dbt artifact와 Asset evidence가 일치한다.
-1. Blocking dirty input은 quality gate를 실제 `failed`로 만들고 analytics task body, dbt subprocess, artifact promotion과 analytics update evidence를 모두 차단한다.
-1. `run_dbt_build=false`는 raw/gate 성공을 보존하면서 analytics만 `skipped`로 남기고 analytics update evidence를 만들지 않는다.
-1. DAGRun에 reliability control plane, approval, recovery, evaluation 또는 AI task가 포함되지 않고 schedule/automatic retry가 활성화되지 않는다.
+| Surface | Owner in this preparation |
+| --- | --- |
+| 현재 repository가 제공하는 evidence와 gap | Inbox research |
+| Actual runtime proof의 feasibility, isolation risk, alternative와 unresolved question | Inbox research |
+| OpenSpec에 들어갈지, spec-level behavior change가 필요한지에 대한 사전 판단 근거 | Inbox research / this preparation plan |
+| Change의 why와 scope | OpenSpec Proposal |
+| Observable behavior와 scenario | OpenSpec Specs |
+| Non-obvious technical delta | OpenSpec Design |
+| Verifiable implementation outcomes | OpenSpec Tasks |
+| Runtime helper, test, production code와 canonical docs 변경 | Apply / implementation |
 
-## Isolation Gate
+Inbox artifact는 이후 OpenSpec artifact의 입력 자료일 뿐 competing source of truth가 아니다. OpenSpec이 생성된 뒤에는 requirement, design과 implementation sequencing을 Inbox에서 병렬로 유지하지 않는다.
 
-Proof 실행 전 아래 surface를 모두 기존 개발 상태와 분리한다.
+## Preparation Questions
 
-- **Airflow runtime:** 전용 `AIRFLOW_HOME`, metadata DB, logs, generated auth/config.
-- **DuckDB:** proof 전용 `database_path`; 기본 `data/hmda_reliability.duckdb` 사용 금지.
-- **Input fixture:** `.local` 또는 임시 root 아래의 작고 deterministic한 clean/dirty source.
-- **dbt artifacts:** `dbt/target/runs/*`, current `manifest.json`, `run_results.json`이 기존 작업 상태와 분리되어야 한다.
-- **Working tree:** canonical dbt project layout은 유지하되 repository-relative artifact surface까지 분리할 수 있는 disposable worktree 또는 temporary checkout을 사용한다.
+사전 조사에서는 다음 질문에 답할 수 있어야 한다.
 
-이 isolation을 안전하게 만들 수 없다면 production contract에 test-only artifact path injection을 추가해 우회하지 않는다. 해당 상태는 **BLOCKED**로 기록하고 isolation blocker를 먼저 해결한다.
+1. 현재 automated test가 실제 Airflow scheduler-created DAGRun과 TaskInstance lifecycle 중 어디까지 증명하지 못하는가?
+1. Actual runtime proof가 기존 개발 state를 오염시키지 않으려면 어떤 runtime/data/artifact surface를 격리해야 하는가?
+1. 현재 Airflow CLI/runtime surface만으로 필요한 runtime evidence를 얻을 수 있는가, 아니면 repeatability 또는 evidence retrieval을 위한 별도 helper가 필요한가?
+1. Task state, Asset event, DuckDB state와 dbt artifact를 실제 runtime에서 재현 가능하게 확인할 수 있는가?
+1. 현재 작업은 기존 behavior를 증명하는 proof/tooling change로 끝나는가, 아니면 actual runtime에서 canonical contract와의 불일치가 발견되어 spec-level delta가 필요한가?
 
-## Proof Scenarios
+이 질문의 답을 Inbox에서 requirement나 implementation task로 변환하지 않는다. 답은 OpenSpec planning의 입력이 된다.
 
-### S0 — Runtime Bootstrap
+## Research Focus
 
-- 격리된 `AIRFLOW_HOME`과 DAG folder를 target revision에 고정한다.
-- examples를 비활성화한다.
-- 실제 Airflow CLI/runtime에서 `hmda_data_plane` parse와 listing을 확인한다.
-- active full data-plane DAG가 하나인지, schedule 없음, retries `0`, `max_active_runs=1`인지 확인한다.
+### Current Verification Boundary
 
-**Evidence:** target SHA, runtime version/config locator, DAG listing/inspection 결과.
+현재 DAG object inspection과 task function test가 검증하는 범위, 그리고 scheduler/runtime layer에서만 확인 가능한 gap을 분리한다. 이미 검증된 contract를 actual-runtime 작업에서 중복 테스트 대상으로 확대하지 않는다.
 
-### S1 — Clean Actual DAGRun
+### Isolation Feasibility
 
-Expected state:
+Airflow metadata/runtime, DuckDB, input fixture, repository-relative dbt artifact와 working tree가 서로 독립적으로 격리 가능한지 조사한다. 기존 sandbox guide가 실제 analytics run의 artifact surface까지 안전하게 분리하는지 재검토한다.
 
-```text
-load_raw_hmda_loans       success
-evaluate_quality_gate     success
-build_dbt_loan_analytics  success
-```
+### Runtime And Evidence Access
 
-추가로 다음 side effect와 evidence를 확인한다.
+Airflow 3.3.0의 repository-native CLI/runtime로 actual DAGRun 생성, terminal state 확인, TaskInstance state와 Asset event 조회가 가능한지 확인한다. 별도 helper는 기존 surface만으로 reproducible proof를 만들기 어렵다는 근거가 있을 때만 OpenSpec planning 후보가 된다.
 
-- sandbox DuckDB에 expected Bronze rows가 존재한다.
-- dbt staging/mart가 같은 sandbox DB를 사용한다.
-- candidate artifact가 생성되고 검증된 current projection으로 promotion된다.
-- raw Asset event의 DB/source/row-count evidence가 실제 state와 일치한다.
-- analytics Asset event의 return code/artifact/projection evidence가 실제 생성물과 일치한다.
+### Change Classification
 
-### S2 — Blocking Dirty Actual DAGRun
+실행 전에는 production behavior change를 전제하지 않는다. Local reconnaissance에서 현재 contract와 실제 runtime이 일치하면 proof/tooling/documentation 성격으로 분류하고, contract violation이 확인되면 그때 behavior delta 필요성을 OpenSpec에 넘긴다.
 
-대표 blocking case는 `null_spike(income)`를 사용한다.
+## Decision Gates
 
-Expected state:
+- **Existing runtime surface is sufficient:** 별도 production capability를 가정하지 않고 OpenSpec planning에 현재 evidence와 재현 경로를 전달한다.
+- **A repeatability/evidence helper is necessary:** helper가 해결해야 하는 operational gap만 OpenSpec Design/Tasks 후보로 넘기고 requirement를 Inbox에서 만들지 않는다.
+- **Canonical behavior is violated:** ad-hoc patch를 시작하지 않고 observed mismatch를 evidence로 남긴 뒤 OpenSpec이 behavior delta를 소유하게 한다.
+- **Safe isolation is not feasible:** test-only production override를 즉석에서 추가하지 않고 blocker와 근거를 OpenSpec planning input으로 남긴다.
 
-```text
-load_raw_hmda_loans       success
-evaluate_quality_gate     failed
-build_dbt_loan_analytics  upstream_failed 또는 미실행
-```
+## Preparation Outputs
 
-Task state만 확인하지 않는다. 다음을 별도 증명한다.
+이 branch의 OpenSpec 이전 초기 artifact는 다음으로 제한한다.
 
-- gate failure에 blocking incident discriminator가 남는다.
-- analytics task body와 dbt subprocess가 시작되지 않는다.
-- 새 analytics Asset update evidence가 없다.
-- dirty run 때문에 current dbt artifact projection이 바뀌지 않는다.
-- raw load 성공 evidence는 보존된다.
+- 이 preparation plan — 사전 조사 목적, boundary와 decision gate.
+- `research` artifact — current repository evidence, runtime gap, isolation feasibility, option과 open question의 synthesized result.
 
-### S3 — Disabled Analytics Semantics
+Scenario checklist, acceptance matrix, implementation task list, technical design 초안과 proof report skeleton은 초기 Inbox artifact로 만들지 않는다. 필요하면 OpenSpec 또는 실제 execution 결과를 소유하는 후속 artifact가 담당한다.
 
-`run_dbt_build=false`로 실제 DAGRun을 생성한다.
+## Exit
 
-Expected state:
+사전 준비는 local agent가 다음을 추측하지 않고 판단할 수 있을 때 충분하다.
 
-```text
-load_raw_hmda_loans       success
-evaluate_quality_gate     success
-build_dbt_loan_analytics  skipped
-```
+- 무엇이 현재 evidence로 이미 증명되었는가.
+- Actual Airflow runtime에서 무엇이 아직 unknown인가.
+- 어떤 isolation risk가 먼저 확인되어야 하는가.
+- 기존 runtime surface만으로 proof가 가능한지 어떤 local reconnaissance가 필요한가.
+- 조사 결과에 따라 OpenSpec이 spec-free change로 진행할지 behavior delta를 다룰지 어떤 기준으로 결정할 것인가.
 
-Analytics candidate/promotion 및 성공 Asset update evidence가 없어야 한다.
-
-## Implementation Strategy
-
-1. **Repository-native 실행 가능성부터 확인한다.** 기존 CLI와 runtime surface만으로 S0–S3를 재현할 수 있으면 별도 harness를 추가하지 않는다.
-1. **반복성과 evidence capture에 필요한 최소 helper만 추가한다.** Harness가 필요하면 proof root 생성, fixture 준비, runtime invocation 또는 evidence extraction처럼 반복 실행을 안정화하는 책임으로 제한한다.
-1. **Harness 자체의 invariant만 deterministic test로 고정한다.** 기존 DAG 구조/task wrapper 테스트를 중복하지 않는다.
-1. **Runtime contract 차이를 발견한 경우에만 구현을 수정한다.** Actual DAGRun이 canonical spec과 어긋날 때 원인에 해당하는 가장 작은 production change를 만들고 동일 시나리오를 재실행한다.
-1. **최종 proof report에 target SHA와 evidence locator를 남긴다.** 일회성 screenshot, metadata DB, sandbox DuckDB, generated auth 파일과 전체 dbt run artifact는 commit하지 않는다.
-
-## Deliverables
-
-필요한 것만 포함한다.
-
-- 재현 가능한 actual-DAGRun proof harness — 기존 workflow만으로 반복 가능한 proof가 어렵다면 추가.
-- Focused tests — harness 또는 isolation invariant를 유지할 가치가 있을 때만 추가.
-- Runtime/validation documentation update — 현재 canonical guide와 실제 절차가 다를 때만 수정.
-- Proof report — target Git SHA, 환경, scenario별 `PROVEN`/`FAILED`/`BLOCKED`, evidence locator를 기록.
-
-## Acceptance
-
-Actual Airflow DAGRun proof는 아래를 모두 만족해야 `PROVEN`으로 닫는다.
-
-- [ ] target Git revision과 clean initial state가 고정되어 있다.
-- [ ] Airflow metadata, DuckDB, source fixture와 dbt artifact surface가 기존 개발 상태와 격리되어 있다.
-- [ ] 실제 Airflow runtime이 `hmda_data_plane`을 load하고 DAGRun을 생성한다.
-- [ ] clean run에서 raw → gate → analytics가 실제 TaskInstance `success`로 완료된다.
-- [ ] clean run의 DuckDB/dbt/Asset evidence가 TaskInstance state와 일치한다.
-- [ ] dirty run에서 gate가 blocking incident로 `failed`가 된다.
-- [ ] dirty run에서 analytics가 실행되지 않고 analytics update/promotion evidence가 생기지 않는다.
-- [ ] `run_dbt_build=false`에서 analytics가 `skipped`이고 성공 update evidence가 없다.
-- [ ] control-plane/recovery/AI task가 DAGRun에 포함되지 않는다.
-- [ ] schedule과 automatic retry가 활성화되지 않는다.
-- [ ] proof 결과가 target SHA와 재현 절차에 연결되어 있다.
-
-## Outcome Rules
-
-- **PROVEN:** isolation과 핵심 runtime scenario가 모두 계약과 일치한다.
-- **FAILED:** actual runtime에서 contract violation이 확인된다. 원인에 해당하는 최소 변경 후 같은 proof를 재실행한다.
-- **BLOCKED:** 안전한 isolation 또는 재현 가능한 actual DAGRun을 만들 수 없다. test-only 우회로 통과 처리하지 않는다.
-
-이 proof가 `PROVEN`으로 닫히기 전에는 actual Airflow data plane이 runtime 수준에서 검증됐다고 간주하지 않는다.
+이 지점부터 normative planning은 OpenSpec workflow가 소유한다.
