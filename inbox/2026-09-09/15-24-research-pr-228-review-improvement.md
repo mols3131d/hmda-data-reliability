@@ -31,7 +31,7 @@ PR #228의 Inbox review가 제기한 admission gap이 현재 `f7b8ee8`에서 실
 
 `f7b8ee8`은 known canonical Spec를 `tests/<domain>` executable target으로 연결하고, unknown/config/schema scope는 `openspec_bulk=true`와 full test fallback으로 넓힌다. `.python-version`, `pyproject.toml`, `uv.lock` 변경에는 `runtime_smoke=true`를 설정해 dbt/DuckDB integration과 Airflow DAG contract를 별도 실행한다. current PR body도 head와 validation evidence에 맞게 갱신되어 F4는 해소된 상태다.
 
-#### Evidence
+#### Evidence of Existing Routing
 
 - `uv run --no-sync pytest tests/test_ci_classifier.py -q -rs` — `46 passed`
 - `uv run --no-sync pytest tests/dbt/test_analytics_foundation.py tests/orchestration/test_airflow_dag.py -q -rs` — `5 passed`
@@ -43,7 +43,7 @@ PR #228의 Inbox review가 제기한 admission gap이 현재 `f7b8ee8`에서 실
 
 현재 classifier는 `openspec/specs/<capability>/**` 변경을 해당 Spec target으로만 변환한다. 하지만 active Change가 `openspec/changes/<change>/specs/<capability>/spec.md`에서 같은 capability의 delta를 소유할 수 있으므로, canonical Spec 변경 시 해당 active Change도 `openspec validate <change> --type change --strict`로 함께 확인해야 한다. 이 관계를 놓치면 Spec과 active delta의 구조적 정합성 검증이 서로 다른 scope로 분리된다.
 
-#### Evidence
+#### Evidence of Pairing Gap
 
 - `openspec/specs/orchestration-pipeline/spec.md`
 - `openspec/changes/orchestration-quality-gate/specs/orchestration-pipeline/spec.md`
