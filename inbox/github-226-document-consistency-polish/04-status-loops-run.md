@@ -10,14 +10,13 @@ tags:
 
 # Mols Loops Run Status
 
-이 artifact는 PR #226 작업 재개용 terminal checkpoint다. Detailed findings, fixes와 review는 sibling artifact를 참조하고 여기서는 완료 상태만 유지한다.
+이 artifact는 PR #226의 terminal checkpoint다.
 
 ## Orchestration
 
 - Orchestrator: `mols-loops`
 - Terminal state: **COMPLETE**
 - `loops_used`: `5`
-- Artifact surface: `inbox/github-226-document-consistency-polish/`
 
 ## Completed Stages
 
@@ -26,19 +25,17 @@ tags:
 - **Stage 3 — Readability Polish:** `docs/mvp.md` wrapping 제거, `docs/ARCHITECTURE.md` paragraph split, `docs/domains/README.md` navigation order 조정.
 - **Stage 4 — Integrity Review:** material semantic regression, authority drift, lost contract distinction 또는 scope expansion finding 없음.
 
-## Confirmed Outcomes
+## Outcomes
 
 - Recovery-wide entry/MVP 문서는 generic validated recovery proposal을 사용하고 concrete proposal type distinction은 Architecture/Reliability owner에 남겼다.
 - Domain entrypoint에 Review AI와 Runtime AI guide를 포함한다.
 - Root Toolchain의 LangGraph/remediation과 OpenAI SDK/runtime ownership을 정렬했다.
-- Readability polish는 AI authority, approval, Airflow와 recovery contract boundary를 보존했다.
 - Canonical scope는 `README.md`, `docs/mvp.md`, `docs/ARCHITECTURE.md`, `docs/domains/README.md` 네 파일로 제한했다.
 
 ## Validation
 
-- CI Lite는 authored-doc Stage 3 head와 이후 여러 terminal status-only head에서 반복 성공했다.
-- Latest durable validation recorded before terminal status wording cleanup: CI Lite #855 success.
-- `scripts/generate_docs_indexes.py`는 path와 frontmatter `description`에만 의존하며 authored doc path/frontmatter는 변경하지 않았다. Explicit generator execution은 별도로 수행하지 않았다.
+- Stage 3 authored-doc head와 후속 status-only heads의 CI Lite가 반복 성공했다.
+- `scripts/generate_docs_indexes.py`의 projection input인 path/frontmatter `description`은 변경하지 않았다.
 
 ## References
 
