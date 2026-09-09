@@ -14,7 +14,7 @@ tags:
 
 이 baseline은 PR #226의 수정 전 탐색 범위를 좁히기 위한 working artifact다. `main`의 `f098190b75df5ae359ab6fc2bb4646cbcddde8bd`를 기준으로 [`README.md`](../../README.md), [`docs/VISION.md`](../../docs/VISION.md), [`docs/mvp.md`](../../docs/mvp.md), [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md), [`DEVELOPMENT.md`](../../DEVELOPMENT.md)를 우선 비교했다.
 
-아래 항목은 canonical contract가 아니다. 확인된 사실과 수정 전 추가 검증이 필요한 판단 후보를 구분한다.
+아래 항목은 canonical contract가 아니다. 확인된 사실과 수정 전 추가 검증이 필요한 판단 후보를 구분한다. 실제 실행 순서와 완료 상태는 [`02-plan-folder-and-logical-validation-todo.md`](02-plan-folder-and-logical-validation-todo.md)에서 folder unit별로 관리한다.
 
 ## Established Ownership
 
@@ -51,4 +51,4 @@ tags:
 1. 수정 없이 짧은 link나 mapping만으로 해석 비용을 줄일 수 있는가?
 1. 다듬기가 의미·조건·예외를 바꾸지 않는가?
 
-검증 결과가 명확한 candidate만 PR의 canonical 문서 수정으로 승격한다.
+검증 결과가 명확한 candidate만 PR의 canonical 문서 수정으로 승격한다. 한 candidate가 여러 폴더에 걸치면 현재 folder unit에서는 독립 문제를 즉시 고치지 않고 cross-folder queue에 기록한 뒤 logical validation 단계에서 다시 확인한다.
