@@ -13,6 +13,8 @@
   - 클린(1,000행 정상 결측률) 및 결함 감지(샘플 20행) 픽스처 동작 확인 완료
 - [x] **1.5 정찰 보고서 작성**
   - 정찰 결과 보고서([02-report-orchestration-actual-airflow-dagrun-reconnaissance.md](02-report-orchestration-actual-airflow-dagrun-reconnaissance.md)) 작성 완료
+- [x] **1.6 후속 작업 에이전트 전달 프롬프트 작성**
+  - 실행 프롬프트 아티팩트([03-prompt-orchestration-actual-airflow-dagrun-proof.md](03-prompt-orchestration-actual-airflow-dagrun-proof.md)) 작성 완료
 
 ## 2. Workstream 2: OpenSpec Planning Transition
 

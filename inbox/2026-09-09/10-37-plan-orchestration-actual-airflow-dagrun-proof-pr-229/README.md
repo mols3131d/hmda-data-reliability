@@ -20,6 +20,7 @@ tags:
 
 - [01-research-orchestration-actual-airflow-dagrun-planning.md](01-research-orchestration-actual-airflow-dagrun-planning.md): 실제 DAGRun 검증 사전 조사 보고서
 - [02-report-orchestration-actual-airflow-dagrun-reconnaissance.md](02-report-orchestration-actual-airflow-dagrun-reconnaissance.md): 런타임 정찰 및 격리 타당성 검증 보고서
+- [03-prompt-orchestration-actual-airflow-dagrun-proof.md](03-prompt-orchestration-actual-airflow-dagrun-proof.md): 후속 작업 에이전트 인수인계 프롬프트
 - [tasks.md](tasks.md): 단계별 사전 정찰 및 계획 태스크 체크리스트
 
 ## Context
