@@ -168,7 +168,7 @@ def _validate_new_github_sequences(
     *,
     repo_root: Path,
 ) -> list[str]:
-    """Require newly added GitHub roots to append after the largest existing sequence."""
+    """Require new GitHub roots to append after the largest existing sequence."""
     added_roots: dict[str, set[str]] = defaultdict(set)
     for raw_path in added_paths:
         root = _new_github_root_for_added_path(Path(raw_path))
@@ -212,8 +212,8 @@ def _validate_new_github_sequences(
         expected_text = ", ".join(f"{value:02d}" for value in expected_values)
         actual_text = ", ".join(f"{value:02d}" for value in actual_values)
         errors.append(
-            f"{directory}: new top-level sequence must append after the current maximum; "
-            f"expected [{expected_text}], got [{actual_text}]"
+            f"{directory}: new top-level sequence must append after "
+            f"the current maximum; expected [{expected_text}], got [{actual_text}]"
         )
 
     return errors
