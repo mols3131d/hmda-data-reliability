@@ -154,6 +154,22 @@ def test_changed_github_bundle_member_validates_bundle_readme(tmp_path: Path) ->
 
 
 @pytest.mark.unit
+def test_github_work_bundle_requires_two_digit_sequence(tmp_path: Path) -> None:
+    """GitHub work bundle에도 같은 two-digit sequence contract를 적용한다."""
+    bundle = Path("inbox/github-226-document-consistency-polish/3-discuss-ci-policy")
+    readme = tmp_path / bundle / "README.md"
+    write_artifact(readme, artifact_type="discuss")
+    turn = tmp_path / bundle / "turns/001-a.md"
+    turn.parent.mkdir(parents=True)
+    turn.write_text("# Turn\n", encoding="utf-8")
+
+    changed = (bundle / "turns/001-a.md").as_posix()
+    errors = validate_changed_paths([changed], repo_root=tmp_path)
+
+    assert errors == [f"{readme}: artifact name must start with NN-"]
+
+
+@pytest.mark.unit
 def test_unrelated_historical_artifact_is_not_scanned(tmp_path: Path) -> None:
     """Changed path로 전달되지 않은 과거 Inbox artifact는 검사하지 않는다."""
     old = Path("inbox/2026-08-01/08-00-review-old.md")
