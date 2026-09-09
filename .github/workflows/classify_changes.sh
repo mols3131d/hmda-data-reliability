@@ -54,13 +54,18 @@ markdown=false
 inbox=false
 openspec=false
 openspec_archived=false
+openspec_bulk=false
 tests=false
 toml=false
 python=false
 lefthook=false
 routes=false
+runtime_smoke=false
 full_unit=false
+full_tests=false
 full_type=false
+openspec_spec_targets=()
+openspec_change_targets=()
 targets=()
 type_targets=()
 
@@ -87,6 +92,71 @@ add_focused_test() {
   tests=true
   add_target "$target"
   add_type_target "$target"
+}
+
+add_openspec_spec_name() {
+  local target="$1"
+  local existing
+  for existing in "${openspec_spec_targets[@]}"; do
+    [[ "$existing" == "$target" ]] && return
+  done
+  openspec_spec_targets+=("$target")
+}
+
+add_openspec_change_name() {
+  local target="$1"
+  local existing
+  for existing in "${openspec_change_targets[@]}"; do
+    [[ "$existing" == "$target" ]] && return
+  done
+  openspec_change_targets+=("$target")
+}
+
+mark_full_test_scope() {
+  tests=true
+  full_tests=true
+  full_unit=true
+  full_type=true
+}
+
+is_valid_openspec_name() {
+  [[ "$1" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]
+}
+
+add_openspec_spec_target() {
+  local capability="$1"
+
+  case "$capability" in
+    data-operations-*)
+      add_focused_test tests/data_operations
+      ;;
+    data-platform-dbt-analytics)
+      add_focused_test tests/dbt
+      ;;
+    data-platform-duckdb-access)
+      add_focused_test tests/data_platform
+      ;;
+    hmda-data-eda-descriptive-evidence)
+      add_focused_test tests/hmda_data/eda
+      ;;
+    hmda-data-ingestion|hmda-data-synthetic-defects)
+      add_focused_test tests/hmda_data
+      ;;
+    orchestration-pipeline)
+      add_focused_test tests/orchestration
+      ;;
+    reliability-agentic-review)
+      add_focused_test tests/review_ai
+      add_focused_test tests/runtime_ai
+      ;;
+    reliability-*)
+      add_focused_test tests/reliability
+      ;;
+    *)
+      openspec_bulk=true
+      mark_full_test_scope
+      ;;
+  esac
 }
 
 add_domain_target() {
@@ -185,12 +255,39 @@ while IFS= read -r path; do
   esac
 
   case "$path" in
-    openspec/changes/archive/*)
+    openspec/specs/*/*)
+      openspec=true
+      capability="${path#openspec/specs/}"
+      capability="${capability%%/*}"
+      if is_valid_openspec_name "$capability" && [[ -d "openspec/specs/$capability" ]]; then
+        add_openspec_spec_name "$capability"
+        add_openspec_spec_target "$capability"
+      else
+        openspec_bulk=true
+        mark_full_test_scope
+      fi
+      ;;
+    openspec/specs/*)
+      openspec=true
+      openspec_bulk=true
+      ;;
+    openspec/changes/archive/*/*)
       openspec=true
       openspec_archived=true
       ;;
-    openspec/*)
+    openspec/changes/*/*)
       openspec=true
+      change="${path#openspec/changes/}"
+      change="${change%%/*}"
+      if is_valid_openspec_name "$change" && [[ -d "openspec/changes/$change" ]]; then
+        add_openspec_change_name "$change"
+      else
+        openspec_bulk=true
+      fi
+      ;;
+    openspec/changes/*|openspec/*)
+      openspec=true
+      openspec_bulk=true
       ;;
   esac
 
@@ -208,6 +305,7 @@ while IFS= read -r path; do
       ;;
     .python-version|pyproject.toml|uv.lock)
       tests=true
+      runtime_smoke=true
       full_unit=true
       full_type=true
       ;;
@@ -323,13 +421,22 @@ write_outputs() {
   echo "inbox=$inbox"
   echo "openspec=$openspec"
   echo "openspec_archived=$openspec_archived"
+  echo "openspec_bulk=$openspec_bulk"
   echo "tests=$tests"
   echo "toml=$toml"
   echo "python=$python"
   echo "lefthook=$lefthook"
   echo "routes=$routes"
+  echo "runtime_smoke=$runtime_smoke"
   echo "full_unit=$full_unit"
+  echo "full_tests=$full_tests"
   echo "full_type=$full_type"
+  printf 'openspec_spec_targets='
+  printf '%s ' "${openspec_spec_targets[@]}"
+  echo
+  printf 'openspec_change_targets='
+  printf '%s ' "${openspec_change_targets[@]}"
+  echo
   printf 'targets='
   printf '%s ' "${targets[@]}"
   echo

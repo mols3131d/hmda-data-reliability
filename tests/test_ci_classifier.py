@@ -300,39 +300,99 @@ def test_workflow_change_targets_classifier_test() -> None:
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    ("openspec_path", "expected_archived"),
+    ("spec_path", "expected_targets"),
     [
-        ("openspec/config.yaml", False),
-        ("openspec/schemas/spec-driven-tdd/schema.yaml", False),
-        ("openspec/schemas/spec-driven-tdd/templates/spec.md", False),
-        ("openspec/specs/orchestration-pipeline/spec.md", False),
-        ("openspec/changes/orchestration-quality-gate/proposal.md", False),
         (
-            "openspec/changes/archive/2026-08-26-data-operations-rename-runtime-settings/tasks.md",
-            True,
+            "openspec/specs/data-platform-dbt-analytics/spec.md",
+            {"tests/dbt"},
         ),
         (
-            "openspec/changes/archive/2026-06-10-complete-foundation-baseline/proposal.md",
-            True,
+            "openspec/specs/orchestration-pipeline/spec.md",
+            {"tests/orchestration"},
+        ),
+        (
+            "openspec/specs/reliability-agentic-review/spec.md",
+            {"tests/review_ai", "tests/runtime_ai"},
         ),
     ],
 )
-def test_openspec_paths_trigger_openspec_validation(
-    openspec_path: str, expected_archived: bool
+def test_canonical_openspec_changes_select_executable_targets(
+    spec_path: str,
+    expected_targets: set[str],
 ) -> None:
-    """OpenSpec 설정, 스키마, 규격, 변경 수정 시 openspec 검증이 활성화된다."""
-    out = run_classifier([openspec_path])
+    """Canonical Spec 변경은 구조 검증과 대응 executable test를 함께 선택한다."""
+    out = run_classifier([spec_path])
+
     assert out["openspec"] == "true"
-    assert out["openspec_archived"] == str(expected_archived).lower()
-    assert out["python"] == "false"
+    assert out["openspec_bulk"] == "false"
+    assert out["tests"] == "true"
+    assert out["full_tests"] == "false"
+    assert set(out["targets"].split()) == expected_targets
+
+
+@pytest.mark.unit
+def test_unknown_canonical_openspec_change_fails_safe_to_full_tests() -> None:
+    """알 수 없는 신규 Spec capability는 executable validation을 생략하지 않는다."""
+    out = run_classifier(["openspec/specs/new-capability/spec.md"])
+
+    assert out["openspec"] == "true"
+    assert out["openspec_bulk"] == "true"
+    assert out["tests"] == "true"
+    assert out["full_tests"] == "true"
+    assert out["full_unit"] == "true"
+    assert out["full_type"] == "true"
+
+
+@pytest.mark.unit
+def test_active_openspec_change_uses_affected_validation_target() -> None:
+    """Active Change 변경은 해당 Change만 OpenSpec validation 대상으로 선택한다."""
+    out = run_classifier(["openspec/changes/orchestration-quality-gate/proposal.md"])
+
+    assert out["openspec"] == "true"
+    assert out["openspec_bulk"] == "false"
+    assert out["openspec_change_targets"].strip() == "orchestration-quality-gate"
     assert out["tests"] == "false"
 
 
 @pytest.mark.unit
-def test_non_openspec_paths_keep_openspec_disabled() -> None:
-    """OpenSpec과 무관한 파일 변경 시 openspec 플래그가 비활성화 상태를 유지한다."""
+def test_archived_openspec_change_requests_archived_validation() -> None:
+    """Archive 변경은 전체 active item 대신 archived validation을 선택한다."""
     out = run_classifier(
-        ["README.md", "src/hmda_reliability/logger.py", "pyproject.toml"]
+        [
+            "openspec/changes/archive/2026-08-26-orchestration-pipeline-migrate-airflow/tasks.md"
+        ]
     )
-    assert out["openspec"] == "false"
-    assert out["openspec_archived"] == "false"
+
+    assert out["openspec"] == "true"
+    assert out["openspec_archived"] == "true"
+    assert out["openspec_bulk"] == "false"
+    assert out["openspec_change_targets"].strip() == ""
+    assert out["tests"] == "false"
+
+
+@pytest.mark.unit
+def test_openspec_configuration_change_uses_bulk_validation() -> None:
+    """OpenSpec configuration 변경은 bulk validation을 사용한다."""
+    out = run_classifier(["openspec/config.yaml"])
+
+    assert out["openspec"] == "true"
+    assert out["openspec_bulk"] == "true"
+    assert out["openspec_spec_targets"].strip() == ""
+    assert out["openspec_change_targets"].strip() == ""
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "dependency_path", [".python-version", "pyproject.toml", "uv.lock"]
+)
+def test_dependency_changes_request_runtime_boundary_smoke(
+    dependency_path: str,
+) -> None:
+    """Dependency 변경은 unit/type과 함께 dbt/Airflow runtime smoke를 선택한다."""
+    out = run_classifier([dependency_path])
+
+    assert out["python"] == "true"
+    assert out["tests"] == "true"
+    assert out["runtime_smoke"] == "true"
+    assert out["full_unit"] == "true"
+    assert out["full_type"] == "true"

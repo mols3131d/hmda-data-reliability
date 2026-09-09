@@ -85,11 +85,37 @@ jobs:
         if: steps.scope.outputs.openspec == 'true'
         env:
           ARCHIVED: ${{ steps.scope.outputs.openspec_archived }}
+          BULK: ${{ steps.scope.outputs.openspec_bulk }}
+          CHANGE_TARGETS: ${{ steps.scope.outputs.openspec_change_targets }}
+          SPEC_TARGETS: ${{ steps.scope.outputs.openspec_spec_targets }}
         run: |
           set -euo pipefail
-          npx --yes @fission-ai/openspec@1.12.0 validate --all --strict
-          if [[ "$ARCHIVED" == 'true' ]]; then
-            npx --yes @fission-ai/openspec@1.12.0 validate --archived
+          validate=(
+            npm exec --yes --package @fission-ai/openspec@1.12.0 --
+            openspec validate
+          )
+
+          if [[ "$BULK" == true ]]; then
+            "${validate[@]}" --all --strict
+          else
+            read -r -a specs <<< "$SPEC_TARGETS"
+            for target in "${specs[@]}"; do
+              "${validate[@]}" "$target" --type spec --strict
+            done
+
+            read -r -a changes <<< "$CHANGE_TARGETS"
+            for target in "${changes[@]}"; do
+              "${validate[@]}" "$target" --type change --strict
+            done
+
+            if [[ "$ARCHIVED" == true ]]; then
+              "${validate[@]}" --archived
+            fi
+
+            if ((${#specs[@]} == 0 && ${#changes[@]} == 0)) && [[ "$ARCHIVED" != true ]]; then
+              echo "OpenSpec changed paths were not assigned a validation target" >&2
+              exit 1
+            fi
           fi
 
       - name: Set up Python
@@ -195,6 +221,7 @@ jobs:
       - name: Run selected tests
         if: steps.scope.outputs.tests == 'true'
         env:
+          FULL_TESTS: ${{ steps.scope.outputs.full_tests }}
           FULL_UNIT: ${{ steps.scope.outputs.full_unit }}
           TARGETS: ${{ steps.scope.outputs.targets }}
         run: |
@@ -208,7 +235,10 @@ jobs:
             -ra
           )
 
-          if [[ "$FULL_UNIT" == true ]]; then
+          if [[ "$FULL_TESTS" == true ]]; then
+            "${common[@]}" -n auto -m "not memory and not stress"
+            exit
+          elif [[ "$FULL_UNIT" == true ]]; then
             "${common[@]}" -n auto -m "unit and not memory and not stress"
             exit
           fi
@@ -221,3 +251,17 @@ jobs:
           else
             "${common[@]}" -m "not memory and not stress" "${targets[@]}"
           fi
+
+      - name: Run dependency runtime smoke
+        if: steps.scope.outputs.runtime_smoke == 'true'
+        run: |
+          set -euo pipefail
+          uv run --no-sync pytest \
+            -q \
+            -p no:sugar \
+            --color=no \
+            --tb=short \
+            -ra \
+            -m "not memory and not stress" \
+            tests/dbt/test_analytics_foundation.py \
+            tests/orchestration/test_airflow_dag.py
