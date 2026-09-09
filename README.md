@@ -2,7 +2,7 @@
 
 **Evidence-first data reliability with bounded AI delegation.**
 
-HMDA Data Reliability는 로컬 HMDA Data Lake에서 데이터 신뢰성을 검증하고, 그 과정에서 AI에 맡길 수 있는 범위를 함께 다루는 프로젝트다. 데이터 상태부터 incident evidence, `RecoveryProposal`, re-validation까지 한 흐름에서 추적한다. AI는 evidence review에 쓰지만, 현재 MVP에서는 직접 복구하지 않는다.
+HMDA Data Reliability는 로컬 HMDA Data Lake에서 데이터 신뢰성을 검증하고, 그 과정에서 AI에 맡길 수 있는 범위를 함께 다루는 프로젝트다. 데이터 상태부터 incident evidence, validated recovery proposal, re-validation까지 한 흐름에서 추적한다. AI는 evidence review에 쓰지만, 현재 MVP에서는 직접 복구하지 않는다.
 
 > [!NOTE]
 > **Status: Active MVP.** 지금은 기능을 넓히지 않고 HMDA reliability flow 하나를 end-to-end로 닫는 중이다. Scope와 acceptance는 [`docs/mvp.md`](docs/mvp.md)에서 관리한다.
@@ -13,7 +13,7 @@ HMDA Data Reliability는 로컬 HMDA Data Lake에서 데이터 신뢰성을 검�
 
 ## Design Boundaries
 
-Incident detection과 핵심 safety 판단은 deterministic code와 evidence로 처리한다. AI는 incident evidence와 `RemediationDraft`를 읽고 검토하지만 MVP에서는 state mutation을 일으킬 수 없다. Recovery는 검증된 `RecoveryProposal`과 human approval 뒤에만 실행하고, 끝나면 같은 기준으로 re-validation한다.
+Incident detection과 핵심 safety 판단은 deterministic code와 evidence로 처리한다. AI는 incident evidence와 `RemediationDraft`를 읽고 검토하지만 MVP에서는 state mutation을 일으킬 수 없다. Recovery는 검증된 recovery proposal과 human approval 뒤에만 실행하고, 끝나면 같은 기준으로 re-validation한다.
 
 장기적으로는 검증과 복구 능력이 쌓이는 만큼 AI에 맡길 수 있는 범위도 넓힌다. 지금은 review까지가 그 경계다.
 
@@ -29,7 +29,7 @@ flowchart TB
         direction LR
         lake["Local Data Lake"] --> evidence["Data + Execution Evidence"]
         evidence --> incident["Incident + RemediationDraft"]
-        incident --> proposal["Validated RecoveryProposal"]
+        incident --> proposal["Validated Recovery Proposal"]
     end
 
     subgraph advisory["Bounded AI Advisory"]
@@ -58,7 +58,8 @@ flowchart TB
 | Data | `DuckDB`, `dbt Core`, `Polars`, `PyArrow` | ingestion, query, transform |
 | Orchestration | `Apache Airflow 3.3.0` | data-plane DAG 실행 |
 | Contracts | `Pydantic` | reliability contract와 AI review model |
-| Agentic review | `LangGraph` | bounded remediation review |
+| Remediation | `LangGraph` | deterministic remediation draft workflow |
+| AI runtime | `OpenAI` Python SDK | OpenAI-compatible bounded provider invocation |
 
 세부 tool choice와 layer별 책임은 [`DEVELOPMENT.md`](DEVELOPMENT.md)에 정리되어 있다.
 
