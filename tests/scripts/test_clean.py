@@ -31,6 +31,10 @@ def _write(path: Path, content: str = "cache") -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def _mark_tmp_owned(path: Path, repo_root: Path) -> None:
+    clean._tmp_ownership_marker(path).write_text(str(repo_root), encoding="utf-8")
+
+
 @pytest.mark.unit
 def test_tmp_patterns_match_only_allow_listed_direct_children(tmp_path: Path) -> None:
     """Project /tmp patterns are matched at the temporary-root boundary."""
@@ -44,7 +48,9 @@ def test_tmp_patterns_match_only_allow_listed_direct_children(tmp_path: Path) ->
         "pytest-of-user",
         "pr123-review-456",
     ):
-        _write(tmp_root / name / "payload.bin")
+        target = tmp_root / name
+        _write(target / "payload.bin")
+        _mark_tmp_owned(target, repo_root)
     _write(tmp_root / "unrelated.duckdb.tmpx")
 
     plan = clean.build_cleanup_plan(
@@ -61,6 +67,62 @@ def test_tmp_patterns_match_only_allow_listed_direct_children(tmp_path: Path) ->
     ]
     assert all(candidate.scope == "tmp" for candidate in plan.candidates)
     assert plan.total_size_bytes == 4 * len("cache")
+
+
+@pytest.mark.unit
+def test_unowned_tmp_pattern_is_skipped_without_explicit_opt_in(
+    tmp_path: Path,
+) -> None:
+    """A matching system path is not deletable without an ownership marker."""
+    tmp_root = tmp_path / "tmp"
+    repo_root = tmp_path / "repo"
+    tmp_root.mkdir()
+    repo_root.mkdir()
+    target = tmp_root / "pytest-of-other-project"
+    _write(target / "payload.bin")
+
+    plan = clean.build_cleanup_plan(
+        scope="tmp",
+        repo_root=repo_root,
+        tmp_root=tmp_root,
+    )
+
+    assert not plan.candidates
+    assert plan.skipped[0].path == target
+    assert "ownership marker" in plan.skipped[0].reason
+
+    opted_in_plan = clean.build_cleanup_plan(
+        scope="tmp",
+        repo_root=repo_root,
+        tmp_root=tmp_root,
+        allow_unowned_tmp=True,
+    )
+    assert [candidate.path for candidate in opted_in_plan.candidates] == [target]
+
+
+@pytest.mark.unit
+def test_tmp_ownership_marker_must_match_current_repository(
+    tmp_path: Path,
+) -> None:
+    """A marker claimed by another repository does not authorize deletion."""
+    tmp_root = tmp_path / "tmp"
+    repo_root = tmp_path / "repo"
+    other_repo_root = tmp_path / "other-repo"
+    tmp_root.mkdir()
+    repo_root.mkdir()
+    other_repo_root.mkdir()
+    target = tmp_root / "airflow_recon_other"
+    _write(target / "payload.bin")
+    _mark_tmp_owned(target, other_repo_root)
+
+    plan = clean.build_cleanup_plan(
+        scope="tmp",
+        repo_root=repo_root,
+        tmp_root=tmp_root,
+    )
+
+    assert not plan.candidates
+    assert "현재 repository" in plan.skipped[0].reason
 
 
 @pytest.mark.unit
@@ -125,13 +187,13 @@ def test_repo_discovery_preserves_protected_paths(tmp_path: Path) -> None:
         "dbt/logs",
         ".tmp",
         ".local/airflow",
-        ".local/worktrees",
         "artifacts/result.xml",
         "artifacts/result.html",
     }
     assert not any(path.startswith((".venv", "data/")) for path in relative_targets)
     assert (repo_root / "data/raw/__pycache__/raw.pyc").exists()
     assert (repo_root / ".venv/__pycache__/venv.pyc").exists()
+    assert (repo_root / ".local/worktrees/worktree/file.txt").exists()
 
 
 @pytest.mark.unit
@@ -268,6 +330,59 @@ def test_yes_deletes_only_safe_targets_and_keeps_protected_data(
     assert exit_code == 0
     assert not (repo_root / ".pytest_cache").exists()
     assert (repo_root / "data/raw/keep.csv").exists()
+
+
+@pytest.mark.unit
+def test_tmp_yes_deletes_marked_target_and_ownership_marker(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit deletion removes only an owned temporary target and its marker."""
+    repo_root = tmp_path / "repo"
+    tmp_root = tmp_path / "tmp"
+    repo_root.mkdir()
+    tmp_root.mkdir()
+    target = tmp_root / "test.duckdb.tmp"
+    _write(target / "payload.bin")
+    _mark_tmp_owned(target, repo_root)
+    monkeypatch.setattr(clean, "REPO_ROOT", repo_root)
+    monkeypatch.setattr(clean, "TMP_ROOT", tmp_root)
+
+    exit_code = clean.main(["--tmp-only", "--yes"])
+
+    assert exit_code == 0
+    assert not target.exists()
+    assert not clean._tmp_ownership_marker(target).exists()
+
+
+@pytest.mark.unit
+def test_delete_reloads_tracked_index_after_confirmation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A path tracked after planning is skipped during destructive deletion."""
+    repo_root = tmp_path / "repo"
+    tmp_root = tmp_path / "tmp"
+    repo_root.mkdir()
+    tmp_root.mkdir()
+    target = repo_root / ".tmp" / "payload.bin"
+    _write(target)
+    states = iter((_tracked_index(), _tracked_index(".tmp")))
+    calls: list[Path] = []
+
+    def load_tracked_index(root: Path) -> clean.TrackedIndex:
+        calls.append(root)
+        return next(states)
+
+    monkeypatch.setattr(clean, "REPO_ROOT", repo_root)
+    monkeypatch.setattr(clean, "TMP_ROOT", tmp_root)
+    monkeypatch.setattr(clean, "_load_tracked_index", load_tracked_index)
+
+    exit_code = clean.main(["--repo-only", "--yes"])
+
+    assert exit_code == 1
+    assert target.exists()
+    assert calls == [repo_root, repo_root]
 
 
 @pytest.mark.unit

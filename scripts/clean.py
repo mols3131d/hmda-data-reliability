@@ -3,7 +3,9 @@
 
 The command only considers explicit cache/artifact patterns. Repository targets
 are deleted only after their resolved path is checked, Git-tracked paths are
-verified, and protected directories are excluded.
+verified, and protected directories are excluded. Legacy system temporary
+patterns also require a repository ownership marker unless the operator opts
+into the explicit legacy cleanup flag.
 """
 
 from __future__ import annotations
@@ -29,6 +31,7 @@ TMP_PATTERNS = (
     "pytest-of-*",
     "pr*-review*",
 )
+TMP_OWNERSHIP_MARKER_PREFIX = ".hmda-data-reliability-owner-"
 CACHE_DIRECTORY_NAMES = frozenset(
     {
         "__pycache__",
@@ -44,7 +47,6 @@ REPO_DIRECTORY_TARGETS = (
     Path("dbt/logs"),
     Path(".tmp"),
     Path(".local/airflow"),
-    Path(".local/worktrees"),
 )
 PROTECTED_REPO_PATHS = (
     Path(".git"),
@@ -54,6 +56,7 @@ PROTECTED_REPO_PATHS = (
     Path("data/metadata"),
     Path("data/lakehouse"),
     Path("data/hmda_reliability.duckdb"),
+    Path(".local/worktrees"),
 )
 PROTECTED_DIRECTORY_NAMES = frozenset({".git", ".venv"})
 ARTIFACT_SUFFIXES = frozenset({".xml", ".html"})
@@ -130,6 +133,46 @@ def _tmp_pattern(name: str) -> str | None:
     for pattern in TMP_PATTERNS:
         if fnmatch.fnmatchcase(name, pattern):
             return pattern
+    return None
+
+
+def _tmp_ownership_marker(path: Path) -> Path:
+    """Return the sidecar marker path for one system temporary artifact."""
+    return path.with_name(f"{TMP_OWNERSHIP_MARKER_PREFIX}{path.name}")
+
+
+def _tmp_ownership_reason(
+    candidate: CleanupCandidate,
+    *,
+    repo_root: Path,
+    allow_unowned_tmp: bool,
+) -> str | None:
+    """Require an exact repository-root marker for legacy /tmp patterns."""
+    if allow_unowned_tmp:
+        return None
+
+    marker = _tmp_ownership_marker(candidate.path)
+    try:
+        marker_stat = marker.lstat()
+    except FileNotFoundError:
+        return (
+            "repository ownership marker가 없어 /tmp 대상은 삭제하지 않습니다 "
+            "(--allow-unowned-tmp 필요)"
+        )
+    except OSError as error:
+        return f"repository ownership marker를 확인할 수 없습니다: {error}"
+
+    if stat.S_ISLNK(marker_stat.st_mode):
+        return "repository ownership marker가 symlink라 삭제하지 않습니다"
+    if not stat.S_ISREG(marker_stat.st_mode):
+        return "repository ownership marker가 regular file이 아닙니다"
+
+    try:
+        marker_owner = marker.read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeError) as error:
+        return f"repository ownership marker를 읽을 수 없습니다: {error}"
+    if marker_owner != str(repo_root):
+        return "repository ownership marker가 현재 repository를 가리키지 않습니다"
     return None
 
 
@@ -384,6 +427,7 @@ def _safety_reason(
     repo_root: Path,
     tmp_root: Path,
     tracked_index: TrackedIndex,
+    allow_unowned_tmp: bool = False,
 ) -> str | None:
     """Return why a candidate must be skipped, or None when it is safe."""
     try:
@@ -423,6 +467,13 @@ def _safety_reason(
             return "temporary root 밖으로 resolve되어 삭제하지 않습니다"
         if repo_root == resolved or repo_root.is_relative_to(resolved):
             return "repository root를 포함할 수 있어 삭제하지 않습니다"
+        ownership_reason = _tmp_ownership_reason(
+            candidate,
+            repo_root=repo_root,
+            allow_unowned_tmp=allow_unowned_tmp,
+        )
+        if ownership_reason is not None:
+            return ownership_reason
     return None
 
 
@@ -432,6 +483,7 @@ def build_cleanup_plan(
     repo_root: Path = REPO_ROOT,
     tmp_root: Path = TMP_ROOT,
     tracked_index: TrackedIndex | None = None,
+    allow_unowned_tmp: bool = False,
 ) -> CleanupPlan:
     """Discover and safety-filter targets for one requested cleanup scope."""
     if scope not in {"all", "tmp", "repo"}:
@@ -464,6 +516,7 @@ def build_cleanup_plan(
             repo_root=resolved_repo_root,
             tmp_root=resolved_tmp_root,
             tracked_index=index,
+            allow_unowned_tmp=allow_unowned_tmp,
         )
         if reason is not None:
             skipped.append(
@@ -535,13 +588,26 @@ def _delete_candidate(
     repo_root: Path,
     tmp_root: Path,
     tracked_index: TrackedIndex,
+    allow_unowned_tmp: bool = False,
 ) -> tuple[bool, str | None]:
     """Revalidate and remove one candidate, returning success and an error."""
+    ownership_marker = None
+    if candidate.scope == "tmp" and (
+        _tmp_ownership_reason(
+            candidate,
+            repo_root=repo_root,
+            allow_unowned_tmp=False,
+        )
+        is None
+    ):
+        ownership_marker = _tmp_ownership_marker(candidate.path)
+
     reason = _safety_reason(
         candidate,
         repo_root=repo_root,
         tmp_root=tmp_root,
         tracked_index=tracked_index,
+        allow_unowned_tmp=allow_unowned_tmp,
     )
     if reason is not None:
         return False, f"삭제 직전 안전성 검증 실패: {reason}"
@@ -551,6 +617,8 @@ def _delete_candidate(
             shutil.rmtree(candidate.path)
         else:
             candidate.path.unlink()
+        if ownership_marker is not None:
+            ownership_marker.unlink(missing_ok=True)
     except OSError as error:
         return False, str(error)
     return True, None
@@ -586,6 +654,14 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         action="store_true",
         help="interactive confirmation을 건너뛰는 명시적 삭제 승인",
     )
+    parser.add_argument(
+        "--allow-unowned-tmp",
+        action="store_true",
+        help=(
+            "ownership marker 없는 legacy /tmp pattern도 대상으로 포함 "
+            "(사용자 확인 후에만 사용)"
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -601,6 +677,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the cleanup CLI and return a process status code."""
     args = _parse_args(argv)
     scope = _scope_from_args(args)
+    if args.allow_unowned_tmp and scope == "repo":
+        print(
+            "error: --allow-unowned-tmp는 --tmp-only 또는 --all과 함께 사용하세요",
+            file=sys.stderr,
+        )
+        return 2
     try:
         repo_root = _normalise_root(REPO_ROOT, "repository root")
         tmp_root = _normalise_root(TMP_ROOT, "temporary root")
@@ -614,12 +696,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             repo_root=repo_root,
             tmp_root=tmp_root,
             tracked_index=tracked_index,
+            allow_unowned_tmp=args.allow_unowned_tmp,
         )
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
 
     _print_plan(plan, scope)
+    if args.allow_unowned_tmp:
+        print("WARNING: ownership marker 없는 /tmp pattern을 명시적으로 포함했습니다.")
     if args.dry_run:
         print("DRY RUN: 실제 삭제를 수행하지 않았습니다.")
         return 0
@@ -629,6 +714,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("취소했습니다. 삭제된 파일은 없습니다.")
         return 2
 
+    destructive_tracked_index = tracked_index
+    if scope in {"all", "repo"}:
+        destructive_tracked_index = _load_tracked_index(repo_root)
+
     deleted_bytes = 0
     failures = 0
     for candidate in plan.candidates:
@@ -636,7 +725,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             candidate,
             repo_root=repo_root,
             tmp_root=tmp_root,
-            tracked_index=tracked_index,
+            tracked_index=destructive_tracked_index,
+            allow_unowned_tmp=args.allow_unowned_tmp,
         )
         if deleted:
             deleted_bytes += candidate.size_bytes
