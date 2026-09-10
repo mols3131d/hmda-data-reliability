@@ -174,7 +174,7 @@ def _validate_new_sequences(
     *,
     repo_root: Path,
 ) -> list[str]:
-    """Require new sequenced roots to append after the largest existing sequence."""
+    """Require added roots to append when an existing sequence is observable."""
     added_roots: dict[str, set[str]] = defaultdict(set)
     for raw_path in added_paths:
         root = _new_sequenced_root_for_added_path(Path(raw_path))
@@ -202,7 +202,10 @@ def _validate_new_sequences(
             if value is not None:
                 existing_values.append(value)
 
-        expected_start = max(existing_values, default=-1) + 1
+        if not existing_values:
+            continue
+
+        expected_start = max(existing_values) + 1
         ordered_new = sorted(
             (value, name)
             for name in new_names
@@ -229,7 +232,7 @@ def validate_changed_paths(
     repo_root: Path,
     added_paths: list[str] | None = None,
 ) -> list[str]:
-    """Validate artifact roots reached from changed paths and append-only new roots."""
+    """Validate artifact roots reached from changed paths and observable appends."""
     errors: list[str] = []
     seen_roots: set[Path] = set()
 

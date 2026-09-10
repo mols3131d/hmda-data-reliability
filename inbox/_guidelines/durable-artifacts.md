@@ -25,7 +25,7 @@ OpenSpec workflow가 정의한 proposal, design, tasks, review와 그 밖의 Ope
 - 기존 artifact로 현재 목적을 정확히 표현할 수 없거나 호출자 또는 지침이 별도 artifact를 요구할 때만 새 artifact를 만든다.
 - Handoff를 위해 만든다는 이유만으로 `handoff`라는 artifact type을 만들지 않는다. 실제 문서 목적에 맞는 기존 type을 사용한다.
 - 새 artifact의 path, naming, frontmatter와 sequence는 [`inbox/AGENTS.md`](../AGENTS.md)의 common contract를 따른다.
-- PR이 없는 change branch에서는 해당 branch work unit을 재사용한다. Pull Request가 생성되면 rename된 `inbox/github-<pr-number>-<short-name>/` work unit을 이어서 사용한다. Change branch가 소유하지 않는 Issue-only work는 해당 GitHub Issue work unit을 사용한다.
+- Current owning work unit의 directory를 재사용한다. Branch가 Pull Request를 얻어 directory identity가 전환되면 같은 artifact를 rename된 work unit에서 이어서 사용하고 competing copy를 만들지 않는다.
 - 여러 session이나 participant가 같은 mutable artifact를 이어 쓰면 owning ref와 exact path를 source identity로 유지한다.
 
 ## Content
@@ -51,7 +51,7 @@ Durable artifact가 활성화된 동안 material state가 바뀌거나 handoff�
 
 ## Boundaries
 
-- Durable artifact는 repository-backed working context이며 제품의 Memory나 runtime session persistence를 대체하지 않는다.
+- Durable artifact는 repository-backed working context이며 runtime session state를 대체하지 않는다.
 - OpenSpec artifact의 구조, lifecycle 또는 completion gate는 이 가이드라인이 소유하지 않는다. [`openspec/README.md`](../../openspec/README.md)와 해당 OpenSpec workflow contract를 따른다.
 - Durable artifact를 만들라는 요구는 현재 작업 scope를 확장하거나 unrelated repository state를 수정할 권한을 부여하지 않는다.
 - Common Inbox ownership, writing과 lifecycle contract는 [`inbox/AGENTS.md`](../AGENTS.md)를 따른다.

@@ -93,7 +93,7 @@ def test_github_work_artifact_without_type_passes(tmp_path: Path) -> None:
 
 @pytest.mark.unit
 def test_branch_work_artifact_passes(tmp_path: Path) -> None:
-    """PR 전 branch work unit은 생성일과 branch-name slug를 container로 사용한다."""
+    """PR 전 branch work unit은 date와 branch-name slug를 container로 사용한다."""
     relative = Path(
         "inbox/2026-09-09-agent-docs-inbox-policy/00-plan-directory-policy.md"
     )
@@ -110,8 +110,8 @@ def test_branch_work_artifact_passes(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-def test_new_branch_sequence_must_append_after_maximum(tmp_path: Path) -> None:
-    """Branch work unit도 GitHub work unit과 같은 append-only sequence를 사용한다."""
+def test_existing_branch_sequence_must_append_after_maximum(tmp_path: Path) -> None:
+    """Branch work unit도 기존 sequence가 있으면 max + 1로 append한다."""
     container = Path("inbox/2026-09-09-agent-docs-inbox-policy")
     write_artifact(tmp_path / container / "01-review-first.md")
     write_bundle(tmp_path, container / "03-discuss-later")
@@ -128,6 +128,26 @@ def test_new_branch_sequence_must_append_after_maximum(tmp_path: Path) -> None:
         f"{tmp_path / container}: new top-level sequence must append after the "
         "current maximum; expected [04], got [02]"
     ]
+
+
+@pytest.mark.unit
+def test_new_sequenced_container_preserves_observed_gaps(tmp_path: Path) -> None:
+    """새 container에서는 이전 identity의 sequence history를 추정하지 않는다."""
+    container = Path("inbox/github-240-inbox-policy")
+    first = container / "00-plan-start.md"
+    later = container / "02-review-later.md"
+    write_artifact(tmp_path / first, artifact_type="plan")
+    write_artifact(tmp_path / later)
+
+    paths = [first.as_posix(), later.as_posix()]
+    assert (
+        validate_changed_paths(
+            paths,
+            repo_root=tmp_path,
+            added_paths=paths,
+        )
+        == []
+    )
 
 
 @pytest.mark.unit
