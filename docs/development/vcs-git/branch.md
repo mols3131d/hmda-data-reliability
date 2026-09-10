@@ -38,11 +38,11 @@ Repository protection, security policy와 권한은 항상 우선한다.
 
 | Part | Meaning |
 | --- | --- |
-| `actor` | branch 작업을 책임지고 주도하는 주체를 구분하는 optional namespace |
+| `actor` | Optional. 작업을 주도하는 주체를 적는다. |
 | `type` | 변경 성격 |
 | `topic` | 변경 의도와 행동 |
 
-`actor`는 branch를 생성하거나 명령을 실행한 도구가 아니라 작업을 실질적으로 책임지고 주도하는 주체를 나타낸다. 인간이 Agent를 사용해 작업하더라도 인간이 작업을 주도하면 인간 주도 branch다. 인간은 특별한 구분이 필요하지 않다면 actor를 생략할 수 있고, Agent가 작업을 주도할 때는 `agent`를 사용한다.
+`actor`는 branch 생성자나 명령 실행 도구가 아니라 작업의 실질적 주도자를 나타낸다. 인간이 Agent를 사용하더라도 인간이 주도하면 인간 주도 branch이고, Agent가 주도할 때만 `agent`를 사용한다. 인간은 필요하지 않으면 actor를 생략한다.
 
 ```text
 feat/add-reliability-profile
@@ -51,12 +51,11 @@ agent/docs/clarify-vcs-git-guides
 agent/chore/adopt-mols-text-optimizer
 ```
 
-`type`은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사용한다. `topic`은 변경 대상의 이름만 쓰지 않고 변경 의도와 수행할 행동이 드러나도록 소문자 kebab-case로 표현한다.
+`type`은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사용한다. `topic`은 변경 대상 이름만 나열하지 않고 변경 의도와 행동이 드러나도록 소문자 kebab-case로 쓴다.
 
 ## Agent Instructions
 
-- 자신이 작업을 주도하는 branch에서는 `agent` actor namespace와 자신의 작업 branch를 사용한다.
-- 인간이 주도하는 branch에서는 Agent가 작업에 참여한다는 이유만으로 `agent` namespace를 사용하지 않는다.
+- Agent가 작업을 주도하면 자신의 `agent` branch를 사용한다. 인간 주도 branch에서는 Agent 참여만으로 `agent` namespace를 사용하지 않는다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
 - 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.
