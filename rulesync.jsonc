@@ -28,7 +28,8 @@
         "mols-markdown-maintenance",
         "mols-mermaid-chart",
         "mols-mermaid-diagram",
-        "mols-openspec-customize"
+        "mols-openspec-customize",
+        "mols-text-optimizer"
       ],
       "transport": "github",
       "ref": "main",
