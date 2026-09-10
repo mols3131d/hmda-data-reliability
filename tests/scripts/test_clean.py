@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -33,6 +35,26 @@ def _write(path: Path, content: str = "cache") -> None:
 
 def _mark_tmp_owned(path: Path, repo_root: Path) -> None:
     clean._tmp_ownership_marker(path).write_text(str(repo_root), encoding="utf-8")
+
+
+def _git_environment() -> dict[str, str]:
+    return {
+        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+    }
+
+
+def _run_git(
+    repo_root: Path,
+    *args: str,
+    env: dict[str, str] | None = None,
+) -> None:
+    subprocess.run(
+        ["git", "-C", str(repo_root), *args],
+        capture_output=True,
+        check=True,
+        env=env,
+        text=True,
+    )
 
 
 @pytest.mark.unit
@@ -194,6 +216,31 @@ def test_repo_discovery_preserves_protected_paths(tmp_path: Path) -> None:
     assert (repo_root / "data/raw/__pycache__/raw.pyc").exists()
     assert (repo_root / ".venv/__pycache__/venv.pyc").exists()
     assert (repo_root / ".local/worktrees/worktree/file.txt").exists()
+
+
+@pytest.mark.unit
+def test_all_scope_keeps_repo_candidate_when_tmp_parent_is_skipped(
+    tmp_path: Path,
+) -> None:
+    """A skipped tmp candidate cannot suppress a nested repo candidate."""
+    tmp_root = tmp_path / "tmp"
+    repo_root = tmp_root / "pr123-review-repo"
+    tmp_root.mkdir()
+    repo_root.mkdir()
+    repo_candidate = repo_root / ".pytest_cache"
+    _write(repo_candidate / "nodeids")
+
+    plan = clean.build_cleanup_plan(
+        scope="all",
+        repo_root=repo_root,
+        tmp_root=tmp_root,
+        tracked_index=_tracked_index(),
+    )
+
+    assert repo_candidate in {
+        candidate.path for candidate in plan.candidates if candidate.scope == "repo"
+    }
+    assert any(item.path == repo_root and item.scope == "tmp" for item in plan.skipped)
 
 
 @pytest.mark.unit
@@ -383,6 +430,49 @@ def test_delete_reloads_tracked_index_after_confirmation(
     assert exit_code == 1
     assert target.exists()
     assert calls == [repo_root, repo_root]
+
+
+@pytest.mark.unit
+def test_tracked_index_ignores_ambient_git_overrides(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cleanup uses the repository index even when ambient Git env is overridden."""
+    repo_root = tmp_path / "repo"
+    tmp_root = tmp_path / "tmp"
+    repo_root.mkdir()
+    tmp_root.mkdir()
+    git_env = _git_environment()
+    _run_git(repo_root, "init", env=git_env)
+    tracked_file = repo_root / ".tmp" / "tracked.txt"
+    _write(tracked_file)
+    _run_git(repo_root, "add", ".tmp/tracked.txt", env=git_env)
+
+    alternate_index = tmp_path / "ambient-index"
+    alternate_git_env = dict(git_env)
+    alternate_git_env["GIT_INDEX_FILE"] = str(alternate_index)
+    _run_git(repo_root, "read-tree", "--empty", env=alternate_git_env)
+    monkeypatch.setenv("GIT_INDEX_FILE", str(alternate_index))
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "wrong-git-dir"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(tmp_path / "wrong-work-tree"))
+    monkeypatch.setenv("GIT_COMMON_DIR", str(tmp_path / "wrong-common-dir"))
+
+    tracked_index = clean._load_tracked_index(repo_root)
+    assert tracked_index.verified
+    assert PurePosixPath(".tmp/tracked.txt") in tracked_index.paths
+
+    plan = clean.build_cleanup_plan(
+        scope="repo",
+        repo_root=repo_root,
+        tmp_root=tmp_root,
+    )
+
+    assert not plan.candidates
+    assert any(
+        item.path == repo_root / ".tmp" and "tracked" in item.reason
+        for item in plan.skipped
+    )
+    assert tracked_file.exists()
 
 
 @pytest.mark.unit

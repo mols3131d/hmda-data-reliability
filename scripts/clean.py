@@ -296,24 +296,34 @@ def discover_repo_targets(repo_root: Path = REPO_ROOT) -> tuple[CleanupCandidate
 def _deduplicate_candidates(
     candidates: Sequence[CleanupCandidate],
 ) -> tuple[CleanupCandidate, ...]:
-    """Keep the broadest matching target once, in deterministic order."""
-    unique: dict[Path, CleanupCandidate] = {}
+    """Keep the broadest matching target once within each cleanup scope."""
+    unique: dict[tuple[TargetScope, Path], CleanupCandidate] = {}
     for candidate in candidates:
-        unique.setdefault(candidate.path, candidate)
+        unique.setdefault((candidate.scope, candidate.path), candidate)
 
     selected: list[CleanupCandidate] = []
     for candidate in sorted(
         unique.values(),
-        key=lambda item: (len(item.path.parts), item.path.as_posix()),
+        key=lambda item: (item.scope, len(item.path.parts), item.path.as_posix()),
     ):
         if any(
-            candidate.path == selected_item.path
-            or candidate.path.is_relative_to(selected_item.path)
+            candidate.scope == selected_item.scope
+            and (
+                candidate.path == selected_item.path
+                or candidate.path.is_relative_to(selected_item.path)
+            )
             for selected_item in selected
         ):
             continue
         selected.append(candidate)
     return tuple(sorted(selected, key=lambda item: item.path.as_posix()))
+
+
+def _git_environment() -> dict[str, str]:
+    """Remove ambient Git overrides before resolving the repository index."""
+    return {
+        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+    }
 
 
 def _load_tracked_index(repo_root: Path) -> TrackedIndex:
@@ -323,6 +333,7 @@ def _load_tracked_index(repo_root: Path) -> TrackedIndex:
             ["git", "-C", str(repo_root), "ls-files", "--cached", "--full-name", "-z"],
             capture_output=True,
             check=False,
+            env=_git_environment(),
             encoding="utf-8",
             errors="surrogateescape",
             text=True,
