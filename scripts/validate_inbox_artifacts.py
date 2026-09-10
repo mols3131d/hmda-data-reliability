@@ -8,9 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-BRANCH_WORK_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$"
-)
+BRANCH_WORK_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$")
 GITHUB_WORK_RE = re.compile(
     r"^github-(?P<number>[1-9]\d*)-(?P<name>[a-z0-9]+(?:-[a-z0-9]+)*)$"
 )
