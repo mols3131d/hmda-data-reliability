@@ -21,7 +21,7 @@ Inbox는 다음처럼 **유용하지만 canonical ownership을 요구하지 않�
 
 - research, review, report, brief, discussion, plan
 - 현재 작업 상태, checkpoint, next action
-- agent-to-agent handoff 또는 coordination note
+- agent-to-agent handoff를 지원하는 working context 또는 coordination note
 - 판단 근거, 실험 결과, 재현 정보와 기타 evidence
 - 필요하면 폐기하거나 핵심 내용만 canonical owner에 반영할 수 있는 임시 작업 기록
 
@@ -72,7 +72,7 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 - Lowercase kebab-case를 사용한다.
 - `type`, `domain`, `short-title`은 required다.
 - Optional component는 identification이나 retrieval에 실제 도움이 될 때만 추가한다.
-- 같은 작업의 status나 handoff를 이어서 기록할 수 있으면 새 artifact를 남발하지 않고 기존 artifact를 갱신한다.
+- 같은 작업의 status나 continuity context를 이어서 기록할 수 있으면 새 artifact를 남발하지 않고 기존 artifact를 갱신한다.
 
 ## Routing
 
@@ -84,7 +84,11 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 | `review` | [Review](_guidelines/review.md) |
 | `discuss` | [Discuss](_guidelines/discuss.md) |
 
-세션 간 continuity 또는 participant 간 정보 공유를 위해 repository-backed working context를 남기라는 호출자나 applicable guidance가 있는 경우에만 [Durable Artifacts](_guidelines/durable-artifacts.md)를 함께 적용한다. `durable`은 artifact type이 아니며, OpenSpec workflow가 정의한 artifact는 OpenSpec owner를 따른다.
+Handoff와 persistence는 artifact type과 별개의 cross-cutting concern으로 적용한다.
+
+- 작업을 다른 session, agent 또는 사람에게 실제로 넘길 때는 [Handoff](_guidelines/handoff.md)를 적용한다.
+- Agent가 사람에게 판단, action 또는 continuation을 넘기면 Handoff와 함께 [Human Handoff](_guidelines/handoff-human.md)를 적용한다.
+- 세션 간 continuity 또는 participant 간 정보 공유를 위해 repository-backed working context를 남기라는 호출자나 applicable guidance가 있는 경우에만 [Durable Artifacts](_guidelines/durable-artifacts.md)를 적용한다. `durable`은 artifact type이 아니며, OpenSpec workflow가 정의한 artifact는 OpenSpec owner를 따른다.
 
 토론 participant prompt를 생성하거나 검토할 때는 [Discussion Prompt](_guidelines/discuss-prompt.md)도 함께 적용한다.
 
