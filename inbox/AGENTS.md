@@ -82,6 +82,8 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 | `review` | [Review](_guidelines/review.md) |
 | `discuss` | [Discuss](_guidelines/discuss.md) |
 
+세션 간 continuity 또는 participant 간 정보 공유를 위해 repository-backed working context를 남기라는 호출자나 applicable guidance가 있는 경우에만 [Durable Artifacts](_guidelines/durable-artifacts.md)를 함께 적용한다. `durable`은 artifact type이 아니며, OpenSpec workflow가 정의한 artifact는 OpenSpec owner를 따른다.
+
 토론 participant prompt를 생성하거나 검토할 때는 [Discussion Prompt](_guidelines/discuss-prompt.md)도 함께 적용한다.
 
 그 밖의 type은 이 common contract만 따른다.
