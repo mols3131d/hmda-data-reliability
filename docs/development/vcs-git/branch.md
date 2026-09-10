@@ -40,18 +40,18 @@ Repository protection, security policy와 권한은 항상 우선한다.
 | --- | --- |
 | `actor` | 작업 주체를 구분하는 optional namespace |
 | `type` | 변경 성격 |
-| `topic` | 변경 목적 |
+| `topic` | 변경 의도와 행동 |
 
 Agent는 actor namespace로 `agent`를 사용한다. 인간은 특별한 구분이 필요하지 않다면 actor를 생략할 수 있다.
 
 ```text
-feat/reliability-profile
-mols/feat/reliability-profile
-agent/docs/vcs-git-guides
-agent/feat/review-engine
+feat/add-reliability-profile
+mols/feat/add-reliability-profile
+agent/docs/clarify-vcs-git-guides
+agent/chore/adopt-mols-text-optimizer
 ```
 
-`type`은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사용한다. `topic`은 변경 목적을 소문자 kebab-case로 표현한다.
+`type`은 [`.gitmessage`](../../../.gitmessage)의 Conventional Commit type을 사용한다. `topic`은 변경 대상의 이름만 쓰지 않고 변경 의도와 수행할 행동이 드러나도록 소문자 kebab-case로 표현한다.
 
 ## Agent Instructions
 
