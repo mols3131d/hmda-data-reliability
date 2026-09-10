@@ -2,6 +2,8 @@
 
 `inbox/`는 **non-canonical working artifact workspace**다. 이 문서는 `inbox/**`를 다루는 agent의 상세 contract를 소유한다. 사람용 간단한 안내는 [`README.md`](README.md)를 본다.
 
+Inbox artifact의 문서 품질과 ownership 판단은 [Documentation Principles](../docs/documentation/principles.md)를 공통 원칙으로 따른다. Inbox-specific contract는 이 문서와 적용되는 `_guidelines/`가 소유한다.
+
 ## Boundary
 
 - 이 규칙은 `inbox/**`의 내용, 구조와 lifecycle을 소유한다. 일반 Git/Pull Request workflow는 [`docs/development/vcs-git/`](../docs/development/vcs-git/README.md)가 소유한다.
