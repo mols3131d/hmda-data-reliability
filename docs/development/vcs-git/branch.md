@@ -42,12 +42,11 @@ Repository protection, security policy와 권한은 항상 우선한다.
 | `type` | 변경 성격 |
 | `topic` | 변경 의도와 행동 |
 
-`actor`는 branch 생성자나 명령 실행 도구가 아니라 작업의 실질적 주도자를 나타낸다. 인간이 Agent를 사용하더라도 인간이 주도하면 인간 주도 branch이고, Agent가 주도할 때만 `agent`를 사용한다. 인간은 필요하지 않으면 actor를 생략한다.
+`actor`는 branch 생성자나 명령 실행 도구가 아니라 실제 작업 주도자를 나타낸다. 인간이 Agent를 사용해도 인간이 주도하면 인간 주도 branch다. Agent가 주도하면 `agent`를 사용한다.
 
 ```text
 feat/add-reliability-profile
 mols/feat/add-reliability-profile
-agent/docs/clarify-vcs-git-guides
 agent/chore/adopt-mols-text-optimizer
 ```
 
@@ -55,7 +54,7 @@ agent/chore/adopt-mols-text-optimizer
 
 ## Agent Instructions
 
-- Agent가 작업을 주도하면 자신의 `agent` branch를 사용한다. 인간 주도 branch에서는 Agent 참여만으로 `agent` namespace를 사용하지 않는다.
+- 자신이 주도하는 작업은 자신의 branch에서 수행한다.
 - 요청된 변경 목적과 범위만 수정한다.
 - `main`, 보호 branch 또는 다른 작업 주체의 branch를 명시적 요청 없이 변경하지 않는다.
 - 명시적 요청 없이 force-push, history rewrite 또는 미병합 branch 삭제를 수행하지 않는다.
