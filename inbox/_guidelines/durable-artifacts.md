@@ -25,7 +25,7 @@ OpenSpec workflow가 정의한 proposal, design, tasks, review와 그 밖의 Ope
 - 기존 artifact로 현재 목적을 정확히 표현할 수 없거나 호출자 또는 지침이 별도 artifact를 요구할 때만 새 artifact를 만든다.
 - Handoff를 위해 만든다는 이유만으로 `handoff`라는 artifact type을 만들지 않는다. 실제 문서 목적에 맞는 기존 type을 사용한다.
 - 새 artifact의 path, naming, frontmatter와 sequence는 [`inbox/AGENTS.md`](../AGENTS.md)의 common contract를 따른다.
-- GitHub Issue 또는 Pull Request 작업이면 해당 `inbox/github-<number>-<short-name>/` work unit을 재사용한다.
+- PR이 없는 change branch에서는 해당 branch work unit을 재사용한다. Pull Request가 생성되면 rename된 `inbox/github-<pr-number>-<short-name>/` work unit을 이어서 사용한다. Change branch가 소유하지 않는 Issue-only work는 해당 GitHub Issue work unit을 사용한다.
 - 여러 session이나 participant가 같은 mutable artifact를 이어 쓰면 owning ref와 exact path를 source identity로 유지한다.
 
 ## Content

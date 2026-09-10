@@ -8,6 +8,9 @@ from collections import defaultdict
 from pathlib import Path
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+BRANCH_WORK_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$"
+)
 GITHUB_WORK_RE = re.compile(
     r"^github-(?P<number>[1-9]\d*)-(?P<name>[a-z0-9]+(?:-[a-z0-9]+)*)$"
 )
@@ -104,6 +107,14 @@ def _validate_root(
     return errors
 
 
+def _is_sequenced_container(container: str) -> bool | None:
+    if DATE_RE.fullmatch(container):
+        return False
+    if BRANCH_WORK_RE.fullmatch(container) or GITHUB_WORK_RE.fullmatch(container):
+        return True
+    return None
+
+
 def _artifact_root_for_changed_path(
     repo_root: Path,
     changed_path: Path,
@@ -119,11 +130,8 @@ def _artifact_root_for_changed_path(
         return None
 
     container = parts[0]
-    if DATE_RE.fullmatch(container):
-        sequenced = False
-    elif GITHUB_WORK_RE.fullmatch(container):
-        sequenced = True
-    else:
+    sequenced = _is_sequenced_container(container)
+    if sequenced is None:
         return None
 
     if len(parts) == 2 and changed_path.suffix == ".md":
@@ -136,15 +144,15 @@ def _artifact_root_for_changed_path(
     return None
 
 
-def _new_github_root_for_added_path(added_path: Path) -> tuple[str, str] | None:
-    """Return GitHub work container and new top-level root for an added root path."""
+def _new_sequenced_root_for_added_path(added_path: Path) -> tuple[str, str] | None:
+    """Return a sequenced work container and new top-level root for an added path."""
     try:
         relative = added_path.relative_to("inbox")
     except ValueError:
         return None
 
     parts = relative.parts
-    if len(parts) < 2 or not GITHUB_WORK_RE.fullmatch(parts[0]):
+    if len(parts) < 2 or _is_sequenced_container(parts[0]) is not True:
         return None
 
     if len(parts) == 2 and added_path.suffix == ".md":
@@ -163,15 +171,15 @@ def _sequence_value(name: str) -> int | None:
     return int(match.group("prefix"))
 
 
-def _validate_new_github_sequences(
+def _validate_new_sequences(
     added_paths: list[str],
     *,
     repo_root: Path,
 ) -> list[str]:
-    """Require new GitHub roots to append after the largest existing sequence."""
+    """Require new sequenced roots to append after the largest existing sequence."""
     added_roots: dict[str, set[str]] = defaultdict(set)
     for raw_path in added_paths:
-        root = _new_github_root_for_added_path(Path(raw_path))
+        root = _new_sequenced_root_for_added_path(Path(raw_path))
         if root is not None:
             container, root_name = root
             added_roots[container].add(root_name)
@@ -239,7 +247,7 @@ def validate_changed_paths(
         errors.extend(_validate_root(root_path, artifact_name, sequenced=sequenced))
 
     if added_paths:
-        errors.extend(_validate_new_github_sequences(added_paths, repo_root=repo_root))
+        errors.extend(_validate_new_sequences(added_paths, repo_root=repo_root))
     return errors
 
 

@@ -42,26 +42,32 @@ tags: [] # Optional
 
 `type`, `title`, `description`은 required다. Filename에 type component를 사용한 경우 frontmatter의 `type`과 같아야 한다.
 
-### GitHub Work Units
+### Sequenced Work Units
 
-GitHub Issue 또는 Pull Request와 직접 연결된 작업은 하나의 work unit directory로 묶는다.
+Change branch와 GitHub Issue 또는 Pull Request에 연결된 work unit은 top-level artifact를 sequence로 관리한다.
 
 ```text
+inbox/<branch-created-date>-<branch-name-slug>/<NN>-[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>].md
+inbox/<branch-created-date>-<branch-name-slug>/<NN>-[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]/*
 inbox/github-<number>-<short-name>/<NN>-[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>].md
 inbox/github-<number>-<short-name>/<NN>-[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]/*
 ```
 
-- `number`는 이 repository의 GitHub Issue 또는 Pull Request number다.
-- `short-name`은 work unit을 식별하는 짧은 lowercase kebab-case 이름이다.
+- PR이 없는 change branch가 work unit을 소유하면 `<branch-created-date>-<branch-name-slug>`을 사용한다.
+- `branch-created-date`는 branch가 실제 생성된 `Asia/Seoul` 기준 날짜다. Branch를 생성한 workflow가 알고 있는 값을 사용하며 commit timestamp에서 추정하지 않는다.
+- `branch-name-slug`은 branch name의 `/`를 `-`로 정규화해 하나의 lowercase kebab-case directory component로 만든 값이다. 예를 들어 `agent/docs/inbox-policy`는 `agent-docs-inbox-policy`가 된다.
+- 해당 branch에 Pull Request가 생성되면 기존 branch work unit directory를 `github-<pr-number>-<short-name>`으로 rename한다. 새 directory에 복사하거나 두 identity를 병렬 유지하지 않으며, 내부 artifact와 sequence는 그대로 보존한다.
+- PR 전환 후 `short-name`은 branch naming contract의 change topic을 사용하고 PR title 변경과 무관하게 유지한다.
+- `github-<number>-<short-name>`의 `number`는 이 repository의 GitHub Issue 또는 Pull Request number다. Change branch가 소유하지 않는 Issue-only work도 이 형식을 사용할 수 있다.
 - `NN`은 `00`부터 시작하는 two-digit zero-padded sequence다.
 - 기존 top-level file 또는 bundle의 sequence는 다시 매기지 않는다. 새 항목은 현재 가장 큰 sequence 값에 `1`을 더한 번호만 사용하고, 삭제나 정리로 생긴 gap은 backfill하지 않는다. 여러 항목을 같은 change에서 추가하면 현재 최대값 다음부터 연속된 번호를 사용한다.
 - File과 bundle은 같은 sequence namespace를 공유한다. `00-00-...` 같은 추가 sequence level을 만들지 않고 세부 산출물은 bundle 내부 구조로 관리한다.
 - Sequence 뒤 naming core는 `[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]`다. `type` component는 optional이며, 나머지 optional component는 identification이나 retrieval에 실제 도움이 될 때만 추가한다.
-- `github-<number>-<short-name>`은 work unit 식별자일 뿐 owning ref나 authority를 바꾸지 않는다. Artifact ownership은 `Boundary`의 change-unit 규칙을 따른다.
+- Work unit directory 이름은 artifact owner를 식별하기 위한 repository path다. Owning ref와 authority는 `Boundary`의 change-unit 규칙을 따른다.
 
 ### Time-Based Work
 
-특정 GitHub Issue 또는 Pull Request에 속하지 않는 작업은 날짜와 시각 기반 경로를 사용한다.
+특정 change branch, GitHub Issue 또는 Pull Request에 속하지 않는 작업은 날짜와 시각 기반 경로를 사용한다.
 
 ```text
 inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>].md
