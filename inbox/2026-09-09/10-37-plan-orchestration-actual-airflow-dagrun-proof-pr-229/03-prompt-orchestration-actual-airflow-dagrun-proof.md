@@ -1,7 +1,7 @@
 ---
 type: prompt
 title: "Actual Airflow DAGRun Proof Agent Handoff Prompt"
-description: "후속 구현 에이전트가 실제 Airflow DAGRun 검증 및 스크립트 구축 작업을 즉시 착수할 수 있도록 정찰 결과, 실행 제약, 시나리오 및 검증 절차를 전달하는 프롬프트."
+description: "[SUPERSEDED] 후속 구현 에이전트가 실제 Airflow DAGRun 검증 및 스크립트 구축 작업을 즉시 착수할 수 있도록 정찰 결과, 실행 제약, 시나리오 및 검증 절차를 전달하는 프롬프트."
 tags:
   - orchestration
   - airflow
@@ -12,6 +12,9 @@ tags:
 ---
 
 # Actual Airflow DAGRun Proof Agent Handoff Prompt
+
+> [!WARNING]
+> 이 handoff prompt는 후속 실행 전 작성된 역사적 기록이며 현재 실행 지침으로 사용하지 않는다. `dags test`는 scheduler service 실행 증거가 아니고 결함 샘플의 실제 적재량은 19행이다. 자동·주기 실행과 scheduler-service proof는 현재 MVP 및 canonical spec의 완료 조건이 아니다. 현재 상태와 근거는 [실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md)와 [이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md)를 따른다.
 
 > [!NOTE]
 > 본 문서는 GitHub Pull Request [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)의 후속 작업을 수행할 에이전트에게 전달하기 위한 실행 프롬프트입니다. 앞서 검증된 정찰 보고서([02-report-orchestration-actual-airflow-dagrun-reconnaissance.md](02-report-orchestration-actual-airflow-dagrun-reconnaissance.md))의 실측 결과와 핵심 제약사항을 바탕으로 작성되었습니다.

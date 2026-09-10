@@ -1,7 +1,7 @@
 ---
 type: report
 title: "Actual Airflow DAGRun Reconnaissance and Isolation Report"
-description: "Airflow 3.3.0 실제 DAGRun CLI 실행, TaskInstance 및 Asset Event 조회 표면, git worktree 기반 런타임/dbt 격리 타당성 정찰 결과."
+description: "[SUPERSEDED] Airflow 3.3.0 실제 DAGRun CLI 실행, TaskInstance 및 Asset Event 조회 표면, git worktree 기반 런타임/dbt 격리 타당성 정찰 결과."
 tags:
   - orchestration
   - airflow
@@ -12,6 +12,9 @@ tags:
 ---
 
 # Actual Airflow DAGRun Reconnaissance and Isolation Report
+
+> [!WARNING]
+> 이 문서는 실행 전 정찰 기록이다. `dags test`를 scheduler service가 생성·관리한 실행으로 표현한 부분과 결함 샘플을 20행으로 표현한 부분은 후속 실측에서 정정됐다. 실제 두 실행은 `triggered_by=TEST`, `creating_job_id=null`, `scheduled_by_job_id=null`이었고 적재량은 19행이다. 현재 결론은 [실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md)와 [이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md)를 따른다.
 
 > [!NOTE]
 > 본 보고서는 GitHub Pull Request [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229)의 사전 기획에 따라, OpenSpec 계획 수립 전 실제 Airflow 3.3.0 CLI 실행 경로, TaskInstance 및 Asset 이벤트 증거 회수 방식, 그리고 `git worktree` 기반의 런타임/dbt 완전 격리 가능성을 로컬에서 직접 검증하고 기록한 정찰 결과입니다.
