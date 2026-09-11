@@ -4,7 +4,7 @@
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
       "resolvedRef": "74b56fa52a3e02a25f727a6841b4c4201d028eec",
-      "resolvedAt": "2026-09-07T23:44:36.995Z",
+      "resolvedAt": "2026-09-10T01:13:00.781Z",
       "skills": {
         "mols-agent-asset-find": {
           "integrity": "sha256-6ace67d927da8eedcdd359593ddcbd7a80d97a2fa9cab42288f634116382aef6"
@@ -53,6 +53,9 @@
         },
         "mols-openspec-customize": {
           "integrity": "sha256-4debe7ef0e25d69f38dca4a4617989d5cd5b9312c26625e2b493abcdaac07429"
+        },
+        "mols-text-optimizer": {
+          "integrity": "sha256-33464dd251ad2fd98e40ae0b5e88b7f1273b735a1ea21076ac2e5c60a4a70bf4"
         }
       }
     }
