@@ -54,7 +54,7 @@ Issue가 단순히 관련되거나 branch가 Issue를 참조한다는 사실만�
 
 ### Sequenced Work Units
 
-GitHub와 Branch work unit은 top-level artifact를 같은 sequence contract로 관리한다.
+GitHub와 Branch work unit은 top-level artifact를 같은 sequence convention으로 관리한다.
 
 ```text
 inbox/github-<number>-<short-name>/<NN>-[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>].md
@@ -71,10 +71,9 @@ inbox/<branch-created-date>-<branch-name-slug>/<NN>-[<type>-]<domain>[-<subdomai
 - 해당 branch에 Pull Request가 생성되면 기존 branch work unit directory를 `github-<pr-number>-<short-name>`으로 rename한다. 새 directory에 복사하거나 두 identity를 병렬 유지하지 않으며, 내부 artifact와 sequence를 그대로 보존하고 renumber하지 않는다.
 - PR 전환 후 `short-name`은 branch naming contract의 change topic을 사용하고 PR title 변경과 무관하게 유지한다. PR이 close 또는 reopen되어도 branch directory로 되돌리지 않는다.
 - `NN`은 `00`부터 시작하는 two-digit zero-padded sequence다.
-- 기존 top-level file 또는 bundle의 sequence는 다시 매기지 않는다. 새 항목은 현재 가장 큰 sequence 값에 `1`을 더한 번호만 사용하고, 삭제나 정리로 생긴 gap은 backfill하지 않는다. 여러 항목을 같은 change에서 추가하면 현재 최대값 다음부터 연속된 번호를 사용한다.
+- 기존 top-level file 또는 bundle의 sequence는 다시 매기지 않는다. 새 항목은 현재 가장 큰 sequence 값 다음 번호를 기본으로 사용하고, 여러 항목을 같은 change에서 추가하면 그 다음 번호부터 이어간다. Sequence는 정리와 탐색을 위한 convention이며 삭제·rename 이력을 복원해 historical high-water mark를 강제하지 않는다.
 - File과 bundle은 같은 sequence namespace를 공유한다. `00-00-...` 같은 추가 sequence level을 만들지 않고 세부 산출물은 bundle 내부 구조로 관리한다.
 - Sequence 뒤 naming core는 `[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]`다. `type` component는 optional이며, 나머지 optional component는 identification이나 retrieval에 실제 도움이 될 때만 추가한다.
-- Validator는 현재 change에서 관측 가능한 sequence invariant만 강제한다. 기존 root가 관측되는 work unit에서는 신규 root가 current max 다음에 append되는지 검증하지만, 새 container에서는 이전 branch/PR history를 추정해 sequence 연속성을 재구성하지 않는다.
 - Work unit directory 이름은 artifact owner를 식별하기 위한 repository path다. Owning ref와 authority는 `Boundary`의 change-unit 규칙을 따른다.
 
 ### Time-Based Work
