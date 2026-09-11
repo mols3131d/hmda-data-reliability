@@ -2,11 +2,28 @@
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
-from scripts.validate_inbox_artifacts import validate_changed_paths
+REPOSITORY_ROOT = Path(__file__).parents[2]
+
+
+def load_validator_module() -> ModuleType:
+    """Load the repository script without relying on repo-root importability."""
+    script_path = REPOSITORY_ROOT / "scripts" / "validate_inbox_artifacts.py"
+    spec = importlib.util.spec_from_file_location("validate_inbox_artifacts", script_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+validator = load_validator_module()
+validate_changed_paths = validator.validate_changed_paths
 
 
 def write_artifact(
