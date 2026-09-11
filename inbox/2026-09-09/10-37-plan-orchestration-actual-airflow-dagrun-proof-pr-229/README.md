@@ -13,15 +13,25 @@ tags:
 # Actual Airflow DAGRun Proof Work Plan (PR #229)
 
 > [!NOTE]
-> 본 번들은 GitHub Pull Request [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)에서 진행되는 실제 Airflow DAGRun 동작 증명(Proof)의 사전 조사, 런타임 격리 검증, 태스크 추적 및 OpenSpec 연계를 관리하는 작업 공간입니다.
-> 이 문서는 OpenSpec artifact를 미리 작성하는 계획서가 아니며, Requirement, observable scenario, technical delta, implementation task와 acceptance는 OpenSpec으로 진입한 뒤 OpenSpec이 소유합니다.
+> 본 번들은 PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)의 actual Airflow DAGRun proof 기록이다. 작업은 완료됐으며 현재 결과 판단은 [실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md), [이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md), [리뷰·머지 핸드오프](08-handoff-orchestration-actual-airflow-proof.md)를 따른다. `01`~`03`과 `06`은 사전 기획·중간 판단 기록이며 현재 실행 지침이나 완료 판단을 소유하지 않는다.
 
 ## Navigation
 
-- [01-research-orchestration-actual-airflow-dagrun-planning.md](01-research-orchestration-actual-airflow-dagrun-planning.md): 실제 DAGRun 검증 사전 조사 보고서
-- [02-report-orchestration-actual-airflow-dagrun-reconnaissance.md](02-report-orchestration-actual-airflow-dagrun-reconnaissance.md): 런타임 정찰 및 격리 타당성 검증 보고서
-- [03-prompt-orchestration-actual-airflow-dagrun-proof.md](03-prompt-orchestration-actual-airflow-dagrun-proof.md): 후속 작업 에이전트 인수인계 프롬프트
-- [tasks.md](tasks.md): 단계별 사전 정찰 및 계획 태스크 체크리스트
+### Current
+
+- [04 실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md): 실제 Airflow 3.3.0 실행, dbt promotion, Asset event와 격리 증거
+- [07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md): 현재 완료 판단, requirement-level 사양 대조와 잔여 제한
+- [08 리뷰·머지 핸드오프](08-handoff-orchestration-actual-airflow-proof.md): 현재 PR 검토 및 lifecycle 절차
+- [tasks.md](tasks.md): 단계별 작업 완료 상태
+
+### Historical Context
+
+- [01 사전 조사](01-research-orchestration-actual-airflow-dagrun-planning.md): runtime proof 착수 전 조사
+- [02 정찰 보고서](02-report-orchestration-actual-airflow-dagrun-reconnaissance.md): `[SUPERSEDED]` 사전 정찰 기록
+- [03 실행 프롬프트](03-prompt-orchestration-actual-airflow-dagrun-proof.md): `[SUPERSEDED]` 후속 실행 프롬프트
+- [06 이슈·인간 핸드오프](06-report-orchestration-proof-issues-human-handoff.md): 현재 `07`로 대체된 중간 이슈 분류 기록
+
+아래 내용은 proof 착수 당시 preparation boundary와 판단 기준을 보존한 기록이다.
 
 ## Context
 

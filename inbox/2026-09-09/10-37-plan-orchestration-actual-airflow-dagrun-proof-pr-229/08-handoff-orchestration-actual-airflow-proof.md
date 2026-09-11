@@ -16,17 +16,17 @@ tags:
 
 PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)의 일회성 Airflow 3.3.0 런타임 실측과 사양 대조 검증을 완료했다. 프로덕션 DAG와 canonical spec 변경은 없다.
 
-- **실측 증거:** [04 실측 보고서](04-report-orchestration-actual-airflow-dagrun-proof-result.md) (격리 환경 2개 시나리오 실행, dbt 프로모션, 메인 DB/manifest 불변)
-- **사양 대조:** [07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md) (10개 Requirement·28개 Scenario 대조, 74개 테스트 통과)
-- **독립 검토:** `review-lead` 검토 결과 `clear`
-- **원격 CI:** `CI Lite` 통과 (`SUCCESS`)
+- **실측 증거:** [04 실측 보고서](04-report-orchestration-actual-airflow-dagrun-proof-result.md) — 격리 환경 2개 시나리오 실행, dbt promotion, 메인 DB/manifest 불변
+- **사양 대조:** [07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md) — 10개 Requirement(총 28개 Scenario 포함)의 requirement-level 대조, 관련 테스트 74개 통과
+- **PR lifecycle:** Draft, CI, review와 mergeability는 GitHub live state가 소유하며 아래 작업 직전에 다시 확인한다.
 
 ## Review And Merge Actions
 
-1. **PR 검토:**
+1. **PR 및 live state 확인:**
 
    ```bash
    gh pr view 229
+   gh pr checks 229
    gh pr diff 229
    ```
 
@@ -48,5 +48,6 @@ PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/ac
    git checkout main
    git pull origin main
    git branch -d test/actual-airflow-dagrun-proof
-   rm -rf .local/pr229-proof-evidence
    ```
+
+`.local/pr229-proof-evidence/`는 [04 실측 보고서](04-report-orchestration-actual-airflow-dagrun-proof-result.md)에 요약된 원본 보조 증거다. Repository에 보존한 최소 증거만으로 최종 검토가 충분하다고 확인한 뒤 필요할 때 별도로 정리한다.
