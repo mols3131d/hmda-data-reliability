@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER_SCRIPT = REPO_ROOT / ".github" / "workflows" / "classify_changes.sh"
 
 
@@ -43,12 +43,13 @@ def run_markdown_paths(paths: list[str]) -> list[str]:
 
 
 @pytest.mark.unit
-def test_root_test_modify() -> None:
-    """존재하는 루트 테스트 파일 수정 시 해당 테스트만 targets에 추가된다."""
-    out = run_classifier(["tests/test_ci_classifier.py"])
+def test_script_test_modify() -> None:
+    """존재하는 scripts 테스트 파일 수정 시 해당 테스트만 targets에 추가된다."""
+    path = "tests/scripts/test_ci_classifier.py"
+    out = run_classifier([path])
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
-    assert out["targets"].strip() == "tests/test_ci_classifier.py"
+    assert out["targets"].strip() == path
     assert out["python"] == "true"
     assert out["full_type"] == "false"
 
@@ -66,14 +67,13 @@ def test_root_test_delete() -> None:
 
 
 @pytest.mark.unit
-def test_root_test_rename() -> None:
-    """루트 테스트 이름 변경 시 존재하는 신규 파일만 targets에 추가된다."""
-    out = run_classifier(
-        ["tests/test_nonexistent_old.py", "tests/test_ci_classifier.py"]
-    )
+def test_script_test_rename() -> None:
+    """scripts 테스트 이름 변경 시 존재하는 신규 파일만 targets에 추가된다."""
+    path = "tests/scripts/test_ci_classifier.py"
+    out = run_classifier(["tests/test_nonexistent_old.py", path])
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
-    assert out["targets"].strip() == "tests/test_ci_classifier.py"
+    assert out["targets"].strip() == path
     assert out["full_type"] == "false"
 
 
@@ -295,7 +295,7 @@ def test_workflow_change_targets_classifier_test() -> None:
     """CI 워크플로 파일 변경 시 classifier 자체의 회귀 테스트가 실행된다."""
     out = run_classifier([".github/workflows/ci-lite.yml"])
     assert out["tests"] == "true"
-    assert "tests/test_ci_classifier.py" in out["targets"]
+    assert "tests/scripts/test_ci_classifier.py" in out["targets"]
 
 
 @pytest.mark.unit

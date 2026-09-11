@@ -359,7 +359,7 @@ while IFS= read -r path; do
       ;;
     .github/workflows/*)
       tests=true
-      add_target tests/test_ci_classifier.py
+      add_target tests/scripts/test_ci_classifier.py
       ;;
     scripts/generate_agent_routes.py)
       add_focused_test tests/scripts/test_generate_agent_routes.py

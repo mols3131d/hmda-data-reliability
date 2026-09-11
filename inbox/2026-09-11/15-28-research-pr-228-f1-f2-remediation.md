@@ -23,7 +23,7 @@ PR #228의 최신 review에서 남은 F1 executable routing gap과 F2 stale pros
 - PR #228 remote head `4bca22830f2ad0693c5d3b9d2079a0b8e612683c`
 - latest `origin/main` `6ef4e642f1cbe477ff1a1967f514649d2aae4772`
 - historical review artifact의 F1/F2와 현재 source/test surface 대조
-- `.github/workflows/classify_changes.sh`와 `tests/test_ci_classifier.py`의 canonical Spec routing
+- `.github/workflows/classify_changes.sh`와 `tests/scripts/test_ci_classifier.py`의 canonical Spec routing
 - F1에 직접 대응하는 executable test collection 범위
 
 ### Out of Scope
@@ -79,7 +79,7 @@ F1은 `orchestration-pipeline)` mapping에 다음 exact targets를 추가하는 
 - `tests/data_operations/test_dbt_runner.py`
 - `tests/reliability/test_quality_gate.py`
 
-`tests/test_ci_classifier.py`의 canonical Spec regression expected set도 같은 네 target으로 갱신한다. F2는 최신 `main` merge commit을 포함한 PR update와 새 CI evidence로 검증한다.
+`tests/scripts/test_ci_classifier.py`의 canonical Spec regression expected set도 같은 네 target으로 갱신한다. F2는 최신 `main` merge commit을 포함한 PR update와 새 CI evidence로 검증한다.
 
 ## Open Questions
 

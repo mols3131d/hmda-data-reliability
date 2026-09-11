@@ -26,7 +26,7 @@ F1의 contract owner test surface를 canonical `orchestration-pipeline` Spec adm
 ## Scope
 
 - `.github/workflows/classify_changes.sh`의 `orchestration-pipeline` target mapping
-- `tests/test_ci_classifier.py`의 canonical Spec regression
+- `tests/scripts/test_ci_classifier.py`의 canonical Spec regression
 - 최신 `origin/main` merge commit을 포함한 PR branch update
 - focused test, OpenSpec, dependency/runtime smoke, Python validation과 remote CI evidence
 - Work/Review/Finalize Inbox artifacts
@@ -62,7 +62,7 @@ F1의 contract owner test surface를 canonical `orchestration-pipeline` Spec adm
 ## Validation Commands
 
 ```bash
-uv run --no-sync pytest tests/test_ci_classifier.py -q -rs
+uv run --no-sync pytest tests/scripts/test_ci_classifier.py -q -rs
 uv run --no-sync pytest tests/orchestration tests/data_operations/test_quality_gate.py tests/data_operations/test_dbt_runner.py tests/reliability/test_quality_gate.py -q -rs
 uv run --no-sync pytest tests/dbt/test_analytics_foundation.py tests/orchestration/test_airflow_dag.py -q -rs
 npm exec --yes --package @fission-ai/openspec@1.12.0 -- openspec validate --all --strict

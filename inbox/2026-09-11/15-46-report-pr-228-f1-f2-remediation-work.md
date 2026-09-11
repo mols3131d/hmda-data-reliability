@@ -30,7 +30,7 @@ tags:
     - `tests/data_operations/test_quality_gate.py`
     - `tests/data_operations/test_dbt_runner.py`
     - `tests/reliability/test_quality_gate.py`
-- [`tests/test_ci_classifier.py`](../../tests/test_ci_classifier.py)
+- [`tests/scripts/test_ci_classifier.py`](../../tests/scripts/test_ci_classifier.py)
   - canonical Spec routing expectation을 네 target으로 갱신
   - `openspec_bulk=false`, `full_tests=false`와 direct active Change pairing 동작을 유지
 - 최신 `origin/main`을 merge한 뒤 non-force push
@@ -44,7 +44,7 @@ tags:
 | --- | --- | --- |
 | F1 routing regression before mapping change | ❌ Fail | 기존 mapping에서 `1 failed, 2 passed`; 세 owner target이 누락됨 |
 | F1 mapping regression after change | ✅ Pass | target-specific regression `4 passed` |
-| Classifier suite | ✅ Pass | `uv run --no-sync pytest tests/test_ci_classifier.py -q -rs` — `49 passed` |
+| Classifier suite | ✅ Pass | `uv run --no-sync pytest tests/scripts/test_ci_classifier.py -q -rs` — `49 passed` |
 | F1 owner surface | ✅ Pass | exact target collection/execution — `74 passed` |
 
 ## Validation
@@ -60,7 +60,7 @@ tags:
 
 ## CI Scope Notes
 
-- Remote CI의 `Run selected tests`는 이번 changed scope에 맞춰 `tests/test_ci_classifier.py`의 `49 passed`를 실행했다.
+- Remote CI의 `Run selected tests`는 이번 changed scope에 맞춰 `tests/scripts/test_ci_classifier.py`의 `49 passed`를 실행했다.
 - Remote `Validate OpenSpec`와 dependency runtime smoke는 이번 push가 `openspec/**` 또는 dependency file 변경이 아니어서 skipped됐다. 두 경계는 local strict OpenSpec `20 passed`와 runtime smoke `5 passed`로 별도 검증했다.
 - local pre-push의 첫 실패는 merged `rulesync.jsonc` 검사를 위한 Biome 미설치였고, repository structured-data tooling 설치 후 재실행해 통과했다. GitHub CI에서는 해당 검사도 성공했다.
 

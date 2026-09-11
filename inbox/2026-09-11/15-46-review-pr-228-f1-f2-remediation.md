@@ -26,7 +26,7 @@ Material finding 없음. F1은 exact owner test target과 classifier regression�
 
 | Result | Check | Evidence |
 | --- | --- | --- |
-| ✅ Pass | F1 exact routing | [`classify_changes.sh`](../../.github/workflows/classify_changes.sh)의 `orchestration-pipeline)`이 네 target을 출력하고, [`test_ci_classifier.py`](../../tests/test_ci_classifier.py)의 canonical Spec regression을 통과 |
+| ✅ Pass | F1 exact routing | [`classify_changes.sh`](../../.github/workflows/classify_changes.sh)의 `orchestration-pipeline)`이 네 target을 출력하고, [`test_ci_classifier.py`](../../tests/scripts/test_ci_classifier.py)의 canonical Spec regression을 통과 |
 | ✅ Pass | F1 executable surface | `tests/orchestration`, `tests/data_operations/test_quality_gate.py`, `tests/data_operations/test_dbt_runner.py`, `tests/reliability/test_quality_gate.py` — `74 passed` |
 | ✅ Pass | Existing safety routing | direct `orchestration-quality-gate` pairing, `openspec_bulk=false`, `full_tests=false`, unknown/bulk/archive fallback regression 유지 |
 | ✅ Pass | F2 current-base evidence | [CI Lite `34570605850`](https://github.com/mols3131d/hmda-data-reliability/actions/runs/34570605850) success; GitHub merge ref `bf8515d` is `Merge f40df25 into 6ef4e64` |
