@@ -21,13 +21,13 @@ copilot:
   tools:
     - read
     - search
-    - execute
+    - runTests
   user-invocable: false
 copilotcli:
   tools:
     - read
     - search
-    - execute
+    - runTests
   user-invocable: false
 antigravity-ide:
   tools:
