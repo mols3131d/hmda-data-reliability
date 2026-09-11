@@ -12,7 +12,7 @@ tags:
 
 # Rulesync
 
-Agent Asset의 **management policy는 [AI Agent](../ai-agent/README.md)가 소유하고, 이 문서는 그 정책을 실행하는 repository entrypoint를 설명한다.** Project Rule/Skill과 Rulesync-managed external Rule/Skill은 Rulesync를 사용하고, Rulesync로 관리하지 않는 [agentskills.io 호환](https://agentskills.io/specification) external Skill만 Skills CLI를 보조 경로로 사용한다.
+Agent Asset의 **management policy는 [AI Agent](../ai-agent/README.md)가 소유하고, 이 문서는 그 정책을 실행하는 repository entrypoint를 설명한다.** Project Rule/Skill/Subagent와 Rulesync-managed external Rule/Skill은 Rulesync를 사용하고, Rulesync로 관리하지 않는 [agentskills.io 호환](https://agentskills.io/specification) external Skill만 Skills CLI를 보조 경로로 사용한다.
 
 Rulesync와 Skills CLI 자체의 일반 사용법은 [Rulesync Configuration](https://rulesync.dyoshikawa.com/guide/configuration), [Rulesync CLI reference](https://rulesync.dyoshikawa.com/reference/cli-commands.html)와 [Skills CLI 공식 repository](https://github.com/vercel-labs/skills)를 따른다.
 
@@ -22,7 +22,7 @@ Rulesync와 Skills CLI 자체의 일반 사용법은 [Rulesync Configuration](ht
 | --- | --- |
 | [`rulesync.jsonc`](../../../rulesync.jsonc) | Rulesync target과 external source 선언 |
 | [`rulesync.lock`](../../../rulesync.lock) | Rulesync-managed external source의 resolved revision과 integrity lock |
-| `.rulesync/**` | project Rule/Skill과 Rulesync-managed source |
+| `.rulesync/**` | project Rule/Skill/Subagent와 Rulesync-managed source |
 | [`scripts/rulesync.py`](../../../scripts/rulesync.py) | Rulesync source restore/update, projection generation/check와 compatibility bridge |
 | `skills-lock.json` when present | Rulesync 밖의 agentskills.io 호환 external Skill에 대한 Skills CLI project lock state |
 | [`scripts/agent_assets.py`](../../../scripts/agent_assets.py) | Rulesync를 먼저 실행하고 Skills CLI와 route generation을 이어서 수행하는 high-level entrypoint |
