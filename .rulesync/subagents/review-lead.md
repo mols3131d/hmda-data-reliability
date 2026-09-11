@@ -22,12 +22,18 @@ copilot:
     - read
     - search
     - agent
+  agents:
+    - review-quality
+    - review-adversarial
   user-invocable: false
 copilotcli:
   tools:
     - read
     - search
     - agent
+  agents:
+    - review-quality
+    - review-adversarial
   user-invocable: false
 antigravity-ide:
   tools:
