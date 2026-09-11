@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER_SCRIPT = REPO_ROOT / ".github" / "workflows" / "classify_changes.sh"
 
 
@@ -43,12 +43,13 @@ def run_markdown_paths(paths: list[str]) -> list[str]:
 
 
 @pytest.mark.unit
-def test_root_test_modify() -> None:
-    """존재하는 루트 테스트 파일 수정 시 해당 테스트만 targets에 추가된다."""
-    out = run_classifier(["tests/test_ci_classifier.py"])
+def test_script_test_modify() -> None:
+    """존재하는 scripts 테스트 파일 수정 시 해당 테스트만 targets에 추가된다."""
+    path = "tests/scripts/test_ci_classifier.py"
+    out = run_classifier([path])
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
-    assert out["targets"].strip() == "tests/test_ci_classifier.py"
+    assert out["targets"].strip() == path
     assert out["python"] == "true"
     assert out["full_type"] == "false"
 
@@ -66,14 +67,13 @@ def test_root_test_delete() -> None:
 
 
 @pytest.mark.unit
-def test_root_test_rename() -> None:
-    """루트 테스트 이름 변경 시 존재하는 신규 파일만 targets에 추가된다."""
-    out = run_classifier(
-        ["tests/test_nonexistent_old.py", "tests/test_ci_classifier.py"]
-    )
+def test_script_test_rename() -> None:
+    """scripts 테스트 이름 변경 시 존재하는 신규 파일만 targets에 추가된다."""
+    path = "tests/scripts/test_ci_classifier.py"
+    out = run_classifier(["tests/test_nonexistent_old.py", path])
     assert out["tests"] == "true"
     assert out["full_unit"] == "false"
-    assert out["targets"].strip() == "tests/test_ci_classifier.py"
+    assert out["targets"].strip() == path
     assert out["full_type"] == "false"
 
 
@@ -295,4 +295,141 @@ def test_workflow_change_targets_classifier_test() -> None:
     """CI 워크플로 파일 변경 시 classifier 자체의 회귀 테스트가 실행된다."""
     out = run_classifier([".github/workflows/ci-lite.yml"])
     assert out["tests"] == "true"
-    assert "tests/test_ci_classifier.py" in out["targets"]
+    assert "tests/scripts/test_ci_classifier.py" in out["targets"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("spec_path", "expected_targets"),
+    [
+        (
+            "openspec/specs/data-platform-dbt-analytics/spec.md",
+            {"tests/dbt"},
+        ),
+        (
+            "openspec/specs/orchestration-pipeline/spec.md",
+            {
+                "tests/orchestration",
+                "tests/data_operations/test_quality_gate.py",
+                "tests/data_operations/test_dbt_runner.py",
+                "tests/reliability/test_quality_gate.py",
+            },
+        ),
+        (
+            "openspec/specs/reliability-agentic-review/spec.md",
+            {"tests/review_ai", "tests/runtime_ai"},
+        ),
+    ],
+)
+def test_canonical_openspec_changes_select_executable_targets(
+    spec_path: str,
+    expected_targets: set[str],
+) -> None:
+    """Canonical Spec 변경은 구조 검증과 대응 executable test를 함께 선택한다."""
+    out = run_classifier([spec_path])
+
+    assert out["openspec"] == "true"
+    assert out["openspec_bulk"] == "false"
+    assert out["tests"] == "true"
+    assert out["full_tests"] == "false"
+    assert set(out["targets"].split()) == expected_targets
+
+
+@pytest.mark.unit
+def test_unknown_canonical_openspec_change_fails_safe_to_full_tests() -> None:
+    """알 수 없는 신규 Spec capability는 executable validation을 생략하지 않는다."""
+    out = run_classifier(["openspec/specs/new-capability/spec.md"])
+
+    assert out["openspec"] == "true"
+    assert out["openspec_bulk"] == "true"
+    assert out["tests"] == "true"
+    assert out["full_tests"] == "true"
+    assert out["full_unit"] == "true"
+    assert out["full_type"] == "true"
+
+
+@pytest.mark.unit
+def test_active_openspec_change_uses_affected_validation_target() -> None:
+    """Active Change 변경은 해당 Change만 OpenSpec validation 대상으로 선택한다."""
+    out = run_classifier(["openspec/changes/orchestration-quality-gate/proposal.md"])
+
+    assert out["openspec"] == "true"
+    assert out["openspec_bulk"] == "false"
+    assert out["openspec_change_targets"].strip() == "orchestration-quality-gate"
+    assert out["tests"] == "false"
+
+
+@pytest.mark.unit
+def test_archived_openspec_change_requests_archived_validation() -> None:
+    """Archive 변경은 전체 active item 대신 archived validation을 선택한다."""
+    out = run_classifier(
+        [
+            "openspec/changes/archive/2026-08-26-orchestration-pipeline-migrate-airflow/tasks.md"
+        ]
+    )
+
+    assert out["openspec"] == "true"
+    assert out["openspec_archived"] == "true"
+    assert out["openspec_bulk"] == "false"
+    assert out["openspec_change_targets"].strip() == ""
+    assert out["tests"] == "false"
+
+
+@pytest.mark.unit
+def test_openspec_configuration_change_uses_bulk_validation() -> None:
+    """OpenSpec configuration 변경은 bulk validation을 사용한다."""
+    out = run_classifier(["openspec/config.yaml"])
+
+    assert out["openspec"] == "true"
+    assert out["openspec_bulk"] == "true"
+    assert out["openspec_spec_targets"].strip() == ""
+    assert out["openspec_change_targets"].strip() == ""
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "dependency_path", [".python-version", "pyproject.toml", "uv.lock"]
+)
+def test_dependency_changes_request_runtime_boundary_smoke(
+    dependency_path: str,
+) -> None:
+    """Dependency 변경은 unit/type과 함께 dbt/Airflow runtime smoke를 선택한다."""
+    out = run_classifier([dependency_path])
+
+    assert out["python"] == "true"
+    assert out["tests"] == "true"
+    assert out["runtime_smoke"] == "true"
+    assert out["full_unit"] == "true"
+    assert out["full_type"] == "true"
+
+
+@pytest.mark.unit
+def test_canonical_spec_selects_direct_active_change_validation() -> None:
+    """Canonical Spec 변경은 같은 capability의 active Change도 검증한다."""
+    out = run_classifier(["openspec/specs/orchestration-pipeline/spec.md"])
+
+    assert out["openspec_spec_targets"].strip() == "orchestration-pipeline"
+    assert out["openspec_change_targets"].strip() == "orchestration-quality-gate"
+
+
+@pytest.mark.unit
+def test_canonical_spec_without_active_delta_keeps_change_targets_empty() -> None:
+    """직접 연결된 active Change가 없으면 affected Spec만 유지한다."""
+    out = run_classifier(["openspec/specs/reliability-data-contracts/spec.md"])
+
+    assert out["openspec_spec_targets"].strip() == "reliability-data-contracts"
+    assert out["openspec_change_targets"].strip() == ""
+
+
+@pytest.mark.unit
+def test_mixed_canonical_spec_and_active_change_preserves_both_targets() -> None:
+    """같은 change set의 Spec와 active Change target을 모두 중복 없이 보존한다."""
+    out = run_classifier(
+        [
+            "openspec/specs/orchestration-pipeline/spec.md",
+            "openspec/changes/orchestration-quality-gate/proposal.md",
+        ]
+    )
+
+    assert out["openspec_spec_targets"].strip() == "orchestration-pipeline"
+    assert out["openspec_change_targets"].strip() == "orchestration-quality-gate"
