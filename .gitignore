@@ -66,7 +66,7 @@ dist/
 /notes/
 /.local/
 /.tmp/
-artifacts/
+/artifacts/
 dbt/.user.yml
 dbt/target/
 dbt/logs/
