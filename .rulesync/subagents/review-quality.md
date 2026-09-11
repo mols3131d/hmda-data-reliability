@@ -23,12 +23,14 @@ copilot:
     - search
     - runTests
   user-invocable: false
+  disable-model-invocation: true
 copilotcli:
   tools:
     - read
     - search
     - runTests
   user-invocable: false
+  disable-model-invocation: true
 antigravity-ide:
   tools:
     - run_command
