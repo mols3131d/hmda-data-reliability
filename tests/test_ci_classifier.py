@@ -308,7 +308,12 @@ def test_workflow_change_targets_classifier_test() -> None:
         ),
         (
             "openspec/specs/orchestration-pipeline/spec.md",
-            {"tests/orchestration"},
+            {
+                "tests/orchestration",
+                "tests/data_operations/test_quality_gate.py",
+                "tests/data_operations/test_dbt_runner.py",
+                "tests/reliability/test_quality_gate.py",
+            },
         ),
         (
             "openspec/specs/reliability-agentic-review/spec.md",

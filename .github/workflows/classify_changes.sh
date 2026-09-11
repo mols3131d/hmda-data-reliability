@@ -181,6 +181,9 @@ add_openspec_spec_target() {
       ;;
     orchestration-pipeline)
       add_focused_test tests/orchestration
+      add_focused_test tests/data_operations/test_quality_gate.py
+      add_focused_test tests/data_operations/test_dbt_runner.py
+      add_focused_test tests/reliability/test_quality_gate.py
       ;;
     reliability-agentic-review)
       add_focused_test tests/review_ai
