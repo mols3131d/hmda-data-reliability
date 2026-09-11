@@ -100,6 +100,115 @@ Worktree의 candidate와 top-level current manifest/run_results를 정리 전에
 {"unchanged": true, "worktree_removed": true}
 ```
 
+## Reproduction Procedures
+
+이 검증을 격리 환경에서 재실행하려면 다음 단계를 순서대로 실행합니다 (환경 변수 오염을 방지하기 위해 서브쉘 또는 전용 터미널에서 실행 권장).
+
+### 1. 격리 워크트리 및 디렉터리 준비
+
+```bash
+# 메인 저장소 루트 경로 보존
+MAIN_REPO="$PWD"
+
+# disposable worktree 생성 및 이동
+git worktree add --detach .local/worktrees/pr229-proof-run HEAD
+cd .local/worktrees/pr229-proof-run
+
+# 시나리오별 격리 디렉터리 생성 (.local/dirty, .local/clean)
+mkdir -p .local/dirty/airflow .local/dirty/tmp .local/dirty/source .local/dirty/db
+mkdir -p .local/clean/airflow .local/clean/tmp .local/clean/source .local/clean/db
+```
+
+### 2. 시나리오별 픽스처 생성 (Git 미추적 샘플 참조)
+
+```bash
+# 시나리오 A: 메인 저장소의 결함 샘플 복사 (19행)
+cp "$MAIN_REPO/data/samples/hmda/year_2025.csv" .local/dirty/source/year_2025.csv
+
+# 시나리오 B: 메인 샘플 기반 1,000행 정상 픽스처 생성 (income 결측률 16.1%)
+python -c "
+import csv
+with open('$MAIN_REPO/data/samples/hmda/year_2025.csv', 'r') as f:
+    reader = csv.reader(f)
+    header = next(reader)
+    template_row = next(reader)
+income_idx = header.index('income')
+amount_idx = header.index('loan_amount')
+year_idx = header.index('activity_year')
+with open('.local/clean/source/year_2025.csv', 'w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(header)
+    for i in range(1000):
+        row = list(template_row)
+        row[year_idx] = '2025'
+        row[amount_idx] = str(200000 + i)
+        row[income_idx] = 'NA' if i < 161 else '80'
+        writer.writerow(row)
+"
+```
+
+### 3. 시나리오 A (결함 차단) 실행 및 증거 확인
+
+```bash
+export AIRFLOW_HOME="$PWD/.local/dirty/airflow"
+export AIRFLOW__CORE__DAGS_FOLDER="$PWD/src/hmda_reliability/orchestration/dags"
+export AIRFLOW__CORE__LOAD_EXAMPLES=false
+export PYTHONPATH="$PWD/src:$PYTHONPATH"
+export TMPDIR="$PWD/.local/dirty/tmp"
+
+# Airflow 메타데이터 DB 초기화
+python -m airflow db migrate
+python -m airflow dags reserialize
+
+# 시나리오 A 실행 (결함 차단 -> CLI exit 1 기대)
+python -m airflow dags test hmda_data_plane -c "{\"database_path\": \"$PWD/.local/dirty/db/dirty.duckdb\", \"source_root\": \"$PWD/.local/dirty/source\", \"source_year\": 2025, \"run_dbt_build\": true}" || true
+
+# 생성된 RUN_ID에 대해 TaskInstance 상태 확인 (evaluate_quality_gate failed, build_dbt_loan_analytics upstream_failed)
+python -m airflow tasks states-for-dag-run hmda_data_plane "<DIRTY_RUN_ID>" -o json
+
+# SQLite asset_event 확인 (raw_load 1건, analytics 0건)
+python -c "
+import sqlite3
+conn = sqlite3.connect('$AIRFLOW_HOME/airflow.db')
+for row in conn.execute('SELECT id, asset_id, extra, timestamp FROM asset_event'):
+    print(row)
+"
+```
+
+### 4. 시나리오 B (정상 승격) 실행 및 증거 확인
+
+```bash
+export AIRFLOW_HOME="$PWD/.local/clean/airflow"
+export TMPDIR="$PWD/.local/clean/tmp"
+
+# Clean 환경 메타데이터 DB 초기화
+python -m airflow db migrate
+python -m airflow dags reserialize
+
+# 시나리오 B 실행 (정상 통과 및 dbt promotion -> CLI exit 0 기대)
+python -m airflow dags test hmda_data_plane -c "{\"database_path\": \"$PWD/.local/clean/db/clean.duckdb\", \"source_root\": \"$PWD/.local/clean/source\", \"source_year\": 2025, \"run_dbt_build\": true}"
+
+# 생성된 RUN_ID에 대해 TaskInstance 상태 확인 (모든 태스크 success)
+python -m airflow tasks states-for-dag-run hmda_data_plane "<CLEAN_RUN_ID>" -o json
+
+# SQLite asset_event 확인 (raw_load 1건, analytics_build 1건)
+python -c "
+import sqlite3
+conn = sqlite3.connect('$AIRFLOW_HOME/airflow.db')
+for row in conn.execute('SELECT id, asset_id, extra, timestamp FROM asset_event'):
+    print(row)
+"
+```
+
+### 5. 무오염 확인 및 워크트리 정리
+
+```bash
+cd "$MAIN_REPO"
+git worktree remove .local/worktrees/pr229-proof-run --force
+unset AIRFLOW_HOME AIRFLOW__CORE__DAGS_FOLDER AIRFLOW__CORE__LOAD_EXAMPLES TMPDIR
+git status -s
+```
+
 첫 시도는 Git 미추적 샘플이 worktree에 없어 DAG 실행 전 실패했다. `finally`에서 worktree 정리와 지문 검사를 수행했고, 허용된 메인 샘플을 읽도록 수정한 뒤 위 두 실행을 완료했다. 최종 `git worktree remove <path> --force` 후, 보고서 편집 전 `git status --porcelain` 출력은 비어 있었다. 보고서와 tasks 수정은 의도된 문서 변경이며 commit 요청 없이 이를 clean으로 만들기 위해 commit하거나 삭제하지 않는다.
 
 전체 로그, CLI JSON, SQLite 결과, conf, provenance, before/after JSON과 회수한 dbt target은 Git 미추적 `.local/pr229-proof-evidence/`에 있다. `projection-verification.json`은 회수한 artifact만 읽어 별도 실행한 candidate/current 비교와 public projection ID 재계산의 통과 결과다. 임시 실행기는 `.local/pr229-proof.py`이며 영구 tooling으로 도입하지 않는다. 제거된 worktree의 경로는 실행 당시 identity이며 현재 열 수 있는 경로가 아니다.

@@ -36,6 +36,11 @@ PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/ac
    gh pr ready 229
    ```
 
+1. **리뷰 승인 및 CI 검증 확인:**
+
+   - GitHub Actions(CI Lite 등) 통과 확인
+   - 리뷰어의 명시적 승인(`Approved`) 확인
+
 1. **Squash and Merge:**
 
    ```bash

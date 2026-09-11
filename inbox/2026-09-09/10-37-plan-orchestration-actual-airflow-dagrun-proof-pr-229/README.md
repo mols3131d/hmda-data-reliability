@@ -15,16 +15,24 @@ tags:
 > [!NOTE]
 > 본 번들은 PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)의 actual Airflow DAGRun proof 기록이다. 작업은 완료됐으며 현재 결과 판단은 [실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md), [이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md), [리뷰·머지 핸드오프](08-handoff-orchestration-actual-airflow-proof.md)를 따른다. `01`~`03`과 `06`은 사전 기획·중간 판단 기록이며 현재 실행 지침이나 완료 판단을 소유하지 않는다.
 
+## Reviewer Guide
+
+리뷰어는 다음 순서로 핵심 3개 문서를 검토합니다:
+
+1. **[04 실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md)**: Airflow 3.3.0 격리 환경 실행(결함 차단 및 정상 승격), dbt 매니페스트/프로젝션 바이트 일치, 메인 DB 무오염 실측 증거 및 재현 절차
+1. **[07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md)**: canonical orchestration spec의 10개 Requirement(28개 Scenario)와 관련 74개 자동화 테스트 대조 결과, 기술적 블로커 부재 및 잔여 제한 판단
+1. **[08 리뷰·머지 핸드오프](08-handoff-orchestration-actual-airflow-proof.md)**: PR #229 검토 및 라이프사이클(Draft 해제, 머지) 절차
+
 ## Navigation
 
-### Current
+### Current (Final Deliverables)
 
-- [04 실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md): 실제 Airflow 3.3.0 실행, dbt promotion, Asset event와 격리 증거
+- [04 실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md): 실제 Airflow 3.3.0 실행, dbt promotion, Asset event와 격리 증거 및 재현 절차
 - [07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md): 현재 완료 판단, requirement-level 사양 대조와 잔여 제한
 - [08 리뷰·머지 핸드오프](08-handoff-orchestration-actual-airflow-proof.md): 현재 PR 검토 및 lifecycle 절차
 - [tasks.md](tasks.md): 단계별 작업 완료 상태
 
-### Historical Context
+### Historical Context (Superseded or Intermediate)
 
 - [01 사전 조사](01-research-orchestration-actual-airflow-dagrun-planning.md): runtime proof 착수 전 조사
 - [02 정찰 보고서](02-report-orchestration-actual-airflow-dagrun-reconnaissance.md): `[SUPERSEDED]` 사전 정찰 기록
