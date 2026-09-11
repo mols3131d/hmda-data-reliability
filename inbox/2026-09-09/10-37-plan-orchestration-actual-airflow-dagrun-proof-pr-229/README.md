@@ -17,16 +17,18 @@ tags:
 
 ## Reviewer Guide
 
-리뷰어는 다음 순서로 핵심 3개 문서를 검토합니다:
+리뷰어는 다음 순서로 핵심 문서들을 검토합니다:
 
+1. **[09 최종 완료 보고서](09-report-orchestration-actual-airflow-dagrun-final-completion.md)**: PR #229 전체 여정, 영구 통합 테스트 산출물, 검증 결과 및 완료 결론 요약
 1. **[04 실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md)**: Airflow 3.3.0 격리 환경 실행(결함 차단 및 정상 승격), dbt 매니페스트/프로젝션 바이트 일치, 메인 DB 무오염 실측 증거 및 재현 절차
-1. **[07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md)**: canonical orchestration spec의 10개 Requirement(28개 Scenario)와 관련 74개 자동화 테스트 대조 결과, 기술적 블로커 부재 및 잔여 제한 판단
+1. **[07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md)**: canonical orchestration spec의 10개 Requirement(28개 Scenario)와 관련 자동화 테스트 대조 결과, 기술적 블로커 부재 및 잔여 제한 판단
 1. **[08 리뷰·머지 핸드오프](08-handoff-orchestration-actual-airflow-proof.md)**: PR #229 검토 및 라이프사이클(Draft 해제, 머지) 절차
 
 ## Navigation
 
 ### Current (Final Deliverables)
 
+- [09 최종 완료 보고서](09-report-orchestration-actual-airflow-dagrun-final-completion.md): PR #229의 실측, 영구 테스트 하네스 구축 및 최종 완료 보고서
 - [04 실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md): 실제 Airflow 3.3.0 실행, dbt promotion, Asset event와 격리 증거 및 재현 절차
 - [07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md): 현재 완료 판단, requirement-level 사양 대조와 잔여 제한
 - [08 리뷰·머지 핸드오프](08-handoff-orchestration-actual-airflow-proof.md): 현재 PR 검토 및 lifecycle 절차

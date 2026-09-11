@@ -32,5 +32,6 @@
   - Canonical spec의 10개 Requirement와 28개 Scenario를 기존 테스트와 두 실제 실행에 대조했다.
   - 2026-09-10 직접 관련된 테스트 모듈 6개에서 74개 테스트가 통과했다. 추가 필수 verification gap은 확인되지 않았으며 10개 Requirement(28개 Scenario 포함) 단위 대조표는 [이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md)에 기록했다.
 - [x] **3.3 인박스 및 PR #229 갱신**
-  - 04~08, 정정된 tasks와 선행 02·03의 정정 표지, 그리고 반복 가능한 [실제 DAGRun 테스트](../../../tests/orchestration/test_airflow_dagrun.py) 및 [설계 문서](../../../tests/orchestration/test_airflow_dagrun.design.md)를 같은 PR 단위로 반영했다.
+  - 04~09, 정정된 tasks와 선행 02·03의 정정 표지, 그리고 반복 가능한 [실제 DAGRun 테스트](../../../tests/orchestration/test_airflow_dagrun.py) 및 [설계 문서](../../../tests/orchestration/test_airflow_dagrun.design.md)를 같은 PR 단위로 반영했다.
+  - 최종 작업 완료 보고서([09-report-orchestration-actual-airflow-dagrun-final-completion.md](09-report-orchestration-actual-airflow-dagrun-final-completion.md))를 작성했다.
   - Commit·push 후 PR description을 실제 revision과 validation에 맞추고 리뷰 및 머지 준비를 완료했다.
