@@ -14,13 +14,14 @@
 
 ## Work
 
-- [ ] canonical Spec classifier regression을 exact target set으로 갱신
-- [ ] `orchestration-pipeline` mapping에 Data Operations/Reliability owner tests 추가
-- [ ] focused classifier/domain/runtime/OpenSpec/lock/build validation 실행
-- [ ] 최신 merge candidate commit 및 PR update push
+- [x] canonical Spec classifier regression을 exact target set으로 갱신
+- [x] `orchestration-pipeline` mapping에 Data Operations/Reliability owner tests 추가
+- [x] focused classifier/domain/runtime/OpenSpec/lock/build validation 실행
+- [x] 최신 merge candidate commit 및 PR update push
 
 ## Review
 
-- [ ] diff와 classifier output contract 재검토
-- [ ] focused test 및 CI 결과를 actual revision에 귀속
-- [ ] residual findings와 human review handoff artifact 기록
+- [x] diff와 classifier output contract 재검토
+- [x] focused test 및 CI 결과를 actual revision에 귀속
+- [x] residual findings와 human review handoff artifact 기록
+- [ ] independent adversarial peer review conclusion 수신
