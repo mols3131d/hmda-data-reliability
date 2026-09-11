@@ -77,14 +77,8 @@ jobs:
                   [[ "$path" == *.md && -f "$path" ]] && printf '%s\n' "$path"
                 done
           )
-          mapfile -t added < <(
-            git diff --diff-filter=A --name-only HEAD^1 HEAD -- inbox/ \
-              | while IFS= read -r path; do
-                  [[ "$path" == *.md && -f "$path" ]] && printf '%s\n' "$path"
-                done
-          )
           if ((${#files[@]})); then
-            python3 scripts/validate_inbox_artifacts.py "${files[@]}" --added "${added[@]}"
+            python3 scripts/validate_inbox_artifacts.py "${files[@]}"
           fi
 
       - name: Set up Python
