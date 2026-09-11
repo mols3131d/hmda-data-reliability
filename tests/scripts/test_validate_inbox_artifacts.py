@@ -63,14 +63,7 @@ def test_github_work_artifact_with_type_passes(tmp_path: Path) -> None:
     )
     write_artifact(tmp_path / relative)
 
-    assert (
-        validate_changed_paths(
-            [relative.as_posix()],
-            repo_root=tmp_path,
-            added_paths=[relative.as_posix()],
-        )
-        == []
-    )
+    assert validate_changed_paths([relative.as_posix()], repo_root=tmp_path) == []
 
 
 @pytest.mark.unit
@@ -81,14 +74,7 @@ def test_github_work_artifact_without_type_passes(tmp_path: Path) -> None:
     )
     write_artifact(tmp_path / relative, artifact_type="plan")
 
-    assert (
-        validate_changed_paths(
-            [relative.as_posix()],
-            repo_root=tmp_path,
-            added_paths=[relative.as_posix()],
-        )
-        == []
-    )
+    assert validate_changed_paths([relative.as_posix()], repo_root=tmp_path) == []
 
 
 @pytest.mark.unit
@@ -99,55 +85,7 @@ def test_branch_work_artifact_passes(tmp_path: Path) -> None:
     )
     write_artifact(tmp_path / relative, artifact_type="plan")
 
-    assert (
-        validate_changed_paths(
-            [relative.as_posix()],
-            repo_root=tmp_path,
-            added_paths=[relative.as_posix()],
-        )
-        == []
-    )
-
-
-@pytest.mark.unit
-def test_existing_branch_sequence_must_append_after_maximum(tmp_path: Path) -> None:
-    """Branch work unit도 기존 sequence가 있으면 max + 1로 append한다."""
-    container = Path("inbox/2026-09-09-agent-docs-inbox-policy")
-    write_artifact(tmp_path / container / "01-review-first.md")
-    write_bundle(tmp_path, container / "03-discuss-later")
-    added = container / "02-plan-backfill.md"
-    write_artifact(tmp_path / added, artifact_type="plan")
-
-    errors = validate_changed_paths(
-        [added.as_posix()],
-        repo_root=tmp_path,
-        added_paths=[added.as_posix()],
-    )
-
-    assert errors == [
-        f"{tmp_path / container}: new top-level sequence must append after the "
-        "current maximum; expected [04], got [02]"
-    ]
-
-
-@pytest.mark.unit
-def test_new_sequenced_container_preserves_observed_gaps(tmp_path: Path) -> None:
-    """새 container에서는 이전 identity의 sequence history를 추정하지 않는다."""
-    container = Path("inbox/github-240-inbox-policy")
-    first = container / "00-plan-start.md"
-    later = container / "02-review-later.md"
-    write_artifact(tmp_path / first, artifact_type="plan")
-    write_artifact(tmp_path / later)
-
-    paths = [first.as_posix(), later.as_posix()]
-    assert (
-        validate_changed_paths(
-            paths,
-            repo_root=tmp_path,
-            added_paths=paths,
-        )
-        == []
-    )
+    assert validate_changed_paths([relative.as_posix()], repo_root=tmp_path) == []
 
 
 @pytest.mark.unit
@@ -161,78 +99,6 @@ def test_github_work_artifact_requires_two_digit_sequence(tmp_path: Path) -> Non
     errors = validate_changed_paths([relative.as_posix()], repo_root=tmp_path)
 
     assert errors == [f"{tmp_path / relative}: artifact name must start with NN-"]
-
-
-@pytest.mark.unit
-def test_new_github_sequence_must_append_after_maximum(tmp_path: Path) -> None:
-    """Sequence gap을 backfill하지 않고 현재 최대값 다음 번호만 추가한다."""
-    container = Path("inbox/github-226-document-consistency-polish")
-    write_artifact(tmp_path / container / "01-review-first.md")
-    write_bundle(tmp_path, container / "03-discuss-later")
-    added = container / "02-plan-backfill.md"
-    write_artifact(tmp_path / added, artifact_type="plan")
-
-    errors = validate_changed_paths(
-        [added.as_posix()],
-        repo_root=tmp_path,
-        added_paths=[added.as_posix()],
-    )
-
-    assert errors == [
-        f"{tmp_path / container}: new top-level sequence must append after the "
-        "current maximum; expected [04], got [02]"
-    ]
-
-
-@pytest.mark.unit
-def test_new_github_sequence_maximum_plus_one_passes(tmp_path: Path) -> None:
-    """01, 03이 존재하면 신규 top-level root는 04를 사용한다."""
-    container = Path("inbox/github-226-document-consistency-polish")
-    write_artifact(tmp_path / container / "01-review-first.md")
-    write_bundle(tmp_path, container / "03-discuss-later")
-    added = container / "04-plan-next.md"
-    write_artifact(tmp_path / added, artifact_type="plan")
-
-    assert (
-        validate_changed_paths(
-            [added.as_posix()],
-            repo_root=tmp_path,
-            added_paths=[added.as_posix()],
-        )
-        == []
-    )
-
-
-@pytest.mark.unit
-def test_multiple_new_github_sequences_are_consecutive(tmp_path: Path) -> None:
-    """한 change에서 여러 root를 추가하면 max + 1부터 연속해서 append한다."""
-    container = Path("inbox/github-226-document-consistency-polish")
-    write_artifact(tmp_path / container / "03-review-existing.md")
-    first = container / "04-plan-next.md"
-    second = container / "05-report-result.md"
-    write_artifact(tmp_path / first, artifact_type="plan")
-    write_artifact(tmp_path / second, artifact_type="report")
-
-    paths = [first.as_posix(), second.as_posix()]
-    assert (
-        validate_changed_paths(
-            paths,
-            repo_root=tmp_path,
-            added_paths=paths,
-        )
-        == []
-    )
-
-
-@pytest.mark.unit
-def test_existing_github_artifact_keeps_sequence_when_modified(tmp_path: Path) -> None:
-    """기존 artifact 수정은 현재 최대 sequence와 무관하게 기존 번호를 유지한다."""
-    container = Path("inbox/github-226-document-consistency-polish")
-    changed = container / "01-review-existing.md"
-    write_artifact(tmp_path / changed)
-    write_artifact(tmp_path / container / "03-report-later.md", artifact_type="report")
-
-    assert validate_changed_paths([changed.as_posix()], repo_root=tmp_path) == []
 
 
 @pytest.mark.unit
@@ -284,22 +150,13 @@ def test_changed_bundle_member_validates_bundle_readme(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-def test_new_github_bundle_shares_top_level_sequence(tmp_path: Path) -> None:
-    """File과 bundle은 같은 append-only top-level sequence를 공유한다."""
-    container = Path("inbox/github-226-document-consistency-polish")
-    write_artifact(tmp_path / container / "01-review-first.md")
-    added_bundle = container / "02-discuss-follow-up"
-    write_bundle(tmp_path, added_bundle)
-    readme = added_bundle / "README.md"
+def test_github_work_bundle_passes(tmp_path: Path) -> None:
+    """GitHub work bundle도 common artifact contract를 검증한다."""
+    bundle = Path("inbox/github-226-document-consistency-polish/02-discuss-follow-up")
+    write_bundle(tmp_path, bundle)
 
-    assert (
-        validate_changed_paths(
-            [readme.as_posix()],
-            repo_root=tmp_path,
-            added_paths=[readme.as_posix()],
-        )
-        == []
-    )
+    changed = (bundle / "turns/001-a.md").as_posix()
+    assert validate_changed_paths([changed], repo_root=tmp_path) == []
 
 
 @pytest.mark.unit
