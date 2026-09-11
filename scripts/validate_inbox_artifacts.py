@@ -7,7 +7,12 @@ import sys
 from pathlib import Path
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-ARTIFACT_RE = re.compile(r"^(?P<time>\d{2}-\d{2})-(?P<rest>.+)$")
+BRANCH_WORK_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$")
+GITHUB_WORK_RE = re.compile(
+    r"^github-(?P<number>[1-9]\d*)-(?P<name>[a-z0-9]+(?:-[a-z0-9]+)*)$"
+)
+TIMED_ARTIFACT_RE = re.compile(r"^(?P<prefix>\d{2}-\d{2})-(?P<rest>.+)$")
+SEQUENCED_ARTIFACT_RE = re.compile(r"^(?P<prefix>\d{2})-(?P<rest>.+)$")
 TYPE_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 REQUIRED_FIELDS = ("type", "title", "description")
 
@@ -47,7 +52,12 @@ def _has_value(value: str) -> bool:
     return normalized not in {"", "null", "Null", "NULL", "~"}
 
 
-def _validate_root(path: Path, artifact_name: str) -> list[str]:
+def _validate_root(
+    path: Path,
+    artifact_name: str,
+    *,
+    sequenced: bool,
+) -> list[str]:
     errors: list[str] = []
     try:
         fields = _frontmatter_fields(path)
@@ -69,17 +79,23 @@ def _validate_root(path: Path, artifact_name: str) -> list[str]:
         )
         return errors
 
-    match = ARTIFACT_RE.fullmatch(artifact_name)
+    pattern = SEQUENCED_ARTIFACT_RE if sequenced else TIMED_ARTIFACT_RE
+    match = pattern.fullmatch(artifact_name)
     if match is None:
-        errors.append(f"{path}: artifact name must start with HH-MM-")
+        required_prefix = "NN-" if sequenced else "HH-MM-"
+        errors.append(f"{path}: artifact name must start with {required_prefix}")
         return errors
 
-    hour_text, minute_text = match.group("time").split("-", 1)
+    prefix = match.group("prefix")
+    if sequenced:
+        return errors
+
+    hour_text, minute_text = prefix.split("-", 1)
     if not (0 <= int(hour_text) <= 23 and 0 <= int(minute_text) <= 59):
         errors.append(f"{path}: artifact time must be a valid HH-MM value")
 
     if artifact_type:
-        expected_prefix = f"{match.group('time')}-{artifact_type}-"
+        expected_prefix = f"{prefix}-{artifact_type}-"
         if not artifact_name.startswith(expected_prefix):
             errors.append(
                 f"{path}: artifact name must start with {expected_prefix!r} "
@@ -88,10 +104,18 @@ def _validate_root(path: Path, artifact_name: str) -> list[str]:
     return errors
 
 
+def _is_sequenced_container(container: str) -> bool | None:
+    if DATE_RE.fullmatch(container):
+        return False
+    if BRANCH_WORK_RE.fullmatch(container) or GITHUB_WORK_RE.fullmatch(container):
+        return True
+    return None
+
+
 def _artifact_root_for_changed_path(
     repo_root: Path,
     changed_path: Path,
-) -> tuple[Path, str] | None:
+) -> tuple[Path, str, bool] | None:
     """Resolve a changed Inbox path to the standalone file or bundle README root."""
     try:
         relative = changed_path.relative_to("inbox")
@@ -99,19 +123,21 @@ def _artifact_root_for_changed_path(
         return None
 
     parts = relative.parts
-    if len(parts) < 2 or not DATE_RE.fullmatch(parts[0]):
+    if len(parts) < 2:
+        return None
+
+    container = parts[0]
+    sequenced = _is_sequenced_container(container)
+    if sequenced is None:
         return None
 
     if len(parts) == 2 and changed_path.suffix == ".md":
-        return repo_root / changed_path, changed_path.stem
+        return repo_root / changed_path, changed_path.stem, sequenced
 
     bundle_name = parts[1]
-    if not ARTIFACT_RE.fullmatch(bundle_name):
-        return None
-
-    readme = repo_root / "inbox" / parts[0] / bundle_name / "README.md"
+    readme = repo_root / "inbox" / container / bundle_name / "README.md"
     if readme.is_file():
-        return readme, bundle_name
+        return readme, bundle_name, sequenced
     return None
 
 
@@ -125,11 +151,11 @@ def validate_changed_paths(paths: list[str], *, repo_root: Path) -> list[str]:
         root = _artifact_root_for_changed_path(repo_root, changed_path)
         if root is None:
             continue
-        root_path, artifact_name = root
+        root_path, artifact_name, sequenced = root
         if root_path in seen_roots or not root_path.is_file():
             continue
         seen_roots.add(root_path)
-        errors.extend(_validate_root(root_path, artifact_name))
+        errors.extend(_validate_root(root_path, artifact_name, sequenced=sequenced))
 
     return errors
 
