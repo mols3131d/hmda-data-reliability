@@ -114,7 +114,7 @@ uv run pytest tests/orchestration/test_airflow_dagrun.py
 
 첫 시도는 Git 미추적 샘플이 worktree에 없어 DAG 실행 전 실패했다. `finally`에서 worktree 정리와 지문 검사를 수행했고, 허용된 메인 샘플을 읽도록 수정한 뒤 위 두 실행을 완료했다. 최종 `git worktree remove <path> --force` 후, 보고서 편집 전 `git status --porcelain` 출력은 비어 있었다. 보고서와 tasks 수정은 의도된 문서 변경이며 commit 요청 없이 이를 clean으로 만들기 위해 commit하거나 삭제하지 않는다.
 
-전체 로그, CLI JSON, SQLite 결과, conf, provenance, before/after JSON과 회수한 dbt target은 Git 미추적 `.local/pr229-proof-evidence/`에 있다. `projection-verification.json`은 회수한 artifact만 읽어 별도 실행한 candidate/current 비교와 public projection ID 재계산의 통과 결과다. 임시 실행기는 `.local/pr229-proof.py`이며 영구 tooling으로 도입하지 않는다. 제거된 worktree의 경로는 실행 당시 identity이며 현재 열 수 있는 경로가 아니다.
+전체 로그, CLI JSON, SQLite 결과, conf, provenance, before/after JSON과 회수한 dbt target은 Git 미추적 `.local/pr229-proof-evidence/`에 있다. `projection-verification.json`은 회수한 artifact만 읽어 별도 실행한 candidate/current 비교와 public projection ID 재계산의 통과 결과다. 실측 당시의 임시 실행기(`.local/pr229-proof.py`) 자체는 영구 tooling으로 유지하지 않으며, 현재 PR의 반복 검증은 [test_airflow_dagrun.py](../../../tests/orchestration/test_airflow_dagrun.py)가 소유한다. 제거된 worktree의 경로는 실행 당시 identity이며 현재 열 수 있는 경로가 아니다.
 
 ## Verification Reconciliation
 
@@ -138,6 +138,6 @@ uv run pytest \
 
 ## Scope And Limits
 
-- Production code, canonical spec과 영구 harness를 변경하지 않은 일회성 verification/report다. OpenSpec Change와 `skip_specs: true` 설정은 만들지 않는다.
+- 2026-09-09 실측 자체는 일회성 검증 보고였으나, 현재 PR에서는 프로덕션 코드와 canonical spec 변경 없이 [test_airflow_dagrun.py](../../../tests/orchestration/test_airflow_dagrun.py) 기반의 반복 가능한 통합 테스트 하네스를 영구 테스트로 추가했다. 프로덕션 및 spec 변경이 없는 test-only 추가이므로 OpenSpec Change와 `skip_specs: true` 설정은 생성하지 않는다.
 - Scheduler service 실행, 모든 TaskInstance 중간 상태의 연속 sampling과 모든 실패 경로의 별도 Airflow 실측은 수행하지 않았다. 이는 명시된 증거 범위의 제한이며 현재 spec 또는 MVP acceptance blocker가 아니다.
-- 향후 scheduler-service 운영 경로나 반복 가능한 runtime harness가 요구되면 현재 PR의 누락 수정이 아니라 별도 요구사항과 변경으로 평가한다.
+- 상시 scheduler-service 데몬 구동 및 운영 환경 검증이 요구되면 현재 PR의 누락 수정이 아니라 별도 요구사항과 변경으로 평가한다.

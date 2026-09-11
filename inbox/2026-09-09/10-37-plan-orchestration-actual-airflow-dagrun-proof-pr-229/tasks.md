@@ -19,9 +19,9 @@
 ## 2. Workstream 2: OpenSpec Planning Transition
 
 - [x] **2.1 Change 성격 분류 확정**
-  - 두 `dags test` 시나리오에서 gate 차단과 정상 promotion을 확인했다. 전체 spec 일치나 scheduler service 증명은 주장하지 않는다. 영구 tooling을 도입하지 않으므로 `skip_specs` 설정은 불필요하다.
+  - 두 `dags test` 시나리오에서 gate 차단과 정상 promotion을 확인했다. 전체 spec 일치나 scheduler service 증명은 주장하지 않는다. 프로덕션 코드나 canonical spec을 변경하지 않는 테스트 추가 및 검증이므로 `skip_specs` 설정은 불필요하다.
 - [x] **2.2 OpenSpec Change 아티팩트 작성 (필요 시): Not Required**
-  - 영구 tooling이나 production/spec 변경 없는 일회성 실행 보고로 분류했다. Change 및 `skip_specs` 설정은 생성하지 않는다.
+  - 프로덕션 코드/spec 변경 없는 테스트 코드 및 검증 문서 추가로 분류했다. Change 및 `skip_specs` 설정은 생성하지 않는다.
 
 ## 3. Workstream 3: Verification & Integration
 
@@ -32,5 +32,5 @@
   - Canonical spec의 10개 Requirement와 28개 Scenario를 기존 테스트와 두 실제 실행에 대조했다.
   - 2026-09-10 직접 관련된 테스트 모듈 6개에서 74개 테스트가 통과했다. 추가 필수 verification gap은 확인되지 않았으며 10개 Requirement(28개 Scenario 포함) 단위 대조표는 [이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md)에 기록했다.
 - [x] **3.3 인박스 및 PR #229 갱신**
-  - 04~07, 정정된 tasks와 선행 02·03의 정정 표지를 같은 PR 문서 변경 단위로 준비했다.
-  - Commit·push 후 PR description을 실제 revision과 validation에 맞추고 Draft를 유지한다.
+  - 04~08, 정정된 tasks와 선행 02·03의 정정 표지, 그리고 반복 가능한 [실제 DAGRun 테스트](../../../tests/orchestration/test_airflow_dagrun.py) 및 [설계 문서](../../../tests/orchestration/test_airflow_dagrun.design.md)를 같은 PR 단위로 반영했다.
+  - Commit·push 후 PR description을 실제 revision과 validation에 맞추고 리뷰 및 머지 준비를 완료했다.

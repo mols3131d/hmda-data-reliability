@@ -67,6 +67,6 @@ uv run pytest \
 
 ## Delivery State
 
-기술적 검증과 문서 전달은 완료됐다. PR의 Draft, CI, review와 mergeability는 GitHub live state가 소유하므로 Ready 전환이나 merge 직전에 다시 확인한다.
+기술적 검증과 문서 전달, 그리고 [test_airflow_dagrun.py](../../../tests/orchestration/test_airflow_dagrun.py) 기반의 반복 가능한 영구 통합 테스트 추가가 완료됐다. PR의 Draft, CI, review와 mergeability는 GitHub live state가 소유하므로 Ready 전환이나 merge 직전에 다시 확인한다.
 
-향후 scheduler-service 운영이나 영구 runtime harness가 요구되면 현재 PR의 숨은 blocker로 소급하지 않고 별도 requirement와 변경으로 평가한다.
+향후 scheduler-service 운영이나 백그라운드 데몬 검증이 요구되면 현재 PR의 숨은 blocker로 소급하지 않고 별도 requirement와 변경으로 평가한다.

@@ -14,10 +14,10 @@ tags:
 
 ## Status
 
-PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)의 일회성 Airflow 3.3.0 런타임 실측과 사양 대조 검증을 완료했다. 프로덕션 DAG와 canonical spec 변경은 없다.
+PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)의 2026-09-09 Airflow 3.3.0 런타임 실측, 사양 대조 검증 및 반복 가능한 영구 통합 테스트([test_airflow_dagrun.py](../../../tests/orchestration/test_airflow_dagrun.py)) 추가를 완료했다. 프로덕션 DAG와 canonical spec 변경은 없다.
 
-- **실측 증거:** [04 실측 보고서](04-report-orchestration-actual-airflow-dagrun-proof-result.md) — 격리 환경 2개 시나리오 실행, dbt promotion, 메인 DB/manifest 불변
-- **사양 대조:** [07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md) — 10개 Requirement(총 28개 Scenario 포함)의 requirement-level 대조, 관련 테스트 74개 통과
+- **실측 증거:** [04 실측 보고서](04-report-orchestration-actual-airflow-dagrun-proof-result.md) — 2026-09-09 격리 환경 2개 시나리오 실측 기록 및 [테스트 설계](../../../tests/orchestration/test_airflow_dagrun.design.md) 기반 5대 핵심 파이프라인 자동화 검증
+- **사양 대조:** [07 이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md) — 10개 Requirement(총 28개 Scenario 포함)의 requirement-level 대조, 관련 테스트 통과
 - **PR lifecycle:** Draft, CI, review와 mergeability는 GitHub live state가 소유하며 아래 작업 직전에 다시 확인한다.
 
 ## Review And Merge Actions

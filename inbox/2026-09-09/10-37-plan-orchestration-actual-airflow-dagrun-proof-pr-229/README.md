@@ -13,7 +13,7 @@ tags:
 # Actual Airflow DAGRun Proof Work Plan (PR #229)
 
 > [!NOTE]
-> 본 번들은 PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)의 actual Airflow DAGRun proof 기록이다. 2026-09-11 요청에 따라 같은 branch와 PR에서 [실제 DAGRun 테스트](../../../tests/orchestration/test_airflow_dagrun.py) 구현으로 이어간다. 기존 `04`~`08`의 완료 판단은 선행 일회성 실측 범위이며 테스트 구현 완료나 독립 검토 통과를 뜻하지 않는다. 현재 테스트 범위와 재현 명령은 [테스트 설계](../../../tests/orchestration/test_airflow_dagrun.design.md)를 따른다. `01`~`03`과 `06`은 사전 기획·중간 판단 기록이다.
+> 본 번들은 PR [#229](https://github.com/mols3131d/hmda-data-reliability/pull/229) (`test/actual-airflow-dagrun-proof`)의 actual Airflow DAGRun proof 및 자동화 테스트 작업 기록이다. 2026-09-09 일회성 실측 결과와 2026-09-11 [실제 DAGRun 테스트](../../../tests/orchestration/test_airflow_dagrun.py) 구현을 함께 정리하며, 현재 결과 판단은 [실측 결과](04-report-orchestration-actual-airflow-dagrun-proof-result.md), [이슈·블로커 보고서](07-report-orchestration-pr-229-issues-blockers.md), [리뷰·머지 핸드오프](08-handoff-orchestration-actual-airflow-proof.md)를 따른다. `01`~`03`과 `06`은 사전 기획·중간 판단 기록이다.
 
 ## Reviewer Guide
 
