@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -142,97 +141,8 @@ def _artifact_root_for_changed_path(
     return None
 
 
-def _new_sequenced_root_for_added_path(added_path: Path) -> tuple[str, str] | None:
-    """Return a sequenced work container and new top-level root for an added path."""
-    try:
-        relative = added_path.relative_to("inbox")
-    except ValueError:
-        return None
-
-    parts = relative.parts
-    if len(parts) < 2 or _is_sequenced_container(parts[0]) is not True:
-        return None
-
-    if len(parts) == 2 and added_path.suffix == ".md":
-        return parts[0], added_path.stem
-
-    if len(parts) == 3 and parts[2] == "README.md":
-        return parts[0], parts[1]
-
-    return None
-
-
-def _sequence_value(name: str) -> int | None:
-    match = SEQUENCED_ARTIFACT_RE.fullmatch(name)
-    if match is None:
-        return None
-    return int(match.group("prefix"))
-
-
-def _validate_new_sequences(
-    added_paths: list[str],
-    *,
-    repo_root: Path,
-) -> list[str]:
-    """Require added roots to append when an existing sequence is observable."""
-    added_roots: dict[str, set[str]] = defaultdict(set)
-    for raw_path in added_paths:
-        root = _new_sequenced_root_for_added_path(Path(raw_path))
-        if root is not None:
-            container, root_name = root
-            added_roots[container].add(root_name)
-
-    errors: list[str] = []
-    for container, new_names in added_roots.items():
-        directory = repo_root / "inbox" / container
-        if not directory.is_dir():
-            continue
-
-        existing_values: list[int] = []
-        for child in directory.iterdir():
-            if child.is_file() and child.suffix == ".md":
-                name = child.stem
-            elif child.is_dir():
-                name = child.name
-            else:
-                continue
-            if name in new_names:
-                continue
-            value = _sequence_value(name)
-            if value is not None:
-                existing_values.append(value)
-
-        if not existing_values:
-            continue
-
-        expected_start = max(existing_values) + 1
-        ordered_new = sorted(
-            (value, name)
-            for name in new_names
-            if (value := _sequence_value(name)) is not None
-        )
-        expected_values = list(range(expected_start, expected_start + len(ordered_new)))
-        actual_values = [value for value, _name in ordered_new]
-        if actual_values == expected_values:
-            continue
-
-        expected_text = ", ".join(f"{value:02d}" for value in expected_values)
-        actual_text = ", ".join(f"{value:02d}" for value in actual_values)
-        errors.append(
-            f"{directory}: new top-level sequence must append after "
-            f"the current maximum; expected [{expected_text}], got [{actual_text}]"
-        )
-
-    return errors
-
-
-def validate_changed_paths(
-    paths: list[str],
-    *,
-    repo_root: Path,
-    added_paths: list[str] | None = None,
-) -> list[str]:
-    """Validate artifact roots reached from changed paths and observable appends."""
+def validate_changed_paths(paths: list[str], *, repo_root: Path) -> list[str]:
+    """Validate only artifact roots reached from the supplied changed paths."""
     errors: list[str] = []
     seen_roots: set[Path] = set()
 
@@ -247,26 +157,12 @@ def validate_changed_paths(
         seen_roots.add(root_path)
         errors.extend(_validate_root(root_path, artifact_name, sequenced=sequenced))
 
-    if added_paths:
-        errors.extend(_validate_new_sequences(added_paths, repo_root=repo_root))
     return errors
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = list(sys.argv[1:] if argv is None else argv)
-    if "--added" in args:
-        split_at = args.index("--added")
-        paths = args[:split_at]
-        added_paths = args[split_at + 1 :]
-    else:
-        paths = args
-        added_paths = []
-
-    errors = validate_changed_paths(
-        paths,
-        repo_root=Path.cwd(),
-        added_paths=added_paths,
-    )
+    paths = list(sys.argv[1:] if argv is None else argv)
+    errors = validate_changed_paths(paths, repo_root=Path.cwd())
     if errors:
         for error in errors:
             print(error, file=sys.stderr)
