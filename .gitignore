@@ -16,6 +16,7 @@ tempCodeRunnerFile.py
 /.claude/
 /.codex/
 /.gemini/
+/.github/agents/
 /.github/skills/*
 
 # Agent local overlays and external installs

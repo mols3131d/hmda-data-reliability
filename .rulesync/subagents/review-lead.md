@@ -1,10 +1,47 @@
 ---
+targets:
+  - claudecode
+  - codexcli
+  - copilot
+  - copilotcli
+  - antigravity-ide
+  - antigravity-cli
 name: review-lead
 description: "Primary independent-review subagent entrypoint. Invoke after code-facing implementation or when a bounded technical change needs independent review; delegates quality and adversarial specialists and returns one reconciled assessment."
-target: vscode
-tools: [read, search, agent]
-agents: [review-quality, review-adversarial]
-user-invocable: false
+claudecode:
+  tools:
+    - Agent
+    - Read
+    - Grep
+    - Glob
+  permissionMode: plan
+codexcli:
+  sandbox_mode: read-only
+copilot:
+  tools:
+    - read
+    - search
+    - agent
+  agents:
+    - review-quality
+    - review-adversarial
+  user-invocable: false
+copilotcli:
+  tools:
+    - read
+    - search
+    - agent
+  agents:
+    - review-quality
+    - review-adversarial
+  user-invocable: false
+antigravity-ide:
+  tools:
+    - view_file
+    - grep_search
+    - invoke_subagent
+  mainAgent: false
+  subagent: true
 ---
 
 # Review Lead
@@ -33,7 +70,7 @@ user-invocable: false
 
 - `review-quality`와 `review-adversarial`만 호출한다.
 - 두 reviewer는 서로의 결과를 보지 않은 상태에서 독립적으로 작업한다.
-- 두 specialist는 일반 model invocation에서 제외되며 이 agent의 explicit `agents` allowlist를 통해서만 delegated specialist로 사용한다.
+- Runtime이 named child-agent allowlist를 지원하면 두 specialist로 제한한다. 지원하지 않으면 이 제한은 instruction contract이며 capability-level isolation으로 과장하지 않는다.
 - 한 reviewer가 실패하거나 incomplete하면 다른 reviewer나 lead가 그 관점을 대신 수행했다고 주장하지 않는다.
 - nested subagent invocation이 비활성화되었거나 사용할 수 없으면 두 specialist를 직접 흉내 내지 않고 coverage gap과 limitation을 반환한다.
 

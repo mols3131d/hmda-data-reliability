@@ -1,9 +1,43 @@
 ---
+targets:
+  - claudecode
+  - codexcli
+  - copilot
+  - copilotcli
+  - antigravity-ide
+  - antigravity-cli
 name: implement-test
 description: "OpenSpec custom schema `spec-driven-tdd`에서 test design과 test implementation을 담당하는 subagent."
-target: vscode
-tools: [read, search, edit]
-user-invocable: false
+claudecode:
+  tools:
+    - Read
+    - Grep
+    - Glob
+    - Edit
+    - Write
+codexcli:
+  sandbox_mode: workspace-write
+copilot:
+  tools:
+    - read
+    - search
+    - edit
+  user-invocable: false
+copilotcli:
+  tools:
+    - read
+    - search
+    - edit
+  user-invocable: false
+antigravity-ide:
+  tools:
+    - view_file
+    - grep_search
+    - write_to_file
+    - replace_file_content
+    - multi_replace_file_content
+  mainAgent: false
+  subagent: true
 ---
 
 # Implement Test
@@ -14,7 +48,7 @@ user-invocable: false
 - OpenSpec custom schema `spec-driven-tdd`에서 test design부터 test implementation까지 담당
   - workflow contract: `openspec/schemas/spec-driven-tdd/`
 
-작업 시작 시 [`prj-load-context-development`](../../.rulesync/skills/prj-load-context-development/SKILL.md)와 [`prj-testing-context`](../../.rulesync/skills/prj-testing-context/SKILL.md)을 읽고 현재 task에 필요한 context만 로드한다. Repository-wide implementation context는 development Skill이, test 설계와 실행의 세부 기준은 testing Skill이 연결하는 canonical 문서가 소유한다.
+작업 시작 시 `.rulesync/skills/prj-load-context-development/SKILL.md`와 `.rulesync/skills/prj-testing-context/SKILL.md`를 읽고 현재 task에 필요한 context만 로드한다. Repository-wide implementation context는 development Skill이, test 설계와 실행의 세부 기준은 testing Skill이 연결하는 canonical 문서가 소유한다.
 
 ## Workflow
 
@@ -44,6 +78,7 @@ Self-review 실패 시 이전 phase를 재검토하고, 자체 해결이 불가�
 - 통과를 위해 테스트를 약화하지 않는다.
 - Production 소스 코드를 수정하지 않는다.
 - Final implementation completion과 independent review gate는 caller 또는 상위 workflow가 소유한다.
+- Runtime이 책임보다 넓은 write 또는 command capability만 제공하면 이 instruction의 범위를 넘겨 사용하지 않는다.
 
 ## Handoff
 

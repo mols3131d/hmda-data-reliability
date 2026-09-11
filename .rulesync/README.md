@@ -6,10 +6,10 @@ Repository Agent asset policy는 [`docs/development/ai-agent/README.md`](../docs
 
 | Surface | Git | Role |
 | --- | --- | --- |
-| `.rulesync/rules`, `.rulesync/skills/prj-*`, config와 lock | Track | canonical source와 재현 가능한 dependency state |
-| `.agents/rules`, `.agents/skills`, `.claude/**`, `.github/skills/**`, generated `CLAUDE.md` | Ignore | local runtime용이며 bootstrap에서 재생성 |
-| `.agents/route` | Track | chatbot discovery용 derived index |
+| `.rulesync/rules`, `.rulesync/skills/prj-*`, `.rulesync/subagents`, config와 lock | Track | canonical source와 재현 가능한 dependency state |
 | `.github/instructions` | Track | GitHub.com이 repository에서 직접 소비하는 projection |
+| `.agents/rules`, `.agents/skills`, `.agents/agents`, `.claude/**`, `.codex/**`, `.github/agents`, `.github/skills/**`, generated `CLAUDE.md` | Ignore | runtime projection이며 필요할 때 Rulesync로 재생성 |
+| `.agents/route` | Track | chatbot discovery용 derived index |
 
 External Rulesync와 Skills CLI 설치물은 추적하지 않는다. Chatbot routing은 설치 경로 대신 lock의 exact ref에 고정된 upstream Skill을 사용한다.
 

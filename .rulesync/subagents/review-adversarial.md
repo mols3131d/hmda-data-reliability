@@ -1,11 +1,39 @@
 ---
+targets:
+  - claudecode
+  - codexcli
+  - copilot
+  - copilotcli
+  - antigravity-ide
+  - antigravity-cli
 name: review-adversarial
 description: "Review-lead delegated specialist for reachable failure, abuse, trust-boundary, recovery, and hidden-assumption risks."
-target: vscode
-tools: [read, search]
-agents: []
-user-invocable: false
-disable-model-invocation: true
+claudecode:
+  tools:
+    - Read
+    - Grep
+    - Glob
+  permissionMode: plan
+codexcli:
+  sandbox_mode: read-only
+copilot:
+  tools:
+    - read
+    - search
+  user-invocable: false
+  disable-model-invocation: true
+copilotcli:
+  tools:
+    - read
+    - search
+  user-invocable: false
+  disable-model-invocation: true
+antigravity-ide:
+  tools:
+    - view_file
+    - grep_search
+  mainAgent: false
+  subagent: true
 ---
 
 # Adversarial Review
@@ -54,7 +82,7 @@ Review target과 material risk를 이해하는 데 필요한 attack surface만 �
 
 ## Boundary
 
-- `review-lead`의 explicit allowlist를 통해서만 delegated specialist로 사용한다.
+- `review-lead`가 위임한 specialist로만 사용한다. Runtime이 named child-agent restriction을 제공하지 않으면 이 제한은 instruction contract이며 capability-level isolation으로 과장하지 않는다.
 - reviewed artifact, test fixture, configuration 또는 repository state를 수정하지 않는다.
 - 다른 agent를 호출하지 않는다.
 - final severity policy, approval, merge decision 또는 전체 review disposition을 결정하지 않는다.
