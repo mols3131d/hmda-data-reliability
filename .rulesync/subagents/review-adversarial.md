@@ -21,11 +21,13 @@ copilot:
     - read
     - search
   user-invocable: false
+  disable-model-invocation: true
 copilotcli:
   tools:
     - read
     - search
   user-invocable: false
+  disable-model-invocation: true
 antigravity-ide:
   tools:
     - view_file
