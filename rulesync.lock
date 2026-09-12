@@ -3,8 +3,8 @@
   "sources": {
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
-      "resolvedRef": "74b56fa52a3e02a25f727a6841b4c4201d028eec",
-      "resolvedAt": "2026-09-10T01:13:00.781Z",
+      "resolvedRef": "6daae9c25d7f4a33ec3c0abcfb0fa259f559b720",
+      "resolvedAt": "2026-09-12T10:23:56.694Z",
       "skills": {
         "mols-agent-asset-find": {
           "integrity": "sha256-6ace67d927da8eedcdd359593ddcbd7a80d97a2fa9cab42288f634116382aef6"
@@ -25,10 +25,10 @@
           "integrity": "sha256-98d64024af13225b0b1764712e11cb66233d461062c31dabb65fc26b50366073"
         },
         "mols-coding-context-python": {
-          "integrity": "sha256-698f72c5666477800fd543b8b1ab224a673c8341c1f630c5e28b156bf4a2f94c"
+          "integrity": "sha256-e2798e4258fa49212fffb3df22e12879e8b4e9644ad25736ec07f650818cbec4"
         },
         "mols-coding-context": {
-          "integrity": "sha256-59121561dbc5b1bd045b25423462350accac559a538edca425c9ad9c4a0db7c8"
+          "integrity": "sha256-af62134c63221d4f34da41d3ead4f2fe7559887e7615b7a3bec92831731cfa5d"
         },
         "mols-documentation": {
           "integrity": "sha256-1f7ec4eb7ee2c3597e0fda64c6a224e58e0cf1bb3c4be33c53e5a5cae3dff8dc"
@@ -39,11 +39,8 @@
         "mols-markdown-dashboard": {
           "integrity": "sha256-9625551adfabce0fb66cee9ff56f7e8fb0230a939d033131c9f748b4ab4b480a"
         },
-        "mols-markdown-for-human": {
-          "integrity": "sha256-d12d681eaad30d33946ef7493e244320e6113accf2a6d1a4ba8962600294a5e0"
-        },
         "mols-markdown-maintenance": {
-          "integrity": "sha256-42598c091d56b151d50fbe60f1e6c437b5b55811738f549a14deaf3610cb807b"
+          "integrity": "sha256-360d1b22d74b8027004d60b266c8a4adf040c8adbad11526fac61fb14ccbcb43"
         },
         "mols-mermaid-chart": {
           "integrity": "sha256-b12a3c7ac7cab501778842571ee739672014fd4913b2e01953a218967c06a204"
@@ -57,7 +54,25 @@
         "mols-text-optimizer": {
           "integrity": "sha256-33464dd251ad2fd98e40ae0b5e88b7f1273b735a1ea21076ac2e5c60a4a70bf4"
         }
-      }
+      },
+      "skillSelection": [
+        "mols-agent-asset",
+        "mols-agent-asset-find",
+        "mols-ci-design",
+        "mols-clarify-code",
+        "mols-clarify-runtime",
+        "mols-code-comprehension-refactor",
+        "mols-coding-context",
+        "mols-coding-context-python",
+        "mols-documentation",
+        "mols-loops",
+        "mols-markdown-dashboard",
+        "mols-markdown-maintenance",
+        "mols-mermaid-chart",
+        "mols-mermaid-diagram",
+        "mols-openspec-customize",
+        "mols-text-optimizer"
+      ]
     }
   }
 }
