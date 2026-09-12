@@ -34,6 +34,13 @@ def _read_tsv(path: Path) -> list[dict[str, str]]:
 
 @pytest.mark.component
 def test_generate_projects_paths_and_frontmatter_descriptions(tmp_path: Path) -> None:
+    """트리 및 마크다운 프런트매터 설명이 INDEX.tsv로 정확히 투영되는지 검증한다.
+
+    검증 불변식:
+    - `README.md`, `index.md`는 해당 디렉토리(`/`)의 설명으로 투영됨.
+    - `AGENTS.md`, `CLAUDE.md`는 색인 대상에서 제외됨.
+    - 하위 디렉토리는 깊이 1 수준까지만 `INDEX.tsv` 파일이 생성됨.
+    """
     docs = tmp_path / "docs"
     _write(docs / "README.md", "# Docs\n")
     _write(docs / "AGENTS.md", "# Agent guidance\n")
@@ -65,6 +72,7 @@ def test_generate_projects_paths_and_frontmatter_descriptions(tmp_path: Path) ->
 
 @pytest.mark.component
 def test_generate_omits_trailing_tab_for_empty_description(tmp_path: Path) -> None:
+    """설명이 비어있는 항목에 대해 후행 탭(`\\t`)이 붙지 않는 포맷 불변식을 검증한다."""
     docs = tmp_path / "docs"
     _write(docs / "guide.md", "# Guide\n")
 
@@ -77,6 +85,7 @@ def test_generate_omits_trailing_tab_for_empty_description(tmp_path: Path) -> No
 
 @pytest.mark.component
 def test_generate_omits_header_only_directory_index(tmp_path: Path) -> None:
+    """하위 문서가 없어 헤더만 남게 되는 디렉토리 인덱스는 생략/정리하는지 검증한다."""
     docs = tmp_path / "docs"
     _write(
         docs / "references" / "README.md",
@@ -93,6 +102,7 @@ def test_generate_omits_header_only_directory_index(tmp_path: Path) -> None:
 
 @pytest.mark.component
 def test_generate_check_reports_drift_without_modifying_files(tmp_path: Path) -> None:
+    """`check=True` 실행 시 디스크 변경 없이 드리프트만 보고하는지 검증한다."""
     docs = tmp_path / "docs"
     guide = docs / "guide.md"
     _write(guide, "---\ndescription: Initial.\n---\n# Guide\n")
@@ -116,6 +126,7 @@ def test_generate_check_reports_drift_without_modifying_files(tmp_path: Path) ->
 
 @pytest.mark.component
 def test_generate_rejects_non_string_description(tmp_path: Path) -> None:
+    """프런트매터 description 필드가 비문자열 타입인 경우 예외를 검증한다."""
     docs = tmp_path / "docs"
     _write(
         docs / "guide.md",

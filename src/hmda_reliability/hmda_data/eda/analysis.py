@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import duckdb
 
@@ -99,6 +99,24 @@ EXPECTED_TYPE_FAMILIES = {
     ),
 }
 CSV_OPTIONS = HMDA_CSV_OPTIONS
+
+
+class _ValidatedSchema(NamedTuple):
+    """검증된 스키마 정보와 프로파일링 대상 컬럼 목록."""
+
+    schema_rows: list[dict[str, str]]
+    inferred_types: dict[str, str]
+    required_schema: list[dict[str, Any]]
+    profile_columns: list[str]
+
+
+class _VolumeAndNullMetrics(NamedTuple):
+    """원천 데이터 전체 및 연도별 볼륨/결측치 집계 결과."""
+
+    row_count: int
+    null_counts: dict[str, int]
+    activity_year_rows: list[tuple[Any, ...]]
+    metric_offset: int
 
 
 def _quote_identifier(identifier: str) -> str:
@@ -231,7 +249,7 @@ def _calculate_grain_alignment(
 
 def _inspect_and_validate_schema(
     source_relation: duckdb.DuckDBPyRelation,
-) -> tuple[list[dict[str, str]], dict[str, str], list[dict[str, Any]], list[str]]:
+) -> _ValidatedSchema:
     """Six-core column의 presence와 type-family compatibility를 검증한다."""
 
     schema_rows = [
@@ -268,7 +286,12 @@ def _inspect_and_validate_schema(
     profile_columns = [
         column for column in REQUIRED_EDA_COLUMNS if column in inferred_types
     ]
-    return schema_rows, inferred_types, required_schema, profile_columns
+    return _ValidatedSchema(
+        schema_rows=schema_rows,
+        inferred_types=inferred_types,
+        required_schema=required_schema,
+        profile_columns=profile_columns,
+    )
 
 
 def _collect_volume_and_null_metrics(
@@ -276,7 +299,7 @@ def _collect_volume_and_null_metrics(
     inferred_types: dict[str, str],
     profile_columns: list[str],
     max_activity_years: int,
-) -> tuple[int, dict[str, int], list[tuple[Any, ...]], int]:
+) -> _VolumeAndNullMetrics:
     """Total/null/year counts를 수집하고 activity_year cardinality 상한을 검증한다."""
 
     metric_select = ["count(*) AS row_count"] + [
@@ -325,7 +348,12 @@ def _collect_volume_and_null_metrics(
         )
         raise HMDADataValidationError(msg)
 
-    return row_count, null_counts, activity_year_rows, metric_offset
+    return _VolumeAndNullMetrics(
+        row_count=row_count,
+        null_counts=null_counts,
+        activity_year_rows=activity_year_rows,
+        metric_offset=metric_offset,
+    )
 
 
 def analyze_hmda_csv(
@@ -370,21 +398,29 @@ def analyze_hmda_csv(
         )
         source_relation.create_view("hmda_eda_source", replace=True)
 
-        schema_rows, inferred_types, required_schema, profile_columns = (
-            _inspect_and_validate_schema(source_relation)
-        )
+        validated_schema = _inspect_and_validate_schema(source_relation)
 
         started_at = time.monotonic()
-        row_count, null_counts, activity_year_rows, metric_offset = (
-            _collect_volume_and_null_metrics(
-                connection, inferred_types, profile_columns, max_activity_years
-            )
+        metrics = _collect_volume_and_null_metrics(
+            connection,
+            validated_schema.inferred_types,
+            validated_schema.profile_columns,
+            max_activity_years,
         )
         distributions = _collect_code_distributions(
-            connection, inferred_types, row_count
+            connection,
+            validated_schema.inferred_types,
+            metrics.row_count,
         )
-        numeric_summaries = _collect_numeric_summaries(connection, inferred_types)
-        grain = _calculate_grain_alignment(connection, inferred_types, row_count)
+        numeric_summaries = _collect_numeric_summaries(
+            connection,
+            validated_schema.inferred_types,
+        )
+        grain = _calculate_grain_alignment(
+            connection,
+            validated_schema.inferred_types,
+            metrics.row_count,
+        )
         duration_seconds = time.monotonic() - started_at
 
         return {
@@ -398,19 +434,19 @@ def analyze_hmda_csv(
                 "duckdb_config": duckdb_config,
             },
             "duration_seconds": duration_seconds,
-            "row_count": row_count,
+            "row_count": metrics.row_count,
             "activity_year_counts": [
-                {"activity_year": row[0], "row_count": row[metric_offset]}
-                for row in activity_year_rows
+                {"activity_year": row[0], "row_count": row[metrics.metric_offset]}
+                for row in metrics.activity_year_rows
             ],
-            "null_counts": null_counts,
+            "null_counts": metrics.null_counts,
             "null_rates": {
-                column: null_count / row_count if row_count else 0.0
-                for column, null_count in null_counts.items()
+                column: null_count / metrics.row_count if metrics.row_count else 0.0
+                for column, null_count in metrics.null_counts.items()
             },
             "schema": {
-                "columns": schema_rows,
-                "required_columns": required_schema,
+                "columns": validated_schema.schema_rows,
+                "required_columns": validated_schema.required_schema,
             },
             "distributions": distributions,
             "numeric_summaries": numeric_summaries,

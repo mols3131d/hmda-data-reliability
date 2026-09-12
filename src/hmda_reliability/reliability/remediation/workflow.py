@@ -26,7 +26,13 @@ class RemediationState(TypedDict, total=False):
 
 
 def create_remediation_draft(request: RemediationDraftRequest) -> RemediationDraft:
-    """검토용 조치 초안을 생성한다; 승인이나 복구 실행은 수행하지 않는다."""
+    """검토용 조치 초안을 생성한다; 승인이나 복구 실행은 수행하지 않는다.
+
+    워크플로 및 안전성 원칙:
+    - LangGraph 기반의 `triage` -> `rca` -> `plan` 상태 머신을 거쳐 결정론적으로 생성.
+    - `requires_approval`: 백필 조치가 포함된 제안은 검토가 필수적이므로
+      `requires_approval=True`로 설정된다. 초안 생성이 실행 권한을 부여하지 않는다.
+    """
 
     graph = _build_graph()
     final_state = graph.invoke({"request": request})

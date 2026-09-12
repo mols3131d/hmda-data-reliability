@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import NamedTuple
 
 import duckdb
 from pydantic import ValidationError
@@ -42,8 +43,28 @@ _REQUIRED_APPROVAL_ACTIONS = frozenset(
 )
 
 
+class ReconciliationDecision(NamedTuple):
+    """파티션 복구 대상 상태 조정 결과 (상태명, 수행할 조치, 실행할 전체 액션 목록)."""
+
+    mutation_state: str
+    reconciliation_action: str
+    executed_actions: list[str]
+
+
 class ApprovalBackfillValidator:
-    """후보 소스 접근 및 대상 변이 전에 승인 범위를 엄격히 검증한다."""
+    """후보 소스 접근 및 대상 변이 전에 승인 범위를 엄격히 검증한다.
+
+    검증 및 복구 불변식:
+    1. 사전 승인 검증: 대상 DB 또는 후보 Parquet 소스를 조작하기 전에
+       `Approval`과 `RecoveryProposal` 계약 일치성 및 권한을 먼저 확인한다.
+    2. 격리된 스테이징: 후보 소스는 임시 디렉토리의 Parquet으로 먼저 구체화 및
+       내용 식별자 검증을 거친 후에만 대상 DB에 반영된다.
+    3. 원자적 교체 및 조정: 파티션 상태가 이미 복구된 상태(`already_recovered`)인 경우
+       덮어쓰기 없이 프로파일 검증만 재개하며, `approved_before_identity`와 일치하는
+       경우에만 `overwrite_partition`을 원자적으로 수행한다.
+    4. 프로파일 실패 시 상태 보존: 파티션 커밋 후 프로파일 스냅샷 계산 실패 시
+       `BackfillValidationError`에 분기(`diverged`) 정보를 명시적으로 반환한다.
+    """
 
     def __init__(self, connection: duckdb.DuckDBPyConnection) -> None:
         self._connection = connection
@@ -54,7 +75,7 @@ class ApprovalBackfillValidator:
         request: ApprovedBackfillRequest,
         proposal: RecoveryProposal,
         current_identity: PartitionContentIdentity,
-    ) -> tuple[str, str, list[str]]:
+    ) -> ReconciliationDecision:
         """Proposal 바인딩 종류(content vs freshness)에 따라 목표 상태를 조정한다."""
         if proposal.freshness_binding is None:
             return _reconcile_content_state(current_identity, proposal)
@@ -385,14 +406,18 @@ def _replace_approved_partition(
 def _reconcile_content_state(
     current_identity: PartitionContentIdentity,
     proposal: RecoveryProposal,
-) -> tuple[str, str, list[str]]:
+) -> ReconciliationDecision:
     if current_identity == proposal.expected_after_identity:
-        return "already_recovered", "resume_verification", ["rerun_profile_snapshot"]
+        return ReconciliationDecision(
+            mutation_state="already_recovered",
+            reconciliation_action="resume_verification",
+            executed_actions=["rerun_profile_snapshot"],
+        )
     if current_identity == proposal.approved_before_identity:
-        return (
-            "partition_changed",
-            "overwrite_partition",
-            ["overwrite_partition", "rerun_profile_snapshot"],
+        return ReconciliationDecision(
+            mutation_state="partition_changed",
+            reconciliation_action="overwrite_partition",
+            executed_actions=["overwrite_partition", "rerun_profile_snapshot"],
         )
     raise ApprovalGateError(
         "recovery target이 approved before/after state와 다른 diverged state입니다."
@@ -406,7 +431,7 @@ def _reconcile_freshness_state(
     observed_at: datetime,
     proposal: RecoveryProposal,
     binding: FreshnessRecoveryBinding,
-) -> tuple[str, str, list[str]]:
+) -> ReconciliationDecision:
     current_observation = _freshness_observation(
         freshness_at=current_freshness_at,
         observed_at=observed_at,
@@ -419,15 +444,19 @@ def _reconcile_freshness_state(
             raise ApprovalGateError(
                 "replay freshness가 만료되어 새 validation과 approval이 필요합니다."
             )
-        return "already_recovered", "resume_verification", ["rerun_profile_snapshot"]
+        return ReconciliationDecision(
+            mutation_state="already_recovered",
+            reconciliation_action="resume_verification",
+            executed_actions=["rerun_profile_snapshot"],
+        )
     if (
         current_identity == proposal.approved_before_identity
         and current_observation.freshness_at == binding.approved_before.freshness_at
     ):
-        return (
-            "partition_changed",
-            "overwrite_partition",
-            ["overwrite_partition", "rerun_profile_snapshot"],
+        return ReconciliationDecision(
+            mutation_state="partition_changed",
+            reconciliation_action="overwrite_partition",
+            executed_actions=["overwrite_partition", "rerun_profile_snapshot"],
         )
     raise ApprovalGateError(
         "freshness recovery target이 approved compound state와 달라 새 validation과 "

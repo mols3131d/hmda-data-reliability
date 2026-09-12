@@ -14,7 +14,15 @@ import scripts.agent_assets as agent_assets
 def test_run_action_starts_selected_skill_with_selected_agent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """run action이 Skills CLI의 use 경계로 선택값을 전달한다."""
+    """`run` 서브커맨드가 Skills CLI로 선택된 인자를 정확히 전달하는지 검증한다.
+
+    검증 불변식:
+    - 패키지: `skills@latest`
+    - 바이너리: `skills`
+    - 커맨드라인 아규먼트: `("use", source, "--skill", skill, "--agent", agent)`
+    - 작업 디렉토리(cwd): 저장소 루트(`REPO_ROOT`)
+    - 종료 코드: 0 반환
+    """
 
     captured: dict[str, object] = {}
 

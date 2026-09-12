@@ -36,10 +36,29 @@ _ACTIONS: dict[str, tuple[str, ...]] = {
 
 
 def _run(args: Sequence[str]) -> int:
+    """Rulesync CLI 바이너리를 npm exec 경유로 저장소 루트에서 실행한다.
+
+    Args:
+        args: `rulesync` 하위 명령어 및 플래그 시퀀스 (예: `("generate", "--check")`).
+
+    Returns:
+        프로세스 종료 코드 (성공 시 0).
+    """
     return run_npm_exec("rulesync@latest", "rulesync", args, cwd=REPO_ROOT)
 
 
 def _tracked_diff() -> str:
+    """저장소 내 Git 추적 파일들의 diff 출력을 반환한다.
+
+    `validate` 명령 실행 시 Rulesync 소스 설치/동기화로 인해 기존에 추적 중인
+    프로젝션 파일들이 무단 변경되었는지 검출하는 무결성 오라클로 사용된다.
+
+    Returns:
+        `git diff` 표준 출력 문자열.
+
+    Raises:
+        RuntimeError: git 명령 실패 시.
+    """
     result = subprocess.run(
         ["git", "diff", "--no-ext-diff", "--binary"],
         cwd=REPO_ROOT,
@@ -53,6 +72,17 @@ def _tracked_diff() -> str:
 
 
 def _repository_paths() -> list[Path]:
+    """저장소 내 추적 및 미추적(ignore 제외) 파일 목록을 반환한다.
+
+    Git index와 작업 트리를 조회하여 표준 무시 규칙(`.gitignore`)을 적용한
+    상대 경로 목록을 복원한다.
+
+    Returns:
+        저장소 상대 `Path` 객체 목록.
+
+    Raises:
+        RuntimeError: git ls-files 실행 실패 시.
+    """
     result = subprocess.run(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
         cwd=REPO_ROOT,
@@ -66,10 +96,22 @@ def _repository_paths() -> list[Path]:
 
 
 def _agent_instruction_paths() -> list[Path]:
+    """저장소 전체에서 발견된 모든 `AGENTS.md` 파일 경로를 정렬하여 반환한다.
+
+    각 `AGENTS.md`는 Claude 호환 브리지 파일(`CLAUDE.md`)의 원천 정의가 된다.
+
+    Returns:
+        정렬된 `AGENTS.md` 상대 경로 목록.
+    """
     return sorted(path for path in _repository_paths() if path.name == "AGENTS.md")
 
 
 def _claude_bridge_outputs() -> dict[Path, str]:
+    """각 `AGENTS.md`에 대응하는 `CLAUDE.md`의 절대 경로와 기대 콘텐츠 매핑을 생성한다.
+
+    Returns:
+        `{절대_경로: 기대_콘텐츠}` 딕셔너리.
+    """
     return {
         REPO_ROOT / agents_path.with_name(CLAUDE_BRIDGE_NAME): CLAUDE_BRIDGE_CONTENT
         for agents_path in _agent_instruction_paths()
@@ -77,6 +119,14 @@ def _claude_bridge_outputs() -> dict[Path, str]:
 
 
 def _existing_claude_bridge_paths() -> set[Path]:
+    """저장소 내 실제로 존재하는 유효한 자동 생성 `CLAUDE.md` 브리지 파일들을 수집한다.
+
+    사용자가 직접 작성한 독립 `CLAUDE.md` 파일과의 충돌을 방지하기 위해,
+    반드시 상단에 `CLAUDE_BRIDGE_MARKER`가 포함된 파일만 브리지 파일로 식별한다.
+
+    Returns:
+        자동 생성 마커를 가진 `CLAUDE.md` 절대 경로 집합.
+    """
     result: set[Path] = set()
     for relative_path in _repository_paths():
         if relative_path.name != CLAUDE_BRIDGE_NAME:
@@ -90,6 +140,15 @@ def _existing_claude_bridge_paths() -> set[Path]:
 
 
 def _check_claude_bridges() -> int:
+    """Claude 브리지 파일들의 최신 상태 및 드리프트 여부를 검사한다.
+
+    기대 경로와 실제 디스크 상의 파일들을 비교하여:
+    1. 더 이상 대응하는 `AGENTS.md`가 없는 stale 브리지 검출
+    2. 내용이 일치하지 않거나 누락된 mismatched 브리지 검출
+
+    Returns:
+        드리프트나 누락이 없으면 0, 발견 시 1.
+    """
     expected = _claude_bridge_outputs()
     actual_paths = _existing_claude_bridge_paths()
     stale = sorted(actual_paths - expected.keys())
@@ -107,6 +166,16 @@ def _check_claude_bridges() -> int:
 
 
 def _write_claude_bridges() -> None:
+    """`AGENTS.md`에 대응하는 `CLAUDE.md` 브리지 파일들을 디스크에 동기화한다.
+
+    안전 보장(Safety Invariant):
+    기존에 존재하는 `CLAUDE.md`가 자동 생성 마커(`CLAUDE_BRIDGE_MARKER`)를 가지고 있지
+    않다면, 사용자의 수동 작성 파일로 판단하여 덮어쓰기를 거부하고 예외를 발생시킨다.
+    대응하는 `AGENTS.md`가 삭제되어 고아가 된 stale 브리지는 제거(unlink)한다.
+
+    Raises:
+        RuntimeError: 수동 작성된 `CLAUDE.md`와 경로 충돌 시.
+    """
     expected = _claude_bridge_outputs()
     for path, content in expected.items():
         if not path.is_file():
@@ -125,6 +194,11 @@ def _write_claude_bridges() -> None:
 
 
 def _preview_claude_bridges() -> int:
+    """Claude 브리지 파일들의 변경 및 삭제 예정 사항을 미리 출력한다(dry-run).
+
+    Returns:
+        수동 작성 파일과의 충돌이 있으면 1, 안전한 변경만 있으면 0.
+    """
     expected = _claude_bridge_outputs()
     actual_paths = _existing_claude_bridge_paths()
     stale = sorted(actual_paths - expected.keys())
@@ -154,6 +228,14 @@ def _preview_claude_bridges() -> int:
 
 
 def _sync_sources(args: Sequence[str]) -> int:
+    """외부 소스를 동기화한 후 프로젝션 및 Claude 브리지를 일괄 재생성한다.
+
+    Args:
+        args: Rulesync 소스 동기화 플래그 (`install` 또는 `update`).
+
+    Returns:
+        종료 코드 (성공 시 0).
+    """
     returncode = _run(args)
     if returncode != 0:
         return returncode
@@ -166,6 +248,17 @@ def _sync_sources(args: Sequence[str]) -> int:
 
 
 def _validate() -> int:
+    """잠긴 프로젝션 상태의 완전 무결성을 검증한다.
+
+    1. 현재 git diff 기준선 확보
+    2. frozen install 및 generate 수행 후 git diff 변경 여부(드리프트) 검증
+    3. rulesync doctor strict 검사
+    4. rulesync generate --check 검사
+    5. claude bridge 일치 검사
+
+    Returns:
+        모든 검증 통과 시 0, 드리프트 또는 오류 발생 시 1 또는 양수 종료 코드.
+    """
     before = _tracked_diff()
     returncode = _sync_sources(_SOURCE_ACTIONS["install"])
     if returncode != 0:

@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
-"""Bootstrap repository state for setup, sessions, or tooling updates."""
+"""Bootstrap repository state for setup, sessions, or tooling updates.
+
+Orchestrates initialization and refresh of developer and CI dependencies:
+- `setup`: Run once after clone to configure virtualenv dependencies, Git hooks,
+  agent assets, local Node tools (Biome, Tombi), and OpenSpec.
+- `session`: Fast idempotent restoration of Python dependencies, agent assets,
+  and local Node tools needed to start an interactive or CI coding session.
+- `update`: Refresh external tooling sources (agent assets, OpenSpec latest,
+  and Node tools in `.local/tooling`).
+
+Failure Semantics:
+- Steps execute sequentially in declared order.
+- If any step fails (returns non-zero), execution halts immediately and returns
+  that exit code.
+- If a prerequisite (like `uv`) is missing, raises `RuntimeError` caught by `main`
+  and exits with code 2.
+"""
 
 from __future__ import annotations
 
@@ -22,16 +38,23 @@ Step = tuple[str, Callable[[], int]]
 
 
 def _sync_dependencies() -> int:
+    """Sync locked Python dependencies via uv.
+
+    Raises:
+        RuntimeError: If uv is not available on PATH.
+    """
     if shutil.which("uv") is None:
         raise RuntimeError("uv is required to bootstrap this repository.")
     return run(["uv", "sync", "--locked"], cwd=REPO_ROOT)
 
 
 def _install_hooks() -> int:
+    """Install repository Git hooks managed by lefthook."""
     return run(["uv", "run", "--no-sync", "lefthook", "install"], cwd=REPO_ROOT)
 
 
 def _sync_agent_assets(action: str) -> int:
+    """Synchronize agent skills, rules, and prompts via agent_assets.py script."""
     return run(
         [sys.executable, str(AGENT_ASSETS_SCRIPT), action],
         cwd=REPO_ROOT,
@@ -39,10 +62,12 @@ def _sync_agent_assets(action: str) -> int:
 
 
 def _sync_openspec() -> int:
+    """Update OpenSpec schemas and tooling using npm exec."""
     return run_npm_exec(OPENSPEC_PACKAGE, "openspec", ("update",), cwd=REPO_ROOT)
 
 
 def _install_node_tools() -> int:
+    """Install local Node-based linters and formatters into .local/tooling."""
     NODE_TOOL_PREFIX.mkdir(parents=True, exist_ok=True)
     return run_npm(
         (
@@ -58,6 +83,7 @@ def _install_node_tools() -> int:
 
 
 def _ensure_node_tools() -> int:
+    """Ensure required Node tools exist locally, installing only if missing."""
     if all(
         local_node_tool_path(tool, cwd=REPO_ROOT).is_file() for tool in NODE_TOOL_NAMES
     ):
@@ -66,6 +92,14 @@ def _ensure_node_tools() -> int:
 
 
 def _steps(action: str) -> list[Step]:
+    """Assemble the ordered sequence of named steps for a given action.
+
+    Args:
+        action: One of 'setup', 'session', or 'update'.
+
+    Returns:
+        List of (label, step_callable) pairs executed in sequence.
+    """
     if action == "update":
         return [
             ("agent assets", lambda: _sync_agent_assets("update")),
@@ -84,6 +118,7 @@ def _steps(action: str) -> list[Step]:
 
 
 def main() -> int:
+    """CLI entrypoint for repository bootstrapping."""
     parser = argparse.ArgumentParser(
         description="Restore or update repository tooling state."
     )

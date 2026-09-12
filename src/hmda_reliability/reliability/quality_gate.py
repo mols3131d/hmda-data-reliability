@@ -63,8 +63,11 @@ def reject_missing_partition_discriminator(
 def evaluate_profile_quality_gate(current: ProfileSnapshot) -> None:
     """현재 프로파일을 MVP baseline과 비교해 blocking 이상을 거부한다.
 
-    현재 MVP는 null spike와 빈 파티션만 blocking하며, 지원하지 않는 profile
-    column은 baseline 누락으로 인한 false positive를 막기 위해 거부한다.
+    계약 및 블로킹 정책:
+    1. 필수 컬럼 일치: `_BASELINE_NULL_RATES` 정의 컬럼(`income`, `loan_amount`)이
+       누락되거나 미지원 컬럼 포함 시 오탐 방지를 위해 `ValueError`를 발생시킨다.
+    2. 빈 파티션 차단: `current.row_count == 0`인 경우 `QualityGateError` 발생.
+    3. Null Spike 차단: `null_spike` 감지 시 `QualityGateError`로 파이프라인을 차단.
     """
 
     current_columns = set(current.null_rates)

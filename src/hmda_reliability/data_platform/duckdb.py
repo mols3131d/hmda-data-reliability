@@ -30,8 +30,15 @@ def database_mutation_lock(
 ) -> Iterator[None]:
     """File-based DuckDB mutation을 canonical path별로 직렬화한다.
 
-    ``None``과 ``:memory:``는 다른 connection과 state를 공유하지 않으므로 file
-    lock을 만들지 않는다. Body exception은 release failure보다 우선한다.
+    동시성 및 락 수명 규칙:
+        - `None`과 `:memory:`는 메모리 내 격리 DB이므로 파일 락 없이 no-op 통과한다.
+        - 파일 기반 DB는 symlink나 relative alias에 관계없이 canonical 경로 기준의
+          락 파일(`.<dbname>.mutation.lock`)을 배타적(`fcntl.LOCK_EX`)으로 획득한다.
+        - Body 블록의 예외는 뒤따른 unlock/close 실패보다 우선 보존된다.
+        - Body가 성공한 경우에만 락 해제 실패가 `DuckDBMutationLockError`로 노출된다.
+
+    Exceptions:
+        - DuckDBMutationLockError: 락 파일 생성, 획득 또는 해제 I/O 실패 시 발생.
     """
 
     if database_path is None or str(database_path) == ":memory:":
@@ -91,10 +98,12 @@ def current_database_path(
 
 
 class DuckDBConnectionManager:
-    """DuckDB 연결 수명과 optional file cleanup을 관리한다.
+    """DuckDB 연결 수명과 optional file cleanup을 관리하는 컨텍스트 매니저.
 
-    경로가 없으면 in-memory DB를 사용한다. File DB는 상위 directory를 만들며,
-    ``cleanup_on_close=True``면 연결 종료 후 database와 ``.wal`` 파일을 제거한다.
+    Contract:
+        - `database_path`가 없으면 `:memory:` 인메모리 데이터베이스를 사용한다.
+        - 파일 데이터베이스인 경우 상위 디렉터리를 자동 생성한다.
+        - `cleanup_on_close=True`면 연결 종료 후 메인 DB 파일 및 `.wal` 파일을 삭제한다.
     """
 
     def __init__(

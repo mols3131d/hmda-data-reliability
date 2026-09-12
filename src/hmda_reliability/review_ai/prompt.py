@@ -27,7 +27,15 @@ recovery, backfill, shell, SQL, file, database, or data mutation execution."""
 
 
 class RenderedReviewPrompt(ReliabilityContract):
-    """검증 및 출처 증명에 사용되는 렌더링된 프롬프트 상태 계약."""
+    """검증 및 출처 증명에 사용되는 렌더링된 프롬프트 상태 계약.
+
+    Attributes:
+        canonical_input: 스펙의 allowlist에 따라 정제된 구조화된 입력 딕셔너리.
+        canonical_json: 재생 가능한 정렬/압축 규칙이 적용된 표준 JSON 문자열.
+        messages: Provider에 전달될 (system, user) 대화 메시지 튜플.
+        prompt_digest: 렌더링된 메시지 바이트의 SHA-256 해시 (`sha256:...`).
+        prompt_bytes: UTF-8 표준 직렬화된 메시지 목록의 총 바이트 수.
+    """
 
     canonical_input: dict[str, object]
     canonical_json: str
@@ -65,7 +73,13 @@ def render_review_prompt(
 
 
 def build_canonical_input(review_input: AgenticReviewInput) -> dict[str, object]:
-    """스펙에서 허용된 필드만 추출하고 evidence를 결정론적으로 정렬한다."""
+    """스펙에서 허용된 필드만 추출하고 evidence를 결정론적으로 정렬한다.
+
+    신뢰할 수 없는 원천 객체로부터 지정된 allowlist 필드만 복사 투영하여
+    프롬프트 크기 제어와 불필요한 메타데이터 유출을 방지한다.
+    Evidence 목록은 `evidence_id` 기준 사전순으로 정렬되어 입력 순서에 무관한
+    동일 다이제스트 계산을 보장한다.
+    """
 
     incident = review_input.incident.model_dump(mode="json")
     evidence = [item.model_dump(mode="json") for item in review_input.evidence]

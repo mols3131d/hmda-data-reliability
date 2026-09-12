@@ -41,7 +41,22 @@ _LOGGER = get_logger(__name__)
 def execute_approved_schema_recovery(
     request: ApprovedSchemaRecoveryRequest,
 ) -> SchemaRecoveryValidationResult:
-    """승인된 정확한 테이블 상태를 복구하거나 재현(replay) 시 검증을 재개한다."""
+    """승인된 정확한 테이블 상태를 복구하거나 재현(replay) 시 검증을 재개한다.
+
+    복구 라이프사이클 및 불변식:
+    1. 사전 승인 및 계약 검증: `_ensure_approved_schema_recovery`를 통해
+       승인 상태 및 대상/후보 DB 경로 계약을 가장 먼저 확인한다.
+    2. 후보 스테이징 격리: 후보 DB로부터 승인된 상태를 임시 Parquet 아티팩트로
+       스테이징 및 재검증하여 소스 무결성을 보장한다.
+    3. 대상 DB 뮤테이션 락 직렬화: 대상 DB에 대해 배타적 `database_mutation_lock`을
+       획득한 상태에서 현재 테이블 상태(`create_table_state_identity`)를 측정한다.
+    4. 멱등적 재현 및 분기 차단:
+       - 이미 목표 상태(`expected_after_state`)인 경우: 불필요한 테이블 재생성 없이
+         프로파일 스냅샷만 다시 실행하고 `already_restored`를 반환한다.
+       - 이전 승인 상태(`approved_before_state`)와 다른 분기 상태인 경우:
+         `SchemaRecoveryValidationError`를 발생시켜 대상 손상을 방지한다.
+       - 이전 승인 상태와 일치하는 경우: 트랜잭션 내에서 `_replace_table` 수행.
+    """
 
     validated_request = _ensure_approved_schema_recovery(request)
     proposal = validated_request.proposal
@@ -139,6 +154,7 @@ def _replace_table(
     request: ApprovedSchemaRecoveryRequest,
     staged_artifact_path: Path,
 ) -> SchemaRecoveryValidationResult:
+    """트랜잭션 내에서 대상 테이블을 Parquet으로부터 원자적으로 교체하고 검증한다."""
     proposal = request.proposal
     transaction_started = False
     try:

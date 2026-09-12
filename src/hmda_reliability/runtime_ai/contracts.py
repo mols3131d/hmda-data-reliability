@@ -8,29 +8,56 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class RuntimeAIContract(BaseModel):
-    """Provider 중립적 AI 런타임 값을 위한 불변 기본 계약."""
+    """Provider 중립적 AI 런타임 값을 위한 불변 기본 계약.
+
+    알려지지 않은 추가 필드(`extra="forbid"`)를 엄격히 금지하고
+    모델 불변성(`frozen=True`) 및 특수 부동소수점 금지(`allow_inf_nan=False`)를
+    보장한다.
+    """
 
     model_config = ConfigDict(allow_inf_nan=False, extra="forbid", frozen=True)
 
 
 class ChatMessage(RuntimeAIContract):
+    """단일 채팅 메시지 표현.
+
+    LLM 제공자에게 전달되는 역할(`role`)과 비어있지 않은 내용(`content`)을 소유한다.
+    """
+
     role: Literal["system", "user"]
     content: str = Field(min_length=1)
 
 
 class ProviderUsage(RuntimeAIContract):
+    """LLM 제공자가 반환한 토큰 사용량 메트릭.
+
+    누락된 경우 None일 수 있으며, 값이 있을 때는 음수가 될 수 없다.
+    """
+
     prompt_tokens: int | None = Field(default=None, ge=0)
     completion_tokens: int | None = Field(default=None, ge=0)
     total_tokens: int | None = Field(default=None, ge=0)
 
 
 class TransportResponse(RuntimeAIContract):
+    """전송(Transport) 계층에서 어댑터 계층으로 전달되는 1회 시도 응답 DTO.
+
+    응답 본문 텍스트(`content`), 토큰 사용량(`usage`), 그리고 upstream 헤더나
+    OpenAI 클라이언트로부터 캡처된 고유 요청 추적 ID(`trace_id`)를 보관한다.
+    """
+
     content: str
     usage: ProviderUsage | None = None
     trace_id: str | None = None
 
 
 class ChatCompletionRequest(RuntimeAIContract):
+    """OpenAI 호환 wire 규격에 맞춘 단일 Chat Completion 요청 페이로드 계약.
+
+    스트리밍과 도구 호출(function call/tools)을 비활성화하고 결정론적 응답을
+    강제하기 위한 프로파일(temperature=0, response_format json_object)을 유지한다.
+    """
+
     messages: tuple[ChatMessage, ...]
     model: str
     temperature: int
@@ -39,6 +66,7 @@ class ChatCompletionRequest(RuntimeAIContract):
     stream: bool
 
     def wire_payload(self) -> dict[str, object]:
+        """OpenAI SDK completions 또는 HTTP wire 호환 dict를 생성한다."""
         return {
             "messages": [message.model_dump(mode="json") for message in self.messages],
             "model": self.model,
@@ -50,6 +78,13 @@ class ChatCompletionRequest(RuntimeAIContract):
 
 
 class ProviderResponse(RuntimeAIContract):
+    """어댑터 호출이 성공했을 때 반환되는 최종 provider 응답 계약.
+
+    단일 완료 텍스트(`content`) 외에 바운디드 재시도 루프에서 기록된
+    총 시도 횟수(`attempt_count`), 누적 소요 시간(`latency_ms`), 토큰 사용량(`usage`),
+    그리고 요청 추적 식별자(`trace_id`)를 포함한다.
+    """
+
     content: str
     attempt_count: int = Field(ge=1)
     latency_ms: float = Field(ge=0)

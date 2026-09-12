@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from pathlib import Path
+from typing import NamedTuple
 
 import duckdb
 
@@ -16,6 +17,13 @@ from hmda_reliability.hmda_data.synthetic._source import (
     source_union_sql,
 )
 from hmda_reliability.hmda_data.synthetic._writer import write_case_file
+
+
+class _TargetCounts(NamedTuple):
+    """원천 또는 샘플 대상 컬럼의 총 행 수와 non-null 행 수."""
+
+    total_count: int
+    non_null_count: int
 
 
 def row_count_drop(
@@ -78,48 +86,11 @@ def null_spike(
 
     _validate_fraction(null_fraction, "null_fraction")
     _validate_fraction(sample_fraction, "sample_fraction")
-    if target_year is not None:
-        if (
-            not isinstance(target_year, int)
-            or isinstance(target_year, bool)
-            or not (2000 <= target_year <= 2100)
-        ):
-            msg = f"target_year는 2000 이상 2100 이하의 정수여야 합니다: {target_year}"
-            raise SyntheticCaseError(msg, context={"target_year": target_year})
-        if target_column == "activity_year":
-            msg = (
-                "target_year와 target_column='activity_year'는 "
-                "동시에 지정할 수 없습니다."
-            )
-            raise SyntheticCaseError(
-                msg,
-                context={"target_column": target_column, "target_year": target_year},
-            )
-        if case_name is not None:
-            filename_year_match = re.search(r"[0-9]{4}", case_name)
-            if filename_year_match is None:
-                msg = (
-                    f"target_year({target_year})가 지정된 경우 case_name에 해당 "
-                    f"ASCII 4자리 연도가 포함되어야 합니다: {case_name}"
-                )
-                raise SyntheticCaseError(
-                    msg,
-                    context={"case_name": case_name, "target_year": target_year},
-                )
-            filename_year = int(filename_year_match.group())
-            if filename_year != target_year:
-                msg = (
-                    "case_name의 첫 번째 4자리 연도는 target_year와 "
-                    f"일치해야 합니다: case_name={case_name}, target_year={target_year}"
-                )
-                raise SyntheticCaseError(
-                    msg,
-                    context={
-                        "case_name": case_name,
-                        "filename_year": filename_year,
-                        "target_year": target_year,
-                    },
-                )
+    _validate_target_year_and_case_name(
+        target_year=target_year,
+        target_column=target_column,
+        case_name=case_name,
+    )
 
     require_columns(connection, source_paths, {target_column, "activity_year"})
     quoted_target = quote_identifier(target_column)
@@ -149,28 +120,28 @@ def null_spike(
                 },
             )
 
-    source_count, source_non_null_count = _target_value_counts(
+    source_counts = _target_value_counts(
         connection,
         query=source_query,
         params=source_params,
         quoted_target=quoted_target,
     )
-    if source_non_null_count == 0:
+    if source_counts.non_null_count == 0:
         msg = "null_spike target_column에 non-null 값이 없어 증가를 만들 수 없습니다."
         raise SyntheticCaseError(msg)
 
     ranked_query = _ranked_sample_query(connection, source_paths)
     sampled_query = _null_spike_sample_query(ranked_query, quoted_target)
-    sample_count, sample_non_null_count = _target_value_counts(
+    sample_counts = _target_value_counts(
         connection,
         query=sampled_query,
         params=[*source_params, sample_fraction],
         quoted_target=quoted_target,
     )
-    if sample_non_null_count == 0:
+    if sample_counts.non_null_count == 0:
         msg = "null_spike target_column에 non-null 값이 없어 증가를 만들 수 없습니다."
         raise SyntheticCaseError(msg)
-    source_null_count = source_count - source_non_null_count
+    source_null_count = source_counts.total_count - source_counts.non_null_count
     # Strict Null Rate 증가를 위한 연도별 대상 인덱스 계산 식:
     # 1) 요청된 null_fraction에 따른 최소 null 개수 (ceil)
     # 2) 원천 null 비율을 초과하기 위해 필요한 정수 단위 최소 null 개수
@@ -226,12 +197,19 @@ def null_spike(
             )
         FROM year_stats
     """
+    # SQL 플레이스홀더 파라미터 매핑 순서:
+    # 1. *source_params: sampled_query(union reader) 소스 파일 경로
+    # 2. sample_fraction: sampled_query의 __null_sample_rank 필터링 상한
+    # 3. null_fraction: null_threshold_expr의 요청된 null 비율 (ceil)
+    # 4. source_null_count: 원천의 결측치 개수 (strict increase 비율 계산 분자)
+    # 5. source_counts.total_count: 원천의 전체 행 수 (strict increase 비율 계산 분모)
+    # 6. target_year (선택): activity_year override 정수값
     params: list[object] = [
         *source_params,
         sample_fraction,
         null_fraction,
         source_null_count,
-        source_count,
+        source_counts.total_count,
     ]
     if target_year is not None:
         params.append(target_year)
@@ -284,6 +262,59 @@ def schema_drift(
     )
 
 
+def _validate_target_year_and_case_name(
+    *,
+    target_year: int | None,
+    target_column: str,
+    case_name: str | None,
+) -> None:
+    """null_spike의 target_year 및 case_name 파라미터 간의 정합성을 검증한다."""
+
+    if target_year is None:
+        return
+
+    if (
+        not isinstance(target_year, int)
+        or isinstance(target_year, bool)
+        or not (2000 <= target_year <= 2100)
+    ):
+        msg = f"target_year는 2000 이상 2100 이하의 정수여야 합니다: {target_year}"
+        raise SyntheticCaseError(msg, context={"target_year": target_year})
+
+    if target_column == "activity_year":
+        msg = "target_year와 target_column='activity_year'는 동시에 지정할 수 없습니다."
+        raise SyntheticCaseError(
+            msg,
+            context={"target_column": target_column, "target_year": target_year},
+        )
+
+    if case_name is not None:
+        filename_year_match = re.search(r"[0-9]{4}", case_name)
+        if filename_year_match is None:
+            msg = (
+                f"target_year({target_year})가 지정된 경우 case_name에 해당 "
+                f"ASCII 4자리 연도가 포함되어야 합니다: {case_name}"
+            )
+            raise SyntheticCaseError(
+                msg,
+                context={"case_name": case_name, "target_year": target_year},
+            )
+        filename_year = int(filename_year_match.group())
+        if filename_year != target_year:
+            msg = (
+                "case_name의 첫 번째 4자리 연도는 target_year와 "
+                f"일치해야 합니다: case_name={case_name}, target_year={target_year}"
+            )
+            raise SyntheticCaseError(
+                msg,
+                context={
+                    "case_name": case_name,
+                    "filename_year": filename_year,
+                    "target_year": target_year,
+                },
+            )
+
+
 def _validate_fraction(value: float, name: str) -> None:
     """비율 인자가 0보다 크고 1 이하인지 검증한다."""
 
@@ -298,7 +329,7 @@ def _target_value_counts(
     query: str,
     params: Sequence[object],
     quoted_target: str,
-) -> tuple[int, int]:
+) -> _TargetCounts:
     """합성 입력 관계에 대한 전체 row 수와 non-null 대상 컬럼 row 수를 조회한다."""
 
     try:
@@ -314,7 +345,7 @@ def _target_value_counts(
         raise SyntheticCaseError(msg) from exc
     if row is None:
         raise SyntheticCaseError("HMDA 합성 null_spike 통계가 없습니다.")
-    return int(row[0]), int(row[1])
+    return _TargetCounts(total_count=int(row[0]), non_null_count=int(row[1]))
 
 
 def _null_spike_sample_query(ranked_query: str, quoted_target: str) -> str:

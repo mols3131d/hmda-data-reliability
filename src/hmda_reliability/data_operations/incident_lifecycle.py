@@ -8,6 +8,7 @@ approval, recovery, evaluation 또는 report output을 변경하지 않는다. d
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import cast
 
@@ -43,11 +44,14 @@ from hmda_reliability.reliability import (
     detect_basic_incidents,
 )
 
-type _IncidentAnalysis = tuple[
-    DetectionResult,
-    ImpactAnalysisResult,
-    RemediationDraft,
-]
+
+@dataclass(frozen=True)
+class _IncidentAnalysis:
+    """단일 탐지 결과에 대한 계통 영향 분석 및 개선 조치 초안 묶음."""
+
+    detection: DetectionResult
+    impact: ImpactAnalysisResult
+    draft: RemediationDraft
 
 
 def run_incident_lifecycle(
@@ -142,7 +146,11 @@ def _analyze_detection(
             lineage_evidence=impact.lineage_evidence,
         )
     )
-    return detection, impact, draft
+    return _IncidentAnalysis(
+        detection=detection,
+        impact=impact,
+        draft=draft,
+    )
 
 
 def _build_lifecycle_result(
@@ -161,32 +169,30 @@ def _build_lifecycle_result(
         baseline_row_count=baseline.row_count,
         current_row_count=current.row_count,
         detected_incident_ids=_unique(
-            detection.incident.incident_id for detection, _, _ in analyses
+            item.detection.incident.incident_id for item in analyses
         ),
         detected_incident_types=_unique(
-            detection.incident.incident_type for detection, _, _ in analyses
+            item.detection.incident.incident_type for item in analyses
         ),
         evidence_refs=_unique(
             ref
-            for detection, impact, _ in analyses
+            for item in analyses
             for ref in (
-                detection.evidence.evidence_id,
-                impact.lineage_evidence.lineage_id,
+                item.detection.evidence.evidence_id,
+                item.impact.lineage_evidence.lineage_id,
             )
         ),
         affected_assets=_unique(
-            asset
-            for _, impact, _ in analyses
-            for asset in impact.incident.affected_assets
+            asset for item in analyses for asset in item.impact.incident.affected_assets
         ),
         recommended_actions=_unique(
-            action for _, _, draft in analyses for action in draft.recommended_actions
+            action for item in analyses for action in item.draft.recommended_actions
         ),
         backfill_actions=_unique(
-            action for _, _, draft in analyses for action in draft.backfill_actions
+            action for item in analyses for action in item.draft.backfill_actions
         ),
         validation_actions=_unique(
-            action for _, _, draft in analyses for action in draft.validation_actions
+            action for item in analyses for action in item.draft.validation_actions
         ),
         target_content_identity=target_content_identity,
         dbt_projection_id=dbt_projection_id,
@@ -194,6 +200,12 @@ def _build_lifecycle_result(
 
 
 def _dbt_projection_id(request: DataOperationRequest) -> str:
+    """Current dbt projection의 manifest/run_results로부터 projection_id를 계산한다.
+
+    Reader lock 하에서 실행되며, lock 획득 실패 시 `ArtifactProjectionLockError`,
+    파일 읽기 실패 시 `ArtifactProjectionReadError`를 `DataOperationError`로 변환하여
+    호출자에게 의미 있는 실패 컨텍스트를 제공한다.
+    """
     try:
         with artifact_projection_lock(
             request.dbt_manifest_path.parent,
@@ -222,6 +234,7 @@ def _validate_profile_compatibility(
     baseline: ProfileSnapshot,
     current: ProfileSnapshot,
 ) -> None:
+    """Baseline과 current 프로파일의 자산명 및 파티션 일치 여부를 검증한다."""
     if (
         baseline.asset_name == current.asset_name
         and baseline.partition == current.partition
@@ -237,4 +250,5 @@ def _validate_profile_compatibility(
 
 
 def _unique(values: Iterable[str]) -> list[str]:
+    """순서를 보존하면서 중복된 요소를 제거한 리스트를 반환한다."""
     return list(dict.fromkeys(values))

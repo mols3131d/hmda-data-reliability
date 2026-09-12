@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
+from typing import Any
 
 import pytest
 
@@ -21,7 +22,7 @@ sys.modules[_SPEC.name] = clean
 _SPEC.loader.exec_module(clean)
 
 
-def _tracked_index(*paths: str) -> clean.TrackedIndex:
+def _tracked_index(*paths: str) -> Any:
     return clean.TrackedIndex(
         verified=True,
         paths=frozenset(PurePosixPath(path) for path in paths),
@@ -417,7 +418,7 @@ def test_delete_reloads_tracked_index_after_confirmation(
     states = iter((_tracked_index(), _tracked_index(".tmp")))
     calls: list[Path] = []
 
-    def load_tracked_index(root: Path) -> clean.TrackedIndex:
+    def load_tracked_index(root: Path) -> Any:
         calls.append(root)
         return next(states)
 

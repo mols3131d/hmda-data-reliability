@@ -2,30 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from contextlib import AbstractContextManager
 from pathlib import Path
 from threading import Event, Thread
-from typing import cast
 
 import pytest
 
 import hmda_reliability.data_platform as data_platform
 import hmda_reliability.data_platform.duckdb as duckdb_module
-from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.data_platform.duckdb import (
+    DuckDBConnectionManager,
+    DuckDBMutationLockError,
+    database_mutation_lock,
+)
 
 pytestmark = pytest.mark.component
-
-MutationLock = Callable[[str | Path | None], AbstractContextManager[None]]
-
-
-def _mutation_lock_api() -> tuple[type[Exception], MutationLock]:
-    error_type = getattr(duckdb_module, "DuckDBMutationLockError", None)
-    mutation_lock = getattr(duckdb_module, "database_mutation_lock", None)
-
-    assert isinstance(error_type, type) and issubclass(error_type, Exception)
-    assert callable(mutation_lock)
-    return cast(type[Exception], error_type), cast(MutationLock, mutation_lock)
 
 
 def test_duckdb_connection_manager_removes_database_file(tmp_path: Path) -> None:
@@ -53,7 +43,6 @@ def test_database_mutation_lock_serializes_canonical_aliases(
 ) -> None:
     """같은 canonical database의 alias는 하나의 exclusive lock을 사용한다."""
 
-    _, mutation_lock = _mutation_lock_api()
     database_path = tmp_path / "hmda-reliability.duckdb"
     database_path.touch()
     if alias_kind == "relative":
@@ -68,10 +57,10 @@ def test_database_mutation_lock_serializes_canonical_aliases(
 
     def acquire_alias() -> None:
         attempted.set()
-        with mutation_lock(alias_path):
+        with database_mutation_lock(alias_path):
             acquired.set()
 
-    with mutation_lock(database_path):
+    with database_mutation_lock(database_path):
         worker = Thread(target=acquire_alias, daemon=True)
         worker.start()
         assert attempted.wait(timeout=1)
@@ -87,18 +76,21 @@ def test_database_mutation_lock_is_noop_for_in_memory_database(
 ) -> None:
     """In-memory mutation boundary는 file을 생성하지 않는다."""
 
-    error_type, mutation_lock = _mutation_lock_api()
-
     def fail_open(*args: object, **kwargs: object) -> None:
         raise AssertionError("in-memory lock must not open a file")
 
     monkeypatch.setattr(Path, "open", fail_open)
 
-    with mutation_lock(None):
+    with database_mutation_lock(None):
         pass
 
-    assert getattr(data_platform, "DuckDBMutationLockError", None) is error_type
-    assert getattr(data_platform, "database_mutation_lock", None) is mutation_lock
+    assert (
+        getattr(data_platform, "DuckDBMutationLockError", None)
+        is DuckDBMutationLockError
+    )
+    assert (
+        getattr(data_platform, "database_mutation_lock", None) is database_mutation_lock
+    )
 
 
 def test_database_mutation_lock_setup_failure_is_typed(
@@ -107,16 +99,14 @@ def test_database_mutation_lock_setup_failure_is_typed(
 ) -> None:
     """Lock 준비 I/O failure는 typed Data Platform error로 변환한다."""
 
-    error_type, mutation_lock = _mutation_lock_api()
-
     def fail_mkdir(*args: object, **kwargs: object) -> None:
         raise OSError("cannot create mutation lock directory")
 
     monkeypatch.setattr(Path, "mkdir", fail_mkdir)
 
     with (
-        pytest.raises(error_type, match="lock"),
-        mutation_lock(tmp_path / "nested" / "hmda-reliability.duckdb"),
+        pytest.raises(DuckDBMutationLockError, match="lock"),
+        database_mutation_lock(tmp_path / "nested" / "hmda-reliability.duckdb"),
     ):
         pass
 
@@ -127,7 +117,6 @@ def test_database_mutation_lock_release_failure_is_typed(
 ) -> None:
     """성공한 body 뒤 release failure는 typed error로 변환한다."""
 
-    error_type, mutation_lock = _mutation_lock_api()
     original_flock = duckdb_module.fcntl.flock
 
     def fail_unlock(file_descriptor: int, operation: int) -> None:
@@ -138,8 +127,8 @@ def test_database_mutation_lock_release_failure_is_typed(
     monkeypatch.setattr(duckdb_module.fcntl, "flock", fail_unlock)
 
     with (
-        pytest.raises(error_type, match="lock"),
-        mutation_lock(tmp_path / "hmda-reliability.duckdb"),
+        pytest.raises(DuckDBMutationLockError, match="lock"),
+        database_mutation_lock(tmp_path / "hmda-reliability.duckdb"),
     ):
         pass
 
@@ -150,7 +139,6 @@ def test_database_mutation_lock_preserves_body_failure(
 ) -> None:
     """Body와 release가 모두 실패하면 원래 body failure를 보존한다."""
 
-    _, mutation_lock = _mutation_lock_api()
     original_flock = duckdb_module.fcntl.flock
 
     class MutationBodyError(Exception):
@@ -165,6 +153,6 @@ def test_database_mutation_lock_preserves_body_failure(
 
     with (
         pytest.raises(MutationBodyError),
-        mutation_lock(tmp_path / "hmda-reliability.duckdb"),
+        database_mutation_lock(tmp_path / "hmda-reliability.duckdb"),
     ):
         raise MutationBodyError

@@ -69,6 +69,12 @@ class NullSpikeFacts(ReliabilityContract):
 
 
 class AgenticReviewInput(ReliabilityContract):
+    """결정론적 review 실행을 위한 불변의 입력 스냅샷 계약.
+
+    모든 중첩 모델(Incident, Evidence, RemediationDraft)을 깊은 복사
+    스냅샷으로 격리하여 외부의 후속 변경으로부터 review 불변식을 보호한다.
+    """
+
     incident: Incident
     evidence: tuple[Evidence, ...] = Field(min_length=1, max_length=64)
     draft: RemediationDraft
@@ -237,6 +243,17 @@ class AgenticReviewValidation(ReliabilityContract):
 
 
 class AgenticReviewResult(ReliabilityContract):
+    """Review 오케스트레이션 결과 및 출처 증명 경계를 캡슐화한 불변 결과 모델.
+
+    상태별 불변식:
+    - `ACCEPTED`: output, validation, invocation_id/path 필수. failure_code는 None.
+    - `VALIDATION_FAILED` / `UNAVAILABLE`: durable invocation_id/path 필수.
+      output 노출 금지, failure_code 필수.
+    - `INPUT_REJECTED`: provider 호출 전 거부이므로 invocation 출처 메타데이터 금지.
+    - `PROVENANCE_FAILED`: invocation_id는 존재하나 디스크 쓰기 실패로
+      invocation_path는 None.
+    """
+
     status: AgenticReviewStatus
     output: AgenticReviewOutput | None = None
     validation: AgenticReviewValidation | None = None
@@ -319,6 +336,11 @@ def _snapshot_model[ModelT: BaseModel](
 
 
 def _canonical_target(evidence: tuple[Evidence, ...]) -> Evidence:
+    """Evidence 튜플에서 null_spike 프로파일 타겟을 정확히 하나 추출한다.
+
+    0개이거나 2개 이상일 경우 결정론적 비교의 모호성을 방지하기 위해
+    ValueError를 발생시킨다.
+    """
     targets = [
         item
         for item in evidence
@@ -332,6 +354,7 @@ def _canonical_target(evidence: tuple[Evidence, ...]) -> Evidence:
 
 
 def _target_column(evidence: Evidence) -> str:
+    """Canonical target evidence 페이로드에서 검토 대상 컬럼명을 추출하고 정규화한다."""
     column = evidence.payload.get("column")
     if not isinstance(column, str) or not column.strip():
         msg = "canonical target column must be a non-empty string"
@@ -340,6 +363,11 @@ def _target_column(evidence: Evidence) -> str:
 
 
 def _null_spike_facts(evidence: Evidence) -> NullSpikeFacts:
+    """Canonical target evidence 페이로드에서 4대 수치 팩트를 추출하여 모델로 조립한다.
+
+    baseline_null_rate, current_null_rate, delta, threshold가 모두 유한한(finite)
+    수치여야 하며 불리언은 거부된다.
+    """
     values: dict[str, float] = {}
     for field_name in (
         "baseline_null_rate",

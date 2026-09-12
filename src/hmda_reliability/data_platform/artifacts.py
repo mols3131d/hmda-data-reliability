@@ -24,7 +24,14 @@ class ArtifactProjectionReadError(Exception):
 def artifact_projection_id(manifest_path: Path, run_results_path: Path) -> str:
     """Artifact 순서와 byte 경계를 보존한 projection identity를 계산한다.
 
-    Artifact read I/O 실패는 ``ArtifactProjectionReadError``로 노출한다.
+    Identity 구조:
+        - 두 아티팩트(`manifest_path`, `run_results_path`)의 길이를
+          각각 8바이트 big-endian 정수로 해시 다이제스트에 주입 후 바이트를 추가한다.
+        - 이는 길이가 다른 두 아티팩트 바이트 배열의 단순 결합 시 생길 수 있는
+          바운더리 충돌(e.g., A + B == A' + B')을 암호학적으로 방지한다.
+
+    Exceptions:
+        - ArtifactProjectionReadError: 아티팩트 파일 읽기 I/O 실패 시 발생.
     """
 
     digest = sha256()
@@ -43,9 +50,13 @@ def artifact_projection_id(manifest_path: Path, run_results_path: Path) -> str:
 def artifact_projection_lock(directory: Path, *, exclusive: bool) -> Iterator[None]:
     """Current artifact pair 접근을 shared/exclusive local lock으로 직렬화한다.
 
-    ``exclusive=False``는 shared reader lock, ``True``는 exclusive writer lock이다.
-    Body exception은 그대로 보존하고, body가 성공한 경우에만 release failure를
-    ``ArtifactProjectionLockError``로 노출한다.
+    Lock 규칙 및 예외 보존 정책:
+        - `exclusive=False`: shared reader lock (`fcntl.LOCK_SH`).
+          복수 프로세스의 동시 읽기 허용.
+        - `exclusive=True`: exclusive writer lock (`fcntl.LOCK_EX`).
+          단일 프로세스의 승격(promotion) 전용.
+        - Body 블록 실행 중 예외는 뒤따른 unlock/close 실패보다 우선 보존된다.
+        - Body가 성공한 경우에만 unlock 실패가 `ArtifactProjectionLockError`로 노출된다.
     """
 
     try:

@@ -12,6 +12,12 @@ import scripts.generate_agent_routes as routes
 
 
 class _TextFile:
+    """테스트용 가상 텍스트 파일 래퍼.
+
+    `is_file() -> True`와 `read_text(encoding='utf-8')` 인터페이스를 제공하여
+    디스크 I/O 없이 모킹된 설정 파일 내용을 반환한다.
+    """
+
     def __init__(self, content: str) -> None:
         self.content = content
 
@@ -36,11 +42,13 @@ class _TextFile:
 def test_normalize_github_source_accepts_supported_forms(
     source: str, expected: str
 ) -> None:
+    """GitHub 소스 경로의 다양한 형태가 단일 규격으로 정규화되는지 검증한다."""
     assert routes.normalize_github_source(source) == expected
 
 
 @pytest.mark.unit
 def test_strip_jsonc_comments_preserves_markers_inside_strings() -> None:
+    """JSONC 주석 제거 시 문자열 리터럴 내부의 마커는 보존되는지 검증한다."""
     text = """
     {
       "url": "https://github.com/owner/repo", // line comment
@@ -61,6 +69,7 @@ def test_strip_jsonc_comments_preserves_markers_inside_strings() -> None:
 def test_rulesync_dependency_sources_use_locked_commit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """lockfile의 resolvedRef 커밋 해시가 GitHub raw URL에 바인딩되는지 검증한다."""
     config = """
     {
       "sources": [
@@ -168,6 +177,7 @@ def test_fetch_text_does_not_send_github_token(
 def test_skills_cli_dependency_sources_use_locked_ref(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Skills CLI lockfile에 잠긴 Git ref와 skillPath가 URL로 합성되는지 검증한다."""
     lock = {
         "skills": {
             "alpha": {
@@ -192,6 +202,7 @@ def test_skills_cli_dependency_sources_use_locked_ref(
 def test_find_local_skill_files_keeps_empty_tracked_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Git 추적 파일 결과가 비어있을 때 빈 목록을 온전히 반환하는지 검증한다."""
     monkeypatch.setattr(
         routes.subprocess,
         "run",
@@ -203,6 +214,7 @@ def test_find_local_skill_files_keeps_empty_tracked_result(
 
 @pytest.mark.unit
 def test_dependency_skill_entry_uses_injected_loader() -> None:
+    """주입된 텍스트 로더 콜백을 통해 Skill 메타데이터가 파싱되는지 검증한다."""
     source = (
         "https://raw.githubusercontent.com/owner/assets/abc123/skills/alpha/SKILL.md"
     )
@@ -217,6 +229,7 @@ def test_dependency_skill_entry_uses_injected_loader() -> None:
 
 @pytest.mark.unit
 def test_dependency_skill_entry_rejects_locked_name_mismatch() -> None:
+    """외부 마크다운의 실제 name과 lockfile의 식별자 불일치 시 예외를 검증한다."""
     source = (
         "https://raw.githubusercontent.com/owner/assets/abc123/skills/alpha/SKILL.md"
     )
@@ -233,6 +246,7 @@ def test_dependency_skill_entry_rejects_locked_name_mismatch() -> None:
 def test_skill_entries_include_external_dependency_entries(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """외부 의존성들이 이름순으로 정렬되어 통합 색인에 포함되는지 검증한다."""
     rulesync_source = "https://example.test/rulesync/zeta"
     skills_cli_source = "https://example.test/skills-cli/alpha"
     monkeypatch.setattr(routes, "find_local_skill_files", lambda: [])
@@ -269,6 +283,7 @@ def test_skill_entries_include_external_dependency_entries(
 def test_skill_entries_reject_local_external_name_collision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """로컬 Skill과 외부 의존성 Skill 이름 중복 시 생성을 거부하는지 검증한다."""
     local_path = object()
     monkeypatch.setattr(routes, "find_local_skill_files", lambda: [local_path])
     monkeypatch.setattr(
@@ -299,6 +314,7 @@ def test_skill_entries_reject_local_external_name_collision(
 def test_skill_entries_reject_dependency_name_collision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """양쪽 lockfile에 동일한 Skill 이름이 중복 정의된 경우 거부하는지 검증한다."""
     monkeypatch.setattr(routes, "find_local_skill_files", lambda: [])
     monkeypatch.setattr(
         routes,

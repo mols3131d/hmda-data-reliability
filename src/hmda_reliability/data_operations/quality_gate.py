@@ -21,7 +21,12 @@ _DBT_SOURCE_PARTITION_COLUMN = "activity_year"
 
 
 def evaluate_quality_gate(request: DataOperationRequest) -> None:
-    """dbt source가 소비할 전체 Bronze 파티션에 Reliability 정책을 적용한다."""
+    """dbt source가 소비할 전체 Bronze 파티션에 Reliability 정책을 적용한다.
+
+    검증 실패 시 `QualityGateError`가 발생하며 downstream dbt build를 중단해야 한다.
+    `request.raw_table_name`과 `request.partition_column`이 canonical contract
+    (`raw.hmda_loans`, `activity_year`)와 일치하지 않으면 `ValueError`를 발생시킨다.
+    """
 
     _validate_dbt_source_contract(request)
     observed_at = request.observed_at or datetime.now(UTC)
@@ -46,6 +51,11 @@ def _bronze_partitions(
     connection: duckdb.DuckDBPyConnection,
     request: DataOperationRequest,
 ) -> tuple[str, ...]:
+    """Bronze 테이블에 존재하는 파티션 목록과 request.source_year를 정렬 반환한다.
+
+    파티션 컬럼(`activity_year`)이 NULL인 행이 하나라도 존재하면 조기에
+    `reject_missing_partition_discriminator()`를 통해 차단한다.
+    """
     missing_partition_count = connection.execute(
         f"""
         SELECT count(*)
@@ -73,6 +83,7 @@ def _bronze_partitions(
 
 
 def _validate_dbt_source_contract(request: DataOperationRequest) -> None:
+    """테이블과 파티션 컬럼이 dbt canonical 소스 규약과 일치하는지 검증한다."""
     if (
         request.raw_table_name != HMDA_LOANS_TABLE
         or request.partition_column != _DBT_SOURCE_PARTITION_COLUMN
