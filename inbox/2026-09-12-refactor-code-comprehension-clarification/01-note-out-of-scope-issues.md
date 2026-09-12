@@ -38,7 +38,7 @@ tags:
 
 ### [ISSUES-data_platform-01] `artifact_projection_lock`의 Shared Reader 락 획득 시 쓰기 모드(`"w"`) 파일 오픈
 
-- **위치**: [src/hmda_reliability/data_platform/artifacts.py](src/hmda_reliability/data_platform/artifacts.py#L52)
+- **위치**: [src/hmda_reliability/data_platform/artifacts.py](../../src/hmda_reliability/data_platform/artifacts.py#L52)
 - **분류**: Safety / Bug
 - **발견 도메인**: `data_platform`
 - **현상 및 잠재적 영향**:
@@ -51,11 +51,11 @@ tags:
 
 ### [ISSUES-data_platform-02] `artifact_projection_id`의 `data_platform` 단위 테스트 누락
 
-- **위치**: [tests/data_platform/test_artifacts.py](tests/data_platform/test_artifacts.py#L1-L60)
+- **위치**: [tests/data_platform/test_artifacts.py](../../tests/data_platform/test_artifacts.py#L1-L60)
 - **분류**: Test Coverage Debt
 - **발견 도메인**: `data_platform`
 - **현상 및 잠재적 영향**:
-  - [src/hmda_reliability/data_platform/artifacts.py](src/hmda_reliability/data_platform/artifacts.py#L24-L39)에 정의된 `artifact_projection_id`는 길이 프리픽스 기반 해싱이라는 핵심 암호학적 불변식을 소유하고 있으나, 정작 자체 단위 테스트 파일인 [tests/data_platform/test_artifacts.py](tests/data_platform/test_artifacts.py)에는 락 관련 테스트 3개만 존재하고 `artifact_projection_id`의 직접 단위 테스트가 없음 (하류 `test_dbt_runner` 등에서만 간접 검증).
+  - [src/hmda_reliability/data_platform/artifacts.py](../../src/hmda_reliability/data_platform/artifacts.py#L24-L39)에 정의된 `artifact_projection_id`는 길이 프리픽스 기반 해싱이라는 핵심 암호학적 불변식을 소유하고 있으나, 정작 자체 단위 테스트 파일인 [tests/data_platform/test_artifacts.py](../../tests/data_platform/test_artifacts.py)에는 락 관련 테스트 3개만 존재하고 `artifact_projection_id`의 직접 단위 테스트가 없음 (하류 `test_dbt_runner` 등에서만 간접 검증).
 - **현재 작업에서 격리한 이유**:
   - 새 테스트 스위트 설계 및 추가는 `mols-clarify-runtime` 및 `mols-code-comprehension-refactor`의 범위를 벗어나며(테스트 설계/품질 책임), 기능 변경을 수반하지 않는 현재 목표와 분리함.
 - **권장 후속 조치**:
@@ -63,7 +63,7 @@ tags:
 
 ### [ISSUES-hmda_data-01] `_replace_partition_rows`의 위치 기반(Positional) INSERT로 인한 컬럼 순서 불일치 위험
 
-- **위치**: [src/hmda_reliability/hmda_data/ingestion/partition.py](src/hmda_reliability/hmda_data/ingestion/partition.py#L393-L400)
+- **위치**: [src/hmda_reliability/hmda_data/ingestion/partition.py](../../src/hmda_reliability/hmda_data/ingestion/partition.py#L393-L400)
 - **분류**: Safety / Bug
 - **발견 도메인**: `hmda_data`
 - **현상 및 잠재적 영향**:
@@ -77,7 +77,7 @@ tags:
 
 ### [ISSUES-hmda_data-02] `load_hmda_loans`의 필수 컬럼 검증 실패 시 불완전한 타겟 테이블 잔존
 
-- **위치**: [src/hmda_reliability/hmda_data/ingestion/full_load.py](src/hmda_reliability/hmda_data/ingestion/full_load.py#L58-L62)
+- **위치**: [src/hmda_reliability/hmda_data/ingestion/full_load.py](../../src/hmda_reliability/hmda_data/ingestion/full_load.py#L58-L62)
 - **분류**: Safety / Architecture Debt
 - **발견 도메인**: `hmda_data`
 - **현상 및 잠재적 영향**:
@@ -91,7 +91,7 @@ tags:
 
 ### [ISSUES-data_operations-01] `run_incident_lifecycle`의 동일 Reader Lock 중첩 획득 및 락 범위 분리
 
-- **위치**: [src/hmda_reliability/data_operations/incident_lifecycle.py](src/hmda_reliability/data_operations/incident_lifecycle.py#L97-L104)
+- **위치**: [src/hmda_reliability/data_operations/incident_lifecycle.py](../../src/hmda_reliability/data_operations/incident_lifecycle.py#L97-L104)
 - **분류**: Safety / Architecture Debt
 - **발견 도메인**: `data_operations`
 - **현상 및 잠재적 영향**:
@@ -105,7 +105,7 @@ tags:
 
 ### [ISSUES-data_operations-02] `_create_run_target`에서 생성된 임시 디렉토리의 생애주기 관리 부재(정리 누락)
 
-- **위치**: [src/hmda_reliability/data_operations/runner.py](src/hmda_reliability/data_operations/runner.py#L312-L318)
+- **위치**: [src/hmda_reliability/data_operations/runner.py](../../src/hmda_reliability/data_operations/runner.py#L312-L318)
 - **분류**: Architecture Debt / Operational
 - **발견 도메인**: `data_operations`
 - **현상 및 잠재적 영향**:
@@ -119,7 +119,7 @@ tags:
 
 ### [ISSUES-scripts-01] `rulesync.py`의 `_check_claude_bridges`에서 stale 및 mismatched bridge 로그 메시지 중복 표기
 
-- **위치**: [scripts/rulesync.py](scripts/rulesync.py#L125-L128)
+- **위치**: [scripts/rulesync.py](../../scripts/rulesync.py#L125-L128)
 - **분류**: Bug / Minor Observability
 - **발견 도메인**: `scripts` & shared (Group A)
 - **현상 및 잠재적 영향**:
@@ -132,7 +132,7 @@ tags:
 
 ### [ISSUES-scripts-02] `generate_agent_routes.py`의 `find_local_skill_files` git 실패 시 상대 경로 불일치 위험
 
-- **위치**: [scripts/generate_agent_routes.py](scripts/generate_agent_routes.py#L322-L334)
+- **위치**: [scripts/generate_agent_routes.py](../../scripts/generate_agent_routes.py#L322-L334)
 - **분류**: Safety / Contract Mismatch
 - **발견 도메인**: `scripts` & shared (Group A)
 - **현상 및 잠재적 영향**:
@@ -146,13 +146,13 @@ tags:
 
 ### [ISSUES-runtime_ai-01] `_sanitize_base_url`의 넷록 내 사용자 인증정보(`user:pass@`) 미제거 위험
 
-- **위치**: [src/hmda_reliability/runtime_ai/settings.py](src/hmda_reliability/runtime_ai/settings.py#L13-L19)
+- **위치**: [src/hmda_reliability/runtime_ai/settings.py](../../src/hmda_reliability/runtime_ai/settings.py#L13-L19)
 - **분류**: Safety / Bug
 - **발견 도메인**: `runtime_ai`
 - **현상 및 잠재적 영향**:
   - `_sanitize_base_url(url: str)`은 독스트링상 "사용자 정보 또는 쿼리 파라미터가 제거된 정규화된 기본 URL을 반환한다"고 선언하지만, 실제 구현은 `parsed.netloc` 전체를 그대로 `urlunsplit`에 전달함.
   - 파이썬 `urllib.parse.urlsplit`에서 `netloc`은 `username:password@hostname:port` 형태의 사용자 인증정보를 포함하므로, 만약 잘못된 URL이 전달될 경우 사용자 자격 증명이 제거되지 않고 그대로 반환될 수 있음.
-  - 현재는 [src/hmda_reliability/runtime_ai/settings.py](src/hmda_reliability/runtime_ai/settings.py#L37-L40)의 `_validate_base_url` 검증자에서 `value.username` 또는 `value.password`가 존재할 경우 `ValueError`를 발생시켜 Pydantic 레벨에서 차단하고 있으므로 런타임상 누출되지는 않으나, `_sanitize_base_url` 독립 함수 자체로는 자격 증명을 제거하지 못하는 계약 불일치가 존재함.
+  - 현재는 [src/hmda_reliability/runtime_ai/settings.py](../../src/hmda_reliability/runtime_ai/settings.py#L37-L40)의 `_validate_base_url` 검증자에서 `value.username` 또는 `value.password`가 존재할 경우 `ValueError`를 발생시켜 Pydantic 레벨에서 차단하고 있으므로 런타임상 누출되지는 않으나, `_sanitize_base_url` 독립 함수 자체로는 자격 증명을 제거하지 못하는 계약 불일치가 존재함.
 - **현재 작업에서 격리한 이유**:
   - `RuntimeAISettings.model_validate`가 이미 자격 증명이 포함된 URL 입력을 금지하고 있어 기존 계약상 안전하며, `_sanitize_base_url`의 내부 파싱 동작 변경은 IPv6 호스트 처리 등 미묘한 URL 재조합 계약에 영향을 줄 수 있으므로 비기능적 리팩터링 범위에서 제외함.
 - **권장 후속 조치**:
@@ -160,7 +160,7 @@ tags:
 
 ### [ISSUES-runtime_ai-02] `_OpenAIChatCompletionTransport`의 HTTP 429(Rate Limit) 재시도 제외 위험
 
-- **위치**: [src/hmda_reliability/runtime_ai/provider.py](src/hmda_reliability/runtime_ai/provider.py#L225-L236)
+- **위치**: [src/hmda_reliability/runtime_ai/provider.py](../../src/hmda_reliability/runtime_ai/provider.py#L225-L236)
 - **분류**: Contract Mismatch / Resilience Debt
 - **발견 도메인**: `runtime_ai`
 - **현상 및 잠재적 영향**:
