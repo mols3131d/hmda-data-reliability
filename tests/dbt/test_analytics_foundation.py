@@ -49,8 +49,8 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
     second_stats = _mart_stats(database_path)
     second_metric_rows = _mart_metric_rows(database_path)
 
-    manifest_path = DBT_PROJECT_DIR / "target" / "manifest.json"
-    run_results_path = DBT_PROJECT_DIR / "target" / "run_results.json"
+    manifest_path = tmp_path / "dbt-target" / "manifest.json"
+    run_results_path = tmp_path / "dbt-target" / "run_results.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     assert run_results_path.exists()
@@ -83,8 +83,18 @@ def _run_dbt(database_path: Path, command: str) -> None:
     env["DBT_PROFILES_DIR"] = str(DBT_PROJECT_DIR)
     env["DBT_SEND_ANONYMOUS_USAGE_STATS"] = "false"
     env["HMDA_RELIABILITY_DUCKDB_PATH"] = str(database_path)
+    arguments = [
+        "dbt",
+        command,
+        "--project-dir",
+        str(DBT_PROJECT_DIR),
+        "--log-path",
+        str(database_path.parent / "dbt-logs"),
+    ]
+    if command == "build":
+        arguments.extend(["--target-path", str(database_path.parent / "dbt-target")])
     result = subprocess.run(
-        ["dbt", command, "--project-dir", str(DBT_PROJECT_DIR)],
+        arguments,
         check=False,
         capture_output=True,
         env=env,
