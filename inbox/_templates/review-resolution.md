@@ -25,7 +25,7 @@ tags:
 
 | ID | Disposition | Resolution | Verification |
 | --- | --- | --- | --- |
-| F1 | <Resolved | No Change | Deferred | Blocked> | <적용한 변경 또는 disposition의 핵심 근거> | <검증 결과 또는 evidence> |
+| F1 | <Resolved / No Change / Deferred / Blocked> | <적용한 변경 또는 disposition의 핵심 근거> | <검증 결과 또는 evidence> |
 
 ## Details <!-- OPTIONAL: summary만으로 resolution을 판단하기 어려운 finding만 작성한다. -->
 
