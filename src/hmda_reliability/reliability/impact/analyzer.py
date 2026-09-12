@@ -12,7 +12,15 @@ from hmda_reliability.reliability.impact.result import ImpactAnalysisResult
 
 
 class DbtImpactAnalyzer:
-    """아티팩트 변경 없이 incident에 downstream dbt 계통 evidence를 연결한다."""
+    """아티팩트 변경 없이 incident에 downstream dbt 계통 evidence를 연결한다.
+
+    접근 제약 및 불변식:
+    1. dbt 디렉토리에 대한 읽기 전용 공유 락(`artifact_projection_lock`)을
+       획득하여 프로모션 작업과의 동시 접근 충돌을 방지한다.
+    2. dbt `run_results.json` 파일이 디렉토리에 실제로 존재하는지 검증한다.
+    3. 전이적 다운스트림(`downstream_assets`)을 분석하여 incident의
+       `affected_assets`에 투영한 불변의 `LineageEvidence`를 생성한다.
+    """
 
     def analyze(self, request: ImpactAnalysisRequest) -> ImpactAnalysisResult:
         """복사된 incident와 계통 evidence를 반환한다; run-results 파일이 필요하다."""

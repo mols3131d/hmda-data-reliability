@@ -167,6 +167,7 @@ def review_null_spike(
             trace_id=provider_response.trace_id,
         )
 
+    # 결정론적 구조 및 사실 가드레일 검증
     validation = validate_agentic_review(review_input, parsed_output)
     if validation.status is ReviewValidationStatus.REJECTED:
         status = AgenticReviewStatus.VALIDATION_FAILED
@@ -276,6 +277,11 @@ class _ReviewSession:
 
 
 def _parse_output(content: str) -> AgenticReviewOutput | None:
+    """Provider 응답 문자열을 AgenticReviewOutput 계약 모델로 파싱한다.
+
+    JSON 형식이 아니거나 스키마 검증에 실패하면 None을 반환한다.
+    호출자(caller)는 None 수신 시 response_schema_invalid 실패로 처리한다.
+    """
     try:
         payload = json.loads(content)
         return AgenticReviewOutput.model_validate(payload)
@@ -290,6 +296,13 @@ def _persist_result(
     review_settings: ReviewAISettings,
     writer: InvocationEvidenceWriter,
 ) -> AgenticReviewResult:
+    """호출 증적 레코드를 디스크에 영속화하고 최종 AgenticReviewResult를 조립한다.
+
+    저장 허용 바이트(`max_record_bytes`)는 설정된 프롬프트 한도와 출력 한도에
+    16KiB의 표준 JSON 메타데이터 오버헤드를 합산하여 산정한다.
+    디스크 쓰기 실패 시 예외를 전파하지 않고 `PROVENANCE_FAILED` 상태를 반환하여
+    호출자에게 증적 불완전성을 명확히 알린다.
+    """
     max_record_bytes = (
         review_settings.max_prompt_bytes + settings.max_output_bytes + 16_384
     )

@@ -98,7 +98,15 @@ def write_evidence(
     repository_revision: str,
     observed_at: str,
 ) -> None:
-    """Write canonical JSON and its derived Markdown summary atomically."""
+    """Write canonical JSON and its derived Markdown summary atomically.
+
+    Atomicity and Invariants:
+    - Writes both artifacts first to `.tmp` files.
+    - Preserves existing JSON file as `.bak` during the transition.
+    - Replaces target files, rolling back on any failure to guarantee that the
+      JSON and Markdown reference documents never enter a desynchronized or
+      partially written state.
+    """
     source = evidence.get("source", {})
     portable_evidence = {
         **evidence,

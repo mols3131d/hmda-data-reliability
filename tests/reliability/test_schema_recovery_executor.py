@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from subprocess import CompletedProcess
 from threading import Event, Thread
-from typing import Any
 
 import duckdb
 import pytest
@@ -46,21 +45,12 @@ from hmda_reliability.reliability.errors import (
 )
 
 
-def _executor_api() -> tuple[Any, type[SchemaRecoveryValidationError]]:
-    execute = getattr(reliability, "execute_approved_schema_recovery", None)
-    error_type = getattr(reliability, "SchemaRecoveryValidationError", None)
-    assert execute is not None, "execute_approved_schema_recovery API가 필요합니다."
-    assert error_type is not None, "SchemaRecoveryValidationError API가 필요합니다."
-    return execute, error_type
-
-
 @pytest.mark.component
 def test_schema_recovery_rejects_mismatched_approval_before_candidate_access(
     tmp_path: Path,
 ) -> None:
     """Exact proposal mismatch는 candidate database 확인보다 먼저 실패한다."""
 
-    execute, _ = _executor_api()
     request = _request(tmp_path, target_state="before")
     missing_candidate = tmp_path / "missing-candidate.duckdb"
     mismatched = request.proposal.model_copy(update={"dbt_projection_id": "dbt:other"})
@@ -72,7 +62,7 @@ def test_schema_recovery_rejects_mismatched_approval_before_candidate_access(
     )
 
     with pytest.raises(ApprovalGateError, match="proposal"):
-        execute(invalid_request)
+        reliability.execute_approved_schema_recovery(invalid_request)
 
     assert not missing_candidate.exists()
 
@@ -81,10 +71,9 @@ def test_schema_recovery_rejects_mismatched_approval_before_candidate_access(
 def test_schema_recovery_replaces_approved_before_state(tmp_path: Path) -> None:
     """Approved before-state is replaced with the exact complete candidate."""
 
-    execute, _ = _executor_api()
     request = _request(tmp_path, target_state="before")
 
-    result = execute(request)
+    result = reliability.execute_approved_schema_recovery(request)
 
     with DuckDBConnectionManager(request.target_database_path) as connection:
         actual_state = reliability.create_table_state_identity(
@@ -114,10 +103,9 @@ def test_schema_recovery_replays_exact_after_without_replacement(
 ) -> None:
     """Exact after-state replay resumes profile verification without replacement."""
 
-    execute, _ = _executor_api()
     request = _request(tmp_path, target_state="after")
 
-    result = execute(request)
+    result = reliability.execute_approved_schema_recovery(request)
 
     assert result.actual_state == request.proposal.expected_after_state
     assert result.mutation_state == "already_restored"
@@ -131,7 +119,6 @@ def test_schema_recovery_rejects_diverged_target_without_mutation(
 ) -> None:
     """Third-state target cannot reuse an existing approval."""
 
-    execute, error_type = _executor_api()
     request = _request(tmp_path, target_state="diverged")
     with DuckDBConnectionManager(request.target_database_path) as connection:
         before = reliability.create_table_state_identity(
@@ -139,8 +126,8 @@ def test_schema_recovery_rejects_diverged_target_without_mutation(
             request.proposal.table_name,
         )
 
-    with pytest.raises(error_type, match="diverged") as error:
-        execute(request)
+    with pytest.raises(SchemaRecoveryValidationError, match="diverged") as error:
+        reliability.execute_approved_schema_recovery(request)
 
     with DuckDBConnectionManager(request.target_database_path) as connection:
         after = reliability.create_table_state_identity(
@@ -164,7 +151,6 @@ def test_schema_recovery_rolls_back_in_transaction_failures(
 ) -> None:
     """Replacement, exact-state, and profile failures preserve exact before-state."""
 
-    execute, error_type = _executor_api()
     request = _request(tmp_path, target_state="before")
     with DuckDBConnectionManager(request.target_database_path) as connection:
         before = reliability.create_table_state_identity(
@@ -201,8 +187,8 @@ def test_schema_recovery_rolls_back_in_transaction_failures(
             ),
         )
 
-    with pytest.raises(error_type) as error:
-        execute(request)
+    with pytest.raises(SchemaRecoveryValidationError) as error:
+        reliability.execute_approved_schema_recovery(request)
 
     with DuckDBConnectionManager(request.target_database_path) as connection:
         after = reliability.create_table_state_identity(
@@ -222,7 +208,6 @@ def test_schema_recovery_rolls_back_table_state_builder_failure(
 ) -> None:
     """Final state calculation failure after replacement also rolls back."""
 
-    execute, error_type = _executor_api()
     request = _request(tmp_path, target_state="before")
     original_create_state = schema_executor.create_table_state_identity
     target_state_calls = 0
@@ -248,8 +233,8 @@ def test_schema_recovery_rolls_back_table_state_builder_failure(
         fail_final_state,
     )
 
-    with pytest.raises(error_type) as error:
-        execute(request)
+    with pytest.raises(SchemaRecoveryValidationError) as error:
+        reliability.execute_approved_schema_recovery(request)
 
     with DuckDBConnectionManager(request.target_database_path) as connection:
         after = reliability.create_table_state_identity(
@@ -269,7 +254,6 @@ def test_schema_recovery_serializes_with_hmda_partition_writer(
 ) -> None:
     """HMDA writer waits for recovery commit, then rechecks and stale-fails."""
 
-    execute, _ = _executor_api()
     hmda_csv_path = _write_hmda_csv(tmp_path)
     request, expected_partition = _hmda_request(tmp_path, hmda_csv_path)
     replacement_path = tmp_path / "year_2025_replacement.csv"
@@ -316,7 +300,7 @@ def test_schema_recovery_serializes_with_hmda_partition_writer(
 
     def recover() -> None:
         try:
-            execute(request)
+            reliability.execute_approved_schema_recovery(request)
         except BaseException as exc:
             recovery_errors.append(exc)
 
@@ -366,7 +350,6 @@ def test_dbt_lock_blocks_schema_recovery_target_state_check(
 ) -> None:
     """Recovery cannot inspect the target while dbt holds the shared mutation lock."""
 
-    execute, _ = _executor_api()
     request = _request(tmp_path, target_state="before")
     dbt_holds_lock = Event()
     release_dbt = Event()
@@ -423,7 +406,7 @@ def test_dbt_lock_blocks_schema_recovery_target_state_check(
 
     def recover() -> None:
         try:
-            execute(request)
+            reliability.execute_approved_schema_recovery(request)
         except BaseException as exc:
             recovery_errors.append(exc)
 

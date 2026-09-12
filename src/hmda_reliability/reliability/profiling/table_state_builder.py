@@ -19,7 +19,15 @@ def create_table_state_identity(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> TableStateIdentity:
-    """정확한 스키마와 완전한 연도별 내용 식별자를 반환한다."""
+    """정확한 스키마와 완전한 연도별 내용 식별자를 반환한다.
+
+    완전성 및 무결성 불변식:
+    1. 단일 소스 연도 누락 방지: `source_year`가 NULL인 행이 존재하면 전체 상태에
+       포함할 수 없으므로 `TableStateIdentityError`를 즉시 발생시킨다.
+    2. 파티션 인구수 보존: 각 연도별 파티션 `PartitionContentIdentity`의 행 수 합계가
+       테이블 전체 `table_row_count`와 정확히 일치해야 한다 (누락/중복 집계 검증).
+    3. 정렬 결정론성: 연도별 파티션 식별자는 오름차순으로 정렬되어 반환된다.
+    """
 
     try:
         row_count = table_row_count(connection, table_name)

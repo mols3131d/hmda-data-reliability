@@ -18,7 +18,16 @@ from hmda_reliability.reliability.detection.result import DetectionResult
 
 
 class BasicIncidentDetector:
-    """파이프라인 상태를 변경하지 않고 프로파일을 비교하여 인시던트를 감지한다."""
+    """파이프라인 상태를 변경하지 않고 프로파일을 비교하여 인시던트를 감지한다.
+
+    감지 규칙 평가 순서 및 불변식:
+    1. `_detect_volume_drop`: 베이스라인 대비 행 수 감소율이 임계값을 초과할 때 감지
+       (베이스라인 행 수가 0인 경우 검사 제외).
+    2. `_detect_null_spike`: 정렬된 각 컬럼별 결측률 증가량이 임계값을 초과할 때 감지.
+    3. `_detect_schema_drift`: 스키마 해시 불일치 시 감지.
+    4. `_detect_freshness_delay`: Bronze 파티션의 관측 시점 대비 수집 경과 시간이
+       임계값을 초과할 때 감지.
+    """
 
     def detect(self, request: DetectionRequest) -> list[DetectionResult]:
         """규칙 순서대로 감지된 인시던트 목록을 반환한다."""

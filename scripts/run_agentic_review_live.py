@@ -74,12 +74,12 @@ def main(
         print("Agentic review live proof is disabled.")
         return 0
 
-    missing = [
+    missing_env_vars = [
         name for name in _REQUIRED_ENVIRONMENT if not environment.get(name, "").strip()
     ]
-    if missing:
+    if missing_env_vars:
         print(
-            "Missing live configuration: " + ", ".join(missing),
+            "Missing live configuration: " + ", ".join(missing_env_vars),
             file=sys.stderr,
         )
         return 2
@@ -244,6 +244,12 @@ def _verify_live_provenance(
     review_settings: ReviewAISettings,
     project_revision: str,
 ) -> bool:
+    """Verify that persisted invocation record faithfully matches the review result.
+
+    Ensures that for non-rejected results, the serialized invocation record written
+    to disk exists, matches the invocation ID, model, prompt digest, project revision,
+    and review status, preventing unauthenticated or corrupted live proof artifacts.
+    """
     if result.status in {
         AgenticReviewStatus.INPUT_REJECTED,
         AgenticReviewStatus.PROVENANCE_FAILED,

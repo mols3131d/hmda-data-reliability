@@ -6,7 +6,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class RawLoadResult(BaseModel):
-    """원천 소스 적재 결과 모델."""
+    """HMDA 원천 파티션 데이터 적재 완료 결과 모델.
+
+    `load_raw_data()` 실행 후 적재 파일 수, 연도 및 최종 row 수를
+    불변(frozen) 모델로 caller에게 제공한다.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

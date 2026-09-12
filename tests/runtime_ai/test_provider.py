@@ -58,6 +58,7 @@ class RecordingTransport:
 
 
 def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile() -> None:
+    """어댑터가 스트리밍/도구를 끄고 json_object 단일 요청을 보내는지 검증한다."""
     messages = _messages()
     transport_response = runtime_contracts.TransportResponse(
         content='{"review_summary":"ok"}',
@@ -90,6 +91,7 @@ def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile() -> None:
 
 
 def test_adapter_owns_bounded_retry_for_retryable_transport_failures() -> None:
+    """재시도 가능한 전송 오류(retryable=True) 시 한도까지 재시도하는지 검증한다."""
     transport = RecordingTransport(
         [
             provider_module.ProviderTransportError(
@@ -110,6 +112,7 @@ def test_adapter_owns_bounded_retry_for_retryable_transport_failures() -> None:
 
 
 def test_adapter_does_not_retry_non_retryable_transport_failures() -> None:
+    """재시도 불가능한 오류(4xx 등)는 재시도 없이 즉시 실패하는지 검증한다."""
     transport = RecordingTransport(
         [
             provider_module.ProviderTransportError(
@@ -131,6 +134,7 @@ def test_adapter_does_not_retry_non_retryable_transport_failures() -> None:
 
 
 def test_adapter_rejects_oversized_response_without_retry() -> None:
+    """응답 크기가 max_output_bytes 초과 시 ProviderResponseTooLargeError를 낸다."""
     transport = RecordingTransport(
         [runtime_contracts.TransportResponse(content="x" * 33)]
     )
@@ -149,6 +153,7 @@ def test_adapter_rejects_oversized_response_without_retry() -> None:
 def test_adapter_disables_sdk_hidden_retry_and_passes_explicit_credentials(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """SDK 생성 시 max_retries=0으로 내부 재시도를 비활성화하는지 검증한다."""
     captured: dict[str, object] = {}
 
     class FakeOpenAI:
@@ -171,6 +176,7 @@ def test_adapter_disables_sdk_hidden_retry_and_passes_explicit_credentials(
     ["http://localhost:11434/v1", "https://api.openai.com/v1"],
 )
 def test_local_and_cloud_urls_use_the_same_adapter_request(base_url: str) -> None:
+    """로컬 및 클라우드 엔드포인트 모두 동일한 wire 규격을 사용하는지 검증한다."""
     messages = _messages()
     transport = RecordingTransport([runtime_contracts.TransportResponse(content="{}")])
     adapter = provider_module.OpenAICompatibleAdapter(

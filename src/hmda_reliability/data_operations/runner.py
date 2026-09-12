@@ -104,13 +104,24 @@ def run_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
     성공해도 shared current artifact projection은 변경하지 않는다. Caller는 이
     결과에 필요한 downstream validation을 끝낸 뒤 ``promote_dbt_artifacts()``를
     별도로 호출해야 한다.
+
+    실행 흐름:
+        1. 격리된 고유 임시 run target 디렉토리 생성 (`_create_run_target`)
+        2. 타겟 DuckDB 배타적 변이 락(`database_mutation_lock`) 획득
+        3. `dbt build` 서브프로세스 실행 (최대 300초 타임아웃)
+        4. 산출물(`manifest.json`, `run_results.json`) 무결성 검증 및 projection ID 계산
     """
 
     return _run_dbt_build(request, quality_gate_required=False)
 
 
 def run_quality_gated_dbt_build(request: DataOperationRequest) -> DbtBuildResult:
-    """전체 Bronze gate를 lock 안에서 재검증한 뒤 dbt build를 실행한다."""
+    """전체 Bronze gate를 lock 안에서 재검증한 뒤 dbt build를 실행한다.
+
+    DB 배타 락(`database_mutation_lock`) 내부에서 `evaluate_quality_gate()`를
+    먼저 통과해야만 dbt build 서브프로세스를 시작한다. 오염된 파티션이 감지되면
+    `QualityGateError`로 차단된다.
+    """
 
     canonical_request = _canonicalize_quality_gated_dbt_configuration(request)
     return _run_dbt_build(canonical_request, quality_gate_required=True)
@@ -386,13 +397,14 @@ def _promote_dbt_artifacts(
     backed_up_promotions: list[_ArtifactPromotion] = []
     committed_promotions: list[_ArtifactPromotion] = []
     try:
-        # Current를 직접 덮어쓰지 않고 두 candidate copy를 먼저 준비한다.
-        # Copy 단계 실패가 기존 current pair를 일부만 변경하지 않게 하기 위함이다.
+        # 1단계: Current를 직접 덮어쓰지 않고 candidate 복사본(.next)을 먼저 준비한다.
+        # copyfile 단계 실패 시 기존 current pair가 부분 변경되는 위험을 방지한다.
         for promotion in promotions:
             promotion.destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(promotion.source, promotion.staged_path)
             staged_promotions.append(promotion)
-        # 기존 current를 backup한 뒤 교체해 중간 실패 시 rollback 경로를 남긴다.
+        # 2단계: 기존 current를 backup(.previous)으로 이동한 뒤 새 아티팩트로 교체한다.
+        # 중간 replace 실패 시 이전 유효 상태로 롤백할 수 있는 경로를 남긴다.
         for promotion in staged_promotions:
             promotion.backup_path.unlink(missing_ok=True)
             if promotion.destination.exists():
@@ -401,6 +413,10 @@ def _promote_dbt_artifacts(
             promotion.staged_path.replace(promotion.destination)
             committed_promotions.append(promotion)
     except OSError as exc:
+        # 롤백 순서 불변식:
+        # (a) 미완료 staged 파일(.next) 삭제
+        # (b) 이미 교체된 불완전한 destination 삭제
+        # (c) 백업 파일(.previous)을 역순으로 destination에 복원
         for promotion in staged_promotions:
             promotion.staged_path.unlink(missing_ok=True)
         for promotion in committed_promotions:
@@ -411,7 +427,8 @@ def _promote_dbt_artifacts(
             "dbt artifact projection을 승격할 수 없습니다.",
             context={"run_target_path": str(run_manifest_path.parent)},
         ) from exc
-    # 승격은 이미 완료되었으므로 backup cleanup 실패가 성공 결과를 뒤집지 않게 한다.
+    # 3단계: 승격 완료 후 백업 파일 정리.
+    # 승격 성공 후 backup 정리 실패가 전체 성공 결과를 뒤집지 않게 예외를 무시한다.
     for promotion in backed_up_promotions:
         try:
             promotion.backup_path.unlink(missing_ok=True)

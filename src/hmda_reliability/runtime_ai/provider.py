@@ -21,9 +21,26 @@ from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 _LOGGER = get_logger(__name__)
 
+# 재시도 간 지수 백오프 기본 단위 (0.25초) 및 최대 백오프 상한 (1.0초)
+_INITIAL_BACKOFF_SECONDS = 0.25
+_MAX_BACKOFF_SECONDS = 1.0
+
+
+def _calculate_backoff_delay(attempt: int) -> float:
+    """1-based 시도 횟수(attempt)에 따른 지수 백오프 지연(초)을 계산한다.
+
+    1차 실패 후 attempt=1일 때 0.25s, attempt=2일 때 0.5s, 이후 최대 1.0s로 상한된다.
+    """
+    delay = _INITIAL_BACKOFF_SECONDS * (2 ** (attempt - 1))
+    return min(delay, _MAX_BACKOFF_SECONDS)
+
 
 class ProviderTransportError(Exception):
-    """SDK 경계에서 분류된 정제된 전송(transport) 실패 예외."""
+    """SDK 경계에서 분류된 정제된 전송(transport) 실패 예외.
+
+    upstream OpenAI SDK 예외를 내부 실패 코드(`failure_code`)와
+    재시도 가능 여부(`retryable`) 플래그로 캡슐화한다.
+    """
 
     def __init__(self, *, failure_code: str, retryable: bool) -> None:
         super().__init__(failure_code)
@@ -32,7 +49,11 @@ class ProviderTransportError(Exception):
 
 
 class ProviderUnavailableError(Exception):
-    """제한된 재시도 횟수 내에 응답을 받지 못했을 때 발생하는 예외."""
+    """제한된 재시도 횟수 내에 응답을 받지 못했을 때 발생하는 예외.
+
+    네트워크 단절, 서버 5xx 에러 또는 재시도 불가능한 클라이언트 4xx 에러 등으로 인해
+    최종적으로 provider 호출이 불가능할 때 발생한다.
+    """
 
     def __init__(
         self,
@@ -48,7 +69,10 @@ class ProviderUnavailableError(Exception):
 
 
 class ProviderResponseTooLargeError(Exception):
-    """Provider 응답 바이트 크기가 설정된 한도를 초과할 때 발생하는 예외."""
+    """Provider 응답 바이트 크기가 설정된 한도를 초과할 때 발생하는 예외.
+
+    `max_output_bytes`를 초과하는 응답은 재시도 없이 즉시 이 예외로 차단된다.
+    """
 
     def __init__(
         self,
@@ -70,11 +94,17 @@ class ProviderResponseTooLargeError(Exception):
 
 
 class ChatCompletionTransport(Protocol):
+    """Chat Completion 요청을 전송 계층으로 위임하기 위한 내부 프로토콜."""
+
     def create(self, request: ChatCompletionRequest) -> TransportResponse: ...
 
 
 class OpenAICompatibleAdapter:
-    """어댑터 자체 재시도 로직이 포함된 provider 중립적 요청 어댑터."""
+    """어댑터 자체 재시도 로직이 포함된 provider 중립적 요청 어댑터.
+
+    SDK의 숨겨진 재시도를 끄고(`max_retries=0`), 이 어댑터 클래스가
+    지수 백오프 및 최대 재시도 제약(`max_retries`)을 단독으로 소유한다.
+    """
 
     def __init__(
         self,
@@ -86,6 +116,7 @@ class OpenAICompatibleAdapter:
         self._settings = settings
         self._sleep = sleep
         if transport is None:
+            # SDK 레벨의 내부 재시도를 끄고 어댑터가 재시도 불변식을 통제한다.
             client = OpenAI(
                 api_key=settings.api_key.get_secret_value(),
                 base_url=str(settings.base_url),
@@ -137,7 +168,7 @@ class OpenAICompatibleAdapter:
                             "max_retries": self._settings.max_retries,
                         },
                     )
-                    self._sleep(min(0.25 * (2 ** (attempt_count - 1)), 1.0))
+                    self._sleep(_calculate_backoff_delay(attempt_count))
                     continue
                 raise ProviderUnavailableError(
                     failure_code=error.failure_code,
@@ -166,12 +197,13 @@ class OpenAICompatibleAdapter:
 
 
 class _OpenAIChatCompletionTransport:
-    """The only module surface that calls the OpenAI Python SDK."""
+    """OpenAI Python SDK와 직접 통신하는 유일한 전송 어댑터 구현체."""
 
     def __init__(self, client: OpenAI) -> None:
         self._client = client
 
     def create(self, request: ChatCompletionRequest) -> TransportResponse:
+        """SDK completions API를 동기 호출하고 예외 및 응답 형식을 정규화한다."""
         messages: list[ChatCompletionMessageParam] = [
             cast(
                 ChatCompletionMessageParam,
@@ -227,4 +259,5 @@ class _OpenAIChatCompletionTransport:
 
 
 def _elapsed_ms(started: float) -> float:
+    """단조 증가 타이머 기준 시작 시점 대비 경과 시간(밀리초)을 반환한다."""
     return max(0.0, (time.monotonic() - started) * 1000)

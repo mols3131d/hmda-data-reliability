@@ -32,8 +32,13 @@ def data_operation_request_from_runtime(
 ) -> DataOperationRequest:
     """명시적 런타임 오버라이드와 환경 변수를 조합하여 최종 요청 객체를 생성한다.
 
-    명시적인 non-None 값은 환경 변수 값보다 우선순위를 갖는다.
-    두 소스가 결합된 후 `DataOperationRequest`에서 최종 유효성 검증을 수행한다.
+    Precedence & Validation Rules:
+        - `_SUPPORTED_OVERRIDES` 필드 중 non-None 명시적 값이 환경 변수보다 우선한다.
+        - 명시적 값이 제공된 환경 변수 키는 base 환경에서 사전에 제거한다.
+        - 결합된 값은 `DataOperationRequest` 모델 검증을 통해 유효한 요청으로 변환된다.
+
+    Returns:
+        DataOperationRequest: 유효성이 검증된 불변 요청 객체.
     """
 
     explicit = {

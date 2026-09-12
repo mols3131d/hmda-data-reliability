@@ -18,7 +18,20 @@ REQUIRED_FIELDS = ("type", "title", "description")
 
 
 def _frontmatter_fields(path: Path) -> dict[str, str]:
-    """Return top-level scalar-looking frontmatter fields from a Markdown file."""
+    """Return top-level scalar-looking frontmatter fields from a Markdown file.
+
+    Extracts key-value lines located between YAML delimiters (`---`). Ignores indented
+    child structures or blank lines.
+
+    Args:
+        path: Path to the markdown file to parse.
+
+    Returns:
+        A dictionary of raw string key-value pairs.
+
+    Raises:
+        ValueError: If opening or closing `---` delimiters are missing.
+    """
     lines = path.read_text(encoding="utf-8").splitlines()
     if not lines or lines[0].strip() != "---":
         raise ValueError("missing YAML frontmatter opening delimiter")
@@ -42,12 +55,14 @@ def _frontmatter_fields(path: Path) -> dict[str, str]:
 
 
 def _unquote(value: str) -> str:
+    """Strip matching leading and trailing single or double quotes."""
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
         return value[1:-1]
     return value
 
 
 def _has_value(value: str) -> bool:
+    """Return True if a frontmatter field contains a meaningful non-null value."""
     normalized = _unquote(value.strip())
     return normalized not in {"", "null", "Null", "NULL", "~"}
 
@@ -58,6 +73,24 @@ def _validate_root(
     *,
     sequenced: bool,
 ) -> list[str]:
+    """Validate schema, naming prefix, and frontmatter consistency.
+
+    Rules:
+    - Required fields: `type`, `title`, `description` must be non-empty.
+    - Type must match lowercase kebab-case.
+    - Naming convention:
+      - Sequenced container: must start with `NN-` (two digits).
+      - Timed container: must start with `HH-MM-`, with valid hour (0-23)
+        and minute (0-59), and must be prefixed with `${HH-MM}-${type}-`.
+
+    Args:
+        path: File path of the artifact markdown or bundle README.
+        artifact_name: Name (or stem) of the artifact being evaluated.
+        sequenced: True if in sequenced container, False if date-ordered.
+
+    Returns:
+        List of formatted error messages, or empty list if valid.
+    """
     errors: list[str] = []
     try:
         fields = _frontmatter_fields(path)
@@ -105,6 +138,7 @@ def _validate_root(
 
 
 def _is_sequenced_container(container: str) -> bool | None:
+    """Determine container mode: False for date, True for sequenced, None if invalid."""
     if DATE_RE.fullmatch(container):
         return False
     if BRANCH_WORK_RE.fullmatch(container) or GITHUB_WORK_RE.fullmatch(container):
@@ -116,7 +150,19 @@ def _artifact_root_for_changed_path(
     repo_root: Path,
     changed_path: Path,
 ) -> tuple[Path, str, bool] | None:
-    """Resolve a changed Inbox path to the standalone file or bundle README root."""
+    """Resolve a changed Inbox path to the standalone file or bundle README root.
+
+    Identifies whether a modified file in `inbox/` represents a standalone artifact
+    or a turn/document within an artifact bundle (whose canonical root is `README.md`).
+
+    Args:
+        repo_root: Path to repository root.
+        changed_path: Relative or absolute path to a changed inbox file.
+
+    Returns:
+        Tuple of `(canonical_root_path, artifact_name, is_sequenced)` or None if
+        the path does not point to a valid inbox artifact.
+    """
     try:
         relative = changed_path.relative_to("inbox")
     except ValueError:
@@ -142,7 +188,18 @@ def _artifact_root_for_changed_path(
 
 
 def validate_changed_paths(paths: list[str], *, repo_root: Path) -> list[str]:
-    """Validate only artifact roots reached from the supplied changed paths."""
+    """Validate only artifact roots reached from the supplied changed paths.
+
+    Deduplicates canonical roots so multiple edits inside a single bundle only
+    trigger one validation pass on its README.
+
+    Args:
+        paths: List of file path strings reported as changed.
+        repo_root: Repository root directory.
+
+    Returns:
+        List of all validation error strings encountered across inspected roots.
+    """
     errors: list[str] = []
     seen_roots: set[Path] = set()
 
@@ -161,6 +218,7 @@ def validate_changed_paths(paths: list[str], *, repo_root: Path) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for changed inbox artifact validation."""
     paths = list(sys.argv[1:] if argv is None else argv)
     errors = validate_changed_paths(paths, repo_root=Path.cwd())
     if errors:

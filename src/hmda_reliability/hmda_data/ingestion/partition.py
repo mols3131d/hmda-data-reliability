@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import NamedTuple
 
 import duckdb
 
@@ -40,6 +41,13 @@ _BRONZE_PROVENANCE_COLUMNS = frozenset(
 )
 
 
+class _SourceFileClause(NamedTuple):
+    """선택적 source_file_name SQL WHERE 절과 바인딩 파라미터."""
+
+    clause: str
+    params: list[str]
+
+
 def load_hmda_loans_partition(
     connection: duckdb.DuckDBPyConnection,
     source_paths: Sequence[str | Path],
@@ -63,6 +71,7 @@ def load_hmda_loans_partition(
 
     paths = validate_source_paths(source_paths)
     try:
+        # 동시 실행 시 파티션 교체 경쟁을 방지하기 위해 DB 뮤테이션 락을 획득한다.
         with database_mutation_lock(current_database_path(connection)):
             _ensure_hmda_loans_table(
                 connection,
@@ -208,15 +217,15 @@ def _partition_row_count(
 ) -> int:
     """적재된 source_year/source_file 파티션 행 수를 반환한다."""
 
-    source_file_filter, source_file_params = _source_file_filter(source_file)
+    file_filter = _source_file_filter(source_file)
     result = connection.execute(
         f"""
         SELECT count(*)
         FROM {qualify_table_name(table_name)}
         WHERE source_year = ?
-        {source_file_filter}
+        {file_filter.clause}
         """,
-        [source_year, *source_file_params],
+        [source_year, *file_filter.params],
     ).fetchone()
     if result is None:
         context = _partition_context(table_name, source_year, source_file)
@@ -233,7 +242,7 @@ def _create_staging_table(
     source_file: str | None,
     preserve_source_metadata: bool,
 ) -> None:
-    source_file_filter, source_file_params = _source_file_filter(source_file)
+    file_filter = _source_file_filter(source_file)
     source_query = source_union_sql(
         source_paths,
         preserve_source_metadata=preserve_source_metadata,
@@ -244,12 +253,12 @@ def _create_staging_table(
         SELECT *
         FROM ({source_query})
         WHERE source_year = ?
-        {source_file_filter}
+        {file_filter.clause}
         """,
         [
             *map(Path.as_posix, source_paths),
             source_year,
-            *source_file_params,
+            *file_filter.params,
         ],
     )
 
@@ -385,14 +394,14 @@ def _replace_partition_rows(
     source_year: int,
     source_file: str | None,
 ) -> None:
-    source_file_filter, source_file_params = _source_file_filter(source_file)
+    file_filter = _source_file_filter(source_file)
     connection.execute(
         f"""
         DELETE FROM {qualify_table_name(table_name)}
         WHERE source_year = ?
-        {source_file_filter}
+        {file_filter.clause}
         """,
-        [source_year, *source_file_params],
+        [source_year, *file_filter.params],
     )
     connection.execute(
         f"""
@@ -403,12 +412,12 @@ def _replace_partition_rows(
     )
 
 
-def _source_file_filter(source_file: str | None) -> tuple[str, list[str]]:
+def _source_file_filter(source_file: str | None) -> _SourceFileClause:
     """선택적 source_file 조건과 대응하는 바인딩 값을 함께 반환한다."""
 
     if source_file is None:
-        return "", []
-    return "AND source_file_name = ?", [source_file]
+        return _SourceFileClause(clause="", params=[])
+    return _SourceFileClause(clause="AND source_file_name = ?", params=[source_file])
 
 
 def _partition_context(

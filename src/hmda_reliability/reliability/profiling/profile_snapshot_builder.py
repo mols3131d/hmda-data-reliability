@@ -76,7 +76,13 @@ def calculate_schema_hash(
     connection: duckdb.DuckDBPyConnection,
     table_name: str,
 ) -> str:
-    """이름순 정렬된 컬럼명과 타입을 해시화한다; 행 데이터는 포함되지 않는다."""
+    """이름순 정렬된 컬럼명과 타입을 해시화한다; 행 데이터는 포함되지 않는다.
+
+    불변식:
+    - 원본 순서와 무관하게 항상 컬럼명 기준 오름차순으로 정렬하여
+      결정론적(deterministic) 해시 문자열(`sha256:...`)을 생성한다.
+    - 데이터 행 변경에는 영향받지 않으며 오직 스키마 메타데이터에만 바인딩된다.
+    """
 
     rows = connection.execute(f"DESCRIBE {qualify_table_name(table_name)}").fetchall()
     schema = sorted(

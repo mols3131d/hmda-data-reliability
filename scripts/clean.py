@@ -296,26 +296,40 @@ def discover_repo_targets(repo_root: Path = REPO_ROOT) -> tuple[CleanupCandidate
 def _deduplicate_candidates(
     candidates: Sequence[CleanupCandidate],
 ) -> tuple[CleanupCandidate, ...]:
-    """Keep the broadest matching target once within each cleanup scope."""
-    unique: dict[tuple[TargetScope, Path], CleanupCandidate] = {}
+    """Keep the broadest matching target once within each cleanup scope.
+
+    When an ancestor directory is already selected for deletion (e.g., `dbt/target`),
+    sub-files or child caches inside it (e.g., `dbt/target/manifest.json`) are subsumed
+    and eliminated from the explicit candidate list to prevent duplicate deletion errors
+    and redundant size calculation.
+    """
+    unique_by_scope_and_path: dict[tuple[TargetScope, Path], CleanupCandidate] = {}
     for candidate in candidates:
-        unique.setdefault((candidate.scope, candidate.path), candidate)
+        unique_by_scope_and_path.setdefault(
+            (candidate.scope, candidate.path), candidate
+        )
+
+    # Sort by ascending path depth so shallower directories are evaluated first.
+    sorted_unique_candidates = sorted(
+        unique_by_scope_and_path.values(),
+        key=lambda item: (item.scope, len(item.path.parts), item.path.as_posix()),
+    )
 
     selected: list[CleanupCandidate] = []
-    for candidate in sorted(
-        unique.values(),
-        key=lambda item: (item.scope, len(item.path.parts), item.path.as_posix()),
-    ):
-        if any(
+    for candidate in sorted_unique_candidates:
+        # Check if candidate is already subsumed by an existing selected parent.
+        is_already_covered = any(
             candidate.scope == selected_item.scope
             and (
                 candidate.path == selected_item.path
                 or candidate.path.is_relative_to(selected_item.path)
             )
             for selected_item in selected
-        ):
+        )
+        if is_already_covered:
             continue
         selected.append(candidate)
+
     return tuple(sorted(selected, key=lambda item: item.path.as_posix()))
 
 
@@ -399,20 +413,33 @@ def _is_protected_relative(relative: Path) -> bool:
     )
 
 
-def _contains_tracked_path(
+def _tracked_index_contains_path(
     candidate: CleanupCandidate,
     repo_root: Path,
     tracked_index: TrackedIndex,
 ) -> bool:
-    relative = PurePosixPath(candidate.path.relative_to(repo_root).as_posix())
+    """Check if a candidate directory or file contains or matches any Git-tracked path.
+
+    Prevents accidental deletion of tracked source files even if they happen to match
+    allow-listed artifact names or reside inside generated folders.
+    """
+    candidate_rel_posix = PurePosixPath(
+        candidate.path.relative_to(repo_root).as_posix()
+    )
     return any(
-        tracked == relative or relative in tracked.parents
-        for tracked in tracked_index.paths
+        tracked_path == candidate_rel_posix
+        or candidate_rel_posix in tracked_path.parents
+        for tracked_path in tracked_index.paths
     )
 
 
 def _symlink_ancestor_reason(path: Path, root: Path) -> str | None:
-    """Reject symlink components between a trusted root and a candidate."""
+    """Reject candidates where any component between root and target is a symlink.
+
+    Defense against symlink manipulation or arbitrary directory traversal:
+    every intermediate directory segment from `root` down to `path` is
+    inspected via `lstat` to guarantee no component is a symbolic link.
+    """
     try:
         relative = path.relative_to(root)
     except ValueError:
@@ -440,7 +467,18 @@ def _safety_reason(
     tracked_index: TrackedIndex,
     allow_unowned_tmp: bool = False,
 ) -> str | None:
-    """Return why a candidate must be skipped, or None when it is safe."""
+    """Return why a candidate must be skipped, or None when it is safe to delete.
+
+    Enforces strict safety invariants:
+    1. The candidate path must physically exist and be accessible (lstat).
+    2. Symlinks are never deleted directly, nor through symlinked ancestors.
+    3. The candidate must be a regular file or directory (no sockets, fifos).
+    4. Must resolve inside the appropriate trusted root (repo_root or tmp_root).
+    5. In repo scope: must not be in protected paths list, must have verified git
+       state, and must not contain or match any Git-tracked files.
+    6. In tmp scope: must not contain repo_root and must possess a valid marker
+       pointing to repo_root (unless explicitly bypassed via allow_unowned_tmp).
+    """
     try:
         path_stat = candidate.path.lstat()
     except FileNotFoundError:
@@ -471,7 +509,7 @@ def _safety_reason(
             return "보호된 repository 경로입니다"
         if not tracked_index.verified:
             return tracked_index.error or "Git tracked state를 확인할 수 없습니다"
-        if _contains_tracked_path(candidate, repo_root, tracked_index):
+        if _tracked_index_contains_path(candidate, repo_root, tracked_index):
             return "Git tracked path를 포함하므로 삭제하지 않습니다"
     else:
         if resolved == tmp_root or not resolved.is_relative_to(tmp_root):

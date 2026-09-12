@@ -151,7 +151,14 @@ def build_dbt_loan_analytics() -> None:
     },
 )
 def _hmda_data_plane() -> None:
-    """단일 수동 실행, 비재시도 raw-to-analytics 워크플로우를 정의한다."""
+    """단일 수동 실행, 비재시도 raw-to-analytics 워크플로우를 정의한다.
+
+    Execution Pipeline & Gate Boundary:
+        - `load_raw_hmda_loans`: 원천 데이터를 Bronze로 멱등 적재
+        - `evaluate_quality_gate`: 전체 Bronze 품질 게이트 검증. 실패 시 차단
+        - `build_dbt_loan_analytics`: 통과 시 dbt 실행 및 candidate 승격
+        - 의존성 흐름: `raw_task >> gate_task >> analytics_task`
+    """
 
     raw_task = load_raw_hmda_loans()
     gate_task = evaluate_quality_gate_task()

@@ -61,11 +61,13 @@ class InvocationEvidenceStore:
         """원자적 임시 링크(hard-link)를 사용하여 정제된 호출 레코드를 기록한다.
 
         부분 쓰기(partial write)를 방지하고 생성 전용 불변성을 보장하기 위해
-        숨김 임시 파일에 기록한 뒤 대상 경로로 하드 링크한다.
+        동일 파일시스템의 숨김 임시 파일에 fsync한 뒤 대상 경로로 하드 링크한다.
+        하드 링크 성공 후 상위 디렉토리를 fsync하여 메타데이터 영속성을 확정한다.
 
         바이트 길이가 `max_record_bytes`를 초과하면 `InvocationEvidenceSizeError`,
         레코드 파일이 이미 존재하면 `InvocationEvidenceExistsError`,
-        기타 I/O 실패 시 `InvocationEvidenceWriteError`를 발생시킨다.
+        디렉토리 생성/쓰기/링크/fsync 실패 시 `InvocationEvidenceWriteError` 발생.
+        임시 파일은 성공/실패 여부와 무관하게 정리된다.
         """
         payload = canonical_json_bytes(record.model_dump(mode="json")) + b"\n"
         if len(payload) > max_record_bytes:
