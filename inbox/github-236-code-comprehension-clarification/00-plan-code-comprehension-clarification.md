@@ -56,7 +56,7 @@ tags:
 1. **임의 수정 금지 및 작업 격리**:
    - 발견된 문제를 현재 리팩터링 작업에 섞어서 임의로 수정하지 않는다. (동작 보존 및 회귀 방지 원칙 준수)
 1. **인박스 전용 아티팩트에 기록**:
-   - 발견 즉시 [inbox/2026-09-12-refactor-code-comprehension-clarification/01-note-out-of-scope-issues.md](inbox/2026-09-12-refactor-code-comprehension-clarification/01-note-out-of-scope-issues.md)에 체계적으로 기록한다.
+   - 발견 즉시 [01-note-out-of-scope-issues.md](01-note-out-of-scope-issues.md)에 체계적으로 기록한다.
 1. **기록 필수 항목**:
    - **발견 위치**: 대상 파일 및 코드 라인 링크
    - **이슈 분류**: 잠재적 버그(Bug), 데이터 무결성/안전성 위험(Safety), 아키텍처/의존성 부채(Architecture Debt), 계약/스펙 불일치(Contract Mismatch)
@@ -98,7 +98,7 @@ flowchart LR
 
 ### Domain 1: `data_platform`
 
-- [x] **조사**: [src/hmda_reliability/data_platform/](src/hmda_reliability/data_platform/) 및 [tests/data_platform/](tests/data_platform/) 전수 조사
+- [x] **조사**: [src/hmda_reliability/data_platform/](../../src/hmda_reliability/data_platform/) 및 [tests/data_platform/](../../tests/data_platform/) 전수 조사
   - [x] `duckdb.py`: 커넥션 매니저 및 뮤테이션 락 획득/해제 제어 흐름 진단
   - [x] `sql.py`: SQL 식별자 및 리터럴 quoting 불변식 계약 진단
   - [x] `artifacts.py`: 프로젝션 락 및 파일 해시 프로젝션 계산 진단
@@ -108,7 +108,7 @@ flowchart LR
 
 ### Domain 2: `hmda_data`
 
-- [x] **조사**: [src/hmda_reliability/hmda_data/](src/hmda_reliability/hmda_data/) 및 [tests/hmda_data/](tests/hmda_data/) 전수 조사
+- [x] **조사**: [src/hmda_reliability/hmda_data/](../../src/hmda_reliability/hmda_data/) 및 [tests/hmda_data/](../../tests/hmda_data/) 전수 조사
   - [x] `ingestion/`: `full_load.py`, `partition.py`, `identity.py`, `discovery.py` 원천 적재 제어 흐름 및 중복 방지 계약 진단
   - [x] `synthetic/`: `cases.py` (null_spike, row_count_drop, schema_drift), `_source.py`, `_writer.py` 쿼리 조립 및 파라미터 매핑 진단
   - [x] `eda/`: `analysis.py`, `explorer.py` 탐색 분석 로직 및 데이터 검증 진단
@@ -118,7 +118,7 @@ flowchart LR
 
 ### Domain 3: `orchestration`
 
-- [x] **조사**: [src/hmda_reliability/orchestration/](src/hmda_reliability/orchestration/) 및 [tests/orchestration/](tests/orchestration/) 전수 조사
+- [x] **조사**: [src/hmda_reliability/orchestration/](../../src/hmda_reliability/orchestration/) 및 [tests/orchestration/](../../tests/orchestration/) 전수 조사
   - [x] `config.py`: 환경 변수 및 설정 해석 로직 진단
   - [x] `dags/hmda_data_plane.py`: Airflow DAG 태스크 의존성 및 게이트 분기 진단
   - [x] `tests/orchestration/`: DAG 무결성 및 설정 테스트 진단
@@ -138,7 +138,7 @@ flowchart LR
 
 ### Domain 4: `data_operations`
 
-- [x] **조사**: [src/hmda_reliability/data_operations/](src/hmda_reliability/data_operations/) 및 [tests/data_operations/](tests/data_operations/) 전수 조사
+- [x] **조사**: [src/hmda_reliability/data_operations/](../../src/hmda_reliability/data_operations/) 및 [tests/data_operations/](../../tests/data_operations/) 전수 조사
   - [x] `runner.py`: `run_dbt_build`, `promote_dbt_artifacts`의 다단계 파일 교체/롤백 상태 추적 진단
   - [x] `quality_gate.py`: 게이트 판정 및 차단 로직 진단
   - [x] `incident_lifecycle.py`: 프로파일 비교, 감지, 영향 분석, 초안 조립 평탄화 및 락 중첩 진단
@@ -148,7 +148,7 @@ flowchart LR
 
 ### Domain 5: `reliability`
 
-- [x] **조사**: [src/hmda_reliability/reliability/](src/hmda_reliability/reliability/) 및 [tests/reliability/](tests/reliability/) 전수 조사
+- [x] **조사**: [src/hmda_reliability/reliability/](../../src/hmda_reliability/reliability/) 및 [tests/reliability/](../../tests/reliability/) 전수 조사
   - [x] `contracts/`: Pydantic 모델 불변식 및 상태 바인딩 계약 진단
   - [x] `profiling/`: `profile_snapshot_builder.py`, `table_state_builder.py` 스키마 해시 및 메트릭 집계 진단
   - [x] `detection/`: `detector.py`, `thresholds.py` 인시던트 감지 규칙 진단
@@ -162,7 +162,7 @@ flowchart LR
 
 ### Domain 6: `runtime_ai`
 
-- [x] **조사**: [src/hmda_reliability/runtime_ai/](src/hmda_reliability/runtime_ai/) 및 [tests/runtime_ai/](tests/runtime_ai/) 전수 조사
+- [x] **조사**: [src/hmda_reliability/runtime_ai/](../../src/hmda_reliability/runtime_ai/) 및 [tests/runtime_ai/](../../tests/runtime_ai/) 전수 조사
   - [x] `provider.py`: OpenAI 호환 프로바이더 어댑터, 타임아웃, 예외 매핑 진단
   - [x] `contracts.py`, `settings.py`: 메시지 및 응답 규격 진단
   - [x] `tests/runtime_ai/`: 모의 프로바이더 및 실패 복원 테스트 진단
@@ -171,7 +171,7 @@ flowchart LR
 
 ### Domain 7: `review_ai`
 
-- [x] **조사**: [src/hmda_reliability/review_ai/](src/hmda_reliability/review_ai/) 및 [tests/review_ai/](tests/review_ai/) 전수 조사
+- [x] **조사**: [src/hmda_reliability/review_ai/](../../src/hmda_reliability/review_ai/) 및 [tests/review_ai/](../../tests/review_ai/) 전수 조사
   - [x] `validator.py`: 3대 결정론적 무결성 검증 규칙 진단
   - [x] `prompt.py`: 프롬프트 렌더링 및 바이트 상한 검증 진단
   - [x] `store.py`: 인보케이션 증적 파일 영속화 및 검증 진단
@@ -182,7 +182,7 @@ flowchart LR
 
 ### Domain 8: `scripts` & Shared Utilities
 
-- [x] **조사**: [scripts/](scripts/) 및 [tests/scripts/](tests/scripts/) 전수 조사
+- [x] **조사**: [scripts/](../../scripts/) 및 [tests/scripts/](../../tests/scripts/) 전수 조사
   - [x] `rulesync.py`: 브리지 파일 생성 및 검증 로직 진단
   - [x] `agent_assets.py`, `generate_docs_indexes.py`: 유틸리티 스크립트 가독성 진단
   - [x] `logger.py`: 공통 로거 포맷 및 컨텍스트 바인딩 진단
@@ -192,8 +192,6 @@ flowchart LR
 
 ---
 
-## Next Steps
+## Completion
 
-1. Domain 1 (`data_platform`)의 [src/hmda_reliability/data_platform/](src/hmda_reliability/data_platform/) 및 [tests/data_platform/](tests/data_platform/) 파일 전수 조사 착수
-1. 발견된 이해 병목 보고 및 개별 파일별 작업(리팩터링/명확화) 계획 확정 후 순차 수정
-1. 도메인 단위 테스트 및 전반 검토 수행 후 Domain 2 (`hmda_data`)로 전진
+Domain 1~8의 조사, 작업, 검증을 완료했다. 범위 외 이슈는 [01-note-out-of-scope-issues.md](01-note-out-of-scope-issues.md)에서 별도 추적한다.
