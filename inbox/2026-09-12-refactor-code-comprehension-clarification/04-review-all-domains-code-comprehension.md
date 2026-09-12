@@ -11,7 +11,7 @@ tags:
 # All-Domain Code Comprehension Refactor Review
 
 > [!IMPORTANT]
-> **Pass** — 실행 코드와 도메인 경계는 승인 가능한 상태이며 회귀는 확인되지 않았다. inbox 문서의 상대 링크 오류(F1)가 해결되어 코드 및 핵심 검증 기준을 충족한다. 계획 문서의 stale `Next Steps`(F2)는 후속 작업으로 정리 가능하다.
+> **Revise** — 실행 코드와 도메인 경계는 승인 가능한 상태이며 회귀는 확인되지 않았다. 다만 이번 작업에서 추가한 inbox 문서의 상대 링크 오류를 수정하고, 계획 문서의 stale `Next Steps`를 정리해야 작업 artifact 제약까지 충족된다.
 
 - **Target** — [refactor/code-comprehension-clarification](../../)
 - **Revision** — `6f0db10` against baseline `59a0ee4`
@@ -28,13 +28,13 @@ tags:
 | Reliability | Pass | deterministic detection, impact, remediation, recovery 계약 유지 |
 | Runtime AI | Pass | provider-neutral settings, retry, error normalization, output limit 계약 유지 |
 | Review AI | Pass | advisory review, deterministic validation, provenance 경계 유지 |
-| Scripts and Shared | Pass | 실행 동작 및 새 review/issue artifact의 Markdown 링크 검증 통과 |
+| Scripts and Shared | Revise | 실행 동작은 통과했으나 새 review/issue artifact의 Markdown 링크 제약 미충족 |
 
 ## Findings
 
 | ID | Severity | Finding | Action |
 | --- | --- | --- | --- |
-| F1 | 🟢 **Resolved** | 새 out-of-scope issue 문서의 source·test 링크가 문서 위치 기준으로 해석되지 않음 | 링크를 `../../src/...`, `../../tests/...`, `../../scripts/...` 형태로 수정 완료 |
+| F1 | 🟠 **Major** | 새 out-of-scope issue 문서의 source·test 링크가 문서 위치 기준으로 해석되지 않음 | 링크를 `../../src/...`, `../../tests/...`, `../../scripts/...` 형태로 수정하고 대상 파일 검증 |
 | F2 | 🟡 **Minor** | 계획 문서의 모든 domain 작업은 완료로 표시됐지만 `Next Steps`에는 초기 작업이 남아 있음 | 완료 상태에 맞게 stale `Next Steps`를 제거하거나 현재 후속 조치로 갱신 |
 | F3 | 🔵 **Note** | lifecycle의 동일 shared artifact lock 중첩과 lock failure normalization은 후속 검토 가치가 있음 | 별도 correctness/safety 변경 단위에서 focused test와 contract 검토 |
 
@@ -127,7 +127,7 @@ lifecycle 분석 중 shared artifact lock을 획득한 뒤 `_dbt_projection_id`�
 | ✅ `Pass` | `git diff --check` | 통과 |
 | ✅ `Pass` | Ruff lint와 format check | 통과 |
 | ✅ `Pass` | Tombi TOML lint | 통과 |
-| ✅ `Pass` | `rumdl check` (F1 대상 문서) | `01-note-out-of-scope-issues.md` 상대 링크 수정 후 No issues 확인 |
+| ❌ `Fail` | `rumdl check .` | 기존 inbox 오류와 이번 작업 문서의 `MD057` 링크 오류 확인 |
 | ✅ `Pass` | 동작 회귀 후보 focused path | lifecycle, artifacts, runtime provider, schema recovery 테스트 통과 |
 
 ## Risks and Limits
