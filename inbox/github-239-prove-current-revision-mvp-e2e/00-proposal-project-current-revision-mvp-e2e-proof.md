@@ -15,7 +15,7 @@ description: "Proposes a same-revision end-to-end proof that closes the MVP acce
 
 현재 repository에는 deterministic recovery E2E, OpenSpec/CI admission, 실제 Airflow DAGRun 등 중요한 proof가 이미 존재한다. 그러나 [`docs/mvp.md`](../../docs/mvp.md)가 요구하는 완료 조건은 각 capability가 서로 다른 시점에 한 번씩 성공했다는 사실이 아니다. **하나의 current revision에서 Data Lake, Reliability, bounded Agentic review, live model invocation, Safety와 Reproducibility가 함께 성립해야 한다.**
 
-따라서 지금 필요한 것은 기능 수를 늘리는 일이 아니라 현재 구현을 하나의 시스템으로 검증하고, MVP를 실제로 닫을 수 있는지 판정하는 일이다.
+따라서 지금 필요한 것은 기능 수를 늘리는 일이 아니라 현재 구현을 하나의 시스템으로 검증하고, MVP를 실제로 닫을 수 있는지 판정하는 일이다. 이 proof를 건너뛰면 서로 다른 revision의 성공 기록을 조합해 현재 MVP가 완료됐다고 추정하게 된다. 그 상태에서 closeout이나 다음 capability 개발을 시작하면 이후 발견되는 실패가 regression인지 원래 남아 있던 gap인지 구분하기 어려워진다.
 
 ## Why This Proof Is Necessary
 
