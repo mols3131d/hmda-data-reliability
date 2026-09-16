@@ -108,7 +108,7 @@ Acceptance evidence는 **exact proof revision SHA**에만 유효하다.
 1. Final full proof는 그 시점의 exact branch HEAD에서 실행한다.
 1. 실행 후 tracked change가 없으면 그 HEAD를 proof revision으로 사용한다.
 1. 결과와 evidence pointer는 proof SHA를 바꾸지 않는 PR metadata 또는 runtime evidence에 기록할 수 있다.
-1. 실행 후 implementation이나 repository artifact를 다시 수정하면 새 revision으로 보고 영향을 받는 proof를 다시 실행한다.
+1. 실행 후 implementation이나 repository artifact를 다시 수정하면 새 revision으로 본다. 영향받는 proof만 재실행하는 것은 중간 진단에 한정하며, final acceptance는 baseline, focused rerun과 live invocation을 포함한 여섯 acceptance 모두의 근거를 최종 SHA에서 다시 확보한다.
 
 이 규칙은 결과를 기록하기 위한 commit 때문에 실제 검증한 SHA와 최종 HEAD가 어긋나는 문제를 막는다.
 

@@ -25,17 +25,17 @@ Final proof는 하나의 exact Git revision에서 수행한다.
 
 ## Proof Record
 
-Final proof를 시작하기 직전에 채운다.
+Final proof 시작 시 ignored `.local/pr239/proofs/<SHA>/record.json`에 아래 field를 기록한다. 아래 표는 기록 schema이며 실행 결과를 tracked 문서에 다시 쓰지 않는다. PR metadata에 exact proof SHA와 결과 요약을 연결한다.
 
 | Field | Value |
 | --- | --- |
 | Branch | `mols/test/prove-current-revision-mvp-e2e` |
-| Proof revision | `PENDING` |
+| Proof revision | `RUNTIME RECORD` |
 | Base revision | `main@7497a57bbd2ed03ba6f887611bd32bda3b7e9520` |
-| Started at | `PENDING` |
-| Environment | `PENDING` |
-| Evidence root | `PENDING` |
-| Final result | `PENDING` |
+| Started at | `RUNTIME RECORD` |
+| Environment | `RUNTIME RECORD` |
+| Evidence root | `RUNTIME RECORD` |
+| Final result | `RUNTIME RECORD` |
 
 ## Preflight
 
@@ -43,7 +43,7 @@ Proof revision을 고정하기 전에 실행 준비를 끝낸다.
 
 - [ ] Proposal과 이 checklist를 포함한 필요한 tracked 준비 변경이 모두 커밋됐다.
 - [ ] `git status --short`에 의도하지 않은 tracked change가 없다.
-- [ ] `git rev-parse HEAD`의 결과를 `Proof revision`에 기록했다.
+- [ ] `git rev-parse HEAD`의 결과를 runtime record의 `Proof revision`에 기록했다.
 - [ ] repository environment와 dependency가 현재 revision 기준으로 준비됐다.
 - [ ] live invocation에 필요한 `HMDA_AGENTIC_REVIEW_*` 설정과 artifact root가 준비됐다.
 - [ ] provider credential을 evidence에 기록하지 않는 경계를 확인했다.
@@ -69,12 +69,12 @@ Baseline이 깨져 있으면 live provider invocation으로 이를 보완하지 
 
 | Acceptance | Primary execution | Required evidence | Result |
 | --- | --- | --- | --- |
-| Data Lake proof | deterministic recovery E2E + actual Airflow DAGRun | Source/Bronze state, real dbt staging/mart result, Airflow task/Asset evidence | `PENDING` |
-| Reliability proof | deterministic recovery E2E | incident, proposal/approval binding, recovery, re-validation, replay result | `PENDING` |
-| Agentic contract proof | Review AI + Runtime AI deterministic suites | structured input/output contract, evidence binding, validation/evaluation, provider-neutral runtime behavior | `PENDING` |
-| Live Agentic proof | opt-in live review script | actual provider invocation, project revision, prompt/model/config identity, evidence refs, output, latency, available usage | `PENDING` |
-| Safety proof | deterministic recovery safety cases + Review AI authority guards | pre-approval zero mutation, advisory-only AI, rejected/unavailable/invalid AI result grants no recovery authority | `PENDING` |
-| Reproducibility proof | focused deterministic rerun | semantically equivalent deterministic result and evidence chain on the same revision; live invocation evidence preserved | `PENDING` |
+| Data Lake proof | deterministic recovery E2E + actual Airflow DAGRun | Source/Bronze state, real dbt staging/mart result, Airflow task/Asset evidence | `RUNTIME RECORD` |
+| Reliability proof | deterministic recovery E2E | incident, proposal/approval binding, recovery, re-validation, replay result | `RUNTIME RECORD` |
+| Agentic contract proof | Review AI + Runtime AI deterministic suites | structured input/output contract, evidence binding, validation/evaluation, provider-neutral runtime behavior | `RUNTIME RECORD` |
+| Live Agentic proof | opt-in live review script | actual provider invocation, project revision, prompt/model/config identity, evidence refs, output, latency, available usage | `RUNTIME RECORD` |
+| Safety proof | deterministic recovery safety cases + Review AI authority guards | pre-approval zero mutation, advisory-only AI, rejected/unavailable/invalid AI result grants no recovery authority | `RUNTIME RECORD` |
+| Reproducibility proof | focused deterministic rerun | semantically equivalent deterministic result and evidence chain on the same revision; live invocation evidence preserved | `RUNTIME RECORD` |
 
 ## Data Lake And Airflow Proof
 
@@ -152,12 +152,12 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 - [ ] `HMDA_AGENTIC_REVIEW_LIVE=true`다.
 - [ ] base URL, API key, model이 명시돼 있다.
 - [ ] tracked worktree가 clean하다.
-- [ ] `HMDA_AGENTIC_REVIEW_PROJECT_REVISION`이 `auto`라면 현재 Git HEAD가 proof revision과 일치한다.
+- [ ] `HMDA_AGENTIC_REVIEW_PROJECT_REVISION`이 `auto`이면 Git HEAD를 사용한다. Explicit value를 사용하는 경우에도 full SHA가 proof revision 및 현재 HEAD와 일치한다.
 
 실행 뒤 확인한다.
 
 - [ ] 실제 provider-started invocation이 발생했다.
-- [ ] 결과가 `accepted` 또는 contract가 정의한 typed failure로 남았다.
+- [ ] 결과가 `accepted`이고 structured output, accepted validation과 durable invocation evidence가 일치한다. Typed failure는 진단 근거로 보존하지만 live `PASS`를 충족하지 않는다.
 - [ ] invocation evidence에 model/config, prompt identity, project revision, evidence refs, output, latency와 제공 가능한 usage가 남았다.
 - [ ] API key 또는 credential이 evidence에 저장되지 않았다.
 - [ ] live invocation이 approval, recovery 또는 data mutation을 수행하지 않았다.
@@ -226,21 +226,21 @@ Result: FAIL | BLOCKED
 
 ## Final Acceptance
 
-Final proof 종료 시 아래 표를 채운다.
+Final proof 종료 시 아래 acceptance별 result와 evidence pointer를 runtime record 및 PR metadata에 기록한다. 이 tracked 표는 실행 schema이며 완료 상태가 아니다.
 
 | Acceptance | Result | Evidence pointer |
 | --- | --- | --- |
-| Data Lake proof | `PENDING` | `PENDING` |
-| Reliability proof | `PENDING` | `PENDING` |
-| Agentic contract proof | `PENDING` | `PENDING` |
-| Live Agentic proof | `PENDING` | `PENDING` |
-| Safety proof | `PENDING` | `PENDING` |
-| Reproducibility proof | `PENDING` | `PENDING` |
+| Data Lake proof | `RUNTIME RECORD` | `RUNTIME RECORD` |
+| Reliability proof | `RUNTIME RECORD` | `RUNTIME RECORD` |
+| Agentic contract proof | `RUNTIME RECORD` | `RUNTIME RECORD` |
+| Live Agentic proof | `RUNTIME RECORD` | `RUNTIME RECORD` |
+| Safety proof | `RUNTIME RECORD` | `RUNTIME RECORD` |
+| Reproducibility proof | `RUNTIME RECORD` | `RUNTIME RECORD` |
 
 - [ ] 모든 result가 `PASS`다.
 - [ ] 각 evidence pointer가 exact proof revision을 설명한다.
 - [ ] Final proof 이후 tracked implementation 또는 repository artifact가 바뀌지 않았다.
-- [ ] 변경이 있었다면 새 revision에서 영향을 받는 proof를 다시 실행했다.
+- [ ] 변경이 있었다면 최종 SHA에서 baseline, focused rerun, live invocation을 포함한 여섯 acceptance 모두의 근거를 다시 확보했다. 영향받는 proof만의 재실행은 중간 진단이며 final acceptance를 대신하지 않는다.
 - [ ] PR metadata의 proof SHA와 validation 상태가 실제 final revision과 일치한다.
 
 하나라도 `FAIL` 또는 `BLOCKED`이면 MVP completion으로 판정하지 않는다.
