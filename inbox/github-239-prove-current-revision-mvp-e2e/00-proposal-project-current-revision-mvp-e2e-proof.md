@@ -77,7 +77,7 @@ Current-revision proof는 최소한 다음을 확인해야 한다.
 - LLM output만으로 recovery 또는 data mutation이 실행되지 않는다.
 - Provider가 unavailable이어도 deterministic recovery authority는 달라지지 않는다.
 - Malformed 또는 policy-invalid output은 deterministic validation을 우회하지 못한다.
-- Approval은 다른 proposal이나 revision에 재사용되지 않는다.
+- Approval은 다른 proposal에 재사용되지 않는다.
 
 ### Delaying Increases Proof Cost
 
