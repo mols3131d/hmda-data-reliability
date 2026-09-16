@@ -401,6 +401,34 @@ def test_dependency_changes_request_runtime_boundary_smoke(
     assert out["runtime_smoke"] == "true"
     assert out["full_unit"] == "true"
     assert out["full_type"] == "true"
+    assert out["tach"] == "true"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "tach.toml",
+        "src/hmda_reliability/__init__.py",
+        "src/hmda_reliability/reliability/evaluation/volume_drop.py",
+    ],
+)
+def test_tach_boundary_changes_request_architecture_check(path: str) -> None:
+    """Tach config와 모든 source-depth의 Python 변경은 boundary check를 선택한다."""
+    out = run_classifier([path])
+
+    assert out["tach"] == "true"
+
+
+@pytest.mark.unit
+def test_tach_only_change_runs_dependency_setup_without_python_suite() -> None:
+    """tach.toml 단독 변경도 dependency setup과 Tach check를 활성화한다."""
+    out = run_classifier(["tach.toml"])
+
+    assert out["tach"] == "true"
+    assert out["toml"] == "true"
+    assert out["python"] == "false"
+    assert out["tests"] == "false"
 
 
 @pytest.mark.unit

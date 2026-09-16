@@ -119,7 +119,7 @@ jobs:
           fi
 
       - name: Set up Python
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true' || steps.scope.outputs.tach == 'true'
         uses: actions/setup-python@v6.2.0
         with:
           python-version-file: ".python-version"
@@ -160,7 +160,7 @@ jobs:
           fi
 
       - name: Set up uv
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.tach == 'true'
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.11.32"
@@ -174,8 +174,12 @@ jobs:
         run: uv lock --check
 
       - name: Sync dependencies
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.tach == 'true'
         run: uv sync --locked
+
+      - name: Check Python dependency boundaries
+        if: steps.scope.outputs.tach == 'true'
+        run: uv run --no-sync tach check
 
       - name: Verify package build
         if: steps.scope.outputs.python == 'true'

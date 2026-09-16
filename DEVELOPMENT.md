@@ -17,6 +17,7 @@
 | Purpose | Command |
 | --- | --- |
 | Docs index | `uv run python scripts/generate_docs_indexes.py` |
+| Tach dependency check | `uv run --no-sync tach check` |
 | Repository setup | `uv run --no-sync python scripts/bootstrap.py setup` |
 | Session bootstrap | `uv run --no-sync python scripts/bootstrap.py session` |
 | Tooling update | `uv run --no-sync python scripts/bootstrap.py update` |
@@ -36,7 +37,7 @@
 | --- | --- |
 | Runtime | `Python>=3.13`, `Node.js` |
 | Package manager | `uv`, `npm` |
-| Repository tooling | `OpenSpec`, `Rulesync`, `Skills CLI`, `Lefthook`, `Ruff`, `rumdl`, `Biome`, `Tombi` |
+| Repository tooling | `OpenSpec`, `Rulesync`, `Skills CLI`, `Lefthook`, `Ruff`, `rumdl`, `Biome`, `Tombi`, `Tach` |
 | Data platform | `DuckDB`, `dbt` |
 | Orchestration | `Apache Airflow 3.3.0` |
 | Analysis | `Polars` |
