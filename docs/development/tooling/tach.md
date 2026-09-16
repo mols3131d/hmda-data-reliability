@@ -54,7 +54,7 @@ Policy와 executable configuration이 충돌하면 `tach.toml`을 임의로 완�
 
 Tach의 source root는 repository의 Python package layout과 일치해야 하며, `src/hmda_reliability` 아래에서 dependency boundary 대상으로 정한 source가 implicit root 처리나 `unchecked` 설정 때문에 조용히 빠져서는 안 된다.
 
-Top-level domain package뿐 아니라 package root의 Python file도 coverage 결정에 포함한다. `root_module`은 permissive default에 맡기지 않고 repository layout에 맞는 동작을 명시적으로 선택한다.
+Top-level Python package뿐 아니라 package root의 Python file도 coverage 결정에 포함한다. `root_module`은 permissive default에 맡기지 않고 repository layout에 맞는 동작을 명시적으로 선택한다.
 
 새 top-level package를 추가하거나 package-root Python surface를 변경하면 Tach coverage도 함께 검토한다. Package ownership 자체는 [`DEVELOPMENT.md`](../../../DEVELOPMENT.md)와 domain guide가 계속 소유한다.
 

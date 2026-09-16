@@ -15,7 +15,7 @@ Tach를 개발 도구로 도입해 `src/hmda_reliability`의 Python dependency b
 ## Scope
 
 - Tach를 dev dependency로 추가하고 `uv.lock`은 로컬 `uv` workflow로 갱신한다.
-- `tach.toml`에서 `src` source root와 현재 top-level domain package를 module boundary로 정의한다. Package root의 Python surface도 검사 범위에서 빠지지 않게 하고 coverage에 영향을 주는 Tach default를 명시적으로 결정한다.
+- `tach.toml`에서 `src` source root와 현재 top-level Python package를 module boundary로 정의한다. Package root의 Python surface도 검사 범위에서 빠지지 않게 하고 coverage에 영향을 주는 Tach default를 명시적으로 결정한다.
 - [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md)와 domain guide에 이미 명시된 dependency constraint를 Tach rule로 보존한다. 현재 import graph는 검증 대상과 구현 근거로 사용하되 새로운 architecture truth로 승격하지 않는다.
   - `review_ai`는 `reliability`, `runtime_ai`를 사용할 수 있다.
   - `reliability`는 `review_ai` 또는 `runtime_ai`에 의존하지 않는다.
@@ -39,7 +39,7 @@ Tach를 개발 도구로 도입해 `src/hmda_reliability`의 Python dependency b
 ## Implementation Direction
 
 1. 로컬에서 `uv add --dev tach`로 dependency와 lockfile을 갱신한다. 준비 시점 기준 최신 upstream release는 `v0.35.1`(2026-09-14)이지만, 구현 시점의 current release와 Python 3.13 호환성을 다시 확인한다.
-1. `src/hmda_reliability`의 top-level package와 package-root Python file을 확인하고, 모든 in-scope source가 Tach 검사에서 빠지지 않도록 module coverage와 `root_module` 동작을 결정한다.
+1. `src/hmda_reliability`의 top-level Python package와 package-root Python file을 확인하고, 모든 in-scope source가 Tach 검사에서 빠지지 않도록 module coverage와 `root_module` 동작을 결정한다.
 1. `docs/ARCHITECTURE.md`, `docs/domains/**`와 applicable OpenSpec Spec에서 실제 dependency constraint를 추출하고 현재 import graph와 대조한다. 현재 graph에만 존재하는 edge는 자동으로 permission으로 채택하지 않는다.
 1. `tach init` 또는 공식 configuration contract를 참고해 `tach.toml`을 만들고, 생성 결과를 그대로 수용하지 말고 repository boundary에 맞춰 정리한다. `ignore_type_checking_imports = true`를 명시하고 기존 AST dependency guard를 유지한다.
 1. Canonical contract가 금지하는 dependency 방향을 Tach가 직접 거부하도록 최소 rule을 구성한다. 이번 PR에서는 full graph allowlist나 global cycle prohibition을 새 policy로 도입하지 않는다.
