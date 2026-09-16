@@ -28,6 +28,7 @@
         "mols-mermaid-chart",
         "mols-mermaid-diagram",
         "mols-openspec-customize",
+        "mols-tach",
         "mols-text-optimizer"
       ],
       "transport": "github",

@@ -3,11 +3,11 @@
   "sources": {
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
-      "resolvedRef": "6daae9c25d7f4a33ec3c0abcfb0fa259f559b720",
-      "resolvedAt": "2026-09-12T10:23:56.694Z",
+      "resolvedRef": "e2861bf53d57aca11de1b6629ab01ae56c6bedff",
+      "resolvedAt": "2026-09-16T16:50:07.064Z",
       "skills": {
         "mols-agent-asset-find": {
-          "integrity": "sha256-6ace67d927da8eedcdd359593ddcbd7a80d97a2fa9cab42288f634116382aef6"
+          "integrity": "sha256-a6155c8c8ebb1873509a8670fe7350f0df80291d072a2392fd942da1007a9ff9"
         },
         "mols-agent-asset": {
           "integrity": "sha256-ba10320d7fadba56e9619c4336d3d6adb57c52fcd2f2a45b8347ffe5d8b84d59"
@@ -25,7 +25,7 @@
           "integrity": "sha256-98d64024af13225b0b1764712e11cb66233d461062c31dabb65fc26b50366073"
         },
         "mols-coding-context-python": {
-          "integrity": "sha256-e2798e4258fa49212fffb3df22e12879e8b4e9644ad25736ec07f650818cbec4"
+          "integrity": "sha256-177924aaeeff96a304ceae61e3e59ead1a2d31711d7bd8e9ba4dde9043ae134b"
         },
         "mols-coding-context": {
           "integrity": "sha256-af62134c63221d4f34da41d3ead4f2fe7559887e7615b7a3bec92831731cfa5d"
@@ -51,6 +51,9 @@
         "mols-openspec-customize": {
           "integrity": "sha256-4debe7ef0e25d69f38dca4a4617989d5cd5b9312c26625e2b493abcdaac07429"
         },
+        "mols-tach": {
+          "integrity": "sha256-d59c5842b0f871c0fae0bf5b41733373471dab8d54c90927ff2bce4961313e89"
+        },
         "mols-text-optimizer": {
           "integrity": "sha256-33464dd251ad2fd98e40ae0b5e88b7f1273b735a1ea21076ac2e5c60a4a70bf4"
         }
@@ -71,6 +74,7 @@
         "mols-mermaid-chart",
         "mols-mermaid-diagram",
         "mols-openspec-customize",
+        "mols-tach",
         "mols-text-optimizer"
       ]
     }
