@@ -61,7 +61,7 @@ python=false
 lefthook=false
 routes=false
 runtime_smoke=false
-architecture=false
+tach=false
 full_unit=false
 full_tests=false
 full_type=false
@@ -298,8 +298,8 @@ while IFS= read -r path; do
   esac
 
   case "$path" in
-    src/*.py|tach.toml|.python-version|pyproject.toml|uv.lock|tests/scripts/test_tach.py|.github/workflows/*)
-      architecture=true
+    .python-version|tach.toml|pyproject.toml|uv.lock|src/*.py|tests/scripts/test_tach*.py|.github/workflows/*)
+      tach=true
       ;;
   esac
 
@@ -477,7 +477,7 @@ write_outputs() {
   echo "lefthook=$lefthook"
   echo "routes=$routes"
   echo "runtime_smoke=$runtime_smoke"
-  echo "architecture=$architecture"
+  echo "tach=$tach"
   echo "full_unit=$full_unit"
   echo "full_tests=$full_tests"
   echo "full_type=$full_type"

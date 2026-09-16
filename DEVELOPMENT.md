@@ -17,13 +17,13 @@
 | Purpose | Command |
 | --- | --- |
 | Docs index | `uv run python scripts/generate_docs_indexes.py` |
+| Tach dependency check | `uv run --no-sync tach check` |
 | Repository setup | `uv run --no-sync python scripts/bootstrap.py setup` |
 | Session bootstrap | `uv run --no-sync python scripts/bootstrap.py session` |
 | Tooling update | `uv run --no-sync python scripts/bootstrap.py update` |
 | External Skill 실행 | `uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>` |
 | Python format | `uv run ruff format .` |
 | Python lint | `uv run ruff check src tests` |
-| Python dependency boundaries | `uv run --no-sync tach check` |
 | Markdown format | `uv run rumdl fmt .` |
 | JSON / JSONC format | `uv run python scripts/biome.py format --write --files-ignore-unknown=true .` |
 | TOML format | `uv run python scripts/tombi.py format .` |

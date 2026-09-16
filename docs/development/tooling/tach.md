@@ -70,7 +70,7 @@ Source root는 `src`다. `hmda_reliability` module이 package root의 `__init__.
 
 현재 code를 통과시키기 위해 모든 관찰된 import를 permission으로 복사하지 않는다. Canonical contract가 금지 방향만 정의한다면 Tach도 그 경계를 직접 표현하는 최소 rule을 우선한다.
 
-현재 설정은 `reliability`와 `runtime_ai`의 네 금지 방향을 `cannot_depend_on`으로 표현한다. `depends_on`은 생략하고 `forbid_circular_dependencies = false`를 명시해 기존 계약 밖의 allowlist와 global no-cycle policy를 도입하지 않는다.
+현재 설정은 `reliability`와 `runtime_ai`의 네 금지 방향을 `cannot_depend_on`으로 표현한다. `depends_on`과 `forbid_circular_dependencies`는 생략해 기존 계약 밖의 allowlist와 global no-cycle policy를 도입하지 않는다.
 
 전체 domain dependency를 exhaustive `depends_on` allowlist로 관리하려면 그 graph가 먼저 repository architecture로 명시되어야 한다. 이 방식을 채택할 때는 사용되지 않는 permission이 남아 drift를 숨기지 않도록 `exact = true`도 함께 사용한다.
 
@@ -96,7 +96,7 @@ uv run --no-sync tach check
 
 Python source, Tach configuration 또는 dependency state가 boundary 의미를 바꿀 수 있다면 PR CI에서 Tach 검증을 우회해서는 안 된다. Exact selector와 command routing은 [CI](../ci.md)의 ownership에 따라 `.github/workflows/**`, classifier와 관련 regression test가 소유한다.
 
-`architecture` selector는 `src/**/*.py`, `tach.toml`, Python runtime/dependency state와 해당 CI/test 변경에서 dependency boundary step을 선택한다. `tach.toml` 단독 변경도 Python/uv setup과 locked dependency sync를 거친다. 이 step은 `tach check`, temporary project의 negative-path regression과 기존 AST guard를 함께 실행한다.
+`tach` selector는 `src/**/*.py`, `tach.toml`, Python runtime/dependency state와 해당 CI/test 변경에서 dependency boundary step을 선택한다. `tach.toml` 단독 변경도 Python/uv setup과 locked dependency sync를 거친다. 이 step은 `tach check`, temporary project의 negative-path regression과 기존 AST guard를 함께 실행한다.
 
 `tests/scripts/test_tach.py`는 네 금지 방향, 허용된 advisory/root import, type-only 제외와 implicit root 거부를 검사한다. Tach의 pytest 선택 기능(`--tach`)은 repository test selection에 도입하지 않는다.
 
