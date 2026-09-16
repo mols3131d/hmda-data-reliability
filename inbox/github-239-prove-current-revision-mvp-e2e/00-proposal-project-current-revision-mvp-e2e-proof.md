@@ -9,7 +9,7 @@ description: "Proposes a same-revision end-to-end proof that closes the MVP acce
 > [!IMPORTANT]
 > **제안:** 새 기능을 더 만들기 전에, 현재 MVP가 실제로 완결됐는지를 하나의 clean revision에서 끝까지 증명한다. 과거의 개별 성공 기록은 선행 근거로 사용하되 current revision의 acceptance를 대신하지 않는다.
 
-## 제안 요약
+## Proposal Summary
 
 다음 핵심 작업으로 Current-revision MVP E2E proof를 진행한다.
 
@@ -25,9 +25,9 @@ description: "Proposes a same-revision end-to-end proof that closes the MVP acce
 
 따라서 지금 필요한 것은 기능 추가가 아니라 현재 구현을 하나의 시스템으로 검증하고 MVP를 닫을 수 있는지 판정하는 일이다.
 
-## 왜 지금 필요한가
+## Why Now
 
-### 개별 성공은 현재 시스템의 성공을 보장하지 않는다
+### Individual Success Does Not Prove the Current System
 
 MVP가 증명해야 하는 대상은 다음 연결 전체다.
 
@@ -51,7 +51,7 @@ HMDA source
 
 Current-revision E2E는 이런 **경계 사이의 실패**를 찾기 위한 proof다.
 
-### Evidence는 revision에 묶여야 한다
+### Evidence Must Be Bound to a Revision
 
 과거 proof는 해당 revision에 대한 유효한 evidence다. 하지만 Airflow runtime, dependency, shared utility, validation, artifact handling 또는 Agentic contract가 바뀌면 그 결과를 현재 revision의 acceptance로 그대로 사용할 수 없다.
 
@@ -59,7 +59,7 @@ Live model invocation도 마찬가지다. model/config, prompt identity, evidenc
 
 Current-revision proof는 acceptance를 exact Git revision에 묶어 이 문제를 해결한다.
 
-### Deterministic proof와 live proof는 서로 대체할 수 없다
+### Deterministic and Live Proofs Are Not Interchangeable
 
 Review AI와 Runtime AI의 deterministic tests는 contract, validator, provider adapter와 persistence를 반복 검증하는 데 적합하다. 그러나 실제 provider가 호출됐고 어떤 evidence와 revision에서 결과가 만들어졌는지는 live invocation으로만 증명할 수 있다.
 
@@ -68,7 +68,7 @@ Review AI와 Runtime AI의 deterministic tests는 contract, validator, provider 
 - **Deterministic contract proof:** contract와 guard가 반복 검증 가능하다.
 - **Live invocation proof:** 실제 model call과 persisted provenance가 proof revision에 결합된다.
 
-### Safety는 AI 품질보다 authority의 문제다
+### Safety Is About Authority, Not AI Quality
 
 이 프로젝트에서 AI는 advisory다. 핵심은 응답의 자연스러움이 아니라 **AI output이 deterministic recovery authority를 바꾸거나 mutation을 직접 일으킬 수 없다는 것**이다.
 
@@ -79,13 +79,13 @@ Current-revision proof는 최소한 다음을 확인해야 한다.
 - Malformed 또는 policy-invalid output은 deterministic validation을 우회하지 못한다.
 - Approval은 다른 proposal이나 revision에 재사용되지 않는다.
 
-### 더 늦추면 proof 비용이 커진다
+### Delaying Increases Proof Cost
 
 Deterministic recovery, actual Airflow runtime, CI admission 등 통합 proof의 선행 조건은 이미 마련됐다. 여기서 기능을 더 추가하면 proof revision이 계속 움직이고 실패 원인도 넓어진다.
 
 지금 acceptance를 확정해야 이후 발견되는 문제가 기존 gap인지 새 regression인지 구분할 수 있고, 다음 개발 단계도 더 작은 상태에서 시작할 수 있다.
 
-## 무엇을 증명할 것인가
+## What to Prove
 
 Canonical acceptance는 [`docs/mvp.md`](../../docs/mvp.md)가 소유한다. 이 작업은 acceptance를 새로 정의하지 않고 current revision에서 다음 여섯 항목을 각각 `PASS`, `FAIL`, `BLOCKED`로 판정한다.
 
@@ -100,7 +100,7 @@ Canonical acceptance는 [`docs/mvp.md`](../../docs/mvp.md)가 소유한다. 이 
 
 여섯 항목이 모두 `PASS`일 때만 MVP completion을 주장한다. 하나라도 `FAIL` 또는 `BLOCKED`이면 결과는 유효한 진단이지만 MVP 완료 증거는 아니다.
 
-## Proof revision을 어떻게 유지할 것인가
+## How to Maintain the Proof Revision
 
 Acceptance evidence는 **exact proof revision SHA**에만 유효하다.
 
@@ -112,7 +112,7 @@ Acceptance evidence는 **exact proof revision SHA**에만 유효하다.
 
 이 규칙은 결과를 기록하기 위한 commit 때문에 실제 검증한 SHA와 최종 HEAD가 어긋나는 문제를 막는다.
 
-## 어떻게 진행할 것인가
+## Execution Approach
 
 1. **Proof revision 준비** — clean tracked state에서 exact Git SHA를 고정하고 checklist와 configuration 준비를 끝낸다.
 1. **Deterministic baseline 확인** — 전체 baseline과 Data Lake, Reliability, Review AI, Runtime AI의 focused validation을 먼저 통과시킨다.
@@ -122,7 +122,7 @@ Acceptance evidence는 **exact proof revision SHA**에만 유효하다.
 
 Test-only 우회로 production contract를 대신 증명하지 않는다. Deterministic baseline이 깨져 있으면 live provider 결과로 이를 보완하지 않는다.
 
-## 이 PR에서 수정해도 되는 범위
+## Allowed Changes in This PR
 
 이 branch는 문서 전용이 아니다. Proof가 기존 MVP contract 위반을 직접 드러내면 같은 branch에서 최소 remediation을 수행할 수 있다.
 
@@ -161,7 +161,7 @@ Test-only 우회로 production contract를 대신 증명하지 않는다. Determ
 - production SLO나 security-grade authorization
 - unrelated cleanup, refactor 또는 문서 정리
 
-## 결과를 어떻게 판정할 것인가
+## Result Classification
 
 이 작업의 목적은 모든 결과를 초록색으로 만드는 것이 아니라 **현재 상태를 정직하게 판정하는 것**이다.
 
@@ -186,7 +186,7 @@ Acceptance impact:
 
 `FAIL`을 발견했다고 즉시 scope를 넓히지 않는다. 먼저 이 PR의 remediation admission rule을 적용한다.
 
-## 기대 결과
+## Expected Outcome
 
 이 작업이 최종적으로 답해야 하는 질문은 하나다.
 
