@@ -20,7 +20,14 @@ tags:
 | Metadata key와 짧은 structured value | English | 문단처럼 긴 값은 본문으로 보고 기본 언어 규칙을 따른다. |
 | File name, directory name, repository path | English | |
 | Code identifier, API name, CLI name | Declared identifier | 식별에 필요한 이름은 선언된 표기를 그대로 쓰고, 주변 설명은 기본 언어 규칙을 따른다. |
-| Established technical term | Korean or English | 일반적인 기술 용어도 기본 언어 규칙을 따른다. |
+| Established technical term | Korean or English | 기본 언어 규칙에 따라 자연스러운 한 표기를 선택한다. |
+
+## Bilingual Terms
+
+한국어만으로 충분하면 영어를 병기하지 않는다.
+
+- 영어 원어가 식별, 검색 또는 의미 구분에 필요할 때만 처음 한 번 병기한다.
+- 이후에는 한 표기로 통일하되, 선언된 label이나 identifier는 원래 표기를 유지한다.
 
 ## Prose
 
