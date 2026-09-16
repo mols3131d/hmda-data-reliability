@@ -32,7 +32,7 @@ description: "인계된 PR #239의 Research, Plan, Work, Review와 exact-revisio
 
 Runtime record는 proof SHA, clean tracked state, environment versions, command/exit/timing, JUnit counts, retained test artifacts, acceptance mapping, limitation을 포함한다. Airflow fixture는 teardown에서 임시 directory를 삭제하므로 ignored observer plugin이 call 종료 후 teardown 전에 SQLite state를 read-only 조회하고 test runtime 파일을 proof root에 복사한다. Fixture, production function, assertion, result와 cleanup을 대체하지 않는다. Observer source와 digest를 실행 evidence에 보존하고 capture failure는 acceptance gap으로 처리한다. Credential과 raw provider response/log는 게시하지 않는다. Local evidence는 이 workspace에만 존재한다는 한계를 명시하고 PR에는 검토 가능한 요약과 digest를 남긴다.
 
-실행 후 tracked file을 변경하면 이전 proof를 historical로 보존하고 최종 SHA에서 baseline, focused rerun과 live invocation을 포함한 여섯 acceptance 근거를 모두 다시 확보한다. 영향받는 proof만의 재실행은 중간 진단에 한정한다. Result를 기록하기 위해 tracked preparation의 checklist나 OpenSpec Tasks를 계속 수정하지 않는다. OpenSpec Tasks는 preparation deliverable만 소유하며 runtime acceptance 완료 여부는 소유하지 않는다.
+실행 후 tracked file을 변경하면 이전 proof를 historical로 보존하고 최종 SHA에서 baseline, focused rerun과 live invocation을 포함한 여섯 acceptance 근거를 모두 다시 확보한다. 영향받는 proof만의 재실행은 중간 진단에 한정한다. Result를 기록하기 위해 tracked preparation의 checklist나 OpenSpec Tasks를 계속 수정하지 않는다. OpenSpec Tasks는 preparation deliverable과 직접 재현된 test remediation을 소유하며 runtime acceptance 완료 여부는 소유하지 않는다.
 
 ## Loop State
 
