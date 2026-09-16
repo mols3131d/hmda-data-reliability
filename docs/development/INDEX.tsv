@@ -1,5 +1,5 @@
 path	description
-ai-agent/	Repository의 agent instruction surface 선택과 Rule/Skill asset management guidance를 모으는 docs/development/ai-agent directory의 entrypoint입니다.
+ai-agent/	Repository의 agent instruction surface 선택과 Rule/Skill/Subagent asset management guidance를 모으는 docs/development/ai-agent directory의 entrypoint입니다.
 ai-agent/rule.md	Repository structure로 applicability가 결정되는 instruction surface인 Rule의 선택 기준, canonical source와 책임 경계를 정의합니다.
 ai-agent/skill.md	Task intent와 semantic relevance에 따라 선택적으로 load하는 Skill의 선택 기준, loading 방식과 source ownership을 정의합니다.
 ci.md	CI의 목적, 판단 원칙, 운영 패턴과 필수 경계를 정의합니다.

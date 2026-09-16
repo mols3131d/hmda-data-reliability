@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER_SCRIPT = REPO_ROOT / ".github" / "workflows" / "classify_changes.sh"
 
 
-def run_classifier(paths: list[str]) -> dict[str, str]:
+def run_classifier(paths: list[str], *, cwd: Path = REPO_ROOT) -> dict[str, str]:
     """Execute the classifier script against the provided paths via stdin."""
     proc = subprocess.run(
         ["bash", str(CLASSIFIER_SCRIPT), "--stdin"],
@@ -19,7 +21,7 @@ def run_classifier(paths: list[str]) -> dict[str, str]:
         capture_output=True,
         text=True,
         check=True,
-        cwd=REPO_ROOT,
+        cwd=cwd,
     )
     result: dict[str, str] = {}
     for line in proc.stdout.splitlines():
@@ -27,6 +29,17 @@ def run_classifier(paths: list[str]) -> dict[str, str]:
             key, val = line.split("=", 1)
             result[key.strip()] = val.strip()
     return result
+
+
+@pytest.fixture
+def active_change_project(tmp_path: Path) -> Path:
+    """실제 Change의 archive lifecycle과 독립적인 active pairing fixture."""
+    (tmp_path / "openspec/specs/orchestration-pipeline").mkdir(parents=True)
+    (
+        tmp_path
+        / "openspec/changes/orchestration-quality-gate/specs/orchestration-pipeline"
+    ).mkdir(parents=True)
+    return tmp_path
 
 
 def run_markdown_paths(paths: list[str]) -> list[str]:
@@ -52,6 +65,57 @@ def test_script_test_modify() -> None:
     assert out["targets"].strip() == path
     assert out["python"] == "true"
     assert out["full_type"] == "false"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "tach.toml",
+        "src/hmda_reliability/logger.py",
+        "src/hmda_reliability/reliability/deleted.py",
+        "src/new_package/module.py",
+        ".python-version",
+        "pyproject.toml",
+        "uv.lock",
+        ".github/workflows/ci-lite.yml",
+        ".github/workflows/classify_changes.sh",
+        "tests/scripts/test_tach.py",
+    ],
+)
+def test_architecture_changes_prepare_and_run_boundary_check(path: str) -> None:
+    out = run_classifier([path])
+    assert out["architecture"] == "true"
+    workflow = yaml.safe_load(
+        (REPO_ROOT / ".github/workflows/ci-lite.yml").read_text(encoding="utf-8")
+    )
+    steps = {step["name"]: step for step in workflow["jobs"]["check"]["steps"]}
+    for name in (
+        "Set up Python",
+        "Set up uv",
+        "Sync dependencies",
+        "Validate dependency boundaries",
+    ):
+        # 실제 workflow의 OR selector를 확인해 setup 누락도 회귀로 잡는다.
+        conditions = steps[name]["if"].split(" || ")
+        keys = []
+        for condition in conditions:
+            match = re.fullmatch(r"steps\.scope\.outputs\.(\w+) == 'true'", condition)
+            assert match is not None, condition
+            keys.append(match.group(1))
+        assert any(out[key] == "true" for key in keys), name
+    assert "uv sync --locked" in steps["Sync dependencies"]["run"]
+    assert (
+        "uv run --no-sync tach check" in steps["Validate dependency boundaries"]["run"]
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path", ["README.md", "dbt/models/example.sql", "lefthook.yml"]
+)
+def test_unrelated_changes_do_not_select_architecture(path: str) -> None:
+    assert run_classifier([path])["architecture"] == "false"
 
 
 @pytest.mark.unit
@@ -349,9 +413,14 @@ def test_unknown_canonical_openspec_change_fails_safe_to_full_tests() -> None:
 
 
 @pytest.mark.unit
-def test_active_openspec_change_uses_affected_validation_target() -> None:
+def test_active_openspec_change_uses_affected_validation_target(
+    active_change_project: Path,
+) -> None:
     """Active Change 변경은 해당 Change만 OpenSpec validation 대상으로 선택한다."""
-    out = run_classifier(["openspec/changes/orchestration-quality-gate/proposal.md"])
+    out = run_classifier(
+        ["openspec/changes/orchestration-quality-gate/proposal.md"],
+        cwd=active_change_project,
+    )
 
     assert out["openspec"] == "true"
     assert out["openspec_bulk"] == "false"
@@ -404,9 +473,13 @@ def test_dependency_changes_request_runtime_boundary_smoke(
 
 
 @pytest.mark.unit
-def test_canonical_spec_selects_direct_active_change_validation() -> None:
+def test_canonical_spec_selects_direct_active_change_validation(
+    active_change_project: Path,
+) -> None:
     """Canonical Spec 변경은 같은 capability의 active Change도 검증한다."""
-    out = run_classifier(["openspec/specs/orchestration-pipeline/spec.md"])
+    out = run_classifier(
+        ["openspec/specs/orchestration-pipeline/spec.md"], cwd=active_change_project
+    )
 
     assert out["openspec_spec_targets"].strip() == "orchestration-pipeline"
     assert out["openspec_change_targets"].strip() == "orchestration-quality-gate"
@@ -422,13 +495,16 @@ def test_canonical_spec_without_active_delta_keeps_change_targets_empty() -> Non
 
 
 @pytest.mark.unit
-def test_mixed_canonical_spec_and_active_change_preserves_both_targets() -> None:
+def test_mixed_canonical_spec_and_active_change_preserves_both_targets(
+    active_change_project: Path,
+) -> None:
     """같은 change set의 Spec와 active Change target을 모두 중복 없이 보존한다."""
     out = run_classifier(
         [
             "openspec/specs/orchestration-pipeline/spec.md",
             "openspec/changes/orchestration-quality-gate/proposal.md",
-        ]
+        ],
+        cwd=active_change_project,
     )
 
     assert out["openspec_spec_targets"].strip() == "orchestration-pipeline"

@@ -23,6 +23,7 @@
 | External Skill 실행 | `uv run python scripts/agent_assets.py run <source> --skill <name> --agent <id>` |
 | Python format | `uv run ruff format .` |
 | Python lint | `uv run ruff check src tests` |
+| Python dependency boundaries | `uv run --no-sync tach check` |
 | Markdown format | `uv run rumdl fmt .` |
 | JSON / JSONC format | `uv run python scripts/biome.py format --write --files-ignore-unknown=true .` |
 | TOML format | `uv run python scripts/tombi.py format .` |
@@ -36,7 +37,7 @@
 | --- | --- |
 | Runtime | `Python>=3.13`, `Node.js` |
 | Package manager | `uv`, `npm` |
-| Repository tooling | `OpenSpec`, `Rulesync`, `Skills CLI`, `Lefthook`, `Ruff`, `rumdl`, `Biome`, `Tombi` |
+| Repository tooling | `OpenSpec`, `Rulesync`, `Skills CLI`, `Lefthook`, `Ruff`, `rumdl`, `Biome`, `Tombi`, `Tach` |
 | Data platform | `DuckDB`, `dbt` |
 | Orchestration | `Apache Airflow 3.3.0` |
 | Analysis | `Polars` |

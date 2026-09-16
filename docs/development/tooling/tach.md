@@ -21,9 +21,7 @@ Tach는 `src/hmda_reliability`의 Python dependency boundary를 실행 가능한
 
 ## Activation
 
-이 guide는 Tach가 활성화된 repository revision에서 적용할 운영 기준을 정의한다. 실제 활성 상태는 `pyproject.toml`, `uv.lock`, `tach.toml`과 [`DEVELOPMENT.md`](../../../DEVELOPMENT.md)의 active tooling을 확인한다.
-
-해당 revision에 Tach dependency나 `tach.toml`이 아직 없다면 아래 command와 validation을 현재 구현 상태로 간주하지 않는다. 계획과 구현 상태가 다르면 source와 configuration이 현재 상태의 근거다.
+Tach는 dev dependency로 설치하며 `uv sync --locked`로 실행 환경을 준비한다. 설치 버전은 `uv.lock`, executable boundary는 `tach.toml`, 실행 entrypoint는 [`DEVELOPMENT.md`](../../../DEVELOPMENT.md)가 소유한다.
 
 ## Repository Role
 
@@ -54,7 +52,9 @@ Policy와 executable configuration이 충돌하면 `tach.toml`을 임의로 완�
 
 Tach의 source root는 repository의 Python package layout과 일치해야 하며, `src/hmda_reliability` 아래에서 dependency boundary 대상으로 정한 source가 implicit root 처리나 `unchecked` 설정 때문에 조용히 빠져서는 안 된다.
 
-Top-level Python package뿐 아니라 package root의 Python file도 coverage 결정에 포함한다. `root_module`은 permissive default에 맡기지 않고 repository layout에 맞는 동작을 명시적으로 선택한다.
+Source root는 `src`다. `hmda_reliability` module이 package root의 `__init__.py`, `logger.py`와 아직 별도 boundary가 없는 하위 source를 포함하고, 현재 top-level package는 개별 module로 선언한다.
+
+`root_module = "forbid"`로 이 package 밖의 implicit root 참조를 거부한다. `exclude = []`, `respect_gitignore = false`로 source 제외를 막으며 `unchecked` module은 두지 않는다. Package root도 검사를 받지만 canonical contract에 없는 import 제한을 추가하지는 않는다.
 
 새 top-level package를 추가하거나 package-root Python surface를 변경하면 Tach coverage도 함께 검토한다. Package ownership 자체는 [`DEVELOPMENT.md`](../../../DEVELOPMENT.md)와 domain guide가 계속 소유한다.
 
@@ -69,6 +69,8 @@ Top-level Python package뿐 아니라 package root의 Python file도 coverage �
 - `runtime_ai`는 `review_ai` 또는 `reliability`에 의존하지 않는다.
 
 현재 code를 통과시키기 위해 모든 관찰된 import를 permission으로 복사하지 않는다. Canonical contract가 금지 방향만 정의한다면 Tach도 그 경계를 직접 표현하는 최소 rule을 우선한다.
+
+현재 설정은 `reliability`와 `runtime_ai`의 네 금지 방향을 `cannot_depend_on`으로 표현한다. `depends_on`은 생략하고 `forbid_circular_dependencies = false`를 명시해 기존 계약 밖의 allowlist와 global no-cycle policy를 도입하지 않는다.
 
 전체 domain dependency를 exhaustive `depends_on` allowlist로 관리하려면 그 graph가 먼저 repository architecture로 명시되어야 한다. 이 방식을 채택할 때는 사용되지 않는 permission이 남아 drift를 숨기지 않도록 `exact = true`도 함께 사용한다.
 
@@ -93,6 +95,10 @@ uv run --no-sync tach check
 실제 command와 dependency 상태는 `pyproject.toml`, `uv.lock`과 `tach.toml`을 기준으로 확인한다. 일반적인 Tach command 설명은 upstream 문서를 따른다.
 
 Python source, Tach configuration 또는 dependency state가 boundary 의미를 바꿀 수 있다면 PR CI에서 Tach 검증을 우회해서는 안 된다. Exact selector와 command routing은 [CI](../ci.md)의 ownership에 따라 `.github/workflows/**`, classifier와 관련 regression test가 소유한다.
+
+`architecture` selector는 `src/**/*.py`, `tach.toml`, Python runtime/dependency state와 해당 CI/test 변경에서 dependency boundary step을 선택한다. `tach.toml` 단독 변경도 Python/uv setup과 locked dependency sync를 거친다. 이 step은 `tach check`, temporary project의 negative-path regression과 기존 AST guard를 함께 실행한다.
+
+`tests/scripts/test_tach.py`는 네 금지 방향, 허용된 advisory/root import, type-only 제외와 implicit root 거부를 검사한다. Tach의 pytest 선택 기능(`--tach`)은 repository test selection에 도입하지 않는다.
 
 Local Git hook에 Tach feedback을 추가할 때는 Tach 자체 hook installer보다 repository-owned `lefthook.yml`을 사용한다. Hook은 CI의 대체물이 아니라 빠른 local feedback 경로다.
 
