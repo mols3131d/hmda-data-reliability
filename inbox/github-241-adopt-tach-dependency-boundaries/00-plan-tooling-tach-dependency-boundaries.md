@@ -23,7 +23,8 @@ Tach를 개발 도구로 도입해 `src/hmda_reliability`의 Python 모듈 의�
   - `runtime_ai`는 `review_ai` 또는 `reliability` semantics에 의존하지 않는다.
 - `tach check`가 `src/**/*.py`, `tach.toml`, `pyproject.toml` 또는 `uv.lock` 변경에서 CI 검증으로 실행되게 한다. `tach.toml`만 변경돼도 필요한 Python/uv 준비와 dependency sync를 거쳐 check가 실행되어야 한다.
 - 기존 Lefthook에 local feedback을 추가한다면 Tach 자체 hook installer 대신 repository-owned `lefthook.yml`을 사용한다.
-- Active repository tooling을 소유하는 `DEVELOPMENT.md`에 Tach와 실행 entrypoint를 반영한다. 별도 tooling guide는 project-specific usage가 반복해서 필요할 때만 추가한다.
+- Active repository tooling을 소유하는 `DEVELOPMENT.md`에 Tach와 실행 entrypoint를 반영한다.
+- [`docs/development/tooling/tach.md`](../../../docs/development/tooling/tach.md)는 이 repository의 Tach 역할, ownership, coverage와 검증 경계를 소유한다. 일반 CLI reference와 troubleshooting은 upstream 문서에 맡긴다.
 
 ## Boundaries
 
@@ -43,7 +44,8 @@ Tach를 개발 도구로 도입해 `src/hmda_reliability`의 Python 모듈 의�
 1. `uv run --no-sync tach check`가 clean 상태에서 통과하도록 한다.
 1. CI classifier에서 architecture check를 명시적으로 선택할 수 있게 하고, `tach.toml` 단독 변경과 `src/**/*.py`, `pyproject.toml`, `uv.lock` 변경이 check 실행 경로를 활성화하는지 회귀 테스트로 고정한다. `tach.toml` 경로는 uv setup/sync가 생략되지 않아야 한다.
 1. Lefthook에 추가한다면 `src/**/*.py`, `tach.toml`, dependency/config 변경에서만 실행되는 whole-repository check로 유지한다.
-1. `DEVELOPMENT.md`의 active tooling 목록과 Quick Commands에 Tach entrypoint를 반영하고, 그 밖의 project-specific 문서는 실제 반복 사용에 필요한 최소 범위만 추가한다. 일반 Tach 사용법은 upstream 문서에 맡긴다.
+1. `DEVELOPMENT.md`의 active tooling 목록과 Quick Commands에 Tach entrypoint를 반영한다.
+1. `docs/development/tooling/tach.md`에는 repository-specific role, ownership, coverage, dependency policy와 CI/local validation만 유지하고 일반 Tach 사용법은 upstream 문서와 `tach --help`에 맡긴다.
 
 ## Acceptance
 
@@ -59,8 +61,9 @@ Tach를 개발 도구로 도입해 `src/hmda_reliability`의 Python 모듈 의�
 - `lefthook.yml`을 변경하면 `uvx lefthook@2.1.10 validate`가 통과한다.
 - 문서 변경은 repository Markdown 규칙을 통과한다.
 - `DEVELOPMENT.md`의 active tooling 목록과 Quick Commands가 실제 도입 상태와 일치한다.
+- `docs/development/tooling/tach.md`가 repository-specific Tach 운영 기준을 설명하고 일반 upstream reference를 중복하지 않는다.
 - PR description의 Validation에는 실제 수행한 검증만 기록한다.
 
 ## Local Agent Handoff
 
-브랜치 `chore/adopt-tach-dependency-boundaries`에서 위 범위만 구현한다. 먼저 현재 import graph와 `docs/ARCHITECTURE.md`의 dependency constraint를 대조하고 package-root file, `TYPE_CHECKING` import와 Tach coverage default를 포함한 검사 경계를 결정한 뒤 config를 작성한다. 이어 dependency 추가, `tach.toml` 단독 변경도 빠지지 않는 CI 연동과 classifier regression test, 필요한 최소 문서 갱신 순서로 진행한다. `uv.lock`은 반드시 `uv`로 갱신하고, 완료 후 `tach check`와 영향받은 repository validation을 실행해 Draft PR 본문을 실제 결과로 갱신한다. Scope가 architecture refactor로 커지면 임의로 확장하지 말고 PR에 blocker로 남긴다.
+브랜치 `chore/adopt-tach-dependency-boundaries`에서 위 범위만 구현한다. 먼저 현재 import graph와 `docs/ARCHITECTURE.md`의 dependency constraint를 대조하고 package-root file, `TYPE_CHECKING` import와 Tach coverage default를 포함한 검사 경계를 결정한 뒤 config를 작성한다. 이어 dependency 추가, `tach.toml` 단독 변경도 빠지지 않는 CI 연동과 classifier regression test, `DEVELOPMENT.md` 및 `docs/development/tooling/tach.md`를 실제 구현 상태와 맞춘다. `uv.lock`은 반드시 `uv`로 갱신하고, 완료 후 `tach check`와 영향받은 repository validation을 실행해 Draft PR 본문을 실제 결과로 갱신한다. Scope가 architecture refactor로 커지면 임의로 확장하지 말고 PR에 blocker로 남긴다.
