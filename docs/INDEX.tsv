@@ -17,6 +17,7 @@ development/tooling/formatting.md	이 repository에서 Python, Markdown, JSON/JS
 development/tooling/lefthook.md	이 repository의 Git hook 설치 경로와 pre-commit/pre-push가 지켜야 할 운영 baseline을 설명합니다.
 development/tooling/openspec.md	이 repository에서 OpenSpec을 실행·갱신하는 integration 방식과 project-specific owning source를 연결합니다.
 development/tooling/rulesync.md	Rulesync를 Agent Asset 관리의 주 실행 경로로 사용하고 Skills CLI를 Rulesync 밖의 agentskills.io 호환 external Skill 보조 경로로 연결하는 repository-specific tooling guide입니다.
+development/tooling/tach.md	이 repository에서 Tach가 소유하는 Python dependency boundary, configuration과 검증 경계를 설명합니다.
 development/vcs-git/	Branch, commit, Pull Request와 review guide를 연결하는 docs/development/vcs-git directory의 entrypoint입니다.
 development/vcs-git/branch.md	하나의 변경 목적을 격리하고 검토 가능한 단위로 전달하기 위한 branch 생성, naming, reuse와 agent 제약을 정의합니다.
 development/vcs-git/commit.md	하나의 논리적 변경을 review 가능한 history로 기록하기 위한 commit 단위, staging과 history 관리 기준을 정의합니다.
