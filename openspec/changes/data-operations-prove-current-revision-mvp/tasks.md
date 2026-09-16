@@ -3,8 +3,8 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: "MVP Proof Preparation Tasks"
 description: "Proof 준비와 baseline test fixture remediation을 추적하며 runtime acceptance 완료를 대신하지 않는다."
-tasks_completed: 4
-tasks_total: 4
+tasks_completed: 6
+tasks_total: 6
 ---
 
 ## Tasks
@@ -18,3 +18,9 @@ tasks_total: 4
 - [x] Classifier의 active Change regression tests를 repository의 mutable Change inventory에서 격리한다.
   - **Done when:** 실제 classifier와 기존 target/bulk assertion을 유지한 채 임시 filesystem fixture에서 active/absent/mixed 시나리오가 통과하고 관련 scripts suite가 회귀 없이 실행된다.
   - **Test first:** `da579b8` baseline과 focused reproduction에서 active target 3건이 실패했다. 이는 product failure의 RED가 아니라 누락된 fixture setup의 재현이다.
+- [x] MVP requirement별 production implementation과 독립 oracle 매핑을 제공한다.
+  - **Done when:** Inbox audit가 9개 영역의 implementation/evidence gap과 fixture 한계를 구분한다.
+- [x] 승인된 proposal과 다른 request target scope를 source 처리 전에 거부한다.
+  - **Done when:** table/year/file 불일치가 각각 source 접근 없이 `ApprovalGateError`를 반환하고 기존 recovery tests가 통과한다.
+  - **Test first:** missing-source와 실제 request/profile 정합성을 갖춘 mismatch 사례로 pre-source 차단 누락을 먼저 재현한다.
+  - **Validation:** mismatch 3건 RED (`BackfillValidationError` source IO), gate 수정 후 module 25 passed. 최종 acceptance는 별도 exact SHA runtime record가 소유한다.
