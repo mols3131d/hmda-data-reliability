@@ -37,6 +37,7 @@ Application 또는 runtime을 구성하는 기술 스택은 이 directory의 소
 | [Rulesync](rulesync.md) | Rulesync source sync·projection과 Skills CLI 보조 실행 경로 |
 | [Lefthook](lefthook.md) | Git hook 설치, current behavior와 pre-commit/pre-push 운영 baseline |
 | [Formatting](formatting.md) | Ruff, rumdl, Biome, Tombi의 repository-owned fix/check 경로와 configuration |
+| [Tach](tach.md) | Python dependency boundary의 repository-specific ownership, coverage와 검증 경계 |
 
 ## Repository Surfaces
 

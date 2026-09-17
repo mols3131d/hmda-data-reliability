@@ -1,0 +1,46 @@
+source_roots = ["src"]
+root_module = "forbid"
+ignore_type_checking_imports = true
+respect_gitignore = false
+exclude = []
+
+[[modules]]
+path = "hmda_reliability"
+
+[[modules]]
+path = "hmda_reliability.configs"
+
+[[modules]]
+path = "hmda_reliability.data_operations"
+
+[[modules]]
+path = "hmda_reliability.data_platform"
+
+[[modules]]
+path = "hmda_reliability.hmda_data"
+
+[[modules]]
+path = "hmda_reliability.orchestration"
+
+[[modules]]
+path = "hmda_reliability.reliability"
+cannot_depend_on = [
+  "hmda_reliability.review_ai",
+  "hmda_reliability.runtime_ai",
+]
+
+[[modules]]
+path = "hmda_reliability.review_ai"
+
+[[modules]]
+path = "hmda_reliability.runtime_ai"
+cannot_depend_on = [
+  "hmda_reliability.reliability",
+  "hmda_reliability.review_ai",
+]
+
+[[modules]]
+path = "hmda_reliability.shared"
+
+[[modules]]
+path = "hmda_reliability.utils"

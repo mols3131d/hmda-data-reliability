@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER_SCRIPT = REPO_ROOT / ".github" / "workflows" / "classify_changes.sh"
@@ -67,6 +69,60 @@ def test_script_test_modify() -> None:
     assert out["targets"].strip() == path
     assert out["python"] == "true"
     assert out["full_type"] == "false"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "tach.toml",
+        "src/hmda_reliability/logger.py",
+        "src/hmda_reliability/reliability/deleted.py",
+        "src/new_package/module.py",
+        ".python-version",
+        "pyproject.toml",
+        "uv.lock",
+        ".github/workflows/ci-lite.yml",
+        ".github/workflows/classify_changes.sh",
+        "tests/scripts/test_tach.py",
+        "tests/scripts/test_tach_config.py",
+        "tests/review_ai/test_dependency_boundaries.py",
+    ],
+)
+def test_architecture_changes_prepare_and_run_boundary_check(path: str) -> None:
+    out = run_classifier([path])
+    assert out["tach"] == "true"
+    workflow = yaml.safe_load(
+        (REPO_ROOT / ".github/workflows/ci-lite.yml").read_text(encoding="utf-8")
+    )
+    steps = {step["name"]: step for step in workflow["jobs"]["check"]["steps"]}
+    for name in (
+        "Set up Python",
+        "Set up uv",
+        "Sync dependencies",
+        "Check Python dependency boundaries",
+    ):
+        # 실제 workflow의 OR selector를 확인해 setup 누락도 회귀로 잡는다.
+        conditions = steps[name]["if"].split(" || ")
+        keys = []
+        for condition in conditions:
+            match = re.fullmatch(r"steps\.scope\.outputs\.(\w+) == 'true'", condition)
+            assert match is not None, condition
+            keys.append(match.group(1))
+        assert any(out[key] == "true" for key in keys), name
+    assert "uv sync --locked" in steps["Sync dependencies"]["run"]
+    assert (
+        "uv run --no-sync tach check"
+        in steps["Check Python dependency boundaries"]["run"]
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path", ["README.md", "dbt/models/example.sql", "lefthook.yml"]
+)
+def test_unrelated_changes_do_not_select_architecture(path: str) -> None:
+    assert run_classifier([path])["tach"] == "false"
 
 
 @pytest.mark.unit
@@ -421,6 +477,34 @@ def test_dependency_changes_request_runtime_boundary_smoke(
     assert out["runtime_smoke"] == "true"
     assert out["full_unit"] == "true"
     assert out["full_type"] == "true"
+    assert out["tach"] == "true"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "tach.toml",
+        "src/hmda_reliability/__init__.py",
+        "src/hmda_reliability/reliability/evaluation/volume_drop.py",
+    ],
+)
+def test_tach_boundary_changes_request_architecture_check(path: str) -> None:
+    """Tach config와 모든 source-depth의 Python 변경은 boundary check를 선택한다."""
+    out = run_classifier([path])
+
+    assert out["tach"] == "true"
+
+
+@pytest.mark.unit
+def test_tach_only_change_runs_dependency_setup_without_python_suite() -> None:
+    """tach.toml 단독 변경도 dependency setup과 Tach check를 활성화한다."""
+    out = run_classifier(["tach.toml"])
+
+    assert out["tach"] == "true"
+    assert out["toml"] == "true"
+    assert out["python"] == "false"
+    assert out["tests"] == "false"
 
 
 @pytest.mark.unit

@@ -79,10 +79,10 @@ Gap은 **MVP contract가 요구하는 observable behavior가 production implemen
 다음 작업자는 먼저 audit 결과를 남긴다.
 
 1. MVP requirement별 status, owning source, test/runtime evidence, 남은 uncertainty를 한 표로 정리한다.
-2. `Gap`마다 빠진 **동작**을 구체적으로 설명하고 단순 test/documentation 부족과 구분한다.
-3. 실제 gap이 없으면 `implementation complete candidate`라고 결론 내리고 current HEAD에서 final acceptance rerun이 필요하다고 명시한다.
-4. 실제 gap이 있으면 MVP 완료 판정을 중단하고 최소 coherent remediation을 제안한다. 구현은 해당 invocation에 별도 권한이 있을 때만 진행한다.
-5. 모든 수정이 끝난 뒤에만 하나의 clean current revision에서 여섯 acceptance를 다시 실행해 최종 완료 여부를 판단한다.
+1. `Gap`마다 빠진 **동작**을 구체적으로 설명하고 단순 test/documentation 부족과 구분한다.
+1. 실제 gap이 없으면 `implementation complete candidate`라고 결론 내리고 current HEAD에서 final acceptance rerun이 필요하다고 명시한다.
+1. 실제 gap이 있으면 MVP 완료 판정을 중단하고 최소 coherent remediation을 제안한다. 구현은 해당 invocation에 별도 권한이 있을 때만 진행한다.
+1. 모든 수정이 끝난 뒤에만 하나의 clean current revision에서 여섯 acceptance를 다시 실행해 최종 완료 여부를 판단한다.
 
 ## Completion
 
