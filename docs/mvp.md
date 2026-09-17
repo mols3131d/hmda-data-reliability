@@ -34,7 +34,7 @@ MVP는 두 capability가 함께 존재해야 한다.
 
 HMDA Data가 local source를 검증해 DuckDB Bronze까지 적재하고, Data Platform이 그 Bronze를 dbt staging/mart로 변환한다. 결과는 downstream Reliability가 다시 추적할 수 있는 data와 dbt evidence를 남긴다.
 
-### Useful Agentic Reliability
+### Agentic Reliability
 
 Deterministic reliability layer를 먼저 만들고, 제한된 Agentic reviewer가 incident에 직접 관련된 bounded evidence와 기존 `RemediationDraft`를 설명·검토한다. AI review는 deterministic 결과의 단순 재진술을 넘어 인간이 다음 investigation 또는 remediation 판단을 내리는 데 사용할 수 있는 추가 가치를 보여야 한다.
 
@@ -55,11 +55,11 @@ flowchart TB
 
     context --> agent["Useful Agentic Review"]
     agent --> guard["Deterministic Review Validation"]
-    guard --> evaluation["Replayable Quality Evaluation"]
+    guard -. evaluation evidence .-> evaluation["Replayable Quality Evaluation"]
 
     incident --> proposal["Validated Recovery Proposal"]
     proposal --> human["Human Approval"]
-    evaluation -. advisory .-> human
+    guard -. advisory .-> human
     human --> recovery["Approved Recovery"]
     recovery --> verify["Deterministic Re-validation"]
 
@@ -90,7 +90,7 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 
 | Domain | MVP proof |
 | --- | --- |
-| [HMDA Data](domains/hmda-data.md) | 같은 source와 case에서 재현 가능한 Source → Bronze state와 representative reliability input을 만든다. |
+| [HMDA Data](domains/hmda-data.md) | 같은 source와 case에서 재현 가능한 Source → Bronze state와 synthetic incident input을 만든다. |
 | [Data Platform](domains/data-platform.md) | Bronze → staging → mart와 채택된 dbt artifact/lineage evidence를 추적할 수 있다. |
 | [Data Operations](domains/data-operations.md) | ingestion/dbt/reliability execution과 candidate/current adoption boundary, failure evidence가 명확하다. |
 | [Reliability](domains/reliability.md) | deterministic incident → validated proposal/approval → recovery → re-validation을 닫는다. |
@@ -105,9 +105,9 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 ### Foundation Proofs
 
 - **Data Lake proof** — HMDA source가 Bronze와 dbt analytical layer까지 재현 가능하게 흐른다.
-- **Reliability proof** — 대표 incident를 deterministic evidence로 탐지·설명하고 recovery 뒤 같은 기준으로 다시 검증한다.
-- **Agentic contract proof** — structured review contract, evidence binding과 structured-fact validation을 deterministic하게 반복 검증할 수 있다.
-- **Live Agentic proof** — 같은 revision에서 실제 model invocation이 bounded review context와 `RemediationDraft`를 기반으로 structured review를 최소 한 번 만들고, model/config, prompt identity, project revision, evidence refs, output, latency와 제공 가능한 usage(token/cost)를 invocation evidence로 남긴다. 이 proof는 deterministic regression과 동일하게 취급하지 않는다.
+- **Reliability proof** — 대표 synthetic incident를 deterministic evidence로 탐지·설명하고 recovery 뒤 같은 기준으로 다시 검증한다.
+- **Agentic contract proof** — structured review contract, evidence binding, structured-fact validation과 evaluation을 deterministic하게 반복 검증할 수 있다.
+- **Live Agentic proof** — 같은 revision에서 실제 model invocation이 evidence와 `RemediationDraft`를 기반으로 structured review를 최소 한 번 만들고, model/config, prompt identity, project revision, evidence refs, output, latency와 제공 가능한 usage(token/cost)를 invocation evidence로 남긴다. 이 proof는 deterministic regression과 동일하게 취급하지 않는다.
 - **Safety proof** — Agentic output은 deterministic guardrail과 proposal-bound human approval을 우회해 mutation을 일으킬 수 없고, LLM availability 자체가 recovery authority를 부여하거나 변경하지 않는다.
 - **Reproducibility proof** — 정상, incident, recovery와 주요 failure/retry의 deterministic 결과를 같은 revision에서 다시 설명할 수 있고 live invocation 결과는 evidence로 보존된다.
 
@@ -126,11 +126,11 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 - dbt staging/marts와 artifact evidence
 - Airflow local data plane
 - deterministic profiling, incident, impact, `RemediationDraft`, recovery와 evaluation
-- 대표 reliability case를 사용하는 bounded Agentic review
+- 대표 synthetic incident를 사용하는 최소 Agentic review
+- Agentic contract evaluation과 최소 한 번의 observable live model proof
 - incident 판단에 직접 관련된 profile, sibling signal, lineage/impact, dbt execution 또는 domain semantics 중 필요한 evidence를 제한적으로 선택하는 review context
 - Agentic structured-fact validation, invocation provenance와 최소한의 human utility evaluation
 - 같은 representative case와 versioned rubric을 사용하는 작은 baseline/candidate comparison
-- 최소 한 번의 observable live model proof
 - validated recovery proposal, human approval, recovery와 re-validation
 
 ### Out of Scope
