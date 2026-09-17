@@ -69,16 +69,16 @@ Tach 0.35.1을 활용한 Python 의존성 경계([tach.toml](../../tach.toml)) �
 
 ### Phase 1: PR #241 병합 전 즉각 반영 작업 (Required for Merge)
 
-- [ ] **Task 1.1 (`F1` 해결)**: [tests/scripts/test_tach.py](../../tests/scripts/test_tach.py)에서 `check()` 함수를 `[sys.executable, "-m", "tach", "check"]`로 변경.
-- [ ] **Task 1.2 (`F2` 해결)**:
+- [x] **Task 1.1 (`F1` 해결)**: [tests/scripts/test_tach.py](../../tests/scripts/test_tach.py)에서 `check()` 함수를 `[sys.executable, "-m", "tach", "check"]`로 변경.
+- [x] **Task 1.2 (`F2` 해결)**:
   - [.github/workflows/classify_changes.sh](../../.github/workflows/classify_changes.sh#L301) 패턴에 `tests/review_ai/test_dependency_boundaries.py` 추가.
   - [tests/scripts/test_ci_classifier.py](../../tests/scripts/test_ci_classifier.py)에 해당 경로 단독 변경 시 `tach=true` 검증 케이스 추가.
-- [ ] **Task 1.3 (`F3` 해결)**: [.github/workflows/ci-lite.yml](../../.github/workflows/ci-lite.yml#L182-L186) 단계에 `set -euo pipefail` 추가.
-- [ ] **Task 1.4 (Rulesync 동기화)**: 갱신된 [rulesync.lock](../../rulesync.lock)을 PR 변경 내역에 포함.
+- [x] **Task 1.3 (`F3` 해결)**: [.github/workflows/ci-lite.yml](../../.github/workflows/ci-lite.yml#L182-L186) 단계에 `set -euo pipefail` 추가.
+- [x] **Task 1.4 (Rulesync 동기화)**: 갱신된 [rulesync.lock](../../rulesync.lock)을 PR 변경 내역에 포함.
 
 ### Phase 2: 로컬 전체 검증 및 PR 갱신 (Verification & PR Update)
 
-- [ ] **Task 2.1 (로컬 검증 실행)**:
+- [x] **Task 2.1 (로컬 검증 실행)**:
   - `uv run --no-sync tach check`
   - `uv run pytest tests/scripts/test_tach.py tests/scripts/test_tach_config.py tests/review_ai/test_dependency_boundaries.py tests/scripts/test_ci_classifier.py`
   - `uv run ruff check .` && `uv run ruff format --check .`
@@ -90,5 +90,5 @@ Tach 0.35.1을 활용한 Python 의존성 경계([tach.toml](../../tach.toml)) �
 
 ### Phase 3: 후속 모니터링 및 확장 과제 (Post-Merge / Future Architecture)
 
-- [ ] **Task 3.1 (`F4` 고려)**: 신규 도메인/모듈 생성 가이드라인에 맞춰 `test_tach_config.py` 모듈 디렉터리 필터 방어성 보완.
+- [x] **Task 3.1 (`F4` 해결)**: [tests/scripts/test_tach_config.py](../../tests/scripts/test_tach_config.py) 모듈 디렉터리 필터 방어성 보완(`path.is_dir() and not path.name.startswith((".", "_"))`).
 - [ ] **Task 3.2 (전이적 의존성 모니터링)**: `shared`나 루트 유틸 모듈을 통한 AI 모듈 간접 노출(Proxy Re-export) 여부를 모니터링하고, 향후 필요 시 `exact = true` 기반의 전체 허용 목록(`depends_on`) 도입 검토.

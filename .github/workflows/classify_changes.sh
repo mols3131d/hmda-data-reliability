@@ -298,7 +298,7 @@ while IFS= read -r path; do
   esac
 
   case "$path" in
-    .python-version|tach.toml|pyproject.toml|uv.lock|src/*.py|tests/scripts/test_tach*.py|.github/workflows/*)
+    .python-version|tach.toml|pyproject.toml|uv.lock|src/*.py|tests/scripts/test_tach*.py|tests/review_ai/test_dependency_boundaries.py|.github/workflows/*)
       tach=true
       ;;
   esac

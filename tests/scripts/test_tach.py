@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -25,7 +26,11 @@ def project(tmp_path: Path) -> Path:
 
 def check(project: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["tach", "check"], cwd=project, text=True, capture_output=True, check=False
+        [sys.executable, "-m", "tach", "check"],
+        cwd=project,
+        text=True,
+        capture_output=True,
+        check=False,
     )
 
 

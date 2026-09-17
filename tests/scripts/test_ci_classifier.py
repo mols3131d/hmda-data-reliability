@@ -82,6 +82,7 @@ def test_script_test_modify() -> None:
         ".github/workflows/classify_changes.sh",
         "tests/scripts/test_tach.py",
         "tests/scripts/test_tach_config.py",
+        "tests/review_ai/test_dependency_boundaries.py",
     ],
 )
 def test_architecture_changes_prepare_and_run_boundary_check(path: str) -> None:

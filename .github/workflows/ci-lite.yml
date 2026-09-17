@@ -180,6 +180,7 @@ jobs:
       - name: Check Python dependency boundaries
         if: steps.scope.outputs.tach == 'true'
         run: |
+          set -euo pipefail
           uv run --no-sync tach check
           uv run --no-sync pytest -q -p no:sugar --tb=short tests/scripts/test_tach.py tests/scripts/test_tach_config.py tests/review_ai/test_dependency_boundaries.py
 

@@ -24,7 +24,7 @@ def test_tach_configuration_covers_source_and_only_forbids_canonical_edges() -> 
         *{
             f"hmda_reliability.{path.name}"
             for path in (REPO_ROOT / "src" / "hmda_reliability").iterdir()
-            if path.is_dir() and (path / "__init__.py").is_file()
+            if path.is_dir() and not path.name.startswith((".", "_"))
         },
     }
 
