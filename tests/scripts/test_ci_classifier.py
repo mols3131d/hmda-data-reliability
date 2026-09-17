@@ -13,7 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CLASSIFIER_SCRIPT = REPO_ROOT / ".github" / "workflows" / "classify_changes.sh"
 
 
-def run_classifier(paths: list[str], *, cwd: Path = REPO_ROOT) -> dict[str, str]:
+def run_classifier(paths: list[str], *, repo_root: Path = REPO_ROOT) -> dict[str, str]:
     """Execute the classifier script against the provided paths via stdin."""
     proc = subprocess.run(
         ["bash", str(CLASSIFIER_SCRIPT), "--stdin"],
@@ -21,7 +21,7 @@ def run_classifier(paths: list[str], *, cwd: Path = REPO_ROOT) -> dict[str, str]
         capture_output=True,
         text=True,
         check=True,
-        cwd=cwd,
+        cwd=repo_root,
     )
     result: dict[str, str] = {}
     for line in proc.stdout.splitlines():
@@ -32,13 +32,17 @@ def run_classifier(paths: list[str], *, cwd: Path = REPO_ROOT) -> dict[str, str]
 
 
 @pytest.fixture
-def active_change_project(tmp_path: Path) -> Path:
-    """실제 Change의 archive lifecycle과 독립적인 active pairing fixture."""
-    (tmp_path / "openspec/specs/orchestration-pipeline").mkdir(parents=True)
-    (
-        tmp_path
-        / "openspec/changes/orchestration-quality-gate/specs/orchestration-pipeline"
-    ).mkdir(parents=True)
+def openspec_repo(tmp_path: Path) -> Path:
+    """Active Change inventory is test-owned, independent of repository archives."""
+    for relative in (
+        "openspec/specs/orchestration-pipeline/spec.md",
+        "openspec/specs/reliability-data-contracts/spec.md",
+        "openspec/changes/orchestration-quality-gate/proposal.md",
+        "openspec/changes/orchestration-quality-gate/specs/orchestration-pipeline/spec.md",
+    ):
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# Classifier fixture\n", encoding="utf-8")
     return tmp_path
 
 
@@ -417,12 +421,12 @@ def test_unknown_canonical_openspec_change_fails_safe_to_full_tests() -> None:
 
 @pytest.mark.unit
 def test_active_openspec_change_uses_affected_validation_target(
-    active_change_project: Path,
+    openspec_repo: Path,
 ) -> None:
     """Active Change 변경은 해당 Change만 OpenSpec validation 대상으로 선택한다."""
     out = run_classifier(
         ["openspec/changes/orchestration-quality-gate/proposal.md"],
-        cwd=active_change_project,
+        repo_root=openspec_repo,
     )
 
     assert out["openspec"] == "true"
@@ -505,11 +509,11 @@ def test_tach_only_change_runs_dependency_setup_without_python_suite() -> None:
 
 @pytest.mark.unit
 def test_canonical_spec_selects_direct_active_change_validation(
-    active_change_project: Path,
+    openspec_repo: Path,
 ) -> None:
     """Canonical Spec 변경은 같은 capability의 active Change도 검증한다."""
     out = run_classifier(
-        ["openspec/specs/orchestration-pipeline/spec.md"], cwd=active_change_project
+        ["openspec/specs/orchestration-pipeline/spec.md"], repo_root=openspec_repo
     )
 
     assert out["openspec_spec_targets"].strip() == "orchestration-pipeline"
@@ -517,9 +521,13 @@ def test_canonical_spec_selects_direct_active_change_validation(
 
 
 @pytest.mark.unit
-def test_canonical_spec_without_active_delta_keeps_change_targets_empty() -> None:
+def test_canonical_spec_without_active_delta_keeps_change_targets_empty(
+    openspec_repo: Path,
+) -> None:
     """직접 연결된 active Change가 없으면 affected Spec만 유지한다."""
-    out = run_classifier(["openspec/specs/reliability-data-contracts/spec.md"])
+    out = run_classifier(
+        ["openspec/specs/reliability-data-contracts/spec.md"], repo_root=openspec_repo
+    )
 
     assert out["openspec_spec_targets"].strip() == "reliability-data-contracts"
     assert out["openspec_change_targets"].strip() == ""
@@ -527,7 +535,7 @@ def test_canonical_spec_without_active_delta_keeps_change_targets_empty() -> Non
 
 @pytest.mark.unit
 def test_mixed_canonical_spec_and_active_change_preserves_both_targets(
-    active_change_project: Path,
+    openspec_repo: Path,
 ) -> None:
     """같은 change set의 Spec와 active Change target을 모두 중복 없이 보존한다."""
     out = run_classifier(
@@ -535,7 +543,7 @@ def test_mixed_canonical_spec_and_active_change_preserves_both_targets(
             "openspec/specs/orchestration-pipeline/spec.md",
             "openspec/changes/orchestration-quality-gate/proposal.md",
         ],
-        cwd=active_change_project,
+        repo_root=openspec_repo,
     )
 
     assert out["openspec_spec_targets"].strip() == "orchestration-pipeline"

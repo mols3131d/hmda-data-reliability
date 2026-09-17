@@ -290,6 +290,14 @@ def _ensure_approved(
         raise ApprovalGateError(
             "backfill approval의 recovery proposal이 일치하지 않습니다."
         )
+    if (
+        request.table_name != proposal.table_name
+        or request.source_year != proposal.source_year
+        or request.source_file != proposal.source_file
+    ):
+        raise ApprovalGateError(
+            "backfill request의 target scope가 승인된 proposal과 일치하지 않습니다."
+        )
     if approval.incident_id != proposal.incident_id:
         raise ApprovalGateError(
             "backfill approval의 incident가 proposal과 일치하지 않습니다."

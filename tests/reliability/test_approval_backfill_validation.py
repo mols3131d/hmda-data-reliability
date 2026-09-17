@@ -138,6 +138,37 @@ def test_mismatched_recovery_proposal_is_rejected_before_source_access(
         )
 
 
+@pytest.mark.component
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("table_name", "raw.other_loans"),
+        ("source_year", 2024),
+        ("source_file", "other.csv"),
+    ],
+)
+def test_mismatched_request_scope_is_rejected_before_source_access(
+    tmp_path: Path, field: str, value: str | int
+) -> None:
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED),
+        source_paths=(tmp_path / "missing.csv",),
+    )
+    payload = request.model_dump()
+    payload[field] = value
+    if field == "table_name":
+        payload["profile_request"]["table_name"] = value
+    elif field == "source_year":
+        payload["profile_request"]["partition"] = value
+    mismatched = ApprovedBackfillRequest.model_validate(payload)
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(ApprovalGateError, match="target scope"),
+    ):
+        execute_approved_backfill(connection, mismatched)
+
+
 @pytest.mark.integration
 def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
     tmp_path: Path,
