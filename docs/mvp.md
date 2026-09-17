@@ -18,7 +18,7 @@ tags:
 
 # MVP
 
-> **Active goal:** 로컬 HMDA 데이터로 최소 Data Lake를 end-to-end로 실행하고, 그 위에서 evidence-first Reliability와 제한된 Agentic review가 안전하게 동작하며 사람의 reliability 판단에도 최소한의 실질적 도움을 준다는 것을 증명한다.
+> **Active goal:** 로컬 HMDA 데이터로 최소 Data Lake를 end-to-end로 실행하고, 그 위에서 evidence-first Reliability와 제한된 Agentic review가 안전하게 동작하며 사람의 reliability 판단에도 최소한으로 유용함을 증명한다.
 
 이 문서는 **현재 MVP의 목표, scope와 acceptance만 소유한다.** 현재 구현 상태, validation 결과와 blocker는 여기서 관리하지 않는다.
 
@@ -28,11 +28,11 @@ AI가 안전하게 호출되고 deterministic facts를 다시 말하는 것만�
 
 ## MVP Value
 
-MVP는 다음 두 capability를 함께 증명해야 한다.
+MVP에는 다음 두 capability가 함께 존재해야 하며, 둘 모두를 증명해야 한다.
 
 ### Minimal Data Lake
 
-HMDA Data는 local source를 검증해 DuckDB Bronze까지 적재되고, Data Platform은 그 Bronze를 dbt staging/mart로 변환한다. 이 결과는 downstream Reliability가 다시 추적할 수 있는 data와 dbt evidence를 남긴다.
+HMDA Data는 local source 검증을 거쳐 DuckDB Bronze까지 적재되고, Data Platform은 그 Bronze를 dbt staging/mart로 변환한다. 이 결과는 downstream Reliability가 다시 추적할 수 있는 data와 dbt evidence를 남긴다.
 
 ### Agentic Reliability
 
