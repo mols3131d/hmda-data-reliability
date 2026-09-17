@@ -1,0 +1,4 @@
+schema: spec-driven-tdd
+created: 2026-09-17
+goal: 대표 incident에서 provenance-aware context, agentic utility, rubric quality,
+  baseline-candidate comparison을 재현 가능하게 증명한다.
