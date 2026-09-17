@@ -100,7 +100,7 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 
 ## MVP Acceptance
 
-하나의 current revision에서 Foundation Proofs와 Utility Proofs가 모두 성립하면 완료한다.
+하나의 current revision에서 Foundation Proofs와 Utility Proofs가 모두 성립하면 완료한다. Foundation Proofs는 기존 MVP acceptance를 그대로 유지하고, Utility Proofs는 그 위에 최소한의 Agentic review 유용성을 추가로 요구한다.
 
 ### Foundation Proofs
 
@@ -114,8 +114,8 @@ Airflow는 최소 Data Lake의 data plane을 실행한다. Reliability control-p
 ### Utility Proofs
 
 - **Review context proof** — 대표 review case에서 단일 incident의 최소 structured facts뿐 아니라 판단에 직접 필요한 주변 evidence를 bounded context로 선택하고, 각 evidence의 provenance와 누락·미확인 context를 구분할 수 있다.
-- **Agentic utility proof** — 대표 review case에서 AI가 deterministic facts 또는 `RemediationDraft`를 단순 재진술하는 데 그치지 않고, 사람의 다음 판단에 사용할 수 있는 decision-relevant contribution을 최소 하나 만든다. 예시는 evidence gap, 조사 우선순위, remediation critique 또는 중요한 uncertainty 식별이다.
-- **Quality evaluation proof** — review utility를 versioned human rubric으로 평가하고 같은 case와 기준으로 다시 실행할 수 있다. 최소 기준은 added value, actionability, evidence awareness, uncertainty handling과 prioritization을 포함하되, 자동 LLM judge나 특정 평가 플랫폼에 의존하지 않는다.
+- **Agentic utility proof** — 대표 review case에서 AI가 deterministic facts 또는 `RemediationDraft`를 단순 재진술하는 데 그치지 않고, 사람의 다음 판단에 직접 도움이 되는 기여를 최소 하나 만든다. 예시는 evidence gap, 조사 우선순위, remediation critique 또는 중요한 uncertainty 식별이다.
+- **Quality evaluation proof** — review utility를 versioned human rubric으로 평가하고 같은 case와 기준으로 다시 실행할 수 있다. 최소 평가 항목은 added value, actionability, evidence awareness, uncertainty handling과 prioritization이며, 자동 LLM judge나 특정 평가 플랫폼에 의존하지 않는다.
 - **Change comparison proof** — prompt, model 또는 review context의 의미 있는 변경은 같은 representative case와 rubric에서 현재 baseline과 비교할 수 있고, 채택 여부와 근거를 사람이 검토 가능한 evidence로 남길 수 있다.
 
 ## Scope
