@@ -168,7 +168,17 @@ def review_null_spike(
         )
 
     # 결정론적 구조 및 사실 가드레일 검증
-    validation = validate_agentic_review(review_input, parsed_output)
+    bounded_context = rendered.context
+    if bounded_context is None:  # pragma: no cover
+        # `render_review_prompt` always binds a context for this service path.
+        raise RuntimeError("review prompt is missing bounded context")
+    validation = validate_agentic_review(
+        review_input,
+        parsed_output,
+        allowed_evidence_ids={
+            item.evidence_id for item in bounded_context.selected_evidence
+        },
+    )
     if validation.status is ReviewValidationStatus.REJECTED:
         status = AgenticReviewStatus.VALIDATION_FAILED
         failure_code = "deterministic_guard_failed"
@@ -251,6 +261,10 @@ class _ReviewSession:
     ) -> AgenticInvocationEvidence:
         configuration = self.settings.sanitized_configuration()
         configuration.update(self.review_settings.sanitized_configuration())
+        bounded_context = self.rendered.context
+        if bounded_context is None:  # pragma: no cover
+            # `_ReviewSession` is created only from `render_review_prompt`.
+            raise RuntimeError("review prompt is missing bounded context")
         return AgenticInvocationEvidence(
             invocation_id=self.invocation_id,
             recorded_at=self.clock(),
@@ -263,7 +277,7 @@ class _ReviewSession:
             project_revision=self.review_input.project_revision,
             incident_id=self.review_input.incident.incident_id,
             evidence_refs=tuple(
-                item.evidence_id for item in self.review_input.evidence
+                item.evidence_id for item in bounded_context.selected_evidence
             ),
             canonical_input=self.rendered.canonical_input,
             parsed_output=parsed_output,

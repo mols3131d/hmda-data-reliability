@@ -177,6 +177,50 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
     assert record.trace_id == "req-1"
 
 
+def test_invocation_provenance_uses_the_same_bounded_projection_as_provider_input(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    bounded_evidence = material.detection.evidence.model_copy(
+        update={
+            "payload": {
+                **material.detection.evidence.payload,
+                "raw_log": "unbounded provider payload",
+            }
+        }
+    )
+    store = RecordingStore(tmp_path)
+
+    result = service_module.review_null_spike(
+        incident=material.detection.incident,
+        evidence=[bounded_evidence],
+        draft=material.draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=FakeProvider(
+            runtime_contracts.ProviderResponse(
+                content=_safe_output(material).model_dump_json(),
+                attempt_count=1,
+                latency_ms=5,
+            )
+        ),
+        evidence_store=store,
+        invocation_id_factory=lambda: "inv-bounded",
+    )
+
+    assert result.status == "accepted"
+    record = store.records[0]
+    assert "raw_log" not in record.model_dump_json()
+    canonical_evidence = record.canonical_input["evidence"]
+    assert isinstance(canonical_evidence, list)
+    assert all(isinstance(item, dict) for item in canonical_evidence)
+    assert record.evidence_refs == tuple(
+        item["evidence_id"] for item in canonical_evidence if isinstance(item, dict)
+    )
+
+
 def test_records_evidence_when_review_outcome_is_created(
     tmp_path: Path,
     null_spike_review_material: NullSpikeReviewMaterial,

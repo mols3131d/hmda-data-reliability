@@ -6,10 +6,14 @@ import hashlib
 import json
 from enum import StrEnum
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
-from hmda_reliability.review_ai.contracts import UtilityContributionKind
+from hmda_reliability.review_ai.contracts import (
+    AgenticReviewOutput,
+    NullSpikeFacts,
+    UtilityContributionKind,
+)
 
 
 class RubricCriterion(StrEnum):
@@ -80,17 +84,42 @@ class HumanUtilityEvaluation(ReliabilityContract):
     case_id: str = Field(min_length=1, max_length=256)
     case_version: str = Field(min_length=1, max_length=64)
     invocation_id: str = Field(min_length=1, max_length=256)
+    project_revision: str = Field(min_length=1, max_length=256)
     rubric_id: str = Field(pattern=r"^rubric_v1$")
     output_kind: str = Field(
         pattern=r"^(positive_control|negative_control|baseline|candidate)$"
     )
+    output_fixture_id: str = Field(min_length=1, max_length=256)
+    output_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    contribution_kinds: tuple[UtilityContributionKind, ...] = Field(
+        max_length=4,
+    )
+    output: AgenticReviewOutput
     scores: tuple[RubricScore, ...] = Field(max_length=5)
+
+    @field_validator("project_revision")
+    @classmethod
+    def _normalize_revision(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            msg = "project_revision must be non-empty"
+            raise ValueError(msg)
+        return normalized
 
     @model_validator(mode="after")
     def _validate_unique_criteria(self) -> HumanUtilityEvaluation:
         criteria = [score.criterion for score in self.scores]
         if len(criteria) != len(set(criteria)):
             msg = "rubric criteria must be unique"
+            raise ValueError(msg)
+        if len(self.contribution_kinds) != len(set(self.contribution_kinds)):
+            msg = "utility contribution kinds must be unique"
+            raise ValueError(msg)
+        if utility_output_digest(self.output) != self.output_digest:
+            msg = "evaluation output digest does not match its output"
+            raise ValueError(msg)
+        if utility_contribution_kinds(self.output) != self.contribution_kinds:
+            msg = "evaluation contribution kinds must match its output"
             raise ValueError(msg)
         return self
 
@@ -113,15 +142,68 @@ class UtilityControl(ReliabilityContract):
     case_id: str = Field(min_length=1, max_length=256)
     case_version: str = Field(min_length=1, max_length=64)
     expected_outcome: str = Field(pattern=r"^(pass|fail)$")
+    output_fixture_id: str = Field(min_length=1, max_length=256)
+    output: AgenticReviewOutput
+    expected_incident_id: str = Field(min_length=1, max_length=256)
+    expected_target_column: str = Field(min_length=1, max_length=256)
+    expected_deterministic_facts: NullSpikeFacts
+    expected_contributions: tuple[UtilityContributionKind, ...] = Field(max_length=4)
     evaluation: HumanUtilityEvaluation
+
+    @model_validator(mode="after")
+    def _validate_output_binding(self) -> UtilityControl:
+        observed_contributions = utility_contribution_kinds(self.output)
+        output_digest = utility_output_digest(self.output)
+        if self.output_fixture_id != self.evaluation.output_fixture_id:
+            msg = "control and evaluation output fixture identities must match"
+            raise ValueError(msg)
+        if output_digest != self.evaluation.output_digest:
+            msg = "control output digest does not match its evaluation"
+            raise ValueError(msg)
+        if self.output != self.evaluation.output:
+            msg = "control output must match its evaluation output"
+            raise ValueError(msg)
+        if (
+            self.output.incident_id != self.expected_incident_id
+            or self.output.target_column != self.expected_target_column
+            or self.output.deterministic_facts != self.expected_deterministic_facts
+        ):
+            msg = "control output does not match its deterministic oracle"
+            raise ValueError(msg)
+        if self.expected_contributions != observed_contributions:
+            msg = "control expected contributions must match the actual output"
+            raise ValueError(msg)
+        if self.evaluation.contribution_kinds != observed_contributions:
+            msg = "evaluation contribution kinds must match the actual output"
+            raise ValueError(msg)
+        expected_output_kind = (
+            "positive_control"
+            if self.expected_outcome == "pass"
+            else "negative_control"
+        )
+        if self.evaluation.output_kind != expected_output_kind:
+            msg = "control outcome must match its output kind"
+            raise ValueError(msg)
+        if self.expected_outcome == "pass" and not observed_contributions:
+            msg = "positive control must contain utility contributions"
+            raise ValueError(msg)
+        if self.expected_outcome == "fail" and observed_contributions:
+            msg = "negative control must be a restatement-only output"
+            raise ValueError(msg)
+        return self
 
 
 class ControlValidationResult(ReliabilityContract):
     control_id: str
     evaluation_id: str
     invocation_id: str
+    project_revision: str
     expected_outcome: str
     observed_outcome: str
+    output_fixture_id: str
+    output_digest: str
+    contribution_kinds: tuple[UtilityContributionKind, ...]
+    output: AgenticReviewOutput
     scores: tuple[RubricScore, ...]
     valid: bool
 
@@ -129,6 +211,7 @@ class ControlValidationResult(ReliabilityContract):
 class QualityBasisValidation(ReliabilityContract):
     basis_id: str = "rubric_v1-controls"
     rubric_id: str = "rubric_v1"
+    project_revision: str = Field(min_length=1, max_length=256)
     controls: tuple[ControlValidationResult, ...] = Field(max_length=8)
     valid: bool
     failure_code: str | None = Field(default=None, max_length=128)
@@ -153,11 +236,24 @@ class UtilityComparisonEvidence(ReliabilityContract):
     comparison_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
     case_id: str = Field(min_length=1, max_length=256)
     case_version: str = Field(min_length=1, max_length=64)
+    project_revision: str = Field(min_length=1, max_length=256)
     rubric_id: str = Field(pattern=r"^rubric_v1$")
     baseline_evaluation_id: str = Field(min_length=1, max_length=256)
     baseline_invocation_id: str = Field(min_length=1, max_length=256)
+    baseline_output_fixture_id: str = Field(min_length=1, max_length=256)
+    baseline_output_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    baseline_contribution_kinds: tuple[UtilityContributionKind, ...] = Field(
+        max_length=4,
+    )
     candidate_evaluation_id: str = Field(min_length=1, max_length=256)
     candidate_invocation_id: str = Field(min_length=1, max_length=256)
+    candidate_output_fixture_id: str = Field(min_length=1, max_length=256)
+    candidate_output_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    candidate_contribution_kinds: tuple[UtilityContributionKind, ...] = Field(
+        max_length=4,
+    )
+    baseline_output: AgenticReviewOutput
+    candidate_output: AgenticReviewOutput
     change_under_test: str = Field(min_length=1, max_length=1_024)
     status: UtilityComparisonStatus
     quality_basis_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
@@ -169,8 +265,31 @@ class UtilityComparisonEvidence(ReliabilityContract):
     rationale: str = Field(min_length=1, max_length=2_048)
     blocker_code: str | None = Field(default=None, max_length=128)
 
+    @field_validator("project_revision")
+    @classmethod
+    def _normalize_revision(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            msg = "project_revision must be non-empty"
+            raise ValueError(msg)
+        return normalized
+
     @model_validator(mode="after")
     def _validate_comparison_boundary(self) -> UtilityComparisonEvidence:
+        if utility_output_digest(self.baseline_output) != self.baseline_output_digest:
+            msg = "baseline output digest does not match comparison evidence"
+            raise ValueError(msg)
+        if utility_output_digest(self.candidate_output) != self.candidate_output_digest:
+            msg = "candidate output digest does not match comparison evidence"
+            raise ValueError(msg)
+        if (
+            utility_contribution_kinds(self.baseline_output)
+            != self.baseline_contribution_kinds
+            or utility_contribution_kinds(self.candidate_output)
+            != self.candidate_contribution_kinds
+        ):
+            msg = "comparison contribution kinds do not match output evidence"
+            raise ValueError(msg)
         if self.total_delta != self.candidate_total - self.baseline_total:
             msg = "comparison total delta does not match totals"
             raise ValueError(msg)
@@ -202,6 +321,15 @@ class UtilityProofCase(ReliabilityContract):
         max_length=4,
     )
 
+    @field_validator("project_revision")
+    @classmethod
+    def _normalize_revision(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            msg = "project_revision must be non-empty"
+            raise ValueError(msg)
+        return normalized
+
 
 class UtilityProofBundle(ReliabilityContract):
     proof_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -220,6 +348,26 @@ class UtilityProofBundle(ReliabilityContract):
         if self.comparison.quality_basis_digest != self.quality_basis.basis_digest:
             msg = "proof comparison must reference its quality basis"
             raise ValueError(msg)
+        if self.case.project_revision != self.comparison.project_revision:
+            msg = "proof case and comparison revision must match"
+            raise ValueError(msg)
+        if self.quality_basis.valid and (
+            self.case.project_revision != self.quality_basis.project_revision
+        ):
+            msg = "proof case and quality basis revision must match"
+            raise ValueError(msg)
+        if (
+            self.case.baseline_output_digest != self.comparison.baseline_output_digest
+            or self.case.candidate_output_digest
+            != self.comparison.candidate_output_digest
+        ):
+            msg = "proof case must reference the compared output digests"
+            raise ValueError(msg)
+        if tuple(self.case.expected_contributions) != tuple(
+            self.comparison.candidate_contribution_kinds
+        ):
+            msg = "proof case expected contributions must match candidate output"
+            raise ValueError(msg)
         return self
 
 
@@ -233,13 +381,30 @@ def validate_quality_basis(
     valid = True
     failure_code: str | None = None
     seen: set[str] = set()
+    project_revisions = {control.evaluation.project_revision for control in controls}
+    control_case_identities = {
+        (control.case_id, control.case_version) for control in controls
+    }
+    project_revision = next(iter(project_revisions), "unavailable")
     for control in controls:
         observed = "pass" if control.evaluation.passed(rubric) else "fail"
+        observed_contributions = utility_contribution_kinds(control.output)
+        output_digest = utility_output_digest(control.output)
         item_valid = (
             control.control_id not in seen
             and control.case_id == control.evaluation.case_id
             and control.case_version == control.evaluation.case_version
             and control.evaluation.rubric_id == rubric.rubric_id
+            and control.evaluation.is_complete
+            and control.evaluation.output_fixture_id == control.output_fixture_id
+            and control.evaluation.output_digest == output_digest
+            and control.evaluation.contribution_kinds == observed_contributions
+            and control.expected_contributions == observed_contributions
+            and control.output == control.evaluation.output
+            and control.output.incident_id == control.expected_incident_id
+            and control.output.target_column == control.expected_target_column
+            and control.output.deterministic_facts
+            == control.expected_deterministic_facts
             and control.expected_outcome == observed
         )
         seen.add(control.control_id)
@@ -248,26 +413,42 @@ def validate_quality_basis(
                 control_id=control.control_id,
                 evaluation_id=control.evaluation.evaluation_id,
                 invocation_id=control.evaluation.invocation_id,
+                project_revision=control.evaluation.project_revision,
                 expected_outcome=control.expected_outcome,
                 observed_outcome=observed,
+                output_fixture_id=control.output_fixture_id,
+                output_digest=output_digest,
+                contribution_kinds=observed_contributions,
+                output=control.output,
                 scores=control.evaluation.scores,
                 valid=item_valid,
             )
         )
         if not item_valid:
             valid = False
-            failure_code = failure_code or "control_mismatch"
+            failure_code = failure_code or (
+                "control_incomplete"
+                if not control.evaluation.is_complete
+                else "control_mismatch"
+            )
 
     control_kinds = {control.evaluation.output_kind for control in controls}
     if control_kinds != {"positive_control", "negative_control"}:
         valid = False
         failure_code = failure_code or "controls_incomplete"
+    if len(project_revisions) != 1:
+        valid = False
+        failure_code = failure_code or "control_revision_mismatch"
+    if len(control_case_identities) != 1:
+        valid = False
+        failure_code = failure_code or "control_case_mismatch"
     payload = [result.model_dump(mode="json") for result in results]
     basis_digest = (
         f"sha256:{hashlib.sha256(_canonical_json_bytes(payload)).hexdigest()}"
     )
     return QualityBasisValidation(
         rubric_id=rubric.rubric_id,
+        project_revision=project_revision,
         controls=tuple(results),
         valid=valid,
         failure_code=failure_code,
@@ -297,6 +478,8 @@ def compare_utility_evaluations(
         blocker = "case_mismatch"
     elif baseline.rubric_id != candidate.rubric_id:
         blocker = "rubric_mismatch"
+    elif baseline.project_revision != candidate.project_revision:
+        blocker = "project_revision_mismatch"
     elif not baseline.is_complete or not candidate.is_complete:
         blocker = "evaluation_incomplete"
 
@@ -319,11 +502,20 @@ def compare_utility_evaluations(
         comparison_id=comparison_id,
         case_id=baseline.case_id,
         case_version=baseline.case_version,
+        project_revision=baseline.project_revision,
         rubric_id=baseline.rubric_id,
         baseline_evaluation_id=baseline.evaluation_id,
         baseline_invocation_id=baseline.invocation_id,
+        baseline_output_fixture_id=baseline.output_fixture_id,
+        baseline_output_digest=baseline.output_digest,
+        baseline_contribution_kinds=baseline.contribution_kinds,
         candidate_evaluation_id=candidate.evaluation_id,
         candidate_invocation_id=candidate.invocation_id,
+        candidate_output_fixture_id=candidate.output_fixture_id,
+        candidate_output_digest=candidate.output_digest,
+        candidate_contribution_kinds=candidate.contribution_kinds,
+        baseline_output=baseline.output,
+        candidate_output=candidate.output,
         change_under_test=change_under_test,
         status="blocked" if blocker else "compared",
         quality_basis_digest=quality_basis.basis_digest,
@@ -374,3 +566,18 @@ def _canonical_json_bytes(value: object) -> bytes:
         separators=(",", ":"),
         sort_keys=True,
     ).encode("utf-8")
+
+
+def utility_output_digest(output: AgenticReviewOutput) -> str:
+    """Return the replayable digest bound to one exact structured output."""
+
+    payload = _canonical_json_bytes(output.model_dump(mode="json"))
+    return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def utility_contribution_kinds(
+    output: AgenticReviewOutput,
+) -> tuple[UtilityContributionKind, ...]:
+    """Return contribution kinds in the output's stable order without duplicates."""
+
+    return tuple(dict.fromkeys(item.kind for item in output.utility_contributions))

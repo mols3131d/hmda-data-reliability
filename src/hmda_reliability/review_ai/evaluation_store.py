@@ -46,19 +46,14 @@ class UtilityEvidenceStore:
         )
 
     def write_proof(self, bundle: UtilityProofBundle) -> Path:
-        path = (
-            self._artifact_root
-            / "agentic-review"
-            / "utility"
-            / "proofs"
-            / f"{bundle.proof_id}.json"
-        )
+        path = self.path_for_proof(bundle.proof_id)
         return self._write(path, bundle.model_dump(mode="json"))
 
     def _write(self, path: Path, value: object) -> Path:
         payload = canonical_json_bytes(value) + b"\n"
         descriptor = -1
         temporary_path: Path | None = None
+        linked = False
         try:
             path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             descriptor, raw_temporary_path = tempfile.mkstemp(
@@ -78,10 +73,18 @@ class UtilityEvidenceStore:
                 raise UtilityEvidenceExistsError(
                     "utility comparison identity already exists"
                 ) from error
+            linked = True
             _fsync_directory(path.parent)
         except UtilityEvidenceExistsError:
             raise
         except OSError as error:
+            if linked:
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError as rollback_error:
+                    raise UtilityEvidenceStoreError(
+                        "utility evidence write failed and rollback was indeterminate"
+                    ) from rollback_error
             raise UtilityEvidenceStoreError("utility evidence write failed") from error
         finally:
             if descriptor >= 0:
@@ -98,14 +101,21 @@ class UtilityEvidenceStore:
         )
 
     def load_proof(self, proof_id: str) -> UtilityProofBundle:
-        path = (
+        return UtilityProofBundle.model_validate_json(
+            self.path_for_proof(proof_id).read_text(encoding="utf-8")
+        )
+
+    def path_for_proof(self, proof_id: str) -> Path:
+        if _SAFE_ID.fullmatch(proof_id) is None:
+            msg = "unsafe proof identity"
+            raise ValueError(msg)
+        return (
             self._artifact_root
             / "agentic-review"
             / "utility"
             / "proofs"
             / f"{proof_id}.json"
         )
-        return UtilityProofBundle.model_validate_json(path.read_text(encoding="utf-8"))
 
 
 def _fsync_directory(directory: Path) -> None:

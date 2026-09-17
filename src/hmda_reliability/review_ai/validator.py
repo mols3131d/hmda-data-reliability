@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
+
 from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
@@ -21,6 +23,8 @@ _VIOLATION_ORDER = (
 def validate_agentic_review(
     review_input: AgenticReviewInput,
     output: AgenticReviewOutput,
+    *,
+    allowed_evidence_ids: Collection[str] | None = None,
 ) -> AgenticReviewValidation:
     """불변의 결정론적 입력 스냅샷과 provider 출력을 비교 검증한다.
 
@@ -38,7 +42,11 @@ def validate_agentic_review(
     detected: set[ReviewViolationCode] = set()
 
     # 1. Evidence 참조 무결성 검증 (허위/환각 증적 방지)
-    provided_evidence = {item.evidence_id for item in review_input.evidence}
+    provided_evidence = (
+        set(allowed_evidence_ids)
+        if allowed_evidence_ids is not None
+        else {item.evidence_id for item in review_input.evidence}
+    )
     referenced_evidence = set(output.evidence_used)
     for finding in output.findings:
         referenced_evidence.update(finding.evidence_refs)

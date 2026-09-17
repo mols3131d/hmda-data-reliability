@@ -96,10 +96,12 @@ def build_canonical_input(
     """
 
     incident = review_input.incident.model_dump(mode="json")
-    evidence = [item.model_dump(mode="json") for item in review_input.evidence]
     draft = review_input.draft.model_dump(mode="json")
     facts = review_input.deterministic_facts.model_dump(mode="json")
     active_context = context or build_bounded_review_context(review_input)
+    evidence = [
+        item.model_dump(mode="json") for item in active_context.selected_evidence
+    ]
     return {
         "incident": _pick(
             incident,
@@ -111,17 +113,7 @@ def build_canonical_input(
             "severity",
         ),
         "evidence": [
-            _pick(
-                item,
-                "evidence_id",
-                "source",
-                "asset_name",
-                "partition",
-                "observed_at",
-                "summary",
-                "payload",
-            )
-            for item in sorted(evidence, key=lambda item: str(item["evidence_id"]))
+            item for item in sorted(evidence, key=lambda item: str(item["evidence_id"]))
         ],
         "draft": _pick(
             draft,

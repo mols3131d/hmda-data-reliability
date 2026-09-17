@@ -76,6 +76,43 @@ def test_canonical_projection_uses_only_the_spec_allowlist(
 
 
 @pytest.mark.unit
+def test_provider_projection_uses_bounded_facts_instead_of_raw_payload(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    evidence = null_spike_review_material.detection.evidence.model_copy(
+        update={
+            "payload": {
+                **null_spike_review_material.detection.evidence.payload,
+                "raw_log": "sensitive unbounded log content",
+                "unexpected_field": {"nested": "secret"},
+            }
+        }
+    )
+    review_input = contracts.AgenticReviewInput(
+        incident=null_spike_review_material.detection.incident,
+        evidence=[evidence],
+        draft=null_spike_review_material.draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+    )
+
+    rendered = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
+    canonical_evidence = rendered.canonical_input["evidence"]
+
+    assert isinstance(canonical_evidence, list)
+    assert "raw_log" not in rendered.canonical_json
+    assert "unexpected_field" not in rendered.canonical_json
+    for item in canonical_evidence:
+        assert isinstance(item, dict)
+        assert "payload" not in item
+    first_evidence = canonical_evidence[0]
+    assert isinstance(first_evidence, dict)
+    facts = first_evidence["facts"]
+    assert isinstance(facts, dict)
+    assert facts["rule"] == "null_spike"
+
+
+@pytest.mark.unit
 def test_prompt_is_deterministic_replayable_and_separates_untrusted_data(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
