@@ -1,6 +1,6 @@
 ---
 title: "MVP"
-description: "로컬 HMDA Data Lake와 evidence-first Reliability, 최소한 유용한 Agentic review를 하나의 완결된 proof로 검증하기 위한 현재 MVP 목표, scope와 acceptance를 정의합니다."
+description: "로컬 HMDA Data Lake와 evidence-first Reliability, 제한된 Agentic review를 하나의 완결된 proof로 검증하기 위한 현재 MVP 목표, scope와 acceptance를 정의합니다."
 categories:
   - data-engineering
   - reliability
