@@ -47,6 +47,7 @@ def test_canonical_projection_uses_only_the_spec_allowlist(
         "evidence",
         "draft",
         "deterministic_facts",
+        "review_context",
     }
     incident = rendered.canonical_input["incident"]
     assert isinstance(incident, dict)
@@ -69,6 +70,9 @@ def test_canonical_projection_uses_only_the_spec_allowlist(
         "delta": 0.21 - 0.01,
         "threshold": 0.1,
     }
+    context = rendered.canonical_input["review_context"]
+    assert isinstance(context, dict)
+    assert context["incident_id"] == review_input.incident.incident_id
 
 
 @pytest.mark.unit

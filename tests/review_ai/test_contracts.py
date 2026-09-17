@@ -182,6 +182,31 @@ def test_output_is_closed_bounded_and_uses_typed_values(
         contracts_module.AgenticReviewOutput.model_validate(payload)
 
 
+def test_utility_contribution_is_structured_and_priority_is_scoped(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    review_input = _review_input(null_spike_review_material)
+    evidence_id = review_input.evidence[0].evidence_id
+    contribution = contracts_module.AgenticReviewUtilityContribution(
+        kind="investigation_priority",
+        description="먼저 income 원천 추출을 확인한다.",
+        evidence_refs=[evidence_id],
+        priority="high",
+    )
+    output = _output(review_input).model_copy(
+        update={"utility_contributions": (contribution,)}
+    )
+
+    assert output.utility_contributions[0].kind == "investigation_priority"
+    assert output.utility_contributions[0].priority == "high"
+    with pytest.raises(ValidationError):
+        contracts_module.AgenticReviewUtilityContribution(
+            kind="evidence_gap",
+            description="gap",
+            priority="low",
+        )
+
+
 def test_validation_policy_versions_restrict_active_violations() -> None:
     accepted = contracts_module.AgenticReviewValidation(
         status="accepted",

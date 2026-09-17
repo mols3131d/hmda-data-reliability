@@ -42,6 +42,8 @@ def validate_agentic_review(
     referenced_evidence = set(output.evidence_used)
     for finding in output.findings:
         referenced_evidence.update(finding.evidence_refs)
+    for contribution in output.utility_contributions:
+        referenced_evidence.update(contribution.evidence_refs)
     if not referenced_evidence.issubset(provided_evidence):
         detected.add(ReviewViolationCode.FABRICATED_EVIDENCE)
 

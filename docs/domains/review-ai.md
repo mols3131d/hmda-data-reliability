@@ -21,8 +21,8 @@ tags:
 | In scope | Out of scope |
 | --- | --- |
 | review input/output contract와 prompt identity | incident detection과 recovery contract |
-| canonical input projection과 prompt rendering | provider SDK transport와 provider credential 관리 |
-| deterministic output validation | approval 또는 mutation authority |
+| bounded context projection과 canonical prompt rendering | provider SDK transport와 provider credential 관리 |
+| deterministic output validation과 human utility evaluation | approval 또는 mutation authority |
 | review orchestration과 invocation provenance | 범용 AI gateway, routing, agent framework |
 
 Current capability의 normative behavior는 [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec이 소유한다. Source는 current implementation을, tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
@@ -40,15 +40,19 @@ Source dependency는 `review_ai -> reliability`와 `review_ai -> runtime_ai`만 
 
 ## Review Boundary
 
-`review_null_spike()`는 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider output은 canonical identity, numeric facts와 provided evidence reference의 structured facts에 대조된다. Validation result는 structured-fact policy identity를 사용하며, 기존 forbidden-action evidence는 historical provenance로 보존된다. 결과는 acceptance, preflight rejection, provider unavailability, validation failure와 provenance failure를 typed result로 구분하며 exact input/output, status/failure mapping과 validation contract는 canonical Spec이 소유한다.
+`review_null_spike()`는 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider에 전달되는 input에는 incident 판단에 직접 관련된 Evidence의 bounded projection과 `missing_evidence`/`unconfirmed_context` gap이 포함된다. Provider output은 canonical identity, numeric facts와 provided evidence reference의 structured facts에 대조된다. Validation result는 structured-fact policy identity를 사용하며, 기존 forbidden-action evidence는 historical provenance로 보존된다. 결과는 acceptance, preflight rejection, provider unavailability, validation failure와 provenance failure를 typed result로 구분하며 exact input/output, status/failure mapping과 validation contract는 canonical Spec이 소유한다.
 
 Provider가 실제로 호출된 logical review는 sanitized invocation evidence를 남긴다. Credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다. Durable provenance의 required behavior와 record contract는 canonical Spec이 소유하고, exact implementation은 source에서 확인하며 tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
+
+Review utility는 `rubric_v1` human rubric으로 평가한다. `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`을 사람이 점수와 rationale로 판정하고, positive/negative control이 각각 `PASS`/`FAIL`인지 결정론적으로 확인한다. 같은 representative case와 rubric으로 baseline/candidate를 비교한 결과는 invocation identity, change-under-test와 human decision을 가진 별도 create-only utility evidence로 남긴다. 이 평가 경로는 provider를 호출하거나 자동 LLM judge를 사용하지 않는다.
 
 ## Package Root API
 
 `hmda_reliability.review_ai` package root는 review consumer가 직접 사용하는 최소 surface만 노출한다.
 
 - `AgenticReviewInput`, `AgenticReviewOutput`, `AgenticReviewResult`
+- `BoundedReviewContext`, `AgenticReviewUtilityContribution`
+- `RUBRIC_V1`, `HumanUtilityEvaluation`, `UtilityComparisonEvidence`
 - `PromptIdentity`
 - `review_null_spike()`
 
@@ -72,6 +76,18 @@ Prompt rendering, deterministic validation, provenance contract/store와 storage
 
 1. Exact review requirement를 판단할 때는 canonical [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec을 확인한다.
 1. [`review_ai/__init__.py`](../../src/hmda_reliability/review_ai/__init__.py)에서 current public surface를 확인한다.
-1. [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py)와 [`prompt.py`](../../src/hmda_reliability/review_ai/prompt.py)에서 current review input과 provider boundary 구현을 확인한다.
+1. [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py), [`context.py`](../../src/hmda_reliability/review_ai/context.py)와 [`prompt.py`](../../src/hmda_reliability/review_ai/prompt.py)에서 current review input, bounded context와 provider boundary 구현을 확인한다.
+1. [`evaluation.py`](../../src/hmda_reliability/review_ai/evaluation.py)와 [`evaluation_store.py`](../../src/hmda_reliability/review_ai/evaluation_store.py)에서 rubric, control과 comparison evidence contract를 확인한다.
 1. [`validator.py`](../../src/hmda_reliability/review_ai/validator.py)와 [`service.py`](../../src/hmda_reliability/review_ai/service.py)에서 current deterministic guard와 orchestration 구현을 확인한다.
 1. Provider mechanics가 필요하면 [Runtime AI](runtime-ai.md)로 이동한다.
+
+## Offline Utility Proof
+
+대표 null-spike fixture와 사람이 미리 점수화한 positive/negative control, baseline/candidate comparison을 network 없이 실행한다.
+
+```bash
+uv run --no-sync python scripts/run_review_ai_utility_proof.py \
+  --artifact-root .local/artifacts
+```
+
+Runner는 `agentic-review/utility/proofs/` 아래 create-only JSON evidence를 만들고 사람이 읽을 수 있는 comparison을 stdout으로 출력한다. 실제 provider invocation과 live proof는 이 offline quality proof와 분리한다.

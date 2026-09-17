@@ -32,6 +32,19 @@ class AdvisoryRecommendation(StrEnum):
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
 
 
+class UtilityContributionKind(StrEnum):
+    EVIDENCE_GAP = "evidence_gap"
+    INVESTIGATION_PRIORITY = "investigation_priority"
+    REMEDIATION_CRITIQUE = "remediation_critique"
+    MATERIAL_UNCERTAINTY = "material_uncertainty"
+
+
+class UtilityPriority(StrEnum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
 class ReviewViolationCode(StrEnum):
     FABRICATED_EVIDENCE = "fabricated_evidence"
     INCIDENT_MISMATCH = "incident_mismatch"
@@ -181,6 +194,39 @@ class AgenticReviewFinding(ReliabilityContract):
         return _normalized_unique_strings(values, field_name="evidence_refs")
 
 
+class AgenticReviewUtilityContribution(ReliabilityContract):
+    kind: UtilityContributionKind
+    description: str = Field(min_length=1, max_length=4096)
+    evidence_refs: tuple[_EvidenceReference, ...] = Field(default=(), max_length=64)
+    priority: UtilityPriority | None = None
+
+    @field_validator("description")
+    @classmethod
+    def _normalize_description(cls, value: str) -> str:
+        return _non_empty(value, field_name="utility contribution description")
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def _normalize_evidence_refs(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        return _normalized_unique_strings(values, field_name="utility evidence_refs")
+
+    @model_validator(mode="after")
+    def _validate_priority(self) -> AgenticReviewUtilityContribution:
+        if (
+            self.kind is UtilityContributionKind.INVESTIGATION_PRIORITY
+            and self.priority is None
+        ):
+            msg = "investigation_priority requires a priority"
+            raise ValueError(msg)
+        if (
+            self.kind is not UtilityContributionKind.INVESTIGATION_PRIORITY
+            and self.priority is not None
+        ):
+            msg = "priority is only valid for investigation_priority"
+            raise ValueError(msg)
+        return self
+
+
 class AgenticReviewOutput(ReliabilityContract):
     incident_id: str = Field(min_length=1, max_length=256)
     incident_type: Literal["null_spike"]
@@ -191,6 +237,10 @@ class AgenticReviewOutput(ReliabilityContract):
     findings: tuple[AgenticReviewFinding, ...] = Field(max_length=64)
     uncertainties: tuple[_BoundedReviewText, ...] = Field(max_length=64)
     advisory_recommendation: AdvisoryRecommendation
+    utility_contributions: tuple[AgenticReviewUtilityContribution, ...] = Field(
+        default=(),
+        max_length=64,
+    )
 
     @field_validator("incident_id", "target_column", "review_summary")
     @classmethod

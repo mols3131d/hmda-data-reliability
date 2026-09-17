@@ -191,6 +191,15 @@ Review AI의 default suite는 fake transport와 temporary artifact root만 사�
 uv run pytest tests/review_ai tests/runtime_ai
 ```
 
+Review AI utility proof는 provider와 network에 의존하지 않는 별도 fixture runner로 실행한다. `rubric_v1`의 다섯 human criterion, positive/negative control discrimination과 baseline/candidate comparison evidence를 함께 생성한다.
+
+```bash
+uv run --no-sync python scripts/run_review_ai_utility_proof.py \
+  --artifact-root .local/artifacts
+```
+
+이 command는 automatic LLM judge를 사용하지 않으며, comparison은 `agentic-review/utility/proofs/` 아래 create-only evidence로 보존된다. Live provider proof는 아래 opt-in command와 분리해 판정한다.
+
 실제 Ollama proof는 default suite와 분리된 명시적 opt-in command다. `.env.example`의 `HMDA_AGENTIC_REVIEW_*` 값을 local `.env`에 설정한 뒤 실행한다. `HMDA_AGENTIC_REVIEW_API_KEY`는 OpenAI-compatible client에 필요한 값이지만 invocation evidence에는 저장되지 않는다.
 
 ```bash
