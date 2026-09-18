@@ -1,4 +1,10 @@
-"""Run the offline Review AI MVP utility proof fixture."""
+"""Run the offline Review AI MVP utility contract and fixture validation.
+
+Note:
+    This script verifies the determinism of the utility rubric, control discrimination,
+    and comparison evidence contract using synthetic fixtures. It does not replace
+    the formal live human evaluation evidence required for final MVP acceptance.
+"""
 
 from __future__ import annotations
 
@@ -206,7 +212,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     bundle = build_representative_utility_proof(project_revision=project_revision)
     store = UtilityEvidenceStore(args.artifact_root)
     path = store.write_proof(bundle)
-    print(f"Utility proof evidence: {path}")
+    print(f"Utility contract & fixture verification evidence: {path}")
     print()
     from hmda_reliability.review_ai.evaluation import render_utility_comparison_markdown
 

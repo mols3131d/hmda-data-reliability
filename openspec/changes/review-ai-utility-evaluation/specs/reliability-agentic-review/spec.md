@@ -45,7 +45,7 @@ Utility contribution은 approval, `RecoveryProposal`, recovery, shell, SQL, file
 
 시스템은 Review AI utility를 `rubric_v1`로 식별되는 immutable human rubric으로 평가해야 하며(SHALL), rubric은 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`의 다섯 criterion을 모두 포함해야 한다(SHALL). 각 criterion은 bounded human score와 non-empty rationale를 가져야 하며 자동 LLM judge 또는 외부 평가 플랫폼에 의존해서는 안 된다(MUST NOT).
 
-Quality basis는 compliant positive control이 `PASS`, deterministic facts 또는 draft를 재진술하는 bounded negative control이 `FAIL`이 되도록 판별력을 검증해야 한다(SHALL). Control validation이 실패하거나 rubric identity가 mismatch이면 실제 baseline/candidate 비교를 성공으로 보고해서는 안 된다(MUST NOT).
+Quality basis는 compliant positive control이 `PASS`, deterministic facts 또는 draft를 재진술하는 bounded negative control뿐만 아니라 구체적 조사 행동 없이 책임을 회피하는 과도한 면책형(non-committal/hedging) negative control이 `FAIL`이 되도록 판별력을 검증해야 한다(SHALL). Control validation이 실패하거나 rubric identity가 mismatch이면 실제 baseline/candidate 비교를 성공으로 보고해서는 안 된다(MUST NOT).
 
 #### Scenario: Rubric scores all utility dimensions
 
@@ -55,20 +55,26 @@ Quality basis는 compliant positive control이 `PASS`, deterministic facts 또�
 #### Scenario: Controls prove non-vacuous discrimination
 
 - **WHEN** `rubric_v1` positive/negative controls를 검증할 때
-- **THEN** positive control은 `PASS`, negative control은 `FAIL`로 판정되고 두 결과가 모두 durable quality-basis evidence에 남아야 한다.
+- **THEN** positive control은 `PASS`, negative control(단순 재진술 및 과도한 면책형 회피)은 `FAIL`로 판정되고 결과가 durable quality-basis evidence에 남아야 한다.
+
+#### Scenario: Over-defensive hedging control is rejected as FAIL
+
+- **GIVEN** deterministic facts가 존재함에도 실행 가능한 후속 검증 행동 없이 전수 조사나 포괄적 불확실성만을 주장하는 면책형 negative control output이 주어질 때
+- **WHEN** `rubric_v1` 기준으로 평가를 수행할 때
+- **THEN** `actionability` 또는 `prioritization` criterion에서 pass score 미달(0점)을 받아 최종 `FAIL`로 판정되어야 한다.
 
 ### Requirement: Baseline and candidate utility comparison evidence
 
 시스템은 동일한 retained representative case와 동일한 rubric identity에서 baseline과 candidate output의 human evaluations를 비교하는 immutable `UtilityComparisonEvidence`를 생성할 수 있어야 한다(SHALL). Comparison은 baseline/candidate invocation identity, case identity/version, rubric identity, change-under-test, criterion별 score와 human `accept`, `reject` 또는 `no_change` decision 및 rationale을 연결해야 한다(SHALL).
 
-Comparison은 quality-basis control validation이 통과하고 baseline과 candidate가 동일 case/rubric으로 평가된 경우에만 valid로 표시해야 한다(SHALL). Applicable candidate에 비교 가능한 evaluation 또는 attribution evidence가 없으면 accept 또는 baseline promotion 대신 `blocked`/`inconclusive`를 기록해야 한다(MUST NOT).
+Comparison은 quality-basis control validation이 통과하고 baseline과 candidate가 동일 case/rubric 및 동일 deterministic facts(`incident_id`, `target_column`, `deterministic_facts`), 동일 `quality_basis.project_revision`으로 평가된 경우에만 valid로 표시해야 한다(SHALL). Applicable candidate에 비교 가능한 evaluation 또는 attribution evidence가 없거나 동일 case 속성이 불일치하면 accept 또는 baseline promotion 대신 `blocked`/`inconclusive`를 기록해야 한다(MUST NOT).
 
 #### Scenario: Same case and rubric are compared
 
-- **WHEN** baseline과 candidate가 같은 case/version 및 `rubric_v1`로 human 평가되고 comparison이 생성될 때
+- **WHEN** baseline과 candidate가 같은 case/version 및 `rubric_v1`, 동일 deterministic facts 및 project revision에서 human 평가되고 comparison이 생성될 때
 - **THEN** criterion별 delta와 total delta, invocation identity, change-under-test와 human decision/rationale을 사람이 검토 가능한 evidence로 복원할 수 있어야 한다.
 
 #### Scenario: Mismatched or incomplete comparison is blocked
 
-- **WHEN** case/version, rubric, control validation 또는 criterion score가 비교 조건을 만족하지 않을 때
+- **WHEN** case/version, rubric, control validation, criterion score, 또는 deterministic facts/project revision이 비교 조건을 만족하지 않을 때
 - **THEN** evidence는 invalid 또는 `blocked`/`inconclusive`로 남고 candidate accept와 baseline promotion을 허용해서는 안 된다.

@@ -187,8 +187,8 @@ class UtilityControl(ReliabilityContract):
         if self.expected_outcome == "pass" and not observed_contributions:
             msg = "positive control must contain utility contributions"
             raise ValueError(msg)
-        if self.expected_outcome == "fail" and observed_contributions:
-            msg = "negative control must be a restatement-only output"
+        if self.expected_outcome == "fail" and self.evaluation.passed():
+            msg = "negative control must not pass rubric evaluation"
             raise ValueError(msg)
         return self
 
@@ -299,6 +299,18 @@ class UtilityComparisonEvidence(ReliabilityContract):
                 raise ValueError(msg)
             if len(self.criterion_deltas) != len(RubricCriterion):
                 msg = "compared evidence requires all rubric criterion deltas"
+                raise ValueError(msg)
+            if (
+                self.baseline_output.incident_id != self.candidate_output.incident_id
+                or self.baseline_output.target_column
+                != self.candidate_output.target_column
+                or self.baseline_output.deterministic_facts
+                != self.candidate_output.deterministic_facts
+            ):
+                msg = (
+                    "compared baseline and candidate must share the same "
+                    "incident, target column, and deterministic facts"
+                )
                 raise ValueError(msg)
         elif self.decision is not None or self.blocker_code is None:
             msg = (
@@ -480,8 +492,16 @@ def compare_utility_evaluations(
         blocker = "rubric_mismatch"
     elif baseline.project_revision != candidate.project_revision:
         blocker = "project_revision_mismatch"
+    elif quality_basis.project_revision != baseline.project_revision:
+        blocker = "quality_basis_revision_mismatch"
     elif not baseline.is_complete or not candidate.is_complete:
         blocker = "evaluation_incomplete"
+    elif (
+        baseline.output.incident_id != candidate.output.incident_id
+        or baseline.output.target_column != candidate.output.target_column
+        or baseline.output.deterministic_facts != candidate.output.deterministic_facts
+    ):
+        blocker = "same_case_fact_mismatch"
 
     baseline_by_criterion = {score.criterion: score.score for score in baseline.scores}
     candidate_by_criterion = {

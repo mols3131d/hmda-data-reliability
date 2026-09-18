@@ -312,7 +312,19 @@ def test_comparison_rejects_a_digest_tampered_after_evaluation_creation() -> Non
 
 
 def test_mismatched_case_blocks_comparison() -> None:
-    basis = validate_quality_basis([])
+    controls = [
+        _control(
+            control_id="control-positive",
+            output_kind="positive_control",
+            score=2,
+        ),
+        _control(
+            control_id="control-negative",
+            output_kind="negative_control",
+            score=0,
+        ),
+    ]
+    basis = validate_quality_basis(controls)
     comparison = compare_utility_evaluations(
         comparison_id="comparison-blocked",
         baseline=_evaluation(
@@ -332,12 +344,362 @@ def test_mismatched_case_blocks_comparison() -> None:
         rationale="Should not be accepted.",
     )
 
-    assert comparison.status in {
-        UtilityComparisonStatus.BLOCKED,
-        UtilityComparisonStatus.INCONCLUSIVE,
-    }
+    assert comparison.status is UtilityComparisonStatus.BLOCKED
     assert comparison.decision is None
-    assert comparison.blocker_code is not None
+    assert comparison.blocker_code == "case_mismatch"
+
+
+def test_mismatched_project_revision_blocks_comparison() -> None:
+    controls = [
+        _control(
+            control_id="control-positive",
+            output_kind="positive_control",
+            score=2,
+        ),
+        _control(
+            control_id="control-negative",
+            output_kind="negative_control",
+            score=0,
+        ),
+    ]
+    basis = validate_quality_basis(controls)
+    baseline = _evaluation(
+        evaluation_id="eval-baseline",
+        invocation_id="inv-baseline",
+        score=0,
+        project_revision="revision-a",
+    )
+    candidate = _evaluation(
+        evaluation_id="eval-candidate",
+        invocation_id="inv-candidate",
+        score=2,
+        project_revision="revision-b",
+    )
+
+    comparison = compare_utility_evaluations(
+        comparison_id="comparison-rev-mismatch",
+        baseline=baseline,
+        candidate=candidate,
+        quality_basis=basis,
+        change_under_test="mismatched project revision",
+        decision=HumanDecision.ACCEPT,
+        rationale="Should block on revision mismatch.",
+    )
+
+    assert comparison.status is UtilityComparisonStatus.BLOCKED
+    assert comparison.decision is None
+    assert comparison.blocker_code == "project_revision_mismatch"
+
+
+def test_mismatched_incident_id_or_target_column_blocks_comparison() -> None:
+    controls = [
+        _control(
+            control_id="control-positive",
+            output_kind="positive_control",
+            score=2,
+        ),
+        _control(
+            control_id="control-negative",
+            output_kind="negative_control",
+            score=0,
+        ),
+    ]
+    basis = validate_quality_basis(controls)
+    baseline_output = _output("baseline")
+    candidate_output = _output("candidate")
+
+    tampered_incident_output = candidate_output.model_copy(
+        update={"incident_id": "other-incident"}
+    )
+    comparison_incident = compare_utility_evaluations(
+        comparison_id="comp-incident-mismatch",
+        baseline=_evaluation(
+            evaluation_id="eval-base",
+            invocation_id="inv-base",
+            score=0,
+            output=baseline_output,
+        ),
+        candidate=_evaluation(
+            evaluation_id="eval-cand",
+            invocation_id="inv-cand",
+            score=2,
+            output=tampered_incident_output,
+        ),
+        quality_basis=basis,
+        change_under_test="mismatched incident id",
+        decision=HumanDecision.ACCEPT,
+        rationale="Should block on incident mismatch.",
+    )
+    assert comparison_incident.status is UtilityComparisonStatus.BLOCKED
+    assert comparison_incident.blocker_code == "same_case_fact_mismatch"
+
+    tampered_column_output = candidate_output.model_copy(
+        update={"target_column": "other_column"}
+    )
+    comparison_column = compare_utility_evaluations(
+        comparison_id="comp-column-mismatch",
+        baseline=_evaluation(
+            evaluation_id="eval-base-2",
+            invocation_id="inv-base-2",
+            score=0,
+            output=baseline_output,
+        ),
+        candidate=_evaluation(
+            evaluation_id="eval-cand-2",
+            invocation_id="inv-cand-2",
+            score=2,
+            output=tampered_column_output,
+        ),
+        quality_basis=basis,
+        change_under_test="mismatched target column",
+        decision=HumanDecision.ACCEPT,
+        rationale="Should block on target column mismatch.",
+    )
+    assert comparison_column.status is UtilityComparisonStatus.BLOCKED
+    assert comparison_column.blocker_code == "same_case_fact_mismatch"
+
+
+def test_control_revision_and_case_mismatch_fails_quality_basis() -> None:
+    positive = _control(
+        control_id="control-positive",
+        output_kind="positive_control",
+        score=2,
+    )
+    negative = _control(
+        control_id="control-negative",
+        output_kind="negative_control",
+        score=0,
+    )
+
+    diff_rev_neg = negative.model_copy(
+        update={
+            "evaluation": negative.evaluation.model_copy(
+                update={"project_revision": "diff-rev"}
+            )
+        }
+    )
+    basis_rev = validate_quality_basis([positive, diff_rev_neg])
+    assert basis_rev.valid is False
+    assert basis_rev.failure_code == "control_revision_mismatch"
+
+    diff_case_neg = negative.model_copy(
+        update={
+            "case_id": "other-case",
+            "evaluation": negative.evaluation.model_copy(
+                update={"case_id": "other-case"}
+            ),
+        }
+    )
+    basis_case = validate_quality_basis([positive, diff_case_neg])
+    assert basis_case.valid is False
+    assert basis_case.failure_code == "control_case_mismatch"
+
+
+def test_mismatched_deterministic_facts_blocks_comparison() -> None:
+    controls = [
+        _control(
+            control_id="control-positive",
+            output_kind="positive_control",
+            score=2,
+        ),
+        _control(
+            control_id="control-negative",
+            output_kind="negative_control",
+            score=0,
+        ),
+    ]
+    basis = validate_quality_basis(controls)
+    baseline_output = _output("baseline")
+    candidate_output = _output("candidate")
+    tampered_facts = candidate_output.deterministic_facts.model_copy(
+        update={"current_null_rate": 0.88}
+    )
+    tampered_candidate_output = candidate_output.model_copy(
+        update={"deterministic_facts": tampered_facts}
+    )
+
+    baseline = _evaluation(
+        evaluation_id="eval-baseline",
+        invocation_id="inv-baseline",
+        score=0,
+        output=baseline_output,
+    )
+    candidate = _evaluation(
+        evaluation_id="eval-candidate",
+        invocation_id="inv-candidate",
+        score=2,
+        output=tampered_candidate_output,
+    )
+
+    comparison = compare_utility_evaluations(
+        comparison_id="comparison-fact-mismatch",
+        baseline=baseline,
+        candidate=candidate,
+        quality_basis=basis,
+        change_under_test="mismatched deterministic facts",
+        decision=HumanDecision.ACCEPT,
+        rationale="Should block when deterministic facts differ.",
+    )
+
+    assert comparison.status is UtilityComparisonStatus.BLOCKED
+    assert comparison.decision is None
+    assert comparison.blocker_code == "same_case_fact_mismatch"
+
+
+def test_mismatched_quality_basis_revision_blocks_comparison() -> None:
+    controls = [
+        _control(
+            control_id="control-positive",
+            output_kind="positive_control",
+            score=2,
+        ),
+        _control(
+            control_id="control-negative",
+            output_kind="negative_control",
+            score=0,
+        ),
+    ]
+    basis = validate_quality_basis(controls)
+    stale_basis = basis.model_copy(update={"project_revision": "other-revision"})
+
+    baseline = _evaluation(
+        evaluation_id="eval-baseline",
+        invocation_id="inv-baseline",
+        score=0,
+        project_revision="test-revision",
+    )
+    candidate = _evaluation(
+        evaluation_id="eval-candidate",
+        invocation_id="inv-candidate",
+        score=2,
+        project_revision="test-revision",
+    )
+
+    comparison = compare_utility_evaluations(
+        comparison_id="comparison-revision-mismatch",
+        baseline=baseline,
+        candidate=candidate,
+        quality_basis=stale_basis,
+        change_under_test="mismatched quality basis revision",
+        decision=HumanDecision.ACCEPT,
+        rationale="Should block when quality basis revision differs.",
+    )
+
+    assert comparison.status is UtilityComparisonStatus.BLOCKED
+    assert comparison.decision is None
+    assert comparison.blocker_code == "quality_basis_revision_mismatch"
+
+
+def test_hedging_negative_control_discrimination() -> None:
+    hedging_output = AgenticReviewOutput(
+        incident_id="incident-1",
+        incident_type="null_spike",
+        target_column="income",
+        deterministic_facts={
+            "baseline_null_rate": 0.01,
+            "current_null_rate": 0.21,
+            "delta": 0.2,
+            "threshold": 0.1,
+        },
+        review_summary=(
+            "Multiple factors could be involved; full audit of all tables required."
+        ),
+        evidence_used=("ev-1",),
+        findings=(),
+        uncertainties=("Everything is uncertain and unconfirmed.",),
+        advisory_recommendation="needs_human_review",
+        utility_contributions=(),
+    )
+
+    # 1. Actionability/prioritization = 0점으로 탈락(FAIL) 판정을 내린
+    # 정상적인 negative control 평가 구성
+    hedging_scores = [
+        RubricScore(
+            criterion=RubricCriterion.ADDED_VALUE,
+            score=1,
+            rationale="Adds minimal context.",
+        ),
+        RubricScore(
+            criterion=RubricCriterion.ACTIONABILITY,
+            score=0,
+            rationale="Over-defensive hedging with no specific action.",
+        ),
+        RubricScore(
+            criterion=RubricCriterion.EVIDENCE_AWARENESS,
+            score=1,
+            rationale="Aware of evidence.",
+        ),
+        RubricScore(
+            criterion=RubricCriterion.UNCERTAINTY_HANDLING,
+            score=1,
+            rationale="Mentions uncertainty.",
+        ),
+        RubricScore(
+            criterion=RubricCriterion.PRIORITIZATION,
+            score=0,
+            rationale="Fails to prioritize any single investigation step.",
+        ),
+    ]
+    valid_hedging_eval = HumanUtilityEvaluation(
+        evaluation_id="eval-hedging-fail",
+        case_id="controls",
+        case_version="v1",
+        invocation_id="inv-hedging",
+        project_revision="test-revision",
+        rubric_id=RUBRIC_V1.rubric_id,
+        output_kind="negative_control",
+        output_fixture_id="utility-hedging-fixture",
+        output_digest=utility_output_digest(hedging_output),
+        contribution_kinds=(),
+        output=hedging_output,
+        scores=tuple(hedging_scores),
+    )
+
+    assert valid_hedging_eval.passed() is False
+
+    hedging_control = UtilityControl(
+        control_id="control-hedging",
+        case_id="controls",
+        case_version="v1",
+        expected_outcome="fail",
+        output_fixture_id="utility-hedging-fixture",
+        output=hedging_output,
+        expected_incident_id=hedging_output.incident_id,
+        expected_target_column=hedging_output.target_column,
+        expected_deterministic_facts=hedging_output.deterministic_facts,
+        expected_contributions=(),
+        evaluation=valid_hedging_eval,
+    )
+
+    positive_control = _control(
+        control_id="control-positive",
+        output_kind="positive_control",
+        score=2,
+    )
+
+    # 실제 validate_quality_basis를 통해 hedging 대조군이 'fail'로 판별되어
+    # basis.valid가 참이 됨을 입증
+    basis = validate_quality_basis([positive_control, hedging_control])
+    assert basis.valid is True
+    assert [result.observed_outcome for result in basis.controls] == ["pass", "fail"]
+
+    # 2. 반대로 면책형 답변에 잘못 통과 점수(2점)를 주어
+    # negative control로 등록하려 하면 유효성 검사에서 차단
+    passing_eval = valid_hedging_eval.model_copy(update={"scores": tuple(_scores(2))})
+    with pytest.raises(ValidationError, match="negative control must not pass"):
+        UtilityControl(
+            control_id="control-hedging-pass",
+            case_id="controls",
+            case_version="v1",
+            expected_outcome="fail",
+            output_fixture_id="utility-hedging-fixture",
+            output=hedging_output,
+            expected_incident_id=hedging_output.incident_id,
+            expected_target_column=hedging_output.target_column,
+            expected_deterministic_facts=hedging_output.deterministic_facts,
+            expected_contributions=(),
+            evaluation=passing_eval,
+        )
 
 
 def test_comparison_store_is_create_only_and_replayable(
