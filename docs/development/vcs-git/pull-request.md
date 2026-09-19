@@ -44,6 +44,8 @@ Optional metadata의 사용 조건과 형식은 [GitHub Templates](../../../.git
 
 Validation과 review 범위는 변경의 위험과 영향에 비례한다. 수행한 검증과 수행하지 못한 검증을 구분하고, 기존 review의 근거를 바꾸는 수정은 다시 검토한다.
 
+Review readiness는 현재 변경과 validation evidence가 인간 review에 들어갈 만큼 current한지를 판단하는 lifecycle gate다. Correctness approval이나 merge readiness를 의미하지 않는다.
+
 Pull Request review의 기록 형식과 finding 기준은 [Pull Request Reviews](pull-request-review.md)를 따른다.
 
 필요한 review와 required check가 완료되고 중요한 conflict가 해결된 뒤 merge한다.
@@ -65,7 +67,8 @@ flowchart TB
 ## Agent Instructions
 
 - Repository content 변경은 Draft Pull Request로 전달한다.
-- 인간의 명시적 요청 없이 Ready 전환, 승인, merge, close 또는 auto-merge를 수행하지 않는다.
+- Agent는 현재 변경과 evidence를 근거로 review readiness를 판정하고 보고할 수 있다. `pr-review-readiness` Subagent를 사용할 수 있으면 이 bounded 판정을 해당 Subagent에 위임한다.
+- `ready` assessment는 GitHub state 변경 권한이 아니다. 인간의 명시적 요청 없이 Ready 전환, 승인, merge, close 또는 auto-merge를 수행하지 않는다.
 - 인간의 판단 없이 review thread를 해결 처리하지 않는다.
 - 실패하거나 수행하지 못한 validation을 숨기지 않으며, 불명확한 응답을 승인으로 해석하지 않는다.
 
