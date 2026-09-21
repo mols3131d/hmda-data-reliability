@@ -562,3 +562,46 @@ def test_service_leaves_no_accepted_record_when_directory_fsync_fails(
     store = store_module.InvocationEvidenceStore(tmp_path)
     assert result.invocation_id is not None
     assert not store.path_for(result.invocation_id).exists()
+
+
+def test_new_invocation_id_format() -> None:
+    fixed_time = datetime(2026, 9, 21, 10, 30, 0, tzinfo=UTC)
+    invocation_id = service_module._new_invocation_id(fixed_time)
+
+    assert invocation_id.startswith("ar-20260921-")
+    assert len(invocation_id) == len("ar-20260921-") + 12
+    # Verify safe pattern compatibility
+    assert store_module._SAFE_INVOCATION_ID.fullmatch(invocation_id) is not None
+
+
+def test_review_null_spike_default_invocation_id_uses_clock_date(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    tmp_path: Path,
+) -> None:
+    fixed_time = datetime(2026, 9, 21, 14, 0, 0, tzinfo=UTC)
+    material = null_spike_review_material
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content=_safe_output(material).model_dump_json(),
+            attempt_count=1,
+            latency_ms=10.0,
+        )
+    )
+
+    result = service_module.review_null_spike(
+        incident=material.detection.incident,
+        evidence=[material.detection.evidence],
+        draft=material.draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=provider,
+        artifact_root=tmp_path,
+        clock=lambda: fixed_time,
+    )
+
+    assert result.status == "accepted"
+    assert result.invocation_id is not None
+    assert result.invocation_id.startswith("ar-20260921-")
+    assert result.invocation_path is not None
+    assert result.invocation_path.name == f"{result.invocation_id}.json"

@@ -124,8 +124,10 @@ def review_null_spike(
 
     review_provider = provider or OpenAICompatibleAdapter(settings)
     writer = evidence_store or InvocationEvidenceStore(artifact_root)
-    make_invocation_id = invocation_id_factory or _new_invocation_id
     current_time = clock or _utc_now
+    make_invocation_id = invocation_id_factory or (
+        lambda: _new_invocation_id(current_time())
+    )
     invocation_id = make_invocation_id()
     session = _ReviewSession(
         invocation_id=invocation_id,
@@ -362,8 +364,9 @@ def _persist_result(
     )
 
 
-def _new_invocation_id() -> str:
-    return f"ar-{uuid4().hex}"
+def _new_invocation_id(now: datetime | None = None) -> str:
+    timestamp = (now or _utc_now()).strftime("%Y%m%d")
+    return f"ar-{timestamp}-{uuid4().hex[:12]}"
 
 
 def _utc_now() -> datetime:
