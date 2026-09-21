@@ -44,6 +44,27 @@ Optional metadata의 사용 조건과 형식은 [GitHub Templates](../../../.git
 
 Validation과 review 범위는 변경의 위험과 영향에 비례한다. 수행한 검증과 수행하지 못한 검증을 구분하고, 기존 review의 근거를 바꾸는 수정은 다시 검토한다.
 
+### Review Readiness
+
+Review readiness는 현재 변경과 validation evidence가 인간 review에 들어갈 만큼 current한지를 판단하는 lifecycle gate다. Correctness approval이나 merge readiness를 의미하지 않는다.
+
+판정할 때 다음 조건을 현재 repository policy와 evidence에 대조한다.
+
+- **Scope:** Pull Request가 하나의 coherent change purpose를 유지하고, 알려진 미완료 작업이나 의도하지 않은 scope drift가 없다.
+- **Description:** 현재 Pull Request template과 policy를 충족하고, description의 scope와 claims가 실제 변경을 반영하며 실패하거나 수행하지 못한 validation을 숨기지 않는다.
+- **Validation:** 필요한 validation evidence가 무엇을 검증한 revision 또는 state인지 식별할 수 있고 현재 base와 head에도 적용 가능해야 한다. Base와의 integration에 민감한 check는 현재 base와 head의 조합 또는 이에 대응하는 prospective merge revision을 기준으로 해야 하며, 필요한 validation의 failure가 남아 있거나 stale하면 준비되지 않은 상태다.
+- **Prior feedback:** 현재 revision에도 적용되는 blocking feedback이 남아 있지 않다. 실제 변경이나 authorized scope decision으로 해결된 feedback은 UI thread가 unresolved라는 이유만으로 blocker로 취급하지 않는다.
+
+Assessment는 다음 세 상태 중 하나다.
+
+- `ready`: 판단에 필요한 evidence가 충분하고 readiness condition을 모두 충족한다.
+- `not_ready`: 현재 evidence에서 하나 이상의 readiness condition이 충족되지 않았음이 확인된다. 별도의 unknown이 있어도 확인된 blocker를 숨기지 않는다.
+- `blocked`: 확인된 `not_ready` 조건은 없지만 필요한 scope, revision, validation 또는 mutable state evidence를 확인할 수 없어 `ready`를 신뢰성 있게 확정할 수 없다.
+
+Assessment에는 판단에 사용한 base와 head revision 또는 동등한 prospective merge revision을 식별할 수 있는 state basis를 남긴다. Base, head, description, applicable feedback 또는 validation/review evidence처럼 readiness 판단에 사용한 material state가 달라지면 이전 assessment는 stale하며 다시 판정한다.
+
+Automation 통과만으로 correctness나 review completeness를 주장하지 않는다. `ready`는 인간 review 진입에 대한 evidence-backed assessment일 뿐 Ready for review 상태 변경, approval 또는 merge 권한을 부여하지 않는다.
+
 Pull Request review의 기록 형식과 finding 기준은 [Pull Request Reviews](pull-request-review.md)를 따른다.
 
 필요한 review와 required check가 완료되고 중요한 conflict가 해결된 뒤 merge한다.
@@ -65,7 +86,8 @@ flowchart TB
 ## Agent Instructions
 
 - Repository content 변경은 Draft Pull Request로 전달한다.
-- 인간의 명시적 요청 없이 Ready 전환, 승인, merge, close 또는 auto-merge를 수행하지 않는다.
+- Agent는 현재 변경과 evidence를 [Review Readiness](#review-readiness) 계약에 대조해 readiness를 판정하고 보고할 수 있다.
+- `ready` assessment는 GitHub state 변경 권한이 아니다. 인간의 명시적 요청 없이 Ready 전환, 승인, merge, close 또는 auto-merge를 수행하지 않는다.
 - 인간의 판단 없이 review thread를 해결 처리하지 않는다.
 - 실패하거나 수행하지 못한 validation을 숨기지 않으며, 불명확한 응답을 승인으로 해석하지 않는다.
 
