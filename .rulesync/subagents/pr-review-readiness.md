@@ -72,7 +72,8 @@ Current head, validation basis 또는 판단에 필요한 mutable GitHub state�
 
 ### Description
 
-- `Summary`, `Changes`, `Validation`과 필요한 `References`가 current head의 실제 변경을 반영한다.
+- repository의 현재 Pull Request template과 policy를 직접 확인하고 required section, validation format, optional section 조건을 충족하는지 판단한다.
+- description의 scope와 claims가 current head의 실제 변경을 반영한다.
 - 시행착오, agent reasoning 또는 GitHub가 이미 충분히 소유하는 상태를 불필요하게 복제하지 않는다.
 - 실패하거나 수행하지 못한 validation을 숨기지 않는다.
 
