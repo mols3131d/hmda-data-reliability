@@ -42,7 +42,14 @@ tags: [] # Optional
 
 `type`, `title`, `description`은 required다. Filename에 type component를 사용한 경우 frontmatter의 `type`과 같아야 한다.
 
-GitHub, Branch, Date container의 root에는 선택적으로 `README.md`를 둘 수 있다. 이 파일은 container의 overview, navigation 또는 artifact index를 위한 metadata이며 독립 artifact나 bundle root가 아니다. 따라서 required frontmatter와 artifact naming 규칙을 적용하지 않는다. 실제 working artifact와 bundle은 아래 naming contract를 계속 사용한다.
+### Container README
+
+GitHub, Branch, Date container root에는 필요할 때 `README.md`를 둘 수 있다. 이 파일은 container의 overview, navigation 또는 artifact index를 위한 metadata이며 독립 artifact나 bundle root가 아니다.
+
+- Required frontmatter와 artifact naming 규칙을 적용하지 않는다.
+- Sequenced work unit의 `NN`이나 Date container의 `HH-MM` namespace를 소비하지 않는다.
+- 실제 working artifact와 bundle은 아래 naming contract를 계속 따른다.
+- Authoritative status/history를 소유하거나 actual artifact를 대체하지 않는다.
 
 ### Directory Selection
 
@@ -73,7 +80,6 @@ inbox/<branch-created-date>-<branch-name-slug>/<NN>-[<type>-]<domain>[-<subdomai
 - 해당 branch에 Pull Request가 생성되면 기존 branch work unit directory를 `github-<pr-number>-<short-name>`으로 rename한다. 새 directory에 복사하거나 두 identity를 병렬 유지하지 않으며, 내부 artifact와 sequence를 그대로 보존하고 renumber하지 않는다.
 - PR 전환 후 `short-name`은 branch naming contract의 change topic을 사용하고 PR title 변경과 무관하게 유지한다. PR이 close 또는 reopen되어도 branch directory로 되돌리지 않는다.
 - `NN`은 `00`부터 시작하는 two-digit zero-padded sequence다.
-- Work unit root의 optional `README.md`는 sequence namespace에 포함되지 않으며 artifact numbering을 소비하지 않는다.
 - 기존 top-level file 또는 bundle의 sequence는 다시 매기지 않는다. 새 항목은 현재 가장 큰 sequence 값 다음 번호를 기본으로 사용하고, 여러 항목을 같은 change에서 추가하면 그 다음 번호부터 이어간다. Sequence는 정리와 탐색을 위한 convention이며 삭제·rename 이력을 복원해 historical high-water mark를 강제하지 않는다.
 - File과 bundle은 같은 sequence namespace를 공유한다. `00-00-...` 같은 추가 sequence level을 만들지 않고 세부 산출물은 bundle 내부 구조로 관리한다.
 - Sequence 뒤 naming core는 `[<type>-]<domain>[-<subdomain>][-<capability>]-<short-title>[-<extensions>]`다. `type` component는 optional이며, 나머지 optional component는 identification이나 retrieval에 실제 도움이 될 때만 추가한다.
@@ -91,7 +97,6 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 - Date와 time은 `Asia/Seoul` 기준이다.
 - Lowercase kebab-case를 사용한다.
 - `type`, `domain`, `short-title`은 required다.
-- Date container root의 optional `README.md`에는 `HH-MM-` artifact naming을 적용하지 않는다.
 - Optional component는 identification이나 retrieval에 실제 도움이 될 때만 추가한다.
 - 같은 작업의 status나 continuity context를 이어서 기록할 수 있으면 새 artifact를 남발하지 않고 기존 artifact를 갱신한다.
 
@@ -124,7 +129,7 @@ Handoff와 persistence는 artifact type과 별개의 cross-cutting concern으로
 
 ## Lifecycle
 
-- Inbox는 status projection이나 canonical history가 아니다. Container-root `README.md`는 lightweight overview나 artifact index로 유지할 수 있지만 authoritative status/history를 소유하거나 actual artifact를 대체하지 않는다.
+- Inbox는 status projection이나 canonical history가 아니다.
 - 장기적으로 유지할 결정이나 계약은 해당 canonical owner에 필요한 내용을 정상 workflow로 반영한다. Inbox artifact 자체를 authority로 승격시키지 않는다.
 - Inbox artifact를 canonical owner에 반영했다는 이유만으로 자동 삭제·이동·archive하지 않는다.
 - 날짜 수, artifact 수 또는 시간이 지났다는 이유만으로 자동 archive, promotion, branch sync를 수행하지 않는다.
