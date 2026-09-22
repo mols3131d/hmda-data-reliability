@@ -108,6 +108,26 @@ def test_branch_work_artifact_passes(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "relative",
+    [
+        Path("inbox/github-226-document-consistency-polish/README.md"),
+        Path("inbox/2026-09-09-agent-docs-inbox-policy/README.md"),
+    ],
+)
+def test_sequenced_work_unit_readme_is_not_artifact_validated(
+    tmp_path: Path,
+    relative: Path,
+) -> None:
+    """GitHub/Branch work-unit README는 sequence artifact 계약 대상이 아니다."""
+    path = tmp_path / relative
+    path.parent.mkdir(parents=True)
+    path.write_text("# Work Unit\n", encoding="utf-8")
+
+    assert validate_changed_paths([relative.as_posix()], repo_root=tmp_path) == []
+
+
+@pytest.mark.unit
 def test_github_work_artifact_requires_two_digit_sequence(tmp_path: Path) -> None:
     """GitHub work artifact는 two-digit sequence prefix를 사용해야 한다."""
     relative = Path(
