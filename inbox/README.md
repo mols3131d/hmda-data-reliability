@@ -17,4 +17,6 @@ inbox/2026-09-09/
 
 GitHub와 Branch work unit의 top-level file과 bundle은 같은 `NN` sequence를 공유한다. Branch가 Pull Request를 얻으면 기존 branch directory를 `github-<pr-number>-<short-name>`으로 rename하고 artifact와 sequence를 그대로 보존한다.
 
-세부 directory selection, branch date, naming, frontmatter, validation과 lifecycle contract는 [`AGENTS.md`](AGENTS.md)가 소유한다. 내용은 필요할 때 직접 찾고 확인하며, 이 README는 artifact index나 project status projection으로 유지하지 않는다.
+각 GitHub, Branch, Date container root에는 필요하면 `README.md`를 두고 overview, navigation 또는 artifact index로 사용할 수 있다. Container-root README는 artifact naming이나 frontmatter 계약을 적용하지 않으며, actual artifact와 bundle은 기존 naming contract를 따른다.
+
+세부 directory selection, branch date, naming, frontmatter, validation과 lifecycle contract는 [`AGENTS.md`](AGENTS.md)가 소유한다.
