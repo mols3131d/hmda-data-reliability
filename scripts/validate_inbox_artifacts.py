@@ -154,7 +154,7 @@ def _artifact_root_for_changed_path(
 
     Identifies whether a modified file in `inbox/` represents a standalone artifact
     or a turn/document within an artifact bundle (whose canonical root is `README.md`).
-    A sequenced work-unit root `README.md` is navigation metadata, not an artifact root.
+    A container-root `README.md` is navigation metadata, not an artifact root.
 
     Args:
         repo_root: Path to repository root.
@@ -178,7 +178,7 @@ def _artifact_root_for_changed_path(
     if sequenced is None:
         return None
 
-    if len(parts) == 2 and sequenced and changed_path.name == "README.md":
+    if len(parts) == 2 and changed_path.name == "README.md":
         return None
 
     if len(parts) == 2 and changed_path.suffix == ".md":
