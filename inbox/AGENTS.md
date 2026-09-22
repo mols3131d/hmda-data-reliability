@@ -42,7 +42,7 @@ tags: [] # Optional
 
 `type`, `title`, `description`은 required다. Filename에 type component를 사용한 경우 frontmatter의 `type`과 같아야 한다.
 
-GitHub 또는 Branch work unit의 root에는 선택적으로 `README.md`를 둘 수 있다. 이 파일은 work unit의 overview, navigation 또는 artifact index를 위한 metadata이며 독립 artifact나 bundle root가 아니다. 따라서 required frontmatter와 `NN-` sequence를 적용하지 않는다. 실제 working artifact는 아래 sequence convention을 계속 사용한다.
+GitHub, Branch, Date container의 root에는 선택적으로 `README.md`를 둘 수 있다. 이 파일은 container의 overview, navigation 또는 artifact index를 위한 metadata이며 독립 artifact나 bundle root가 아니다. 따라서 required frontmatter와 artifact naming 규칙을 적용하지 않는다. 실제 working artifact와 bundle은 아래 naming contract를 계속 사용한다.
 
 ### Directory Selection
 
@@ -91,6 +91,7 @@ inbox/YYYY-MM-DD/HH-MM-<type>-<domain>[-<subdomain>][-<capability>]-<short-title
 - Date와 time은 `Asia/Seoul` 기준이다.
 - Lowercase kebab-case를 사용한다.
 - `type`, `domain`, `short-title`은 required다.
+- Date container root의 optional `README.md`에는 `HH-MM-` artifact naming을 적용하지 않는다.
 - Optional component는 identification이나 retrieval에 실제 도움이 될 때만 추가한다.
 - 같은 작업의 status나 continuity context를 이어서 기록할 수 있으면 새 artifact를 남발하지 않고 기존 artifact를 갱신한다.
 
@@ -123,7 +124,7 @@ Handoff와 persistence는 artifact type과 별개의 cross-cutting concern으로
 
 ## Lifecycle
 
-- Inbox는 status projection이나 canonical history가 아니다. GitHub 또는 Branch work unit의 `README.md`는 lightweight overview나 artifact index로 유지할 수 있지만 authoritative status/history를 소유하거나 sequenced artifact를 대체하지 않는다.
+- Inbox는 status projection이나 canonical history가 아니다. Container-root `README.md`는 lightweight overview나 artifact index로 유지할 수 있지만 authoritative status/history를 소유하거나 actual artifact를 대체하지 않는다.
 - 장기적으로 유지할 결정이나 계약은 해당 canonical owner에 필요한 내용을 정상 workflow로 반영한다. Inbox artifact 자체를 authority로 승격시키지 않는다.
 - Inbox artifact를 canonical owner에 반영했다는 이유만으로 자동 삭제·이동·archive하지 않는다.
 - 날짜 수, artifact 수 또는 시간이 지났다는 이유만으로 자동 archive, promotion, branch sync를 수행하지 않는다.
