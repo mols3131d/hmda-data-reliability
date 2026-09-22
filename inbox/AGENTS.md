@@ -42,6 +42,15 @@ tags: [] # Optional
 
 `type`, `title`, `description`은 required다. Filename에 type component를 사용한 경우 frontmatter의 `type`과 같아야 한다.
 
+### Container README
+
+GitHub, Branch, Date container root에는 필요할 때 `README.md`를 둘 수 있다. 이 파일은 container의 overview, navigation 또는 artifact index를 위한 metadata이며 독립 artifact나 bundle root가 아니다.
+
+- Required frontmatter와 artifact naming 규칙을 적용하지 않는다.
+- Sequenced work unit의 `NN`이나 Date container의 `HH-MM` namespace를 소비하지 않는다.
+- 실제 working artifact와 bundle은 아래 naming contract를 계속 따른다.
+- Authoritative status/history를 소유하거나 actual artifact를 대체하지 않는다.
+
 ### Directory Selection
 
 새 artifact는 현재 artifact를 실제로 소유하는 work unit을 기준으로 **GitHub → Branch → Date** 순서로 directory를 선택한다. 단순한 연관 관계가 아니라 ownership을 기준으로 하며, 한 단계가 적용되면 더 낮은 단계로 내려가지 않는다.
@@ -120,7 +129,7 @@ Handoff와 persistence는 artifact type과 별개의 cross-cutting concern으로
 
 ## Lifecycle
 
-- Inbox는 status projection이나 canonical history가 아니다. `README.md`를 artifact index로 갱신하지 않는다.
+- Inbox는 status projection이나 canonical history가 아니다.
 - 장기적으로 유지할 결정이나 계약은 해당 canonical owner에 필요한 내용을 정상 workflow로 반영한다. Inbox artifact 자체를 authority로 승격시키지 않는다.
 - Inbox artifact를 canonical owner에 반영했다는 이유만으로 자동 삭제·이동·archive하지 않는다.
 - 날짜 수, artifact 수 또는 시간이 지났다는 이유만으로 자동 archive, promotion, branch sync를 수행하지 않는다.
