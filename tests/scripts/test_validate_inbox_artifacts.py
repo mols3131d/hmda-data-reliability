@@ -113,16 +113,17 @@ def test_branch_work_artifact_passes(tmp_path: Path) -> None:
     [
         Path("inbox/github-226-document-consistency-polish/README.md"),
         Path("inbox/2026-09-09-agent-docs-inbox-policy/README.md"),
+        Path("inbox/2026-09-07/README.md"),
     ],
 )
-def test_sequenced_work_unit_readme_is_not_artifact_validated(
+def test_container_root_readme_is_not_artifact_validated(
     tmp_path: Path,
     relative: Path,
 ) -> None:
-    """GitHub/Branch work-unit README는 sequence artifact 계약 대상이 아니다."""
+    """Container root README는 artifact naming/frontmatter 계약 대상이 아니다."""
     path = tmp_path / relative
     path.parent.mkdir(parents=True)
-    path.write_text("# Work Unit\n", encoding="utf-8")
+    path.write_text("# Overview\n", encoding="utf-8")
 
     assert validate_changed_paths([relative.as_posix()], repo_root=tmp_path) == []
 
