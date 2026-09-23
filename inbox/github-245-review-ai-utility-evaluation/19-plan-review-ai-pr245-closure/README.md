@@ -16,7 +16,7 @@ tags:
 
 같은 session에서 여러 단계를 연속 수행할 수는 있다. 다만 각 단계의 검증과 완료 조건을 별도로 확인하고, material state가 바뀌면 영향을 받는 이전 gate를 다시 검증한다.
 
-PR #245 자체의 closure는 12의 merge/post-merge 확인에서 끝난다. [`13-canonicalize-openspec-before-langfuse.md`](13-canonicalize-openspec-before-langfuse.md)는 **post-merge transition gate**이며 #245 closure와 같은 작업으로 취급하지 않는다. Langfuse는 13까지 끝난 뒤에만 [`14-langfuse-next-pr.md`](14-langfuse-next-pr.md)를 사용한다.
+PR #245 자체의 closure는 12의 merge/post-merge 확인에서 끝난다. [`13-verify-openspec-before-langfuse.md`](13-verify-openspec-before-langfuse.md)는 **post-merge transition gate**이며 #245 closure와 같은 작업으로 취급하지 않는다. Langfuse는 13까지 끝난 뒤에만 [`14-langfuse-next-pr.md`](14-langfuse-next-pr.md)를 사용한다.
 
 ## Current Basis
 
@@ -86,11 +86,11 @@ PR #245 자체의 closure는 12의 merge/post-merge 확인에서 끝난다. [`13
 
 `ready`는 correctness approval이나 merge authorization이 아니다. Draft → Ready 또는 merge처럼 mutable lifecycle action은 해당 시점의 명시적 권한과 current state를 다시 확인한다.
 
-## Post-Merge Transition Gate — Canonicalize Before Langfuse
+## Post-Merge Transition Gate — Verify Canonical OpenSpec
 
 | Order | Work | Gate |
 | --- | --- | --- |
-| 13 | [`13-canonicalize-openspec-before-langfuse.md`](13-canonicalize-openspec-before-langfuse.md) | #245의 durable spec-level behavior가 canonical OpenSpec에 반영되고 active change lifecycle이 정리됨 |
+| 13 | [`13-verify-openspec-before-langfuse.md`](13-verify-openspec-before-langfuse.md) | #245의 durable spec-level behavior가 canonical OpenSpec에 반영되고 active change lifecycle이 정리됨 |
 
 OpenSpec archive/sync가 repository workflow상 별도 PR을 요구하면 그 PR이 Langfuse보다 먼저다. #245 merge만으로 `changes/**`의 delta가 canonical `specs/**`가 되었다고 가정하지 않는다.
 
