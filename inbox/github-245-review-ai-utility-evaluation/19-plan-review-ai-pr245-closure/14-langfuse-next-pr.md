@@ -1,6 +1,6 @@
 # 14 — Start the Langfuse Follow-Up PR
 
-이 작업은 PR #245가 실제로 `main`에 병합되고 13의 OpenSpec canonicalization gate가 완료된 뒤에만 시작한다.
+이 작업은 PR #245가 실제로 `main`에 병합되고 13의 OpenSpec transition gate가 완료된 뒤에만 시작한다.
 
 ## Goal
 
@@ -25,7 +25,7 @@ Langfuse는 관찰과 human annotation을 위한 working surface다. 평가 의�
 ## Preconditions
 
 1. PR #245 merge와 resulting `main` revision을 확인한다.
-1. 13의 canonicalization 결과를 확인하고 current OpenSpec `specs/**`를 기준으로 상태를 다시 읽는다.
+1. 13의 transition gate 결과를 확인하고 current OpenSpec `specs/**`를 기준으로 상태를 다시 읽는다.
 1. 최신 `main`에서 새 branch와 Draft PR을 만든다. #245 branch를 재사용하지 않는다.
 1. `CHATBOT.md`부터 applicable repository guidance를 다시 로드하고 현재 `docs/mvp.md`, canonical OpenSpec, `review_ai`/`runtime_ai` 구현과 tests를 다시 읽는다.
 1. #245 이후 evaluation model이 단순화·변경되었으면 현재 canonical contract에 맞춘다. 이 Inbox의 오래된 type을 보존하기 위한 compatibility abstraction을 만들지 않는다.
@@ -101,4 +101,5 @@ Langfuse 역할과 repository authority, opt-in configuration/credential boundar
 - Repository evaluation contract를 Langfuse schema에 맞춰 약화해야 함
 - Production-grade self-host infrastructure가 필수임
 - Generic two-way synchronization 또는 experiment platform이 필요함
+- Human annotation import에 supported public API가 없고 private/unstable API, scraping 또는 별도 polling framework가 필요함
 - Langfuse가 deterministic safety나 recovery path의 필수 dependency가 됨
