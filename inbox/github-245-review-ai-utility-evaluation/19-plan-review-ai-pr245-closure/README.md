@@ -1,7 +1,7 @@
 ---
 type: plan
 title: "PR #245 Staged Closure Plan"
-description: "PR #245를 Langfuse 후속 작업 전에 정확하게 닫기 위한 단계별 실행 계획과 각 작업의 완료 gate를 정의합니다."
+description: "PR #245를 Langfuse 후속 작업 전에 정확하게 닫고 post-merge contract transition을 안전하게 이어가기 위한 단계별 계획입니다."
 tags:
   - "domain:review-ai"
   - "capability:reliability-agentic-review"
@@ -12,11 +12,11 @@ tags:
 
 # PR #245 Staged Closure Plan
 
-이 bundle은 PR #245를 한 번에 크게 수정하지 않고 **OpenSpec preflight → correctness → scope/contract → final evidence → readiness/merge → canonicalization** 순서로 닫기 위한 실행 계획이다. 각 파일은 한 작업만 소유하고, 앞 단계의 gate를 통과하기 전에는 다음 단계의 consequential work를 시작하지 않는다.
+이 bundle은 PR #245를 한 번에 크게 수정하지 않고 **OpenSpec preflight → correctness → scope/contract → final evidence → readiness/merge** 순서로 닫고, merge 뒤에는 Langfuse 전에 필요한 canonicalization gate를 별도로 확인하기 위한 실행 계획이다. 각 파일은 한 작업만 소유하고, 앞 단계의 gate를 통과하기 전에는 다음 단계의 consequential work를 시작하지 않는다.
 
 같은 session에서 여러 단계를 연속 수행할 수는 있다. 다만 각 단계의 검증과 완료 조건을 별도로 확인하고, material state가 바뀌면 영향을 받는 이전 gate를 다시 검증한다.
 
-Langfuse 도입은 이 bundle의 closure 작업이 아니다. PR #245 merge와 필요한 OpenSpec canonicalization이 끝난 뒤에만 [`14-langfuse-next-pr.md`](14-langfuse-next-pr.md)를 사용한다.
+PR #245 자체의 closure는 12의 merge/post-merge 확인에서 끝난다. [`13-canonicalize-openspec-before-langfuse.md`](13-canonicalize-openspec-before-langfuse.md)는 **post-merge transition gate**이며 #245 closure와 같은 작업으로 취급하지 않는다. Langfuse는 13까지 끝난 뒤에만 [`14-langfuse-next-pr.md`](14-langfuse-next-pr.md)를 사용한다.
 
 ## Current Basis
 
@@ -31,7 +31,7 @@ Langfuse 도입은 이 bundle의 closure 작업이 아니다. PR #245 merge와 �
 ## Execution Rule
 
 1. 현재 단계의 파일 하나를 선택한다.
-1. 시작 전에 current HEAD와 해당 단계의 prerequisites가 여전히 유효한지 확인한다.
+1. 시작 전에 current HEAD, base/main relation과 해당 단계의 prerequisites가 여전히 유효한지 확인한다.
 1. 해당 파일의 scope 안에서 가장 작은 coherent change를 수행한다.
 1. focused validation과 Done When을 확인한다.
 1. 실패하면 같은 owning stage로 돌아가 수정하거나 blocker를 남긴다.
@@ -41,7 +41,7 @@ Langfuse 도입은 이 bundle의 closure 작업이 아니다. PR #245 merge와 �
 
 | Order | Work | Gate |
 | --- | --- | --- |
-| 00 | [`00-revalidate-openspec-planning.md`](00-revalidate-openspec-planning.md) | F1–F3이 current HEAD에서 재확인되고 owning planning/task state가 실제 remediation을 허용 |
+| 00 | [`00-revalidate-openspec-planning.md`](00-revalidate-openspec-planning.md) | F1–F3이 current HEAD에서 재확인되고 owning planning/task state가 actual remediation을 허용 |
 
 **Stage 0 Gate:** active `spec-driven-tdd` Change가 code-facing remediation의 lifecycle owner다. 필요한 task reopen 또는 planning correction을 구현보다 먼저 반영한다.
 
@@ -86,7 +86,7 @@ Langfuse 도입은 이 bundle의 closure 작업이 아니다. PR #245 merge와 �
 
 `ready`는 correctness approval이나 merge authorization이 아니다. Draft → Ready 또는 merge처럼 mutable lifecycle action은 해당 시점의 명시적 권한과 current state를 다시 확인한다.
 
-## Stage 5 — Canonicalize Before Langfuse
+## Post-Merge Transition Gate — Canonicalize Before Langfuse
 
 | Order | Work | Gate |
 | --- | --- | --- |
@@ -94,15 +94,16 @@ Langfuse 도입은 이 bundle의 closure 작업이 아니다. PR #245 merge와 �
 
 OpenSpec archive/sync가 repository workflow상 별도 PR을 요구하면 그 PR이 Langfuse보다 먼저다. #245 merge만으로 `changes/**`의 delta가 canonical `specs/**`가 되었다고 가정하지 않는다.
 
-## Stage 6 — Follow-Up Only
+## Follow-Up Only
 
-PR #245 merge와 Stage 5가 완료된 뒤에만 [`14-langfuse-next-pr.md`](14-langfuse-next-pr.md)를 handoff seed로 사용한다. 새 Langfuse branch/PR이 생기면 active planning은 그 새 work unit이 소유하며, 이 파일은 historical handoff context로만 남긴다.
+PR #245 merge와 13이 완료된 뒤에만 [`14-langfuse-next-pr.md`](14-langfuse-next-pr.md)를 handoff seed로 사용한다. 새 Langfuse branch/PR이 생기면 active planning은 그 새 work unit이 소유하며, 이 파일은 historical handoff context로만 남긴다.
 
 ## Stop Conditions
 
 다음 상황에서는 다음 단계로 진행하지 않는다.
 
 - current HEAD에서 새로운 correctness blocker가 발견됨
+- base/main divergence가 current remediation 또는 validation을 stale하게 만듦
 - OpenSpec planning owner 또는 task state가 remediation과 불일치함
 - Stage 1 defect를 고치기 위해 unrelated architecture redesign이 필요함
 - final validation이 실패함
