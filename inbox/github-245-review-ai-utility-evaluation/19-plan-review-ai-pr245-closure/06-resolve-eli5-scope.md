@@ -2,15 +2,19 @@
 
 ## Goal
 
-PR #245의 목적과 직접 관련 없는 repository-wide agent asset 변경이 diff에 섞이지 않게 하되, 실제 repository-level 필요성이 확인되면 근거와 함께 유지한다.
+PR #245의 목적과 직접 관련 없는 repository-wide agent asset 변경이 diff에 섞이지 않게 한다.
 
-## Scope
+## Decision Rule
 
-현재 PR은 `dreambigou/eli5` source, generated route entry와 managed lock state를 함께 변경한다. 먼저 이 asset이 PR #245의 runtime/evaluation capability 또는 유지보수에 지속적으로 필요한 repository-level dependency인지 current evidence로 판단한다.
+`dreambigou/eli5`가 repository에 일반적으로 유용하다는 사실만으로 #245 scope에 남기지 않는다.
 
-- 구체적 지속 사용 근거가 없으면 #245에서 제거한다.
-- current repository-level 필요성이 확인되면 유지하되 PR 목적과의 관계를 명확히 설명한다.
-- 과거 ELI5 보고서가 존재한다는 사실만으로 permanent skill installation을 정당화하지 않는다.
+#245에 유지하려면 다음을 모두 설명할 수 있어야 한다.
+
+- #245의 implementation/validation/maintenance 결과에 실제로 필요하다.
+- 별도 PR로 분리하면 #245의 검증 가능한 결과가 깨지거나 의미 있게 불완전해진다.
+- repository-wide permanent dependency를 추가하는 비용이 그 필요성에 비례한다.
+
+하나라도 성립하지 않으면 #245에서는 제거하고, 지속적인 repository capability가 필요하면 별도 work unit 후보로 분리한다. 과거 ELI5 보고서가 존재한다는 사실은 permanent skill installation 근거가 아니다.
 
 ## Managed-State Rule
 
@@ -25,8 +29,8 @@ PR #245의 목적과 직접 관련 없는 repository-wide agent asset 변경이 
 - `rulesync.jsonc`, generated route, lock state가 같은 결정과 일치한다.
 - chatbot route validation과 관련 CI가 통과한다.
 - Review AI tests는 ELI5 유지/제거 결정과 독립적으로 통과한다.
-- PR body가 실제 유지/제거 결과를 정확히 설명할 수 있다.
+- PR body가 실제 결과를 정확히 설명할 수 있다.
 
 ## Done When
 
-ELI5 변경을 유지할지 제거할지가 current repository need와 PR coherence를 기준으로 결정되고, managed state와 validation이 그 결정과 일치하면 완료한다.
+ELI5 변경이 #245에 필수·비분리적이라는 근거가 있으면 최소 범위로 유지되고, 그렇지 않으면 #245에서 제거되며 managed state와 validation이 그 결정과 일치하면 완료한다.

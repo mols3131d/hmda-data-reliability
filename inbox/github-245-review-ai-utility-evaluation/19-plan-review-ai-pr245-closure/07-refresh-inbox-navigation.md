@@ -12,7 +12,7 @@ PR #245 Inbox의 stale navigation이 다음 작업자를 실제로 혼란스럽�
 - 오래된 proposal/archive가 current verdict처럼 보인다.
 - handoff 시 next action을 잘못 선택할 현실적인 위험이 있다.
 
-그렇지 않으면 이 단계를 건너뛴다.
+그렇지 않으면 아무 repository change 없이 건너뛴다.
 
 ## Scope
 
@@ -28,8 +28,8 @@ PR #245 Inbox의 stale navigation이 다음 작업자를 실제로 혼란스럽�
 
 - 링크가 current branch에서 유효하다.
 - navigation이 canonical spec/code 상태를 재정의하지 않는다.
-- Markdown/Inbox validation을 통과한다.
+- 변경했다면 Markdown/Inbox validation을 통과한다.
 
 ## Done When
 
-필요한 경우에만 최소 navigation correction이 적용되고, 필요하지 않다면 `skipped: no material handoff risk`로 판단 근거를 남기면 완료한다. 어느 경우에도 이 단계 자체가 merge readiness를 증명하지 않는다.
+Material handoff risk가 있으면 최소 navigation correction과 validation이 완료되었을 때 끝난다. Risk가 없으면 repository를 바꾸지 않고 이 단계를 생략한다. 어느 경우에도 이 단계 자체가 merge readiness를 증명하지 않는다.

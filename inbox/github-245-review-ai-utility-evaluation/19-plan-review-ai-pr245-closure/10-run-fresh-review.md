@@ -33,12 +33,12 @@ Self-review는 independent approval로 부르지 않는다. 독립 reviewer/orch
 1. current code/spec/evidence로 finding이 실제인지 확인한다.
 1. 수용 시 얻는 correctness/readability/scope 이득과 복잡도·중복 비용을 비교한다.
 1. unsupported, duplicate, immaterial 또는 과도한 abstraction을 요구하는 finding은 기각하고 근거를 남긴다.
-1. blocking finding만 remediation으로 돌린다.
+1. 수용한 finding은 **가장 이른 실제 owner**로 돌린다. Code/spec/test defect는 Stage 0–2, validation freshness 문제는 08, PR description 문제는 09가 owner다.
 
 ## Result Handling
 
 - blocking finding 없음 → 11로 진행
-- blocking finding 수용 → 해당 owning Stage 0–2로 돌아가 수정 후 08–10을 다시 수행
+- blocking finding 수용 → 가장 이른 owning stage로 돌아가 수정하고, tracked file이 바뀌었으면 08부터 validation/review chain을 다시 수행
 - finding 기각 → 근거를 review surface에 남기고 frozen HEAD 유지
 - evidence 부족 → `not_ready` 상태로 유지하고 부족한 proof를 먼저 확보
 
