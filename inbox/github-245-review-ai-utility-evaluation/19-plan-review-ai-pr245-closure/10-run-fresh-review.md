@@ -23,6 +23,7 @@ Review는 diff 중심으로 수행한다. 최소한 다음을 다시 확인한�
 - ELI5 또는 다른 unrelated scope가 남지 않았는지
 - offline proof와 live-human proof 경계
 - final PR description/validation evidence가 frozen HEAD에 적용되는지
+- future Langfuse integration을 이유로 불필요한 evaluator/store/CLI/vendor abstraction이 들어오지 않았는지
 
 Self-review는 independent approval로 부르지 않는다. 독립 reviewer/orchestration이 실제로 사용 가능하면 current repository workflow에 따라 사용하고, 사용할 수 없으면 limitation을 명시한다.
 
@@ -32,8 +33,17 @@ Self-review는 independent approval로 부르지 않는다. 독립 reviewer/orch
 
 1. current code/spec/evidence로 finding이 실제인지 확인한다.
 1. 수용 시 얻는 correctness/readability/scope 이득과 복잡도·중복 비용을 비교한다.
-1. unsupported, duplicate, immaterial 또는 과도한 abstraction을 요구하는 finding은 기각하고 근거를 남긴다.
-1. 수용한 finding은 **가장 이른 실제 owner**로 돌린다. Code/spec/test defect는 Stage 0–2, validation freshness 문제는 08, PR description 문제는 09가 owner다.
+1. unsupported, duplicate, immaterial 또는 future integration convenience만을 위한 finding은 기각한다.
+1. generic abstraction, 새 persistence layer, evaluator framework처럼 현재 defect보다 큰 구조를 요구하면 더 작은 대안이 없는지 먼저 확인한다.
+1. 수용한 finding은 가장 이른 실제 owner로 돌린다. Code/spec/test defect는 Stage 0–2, validation freshness 문제는 08, PR description 문제는 09가 owner다.
+
+Langfuse 관련 finding은 다음 조건을 모두 만족할 때만 #245에 수용한다.
+
+- Langfuse가 없어도 현재 #245 contract의 correctness 문제다.
+- current requirement 또는 reachable runtime/test evidence로 재현된다.
+- 가장 작은 수정이 #245의 기존 scope 안에 있다.
+
+그 외에는 14의 follow-up research 대상으로만 넘긴다.
 
 ## Result Handling
 
@@ -44,4 +54,4 @@ Self-review는 independent approval로 부르지 않는다. 독립 reviewer/orch
 
 ## Done When
 
-Frozen final HEAD에 적용되는 fresh review에서 unresolved blocking finding이 없고 accepted/rejected finding의 근거와 remaining limitation이 명확하면 완료한다.
+Frozen final HEAD에 적용되는 fresh review에서 unresolved blocking finding이 없고 accepted/rejected finding의 근거와 remaining limitation이 명확하며, speculative Langfuse preparation이 merge blocker로 승격되지 않았으면 완료한다.
