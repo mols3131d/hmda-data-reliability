@@ -9,6 +9,7 @@ Stage 1 remediation 이후 active `review-ai-utility-evaluation` OpenSpec change
 00에서 정리한 planning owner와 Stage 1 implementation 결과를 기준으로 post-Apply consistency만 확인한다.
 
 - reopened task가 실제로 완료됐는지 확인한다.
+- task checkbox와 `tasks_completed`/`tasks_total` 같은 schema-owned progress metadata가 같은 상태를 표현하는지 확인한다.
 - Stage 1에서 planning interpretation이 추가로 바뀌었다면 원인을 소유하는 artifact부터 최소 수정한다.
 - Proposal/spec/design/tasks에 current implementation보다 앞서거나 뒤처진 완료 주장을 남기지 않는다.
 - offline utility proof와 global Live Agentic proof의 경계를 유지한다.
@@ -21,6 +22,7 @@ Stage 1 remediation 이후 active `review-ai-utility-evaluation` OpenSpec change
 - F2의 required control semantics가 spec, task, implementation과 durable proof에 같은 의미로 표현되는가?
 - F3 bounded evidence boundary가 prompt와 validator에서 동일한가?
 - reopened task가 실제 proof를 근거로 다시 완료됐는가?
+- task checklist와 progress metadata가 같은 completion state인가?
 - active Change의 완료 주장이 current tests/evidence와 일치하는가?
 
 ## Validation
@@ -32,4 +34,4 @@ Stage 1 remediation 이후 active `review-ai-utility-evaluation` OpenSpec change
 
 ## Done When
 
-OpenSpec planning, current code/tests와 durable proof 사이에 알려진 semantic drift가 없고 active Change의 task state가 실제 implementation 상태와 맞으면 완료한다. 그 후에만 scope cleanup으로 이동한다.
+OpenSpec planning, task progress metadata, current code/tests와 durable proof 사이에 알려진 semantic drift가 없고 active Change의 completion state가 actual implementation 상태와 맞으면 완료한다. 그 후에만 scope cleanup으로 이동한다.
