@@ -300,6 +300,94 @@ def test_preflight_rejection_never_calls_provider_or_evidence_store(
     assert not tmp_path.joinpath("agentic-review").exists()
 
 
+def test_context_overflow_is_typed_preflight_rejection(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    evidence = [material.detection.evidence]
+    for index in range(7):
+        evidence.append(
+            Evidence(
+                evidence_id=f"ev-large-{index}",
+                source="table_metadata",
+                asset_name=material.detection.incident.asset_name,
+                partition=material.detection.incident.partition,
+                observed_at=datetime(2026, 8, 27, 0, 0, tzinfo=UTC),
+                summary="s" * 1_500,
+                payload={
+                    "table_name": "raw.hmda_loans",
+                    "columns": [f"column-{index}-{value:070d}" for value in range(10)],
+                    "column_types": [
+                        f"type-{index}-{value:070d}" for value in range(10)
+                    ],
+                    "schema_hash": "sha256:large-context",
+                },
+            )
+        )
+
+    evidence_refs = [item.evidence_id for item in evidence]
+    incident = material.detection.incident.model_copy(
+        update={"evidence_refs": evidence_refs}
+    )
+    draft = material.draft.model_copy(update={"evidence_refs": evidence_refs})
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content="{}",
+            attempt_count=1,
+            latency_ms=1,
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    result = service_module.review_null_spike(
+        incident=incident,
+        evidence=evidence,
+        draft=draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=provider,
+        evidence_store=store,
+    )
+
+    assert result.status == "input_rejected"
+    assert result.failure_code == "context_too_large"
+    assert result.invocation_id is None
+    assert provider.calls == 0
+    assert store.records == []
+
+
+def test_unrelated_prompt_value_error_is_not_mapped_to_input_rejection(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content="{}",
+            attempt_count=1,
+            latency_ms=1,
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    def fail_render(*args: object, **kwargs: object) -> object:
+        raise ValueError("unexpected prompt programming failure")
+
+    monkeypatch.setattr(service_module, "render_review_prompt", fail_render)
+
+    with pytest.raises(ValueError, match="unexpected prompt programming failure"):
+        _call(
+            null_spike_review_material,
+            provider=provider,
+            evidence_store=store,
+        )
+
+    assert provider.calls == 0
+    assert store.records == []
+
+
 def test_schema_and_guard_failures_are_persisted_without_exposing_output(
     tmp_path: Path,
     null_spike_review_material: NullSpikeReviewMaterial,

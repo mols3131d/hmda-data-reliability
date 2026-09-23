@@ -40,14 +40,20 @@ class UtilityEvidenceStore:
         )
 
     def write(self, evidence: UtilityComparisonEvidence) -> Path:
+        validated_evidence = UtilityComparisonEvidence.model_validate_json(
+            evidence.model_dump_json()
+        )
         return self._write(
-            self.path_for(evidence.comparison_id),
-            evidence.model_dump(mode="json"),
+            self.path_for(validated_evidence.comparison_id),
+            validated_evidence.model_dump(mode="json"),
         )
 
     def write_proof(self, bundle: UtilityProofBundle) -> Path:
+        validated_bundle = UtilityProofBundle.model_validate_json(
+            bundle.model_dump_json()
+        )
         path = self.path_for_proof(bundle.proof_id)
-        return self._write(path, bundle.model_dump(mode="json"))
+        return self._write(path, validated_bundle.model_dump(mode="json"))
 
     def _write(self, path: Path, value: object) -> Path:
         payload = canonical_json_bytes(value) + b"\n"

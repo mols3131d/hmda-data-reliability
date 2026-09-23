@@ -32,6 +32,7 @@ from hmda_reliability.review_ai import (
     HumanDecision,
     HumanUtilityEvaluation,
     UtilityControl,
+    UtilityControlRole,
     UtilityProofBundle,
     UtilityProofCase,
     build_bounded_review_context,
@@ -93,7 +94,8 @@ def build_representative_utility_proof(
         [
             UtilityControl(
                 control_id="control-positive",
-                case_id="review-ai-utility-controls",
+                role=UtilityControlRole.POSITIVE,
+                case_id=CASE_ID,
                 case_version=CASE_VERSION,
                 expected_outcome="pass",
                 output_fixture_id="utility-control-positive-v1",
@@ -105,7 +107,7 @@ def build_representative_utility_proof(
                 evaluation=_evaluation(
                     evaluation_id="eval-control-positive",
                     invocation_id="utility-control-positive",
-                    case_id="review-ai-utility-controls",
+                    case_id=CASE_ID,
                     output_kind="positive_control",
                     score=2,
                     project_revision=project_revision,
@@ -115,7 +117,8 @@ def build_representative_utility_proof(
             ),
             UtilityControl(
                 control_id="control-negative",
-                case_id="review-ai-utility-controls",
+                role=UtilityControlRole.RESTATEMENT_NEGATIVE,
+                case_id=CASE_ID,
                 case_version=CASE_VERSION,
                 expected_outcome="fail",
                 output_fixture_id="utility-control-negative-v1",
@@ -127,12 +130,35 @@ def build_representative_utility_proof(
                 evaluation=_evaluation(
                     evaluation_id="eval-control-negative",
                     invocation_id="utility-control-negative",
-                    case_id="review-ai-utility-controls",
+                    case_id=CASE_ID,
                     output_kind="negative_control",
                     score=0,
                     project_revision=project_revision,
                     output_fixture_id="utility-control-negative-v1",
                     output=baseline_output,
+                ),
+            ),
+            UtilityControl(
+                control_id="control-hedging",
+                role=UtilityControlRole.HEDGING_NEGATIVE,
+                case_id=CASE_ID,
+                case_version=CASE_VERSION,
+                expected_outcome="fail",
+                output_fixture_id="utility-control-hedging-v1",
+                output=_build_hedging_output(review_input),
+                expected_incident_id=review_input.incident.incident_id,
+                expected_target_column=review_input.target_column,
+                expected_deterministic_facts=review_input.deterministic_facts,
+                expected_contributions=(),
+                evaluation=_evaluation(
+                    evaluation_id="eval-control-hedging",
+                    invocation_id="utility-control-hedging",
+                    case_id=CASE_ID,
+                    output_kind="negative_control",
+                    score=0,
+                    project_revision=project_revision,
+                    output_fixture_id="utility-control-hedging-v1",
+                    output=_build_hedging_output(review_input),
                 ),
             ),
         ]
@@ -300,6 +326,25 @@ def _build_output(
         uncertainties=("Root cause remains unconfirmed.",),
         advisory_recommendation="needs_human_review",
         utility_contributions=utility_contributions,
+    )
+
+
+def _build_hedging_output(
+    review_input: AgenticReviewInput,
+) -> AgenticReviewOutput:
+    return AgenticReviewOutput(
+        incident_id=review_input.incident.incident_id,
+        incident_type="null_spike",
+        target_column=review_input.target_column,
+        deterministic_facts=review_input.deterministic_facts,
+        review_summary=(
+            "Multiple causes are possible; a full audit of every table may be needed."
+        ),
+        evidence_used=(review_input.evidence[0].evidence_id,),
+        findings=(),
+        uncertainties=("The full context remains uncertain.",),
+        advisory_recommendation="needs_human_review",
+        utility_contributions=(),
     )
 
 

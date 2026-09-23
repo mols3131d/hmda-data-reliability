@@ -8,10 +8,14 @@ description: "PR #245 작업 과정에서 생성된 비정본 Review AI utility 
 
 이 디렉터리는 [PR #245 · `feat(review-ai): prove MVP utility evaluation`](https://github.com/mols3131d/hmda-data-reliability/pull/245) 작업 과정에서 생성된 비정본 작업 산출물(리뷰, 기획, 보고서, 제안서)을 보관합니다.
 
+현재 후속 작업은 [18번 high-confidence review](18-review-review-ai-high-confidence/README.md), 실행 계획과 next action은 [19번 PR closure plan](19-plan-review-ai-pr245-closure/README.md)을 참조합니다. 아래 기록의 15번은 당시 한계 스냅샷이며 현재 상태를 대체하지 않습니다.
+
 ## Key Artifacts
 
 | Sequence | Type | Artifact | Description |
 | --- | --- | --- | --- |
+| **21** | `brief` | [21-brief-review-ai-pr245-work-summary.md](21-brief-review-ai-pr245-work-summary.md) | PR #245에서 만든 Review AI 근거·검증·품질 비교 기능을 쉬운 말로 요약 |
+| **20** | `report` | [20-report-review-ai-pr245-closure-status.md](20-report-review-ai-pr245-closure-status.md) | F1–F3 수정, 로컬 검증 결과와 PR #245의 미완료 closure gate 현황 |
 | **15** | `report` | [15-report-review-ai-limitations-and-gaps.md](15-report-review-ai-limitations-and-gaps.md) | **★ [Archive] 리비전 정보 및 에이전트 리뷰 5대 한계·부족점 종합 정리** |
 | 14 | `plan` | [14-plan-review-ai-json-markdown-fence-sanitization.md](14-plan-review-ai-json-markdown-fence-sanitization.md) | 로컬 LLM 마크다운 펜스(```` ```json ````) 자동 정제 구현 계획 |
 | 13 | `report` | [13-report-review-ai-hands-on-evaluation-guide.md](13-report-review-ai-hands-on-evaluation-guide.md) | 오프라인 픽스처 및 opt-in 라이브 리뷰 사용자 직접 체험 가이드 |

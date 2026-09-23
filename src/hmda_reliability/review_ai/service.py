@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability.contracts import Evidence, Incident
 from hmda_reliability.reliability.remediation import RemediationDraft
+from hmda_reliability.review_ai.context import ReviewContextTooLargeError
 from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
@@ -120,6 +121,11 @@ def review_null_spike(
         return AgenticReviewResult(
             status=AgenticReviewStatus.INPUT_REJECTED,
             failure_code="prompt_too_large",
+        )
+    except ReviewContextTooLargeError:
+        return AgenticReviewResult(
+            status=AgenticReviewStatus.INPUT_REJECTED,
+            failure_code="context_too_large",
         )
 
     review_provider = provider or OpenAICompatibleAdapter(settings)

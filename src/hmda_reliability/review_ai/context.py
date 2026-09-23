@@ -115,6 +115,10 @@ class BoundedReviewContext(ReliabilityContract):
     digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
 
 
+class ReviewContextTooLargeError(ValueError):
+    """직렬화된 bounded context가 설정된 크기 한도를 넘을 때 발생한다."""
+
+
 def build_bounded_review_context(
     review_input: AgenticReviewInput,
     *,
@@ -176,8 +180,9 @@ def build_bounded_review_context(
         digest=digest,
     )
     if len(_canonical_json_bytes(context.model_dump(mode="json"))) > max_context_bytes:
-        msg = "bounded review context exceeds max_context_bytes"
-        raise ValueError(msg)
+        raise ReviewContextTooLargeError(
+            "bounded review context exceeds max_context_bytes"
+        )
     return context
 
 

@@ -102,6 +102,12 @@ def build_canonical_input(
     evidence = [
         item.model_dump(mode="json") for item in active_context.selected_evidence
     ]
+    selected_evidence_ids = {str(item["evidence_id"]) for item in evidence}
+    draft["evidence_refs"] = [
+        evidence_id
+        for evidence_id in draft["evidence_refs"]
+        if evidence_id in selected_evidence_ids
+    ]
     return {
         "incident": _pick(
             incident,

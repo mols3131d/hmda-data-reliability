@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 
+from hmda_reliability.reliability.contracts import Evidence, EvidenceSource
 from hmda_reliability.review_ai import contracts
 from hmda_reliability.review_ai import prompt as prompt_module
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
@@ -110,6 +113,47 @@ def test_provider_projection_uses_bounded_facts_instead_of_raw_payload(
     facts = first_evidence["facts"]
     assert isinstance(facts, dict)
     assert facts["rule"] == "null_spike"
+
+
+@pytest.mark.unit
+def test_draft_citable_evidence_is_limited_to_prompt_selected_evidence(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    observed_at = datetime(2026, 8, 27, 0, 0, tzinfo=UTC)
+    evidence = [material.detection.evidence]
+    evidence.extend(
+        Evidence(
+            evidence_id=f"ev-table-{index:02d}",
+            source=EvidenceSource.TABLE_METADATA,
+            asset_name=material.detection.incident.asset_name,
+            partition=material.detection.incident.partition,
+            observed_at=observed_at,
+            summary=f"Table metadata {index}",
+            payload={"table_name": "raw.hmda_loans", "columns": [f"column-{index}"]},
+        )
+        for index in range(10)
+    )
+    review_input = _review_input(material)
+    evidence_refs = [item.evidence_id for item in evidence]
+    review_input = contracts.AgenticReviewInput(
+        incident=review_input.incident.model_copy(
+            update={"evidence_refs": evidence_refs}
+        ),
+        evidence=evidence,
+        draft=material.draft.model_copy(update={"evidence_refs": evidence_refs}),
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+    )
+
+    rendered = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
+
+    prompt_evidence = rendered.canonical_input["evidence"]
+    draft = rendered.canonical_input["draft"]
+    assert isinstance(prompt_evidence, list)
+    assert isinstance(draft, dict)
+    selected_ids = {item["evidence_id"] for item in prompt_evidence}
+    assert set(draft["evidence_refs"]) == selected_ids
 
 
 @pytest.mark.unit
