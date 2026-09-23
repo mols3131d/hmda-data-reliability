@@ -24,6 +24,7 @@
    - planning artifact의 semantic defect
    - 이미 해결되어 더 이상 적용되지 않음
 1. 기존 task가 owner이면 해당 task의 완료 상태를 다시 열거나 완료 조건을 current requirement에 맞게 수정한다.
+1. Checklist 상태를 바꾸면 `tasks_completed`/`tasks_total` 같은 schema-owned progress metadata도 실제 상태와 일치시킨다. Review process 자체를 새 task로 추가하지 않는다.
 1. Proposal/spec/design이 잘못된 경우 가장 이른 owning artifact를 먼저 수정하고 직접 영향받는 downstream만 다시 일치시킨다.
 1. 새로운 독립 requirement를 만들지 않는다. Current Change 범위 밖이면 blocker/follow-up으로 분리한다.
 
@@ -37,8 +38,9 @@
 
 - OpenSpec validation이 통과한다.
 - F1–F3 각각에 current owner와 remediation path가 명확하다.
+- task checkbox와 progress metadata가 actual state와 일치한다.
 - implementation work를 시작할 수 있도록 task/dependency state가 actual state와 일치한다.
 
 ## Done When
 
-F1–F3의 current applicability와 owning planning/task가 확인되고, 필요한 planning correction이 implementation보다 먼저 반영됐으면 Stage 0을 완료한다. 그 후에만 01로 이동한다.
+F1–F3의 current applicability와 owning planning/task가 확인되고, 필요한 planning correction과 progress state가 implementation보다 먼저 정합화됐으면 Stage 0을 완료한다. 그 후에만 01로 이동한다.
