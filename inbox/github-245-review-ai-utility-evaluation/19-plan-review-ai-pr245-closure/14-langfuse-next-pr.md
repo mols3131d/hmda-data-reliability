@@ -1,6 +1,6 @@
-# 13 — Start the Langfuse Follow-Up PR
+# 14 — Start the Langfuse Follow-Up PR
 
-이 작업은 PR #245가 실제로 `main`에 병합된 뒤에만 시작한다. #245가 아직 open이면 Langfuse 구현을 시작하지 않는다.
+이 작업은 PR #245가 실제로 `main`에 병합되고 13의 OpenSpec canonicalization gate가 완료된 뒤에만 시작한다.
 
 ## Goal
 
@@ -13,11 +13,11 @@ live Review AI invocation
         ↓
 Langfuse trace
         ↓
-human rubric_v1 annotation + rationale
+human rubric annotation + rationale
         ↓
 one-way import
         ↓
-repository HumanUtilityEvaluation
+repository human evaluation
 ```
 
 Langfuse는 관찰과 human annotation을 위한 working surface다. 평가 의미, deterministic guard, acceptance와 canonical evaluation evidence는 repository가 계속 소유한다.
@@ -25,16 +25,21 @@ Langfuse는 관찰과 human annotation을 위한 working surface다. 평가 의�
 ## Preconditions
 
 1. PR #245 merge와 resulting `main` revision을 확인한다.
+1. 13의 canonicalization 결과를 확인하고 current OpenSpec `specs/**`를 기준으로 상태를 다시 읽는다.
 1. 최신 `main`에서 새 branch와 Draft PR을 만든다. #245 branch를 재사용하지 않는다.
 1. `CHATBOT.md`부터 applicable repository guidance를 다시 로드하고 현재 `docs/mvp.md`, canonical OpenSpec, `review_ai`/`runtime_ai` 구현과 tests를 다시 읽는다.
-1. #245 이후 evaluation model이 단순화·변경되었으면 현재 canonical contract에 맞춘다. 이 Inbox에 적힌 오래된 type을 보존하기 위한 compatibility abstraction을 만들지 않는다.
+1. #245 이후 evaluation model이 단순화·변경되었으면 현재 canonical contract에 맞춘다. 이 Inbox의 오래된 type을 보존하기 위한 compatibility abstraction을 만들지 않는다.
 
-Working context는 [`../12-proposal-review-ai-utility-evaluation-remediation-and-simplification.md`](../12-proposal-review-ai-utility-evaluation-remediation-and-simplification.md), [`../13-report-review-ai-hands-on-evaluation-guide.md`](../13-report-review-ai-hands-on-evaluation-guide.md), [`../18-review-review-ai-high-confidence/README.md`](../18-review-review-ai-high-confidence/README.md)를 참고한다. Inbox와 current code/spec이 충돌하면 canonical source를 따른다.
+Working context는 `12-proposal-review-ai-utility-evaluation-remediation-and-simplification.md`, `13-report-review-ai-hands-on-evaluation-guide.md`, `18-review-review-ai-high-confidence/README.md`를 historical context로 참고할 수 있다. Inbox와 current code/spec이 충돌하면 canonical source를 따른다.
+
+## Ownership Handoff
+
+이 파일은 새 작업을 시작하기 위한 seed다. 새 Langfuse branch 또는 PR이 생기면 active planning, review와 durable working context는 그 새 work unit의 Inbox가 소유한다. 이 파일을 새 PR의 mutable status owner로 계속 갱신하지 않는다.
 
 ## Boundaries
 
 - Repository가 rubric, evaluation semantics, same-case invariant, deterministic safety와 MVP acceptance를 소유한다.
-- Langfuse가 없거나 unavailable이어도 Review AI core, deterministic tests와 recovery path가 정상 동작해야 한다.
+- Langfuse가 없거나 unavailable이어도 Review AI core, deterministic tests와 recovery path는 정상 동작해야 한다.
 - Langfuse annotation/dashboard만으로 candidate 승인, recovery 또는 delegation authority를 변경하지 않는다.
 - Repository prompt와 prompt identity를 canonical로 유지한다. 첫 PR에서 Langfuse Prompt Management로 runtime authority를 이전하지 않는다.
 - Automatic LLM judge, Promptfoo, generic experiment platform과 production-grade Langfuse self-host infrastructure를 도입하지 않는다.
@@ -45,7 +50,7 @@ Working context는 [`../12-proposal-review-ai-utility-evaluation-remediation-and
 
 ### 1. Research the Current Integration Surface
 
-현재 Langfuse 공식 문서를 기준으로 Python SDK/OpenTelemetry tracing, human annotation/score API, credential/redaction과 failure behavior를 조사한다. 그 결과 아래 목표를 만족하는 가장 작은 supported path를 선택한다.
+현재 Langfuse 공식 문서를 기준으로 Python SDK/OpenTelemetry tracing, human annotation/score API, credential/redaction과 failure behavior를 조사한다. 아래 목표를 만족하는 가장 작은 supported path를 선택한다.
 
 ### 2. Add an Optional Live Trace Projection
 
@@ -75,7 +80,7 @@ Fake/stub client로 다음을 검증한다.
 
 ### 6. Document Only the Project Boundary
 
-Langfuse 역할과 repository authority, opt-in configuration/credential boundary, trace → annotation → import 절차와 외부 서비스 없이 local validation 가능한 이유만 문서화한다. Langfuse 일반 사용법을 복제하지 않는다. Capability contract가 materially 바뀌는 경우에만 현재 OpenSpec workflow를 따른다.
+Langfuse 역할과 repository authority, opt-in configuration/credential boundary, trace → annotation → import 절차와 외부 서비스 없이 local validation 가능한 이유만 문서화한다. Langfuse 일반 사용법을 복제하지 않는다. Capability contract가 materially 바뀌는 경우에만 current OpenSpec workflow를 따른다.
 
 ## Acceptance
 

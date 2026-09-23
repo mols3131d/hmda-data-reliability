@@ -2,7 +2,7 @@
 
 ## Goal
 
-PR #245를 안전하게 `main`에 반영하고 Langfuse 후속 PR이 시작할 안정된 baseline을 만든다.
+PR #245를 안전하게 `main`에 반영하고 post-merge OpenSpec canonicalization을 시작할 안정된 baseline을 만든다.
 
 ## Authorization Gate
 
@@ -13,7 +13,7 @@ PR #245를 안전하게 `main`에 반영하고 Langfuse 후속 PR이 시작할 �
 Merge 직전에 mutable state를 다시 확인한다.
 
 - PR이 open인지
-- exact head SHA가 08–11의 evidence와 같은지
+- exact head SHA가 08–11의 frozen evidence와 같은지
 - base `main`이 material하게 움직이지 않았는지
 - required/current CI가 성공했는지
 - mergeability가 clean인지
@@ -33,8 +33,9 @@ Expected-head guard를 사용할 수 있으면 사용해 검증한 HEAD와 다�
 - PR이 merged/closed인지 확인한다.
 - resulting main commit SHA를 기록한다.
 - #245가 실제로 `main`에 포함됐는지 확인한다.
-- 이 시점 이후에만 `13-langfuse-next-pr.md`를 활성화한다.
+- active `review-ai-utility-evaluation` Change와 canonical `openspec/specs/**`의 관계를 다시 확인한다.
+- Langfuse를 시작하지 않고 13의 canonicalization gate로 이동한다.
 
 ## Done When
 
-PR #245가 검증한 final change로 `main`에 반영되고 resulting revision을 식별할 수 있으면 closure가 완료된다.
+PR #245가 검증한 final change로 `main`에 반영되고 resulting revision을 식별할 수 있으면 이 단계가 완료된다. 전체 closure는 13의 canonicalization gate까지 끝나야 한다.
