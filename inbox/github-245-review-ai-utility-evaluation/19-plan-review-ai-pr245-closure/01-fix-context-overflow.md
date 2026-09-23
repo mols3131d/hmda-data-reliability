@@ -22,7 +22,7 @@
 - `src/hmda_reliability/review_ai/service.py`
 - `tests/review_ai/test_context.py`
 - `tests/review_ai/test_service.py`
-- [`../../18-review-review-ai-high-confidence/README.md`](../../18-review-review-ai-high-confidence/README.md)
+- [`../18-review-review-ai-high-confidence/README.md`](../18-review-review-ai-high-confidence/README.md)
 
 ## Validation
 
