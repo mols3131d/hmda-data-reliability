@@ -44,7 +44,7 @@ Source dependency는 `review_ai -> reliability`와 `review_ai -> runtime_ai`만 
 
 Provider가 실제로 호출된 logical review는 sanitized invocation evidence를 남긴다. Credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다. Durable provenance의 required behavior와 record contract는 canonical Spec이 소유하고, exact implementation은 source에서 확인하며 tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
-Review utility는 `rubric_v1` human rubric으로 평가한다. `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`을 사람이 점수와 rationale로 판정하고, positive/negative control이 각각 `PASS`/`FAIL`인지 결정론적으로 확인한다. 같은 representative case와 rubric으로 baseline/candidate를 비교한 결과는 invocation identity, change-under-test와 human decision을 가진 별도 create-only utility evidence로 남긴다. 이 평가 경로는 provider를 호출하거나 자동 LLM judge를 사용하지 않는다.
+Review utility는 `rubric_v1` human rubric으로 평가한다. `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`을 사람이 점수와 rationale로 판정하고, 같은 case/version/rubric/revision의 baseline/candidate 평가를 invocation identity, change-under-test와 human decision에 연결해 비교한다. Positive, restatement-negative와 hedging-negative 사례는 판별력을 확인하는 test fixture로만 사용한다. 이 계약은 전용 evaluation store나 고정 점수 proof runner를 제공하지 않고, 자동 LLM judge도 사용하지 않는다.
 
 ## Package Root API
 
@@ -77,17 +77,6 @@ Prompt rendering, deterministic validation, provenance contract/store와 storage
 1. Exact review requirement를 판단할 때는 canonical [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec을 확인한다.
 1. [`review_ai/__init__.py`](../../src/hmda_reliability/review_ai/__init__.py)에서 current public surface를 확인한다.
 1. [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py), [`context.py`](../../src/hmda_reliability/review_ai/context.py)와 [`prompt.py`](../../src/hmda_reliability/review_ai/prompt.py)에서 current review input, bounded context와 provider boundary 구현을 확인한다.
-1. [`evaluation.py`](../../src/hmda_reliability/review_ai/evaluation.py)와 [`evaluation_store.py`](../../src/hmda_reliability/review_ai/evaluation_store.py)에서 rubric, control과 comparison evidence contract를 확인한다.
+1. [`evaluation.py`](../../src/hmda_reliability/review_ai/evaluation.py)에서 human rubric과 baseline/candidate comparison contract를 확인한다.
 1. [`validator.py`](../../src/hmda_reliability/review_ai/validator.py)와 [`service.py`](../../src/hmda_reliability/review_ai/service.py)에서 current deterministic guard와 orchestration 구현을 확인한다.
 1. Provider mechanics가 필요하면 [Runtime AI](runtime-ai.md)로 이동한다.
-
-## Offline Utility Proof
-
-대표 null-spike fixture와 사람이 미리 점수화한 positive/negative control, baseline/candidate comparison을 network 없이 실행한다.
-
-```bash
-uv run --no-sync python scripts/run_review_ai_utility_proof.py \
-  --artifact-root .local/artifacts
-```
-
-Runner는 `agentic-review/utility/proofs/` 아래 create-only JSON evidence를 만들고 사람이 읽을 수 있는 comparison을 stdout으로 출력한다. 실제 provider invocation과 live proof는 이 offline quality proof와 분리한다.

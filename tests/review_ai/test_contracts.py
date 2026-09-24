@@ -81,6 +81,98 @@ def test_input_derives_one_canonical_target_and_snapshots_nested_values(
     assert "caller-mutation" not in review_input.draft.recommended_actions
 
 
+def test_input_accepts_referenced_context_evidence_from_related_asset(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    target = material.detection.evidence
+    context = target.model_copy(
+        update={
+            "evidence_id": "related-table-metadata",
+            "source": contracts_module.EvidenceSource.TABLE_METADATA,
+            "asset_name": "HMDA_LOAN",
+            "partition": "2024",
+            "summary": "Related table metadata",
+            "payload": {"table_name": "HMDA_LOAN", "columns": ["income"]},
+        }
+    )
+    incident = material.detection.incident.model_copy(
+        update={"evidence_refs": [target.evidence_id, context.evidence_id]}
+    )
+    draft = material.draft.model_copy(
+        update={"evidence_refs": [target.evidence_id, context.evidence_id]}
+    )
+
+    review_input = contracts_module.AgenticReviewInput(
+        incident=incident,
+        evidence=[target, context],
+        draft=draft,
+        prompt_identity=contracts_module.PromptIdentity(),
+        project_revision="e09c54b",
+    )
+
+    assert review_input.target_column == "income"
+    assert {item.evidence_id for item in review_input.evidence} == {
+        target.evidence_id,
+        context.evidence_id,
+    }
+    assert review_input.evidence[1].asset_name == "HMDA_LOAN"
+    assert review_input.evidence[1].partition == "2024"
+
+
+def test_input_accepts_related_profile_evidence_as_context(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    target = material.detection.evidence
+    context = target.model_copy(
+        update={
+            "evidence_id": "related-null-spike-profile",
+            "asset_name": "HMDA_LOAN",
+            "partition": "2024",
+            "summary": "Related asset null-spike profile",
+        }
+    )
+    evidence_refs = [target.evidence_id, context.evidence_id]
+    incident = material.detection.incident.model_copy(
+        update={"evidence_refs": evidence_refs}
+    )
+    draft = material.draft.model_copy(update={"evidence_refs": evidence_refs})
+
+    review_input = contracts_module.AgenticReviewInput(
+        incident=incident,
+        evidence=[target, context],
+        draft=draft,
+        prompt_identity=contracts_module.PromptIdentity(),
+        project_revision="e09c54b",
+    )
+
+    assert review_input.target_column == "income"
+    assert review_input.evidence[1].evidence_id == context.evidence_id
+    assert review_input.evidence[1].asset_name == "HMDA_LOAN"
+    assert review_input.evidence[1].partition == "2024"
+
+
+def test_input_rejects_canonical_target_from_another_asset(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    target = material.detection.evidence.model_copy(update={"asset_name": "HMDA_LOAN"})
+    incident = material.detection.incident.model_copy(
+        update={"evidence_refs": [target.evidence_id]}
+    )
+    draft = material.draft.model_copy(update={"evidence_refs": [target.evidence_id]})
+
+    with pytest.raises(ValidationError, match="canonical target evidence identity"):
+        contracts_module.AgenticReviewInput(
+            incident=incident,
+            evidence=[target],
+            draft=draft,
+            prompt_identity=contracts_module.PromptIdentity(),
+            project_revision="e09c54b",
+        )
+
+
 @pytest.mark.parametrize(
     "mutation",
     [

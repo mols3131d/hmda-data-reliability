@@ -133,3 +133,31 @@ def test_context_is_bounded_and_replayable(
     assert first.digest.startswith("sha256:")
     assert len(first.model_dump_json().encode("utf-8")) <= 4_096
     assert any(gap.topic == "bounded_selection" for gap in first.gaps)
+
+
+def test_context_always_includes_canonical_target_within_bound(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    target = null_spike_review_material.detection.evidence.model_copy(
+        update={"evidence_id": "zzz-canonical-profile"}
+    )
+    related_profiles = [
+        target.model_copy(
+            update={
+                "evidence_id": f"aaa-related-profile-{index:02d}",
+                "asset_name": "raw.related_loans",
+                "partition": "2024",
+            }
+        )
+        for index in range(8)
+    ]
+    review_input = _review_input(
+        null_spike_review_material,
+        [*related_profiles, target],
+    )
+
+    context = build_bounded_review_context(review_input, max_evidence=8)
+
+    selected_ids = {item.evidence_id for item in context.selected_evidence}
+    assert target.evidence_id in selected_ids
+    assert len(context.selected_evidence) == 8

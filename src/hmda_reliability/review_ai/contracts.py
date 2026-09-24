@@ -155,27 +155,37 @@ class AgenticReviewInput(ReliabilityContract):
             msg = "provided evidence must match incident and draft references"
             raise ValueError(msg)
 
+        target = _canonical_target(
+            self.evidence,
+            asset_name=self.incident.asset_name,
+            partition=self.incident.partition,
+        )
         for item in self.evidence:
-            if (item.asset_name, item.partition) != (
-                self.incident.asset_name,
-                self.incident.partition,
-            ):
-                msg = "evidence identity must match the incident"
-                raise ValueError(msg)
             _validate_canonical_json(item.payload)
 
-        target = _canonical_target(self.evidence)
         _target_column(target)
         _null_spike_facts(target)
         return self
 
     @property
     def target_column(self) -> str:
-        return _target_column(_canonical_target(self.evidence))
+        return _target_column(
+            _canonical_target(
+                self.evidence,
+                asset_name=self.incident.asset_name,
+                partition=self.incident.partition,
+            )
+        )
 
     @property
     def deterministic_facts(self) -> NullSpikeFacts:
-        return _null_spike_facts(_canonical_target(self.evidence))
+        return _null_spike_facts(
+            _canonical_target(
+                self.evidence,
+                asset_name=self.incident.asset_name,
+                partition=self.incident.partition,
+            )
+        )
 
 
 class AgenticReviewFinding(ReliabilityContract):
@@ -385,19 +395,32 @@ def _snapshot_model[ModelT: BaseModel](
     return deepcopy(value)
 
 
-def _canonical_target(evidence: tuple[Evidence, ...]) -> Evidence:
+def _canonical_target(
+    evidence: tuple[Evidence, ...],
+    *,
+    asset_name: str,
+    partition: str,
+) -> Evidence:
     """Evidence 튜플에서 null_spike 프로파일 타겟을 정확히 하나 추출한다.
 
     0개이거나 2개 이상일 경우 결정론적 비교의 모호성을 방지하기 위해
     ValueError를 발생시킨다.
     """
-    targets = [
+    profile_targets = [
         item
         for item in evidence
         if item.source is EvidenceSource.PROFILE
         and item.payload.get("rule") == "null_spike"
     ]
+    targets = [
+        item
+        for item in profile_targets
+        if item.asset_name == asset_name and item.partition == partition
+    ]
     if len(targets) != 1:
+        if profile_targets and not targets:
+            msg = "canonical target evidence identity must match the incident"
+            raise ValueError(msg)
         msg = "exactly one canonical null_spike target evidence is required"
         raise ValueError(msg)
     return targets[0]

@@ -16,12 +16,7 @@ from hmda_reliability.review_ai.evaluation import (
     HumanDecision,
     HumanUtilityEvaluation,
     UtilityComparisonEvidence,
-    UtilityControl,
-    UtilityControlRole,
-    UtilityProofBundle,
-    UtilityProofCase,
     compare_utility_evaluations,
-    validate_quality_basis,
 )
 from hmda_reliability.review_ai.service import review_null_spike
 
@@ -35,13 +30,8 @@ __all__ = [
     "HumanUtilityEvaluation",
     "PromptIdentity",
     "RUBRIC_V1",
-    "UtilityControl",
-    "UtilityControlRole",
     "UtilityComparisonEvidence",
-    "UtilityProofBundle",
-    "UtilityProofCase",
     "build_bounded_review_context",
     "compare_utility_evaluations",
     "review_null_spike",
-    "validate_quality_basis",
 ]

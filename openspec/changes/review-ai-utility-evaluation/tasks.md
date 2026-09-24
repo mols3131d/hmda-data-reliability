@@ -13,8 +13,8 @@ tags:
 
 - [x] 1. Bounded Review Context contract와 deterministic builder를 구현한다
   - **Covers:** Bounded review context
-  - **Test first:** canonical target 우선순위, related evidence selection, source provenance, missing/unconfirmed gap, max evidence/payload와 stable digest를 검증한다.
-  - **Done when:** `BoundedReviewContext`가 immutable bounded projection을 만들고 prompt/provenance가 재사용할 수 있다.
+  - **Test first:** canonical target의 incident identity, 명시적으로 참조된 related evidence selection, source provenance, missing/unconfirmed gap, max evidence/payload와 stable digest를 검증한다.
+  - **Done when:** canonical target은 incident identity에 고정되고, 참조된 contextual Evidence는 bounded projection/provenance에 포함된다.
 
 - [x] 2. Review prompt/provenance에 context projection을 연결한다
   - **Covers:** Context projection is bounded and replayable
@@ -26,17 +26,17 @@ tags:
   - **Test first:** 네 contribution kind, priority invariant, bounded text, provided Evidence subset과 legacy output compatibility를 검증한다.
   - **Done when:** utility contribution이 advisory output에 표현되고 fabricated reference는 기존 validation boundary에서 거부된다.
 
-- [x] 4. `rubric_v1` human rubric과 positive/negative controls를 구현한다
+- [x] 4. `rubric_v1` human rubric과 test-only positive/negative fixtures를 구현한다
   - **Covers:** Versioned human rubric and control discrimination
-  - **Test first:** 다섯 criterion completeness, score/rationale bound, compliant positive `PASS`, deterministic fact/draft restatement negative `FAIL`, actionability/prioritization이 없는 hedging negative `FAIL`, 누락·중복 role 및 case/revision/outcome mismatch rejection을 검증한다.
-  - **Done when:** 명시적 semantic role을 가진 세 required control이 같은 case/version/revision에서 각각 `PASS`, `FAIL`, `FAIL`로 검증되고, quality basis가 case identity와 control 결과를 digest에 바인딩해 자동 judge 없이 durable evidence로 보존한다.
+  - **Test first:** 다섯 criterion completeness, score/rationale bound와 fixture 사례에 대한 human score를 검증한다. Control 결과는 runtime model이나 durable hierarchy로 저장하지 않는다.
+  - **Done when:** rubric identity와 complete human scores가 유지되고 restatement/hedging 사례는 test fixture로만 판별력을 확인한다.
 
-- [x] 5. Baseline/candidate comparison evidence와 create-only store를 구현한다
+- [x] 5. Baseline/candidate comparison evidence를 최소화한다
   - **Covers:** Baseline and candidate utility comparison evidence
-  - **Test first:** same case/rubric comparison, criterion deltas, human decision/rationale, blocked/inconclusive fail-closed, duplicate ID와 JSON reload를 검증한다.
-  - **Done when:** comparison이 invocation identities와 change-under-test를 연결한 사람이 읽을 수 있는 durable JSON evidence를 생성한다.
+  - **Test first:** exact baseline/candidate output roles, same case/rubric/revision comparison, criterion deltas, human decision/rationale, blocked/inconclusive fail-closed와 JSON round-trip을 검증한다.
+  - **Done when:** comparison model이 evaluation identities와 change-under-test를 연결하고 역할 또는 attribution mismatch를 거부하며, 별도 proof bundle/store 없이 직렬화할 수 있다.
 
-- [ ] 6. Representative fixture, proof runner, docs와 전체 검증을 연결한다
+- [ ] 6. Representative fixtures, docs와 전체 검증을 연결한다
   - **Covers:** 네 Utility Proofs와 MVP acceptance evidence
-  - **Test first:** network 없는 baseline/candidate fixture 실행, 세 control role 결과와 case-bound basis digest의 store/reload 보존, comparison의 동일 case 및 basis digest 연결, Markdown/JSON proof rendering 및 기존 `tests/review_ai`와 관련 suite 회귀를 검증한다.
-  - **Done when:** matching case/version/revision에서 세 required control 결과와 identity-bound basis digest가 저장·재로드되고 comparison이 같은 identity와 digest를 참조하며, PR에 실제 validation과 미검증 live provider 경계가 기록된다.
+  - **Test first:** representative positive/restatement/hedging fixtures의 human rubric score, comparison JSON/Markdown rendering과 기존 `tests/review_ai` 및 관련 suite 회귀를 검증한다. 고정 점수를 evidence로 만드는 standalone proof runner는 두지 않는다.
+  - **Done when:** 같은 case/version/revision의 complete evaluation이 exact baseline/candidate roles로 비교되고, PR에 실제 validation과 미검증 live provider/human-evaluation 경계가 기록된다.

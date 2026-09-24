@@ -34,11 +34,6 @@
       "transport": "github",
       "ref": "main",
       "path": "src/rulesync/.rulesync/skills"
-    },
-    {
-      "source": "dreambigou/eli5",
-      "skills": ["eli5"],
-      "path": "skills"
     }
   ]
 }

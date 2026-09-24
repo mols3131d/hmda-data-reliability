@@ -141,6 +141,8 @@ def build_bounded_review_context(
             0
             if item.source is EvidenceSource.PROFILE
             and item.payload.get("rule") == "null_spike"
+            and item.asset_name == review_input.incident.asset_name
+            and item.partition == review_input.incident.partition
             else 1,
             _SOURCE_PRIORITY[item.source],
             item.evidence_id,
