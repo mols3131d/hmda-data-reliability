@@ -34,6 +34,13 @@
       "transport": "github",
       "ref": "main",
       "path": "src/rulesync/.rulesync/skills"
+    },
+    {
+      "source": "dietrichgebert/ponytail",
+      "skills": ["ponytail"],
+      "transport": "github",
+      "ref": "main",
+      "path": "skills"
     }
   ]
 }

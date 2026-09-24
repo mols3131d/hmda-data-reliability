@@ -86,6 +86,27 @@ def test_fabricated_evidence_is_reported_once_across_output_surfaces(
     assert validation.violations == ("fabricated_evidence",)
 
 
+def test_fabricated_utility_evidence_is_rejected(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    review_input = _review_input(null_spike_review_material)
+    output = _safe_output(review_input).model_copy(
+        update={
+            "utility_contributions": (
+                contracts.AgenticReviewUtilityContribution(
+                    kind="evidence_gap",
+                    description="제공되지 않은 lineage evidence가 필요하다.",
+                    evidence_refs=["ev-fabricated"],
+                ),
+            )
+        }
+    )
+
+    validation = validator_module.validate_agentic_review(review_input, output)
+
+    assert validation.violations == ("fabricated_evidence",)
+
+
 @pytest.mark.parametrize(
     ("updates", "expected"),
     [

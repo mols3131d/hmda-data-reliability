@@ -177,6 +177,50 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
     assert record.trace_id == "req-1"
 
 
+def test_invocation_provenance_uses_the_same_bounded_projection_as_provider_input(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    bounded_evidence = material.detection.evidence.model_copy(
+        update={
+            "payload": {
+                **material.detection.evidence.payload,
+                "raw_log": "unbounded provider payload",
+            }
+        }
+    )
+    store = RecordingStore(tmp_path)
+
+    result = service_module.review_null_spike(
+        incident=material.detection.incident,
+        evidence=[bounded_evidence],
+        draft=material.draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=FakeProvider(
+            runtime_contracts.ProviderResponse(
+                content=_safe_output(material).model_dump_json(),
+                attempt_count=1,
+                latency_ms=5,
+            )
+        ),
+        evidence_store=store,
+        invocation_id_factory=lambda: "inv-bounded",
+    )
+
+    assert result.status == "accepted"
+    record = store.records[0]
+    assert "raw_log" not in record.model_dump_json()
+    canonical_evidence = record.canonical_input["evidence"]
+    assert isinstance(canonical_evidence, list)
+    assert all(isinstance(item, dict) for item in canonical_evidence)
+    assert record.evidence_refs == tuple(
+        item["evidence_id"] for item in canonical_evidence if isinstance(item, dict)
+    )
+
+
 def test_records_evidence_when_review_outcome_is_created(
     tmp_path: Path,
     null_spike_review_material: NullSpikeReviewMaterial,
@@ -254,6 +298,94 @@ def test_preflight_rejection_never_calls_provider_or_evidence_store(
     assert provider.calls == 0
     assert store.records == []
     assert not tmp_path.joinpath("agentic-review").exists()
+
+
+def test_context_overflow_is_typed_preflight_rejection(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    evidence = [material.detection.evidence]
+    for index in range(7):
+        evidence.append(
+            Evidence(
+                evidence_id=f"ev-large-{index}",
+                source="table_metadata",
+                asset_name=material.detection.incident.asset_name,
+                partition=material.detection.incident.partition,
+                observed_at=datetime(2026, 8, 27, 0, 0, tzinfo=UTC),
+                summary="s" * 1_500,
+                payload={
+                    "table_name": "raw.hmda_loans",
+                    "columns": [f"column-{index}-{value:070d}" for value in range(10)],
+                    "column_types": [
+                        f"type-{index}-{value:070d}" for value in range(10)
+                    ],
+                    "schema_hash": "sha256:large-context",
+                },
+            )
+        )
+
+    evidence_refs = [item.evidence_id for item in evidence]
+    incident = material.detection.incident.model_copy(
+        update={"evidence_refs": evidence_refs}
+    )
+    draft = material.draft.model_copy(update={"evidence_refs": evidence_refs})
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content="{}",
+            attempt_count=1,
+            latency_ms=1,
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    result = service_module.review_null_spike(
+        incident=incident,
+        evidence=evidence,
+        draft=draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=provider,
+        evidence_store=store,
+    )
+
+    assert result.status == "input_rejected"
+    assert result.failure_code == "context_too_large"
+    assert result.invocation_id is None
+    assert provider.calls == 0
+    assert store.records == []
+
+
+def test_unrelated_prompt_value_error_is_not_mapped_to_input_rejection(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content="{}",
+            attempt_count=1,
+            latency_ms=1,
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    def fail_render(*args: object, **kwargs: object) -> object:
+        raise ValueError("unexpected prompt programming failure")
+
+    monkeypatch.setattr(service_module, "render_review_prompt", fail_render)
+
+    with pytest.raises(ValueError, match="unexpected prompt programming failure"):
+        _call(
+            null_spike_review_material,
+            provider=provider,
+            evidence_store=store,
+        )
+
+    assert provider.calls == 0
+    assert store.records == []
 
 
 def test_schema_and_guard_failures_are_persisted_without_exposing_output(
@@ -518,3 +650,46 @@ def test_service_leaves_no_accepted_record_when_directory_fsync_fails(
     store = store_module.InvocationEvidenceStore(tmp_path)
     assert result.invocation_id is not None
     assert not store.path_for(result.invocation_id).exists()
+
+
+def test_new_invocation_id_format() -> None:
+    fixed_time = datetime(2026, 9, 21, 10, 30, 0, tzinfo=UTC)
+    invocation_id = service_module._new_invocation_id(fixed_time)
+
+    assert invocation_id.startswith("ar-20260921-")
+    assert len(invocation_id) == len("ar-20260921-") + 12
+    # Verify safe pattern compatibility
+    assert store_module._SAFE_INVOCATION_ID.fullmatch(invocation_id) is not None
+
+
+def test_review_null_spike_default_invocation_id_uses_clock_date(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    tmp_path: Path,
+) -> None:
+    fixed_time = datetime(2026, 9, 21, 14, 0, 0, tzinfo=UTC)
+    material = null_spike_review_material
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content=_safe_output(material).model_dump_json(),
+            attempt_count=1,
+            latency_ms=10.0,
+        )
+    )
+
+    result = service_module.review_null_spike(
+        incident=material.detection.incident,
+        evidence=[material.detection.evidence],
+        draft=material.draft,
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=provider,
+        artifact_root=tmp_path,
+        clock=lambda: fixed_time,
+    )
+
+    assert result.status == "accepted"
+    assert result.invocation_id is not None
+    assert result.invocation_id.startswith("ar-20260921-")
+    assert result.invocation_path is not None
+    assert result.invocation_path.name == f"{result.invocation_id}.json"
