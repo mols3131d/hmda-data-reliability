@@ -4,7 +4,7 @@
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
       "resolvedRef": "e2861bf53d57aca11de1b6629ab01ae56c6bedff",
-      "resolvedAt": "2026-09-17T06:54:21.372Z",
+      "resolvedAt": "2026-09-24T05:48:33.757Z",
       "skills": {
         "mols-agent-asset-find": {
           "integrity": "sha256-0894496b554b42aae1e0284e5a47b1fa8a3d5b6bfa3026cd412c45daf0381420"
@@ -76,6 +76,19 @@
         "mols-openspec-customize",
         "mols-tach",
         "mols-text-optimizer"
+      ]
+    },
+    "dietrichgebert/ponytail": {
+      "requestedRef": "main",
+      "resolvedRef": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+      "resolvedAt": "2026-09-24T05:48:34.919Z",
+      "skills": {
+        "ponytail": {
+          "integrity": "sha256-388ec42c9551f47d12555b1723b1af67b8fe18a8afbea0a8db96cfb870eb3803"
+        }
+      },
+      "skillSelection": [
+        "ponytail"
       ]
     }
   }
