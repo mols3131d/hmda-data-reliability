@@ -9,6 +9,10 @@ from copy import deepcopy
 from pydantic import Field
 
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.review_ai.context import (
+    BoundedReviewContext,
+    build_bounded_review_context,
+)
 from hmda_reliability.review_ai.contracts import AgenticReviewInput, PromptIdentity
 from hmda_reliability.runtime_ai.contracts import ChatMessage
 
@@ -21,7 +25,10 @@ incident_id, incident_type="null_spike", target_column, deterministic_facts
 (baseline_null_rate, current_null_rate, delta, threshold), non-empty
 review_summary, non-empty evidence_used, findings (kind is observation, concern,
 omission, or uncertainty; description; evidence_refs), uncertainties, and
-advisory_recommendation (support, needs_human_review, or insufficient_evidence).
+utility_contributions (kind is evidence_gap, investigation_priority,
+remediation_critique, or material_uncertainty; description; evidence_refs;
+priority when applicable), and advisory_recommendation (support,
+needs_human_review, or insufficient_evidence).
 The review is advisory: do not grant approval, claim authority, or instruct
 recovery, backfill, shell, SQL, file, database, or data mutation execution."""
 
@@ -42,6 +49,7 @@ class RenderedReviewPrompt(ReliabilityContract):
     messages: tuple[ChatMessage, ...]
     prompt_digest: str
     prompt_bytes: int = Field(gt=0)
+    context: BoundedReviewContext | None = None
 
 
 class PromptTooLargeError(ValueError):
@@ -65,14 +73,20 @@ def render_review_prompt(
     `PromptTooLargeError`를 발생시킨다.
     """
 
+    context = build_bounded_review_context(review_input)
     return render_canonical_input(
-        build_canonical_input(review_input),
+        build_canonical_input(review_input, context=context),
         review_input.prompt_identity,
+        context=context,
         max_prompt_bytes=max_prompt_bytes,
     )
 
 
-def build_canonical_input(review_input: AgenticReviewInput) -> dict[str, object]:
+def build_canonical_input(
+    review_input: AgenticReviewInput,
+    *,
+    context: BoundedReviewContext | None = None,
+) -> dict[str, object]:
     """스펙에서 허용된 필드만 추출하고 evidence를 결정론적으로 정렬한다.
 
     신뢰할 수 없는 원천 객체로부터 지정된 allowlist 필드만 복사 투영하여
@@ -82,9 +96,18 @@ def build_canonical_input(review_input: AgenticReviewInput) -> dict[str, object]
     """
 
     incident = review_input.incident.model_dump(mode="json")
-    evidence = [item.model_dump(mode="json") for item in review_input.evidence]
     draft = review_input.draft.model_dump(mode="json")
     facts = review_input.deterministic_facts.model_dump(mode="json")
+    active_context = context or build_bounded_review_context(review_input)
+    evidence = [
+        item.model_dump(mode="json") for item in active_context.selected_evidence
+    ]
+    selected_evidence_ids = {str(item["evidence_id"]) for item in evidence}
+    draft["evidence_refs"] = [
+        evidence_id
+        for evidence_id in draft["evidence_refs"]
+        if evidence_id in selected_evidence_ids
+    ]
     return {
         "incident": _pick(
             incident,
@@ -96,17 +119,7 @@ def build_canonical_input(review_input: AgenticReviewInput) -> dict[str, object]
             "severity",
         ),
         "evidence": [
-            _pick(
-                item,
-                "evidence_id",
-                "source",
-                "asset_name",
-                "partition",
-                "observed_at",
-                "summary",
-                "payload",
-            )
-            for item in sorted(evidence, key=lambda item: str(item["evidence_id"]))
+            item for item in sorted(evidence, key=lambda item: str(item["evidence_id"]))
         ],
         "draft": _pick(
             draft,
@@ -127,6 +140,7 @@ def build_canonical_input(review_input: AgenticReviewInput) -> dict[str, object]
             "target_column": review_input.target_column,
             **facts,
         },
+        "review_context": active_context.model_dump(mode="json"),
     }
 
 
@@ -135,6 +149,7 @@ def render_canonical_input(
     prompt_identity: PromptIdentity,
     *,
     max_prompt_bytes: int,
+    context: BoundedReviewContext | None = None,
 ) -> RenderedReviewPrompt:
     """저장된 표준 입력을 버전이 지정된 프롬프트 템플릿으로 렌더링한다.
 
@@ -169,6 +184,7 @@ def render_canonical_input(
         messages=messages,
         prompt_digest=f"sha256:{hashlib.sha256(rendered_bytes).hexdigest()}",
         prompt_bytes=len(rendered_bytes),
+        context=context or _context_from_canonical_input(canonical_snapshot),
     )
 
 
@@ -189,3 +205,15 @@ def canonical_json_bytes(value: object) -> bytes:
 
 def _pick(payload: dict[str, object], *fields: str) -> dict[str, object]:
     return {field: deepcopy(payload[field]) for field in fields}
+
+
+def _context_from_canonical_input(
+    canonical_input: dict[str, object],
+) -> BoundedReviewContext | None:
+    value = canonical_input.get("review_context")
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        msg = "review_context must be an object"
+        raise ValueError(msg)
+    return BoundedReviewContext.model_validate(value)

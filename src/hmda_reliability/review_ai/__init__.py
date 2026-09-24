@@ -1,10 +1,22 @@
 """제한된 evidence 기반 advisory review 공개 API 모듈."""
 
+from hmda_reliability.review_ai.context import (
+    BoundedReviewContext,
+    build_bounded_review_context,
+)
 from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewResult,
+    AgenticReviewUtilityContribution,
     PromptIdentity,
+)
+from hmda_reliability.review_ai.evaluation import (
+    RUBRIC_V1,
+    HumanDecision,
+    HumanUtilityEvaluation,
+    UtilityComparisonEvidence,
+    compare_utility_evaluations,
 )
 from hmda_reliability.review_ai.service import review_null_spike
 
@@ -12,6 +24,14 @@ __all__ = [
     "AgenticReviewInput",
     "AgenticReviewOutput",
     "AgenticReviewResult",
+    "AgenticReviewUtilityContribution",
+    "BoundedReviewContext",
+    "HumanDecision",
+    "HumanUtilityEvaluation",
     "PromptIdentity",
+    "RUBRIC_V1",
+    "UtilityComparisonEvidence",
+    "build_bounded_review_context",
+    "compare_utility_evaluations",
     "review_null_spike",
 ]

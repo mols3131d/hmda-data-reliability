@@ -32,6 +32,19 @@ class AdvisoryRecommendation(StrEnum):
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
 
 
+class UtilityContributionKind(StrEnum):
+    EVIDENCE_GAP = "evidence_gap"
+    INVESTIGATION_PRIORITY = "investigation_priority"
+    REMEDIATION_CRITIQUE = "remediation_critique"
+    MATERIAL_UNCERTAINTY = "material_uncertainty"
+
+
+class UtilityPriority(StrEnum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
 class ReviewViolationCode(StrEnum):
     FABRICATED_EVIDENCE = "fabricated_evidence"
     INCIDENT_MISMATCH = "incident_mismatch"
@@ -142,27 +155,37 @@ class AgenticReviewInput(ReliabilityContract):
             msg = "provided evidence must match incident and draft references"
             raise ValueError(msg)
 
+        target = _canonical_target(
+            self.evidence,
+            asset_name=self.incident.asset_name,
+            partition=self.incident.partition,
+        )
         for item in self.evidence:
-            if (item.asset_name, item.partition) != (
-                self.incident.asset_name,
-                self.incident.partition,
-            ):
-                msg = "evidence identity must match the incident"
-                raise ValueError(msg)
             _validate_canonical_json(item.payload)
 
-        target = _canonical_target(self.evidence)
         _target_column(target)
         _null_spike_facts(target)
         return self
 
     @property
     def target_column(self) -> str:
-        return _target_column(_canonical_target(self.evidence))
+        return _target_column(
+            _canonical_target(
+                self.evidence,
+                asset_name=self.incident.asset_name,
+                partition=self.incident.partition,
+            )
+        )
 
     @property
     def deterministic_facts(self) -> NullSpikeFacts:
-        return _null_spike_facts(_canonical_target(self.evidence))
+        return _null_spike_facts(
+            _canonical_target(
+                self.evidence,
+                asset_name=self.incident.asset_name,
+                partition=self.incident.partition,
+            )
+        )
 
 
 class AgenticReviewFinding(ReliabilityContract):
@@ -181,6 +204,39 @@ class AgenticReviewFinding(ReliabilityContract):
         return _normalized_unique_strings(values, field_name="evidence_refs")
 
 
+class AgenticReviewUtilityContribution(ReliabilityContract):
+    kind: UtilityContributionKind
+    description: str = Field(min_length=1, max_length=4096)
+    evidence_refs: tuple[_EvidenceReference, ...] = Field(default=(), max_length=64)
+    priority: UtilityPriority | None = None
+
+    @field_validator("description")
+    @classmethod
+    def _normalize_description(cls, value: str) -> str:
+        return _non_empty(value, field_name="utility contribution description")
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def _normalize_evidence_refs(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        return _normalized_unique_strings(values, field_name="utility evidence_refs")
+
+    @model_validator(mode="after")
+    def _validate_priority(self) -> AgenticReviewUtilityContribution:
+        if (
+            self.kind is UtilityContributionKind.INVESTIGATION_PRIORITY
+            and self.priority is None
+        ):
+            msg = "investigation_priority requires a priority"
+            raise ValueError(msg)
+        if (
+            self.kind is not UtilityContributionKind.INVESTIGATION_PRIORITY
+            and self.priority is not None
+        ):
+            msg = "priority is only valid for investigation_priority"
+            raise ValueError(msg)
+        return self
+
+
 class AgenticReviewOutput(ReliabilityContract):
     incident_id: str = Field(min_length=1, max_length=256)
     incident_type: Literal["null_spike"]
@@ -191,6 +247,10 @@ class AgenticReviewOutput(ReliabilityContract):
     findings: tuple[AgenticReviewFinding, ...] = Field(max_length=64)
     uncertainties: tuple[_BoundedReviewText, ...] = Field(max_length=64)
     advisory_recommendation: AdvisoryRecommendation
+    utility_contributions: tuple[AgenticReviewUtilityContribution, ...] = Field(
+        default=(),
+        max_length=64,
+    )
 
     @field_validator("incident_id", "target_column", "review_summary")
     @classmethod
@@ -335,19 +395,32 @@ def _snapshot_model[ModelT: BaseModel](
     return deepcopy(value)
 
 
-def _canonical_target(evidence: tuple[Evidence, ...]) -> Evidence:
+def _canonical_target(
+    evidence: tuple[Evidence, ...],
+    *,
+    asset_name: str,
+    partition: str,
+) -> Evidence:
     """Evidence 튜플에서 null_spike 프로파일 타겟을 정확히 하나 추출한다.
 
     0개이거나 2개 이상일 경우 결정론적 비교의 모호성을 방지하기 위해
     ValueError를 발생시킨다.
     """
-    targets = [
+    profile_targets = [
         item
         for item in evidence
         if item.source is EvidenceSource.PROFILE
         and item.payload.get("rule") == "null_spike"
     ]
+    targets = [
+        item
+        for item in profile_targets
+        if item.asset_name == asset_name and item.partition == partition
+    ]
     if len(targets) != 1:
+        if profile_targets and not targets:
+            msg = "canonical target evidence identity must match the incident"
+            raise ValueError(msg)
         msg = "exactly one canonical null_spike target evidence is required"
         raise ValueError(msg)
     return targets[0]

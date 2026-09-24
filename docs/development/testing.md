@@ -191,6 +191,8 @@ Review AI의 default suite는 fake transport와 temporary artifact root만 사�
 uv run pytest tests/review_ai tests/runtime_ai
 ```
 
+Review AI utility 계약은 `tests/review_ai`에서 provider/network 없이 검증한다. 다섯 human rubric criterion, test-only positive/restatement/hedging fixtures, evaluation identity와 baseline/candidate comparison을 확인한다. 이 deterministic suite는 사람의 실제 utility assessment를 대신하지 않는다. Live provider proof는 아래 opt-in command와 분리해 판정한다.
+
 실제 Ollama proof는 default suite와 분리된 명시적 opt-in command다. `.env.example`의 `HMDA_AGENTIC_REVIEW_*` 값을 local `.env`에 설정한 뒤 실행한다. `HMDA_AGENTIC_REVIEW_API_KEY`는 OpenAI-compatible client에 필요한 값이지만 invocation evidence에는 저장되지 않는다.
 
 ```bash
