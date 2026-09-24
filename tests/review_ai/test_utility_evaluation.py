@@ -321,15 +321,22 @@ def test_comparison_rejects_output_digest_tampering_even_when_blocked() -> None:
 
 
 @pytest.mark.parametrize(
-    ("candidate_changes", "expected_blocker"),
+    ("case_id", "case_version", "project_revision", "expected_blocker"),
     [
-        ({"case_id": "other-case"}, "case_mismatch"),
-        ({"case_version": "v2"}, "case_mismatch"),
-        ({"project_revision": "revision-2"}, "project_revision_mismatch"),
+        ("other-case", "v1", "revision-1", "case_mismatch"),
+        ("null-spike-case", "v2", "revision-1", "case_mismatch"),
+        (
+            "null-spike-case",
+            "v1",
+            "revision-2",
+            "project_revision_mismatch",
+        ),
     ],
 )
 def test_comparison_blocks_mismatched_attribution(
-    candidate_changes: dict[str, str],
+    case_id: str,
+    case_version: str,
+    project_revision: str,
     expected_blocker: str,
 ) -> None:
     candidate = _evaluation(
@@ -337,7 +344,9 @@ def test_comparison_blocks_mismatched_attribution(
         invocation_id="invocation-candidate-mismatch",
         output_kind="candidate",
         score=2,
-        **candidate_changes,
+        case_id=case_id,
+        case_version=case_version,
+        project_revision=project_revision,
     )
 
     comparison = _compare(candidate=candidate)
