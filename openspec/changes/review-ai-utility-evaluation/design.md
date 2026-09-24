@@ -9,7 +9,7 @@ description: "기존 review input/provenance 경계를 보존하면서 bounded c
 
 `review_ai` 내부에 context projection과 utility evaluation을 둔다. `BoundedReviewContext`는 기존 immutable `AgenticReviewInput`에서만 만들며, source별 priority와 stable evidence ID 정렬을 사용한다. Evidence payload는 context projection에서 제한된 JSON 값으로 잘라내고, context gap은 caller가 제공하지 않은 expected source와 Evidence로 확정할 수 없는 root-cause 성격을 별도 code로 표현한다. Context projection은 prompt canonical input과 invocation evidence에 포함되어 같은 application revision에서 재생성할 수 있어야 한다.
 
-`AgenticReviewOutput`에는 backward-compatible default를 가진 `utility_contributions` collection을 추가한다. 기존 historical invocation JSON이 새 field 없이도 읽히도록 optional empty default를 사용하고, 새 utility evaluation은 contribution이 있는 output만 utility proof candidate로 평가한다. Contribution reference는 기존 provided Evidence subset에 대해 validator가 확인한다.
+`AgenticReviewOutput`에는 backward-compatible default를 가진 `utility_contributions` collection을 추가한다. 기존 historical invocation JSON이 새 field 없이도 읽히도록 optional empty default를 사용한다. Human rubric은 output 전체를 평가하며 contribution의 존재 자체를 utility 통과 조건으로 사용하지 않는다. Contribution reference는 기존 provided Evidence subset에 대해 validator가 확인한다.
 
 Evaluation은 provider 호출이나 LLM judge를 소유하지 않는다. `rubric_v1`은 다섯 criterion과 0–2 integer human score를 사용하며, 각 evaluation은 모든 criterion의 rationale을 저장한다. Positive, restatement-negative, hedging-negative fixture는 rubric이 추가 가치와 구체적 행동 가능성을 구분하는지 테스트하지만 runtime quality-basis model이나 durable control hierarchy를 만들지 않는다.
 
