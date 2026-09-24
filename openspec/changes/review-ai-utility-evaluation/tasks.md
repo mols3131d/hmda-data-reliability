@@ -3,7 +3,7 @@ type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: "Review AI Utility Proof Tasks"
 description: "Bounded context, utility output, rubric controls와 comparison evidence를 test-first로 구현한다."
-tasks_completed: 5
+tasks_completed: 6
 tasks_total: 6
 tags:
   - "capability:reliability-agentic-review"
@@ -36,7 +36,7 @@ tags:
   - **Test first:** exact baseline/candidate output roles, same case/rubric/revision comparison, criterion deltas, human decision/rationale, blocked/inconclusive fail-closed와 JSON round-trip을 검증한다.
   - **Done when:** comparison model이 evaluation identities와 change-under-test를 연결하고 역할 또는 attribution mismatch를 거부하며, 별도 proof bundle/store 없이 직렬화할 수 있다.
 
-- [ ] 6. Representative fixtures, docs와 전체 검증을 연결한다
+- [x] 6. Representative fixtures, docs와 전체 검증을 연결한다
   - **Covers:** 네 Utility Proofs와 MVP acceptance evidence
   - **Test first:** representative positive/restatement/hedging fixtures의 human rubric score, comparison JSON/Markdown rendering과 기존 `tests/review_ai` 및 관련 suite 회귀를 검증한다. 고정 점수를 evidence로 만드는 standalone proof runner는 두지 않는다.
   - **Done when:** 같은 case/version/revision의 complete evaluation이 exact baseline/candidate roles로 비교되고, PR에 실제 validation과 미검증 live provider/human-evaluation 경계가 기록된다.
