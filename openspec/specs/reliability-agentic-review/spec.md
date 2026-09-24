@@ -85,6 +85,7 @@ Rendered messages가 configured `max_prompt_bytes`를 넘으면 시스템은 pro
 - **Deterministic facts:** canonical target Evidence의 `baseline_null_rate`, `current_null_rate`, `delta`와 `threshold`를 복사한 `NullSpikeFacts` 형태의 `deterministic_facts`
 - **Review content:** non-empty `review_summary`, 하나 이상의 `evidence_used`, `findings`와 `uncertainties`
 - **Recommendation:** `support`, `needs_human_review`, `insufficient_evidence` 중 하나인 `advisory_recommendation`
+- **Utility contribution:** optional `utility_contributions` containing bounded, structured contributions of kind `evidence_gap`, `investigation_priority`, `remediation_critique` or `material_uncertainty`; `investigation_priority` requires a priority and other kinds must not carry one.
 
 Output invariant는 다음과 같다.
 
@@ -92,6 +93,7 @@ Output invariant는 다음과 같다.
 - Output은 `extra=forbid`에 해당하는 closed shape여야 한다.
 - Approval, `RecoveryProposal`, recovery, shell, SQL, file, database 또는 data mutation action을 명령하거나 부여하는 dedicated field를 제공해서는 안 된다(MUST NOT).
 - Text와 collection은 configured bounded limit을 넘어서는 안 된다(SHALL).
+- Utility contribution은 사람의 다음 판단을 돕는 advisory content이며 approval, recovery 또는 mutation authority를 생성해서는 안 된다(MUST NOT).
 
 Free-text가 advisory instruction을 얼마나 잘 따르는지는 prompt/evaluation concern이다. Deterministic validator는 자연어 의미 전체를 authoritative safety oracle로 취급하지 않는다. 실제 action authority는 review output shape와 분리된 read-only execution boundary 및 proposal-bound human approval이 통제한다.
 
@@ -104,6 +106,16 @@ Free-text가 advisory instruction을 얼마나 잘 따르는지는 prompt/evalua
 
 - **WHEN** response에 required field가 없거나 허용되지 않은 field, 허용되지 않은 finding kind/recommendation, 빈 summary 또는 canonical facts가 포함되지 않을 때
 - **THEN** 시스템은 `validation_failed` result를 반환하고 response를 accepted review로 노출해서는 안 된다(MUST NOT).
+
+#### Scenario: Utility contribution adds a decision aid
+
+- **WHEN** provider output이 제공된 Evidence의 gap 또는 불확실성을 식별하고 investigation priority나 remediation critique를 반환할 때
+- **THEN** 시스템은 contribution kind, bounded description, optional Evidence reference와 필요한 priority를 structured advisory output으로 보존해야 한다(SHALL).
+
+#### Scenario: Utility output remains advisory
+
+- **WHEN** utility contribution이 recovery 또는 backfill을 추천하거나 비판할 때
+- **THEN** output은 advisory content로만 남고 approval, recovery 또는 target mutation을 직접 수행하거나 권한을 부여해서는 안 된다(MUST NOT).
 
 ### Requirement: Versioned validation provenance compatibility
 
@@ -126,13 +138,76 @@ Free-text가 advisory instruction을 얼마나 잘 따르는지는 prompt/evalua
 - **WHEN** current validator result가 새 invocation evidence에 저장될 때
 - **THEN** validation은 `structured-fact-validation-v1`을 식별하고 legacy natural-language violation을 포함해서는 안 된다(MUST NOT).
 
+### Requirement: Bounded review context
+
+시스템은 유효한 `AgenticReviewInput`에서 incident 판단에 직접 관련된 Evidence만 결정론적으로 선택·투영하는 immutable `BoundedReviewContext`를 제공해야 한다(SHALL). Context는 각 선택 Evidence의 `evidence_id`, source, asset, partition, observation time, bounded facts와 provenance를 보존해야 하며 raw log, 전체 row, 전체 database 또는 allowlist 밖의 unbounded payload를 포함해서는 안 된다(MUST NOT).
+
+Context selection은 stable priority와 evidence identity로 반복 실행해도 같은 순서와 projection을 생성해야 한다(SHALL). 요청된 context source가 제공되지 않으면 `missing_evidence` gap으로, 제공된 Evidence만으로 확인할 수 없는 root cause 또는 semantic context는 `unconfirmed_context` gap으로 구분해야 한다(SHALL).
+
+#### Scenario: Context selects bounded evidence and preserves provenance
+
+- **GIVEN** canonical null-spike Evidence 및 관련 metadata, lineage 또는 validation Evidence가 review input에 포함될 때
+- **WHEN** bounded context를 생성할 때
+- **THEN** canonical target을 포함해 limit 안의 관련 Evidence가 stable order로 선택되고 각 항목의 source, identity, observation time과 provenance가 보존되어야 한다(SHALL).
+
+#### Scenario: Missing and unconfirmed context remain distinct
+
+- **GIVEN** 일부 context source가 제공되지 않고 root cause가 Evidence에서 확정되지 않을 때
+- **WHEN** bounded context를 생성할 때
+- **THEN** 누락된 source는 `missing_evidence`, Evidence만으로 확인할 수 없는 내용은 `unconfirmed_context`로 각각 기록되어야 한다(SHALL).
+
+#### Scenario: Context projection is bounded and replayable
+
+- **WHEN** 같은 review input으로 bounded context를 반복 생성할 때
+- **THEN** 같은 canonical projection과 digest가 생성되고 serialized size와 선택 Evidence 수가 configured bound를 초과해서는 안 된다(MUST NOT).
+
+#### Scenario: Oversized context is rejected before invocation
+
+- **WHEN** bounded context가 configured size limit을 초과할 때
+- **THEN** 시스템은 `input_rejected`와 `context_too_large` failure code를 반환하고 provider invocation 또는 invocation evidence 생성을 수행해서는 안 된다(MUST NOT).
+
+#### Scenario: Prompt-visible evidence references match the bounded allowlist
+
+- **WHEN** bounded context에서 canonical prompt input을 생성할 때
+- **THEN** draft의 citable Evidence reference는 선택된 context Evidence ID와 일치하고 deterministic validator의 allowlist 밖 reference를 노출해서는 안 된다(MUST NOT).
+
+### Requirement: Versioned human utility evaluation
+
+시스템은 Review AI utility를 `rubric_v1`로 식별되는 immutable human rubric으로 평가해야 한다(SHALL). Rubric은 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`의 다섯 criterion을 모두 포함해야 하며(SHALL), 각 criterion의 human score는 0–2 범위이고 non-empty rationale을 가져야 한다(SHALL). 자동 LLM judge 또는 외부 평가 플랫폼은 quality evaluation authority로 사용해서는 안 된다(MUST NOT).
+
+#### Scenario: Rubric scores all utility dimensions
+
+- **WHEN** human evaluator가 representative output을 평가할 때
+- **THEN** 다섯 criterion 각각에 bounded score와 non-empty rationale가 있어야 evaluation을 유효한 quality evidence로 취급할 수 있다(SHALL).
+
+#### Scenario: Rubric fixtures distinguish utility from restatement and hedging
+
+- **WHEN** positive, deterministic-fact restatement 및 actionable next step이 없는 hedging control을 rubric test fixture로 평가할 때
+- **THEN** fixture score는 추가 가치와 행동 가능성의 차이를 구분해야 하고 control 결과는 runtime 또는 durable quality-basis contract로 취급되어서는 안 된다(MUST NOT).
+
+### Requirement: Baseline and candidate utility comparison evidence
+
+시스템은 동일한 retained representative case와 rubric identity에서 baseline 및 candidate output의 human evaluation을 비교하는 immutable `UtilityComparisonEvidence`를 생성할 수 있어야 한다(SHALL). Comparison은 baseline/candidate invocation identity, case identity/version, rubric identity, change-under-test, criterion별 정확히 하나의 score delta와 human `accept`, `reject` 또는 `no_change` decision 및 rationale을 연결해야 한다(SHALL). Criterion delta aggregate는 recorded baseline/candidate total과 total delta에 일치해야 한다(SHALL).
+
+Comparison은 baseline output role이 `baseline`, candidate output role이 `candidate`이고 둘이 동일 case/version/rubric/revision 및 deterministic facts에서 평가된 경우에만 valid로 표시해야 한다(SHALL). 비교 조건이나 attribution evidence가 맞지 않으면 candidate를 accept 또는 baseline promotion하지 않고 `blocked`/`inconclusive`로 기록해야 한다(MUST NOT).
+
+#### Scenario: Same case and rubric are compared
+
+- **WHEN** 명시적 baseline/candidate evaluation이 동일 case/version, `rubric_v1`, deterministic facts와 project revision을 사용해 생성될 때
+- **THEN** criterion 및 total delta, invocation identity, change-under-test와 human decision/rationale을 복원할 수 있어야 한다(SHALL).
+
+#### Scenario: Mismatched or incomplete comparison is blocked
+
+- **WHEN** output role, case/version, rubric, criterion score, deterministic facts 또는 project revision이 비교 조건을 만족하지 않을 때
+- **THEN** evidence는 invalid 또는 `blocked`/`inconclusive`로 남고 candidate acceptance나 baseline promotion을 허용해서는 안 된다(MUST NOT).
+
 ### Requirement: Deterministic review validation
 
 Provider response가 schema validation을 통과한 뒤 시스템은 network 또는 외부 side effect가 없는 deterministic validator로 output과 immutable `AgenticReviewInput`을 비교해야 한다(SHALL). Validator가 authoritative하게 판정하는 violation은 다음 세 가지로 한정해야 하며(SHALL), stable order와 uniqueness를 유지해야 한다(SHALL).
 
 | Violation | Deterministic condition |
 | --- | --- |
-| `fabricated_evidence` | `evidence_used` 또는 finding의 `evidence_refs`가 provided Evidence subset이 아님 |
+| `fabricated_evidence` | `evidence_used`, finding 또는 utility contribution의 `evidence_refs`가 provided Evidence subset이 아님 |
 | `incident_mismatch` | output의 `incident_id`가 input과 다름 |
 | `deterministic_contradiction` | output의 `target_column` 또는 `deterministic_facts`가 canonical input과 다름 |
 
@@ -176,6 +251,11 @@ Validation result는 `structured-fact-validation-v1` policy identity를 사용�
 
 - **WHEN** output이 input identity와 canonical facts를 보존하고 실제 Evidence subset만 사용할 때
 - **THEN** validator는 `structured-fact-validation-v1` accepted result를 반환하되 approval, recovery 또는 mutation authority를 생성해서는 안 된다(MUST NOT).
+
+#### Scenario: Utility contribution references are validated
+
+- **WHEN** utility contribution이 제공되지 않은 Evidence ID를 참조할 때
+- **THEN** validator는 `fabricated_evidence` violation을 반환하고 output을 accepted advisory result로 채택해서는 안 된다(MUST NOT).
 
 ### Requirement: Typed review result boundary
 
