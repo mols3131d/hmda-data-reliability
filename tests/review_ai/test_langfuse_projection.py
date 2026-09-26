@@ -7,7 +7,9 @@ import subprocess
 import sys
 import time
 from datetime import UTC, datetime
+from queue import Queue
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
@@ -81,6 +83,22 @@ def record() -> AgenticInvocationEvidence:
     )
 
 
+@pytest.fixture
+def valid_annotation(record):
+    payload = projection.project_invocation(
+        record, expected_input=record.canonical_input
+    )
+    target = {
+        key: payload["metadata"][key]
+        for key in ("invocation_id", "output_digest", "rubric_id")
+    }
+    scores = [
+        {"criterion": criterion.value, "score": 1, "rationale": "Test rationale."}
+        for criterion in RubricCriterion
+    ]
+    return payload, target, scores
+
+
 @pytest.mark.unit
 def test_projection_keeps_exact_context_and_output_without_provider_secrets(record):
     payload = projection.project_invocation(
@@ -126,18 +144,8 @@ def test_failed_record_excludes_input_output_and_free_text(record, status):
 
 
 @pytest.mark.unit
-def test_annotation_requires_exact_target_and_each_valid_score_once(record):
-    payload = projection.project_invocation(
-        record, expected_input=record.canonical_input
-    )
-    target = {
-        k: payload["metadata"][k]
-        for k in ("invocation_id", "output_digest", "rubric_id")
-    }
-    scores = [
-        {"criterion": c.value, "score": 1, "rationale": "Test-only rationale."}
-        for c in RubricCriterion
-    ]
+def test_annotation_requires_exact_target_and_each_valid_score_once(valid_annotation):
+    payload, target, scores = valid_annotation
     assert projection.annotation_complete(payload, target=target, scores=scores)
     assert not projection.annotation_complete(
         payload, target={**target, "output_digest": "wrong"}, scores=scores
@@ -155,6 +163,63 @@ def test_annotation_requires_exact_target_and_each_valid_score_once(record):
         )
     assert not projection.annotation_complete(
         payload, target=target, scores=[{**scores[0], "rationale": " "}, *scores[1:]]
+    )
+
+
+@pytest.mark.unit
+def test_annotation_rejects_unsupported_rubric_even_when_target_matches(
+    valid_annotation,
+):
+    payload, target, scores = valid_annotation
+    payload["metadata"]["rubric_id"] = "rubric_v2"
+    target["rubric_id"] = "rubric_v2"
+
+    assert not projection.annotation_complete(payload, target=target, scores=scores)
+
+
+@pytest.mark.unit
+def test_annotation_rejects_digest_that_only_matches_modified_metadata(
+    valid_annotation,
+):
+    payload, target, scores = valid_annotation
+    payload["metadata"]["output_digest"] = "sha256:" + "0" * 64
+    target["output_digest"] = payload["metadata"]["output_digest"]
+
+    assert not projection.annotation_complete(payload, target=target, scores=scores)
+
+
+@pytest.mark.unit
+def test_annotation_rejects_changed_output(valid_annotation):
+    payload, target, scores = valid_annotation
+    payload["output"]["review_summary"] = "A different accepted output."
+
+    assert not projection.annotation_complete(payload, target=target, scores=scores)
+
+
+@pytest.mark.unit
+def test_annotation_rejects_output_changed_by_model_coercion(valid_annotation):
+    payload, target, scores = valid_annotation
+    payload["output"]["deterministic_facts"]["baseline_null_rate"] = "0.01"
+
+    assert not projection.annotation_complete(payload, target=target, scores=scores)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("output", [None, {"review_summary": "incomplete"}])
+def test_annotation_rejects_missing_or_malformed_output(valid_annotation, output):
+    payload, target, scores = valid_annotation
+    payload["output"] = output
+
+    assert not projection.annotation_complete(payload, target=target, scores=scores)
+
+
+@pytest.mark.unit
+def test_annotation_rejects_non_mapping_score(valid_annotation):
+    payload, target, scores = valid_annotation
+    invalid_scores = [None, *scores[1:]]
+
+    assert not projection.annotation_complete(
+        payload, target=target, scores=cast(Any, invalid_scores)
     )
 
 
@@ -222,6 +287,61 @@ def test_child_receives_only_selected_environment_and_bounded_payload(
     assert "sk-test" not in kwargs["input"]
     assert kwargs["stdout"] == subprocess.DEVNULL
     assert kwargs["stderr"] == subprocess.DEVNULL
+
+
+@pytest.mark.unit
+def test_media_like_output_stays_exact_and_child_disables_sdk_media(
+    monkeypatch, record
+):
+    media_like_summary = "data:image/png;base64,AA=="
+    output = record.parsed_output.model_copy(
+        update={"review_summary": media_like_summary}
+    )
+    record = record.model_copy(update={"parsed_output": output})
+    payload = projection.project_invocation(
+        record, expected_input=record.canonical_input
+    )
+    calls = []
+
+    def capture(*args, **kwargs):
+        calls.append((args, kwargs))
+        return subprocess.CompletedProcess(args[0], 0)
+
+    monkeypatch.setattr(subprocess, "run", capture)
+    environment = {
+        **_environment(),
+        "LANGFUSE_MEDIA_UPLOAD_ENABLED": "true",
+    }
+    assert projection.export_projection(payload, env=environment) == (
+        "submitted_unverified"
+    )
+
+    _, kwargs = calls[0]
+    child_payload = json.loads(kwargs["input"])
+    assert kwargs["env"]["LANGFUSE_MEDIA_UPLOAD_ENABLED"] == "false"
+    assert child_payload["output"] == output.model_dump(mode="json")
+    assert child_payload["metadata"]["output_digest"] == utility_output_digest(output)
+
+
+@pytest.mark.integration
+def test_pinned_langfuse_media_processor_keeps_data_uri_when_disabled(monkeypatch):
+    media_manager_module = pytest.importorskip("langfuse._task_manager.media_manager")
+    monkeypatch.setenv("LANGFUSE_MEDIA_UPLOAD_ENABLED", "false")
+    queue = Queue()
+    manager = media_manager_module.MediaManager(
+        api_client=object(), httpx_client=object(), media_upload_queue=queue
+    )
+    output = {"review_summary": "data:image/png;base64,AA=="}
+
+    processed = manager._find_and_process_media(
+        data=output,
+        trace_id="0" * 32,
+        observation_id=None,
+        field="output",
+    )
+
+    assert processed == output
+    assert queue.empty()
 
 
 @pytest.mark.unit

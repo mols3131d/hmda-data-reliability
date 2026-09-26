@@ -49,7 +49,7 @@ Review utility는 `rubric_v1` human rubric으로 평가한다. `added_value`, `a
 
 ## Optional External Observation
 
-명시적으로 활성화한 synthetic live harness는 local provenance를 검증한 뒤 허용된 invocation record를 Langfuse에 사후 projection할 수 있다. Projection은 Review AI의 public API, `runtime_ai` transport, local record 또는 acceptance authority를 변경하지 않는다. SDK는 optional이며 별도 process에서 실행되고, 실패는 core review 결과와 분리된다. SDK 반환만으로 원격 ingestion이나 human evaluation 완료를 주장하지 않는다.
+명시적으로 활성화한 synthetic live harness는 local provenance를 검증한 뒤 허용된 invocation record를 Langfuse에 사후 projection할 수 있다. Projection은 Review AI의 public API, `runtime_ai` transport, local record 또는 acceptance authority를 변경하지 않는다. SDK는 optional이며 별도 process에서 실행되고, 실패는 core review 결과와 분리된다. 정확한 output digest를 유지하기 위해 SDK media detection/upload를 끈다. SDK 반환만으로 원격 ingestion이나 human evaluation 완료를 주장하지 않는다.
 
 Langfuse의 local setup, projection 상태와 다섯 rubric 항목의 수동 annotation 절차는 [Testing Guide](../development/testing.md#optional-langfuse-projection)가 안내한다. Remote annotation을 repository evaluation으로 자동 import하지 않으며, 실제 utility 판단은 사람이 소유한다.
 

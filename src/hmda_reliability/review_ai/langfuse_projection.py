@@ -14,7 +14,10 @@ from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 
-from hmda_reliability.review_ai.contracts import AgenticReviewStatus
+from hmda_reliability.review_ai.contracts import (
+    AgenticReviewOutput,
+    AgenticReviewStatus,
+)
 from hmda_reliability.review_ai.evaluation import (
     RUBRIC_V1,
     RubricCriterion,
@@ -129,14 +132,41 @@ def annotation_complete(
     scores: Sequence[Mapping[str, object]],
 ) -> bool:
     """Check a manually supplied snapshot's shape, never human authorship or utility."""
-    metadata = payload.get("metadata", {})
-    if metadata.get("status") != "accepted" or any(
-        target.get(key) != metadata.get(key) or not target.get(key)
-        for key in ("invocation_id", "output_digest", "rubric_id")
+    metadata = payload.get("metadata")
+    if (
+        not isinstance(metadata, Mapping)
+        or not isinstance(target, Mapping)
+        or metadata.get("status") != "accepted"
+        or metadata.get("rubric_id") != RUBRIC_V1.rubric_id
     ):
         return False
-    if len(scores) != len(RubricCriterion) or any(
-        type(item.get("score")) is not int for item in scores
+    raw_output = payload.get("output")
+    if not isinstance(raw_output, Mapping):
+        return False
+    try:
+        output = AgenticReviewOutput.model_validate(raw_output)
+        if _encode(raw_output) != _encode(output.model_dump(mode="json")):
+            return False
+    except (TypeError, ValueError):
+        return False
+    if metadata.get("output_digest") != utility_output_digest(output):
+        return False
+    target_keys = ("invocation_id", "output_digest", "rubric_id")
+    if any(
+        not isinstance(metadata.get(key), str)
+        or not metadata[key]
+        or target.get(key) != metadata[key]
+        for key in target_keys
+    ):
+        return False
+    if (
+        not isinstance(scores, Sequence)
+        or isinstance(scores, (str, bytes))
+        or len(scores) != len(RubricCriterion)
+        or any(
+            not isinstance(item, Mapping) or type(item.get("score")) is not int
+            for item in scores
+        )
     ):
         return False
     try:
@@ -179,6 +209,8 @@ def export_projection(payload: Mapping[str, object], *, env: Mapping[str, str]) 
             if key in os.environ
         }
     )
+    # Keep data-URI output as text; the SDK otherwise converts and uploads media.
+    child_env["LANGFUSE_MEDIA_UPLOAD_ENABLED"] = "false"
     try:
         result = subprocess.run(
             [sys.executable, "-m", "hmda_reliability.review_ai.langfuse_projection"],

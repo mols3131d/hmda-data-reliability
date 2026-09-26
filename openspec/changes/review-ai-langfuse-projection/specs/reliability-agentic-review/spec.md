@@ -22,6 +22,12 @@ description: 검증된 합성 invocation의 외부 projection과 human annotatio
 - **THEN** invocation, revision, prompt identity/digest, rubric과 exact output digest를 보존한 allowlist projection을 생성한다
 - **AND** bounded facts, draft, evidence와 context gaps 및 accepted structured output을 사람에게 제공한다
 
+#### Scenario: Media-like accepted output remains exact
+
+- **WHEN** accepted output에 Langfuse SDK가 media로 인식하는 base64 data URI 문자열이 있다
+- **THEN** child SDK의 media detection/upload를 끄고 structured output 문자열을 그대로 전달한다
+- **AND** metadata의 output digest는 관찰되는 exact structured output을 식별한다
+
 #### Scenario: Unsafe or missing evidence
 
 - **WHEN** input rejection, provenance failure, provenance 검증 실패, 합성 입력 불일치 또는 65536 UTF-8 byte 초과 projection이 발생한다
@@ -53,7 +59,12 @@ description: 검증된 합성 invocation의 외부 projection과 human annotatio
 - **WHEN** 다섯 항목 중 누락, 중복, 범위 밖 값, 비정수, 빈 rationale 또는 target 불일치가 있다
 - **THEN** incomplete로 판정하며 UI 완료 표시는 이를 덮어쓰지 않는다
 
+#### Scenario: Snapshot does not match its accepted output
+
+- **WHEN** snapshot output이 없거나 유효한 `AgenticReviewOutput`이 아니거나, model 정규화 뒤 canonical JSON 값과 타입이 다르거나, output digest가 재계산 값과 다르거나 rubric이 `rubric_v1`이 아니다
+- **THEN** annotation은 incomplete로 판정한다
+
 #### Scenario: Complete local annotation shape
 
-- **WHEN** exact accepted output target과 다섯 유효한 criterion/rationale가 제공된다
+- **WHEN** accepted output이 재검증되고 그 exact digest 및 `rubric_v1` target과 다섯 유효한 criterion/rationale가 제공된다
 - **THEN** integration-local completeness만 확인하며 HumanUtilityEvaluation, candidate 승인 또는 recovery action을 만들지 않는다
