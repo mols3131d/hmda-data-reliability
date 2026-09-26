@@ -201,6 +201,30 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 
 `HMDA_AGENTIC_REVIEW_LIVE=true`와 non-empty base URL, API key, model이 있어야 provider를 호출한다. `HMDA_AGENTIC_REVIEW_PROJECT_REVISION`은 기본 `auto`에서 현재 Git HEAD를 사용하며, 잘못된 provenance를 피하기 위해 tracked worktree가 clean해야 한다. 필요하면 non-empty revision을 명시적으로 제공할 수 있다. 결과는 `accepted` 또는 typed failure이며, provider-started call은 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
 
+### Optional Langfuse Projection
+
+기존 synthetic live proof를 Langfuse에도 표시하려면 선택 dependency를 설치하고 별도 export opt-in을 설정한다. Provider opt-in만으로는 전송하지 않는다.
+
+```bash
+uv sync --extra langfuse
+uv run --extra langfuse --env-file .env python scripts/run_agentic_review_live.py
+```
+
+Local `.env`에 `HMDA_LANGFUSE_EXPORT=true`, `LANGFUSE_BASE_URL`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`를 설정한다. Endpoint/project는 사용자가 선택하고 합성 사례 전송을 허용한 대상이어야 한다. Key는 commit하거나 로그에 복사하지 않는다. 전체 연동 대기는 `HMDA_LANGFUSE_TIMEOUT_SECONDS`로 조절하며 기본 5초, 최대 60초다. 기존 `HMDA_AGENTIC_REVIEW_*` 설정도 필요하다.
+
+Harness는 local provenance 검증 후 현재 합성 사례와 일치하는 record만 projection한다. Provider URL/trace ID, rendered prompt, raw error와 전체 환경 변수는 전송하지 않는다. Accepted input/output은 허용된 필드만 보내며 크기 상한을 넘으면 자르지 않고 생략한다. SDK는 단기 child에서만 초기화한다. `timeout`, `export_failed`, `projection_failed`, `invalid_config`, `skipped_*` 상태는 stderr에 표시하며 core result와 exit code를 바꾸지 않는다. 종료 코드 0만으로 export 성공을 판단하지 않는다.
+
+`submitted_unverified`는 SDK 반환만 뜻한다. 실제 프로젝트에서 `review-ai-post-hoc-projection` observation을 찾아 invocation/revision/output digest와 input/output을 확인해야 한다. Span duration은 projection 시간이며 model 실행 시간은 `recorded_latency_ms`다. 동일 payload 재전송은 같은 trace로 묶이고 observation이 추가될 수 있으므로 정확한 observation 하나를 채점한다.
+
+Human setup은 다음 순서로 수행한다.
+
+1. `rubric_v1`의 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`별 score config를 만든다. 각 config는 categorical option 0/1/2에 대응하는 값만 사용하고, 이름·설명에 rubric과 criterion을 식별한다.
+1. Accepted observation의 input, draft, evidence/context gaps와 output을 읽고 다섯 score 각각에 근거 comment를 남긴다. 실패 observation은 채점 대상이 아니다.
+1. `invocation_id + output_digest + rubric_v1`이 일치하는지 확인한다. 항목 누락·중복, 0/1/2 밖의 값 또는 빈 comment가 있으면 incomplete다. UI의 완료 표시는 repository completeness를 보장하지 않는다.
+1. 필요하면 `review_ai.langfuse_projection.annotation_complete()`에 수동 score snapshot을 넘겨 target와 shape만 검사한다. 각 score는 `criterion`, integer `score`, `rationale`다. 이 helper는 human authorship나 판단 품질을 증명하지 않으며 evaluation을 저장하거나 import하지 않는다.
+
+점수 판단은 사람이 수행한다. Annotation queue는 수동 setup으로 충분하며 importer, automatic judge, prompt 관리와 candidate/recovery 승인은 포함하지 않는다. Offline tests와 SDK smoke는 실제 ingestion, 배포 UI와 사람의 utility 판단을 증명하지 않는다. 실제 proof가 필요하면 동일 implementation revision에서 원격 observation 확인과 다섯 항목 채점을 수행하고 별도 evidence로 기록한다.
+
 ## Interpret Results
 
 실행하지 않은 test는 통과했다고 기록하지 않는다. 실패가 나면 test 자체의 오류, production behavior 불일치, requirement의 빈틈, environment 문제, 현재 작업과 무관한 baseline failure를 구분한다. Test를 약화하거나 무조건 skip해 실패를 숨기지 않는다.

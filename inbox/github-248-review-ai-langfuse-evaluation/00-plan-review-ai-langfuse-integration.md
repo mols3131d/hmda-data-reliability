@@ -23,12 +23,12 @@ tags:
 | Item | State | Evidence |
 | --- | --- | --- |
 | Utility evaluation prerequisite | Complete | #245 구현 뒤 #250의 `1d7e5c70baa03540644e0dac71b740330f3e58cb`에서 canonical Spec 반영과 [Change archive](../../openspec/changes/archive/2026-09-25-review-ai-utility-evaluation/README.md)를 완료했다. |
-| Local main integration | Complete | 로컬 HEAD `9cfc21b6432c845c0303be3e46f35c313b5ecc5e`에 위 main revision을 병합했다. |
-| Remote delivery | Pending | 마지막 확인한 Draft PR head는 `7df0f772d0fc0b2dba3f5e1ad548ffc3436866ef`다. 로컬 병합은 아직 push하지 않았고 PR 설명도 이전 prerequisite 상태다. |
-| Contract review | Reviewed | MVP, domain guide, canonical Spec, live harness, provenance와 human evaluation 계약을 검토했다. Langfuse implementation, runtime test와 live smoke는 수행하지 않았다. |
-| Vendor evidence | Blocked | 공식 문서 접근이 network domain policy로 차단됐다. 선택할 SDK 버전, capture 제어, score/comment mapping과 bounded flush 동작은 미확인이다. |
+| Local main integration | Complete | Starting head `e8441fb896eb94d07aed492b1dce0c641df2b0eb`는 위 main revision을 포함하며 remote에도 반영됐다. |
+| Implementation contract | Active | [review-ai-langfuse-projection](../../openspec/changes/review-ai-langfuse-projection/proposal.md)이 상세 계약, 설계와 task 상태를 소유한다. |
+| Vendor evidence | Available | [Entry research](01-research-review-ai-langfuse-entry.md): SDK 4.15.6 공식 문서/source 확인과 Python 3.13 import. |
+| Live destination | Deferred by user | 대상 project가 없어 사용자는 로컬 구현·검증부터 진행하도록 지정했다. 실제 ingestion과 human annotation은 미검증이다. |
 
-OpenSpec canonicalization을 다시 수행하거나 기다릴 필요는 없다. **다음 작업은 아래 Entry Checks이며, 확인 전에는 Langfuse dependency나 production integration code를 추가하지 않는다.** Code, base 또는 vendor version이 바뀌면 영향을 받는 근거만 다시 확인한다.
+OpenSpec canonicalization blocker와 이전 문서 접근 blocker는 해소됐다. 이후 구현 결과와 검증은 Change와 후속 Inbox evidence를 참조한다. 이 계획은 첫 slice의 전체 live proof 범위를 유지하며, 사용자의 이번 실행 범위는 로컬 구현·검증까지다.
 
 ## Goal
 
@@ -48,7 +48,7 @@ OpenSpec canonicalization을 다시 수행하거나 기다릴 필요는 없다. 
 
 공식 문서 확인 출발점은 [SDK overview](https://langfuse.com/docs/observability/sdk/overview), [Masking](https://langfuse.com/docs/observability/features/masking), [Annotation queues](https://langfuse.com/docs/evaluation/evaluation-methods/annotation-queues)다. 링크는 기능 검증의 증거가 아니다. Network policy가 차단하면 다른 통로로 우회하지 않고 접근 허용 또는 해당 버전의 공식 자료를 요청한다.
 
-앞의 네 check는 dependency와 구현 착수 조건이며, live destination은 외부 전송과 smoke의 조건이다. 확인 결과와 남은 blocker는 이 문서에 이어서 기록한다. Deferred importer를 위한 score retrieval API 조사는 첫 구현의 prerequisite가 아니다.
+공식 SDK·lifecycle 근거는 확보했다. 사용자가 live destination 없이 로컬 구현·검증을 우선하도록 지정했으므로 해당 배포 UI의 확인은 실제 전송·human smoke 시 수행한다. 확인 결과와 남은 blocker는 이 문서에 이어서 기록한다. Deferred importer를 위한 score retrieval API 조사는 첫 구현의 prerequisite가 아니다.
 
 ## Implementation Decisions
 

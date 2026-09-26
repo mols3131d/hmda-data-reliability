@@ -24,6 +24,7 @@ from hmda_reliability.reliability import (
     detect_basic_incidents,
 )
 from hmda_reliability.review_ai import (
+    AgenticReviewInput,
     AgenticReviewResult,
     PromptIdentity,
     review_null_spike,
@@ -33,7 +34,10 @@ from hmda_reliability.review_ai.contracts import (
     ReviewValidationStatus,
 )
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
-from hmda_reliability.review_ai.prompt import render_canonical_input
+from hmda_reliability.review_ai.prompt import (
+    build_canonical_input,
+    render_canonical_input,
+)
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.runtime_ai import RuntimeAISettings
 
@@ -155,7 +159,70 @@ def main(
     ):
         print("Live invocation provenance validation failed.", file=sys.stderr)
         return 3
+    if environment.get("HMDA_LANGFUSE_EXPORT", "").strip().lower() in _TRUE_VALUES:
+        integration_status = _export_live_projection(
+            result,
+            environment=environment,
+            settings=settings,
+            review_settings=review_settings,
+            project_revision=project_revision,
+            incident=incident,
+            evidence=evidence,
+            draft=draft,
+        )
+        print(f"Langfuse projection: {integration_status}", file=sys.stderr)
     return 0 if result.status == "accepted" else 1
+
+
+def _export_live_projection(
+    result: AgenticReviewResult,
+    *,
+    environment: Mapping[str, str],
+    settings: RuntimeAISettings,
+    review_settings: ReviewAISettings,
+    project_revision: str,
+    incident: Incident,
+    evidence: Evidence,
+    draft: RemediationDraft,
+) -> str:
+    if result.status in {
+        AgenticReviewStatus.INPUT_REJECTED,
+        AgenticReviewStatus.PROVENANCE_FAILED,
+    }:
+        return "skipped_no_record"
+    # Optional projection failures must not replace the already verified core outcome.
+    try:
+        from hmda_reliability.review_ai.langfuse_projection import (
+            export_projection,
+            project_invocation,
+        )
+
+        if result.invocation_path is None:
+            return "skipped_no_record"
+        record = AgenticInvocationEvidence.model_validate_json(
+            result.invocation_path.read_text(encoding="utf-8")
+        )
+        if not _verify_live_provenance(
+            result,
+            settings=settings,
+            review_settings=review_settings,
+            project_revision=project_revision,
+            record=record,
+        ):
+            return "skipped_invalid_record"
+        expected_input = build_canonical_input(
+            AgenticReviewInput(
+                incident=incident,
+                evidence=[evidence],
+                draft=draft,
+                prompt_identity=PromptIdentity(),
+                project_revision=project_revision,
+            )
+        )
+        payload = project_invocation(record, expected_input=expected_input)
+        return export_projection(payload, env=environment)
+    except Exception:
+        return "projection_failed"
 
 
 def _project_revision(environment: Mapping[str, str]) -> str:
@@ -243,6 +310,7 @@ def _verify_live_provenance(
     settings: RuntimeAISettings,
     review_settings: ReviewAISettings,
     project_revision: str,
+    record: AgenticInvocationEvidence | None = None,
 ) -> bool:
     """Verify that persisted invocation record faithfully matches the review result.
 
@@ -259,9 +327,10 @@ def _verify_live_provenance(
         return False
 
     try:
-        record = AgenticInvocationEvidence.model_validate_json(
-            result.invocation_path.read_text(encoding="utf-8")
-        )
+        if record is None:
+            record = AgenticInvocationEvidence.model_validate_json(
+                result.invocation_path.read_text(encoding="utf-8")
+            )
         replay = render_canonical_input(
             record.canonical_input,
             record.prompt_identity,
