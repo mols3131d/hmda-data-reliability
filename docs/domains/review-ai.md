@@ -24,6 +24,7 @@ tags:
 | bounded context projection과 canonical prompt rendering | provider SDK transport와 provider credential 관리 |
 | deterministic output validation과 human utility evaluation | approval 또는 mutation authority |
 | review orchestration과 invocation provenance | 범용 AI gateway, routing, agent framework |
+| 검증된 synthetic invocation의 optional 외부 관찰 projection | 자동 계측, 외부 점수의 repository importer |
 
 Current capability의 normative behavior는 [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec이 소유한다. Source는 current implementation을, tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
@@ -45,6 +46,12 @@ Source dependency는 `review_ai -> reliability`와 `review_ai -> runtime_ai`만 
 Provider가 실제로 호출된 logical review는 sanitized invocation evidence를 남긴다. Credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다. Durable provenance의 required behavior와 record contract는 canonical Spec이 소유하고, exact implementation은 source에서 확인하며 tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
 Review utility는 `rubric_v1` human rubric으로 평가한다. `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`을 사람이 점수와 rationale로 판정하고, 같은 case/version/rubric/revision의 baseline/candidate 평가를 invocation identity, change-under-test와 human decision에 연결해 비교한다. Positive, restatement-negative와 hedging-negative 사례는 판별력을 확인하는 test fixture로만 사용한다. 이 계약은 전용 evaluation store나 고정 점수 proof runner를 제공하지 않고, 자동 LLM judge도 사용하지 않는다.
+
+## Optional External Observation
+
+명시적으로 활성화한 synthetic live harness는 local provenance를 검증한 뒤 허용된 invocation record를 Langfuse에 사후 projection할 수 있다. Projection은 Review AI의 public API, `runtime_ai` transport, local record 또는 acceptance authority를 변경하지 않는다. SDK는 optional이며 별도 process에서 실행되고, 실패는 core review 결과와 분리된다. SDK 반환만으로 원격 ingestion이나 human evaluation 완료를 주장하지 않는다.
+
+Langfuse의 local setup, projection 상태와 다섯 rubric 항목의 수동 annotation 절차는 [Testing Guide](../development/testing.md#optional-langfuse-projection)가 안내한다. Remote annotation을 repository evaluation으로 자동 import하지 않으며, 실제 utility 판단은 사람이 소유한다.
 
 ## Package Root API
 

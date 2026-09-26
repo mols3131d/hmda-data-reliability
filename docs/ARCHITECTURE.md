@@ -42,8 +42,11 @@ flowchart TB
     end
 
     subgraph ai_plane ["Bounded AI Delegation"]
-        review["Review AI"] -->|provider invocation| runtime["Runtime AI"]
+        live_harness["Opt-in synthetic live harness"] -->|review call| review["Review AI"]
+        review -->|provider invocation| runtime["Runtime AI"]
         runtime --> provider["OpenAI-compatible Provider"]
+        live_harness -.->|verified record| projection["Optional isolated projection"]
+        projection -.-> langfuse["Langfuse destination"]
     end
 
     subgraph recovery_plane ["Approval-Bound Recovery"]
@@ -63,6 +66,8 @@ flowchart TB
 
 `RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Review AI output도 approval 또는 Reliability truth가 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다.
 
+Langfuse 연동은 opt-in live harness가 검증된 synthetic invocation을 사후 투영하는 선택 경계다. Runtime AI의 provider 호출이나 Review AI 계약에 계측을 주입하지 않으며, 연동 실패도 review 결과와 local provenance를 바꾸지 않는다. 설정과 수동 annotation 절차는 [Testing Guide](development/testing.md#optional-langfuse-projection)를 따른다.
+
 Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
 
 ## Execution Boundaries
@@ -72,7 +77,7 @@ Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별
 | Pipeline | Airflow `hmda_data_plane` DAG은 Bronze 적재 후 read-only quality gate를 실행하고, 통과한 경우에만 dbt 분석을 실행한다. |
 | Quality gate | Data Operations가 전체 Bronze partition profile과 lock-bound dbt build를 조합하고 Reliability가 baseline, threshold, detector와 blocking 판정을 소유한다. Airflow는 task state만 조율한다. |
 | Reliability lifecycle | Read-only다. approval, recovery, evaluation 또는 report write를 수행하지 않는다. |
-| Review AI | Reliability evidence를 immutable input으로 받아 advisory review와 deterministic validation/provenance만 소유한다. |
+| Review AI | Reliability evidence를 immutable input으로 받아 advisory review와 deterministic validation/provenance를 소유한다. Opt-in harness는 검증된 synthetic record를 optional destination에 사후 projection할 수 있다. |
 | Runtime AI | Review semantics를 알지 않고 provider-neutral settings, bounded invocation과 runtime error normalization만 소유한다. |
 | Recovery proposal | Incident evidence, 검증된 candidate와 target state를 mutation 전에 immutable contract로 묶는다. Concrete contract는 recovery scope에 따라 달라진다. |
 | Approval | Lifecycle 밖에서 결정하며 exact validated proposal에 결합된다. |
