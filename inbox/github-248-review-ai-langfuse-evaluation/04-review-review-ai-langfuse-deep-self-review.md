@@ -10,8 +10,8 @@ description: PR #248의 Langfuse projection 구현, 검증 경계와 문서 계�
 > **Revise** — annotation completeness helper가 잘못된 rubric과 output digest를 가진 snapshot도 complete로 판정하는 Minor finding을 확인했다. 이 helper의 결과를 신뢰 가능한 completeness 신호로 쓰기 전에 `rubric_v1`과 실제 structured output digest를 검증해야 한다.
 
 - **Target** — [PR #248](https://github.com/mols3131d/hmda-data-reliability/pull/248)
-- **Revision** — base `1d7e5c70baa03540644e0dac71b740330f3e58cb`, reviewed local HEAD `44d424356d9a27870f6e9c8c1966abcf7edc86a8`
-- **Scope** — PR diff의 projection module, live harness, tests, OpenSpec delta, architecture/domain/testing guide와 optional dependency/configuration. 현재 원격 PR state는 이 세션에서 조회되지 않았다.
+- **Revision** — base `1d7e5c70baa03540644e0dac71b740330f3e58cb`, reviewed implementation/documentation HEAD `44d424356d9a27870f6e9c8c1966abcf7edc86a8`; first report publication HEAD `13f7212f8205577e3b31796e9034f131575e4b5d`
+- **Scope** — PR diff의 projection module, live harness, tests, OpenSpec delta, architecture/domain/testing guide와 optional dependency/configuration. 첫 보고서 push 직후 원격 PR snapshot은 Open/Draft, head `13f7212`였다.
 
 ## Findings
 
@@ -56,7 +56,8 @@ Accepted snapshot의 output을 `AgenticReviewOutput`으로 검증하고 `utility
 | ✅ Pass | Diff hygiene at reviewed head | `git diff --check 1d7e5c70baa03540644e0dac71b740330f3e58cb...HEAD`가 오류 없이 끝났다. |
 | ✅ Pass | Reviewed source identity | Projection module, projection tests, live harness의 SHA-256이 이전 [독립 구현 리뷰](03-review-review-ai-langfuse-local.md)에 기록된 값과 일치한다. |
 | ✅ Pass | Review artifact contract and Markdown | `python3 scripts/validate_inbox_artifacts.py`와 `UV_CACHE_DIR=/tmp/uv-cache uv run --no-sync rumdl check`가 이 보고서에서 통과했다. |
-| ⚪ Not Verified | Current remote PR/CI state | `gh pr view 248`에서 `api.github.com` 연결 오류가 발생했다. 로컬 tracking ref는 reviewed HEAD와 같지만 원격 상태를 새로 조회하지 못했다. 기존 구현·문서 validation evidence는 [local validation report](02-report-review-ai-langfuse-local-validation.md)에 보존되어 있다. |
+| ✅ Pass | Remote PR metadata at report publication | GitHub PR snapshot에서 PR이 Open/Draft이고 base SHA가 `1d7e5c7`, head가 `13f7212`임을 확인했다. |
+| ⚪ Not Verified | CI for report publication head | `13f7212`의 combined status 조회 결과가 비어 있어 해당 report commit의 CI는 확인하지 못했다. 기존 구현·문서 validation evidence는 [local validation report](02-report-review-ai-langfuse-local-validation.md)에 보존되어 있다. |
 
 ## Risks and Limits
 
