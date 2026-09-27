@@ -7,12 +7,12 @@ description: PR #251의 문서, OpenSpec, Inbox evidence와 현재 구현 사이
 # PR 251 Documentation Consistency Report
 
 > [!IMPORTANT]
-> 현재 코드, PR 본문과 주요 사용자 가이드는 `review_ai.evaluation` ownership과 `ReviewValue*` API에 맞다. 다만 활성 Langfuse OpenSpec Change에는 리팩터링 전 경로와 API 이름이 남아 있고, 일부 Inbox evidence는 이전 source revision을 여전히 `Current`로 표현한다.
+> **Resolved** — snapshot에서 확인한 C1–C3를 후속 문서·Spec 수정으로 해소했다. 아래 Findings는 당시 조사 근거이며, 현재 조치는 [Resolution](#resolution)을 따른다.
 
 - **Snapshot** — PR #251 head `3749339f3f86e07afbf57f029099b3ee2ce0b029`
 - **Base** — `5532dca2fd93696d40ba870471fa2359c5662335`
 - **Scope** — PR body, canonical Review AI Spec, active OpenSpec Changes, Review AI/testing guides, PR-owned Inbox evidence, current evaluation/Langfuse module surface
-- **Result** — verified gap 2건, unresolved ownership gap 1건
+- **Snapshot Result** — verified gap 2건, unresolved ownership gap 1건; 후속 수정에서 C1–C3 해소
 
 ## Findings
 
@@ -53,7 +53,19 @@ Canonical Spec에는 Review Value evaluation/comparison contract가 반영되어
 
 이 상태가 live proof를 기다리기 위한 의도적인 active Change 유지인지, canonicalization/archive가 아직 끝나지 않은 것인지는 현재 문서만으로 확정할 수 없다. 따라서 C3는 verified defect가 아니라 unresolved ownership gap으로 둔다.
 
-## Recommended Order
+## Resolution
+
+2026-09-28 KST. 위 Findings는 `3749339f` snapshot의 조사 결과로 보존한다. 후속 수정은 source head `724580a7f1c051acb9f2a5ed3c43a00a947b4b59` 이후 문서·Spec만 변경한다.
+
+| ID | Disposition | Resolution |
+| --- | --- | --- |
+| C1 | Resolved | 활성 Langfuse design과 delta Spec의 식별자를 `review_ai.evaluation.langfuse`, `review_output_digest()`와 `ReviewValueAssessment`로 갱신했다. |
+| C2 | Resolved | completion/resolution evidence의 `Current` 표현을 해소 당시 source revision과 CI에 결합했다. 최신 PR head·CI는 PR 본문과 checks가 소유한다. |
+| C3 | Resolved | 두 기존 Langfuse 요구사항을 canonical Spec에 동기화했다. Proposal과 Tasks는 #251 전달 중 active 유지, 병합 후 archive 대상 정리, live/human proof가 별도 검증이라는 경계를 명시한다. |
+
+후속 수정에서 `openspec validate --all --strict`는 **20 passed**, `openspec validate --specs --strict`는 **18 passed**다. 변경 Markdown 8개는 repository rumdl check를 통과했고 Inbox artifact 3개와 `git diff --check`도 통과했다. 기존 독립 source review를 새 문서 변경의 독립 리뷰로 표현하지 않는다.
+
+## Recommended Order at Snapshot
 
 1. 활성 Langfuse Change의 old module/API reference를 current `review_ai.evaluation` surface와 맞춘다.
 1. PR-owned completion/resolution evidence의 `Current` 표현을 `Resolution source` 기준으로 좁힌다.
