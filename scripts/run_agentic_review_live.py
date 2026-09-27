@@ -192,7 +192,7 @@ def _export_live_projection(
         return "skipped_no_record"
     # Optional projection failures must not replace the already verified core outcome.
     try:
-        from hmda_reliability.review_ai.langfuse_projection import (
+        from hmda_reliability.review_ai.evaluation.langfuse import (
             export_projection,
             project_invocation,
         )

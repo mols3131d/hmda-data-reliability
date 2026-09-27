@@ -17,12 +17,12 @@ def test_review_ai_exports_only_consumer_surface() -> None:
         "AgenticReviewUtilityContribution",
         "BoundedReviewContext",
         "HumanDecision",
-        "HumanUtilityEvaluation",
+        "ReviewValueAssessment",
         "PromptIdentity",
         "RUBRIC_V1",
-        "UtilityComparisonEvidence",
+        "ReviewValueComparisonEvidence",
         "build_bounded_review_context",
-        "compare_utility_evaluations",
+        "compare_review_value",
         "review_null_spike",
     }
 

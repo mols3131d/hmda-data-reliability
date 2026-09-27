@@ -221,7 +221,7 @@ Human setup은 다음 순서로 수행한다.
 1. `rubric_v1`의 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`별 score config를 만든다. 각 config는 categorical option 0/1/2에 대응하는 값만 사용하고, 이름·설명에 rubric과 criterion을 식별한다.
 1. Accepted observation의 input, draft, evidence/context gaps와 output을 읽고 다섯 score 각각에 근거 comment를 남긴다. 실패 observation은 채점 대상이 아니다.
 1. `invocation_id + output_digest + rubric_v1`이 일치하는지 확인한다. 항목 누락·중복, 0/1/2 밖의 값 또는 빈 comment가 있으면 incomplete다. UI의 완료 표시는 repository completeness를 보장하지 않는다.
-1. 필요하면 `review_ai.langfuse_projection.annotation_complete()`에 수동 score snapshot을 넘겨 accepted structured output의 canonical JSON 값/타입, metadata digest, `rubric_v1` target과 score shape의 일치를 검사한다. 각 score는 `criterion`, integer `score`, `rationale`다. 이 helper는 human authorship나 판단 품질을 증명하지 않으며 evaluation을 저장하거나 import하지 않는다.
+1. 필요하면 `review_ai.evaluation.langfuse.annotation_complete()`에 수동 score snapshot을 넘겨 accepted structured output의 canonical JSON 값/타입, metadata digest, `rubric_v1` target과 score shape의 일치를 검사한다. 각 score는 `criterion`, integer `score`, `rationale`다. 이 helper는 human authorship나 판단 품질을 증명하지 않으며 evaluation을 저장하거나 import하지 않는다.
 
 선택 SDK의 data URI media 변환 차단도 project 없이 확인하려면 다음 network-free test를 실행한다.
 

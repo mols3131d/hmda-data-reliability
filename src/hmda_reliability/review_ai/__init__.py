@@ -14,9 +14,9 @@ from hmda_reliability.review_ai.contracts import (
 from hmda_reliability.review_ai.evaluation import (
     RUBRIC_V1,
     HumanDecision,
-    HumanUtilityEvaluation,
-    UtilityComparisonEvidence,
-    compare_utility_evaluations,
+    ReviewValueAssessment,
+    ReviewValueComparisonEvidence,
+    compare_review_value,
 )
 from hmda_reliability.review_ai.service import review_null_spike
 
@@ -27,11 +27,11 @@ __all__ = [
     "AgenticReviewUtilityContribution",
     "BoundedReviewContext",
     "HumanDecision",
-    "HumanUtilityEvaluation",
+    "ReviewValueAssessment",
     "PromptIdentity",
     "RUBRIC_V1",
-    "UtilityComparisonEvidence",
+    "ReviewValueComparisonEvidence",
     "build_bounded_review_context",
-    "compare_utility_evaluations",
+    "compare_review_value",
     "review_null_spike",
 ]

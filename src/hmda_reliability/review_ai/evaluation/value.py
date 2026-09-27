@@ -1,4 +1,4 @@
-"""Versioned human rubric과 Review AI utility comparison 계약."""
+"""Versioned human rubric과 Review AI value comparison 계약."""
 
 from __future__ import annotations
 
@@ -26,12 +26,12 @@ class HumanDecision(StrEnum):
     NO_CHANGE = "no_change"
 
 
-class UtilityComparisonStatus(StrEnum):
+class ReviewValueComparisonStatus(StrEnum):
     COMPARED = "compared"
     BLOCKED = "blocked"
 
 
-class UtilityRubric(ReliabilityContract):
+class ReviewValueRubric(ReliabilityContract):
     rubric_id: str = Field(pattern=r"^rubric_v1$")
     criteria: tuple[RubricCriterion, ...] = Field(min_length=5, max_length=5)
     score_min: int = Field(ge=0, le=2)
@@ -39,7 +39,7 @@ class UtilityRubric(ReliabilityContract):
     pass_score: int = Field(ge=0, le=2)
 
     @model_validator(mode="after")
-    def _validate_rubric(self) -> UtilityRubric:
+    def _validate_rubric(self) -> ReviewValueRubric:
         if self.criteria != tuple(RubricCriterion):
             msg = "rubric_v1 must contain all five criteria in stable order"
             raise ValueError(msg)
@@ -52,7 +52,7 @@ class UtilityRubric(ReliabilityContract):
         return self
 
 
-RUBRIC_V1 = UtilityRubric(
+RUBRIC_V1 = ReviewValueRubric(
     rubric_id="rubric_v1",
     criteria=tuple(RubricCriterion),
     score_min=0,
@@ -74,7 +74,7 @@ class RubricScore(ReliabilityContract):
         return self
 
 
-class HumanUtilityEvaluation(ReliabilityContract):
+class ReviewValueAssessment(ReliabilityContract):
     evaluation_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
     case_id: str = Field(min_length=1, max_length=256)
     case_version: str = Field(min_length=1, max_length=64)
@@ -88,7 +88,7 @@ class HumanUtilityEvaluation(ReliabilityContract):
     scores: tuple[RubricScore, ...] = Field(min_length=5, max_length=5)
 
     @model_validator(mode="after")
-    def _validate_evaluation(self) -> HumanUtilityEvaluation:
+    def _validate_evaluation(self) -> ReviewValueAssessment:
         if (
             not self.project_revision
             or self.project_revision != self.project_revision.strip()
@@ -99,7 +99,7 @@ class HumanUtilityEvaluation(ReliabilityContract):
         if criteria != list(RubricCriterion):
             msg = "evaluation must score each rubric criterion exactly once in order"
             raise ValueError(msg)
-        if utility_output_digest(self.output) != self.output_digest:
+        if review_output_digest(self.output) != self.output_digest:
             msg = "evaluation output digest does not match its output"
             raise ValueError(msg)
         return self
@@ -123,7 +123,7 @@ class CriterionDelta(ReliabilityContract):
         return self
 
 
-class UtilityComparisonEvidence(ReliabilityContract):
+class ReviewValueComparisonEvidence(ReliabilityContract):
     comparison_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
     case_id: str = Field(min_length=1, max_length=256)
     case_version: str = Field(min_length=1, max_length=64)
@@ -142,7 +142,7 @@ class UtilityComparisonEvidence(ReliabilityContract):
     candidate_output: AgenticReviewOutput
     candidate_output_kind: str = Field(pattern=r"^(baseline|candidate)$")
     change_under_test: str = Field(min_length=1, max_length=1_024)
-    status: UtilityComparisonStatus
+    status: ReviewValueComparisonStatus
     criterion_deltas: tuple[CriterionDelta, ...] = Field(max_length=5)
     baseline_total: int = Field(ge=0, le=10)
     candidate_total: int = Field(ge=0, le=10)
@@ -152,18 +152,18 @@ class UtilityComparisonEvidence(ReliabilityContract):
     blocker_code: str | None = Field(default=None, max_length=128)
 
     @model_validator(mode="after")
-    def _validate_comparison_boundary(self) -> UtilityComparisonEvidence:
+    def _validate_comparison_boundary(self) -> ReviewValueComparisonEvidence:
         if self.total_delta != self.candidate_total - self.baseline_total:
             msg = "comparison total delta does not match totals"
             raise ValueError(msg)
         if (
-            utility_output_digest(self.baseline_output) != self.baseline_output_digest
-            or utility_output_digest(self.candidate_output)
+            review_output_digest(self.baseline_output) != self.baseline_output_digest
+            or review_output_digest(self.candidate_output)
             != self.candidate_output_digest
         ):
             msg = "comparison output digest does not match output"
             raise ValueError(msg)
-        if self.status is UtilityComparisonStatus.COMPARED:
+        if self.status is ReviewValueComparisonStatus.COMPARED:
             if self.decision is None or self.blocker_code is not None:
                 msg = "compared evidence requires a human decision and no blocker"
                 raise ValueError(msg)
@@ -205,15 +205,15 @@ class UtilityComparisonEvidence(ReliabilityContract):
         return self
 
 
-def compare_utility_evaluations(
+def compare_review_value(
     *,
     comparison_id: str,
-    baseline: HumanUtilityEvaluation,
-    candidate: HumanUtilityEvaluation,
+    baseline: ReviewValueAssessment,
+    candidate: ReviewValueAssessment,
     change_under_test: str,
     decision: HumanDecision,
     rationale: str,
-) -> UtilityComparisonEvidence:
+) -> ReviewValueComparisonEvidence:
     """동일 case/rubric의 human evaluation을 비교하거나 fail closed한다."""
 
     blocker: str | None = None
@@ -246,7 +246,7 @@ def compare_utility_evaluations(
         )
         for criterion in RubricCriterion
     )
-    return UtilityComparisonEvidence(
+    return ReviewValueComparisonEvidence(
         comparison_id=comparison_id,
         case_id=baseline.case_id,
         case_version=baseline.case_version,
@@ -265,9 +265,9 @@ def compare_utility_evaluations(
         candidate_output=candidate.output,
         candidate_output_kind=candidate.output_kind,
         change_under_test=change_under_test,
-        status=UtilityComparisonStatus.BLOCKED
+        status=ReviewValueComparisonStatus.BLOCKED
         if blocker
-        else UtilityComparisonStatus.COMPARED,
+        else ReviewValueComparisonStatus.COMPARED,
         criterion_deltas=deltas,
         baseline_total=baseline.total_score,
         candidate_total=candidate.total_score,
@@ -278,13 +278,13 @@ def compare_utility_evaluations(
     )
 
 
-def render_utility_comparison_markdown(
-    comparison: UtilityComparisonEvidence,
+def render_review_value_comparison_markdown(
+    comparison: ReviewValueComparisonEvidence,
 ) -> str:
     """사람이 검토할 수 있는 작은 comparison projection을 렌더링한다."""
 
     lines = [
-        "# Review AI Utility Comparison",
+        "# Review AI Value Comparison",
         "",
         f"- Case: `{comparison.case_id}` ({comparison.case_version})",
         f"- Rubric: `{comparison.rubric_id}`",
@@ -317,7 +317,7 @@ def _canonical_json_bytes(value: object) -> bytes:
     ).encode("utf-8")
 
 
-def utility_output_digest(output: AgenticReviewOutput) -> str:
+def review_output_digest(output: AgenticReviewOutput) -> str:
     """Return a replayable digest bound to one exact structured output."""
 
     payload = _canonical_json_bytes(output.model_dump(mode="json"))

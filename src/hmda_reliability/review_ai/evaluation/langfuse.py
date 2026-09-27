@@ -22,7 +22,7 @@ from hmda_reliability.review_ai.evaluation import (
     RUBRIC_V1,
     RubricCriterion,
     RubricScore,
-    utility_output_digest,
+    review_output_digest,
 )
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
 
@@ -69,7 +69,7 @@ def project_invocation(
                 "prompt_version": record.prompt_identity.version,
                 "prompt_digest": record.prompt_digest,
                 "rubric_id": RUBRIC_V1.rubric_id,
-                "output_digest": utility_output_digest(record.parsed_output),
+                "output_digest": review_output_digest(record.parsed_output),
                 "validation_policy": record.validation.policy_id,
                 "validation_status": record.validation.status.value,
                 "model": config.model,
@@ -149,7 +149,7 @@ def annotation_complete(
             return False
     except (TypeError, ValueError):
         return False
-    if metadata.get("output_digest") != utility_output_digest(output):
+    if metadata.get("output_digest") != review_output_digest(output):
         return False
     target_keys = ("invocation_id", "output_digest", "rubric_id")
     if any(
@@ -213,7 +213,11 @@ def export_projection(payload: Mapping[str, object], *, env: Mapping[str, str]) 
     child_env["LANGFUSE_MEDIA_UPLOAD_ENABLED"] = "false"
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "hmda_reliability.review_ai.langfuse_projection"],
+            [
+                sys.executable,
+                "-m",
+                "hmda_reliability.review_ai.evaluation.langfuse",
+            ],
             input=encoded,
             text=True,
             env=child_env,

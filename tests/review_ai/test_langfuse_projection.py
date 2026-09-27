@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
 import sys
@@ -13,14 +14,14 @@ from typing import Any, cast
 
 import pytest
 
-from hmda_reliability.review_ai import langfuse_projection as projection
 from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewValidation,
     PromptIdentity,
 )
-from hmda_reliability.review_ai.evaluation import RubricCriterion, utility_output_digest
+from hmda_reliability.review_ai.evaluation import RubricCriterion, review_output_digest
+from hmda_reliability.review_ai.evaluation import langfuse as projection
 from hmda_reliability.review_ai.evidence import (
     AgenticInvocationEvidence,
     SanitizedAgenticReviewConfiguration,
@@ -106,7 +107,7 @@ def test_projection_keeps_exact_context_and_output_without_provider_secrets(reco
     )
     assert payload["input"] == record.canonical_input
     assert payload["output"] == record.parsed_output.model_dump(mode="json")
-    assert payload["metadata"]["output_digest"] == utility_output_digest(
+    assert payload["metadata"]["output_digest"] == review_output_digest(
         record.parsed_output
     )
     assert payload["metadata"]["recorded_latency_ms"] == 123
@@ -280,6 +281,9 @@ def test_child_receives_only_selected_environment_and_bounded_payload(
         projection.export_projection(payload, env=environment) == "submitted_unverified"
     )
     args, kwargs = calls[0]
+    child_module = "hmda_reliability.review_ai.evaluation.langfuse"
+    assert args[0] == [sys.executable, "-m", child_module]
+    assert importlib.util.find_spec(child_module) is not None
     assert kwargs["timeout"] == 5
     assert "PROVIDER_API_KEY" not in kwargs["env"]
     assert "OTEL_RESOURCE_ATTRIBUTES" not in kwargs["env"]
@@ -320,7 +324,7 @@ def test_media_like_output_stays_exact_and_child_disables_sdk_media(
     child_payload = json.loads(kwargs["input"])
     assert kwargs["env"]["LANGFUSE_MEDIA_UPLOAD_ENABLED"] == "false"
     assert child_payload["output"] == output.model_dump(mode="json")
-    assert child_payload["metadata"]["output_digest"] == utility_output_digest(output)
+    assert child_payload["metadata"]["output_digest"] == review_output_digest(output)
 
 
 @pytest.mark.integration
