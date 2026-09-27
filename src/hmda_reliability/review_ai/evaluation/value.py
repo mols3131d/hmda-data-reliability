@@ -1,4 +1,9 @@
-"""Versioned human rubric과 Review AI value comparison 계약."""
+"""Review AI 결과의 사람 중심 평가와 비교 계약.
+
+버전이 지정된 평가 기준표, 개별 결과 평가, 기준 결과와 변경 결과의 비교 근거,
+결과의 SHA-256 해시와 Markdown 요약을 정의한다. 점수로 사람의 결정을 자동으로
+만들지 않는다.
+"""
 
 from __future__ import annotations
 
@@ -31,6 +36,7 @@ class ReviewValueComparisonStatus(StrEnum):
     BLOCKED = "blocked"
 
 
+# `rubric_v1`의 점수 범위와 평가 항목 순서는 버전 계약의 일부다.
 class ReviewValueRubric(ReliabilityContract):
     rubric_id: str = Field(pattern=r"^rubric_v1$")
     criteria: tuple[RubricCriterion, ...] = Field(min_length=5, max_length=5)
@@ -74,6 +80,7 @@ class RubricScore(ReliabilityContract):
         return self
 
 
+# 개별 평가는 다섯 항목의 점수를 해당 결과의 해시에 결합한다.
 class ReviewValueAssessment(ReliabilityContract):
     evaluation_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
     case_id: str = Field(min_length=1, max_length=256)
@@ -123,6 +130,8 @@ class CriterionDelta(ReliabilityContract):
         return self
 
 
+# 비교 완료 상태에서는 결과 역할·결정적 사실·합계를 맞춘다.
+# 차단 상태에서는 결정을 보류한다.
 class ReviewValueComparisonEvidence(ReliabilityContract):
     comparison_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
     case_id: str = Field(min_length=1, max_length=256)
@@ -214,7 +223,13 @@ def compare_review_value(
     decision: HumanDecision,
     rationale: str,
 ) -> ReviewValueComparisonEvidence:
-    """동일 case/rubric의 human evaluation을 비교하거나 fail closed한다."""
+    """같은 사례와 평가 기준표의 결과를 비교하고 맞지 않는 조건은 차단한다.
+
+    사례 버전, 평가 기준표, `project_revision`, 결과 역할(`baseline`과
+    `candidate`), 결정적 사실이 맞지 않으면 `blocker_code`를 기록하고 결정을
+    보류한다. `decision`은 호출자가 제공하는 사람의 판단이며 점수로 자동 판정하지
+    않는다.
+    """
 
     blocker: str | None = None
     if baseline.output_kind != "baseline" or candidate.output_kind != "candidate":
@@ -281,7 +296,11 @@ def compare_review_value(
 def render_review_value_comparison_markdown(
     comparison: ReviewValueComparisonEvidence,
 ) -> str:
-    """사람이 검토할 수 있는 작은 comparison projection을 렌더링한다."""
+    """사람이 검토할 비교 요약을 Markdown으로 만든다.
+
+    사례, 평가 기준표, 상태, 결정, 항목별 점수 차이, 사유와 차단 코드를 포함한다.
+    전체 모델 결과와 호출 식별 정보는 출력하지 않는다.
+    """
 
     lines = [
         "# Review AI Value Comparison",
@@ -308,6 +327,11 @@ def render_review_value_comparison_markdown(
 
 
 def _canonical_json_bytes(value: object) -> bytes:
+    """해시 계산에 사용할 UTF-8 정규 JSON 바이트를 만든다.
+
+    키 정렬, 공백 없는 구분자, 유니코드 문자 유지, 비유한 수 거부로 결과 해시의
+    입력 바이트를 항상 같은 방식으로 만든다.
+    """
     return json.dumps(
         value,
         ensure_ascii=False,
@@ -318,7 +342,10 @@ def _canonical_json_bytes(value: object) -> bytes:
 
 
 def review_output_digest(output: AgenticReviewOutput) -> str:
-    """Return a replayable digest bound to one exact structured output."""
+    """구조화된 결과를 정규 JSON으로 바꾼 뒤 SHA-256 해시를 반환한다.
+
+    해시는 결과가 같은지 확인할 뿐, 평가 품질이나 결과의 출처를 증명하지 않는다.
+    """
 
     payload = _canonical_json_bytes(output.model_dump(mode="json"))
     return f"sha256:{hashlib.sha256(payload).hexdigest()}"

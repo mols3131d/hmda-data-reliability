@@ -1,4 +1,8 @@
-"""제한된 evidence 기반 advisory review 공개 API 모듈."""
+"""근거 범위를 제한하는 Review AI 보조 검토의 공개 API.
+
+평가 계약은 하위 `evaluation` 모듈에서 공개한다. 이 패키지를 가져와도 선택적
+Langfuse SDK 어댑터는 자동으로 불러오지 않는다.
+"""
 
 from hmda_reliability.review_ai.context import (
     BoundedReviewContext,
