@@ -16,6 +16,16 @@ description: PR 251의 main 통합, 전체 comparison golden 검증 보강과 �
 - **Reviewed code head:** `5bde8a45e8af26f0f418634a862157f251fca9ef`.
 - 아래 독립 리뷰와 실행 결과는 이 code head에만 적용된다. 이후 `a2d85c1`은 Python 파일 다섯 개를 수정하고 선택적 Langfuse 투영 DEBUG 로그를 추가했다. 따라서 이후 source head에 대한 검증으로 해석하지 않는다. 이후 source 검토는 [로컬 코드 리뷰](02-review-review-ai-evaluation-subdomain-localized-code.md)와 [고강도 리뷰](03-review-review-ai-evaluation-subdomain-high-intensity.md)를 참조한다.
 
+## Follow-up Evidence
+
+2026-09-28 KST. 두 독스트링을 현재 구현과 public export에 맞췄고 PR 본문도 current base/head 및 revision별 validation으로 갱신했다. [고강도 리뷰 해소 기록](04-review-resolution-review-ai-evaluation-subdomain-high-intensity.md)은 F1–F3의 조치와 검증을 기록한다.
+
+- **Resolution source head:** `724580a7f1c051acb9f2a5ed3c43a00a947b4b59`.
+- **Current PR CI:** [CI Lite run 36341207619](https://github.com/mols3131d/hmda-data-reliability/actions/runs/36341207619)에서 selected tests **186 passed, 1 skipped**. Skip은 CI에 `langfuse` dependency가 없어 optional SDK integration test를 실행하지 못한 결과다.
+- **Current pre-push checks:** affected tests **11 passed**, Ruff check와 format 통과.
+- **Independent review:** 정확한 base/head의 focused quality review에서 **55 tests passed**; adversarial review에서 추가 material regression은 없었다. Stale PR body를 갱신한 뒤 review lead는 PR description과 evidence attribution을 `clear`로 판정했다.
+- `5bde8a4`의 independent `clear`, Review AI/Runtime AI **187 passed**, 기본 전체 suite **707 passed, 1 skipped**는 해당 historical code head에만 적용되며 `724580a`의 전체 suite 근거가 아니다.
+
 ## F1 Resolution
 
 새 [static fixture](../../tests/review_ai/fixtures/utility_comparison_6e64cc7.json)는 pre-refactor revision `6e64cc70a5dca8ff8cd423a9f2240848f4b2e7dd`의 `src`와 기존 test helper를 temporary archive에서 실행해 얻었다. Historical `evaluation.py`가 실제 import origin인지 확인한 뒤 compared와 case-version mismatch의 blocked JSON을 캡처했다. 현재 `ReviewValue*` 모델로 expected 값을 생성하지 않았다.
