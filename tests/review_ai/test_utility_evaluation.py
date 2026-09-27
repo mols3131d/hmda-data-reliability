@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from importlib import import_module
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -105,6 +107,7 @@ def _compare(
     *,
     baseline: ReviewValueAssessment | None = None,
     candidate: ReviewValueAssessment | None = None,
+    decision: HumanDecision = HumanDecision.ACCEPT,
 ) -> ReviewValueComparisonEvidence:
     return compare_review_value(
         comparison_id="comparison-1",
@@ -123,18 +126,15 @@ def _compare(
             score=2,
         ),
         change_under_test="Add bounded context utility contribution.",
-        decision=HumanDecision.ACCEPT,
+        decision=decision,
         rationale="The candidate adds an actionable, evidence-bound contribution.",
     )
 
 
-def test_review_value_api_preserves_comparison_wire_contract() -> None:
+def test_review_value_api_exposes_only_intended_names() -> None:
     value_api = import_module("hmda_reliability.review_ai.evaluation.value")
     evaluation_api = import_module("hmda_reliability.review_ai.evaluation")
     public_api = import_module("hmda_reliability.review_ai")
-
-    comparison = _compare()
-    payload = comparison.model_dump(mode="json")
 
     assert evaluation_api.ReviewValueRubric is value_api.ReviewValueRubric
     assert set(evaluation_api.__all__) == {
@@ -155,42 +155,38 @@ def test_review_value_api_preserves_comparison_wire_contract() -> None:
     assert "ReviewValueAssessment" in public_api.__all__
     assert "ReviewValueComparisonEvidence" in public_api.__all__
     assert "HumanUtilityEvaluation" not in public_api.__all__
-    assert set(payload) == {
-        "comparison_id",
-        "case_id",
-        "case_version",
-        "project_revision",
-        "rubric_id",
-        "baseline_evaluation_id",
-        "baseline_output_kind",
-        "baseline_invocation_id",
-        "baseline_output_fixture_id",
-        "baseline_output_digest",
-        "candidate_evaluation_id",
-        "candidate_invocation_id",
-        "candidate_output_fixture_id",
-        "candidate_output_digest",
-        "baseline_output",
-        "candidate_output",
-        "candidate_output_kind",
-        "change_under_test",
-        "status",
-        "criterion_deltas",
-        "baseline_total",
-        "candidate_total",
-        "total_delta",
-        "decision",
-        "rationale",
-        "blocker_code",
-    }
-    assert payload["status"] == "compared"
-    assert payload["decision"] == "accept"
-    assert payload["rubric_id"] == "rubric_v1"
-    assert payload["baseline_output_digest"] == (
-        "sha256:ec197c419184c9a82869f0736f709cb5e76ca0b74c7a5e12fd59fd1e237329b5"
+
+
+@pytest.mark.parametrize(
+    ("decision", "case_version", "golden_key"),
+    [
+        ("accept", "v1", "compared"),
+        ("reject", "v1", "compared"),
+        ("no_change", "v1", "compared"),
+        ("accept", "v2", "blocked"),
+    ],
+)
+def test_comparison_json_matches_pre_refactor_golden(
+    decision: str, case_version: str, golden_key: str
+) -> None:
+    """Compare complete JSON to the captured 6e64cc7 API, including nested types."""
+    fixture = Path(__file__).with_name("fixtures") / "utility_comparison_6e64cc7.json"
+    expected = json.loads(fixture.read_text(encoding="utf-8"))[golden_key]
+    if golden_key == "compared":
+        expected["decision"] = decision
+
+    candidate = _evaluation(
+        evaluation_id="evaluation-candidate",
+        invocation_id="invocation-candidate",
+        output_kind="candidate",
+        score=2,
+        case_version=case_version,
     )
-    assert value_api.review_output_digest(_output(utility=True)) == (
-        "sha256:9d9bda299b782cc2bcd8df56ea194b30c09e344562deed6c69d9bd479d8766bc"
+    actual = _compare(candidate=candidate, decision=HumanDecision(decision))
+
+    # JSON text also distinguishes bool/int and int/float values that Python equals.
+    assert json.dumps(actual.model_dump(mode="json"), sort_keys=True) == json.dumps(
+        expected, sort_keys=True
     )
 
 
