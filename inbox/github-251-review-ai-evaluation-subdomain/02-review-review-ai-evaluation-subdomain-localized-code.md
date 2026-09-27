@@ -26,7 +26,7 @@ description: PR #251 작업 트리의 독스트링과 DEBUG 로그 변경을 설
 
 🟡 Minor
 
-#### Locations
+#### F1 Locations
 
 - [`scripts/run_agentic_review_live.py`](../../scripts/run_agentic_review_live.py)
   - `_project_revision` 독스트링, 242행
@@ -34,15 +34,15 @@ description: PR #251 작업 트리의 독스트링과 DEBUG 로그 변경을 설
 - [`docs/development/testing.md`](../../docs/development/testing.md)
   - 자동 리비전의 기존 조건 설명
 
-#### Evidence
+#### F1 Evidence
 
 `_project_revision()`은 `auto`일 때 `_current_git_revision()`을 호출한다. 그 함수는 `git status --porcelain --untracked-files=no`로 작업 상태를 확인하므로 추적 중인 파일의 변경만 거부하고 미추적 파일은 무시한다. 독스트링의 “작업 폴더가 깨끗한 경우”는 이 범위를 넘어선다. Testing Guide는 추적 중인 작업 트리가 깨끗해야 한다고 더 정확히 적고 있다.
 
-#### Impact
+#### F1 Impact
 
 독자는 미추적 파일도 자동 리비전 계산을 막는다고 오해하거나, 자동 리비전이 실제로 포함하는 상태 범위를 잘못 이해할 수 있다.
 
-#### Action
+#### F1 Action
 
 독스트링을 추적 중인 파일에 변경이 없는 조건으로 좁혀 현재 동작과 맞춘다.
 
@@ -50,21 +50,21 @@ description: PR #251 작업 트리의 독스트링과 DEBUG 로그 변경을 설
 
 🟡 Minor
 
-#### Locations
+#### F2 Locations
 
 - [`src/hmda_reliability/review_ai/evaluation/__init__.py`](../../src/hmda_reliability/review_ai/evaluation/__init__.py)
   - 독스트링 3행
   - `__all__`, 22–34행
 
-#### Evidence
+#### F2 Evidence
 
 독스트링은 평가 기준표와 비교 모델만 공개한다고 하지만, `__all__`은 `compare_review_value`, `render_review_value_comparison_markdown`, `review_output_digest`와 평가·점수 열거형 및 모델도 공개한다.
 
-#### Impact
+#### F2 Impact
 
 하위 모듈의 공개 경계를 설명하는 독스트링이 일부 API를 누락해 사용자가 가져올 수 있는 평가·비교 기능을 놓칠 수 있다.
 
-#### Action
+#### F2 Action
 
 기준표와 모델뿐 아니라 비교 함수, 요약 렌더러, digest 함수도 포함하는 공개 표면이라고 설명한다.
 
