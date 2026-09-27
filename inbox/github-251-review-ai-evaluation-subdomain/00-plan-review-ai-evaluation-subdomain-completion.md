@@ -10,7 +10,7 @@ description: PR 251의 주 리팩터링을 마무리하기 위해 남은 테스�
 
 ## 남은 작업
 
-1. **F1 테스트 공백 해소:** [셀프 리뷰 09](../../github-248-review-ai-langfuse-evaluation/09-review-review-ai-evaluation-subdomain-self-review.md)에서 재현한 nested comparison JSON 호환성 공백을 고친다. Base `6e64cc70a5dca8ff8cd423a9f2240848f4b2e7dd`의 대표 JSON을 독립 golden으로 고정하고 `criterion_deltas`의 전체 key/value와 enum serialization을 비교한다. 현재 모델로 expected 값을 생성하지 않는다.
+1. **F1 테스트 공백 해소:** [셀프 리뷰 09](../github-248-review-ai-langfuse-evaluation/09-review-review-ai-evaluation-subdomain-self-review.md)에서 재현한 nested comparison JSON 호환성 공백을 고친다. Base `6e64cc70a5dca8ff8cd423a9f2240848f4b2e7dd`의 대표 JSON을 독립 golden으로 고정하고 `criterion_deltas`의 전체 key/value와 enum serialization을 비교한다. 현재 모델로 expected 값을 생성하지 않는다.
 1. **Mutation 검출 확인:** `baseline_score` 또는 `candidate_score` 이름 변경 mutation에서 새 golden 검사가 실패하는지 확인한다. 정상 구현에서는 통과해야 한다.
 1. **변경 후 검증 갱신:** 영향받은 evaluation/Langfuse 및 Review AI/Runtime AI 테스트와 project type/lint, Tach, strict OpenSpec, 변경 Markdown/Inbox 검사를 수정된 exact head에서 다시 실행하고 결과를 기록한다.
 1. **전체 suite 결과 정리:** 이전 전체 pytest는 153 passed 뒤 Airflow child 60초 timeout으로 중단됐다. 수정 후 전체 suite를 다시 실행해 결과를 갱신한다. 같은 orchestration timeout이 재현되면 PR 변경과의 관계를 조사해 별도 원인 또는 환경 제한으로 명시하고 전체 suite pass라고 주장하지 않는다.
