@@ -23,6 +23,11 @@ dependencies = [
   "sqlglot>=30.14.0",
 ]
 
+[project.optional-dependencies]
+langfuse = [
+  "langfuse==4.15.6",
+]
+
 [dependency-groups]
 dev = [
   "hypothesis>=6.165.0",
