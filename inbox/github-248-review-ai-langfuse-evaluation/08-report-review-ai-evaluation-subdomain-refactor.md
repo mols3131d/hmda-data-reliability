@@ -40,7 +40,7 @@ Quality reviewer는 새 package export, optional Langfuse child 경계, launcher
 
 실제 Langfuse endpoint/project가 없어 remote ingestion, 배포 UI와 human rubric 평가도 **Not Verified**다. 실행 결과 `submitted_unverified`는 전달 확인이나 utility acceptance를 뜻하지 않는다.
 
-PR #248은 plan revision과 CI Lite #1094 결과를 반영해 body를 갱신했으며 `open`, Draft 상태로 유지된다. 새 구현 branch는 그 PR을 base로 쌓이며 독립 Draft PR의 CI가 통과하기 전에는 구현 CI 상태를 주장하지 않는다.
+PR #248은 plan revision과 CI Lite #1094 결과를 반영해 body를 갱신했으며 `open`, Draft 상태로 유지된다. 새 구현 branch는 그 PR을 base로 쌓인다. CI Lite는 PR base가 `main`일 때만 실행되므로 #251이 #248 branch를 base로 둔 동안 workflow run은 생성되지 않는다. #248 merge 후 #251을 `main`으로 retarget하고 CI Lite를 다시 확인한다.
 
 ```yaml
 revision:
