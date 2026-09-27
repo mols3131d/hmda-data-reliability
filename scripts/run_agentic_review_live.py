@@ -239,7 +239,10 @@ def _export_live_projection(
 
 
 def _project_revision(environment: Mapping[str, str]) -> str:
-    """설정값을 쓰거나 `auto`이면 작업 폴더가 깨끗한 경우 Git HEAD를 구한다."""
+    """설정값을 반환하거나, `auto`이면 tracked 파일이 깨끗할 때 Git HEAD를 반환한다.
+
+    자동 판정은 untracked 파일을 검사하지 않는다.
+    """
     configured = environment.get("HMDA_AGENTIC_REVIEW_PROJECT_REVISION", "").strip()
     if configured and configured.lower() != "auto":
         return configured

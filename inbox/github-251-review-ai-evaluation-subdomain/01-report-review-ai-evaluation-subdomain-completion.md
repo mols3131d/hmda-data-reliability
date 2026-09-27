@@ -14,7 +14,7 @@ description: PR 251의 main 통합, 전체 comparison golden 검증 보강과 �
 - **Current base:** `5532dca2fd93696d40ba870471fa2359c5662335` (`main`, 부모 #248의 squash merge).
 - **Integration commit:** `24419a2`; 최신 main의 tree는 기존 stacked parent `6e64cc70a5dca8ff8cd423a9f2240848f4b2e7dd`와 같았다. Merge conflict는 renamed module import/reference와 새 test 경로에서 발생했다. 새 경로를 유지하고 이전 adapter의 재등장을 제거한 결과 integration commit의 tree는 직전 branch tree와 같다.
 - **Reviewed code head:** `5bde8a45e8af26f0f418634a862157f251fca9ef`.
-- 이 code head 뒤의 완료 task, 계획과 보고서 갱신은 문서 변경이다. 아래 실행 결과와 독립 리뷰를 그 문서 commit에서 다시 실행한 결과로 표현하지 않는다.
+- 아래 독립 리뷰와 실행 결과는 이 code head에만 적용된다. 이후 `a2d85c1`은 Python 파일 다섯 개를 수정하고 선택적 Langfuse 투영 DEBUG 로그를 추가했다. 따라서 이후 source head에 대한 검증으로 해석하지 않는다. 이후 source 검토는 [로컬 코드 리뷰](02-review-review-ai-evaluation-subdomain-localized-code.md)와 [고강도 리뷰](03-review-review-ai-evaluation-subdomain-high-intensity.md)를 참조한다.
 
 ## F1 Resolution
 
