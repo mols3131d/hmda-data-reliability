@@ -1,16 +1,16 @@
 ---
 type: plan
-title: Review AI Evaluation Test Layout
-description: Review AI evaluation 테스트와 golden fixture를 하위 도메인으로 묶고 검증 근거를 유지하는 이동 계획이다.
+title: Review AI Evaluation Test Layout Improvement Plan
+description: 셀프 리뷰를 반영해 Review AI evaluation 테스트와 golden fixture를 하위 도메인으로 묶는 이동 계획이다.
 ---
 
-# Review AI Evaluation Test Layout
+# Review AI Evaluation Test Layout Improvement Plan
 
 ## Goal
 
 평가 계약과 선택적 Langfuse adapter의 테스트를 `tests/review_ai/evaluation/`에 모아 소유 범위를 찾고 따로 실행하기 쉽게 한다. **테스트 시나리오·assertion·marker와 production 동작은 바꾸지 않는다.** 이는 `src/`를 기계적으로 복제하는 작업이 아니라, 두 평가 테스트와 그 golden fixture가 이미 공유하는 검증 경계를 드러내는 작은 경로 변경이다.
 
-테스트·source 기준은 PR #251 head `4de6d33e9c2fe626d9ce78aa9ab1ef5330bdf396`이다. 구현 시 현재 base/head와 다른 작업의 변경을 다시 확인한다. 테스트 설계의 현재 근거는 [research](research.md)가 소유한다.
+테스트·source 기준은 PR #251 head `4de6d33e9c2fe626d9ce78aa9ab1ef5330bdf396`이다. 구현 시 현재 base/head와 다른 작업의 변경을 다시 확인한다. 테스트 설계의 현재 근거는 [research](00-research.md)가 소유한다.
 
 ## Target Layout
 

@@ -42,4 +42,4 @@ PR #251의 평가 테스트를 `tests/review_ai/evaluation/`으로 묶을 때 �
 
 ## Implications
 
-수집 비교에서는 파일 경로가 달라지는 pytest node ID를 그대로 비교할 수 없다. 파일 경로를 매핑한 뒤 함수명·parameter ID와 marker를 대조해야 한다. 테스트 배치와 문서 경로 수정의 실행 순서, CI와 review 근거 갱신은 [plan](plan.md)이 소유한다.
+수집 비교에서는 파일 경로가 달라지는 pytest node ID를 그대로 비교할 수 없다. 파일 경로를 매핑한 뒤 함수명·parameter ID와 marker를 대조해야 한다. 테스트 배치와 문서 경로 수정의 실행 순서, CI와 review 근거 갱신은 [improvement plan](02-plan-improvement.md)이 소유한다.
