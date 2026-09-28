@@ -28,9 +28,9 @@ description: PR 251의 main 통합, 전체 comparison golden 검증 보강과 �
 
 ## F1 Resolution
 
-새 [static fixture](../../tests/review_ai/fixtures/utility_comparison_6e64cc7.json)는 pre-refactor revision `6e64cc70a5dca8ff8cd423a9f2240848f4b2e7dd`의 `src`와 기존 test helper를 temporary archive에서 실행해 얻었다. Historical `evaluation.py`가 실제 import origin인지 확인한 뒤 compared와 case-version mismatch의 blocked JSON을 캡처했다. 현재 `ReviewValue*` 모델로 expected 값을 생성하지 않았다.
+새 [static fixture](https://github.com/mols3131d/hmda-data-reliability/blob/5bde8a45e8af26f0f418634a862157f251fca9ef/tests/review_ai/fixtures/utility_comparison_6e64cc7.json)는 pre-refactor revision `6e64cc70a5dca8ff8cd423a9f2240848f4b2e7dd`의 `src`와 기존 test helper를 temporary archive에서 실행해 얻었다. Historical `evaluation.py`가 실제 import origin인지 확인한 뒤 compared와 case-version mismatch의 blocked JSON을 캡처했다. 현재 `ReviewValue*` 모델로 expected 값을 생성하지 않았다.
 
-[Golden test](../../tests/review_ai/test_utility_evaluation.py)는 nested score/delta keys, criterion 및 decision/status enum 문자열, embedded outputs, attribution과 두 output digest를 포함한 전체 JSON을 비교한다. Human decision `accept`, `reject`, `no_change`는 test의 literal 값으로 검증한다. JSON text 비교는 Python equality가 같다고 보는 bool/int 및 int/float 차이도 검출한다.
+[Golden test](https://github.com/mols3131d/hmda-data-reliability/blob/5bde8a45e8af26f0f418634a862157f251fca9ef/tests/review_ai/test_utility_evaluation.py)는 nested score/delta keys, criterion 및 decision/status enum 문자열, embedded outputs, attribution과 두 output digest를 포함한 전체 JSON을 비교한다. Human decision `accept`, `reject`, `no_change`는 test의 literal 값으로 검증한다. JSON text 비교는 Python equality가 같다고 보는 bool/int 및 int/float 차이도 검출한다.
 
 Repository 밖 temporary source copy에서 `baseline_score`를 `before_score`로, `candidate_score`를 `after_score`로 함께 바꾸고 import origin을 확인한 뒤 동일 mutation을 두 test revision에 적용했다. 기존 테스트는 **15 passed**로 변경을 놓쳤고, 보강된 테스트는 golden assertion에서 **4 failed, 15 passed**였다. 정상 repository의 보강된 evaluation module은 **19 passed**다. Mutation은 production source에 반영하지 않았으며 temporary copy는 제거했다.
 

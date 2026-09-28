@@ -226,7 +226,7 @@ Human setup은 다음 순서로 수행한다.
 선택 SDK의 data URI media 변환 차단도 project 없이 확인하려면 다음 network-free test를 실행한다.
 
 ```bash
-uv run --extra langfuse pytest tests/review_ai/test_langfuse_projection.py::test_pinned_langfuse_media_processor_keeps_data_uri_when_disabled
+uv run --extra langfuse pytest tests/review_ai/evaluation/test_langfuse_projection.py::test_pinned_langfuse_media_processor_keeps_data_uri_when_disabled
 ```
 
 점수 판단은 사람이 수행한다. Annotation queue는 수동 setup으로 충분하며 importer, automatic judge, prompt 관리와 candidate/recovery 승인은 포함하지 않는다. Offline tests와 SDK smoke는 실제 ingestion, 배포 UI와 사람의 utility 판단을 증명하지 않는다. 실제 proof가 필요하면 동일 implementation revision에서 원격 observation 확인과 다섯 항목 채점을 수행하고 별도 evidence로 기록한다.

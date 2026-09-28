@@ -13,7 +13,7 @@ description: PR #251 CI에서 건너뛴 Langfuse SDK 테스트의 의미와 CI �
 ## Current Evidence
 
 - **Revision:** PR #251 head `957b29341ed0f9abb35608aa6cdeb54670fb41cf` 기준 [CI Lite run 36371778842](https://github.com/mols3131d/hmda-data-reliability/actions/runs/36371778842)는 `186 passed, 1 skipped`로 성공했다.
-- **Skipped test:** [`test_pinned_langfuse_media_processor_keeps_data_uri_when_disabled()`](../../tests/review_ai/test_langfuse_projection.py)은 `langfuse._task_manager.media_manager`를 `pytest.importorskip()`으로 가져온다. CI 로그의 skip 사유는 `No module named 'langfuse'`다.
+- **Skipped test:** [`test_pinned_langfuse_media_processor_keeps_data_uri_when_disabled()`](https://github.com/mols3131d/hmda-data-reliability/blob/957b29341ed0f9abb35608aa6cdeb54670fb41cf/tests/review_ai/test_langfuse_projection.py)은 `langfuse._task_manager.media_manager`를 `pytest.importorskip()`으로 가져온다. CI 로그의 skip 사유는 `No module named 'langfuse'`다.
 - **Cause:** [CI Lite](../../.github/workflows/ci-lite.yml)는 `uv sync --locked`를 실행한다. `langfuse==4.15.6`은 [`pyproject.toml`](../../pyproject.toml)의 선택 의존성이라 기본 동기화에 포함되지 않는다.
 - **Observable contract:** 테스트는 `LANGFUSE_MEDIA_UPLOAD_ENABLED=false`에서 SDK의 media processor에 data URI를 전달해 output이 그대로 남고 media upload queue가 비어 있는지 확인한다. Dummy client를 사용하므로 실제 Langfuse endpoint나 credential은 필요하지 않다. 이 검사는 exporter의 원격 수집, UI 표시 또는 human annotation을 증명하지 않는다.
 

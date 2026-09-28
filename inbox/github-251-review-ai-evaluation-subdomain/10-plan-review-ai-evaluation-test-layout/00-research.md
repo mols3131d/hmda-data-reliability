@@ -7,7 +7,7 @@ description: 평가 테스트를 하위 디렉터리로 옮길 때 기존 테스
 # Review AI Evaluation Test Layout Research
 
 > [!NOTE]
-> `test_utility_evaluation.py`, `test_langfuse_projection.py`와 golden fixture는 evaluation 계약이라는 소유 범위로 묶을 수 있다. 변경의 검증 초점은 새 시나리오 추가가 아니라 기존 52개 case, marker, 독립 oracle과 외부 경계의 보존이다. 실제 이동 후 수집·실행은 아직 확인하지 않았다.
+> `test_utility_evaluation.py`, `test_langfuse_projection.py`와 golden fixture는 evaluation 계약이라는 소유 범위로 묶을 수 있다. 변경의 검증 초점은 새 시나리오 추가가 아니라 기존 52개 case, marker, 독립 oracle과 외부 경계의 보존이다. 조사 이후 수행한 이동 검증은 [bundle status](README.md)에 기록했다.
 
 ## Question
 
@@ -22,13 +22,13 @@ PR #251의 평가 테스트를 `tests/review_ai/evaluation/`으로 묶을 때 �
 
 ### Evaluation Tests Share An Owner
 
-[평가 계약 테스트](../../../tests/review_ai/test_utility_evaluation.py)는 `review_ai.evaluation`의 공개 API, rubric, comparison, digest와 fail-closed behavior를 검증한다. [Langfuse projection 테스트](../../../tests/review_ai/test_langfuse_projection.py)는 같은 하위 도메인의 선택 adapter, annotation, child process와 failure/isolation 경계를 검증한다. 두 module은 각각 `evaluation/value.py`와 `evaluation/langfuse.py`에 대응하며, 기존 수집 결과는 합계 52개 case다. 이 공통 소유 범위가 새 test area를 만드는 근거다. 단순한 `src/` 디렉터리 복제가 근거는 아니다.
+[평가 계약 테스트](../../../tests/review_ai/evaluation/test_utility_evaluation.py)는 `review_ai.evaluation`의 공개 API, rubric, comparison, digest와 fail-closed behavior를 검증한다. [Langfuse projection 테스트](../../../tests/review_ai/evaluation/test_langfuse_projection.py)는 같은 하위 도메인의 선택 adapter, annotation, child process와 failure/isolation 경계를 검증한다. 두 module은 각각 `evaluation/value.py`와 `evaluation/langfuse.py`에 대응하며, 기존 수집 결과는 합계 52개 case다. 이 공통 소유 범위가 새 test area를 만드는 근거다. 단순한 `src/` 디렉터리 복제가 근거는 아니다.
 
 [Root 공개 API 테스트](../../../tests/review_ai/test_public_surface.py)와 [live harness 테스트](../../../tests/review_ai/test_live_harness.py)는 평가 package 내부만의 계약을 소유하지 않는다. 따라서 두 파일을 같은 이동 단위로 취급할 근거는 없다.
 
 ### Golden Fixture Is An Independent Oracle
 
-`test_comparison_json_matches_pre_refactor_golden`은 [고정 JSON](../../../tests/review_ai/fixtures/utility_comparison_6e64cc7.json)의 전체 serialized comparison을 비교한다. 이 fixture는 pre-refactor revision에서 캡처했으며 current model로 expected 값을 재생성하지 않았다는 [완료 보고서](../01-report-review-ai-evaluation-subdomain-completion.md)의 근거가 있다. Test는 `Path(__file__).with_name("fixtures")`로 파일을 읽으므로 test와 fixture를 같은 상대 구조로 이동하면 oracle의 내용은 바꿀 필요가 없다. Fixture byte나 expected JSON을 수정하면 단순 재배치라는 전제가 깨진다.
+`test_comparison_json_matches_pre_refactor_golden`은 [고정 JSON](../../../tests/review_ai/evaluation/fixtures/utility_comparison_6e64cc7.json)의 전체 serialized comparison을 비교한다. 이 fixture는 pre-refactor revision에서 캡처했으며 current model로 expected 값을 재생성하지 않았다는 [완료 보고서](../01-report-review-ai-evaluation-subdomain-completion.md)의 근거가 있다. Test는 `Path(__file__).with_name("fixtures")`로 파일을 읽으므로 test와 fixture를 같은 상대 구조로 이동하면 oracle의 내용은 바꿀 필요가 없다. Fixture byte나 expected JSON을 수정하면 단순 재배치라는 전제가 깨진다.
 
 ### Test Levels And Evidence Limits Remain Distinct
 
