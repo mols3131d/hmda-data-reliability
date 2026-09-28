@@ -7,9 +7,9 @@ description: PR #251 평가 테스트 재배치 계획의 실행 가능성, 검�
 # Review AI Evaluation Test Layout Plan Self-Review
 
 > [!IMPORTANT]
-> **Revise before implementation** — 세 파일을 `tests/review_ai/evaluation/`으로 묶는 방향과 CI 선택은 타당하다. 다만 PR 분리 조건은 repository policy와 맞춰야 하고, 수집 결과 비교 기준과 이전 보고서의 링크 처리도 명시해야 한다. 이는 작성자의 셀프 리뷰이며 독립 리뷰가 아니다.
+> **Revise before implementation at the reviewed revision** — 세 파일을 `tests/review_ai/evaluation/`으로 묶는 방향과 CI 선택은 타당하다. 다만 최초 계획의 PR 분리 조건, 수집 결과 비교 기준과 이전 보고서 링크 처리는 수정이 필요했다. 이는 작성자의 셀프 리뷰이며 독립 리뷰가 아니다.
 
-- **Target** — [test layout plan](10-plan-review-ai-evaluation-test-layout.md)
+- **Target** — [reviewed test layout plan](https://github.com/mols3131d/hmda-data-reliability/blob/0778a3f7a1ab9f65fb32a565a213600cc2540e33/inbox/github-251-review-ai-evaluation-subdomain/10-plan-review-ai-evaluation-test-layout.md)
 - **Revision** — 계획서 commit `0778a3f7a1ab9f65fb32a565a213600cc2540e33`; PR #251 base `5532dca2fd93696d40ba870471fa2359c5662335`
 - **Scope** — 테스트 이동 범위, pytest 수집 비교, 기존 문서 링크, CI 경로 선택과 PR ownership. 테스트 파일은 이동하지 않았다.
 
@@ -27,8 +27,8 @@ description: PR #251 평가 테스트 재배치 계획의 실행 가능성, 검�
 
 #### F1 Locations
 
-- [Test layout plan](10-plan-review-ai-evaluation-test-layout.md) — 마지막 문단
-- [Pull Request policy](../../docs/development/vcs-git/pull-request.md) — Scope와 Lifecycle
+- [Reviewed test layout plan](https://github.com/mols3131d/hmda-data-reliability/blob/0778a3f7a1ab9f65fb32a565a213600cc2540e33/inbox/github-251-review-ai-evaluation-subdomain/10-plan-review-ai-evaluation-test-layout.md) — 마지막 문단
+- [Pull Request policy](../../../docs/development/vcs-git/pull-request.md) — Scope와 Lifecycle
 
 #### F1 Evidence
 
@@ -42,7 +42,7 @@ description: PR #251 평가 테스트 재배치 계획의 실행 가능성, 검�
 
 #### F2 Locations
 
-- [Test layout plan](10-plan-review-ai-evaluation-test-layout.md) — Execution Plan 4, Acceptance And Boundary 1
+- [Reviewed test layout plan](https://github.com/mols3131d/hmda-data-reliability/blob/0778a3f7a1ab9f65fb32a565a213600cc2540e33/inbox/github-251-review-ai-evaluation-subdomain/10-plan-review-ai-evaluation-test-layout.md) — Execution Plan 4, Acceptance And Boundary 1
 
 #### F2 Evidence
 
@@ -56,8 +56,8 @@ description: PR #251 평가 테스트 재배치 계획의 실행 가능성, 검�
 
 #### F3 Locations
 
-- [Test layout plan](10-plan-review-ai-evaluation-test-layout.md) — Execution Plan 2
-- [Completion report](01-report-review-ai-evaluation-subdomain-completion.md), [test design review](07-review-review-ai-evaluation-test-design.md), [CI skip report](08-report-review-ai-langfuse-ci-skip-tradeoffs.md)
+- [Reviewed test layout plan](https://github.com/mols3131d/hmda-data-reliability/blob/0778a3f7a1ab9f65fb32a565a213600cc2540e33/inbox/github-251-review-ai-evaluation-subdomain/10-plan-review-ai-evaluation-test-layout.md) — Execution Plan 2
+- [Completion report](../01-report-review-ai-evaluation-subdomain-completion.md), [test design review](../07-review-review-ai-evaluation-test-design.md), [CI skip report](../08-report-review-ai-langfuse-ci-skip-tradeoffs.md)
 
 #### F3 Evidence
 
@@ -76,3 +76,7 @@ description: PR #251 평가 테스트 재배치 계획의 실행 가능성, 검�
 | ✅ Pass | 기준 pytest 수집 | 현재 두 module은 52개 case로 수집된다. |
 | ⚪ Not Verified | 이동 후 수집·실행 | 이 셀프 리뷰에서는 테스트 파일을 이동하거나 새 경로의 pytest를 실행하지 않았다. |
 | ⚪ Not Verified | 독립 리뷰 | 작성자 본인의 계획을 같은 맥락에서 검토했다. |
+
+## Resolution
+
+[현재 계획](plan.md)은 F1의 PR 분리 기준을 같은 변경 목적으로 고쳤다. F2는 pytest node ID의 경로만 매핑해 비교하도록 했고, F3는 영향을 받는 01·07·08 보고서를 명시했다. 이 문서의 finding과 verdict는 위에 고정한 최초 계획 revision에 대한 기록이다. 수정된 계획의 실제 테스트 이동과 새 경로 실행은 아직 검증하지 않았다.
