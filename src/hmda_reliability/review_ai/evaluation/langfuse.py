@@ -65,7 +65,7 @@ def project_invocation(
         "status": record.status.value,
     }
     payload: dict[str, Any] = {"metadata": metadata}
-    if record.canonical_input != expected_input:
+    if _encode(record.canonical_input) != _encode(expected_input):
         raise ValueError("record does not match synthetic input")
     if record.status is AgenticReviewStatus.ACCEPTED:
         if record.parsed_output is None or record.validation is None:
