@@ -26,7 +26,7 @@ jobs:
 
       - name: Classify changes
         id: scope
-        run: bash .github/workflows/classify_changes.sh "$GITHUB_OUTPUT"
+        run: bash scripts/ci/classify_changes.sh "$GITHUB_OUTPUT"
 
       - name: Set up rumdl
         if: steps.scope.outputs.markdown == 'true'
@@ -37,46 +37,15 @@ jobs:
 
       - name: Format changed Markdown and validate docs
         if: steps.scope.outputs.markdown == 'true'
-        run: |
-          set -euo pipefail
-          mapfile -t files < <(
-            bash .github/workflows/classify_changes.sh --markdown-paths
-          )
-          if ((${#files[@]})); then
-            rumdl fmt "${files[@]}"
-            if ! git diff --quiet -- "${files[@]}"; then
-              echo "Markdown formatting suggestions (non-blocking):"
-              git diff -- "${files[@]}"
-              {
-                echo "### Markdown formatting suggestions"
-                echo
-                echo "rumdl found safe formatting changes. CI applied them only in its disposable workspace; formatting-only drift does not fail this check."
-                echo
-                echo '```diff'
-                git diff -- "${files[@]}"
-                echo '```'
-              } >> "$GITHUB_STEP_SUMMARY"
-            fi
-
-            docs=()
-            for path in "${files[@]}"; do
-              [[ "$path" == docs/* ]] && docs+=("$path")
-            done
-            if ((${#docs[@]})); then
-              rumdl check "${docs[@]}"
-            fi
-          fi
+        run: bash scripts/ci/markdown.sh
 
       - name: Validate changed Inbox artifacts
         if: steps.scope.outputs.inbox == 'true'
         run: |
           set -euo pipefail
-          mapfile -t files < <(
-            git diff --name-only HEAD^1 HEAD -- inbox/ \
-              | while IFS= read -r path; do
-                  [[ "$path" == *.md && -f "$path" ]] && printf '%s\n' "$path"
-                done
-          )
+          source scripts/ci/changed_files.sh
+          files=()
+          collect_changed_files files HEAD^1 HEAD 'inbox/*.md'
           if ((${#files[@]})); then
             python3 scripts/validate_inbox_artifacts.py "${files[@]}"
           fi
@@ -88,35 +57,7 @@ jobs:
           BULK: ${{ steps.scope.outputs.openspec_bulk }}
           CHANGE_TARGETS: ${{ steps.scope.outputs.openspec_change_targets }}
           SPEC_TARGETS: ${{ steps.scope.outputs.openspec_spec_targets }}
-        run: |
-          set -euo pipefail
-          validate=(
-            npm exec --yes --package @fission-ai/openspec@1.12.0 --
-            openspec validate
-          )
-
-          if [[ "$BULK" == true ]]; then
-            "${validate[@]}" --all --strict
-          else
-            read -r -a specs <<< "$SPEC_TARGETS"
-            for target in "${specs[@]}"; do
-              "${validate[@]}" "$target" --type spec --strict
-            done
-
-            read -r -a changes <<< "$CHANGE_TARGETS"
-            for target in "${changes[@]}"; do
-              "${validate[@]}" "$target" --type change --strict
-            done
-
-            if [[ "$ARCHIVED" == true ]]; then
-              "${validate[@]}" --archived
-            fi
-
-            if ((${#specs[@]} == 0 && ${#changes[@]} == 0)) && [[ "$ARCHIVED" != true ]]; then
-              echo "OpenSpec changed paths were not assigned a validation target" >&2
-              exit 1
-            fi
-          fi
+        run: bash scripts/ci/openspec.sh
 
       - name: Set up Python
         if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true' || steps.scope.outputs.tach == 'true'
@@ -132,12 +73,9 @@ jobs:
         if: steps.scope.outputs.json == 'true'
         run: |
           set -euo pipefail
-          mapfile -t files < <(
-            git diff --name-only HEAD^1 HEAD -- '*.json' '*.jsonc' \
-              | while IFS= read -r path; do
-                  [[ -f "$path" ]] && printf '%s\n' "$path"
-                done
-          )
+          source scripts/ci/changed_files.sh
+          files=()
+          collect_changed_files files HEAD^1 HEAD '*.json' '*.jsonc'
           if ((${#files[@]})); then
             python scripts/biome.py check "${files[@]}"
           fi
@@ -146,12 +84,9 @@ jobs:
         if: steps.scope.outputs.toml == 'true'
         run: |
           set -euo pipefail
-          mapfile -t files < <(
-            git diff --name-only HEAD^1 HEAD -- '*.toml' \
-              | while IFS= read -r path; do
-                  [[ -f "$path" ]] && printf '%s\n' "$path"
-                done
-          )
+          source scripts/ci/changed_files.sh
+          files=()
+          collect_changed_files files HEAD^1 HEAD '*.toml'
           if ((${#files[@]})); then
             python scripts/tombi.py format --check "${files[@]}"
             python scripts/tombi.py lint "${files[@]}"
@@ -193,29 +128,7 @@ jobs:
         env:
           FULL_TYPE: ${{ steps.scope.outputs.full_type }}
           TYPE_TARGETS: ${{ steps.scope.outputs.type_targets }}
-        run: |
-          set -euo pipefail
-          mapfile -t files < <(
-            git diff --name-only HEAD^1 HEAD -- '*.py' \
-              | while IFS= read -r path; do
-                  [[ -f "$path" ]] && printf '%s\n' "$path"
-                done
-          )
-          if ((${#files[@]})); then
-            uv run --no-sync ruff check "${files[@]}"
-            uv run --no-sync ruff format --check "${files[@]}"
-          fi
-
-          if [[ "$FULL_TYPE" == true ]]; then
-            uv run --no-sync ty check
-            exit
-          fi
-
-          read -r -a type_targets <<< "$TYPE_TARGETS"
-          type_targets+=("${files[@]}")
-          if ((${#type_targets[@]})); then
-            uv run --no-sync ty check "${type_targets[@]}"
-          fi
+        run: bash scripts/ci/python.sh
 
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
@@ -231,33 +144,8 @@ jobs:
           FULL_TESTS: ${{ steps.scope.outputs.full_tests }}
           FULL_UNIT: ${{ steps.scope.outputs.full_unit }}
           TARGETS: ${{ steps.scope.outputs.targets }}
-        run: |
-          set -euo pipefail
-          common=(
-            uv run --no-sync pytest
-            -q
-            -p no:sugar
-            --color=no
-            --tb=short
-            -ra
-          )
-
-          if [[ "$FULL_TESTS" == true ]]; then
-            "${common[@]}" -n auto -m "not memory and not stress"
-            exit
-          elif [[ "$FULL_UNIT" == true ]]; then
-            "${common[@]}" -n auto -m "unit and not memory and not stress"
-            exit
-          fi
-
-          read -r -a targets <<< "$TARGETS"
-          if ((${#targets[@]} == 0)); then
-            exit
-          elif ((${#targets[@]} >= 3)); then
-            "${common[@]}" -n auto -m "not memory and not stress" "${targets[@]}"
-          else
-            "${common[@]}" -m "not memory and not stress" "${targets[@]}"
-          fi
+          CI_TARGETS: ${{ steps.scope.outputs.ci_targets }}
+        run: bash scripts/ci/pytest.sh
 
       - name: Run dependency runtime smoke
         if: steps.scope.outputs.runtime_smoke == 'true'

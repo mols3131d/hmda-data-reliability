@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
+# 저장소 루트에서 변경 경로를 검증 선택 값과 테스트 대상으로 분류한다.
+# 기본 입력은 HEAD^1과 HEAD의 차이이며, --stdin은 줄 단위 경로 입력을 받는다.
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/classify_openspec.sh"
 
 output_target=""
 use_stdin=false
@@ -23,9 +26,12 @@ get_paths() {
   if [[ "$use_stdin" == "true" ]]; then
     cat
   else
-    git diff --name-only HEAD^1 HEAD
+    git -c core.quotePath=false diff --name-only HEAD^1 HEAD
   fi
 }
+
+# 비교 실패가 반복문의 입력 처리에 가려지지 않도록 먼저 성공 여부를 확인한다.
+paths=$(get_paths)
 
 is_markdown_validation_path() {
   local path="$1"
@@ -40,12 +46,13 @@ is_markdown_validation_path() {
   esac
 }
 
+# 이 모드는 현재 존재하는 Markdown 경로만 출력하고 검증 선택 값은 출력하지 않는다.
 if [[ "$list_markdown_paths" == "true" ]]; then
   while IFS= read -r path; do
     [[ -z "$path" ]] && continue
     [[ -f "$path" ]] || continue
     is_markdown_validation_path "$path" && printf '%s\n' "$path"
-  done < <(get_paths)
+  done <<< "$paths"
   exit 0
 fi
 
@@ -68,8 +75,10 @@ full_type=false
 openspec_spec_targets=()
 openspec_change_targets=()
 targets=()
+ci_targets=()
 type_targets=()
 
+# 대상 배열은 최초 선택 순서를 유지하면서 중복을 제거한다.
 add_target() {
   local target="$1"
   local existing
@@ -77,6 +86,17 @@ add_target() {
     [[ "$existing" == "$target" ]] && return
   done
   targets+=("$target")
+}
+
+# 전체 unit 검사에서도 CI의 non-unit 계약 검사가 빠지지 않도록 별도로 기록한다.
+add_ci_target() {
+  local target="$1"
+  local existing
+  for existing in "${ci_targets[@]}"; do
+    [[ "$existing" == "$target" ]] && return
+  done
+  ci_targets+=("$target")
+  add_target "$target"
 }
 
 add_type_target() {
@@ -95,113 +115,6 @@ add_focused_test() {
   add_type_target "$target"
 }
 
-add_openspec_spec_name() {
-  local target="$1"
-  local existing
-  for existing in "${openspec_spec_targets[@]}"; do
-    [[ "$existing" == "$target" ]] && return
-  done
-  openspec_spec_targets+=("$target")
-}
-
-add_openspec_change_name() {
-  local target="$1"
-  local existing
-  for existing in "${openspec_change_targets[@]}"; do
-    [[ "$existing" == "$target" ]] && return
-  done
-  openspec_change_targets+=("$target")
-}
-
-mark_full_test_scope() {
-  tests=true
-  full_tests=true
-  full_unit=true
-  full_type=true
-}
-
-is_valid_openspec_name() {
-  [[ "$1" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]
-}
-
-add_related_openspec_changes() {
-  local capability="$1"
-  local change_dir
-  local change
-  local related_path
-
-  if [[ ! -d openspec/changes || -L openspec/changes ]]; then
-    mark_full_test_scope
-    return
-  fi
-
-  for change_dir in openspec/changes/*; do
-    [[ -e "$change_dir" || -L "$change_dir" ]] || continue
-    if [[ -L "$change_dir" ]]; then
-      mark_full_test_scope
-      continue
-    fi
-    [[ -d "$change_dir" ]] || continue
-
-    change="${change_dir##*/}"
-    [[ "$change" == archive ]] && continue
-    related_path="$change_dir/specs/$capability"
-
-    if [[ -L "$related_path" ]]; then
-      mark_full_test_scope
-    elif [[ -e "$related_path" && ! -d "$related_path" ]]; then
-      mark_full_test_scope
-    elif [[ -d "$related_path" ]]; then
-      if is_valid_openspec_name "$change"; then
-        add_openspec_change_name "$change"
-      else
-        mark_full_test_scope
-      fi
-    fi
-  done
-}
-
-add_openspec_spec_target() {
-  local capability="$1"
-
-  case "$capability" in
-    data-operations-*)
-      add_focused_test tests/data_operations
-      ;;
-    data-platform-dbt-analytics)
-      add_focused_test tests/dbt
-      ;;
-    data-platform-duckdb-access)
-      add_focused_test tests/data_platform
-      ;;
-    hmda-data-eda-descriptive-evidence)
-      add_focused_test tests/hmda_data/eda
-      ;;
-    hmda-data-ingestion|hmda-data-synthetic-defects)
-      add_focused_test tests/hmda_data
-      ;;
-    orchestration-pipeline)
-      add_focused_test tests/orchestration
-      add_focused_test tests/data_operations/test_quality_gate.py
-      add_focused_test tests/data_operations/test_dbt_runner.py
-      add_focused_test tests/reliability/test_quality_gate.py
-      ;;
-    reliability-agentic-review)
-      add_focused_test tests/review_ai
-      add_focused_test tests/runtime_ai
-      ;;
-    reliability-*)
-      add_focused_test tests/reliability
-      ;;
-    *)
-      openspec_bulk=true
-      mark_full_test_scope
-      ;;
-  esac
-
-  [[ "$openspec_bulk" == true ]] || add_related_openspec_changes "$capability"
-}
-
 add_domain_target() {
   local domain="$1"
   add_target "tests/$domain"
@@ -210,6 +123,7 @@ add_domain_target() {
   [[ -d "tests/$domain" ]] && add_type_target "tests/$domain"
 }
 
+# 변경 domain뿐 아니라 영향을 받는 consumer의 테스트와 타입 검사도 선택한다.
 add_domain_closure() {
   local domain="$1"
   local target
@@ -260,6 +174,7 @@ add_domain_closure() {
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
 
+  # 하나의 경로가 여러 검증을 요구할 수 있으므로 검증 종류별 조건은 독립 적용한다.
   case "$path" in
     .rulesync/rules/*|.rulesync/skills/*/SKILL.md|rulesync.jsonc|rulesync.lock|skills-lock.json|.agents/route/*|scripts/generate_agent_routes.py)
       routes=true
@@ -298,47 +213,13 @@ while IFS= read -r path; do
   esac
 
   case "$path" in
-    .python-version|tach.toml|pyproject.toml|uv.lock|src/*.py|tests/scripts/test_tach*.py|tests/review_ai/test_dependency_boundaries.py|.github/workflows/*)
+    .python-version|tach.toml|pyproject.toml|uv.lock|src/*.py|tests/scripts/test_tach*.py|tests/review_ai/test_dependency_boundaries.py)
       tach=true
       ;;
   esac
 
-  case "$path" in
-    openspec/specs/*/*)
-      openspec=true
-      capability="${path#openspec/specs/}"
-      capability="${capability%%/*}"
-      if is_valid_openspec_name "$capability" && [[ -d "openspec/specs/$capability" ]]; then
-        add_openspec_spec_name "$capability"
-        add_openspec_spec_target "$capability"
-      else
-        openspec_bulk=true
-        mark_full_test_scope
-      fi
-      ;;
-    openspec/specs/*)
-      openspec=true
-      openspec_bulk=true
-      ;;
-    openspec/changes/archive/*/*)
-      openspec=true
-      openspec_archived=true
-      ;;
-    openspec/changes/*/*)
-      openspec=true
-      change="${path#openspec/changes/}"
-      change="${change%%/*}"
-      if is_valid_openspec_name "$change" && [[ -d "openspec/changes/$change" ]]; then
-        add_openspec_change_name "$change"
-      else
-        openspec_bulk=true
-      fi
-      ;;
-    openspec/changes/*|openspec/*)
-      openspec=true
-      openspec_bulk=true
-      ;;
-  esac
+  # Spec 문서도 실행 테스트를 선택하므로 일반 Markdown 처리를 끝내기 전에 분류한다.
+  classify_openspec_path "$path"
 
   if [[ "$path" == *.md ]]; then
     if [[ -f "$path" ]] && is_markdown_validation_path "$path"; then
@@ -364,9 +245,11 @@ while IFS= read -r path; do
         add_target "tests/$target"
       done
       ;;
-    .github/workflows/*)
+    .github/workflows/*|scripts/ci/*)
+      # CI 자체 변경은 계약 테스트로 보호하되 무관한 domain 검증까지 넓히지 않는다.
       tests=true
-      add_target tests/scripts/test_ci_classifier.py
+      add_ci_target tests/scripts/test_ci_classifier.py
+      add_ci_target tests/scripts/test_ci_steps.py
       ;;
     scripts/generate_agent_routes.py)
       add_focused_test tests/scripts/test_generate_agent_routes.py
@@ -433,6 +316,12 @@ while IFS= read -r path; do
         add_target "$path"
       }
       ;;
+    tests/scripts/test_ci_classifier.py|tests/scripts/test_ci_steps.py)
+      [[ -f "$path" ]] && {
+        tests=true
+        add_ci_target "$path"
+      }
+      ;;
     tests/scripts/test_*.py)
       [[ -f "$path" ]] && {
         tests=true
@@ -462,8 +351,9 @@ while IFS= read -r path; do
       full_type=true
       ;;
   esac
-done < <(get_paths)
+done <<< "$paths"
 
+# Actions가 소비하는 key=value 형식을 유지하며 지정한 출력 파일에는 이어 쓴다.
 write_outputs() {
   echo "json=$json"
   echo "markdown=$markdown"
@@ -489,6 +379,9 @@ write_outputs() {
   echo
   printf 'targets='
   printf '%s ' "${targets[@]}"
+  echo
+  printf 'ci_targets='
+  printf '%s ' "${ci_targets[@]}"
   echo
   printf 'type_targets='
   printf '%s ' "${type_targets[@]}"

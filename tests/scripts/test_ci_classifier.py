@@ -10,7 +10,7 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CLASSIFIER_SCRIPT = REPO_ROOT / ".github" / "workflows" / "classify_changes.sh"
+CLASSIFIER_SCRIPT = REPO_ROOT / "scripts" / "ci" / "classify_changes.sh"
 
 
 def run_classifier(paths: list[str], *, repo_root: Path = REPO_ROOT) -> dict[str, str]:
@@ -82,8 +82,6 @@ def test_script_test_modify() -> None:
         ".python-version",
         "pyproject.toml",
         "uv.lock",
-        ".github/workflows/ci-lite.yml",
-        ".github/workflows/classify_changes.sh",
         "tests/scripts/test_tach.py",
         "tests/scripts/test_tach_config.py",
         "tests/review_ai/test_dependency_boundaries.py",
@@ -123,6 +121,69 @@ def test_architecture_changes_prepare_and_run_boundary_check(path: str) -> None:
 )
 def test_unrelated_changes_do_not_select_architecture(path: str) -> None:
     assert run_classifier([path])["tach"] == "false"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        ".github/workflows/ci-lite.yml",
+        "scripts/ci/classify_changes.sh",
+        "scripts/ci/classify_openspec.sh",
+        "scripts/ci/markdown.sh",
+        "scripts/ci/changed_files.sh",
+        "scripts/ci/future-helper.sh",
+    ],
+)
+def test_ci_changes_select_contract_tests_without_domain_validation(path: str) -> None:
+    out = run_classifier([path])
+
+    assert set(out["targets"].split()) == {
+        "tests/scripts/test_ci_classifier.py",
+        "tests/scripts/test_ci_steps.py",
+    }
+    assert set(out["ci_targets"].split()) == set(out["targets"].split())
+    assert out["tests"] == "true"
+    for flag in ("tach", "python", "runtime_smoke", "full_unit", "full_type"):
+        assert out[flag] == "false", flag
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        (
+            "scripts/ci/pytest.sh",
+            {"tests/scripts/test_ci_classifier.py", "tests/scripts/test_ci_steps.py"},
+        ),
+        ("tests/scripts/test_ci_steps.py", {"tests/scripts/test_ci_steps.py"}),
+    ],
+)
+def test_ci_and_dependency_changes_preserve_component_contract_targets(
+    path: str, expected: set[str]
+) -> None:
+    out = run_classifier(["uv.lock", path])
+
+    assert out["full_unit"] == "true"
+    assert out["tach"] == "true"
+    assert out["runtime_smoke"] == "true"
+    assert set(out["ci_targets"].split()) == expected
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("args", [[], ["--markdown-paths"]])
+def test_git_comparison_failure_is_not_success(tmp_path: Path, args: list[str]) -> None:
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    proc = subprocess.run(
+        ["bash", str(CLASSIFIER_SCRIPT), *args],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode != 0
+    assert "tests=false" not in proc.stdout
 
 
 @pytest.mark.unit

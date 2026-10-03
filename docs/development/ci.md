@@ -15,7 +15,7 @@ CI는 변경을 `main`에 받아들여도 되는지 판단할 **신뢰할 수 �
 
 목표는 검사를 많이 돌리는 것이 아니다. **필요한 신뢰를 가장 낮은 운영 비용으로 확보하는 것**이다.
 
-이 문서는 CI의 목적과 원칙, 반복해서 쓰는 패턴, 반드시 지켜야 할 경계를 정의한다. 정확한 trigger, job, command와 path 분류는 [`.github/workflows/`](../../.github/workflows/)가 소유한다.
+이 문서는 CI의 목적과 원칙, 반복해서 쓰는 패턴, 반드시 지켜야 할 경계를 정의한다. 정확한 trigger, job, setup과 step 조건은 [`.github/workflows/`](../../.github/workflows/)가, 변경 경로의 검증 선택과 step 실행 로직은 [`scripts/ci/`](../../scripts/ci/)가 소유한다.
 
 ## Goal
 
@@ -58,7 +58,7 @@ CI는 다음 상태를 지향한다.
 - 영향 범위를 안전하게 좁힐 수 있으면 전체 검증보다 우선한다.
 - 영향 범위를 확신할 수 없으면 검증을 넓히거나 selector를 실패시킨다.
 - 중요한 검증이 path 분류 때문에 조용히 빠지지 않게 한다.
-- 정확한 glob과 routing table은 workflow에 둔다.
+- 정확한 glob과 routing table은 [`classify_changes.sh`](../../scripts/ci/classify_changes.sh)에 둔다. OpenSpec의 capability mapping과 연관 Change 탐색은 classifier가 불러오는 [`classify_openspec.sh`](../../scripts/ci/classify_openspec.sh)에 모은다. Step 분기와 반복되는 변경 파일 수집은 독립 script로 검증하며, CI script 자체의 변경도 대응 contract test를 선택한다.
 
 ### Validation Surfaces
 
@@ -151,7 +151,7 @@ Inbox 자체의 내용과 lifecycle은 [`inbox/AGENTS.md`](../../inbox/AGENTS.md
 ### Ownership
 
 - 이 문서는 CI의 목적, 원칙, 패턴과 계약을 소유한다.
-- [`.github/workflows/`](../../.github/workflows/)는 정확한 trigger, job, command, selector와 path mapping을 소유한다.
+- [`.github/workflows/`](../../.github/workflows/)는 정확한 trigger, job, setup과 step 조건을 소유하고 [`scripts/ci/`](../../scripts/ci/)는 변경 경로의 검증 선택, step command·분기와 변경 파일 수집을 소유한다.
 - [Testing Guide](testing.md)는 test 실행 방법과 현재 CI test 동작의 사용자-facing 설명을 소유한다.
 - [Lefthook](tooling/lefthook.md)은 pre-commit과 pre-push의 기준을 소유한다.
 

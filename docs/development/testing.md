@@ -82,6 +82,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 - Markdown은 prospective change set에 포함된 현재 존재하는 changed file만 formatting한다. `docs/**`의 changed Markdown만 formatter 이후 `rumdl check`까지 수행한다. 일반 Inbox artifact를 포함한 `docs/**` 밖의 Markdown은 Markdown lint를 merge admission 조건으로 사용하지 않는다.
 - Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check를 실행한다. Type check는 source domain의 current reverse dependency closure와 직접 대응 test까지 넓히고, shared/common/runtime config 또는 unknown Python path처럼 영향 범위를 안정적으로 좁히기 어려우면 project-wide `ty check`로 fallback한다.
 - Direct-mapped repository Python script는 해당 wrapper 또는 workflow contract test를 실행한다. 여러 wrapper가 소비하는 shared script helper는 consumer script까지 type-check하고 관련 contract test를 함께 실행하며, 미매핑 script는 전체 `unit` suite와 project-wide `ty check`로 fallback한다.
+- CI workflow와 [`scripts/ci/`](../../scripts/ci/) helper 변경은 classifier와 CI step contract test를 실행한다. CI 파일이라는 이유만으로 Tach나 domain runtime suite를 선택하지 않으며 source·dependency 변경이 함께 있으면 해당 검증은 독립적으로 유지한다. 전체 `unit` fallback과 CI 변경이 겹치면 선택된 CI 계약의 non-unit test를 이어서 실행하며 전체 non-resource suite에서는 중복 실행하지 않는다. CI 계약 test 자체의 변경도 같은 보완 규칙을 따른다.
 - Domain source는 own test와 현재 reverse dependency에 따른 consumer test directory를 선택한다.
 - Python source, Tach configuration과 dependency state 변경은 [Tach](tooling/tach.md) runtime dependency check와 negative-path regression, source-level AST guard를 실행한다. Tach configuration 단독 변경도 locked environment를 준비한다.
 - Scoped domain test는 `unit`, `component`, `integration`을 유지하고 `memory`, `stress`만 제외한다.
@@ -93,6 +94,21 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 - Python dependency setup은 Python/test/dependency boundary validation이 필요할 때만 수행하고 uv cache를 재사용한다.
 
 Markdown formatting은 `rumdl fmt`를 현재 changed Markdown 전체에 대해 CI의 disposable workspace에서 실행한다. 자동 수정 가능한 formatting 차이는 병합을 막지 않고 diff를 log와 step summary에 남긴다. Formatting 이후 `rumdl check`는 `docs/**`의 changed Markdown에만 실행하며 남는 lint 위반은 실패한다. `docs/**` 밖의 Markdown에는 `rumdl check`를 실행하지 않는다. CI는 formatting 결과를 branch에 write-back하지 않으며 별도의 post-merge Markdown autofix workflow도 두지 않는다. Local runtime이 없는 기여자도 출력된 diff를 수정 근거로 사용할 수 있다.
+
+### Local CI Steps
+
+변경 경로 분류와 긴 step 분기는 [`scripts/ci/`](../../scripts/ci/)에서 Bash script로 실행한다. [`classify_changes.sh`](../../scripts/ci/classify_changes.sh)는 OpenSpec 분류 helper를 불러오며, [`changed_files.sh`](../../scripts/ci/changed_files.sh)는 step들이 공유하는 파일 수집 helper다. 두 helper는 직접 실행하지 않는다. Actions setup과 step 조건은 workflow에 유지한다. 필요한 도구와 locked Python 환경을 먼저 준비한 뒤 repository root에서 호출한다.
+
+```bash
+set -o pipefail
+git -c core.quotePath=false diff --name-only <base> <head> | bash scripts/ci/classify_changes.sh --stdin
+bash scripts/ci/markdown.sh <base> <head>
+FULL_TYPE=false TYPE_TARGETS="src/hmda_reliability/review_ai tests/review_ai" bash scripts/ci/python.sh <base> <head>
+BULK=false SPEC_TARGETS="reliability-agentic-review" bash scripts/ci/openspec.sh
+FULL_TESTS=false FULL_UNIT=false TARGETS="tests/scripts/test_ci_classifier.py tests/scripts/test_ci_steps.py" bash scripts/ci/pytest.sh
+```
+
+파일을 수집하는 step의 기본 비교는 CI prospective merge의 `HEAD^1`과 `HEAD`다. Local branch의 전체 PR 변경을 확인하려면 적절한 base/head를 명시한다. Git 비교 실패와 필수 도구 실패는 nonzero이며, Markdown formatter의 정보성 진단과 non-blocking diff는 docs lint 실패와 별도로 표시한다.
 
 ## Select Tests
 
