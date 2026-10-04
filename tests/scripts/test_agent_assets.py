@@ -58,3 +58,48 @@ def test_run_action_starts_selected_skill_with_selected_agent(
         "args": ("use", "owner/skills", "--skill", "review", "--agent", "codex"),
         "cwd": agent_assets.REPO_ROOT,
     }
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("rulesync_code", "skills_code", "routes_code", "expected"),
+    [(0, 0, 0, 0), (9, 0, 0, 9), (0, 7, 0, 7), (0, 0, 2, 2), (0, 7, 2, 7)],
+)
+def test_sync_uses_module_entrypoint_and_preserves_order_and_failures(
+    monkeypatch: pytest.MonkeyPatch,
+    rulesync_code: int,
+    skills_code: int,
+    routes_code: int,
+    expected: int,
+) -> None:
+    calls: list[object] = []
+
+    def fake_script(path: Path, *args: str) -> int:
+        calls.append((path, *args))
+        return rulesync_code
+
+    def fake_skills(action: str) -> int:
+        calls.append(("skills", action))
+        return skills_code
+
+    def fake_run(argv: list[str], *, cwd: Path) -> int:
+        calls.append((argv, cwd))
+        return routes_code
+
+    monkeypatch.setattr(agent_assets, "_run_script", fake_script)
+    monkeypatch.setattr(agent_assets, "_run_skills", fake_skills)
+    monkeypatch.setattr(agent_assets, "run", fake_run)
+
+    assert agent_assets._sync("install") == expected
+    expected_calls: list[object] = [(agent_assets.RULESYNC_SCRIPT, "install")]
+    if rulesync_code == 0:
+        expected_calls.extend(
+            [
+                ("skills", "install"),
+                (
+                    [sys.executable, "-m", "scripts.agent_routes"],
+                    agent_assets.REPO_ROOT,
+                ),
+            ]
+        )
+    assert calls == expected_calls

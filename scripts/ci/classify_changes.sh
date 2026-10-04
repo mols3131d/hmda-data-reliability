@@ -176,7 +176,7 @@ while IFS= read -r path; do
 
 	# 하나의 경로가 여러 검증을 요구할 수 있으므로 검증 종류별 조건은 독립 적용한다.
 	case "$path" in
-	.rulesync/rules/* | .rulesync/skills/*/SKILL.md | rulesync.jsonc | rulesync.lock | skills-lock.json | .agents/route/* | scripts/generate_agent_routes.py)
+	.rulesync/rules/* | .rulesync/skills/*/SKILL.md | rulesync.jsonc | rulesync.lock | skills-lock.json | .agents/route/* | scripts/agent_routes/*)
 		routes=true
 		;;
 	esac
@@ -250,8 +250,9 @@ while IFS= read -r path; do
 		tests=true
 		add_ci_target tests/scripts/ci
 		;;
-	scripts/generate_agent_routes.py)
+	scripts/agent_routes/*.py)
 		add_focused_test tests/scripts/test_generate_agent_routes.py
+		add_type_target scripts/agent_routes
 		;;
 	scripts/agent_assets.py)
 		add_focused_test tests/scripts/test_agent_assets.py

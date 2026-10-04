@@ -132,7 +132,7 @@ jobs:
 
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
-        run: uv run --no-project --with "PyYAML==6.0.3" python scripts/generate_agent_routes.py --check
+        run: uv run --no-project --with "PyYAML==6.0.3" python -m scripts.agent_routes --check
 
       - name: Validate Lefthook config
         if: steps.scope.outputs.lefthook == 'true'

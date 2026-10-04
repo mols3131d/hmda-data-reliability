@@ -65,7 +65,7 @@ def test_unrelated_changes_do_not_select_architecture(path: str) -> None:
     ("script_path", "expected_target"),
     [
         (
-            "scripts/generate_agent_routes.py",
+            "scripts/agent_routes/__main__.py",
             "tests/scripts/test_generate_agent_routes.py",
         ),
         ("scripts/agent_assets.py", "tests/scripts/test_agent_assets.py"),
@@ -90,6 +90,27 @@ def test_explicitly_mapped_scripts(script_path: str, expected_target: str) -> No
     assert out["targets"].strip() == expected_target
     assert out["full_type"] == "false"
     assert expected_target in out["type_targets"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path",
+    [
+        "scripts/agent_routes/__init__.py",
+        "scripts/agent_routes/__main__.py",
+        "scripts/agent_routes/metadata.py",
+        "scripts/agent_routes/sources.py",
+        "scripts/agent_routes/indexes.py",
+    ],
+)
+def test_route_bundle_changes_select_routes_and_focused_tests(path: str) -> None:
+    out = run_classifier([path])
+    assert out["routes"] == "true"
+    assert out["python"] == "true"
+    assert out["targets"].split() == ["tests/scripts/test_generate_agent_routes.py"]
+    assert out["full_unit"] == "false"
+    assert out["full_type"] == "false"
+    assert "scripts/agent_routes" in out["type_targets"].split()
 
 
 @pytest.mark.unit

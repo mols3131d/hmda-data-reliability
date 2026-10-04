@@ -2,13 +2,24 @@
 
 from __future__ import annotations
 
+import hashlib
+import io
 import json
+import os
+import shutil
+import socket
+import subprocess
+import sys
+from http.client import HTTPResponse
+from pathlib import Path
 from types import SimpleNamespace
 from urllib.request import Request
+from zipfile import ZipFile
 
 import pytest
 
-import scripts.generate_agent_routes as routes
+from scripts.agent_routes import RouteGenerationError, indexes, metadata, sources
+from scripts.agent_routes import __main__ as cli
 
 
 class _TextFile:
@@ -43,7 +54,7 @@ def test_normalize_github_source_accepts_supported_forms(
     source: str, expected: str
 ) -> None:
     """GitHub 소스 경로의 다양한 형태가 단일 규격으로 정규화되는지 검증한다."""
-    assert routes.normalize_github_source(source) == expected
+    assert sources.normalize_github_source(source) == expected
 
 
 @pytest.mark.unit
@@ -58,7 +69,7 @@ def test_strip_jsonc_comments_preserves_markers_inside_strings() -> None:
     }
     """
 
-    assert json.loads(routes.strip_jsonc_comments(text)) == {
+    assert json.loads(metadata.strip_jsonc_comments(text)) == {
         "url": "https://github.com/owner/repo",
         "literal": "/* keep this */",
         "enabled": True,
@@ -89,10 +100,10 @@ def test_rulesync_dependency_sources_use_locked_commit(
             }
         }
     }
-    monkeypatch.setattr(routes, "RULESYNC_CONFIG", _TextFile(config))
-    monkeypatch.setattr(routes, "RULESYNC_LOCK", _TextFile(json.dumps(lock)))
+    monkeypatch.setattr(sources, "RULESYNC_CONFIG", _TextFile(config))
+    monkeypatch.setattr(sources, "RULESYNC_LOCK", _TextFile(json.dumps(lock)))
 
-    assert routes.rulesync_dependency_sources() == {
+    assert sources.rulesync_dependency_sources() == {
         "alpha": (
             "https://raw.githubusercontent.com/owner/assets/abc123/"
             "src/rulesync/.rulesync/skills/alpha/SKILL.md"
@@ -129,14 +140,14 @@ def test_rulesync_dependency_sources_reject_missing_configured_skill(
             }
         }
     }
-    monkeypatch.setattr(routes, "RULESYNC_CONFIG", _TextFile(config))
-    monkeypatch.setattr(routes, "RULESYNC_LOCK", _TextFile(json.dumps(lock)))
+    monkeypatch.setattr(sources, "RULESYNC_CONFIG", _TextFile(config))
+    monkeypatch.setattr(sources, "RULESYNC_LOCK", _TextFile(json.dumps(lock)))
 
     with pytest.raises(
-        routes.RouteGenerationError,
+        RouteGenerationError,
         match="missing configured Skills.*beta",
     ):
-        routes.rulesync_dependency_sources()
+        sources.rulesync_dependency_sources()
 
 
 @pytest.mark.unit
@@ -164,11 +175,11 @@ def test_fetch_text_does_not_send_github_token(
         requests.append(request)
         return _Response()
 
-    monkeypatch.setattr(routes, "urlopen", fake_urlopen)
+    monkeypatch.setattr(sources, "urlopen", fake_urlopen)
 
     raw_url = "https://raw.githubusercontent.com/owner/repo/main/SKILL.md"
-    assert routes.fetch_text(raw_url) == "metadata"
-    assert routes.fetch_text("https://example.test/SKILL.md") == "metadata"
+    assert sources.fetch_text(raw_url) == "metadata"
+    assert sources.fetch_text("https://example.test/SKILL.md") == "metadata"
     assert requests[0].get_header("Authorization") is None
     assert requests[1].get_header("Authorization") is None
 
@@ -188,14 +199,390 @@ def test_skills_cli_dependency_sources_use_locked_ref(
             }
         }
     }
-    monkeypatch.setattr(routes, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
 
-    assert routes.skills_cli_dependency_sources() == {
+    assert sources.skills_cli_dependency_sources() == {
         "alpha": (
             "https://raw.githubusercontent.com/owner/assets/deadbeef/"
             "skills/alpha/SKILL.md"
         )
     }
+
+
+def _github_snapshot(
+    monkeypatch: pytest.MonkeyPatch, files: dict[str, bytes]
+) -> list[str]:
+    payload = io.BytesIO()
+    with ZipFile(payload, "w") as archive:
+        for path, content in files.items():
+            archive.writestr(f"assets-{'a' * 40}/{path}", content)
+    calls: list[str] = []
+
+    def fake_urlopen(request: Request, *, timeout: int) -> io.BytesIO:
+        assert timeout == 30
+        assert request.get_header("Authorization") is None
+        calls.append(request.full_url)
+        if (
+            request.full_url
+            == "https://api.github.com/repos/owner/assets/commits?per_page=1"
+        ):
+            return io.BytesIO(json.dumps([{"sha": "a" * 40}]).encode())
+        if (
+            request.full_url
+            == f"https://codeload.github.com/owner/assets/zip/{'a' * 40}"
+        ):
+            return io.BytesIO(payload.getvalue())
+        pytest.fail(f"unexpected remote request: {request.full_url}")
+
+    monkeypatch.setattr(sources, "urlopen", fake_urlopen)
+    return calls
+
+
+@pytest.mark.unit
+def test_skills_cli_version_one_resolves_hash_verified_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": "owner/assets",
+                "sourceType": "github",
+                "computedHash": hashlib.sha256(b"SKILL.md" + text).hexdigest(),
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    monkeypatch.setenv("GH_TOKEN", "must-not-be-sent")
+    calls = _github_snapshot(
+        monkeypatch,
+        {"unusual/location/SKILL.md": text, "README.md": b"outside the skill"},
+    )
+
+    assert sources.skills_cli_dependency_sources() == {
+        "alpha": (
+            f"https://raw.githubusercontent.com/owner/assets/{'a' * 40}/"
+            "unusual/location/SKILL.md"
+        )
+    }
+    assert calls == [
+        "https://api.github.com/repos/owner/assets/commits?per_page=1",
+        f"https://codeload.github.com/owner/assets/zip/{'a' * 40}",
+    ]
+
+
+@pytest.mark.unit
+def test_skills_cli_version_one_rejects_unlocked_folder_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": "owner/assets",
+                "sourceType": "github",
+                "computedHash": hashlib.sha256(b"SKILL.md" + text).hexdigest(),
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    _github_snapshot(
+        monkeypatch,
+        {"skills/alpha/SKILL.md": text, "skills/alpha/extra.txt": b"unlocked file"},
+    )
+
+    with pytest.raises(RouteGenerationError, match="Skills CLI hash mismatch: alpha"):
+        sources.skills_cli_dependency_sources()
+
+
+@pytest.mark.unit
+def test_skills_cli_encodes_verified_path_for_metadata_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    text = b"---\nname: alpha\ndescription: Verified metadata\n---\n"
+    path = "alpha#stable ?100%/SKILL.md"
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": "owner/assets",
+                "sourceType": "github",
+                "computedHash": hashlib.sha256(b"SKILL.md" + text).hexdigest(),
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    _github_snapshot(monkeypatch, {path: text})
+    resolved = sources.skills_cli_dependency_sources()["alpha"]
+    expected_url = (
+        f"https://raw.githubusercontent.com/owner/assets/{'a' * 40}/"
+        "alpha%23stable%20%3F100%25/SKILL.md"
+    )
+
+    def metadata_request(request: Request, *, timeout: int) -> io.BytesIO:
+        assert timeout == 30
+        assert request.full_url == expected_url
+        return io.BytesIO(text)
+
+    monkeypatch.setattr(sources, "urlopen", metadata_request)
+    assert indexes.dependency_skill_entry("alpha", resolved, sources.fetch_text) == {
+        "name": "alpha",
+        "description": "Verified metadata",
+        "source": expected_url,
+    }
+
+
+@pytest.mark.unit
+def test_skills_cli_explicit_path_does_not_bypass_duplicate_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": "owner/assets",
+                "sourceType": "github",
+                "skillPath": "first/SKILL.md",
+                "computedHash": hashlib.sha256(b"SKILL.md" + text).hexdigest(),
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    _github_snapshot(monkeypatch, {"first/SKILL.md": text, "second/SKILL.md": text})
+    with pytest.raises(RouteGenerationError, match="one named Skill: alpha"):
+        sources.skills_cli_dependency_sources()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "lock",
+    [
+        [],
+        {"version": 2, "skills": {}},
+        {"version": True, "skills": {}},
+        {"version": 1, "skills": []},
+        {
+            "version": 1,
+            "skills": {"alpha": {"source": "owner/assets", "sourceType": "github"}},
+        },
+    ],
+)
+def test_skills_cli_rejects_invalid_lock_without_network(
+    monkeypatch: pytest.MonkeyPatch, lock: object
+) -> None:
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    monkeypatch.setattr(
+        sources,
+        "urlopen",
+        lambda *_args, **_kwargs: pytest.fail("invalid lock must not fetch metadata"),
+    )
+
+    with pytest.raises(RouteGenerationError):
+        sources.skills_cli_dependency_sources()
+
+
+@pytest.mark.unit
+def test_skills_cli_reports_snapshot_network_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": "owner/assets",
+                "sourceType": "github",
+                "computedHash": "a" * 64,
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+
+    def unavailable(*_args: object, **_kwargs: object) -> None:
+        raise OSError("offline")
+
+    monkeypatch.setattr(sources, "urlopen", unavailable)
+
+    with pytest.raises(
+        RouteGenerationError, match="failed to load Skills CLI snapshot: alpha.*offline"
+    ):
+        sources.skills_cli_dependency_sources()
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("phase", ["commits", "archive", "metadata"])
+def test_cli_reports_incomplete_http_read_without_writing_routes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    phase: str,
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": "owner/assets",
+                "sourceType": "github",
+                "computedHash": hashlib.sha256(b"SKILL.md" + text).hexdigest(),
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    monkeypatch.setattr(sources, "RULESYNC_LOCK", tmp_path / "rulesync.lock")
+    monkeypatch.setattr(indexes, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(indexes, "SKILLS_ROOT", tmp_path / ".rulesync/skills")
+    monkeypatch.setattr(indexes, "RULES_ROOT", tmp_path / ".rulesync/rules")
+    route_root = tmp_path / ".agents/route"
+    route_root.mkdir(parents=True)
+    for name in ("skills.jsonl", "rules.jsonl"):
+        (route_root / name).write_text("stale\n", encoding="utf-8")
+    monkeypatch.setattr(indexes, "ROUTE_ROOT", route_root)
+    monkeypatch.setattr(cli, "ROUTE_ROOT", route_root)
+    _github_snapshot(monkeypatch, {"alpha/SKILL.md": text})
+    snapshot_request = sources.urlopen
+
+    def partial_request(request: Request, *, timeout: int) -> object:
+        if (
+            (phase == "commits" and request.full_url.startswith("https://api."))
+            or (phase == "metadata" and request.full_url.startswith("https://raw."))
+            or (phase == "archive" and request.full_url.startswith("https://codeload."))
+        ):
+            payload = (
+                b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n14\r\npartial"
+                if phase == "archive"
+                else b"HTTP/1.1 200 OK\r\nContent-Length: 20\r\n\r\npartial"
+            )
+            connection, sender = socket.socketpair()
+            with connection:
+                with sender:
+                    sender.sendall(payload)
+                response = HTTPResponse(connection)
+                response.begin()
+                return response
+        return snapshot_request(request, timeout=timeout)
+
+    monkeypatch.setattr(sources, "urlopen", partial_request)
+
+    assert cli.main(["--check"]) == 2
+    assert "IncompleteRead" in capsys.readouterr().err
+    assert {
+        path.name: path.read_text(encoding="utf-8") for path in route_root.iterdir()
+    } == {
+        "skills.jsonl": "stale\n",
+        "rules.jsonl": "stale\n",
+    }
+
+
+@pytest.mark.unit
+def test_skills_cli_absent_lock_is_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sources, "SKILLS_LOCK", SimpleNamespace(is_file=lambda: False))
+    assert sources.skills_cli_dependency_sources() == {}
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("names", [["beta"], ["alpha", "alpha"]])
+def test_skills_cli_rejects_missing_or_ambiguous_named_skill(
+    monkeypatch: pytest.MonkeyPatch, names: list[str]
+) -> None:
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": "owner/assets",
+                "sourceType": "github",
+                "computedHash": "a" * 64,
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    _github_snapshot(
+        monkeypatch,
+        {
+            f"folder{index}/SKILL.md": (
+                f"---\nname: {name}\ndescription: Skill\n---\n".encode()
+            )
+            for index, name in enumerate(names)
+        },
+    )
+    with pytest.raises(RouteGenerationError, match="one named Skill: alpha"):
+        sources.skills_cli_dependency_sources()
+
+
+@pytest.mark.component
+def test_folder_hash_matches_vendor_path_order_and_exclusions() -> None:
+    files = {
+        "skill/b.txt": b"b",
+        "skill/a.txt": b"a",
+        "skill/SKILL.md": b"metadata",
+        "skill/.git/config": b"excluded",
+        "skill/node_modules/package.txt": b"excluded",
+        "outside.txt": b"excluded",
+    }
+    expected = hashlib.sha256(b"a.txtab.txtbSKILL.mdmetadata").hexdigest()
+    assert sources._skill_folder_hash(files, "skill") == expected
+
+
+@pytest.mark.component
+def test_module_cli_preserves_output_and_exit_codes_without_path_injection(
+    tmp_path: Path,
+) -> None:
+    bundle_root = Path(sources.__file__).parent
+    shutil.copytree(
+        bundle_root,
+        tmp_path / "scripts/agent_routes",
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
+    skill = tmp_path / ".rulesync/skills/alpha/SKILL.md"
+    skill.parent.mkdir(parents=True)
+    skill.write_text(
+        "---\nname: alpha\ndescription: Alpha   skill\n---\n", encoding="utf-8"
+    )
+    rule = tmp_path / ".rulesync/rules/python.md"
+    rule.parent.mkdir(parents=True)
+    rule.write_text(
+        "---\ndescription: Python rules\nglobs: '*.py'\n---\n", encoding="utf-8"
+    )
+    subprocess.run(["git", "init", "--quiet"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", ".rulesync"], cwd=tmp_path, check=True)
+    env = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
+
+    def invoke(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, "-m", "scripts.agent_routes", *args],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+    assert invoke("--check").returncode == 1
+    route_root = tmp_path / ".agents/route"
+    assert not route_root.exists()
+    assert invoke().returncode == 0
+    skills_route = route_root / "skills.jsonl"
+    rules_route = route_root / "rules.jsonl"
+    assert skills_route.read_text(encoding="utf-8") == (
+        '{"name":"alpha","description":"Alpha skill",'
+        '"source":".rulesync/skills/alpha/SKILL.md"}\n'
+    )
+    assert rules_route.read_text(encoding="utf-8") == (
+        '{"description":"Python rules","globs":["*.py"],'
+        '"source":".rulesync/rules/python.md"}\n'
+    )
+    assert invoke("--check").returncode == 0
+    skills_route.write_text("stale\n", encoding="utf-8")
+    assert invoke("--check").returncode == 1
+    assert skills_route.read_text(encoding="utf-8") == "stale\n"
+    (tmp_path / "skills-lock.json").write_text("[]", encoding="utf-8")
+    failed = invoke("--check")
+    assert failed.returncode == 2
+    assert "invalid skills-lock.json" in failed.stderr
+    assert skills_route.read_text(encoding="utf-8") == "stale\n"
 
 
 @pytest.mark.unit
@@ -204,12 +591,12 @@ def test_find_local_skill_files_keeps_empty_tracked_result(
 ) -> None:
     """Git 추적 파일 결과가 비어있을 때 빈 목록을 온전히 반환하는지 검증한다."""
     monkeypatch.setattr(
-        routes.subprocess,
+        indexes.subprocess,
         "run",
         lambda *_args, **_kwargs: SimpleNamespace(stdout=""),
     )
 
-    assert routes.find_local_skill_files() == []
+    assert indexes.find_local_skill_files() == []
 
 
 @pytest.mark.unit
@@ -220,7 +607,7 @@ def test_dependency_skill_entry_uses_injected_loader() -> None:
     )
     text = "---\nname: alpha\ndescription:  Useful   skill.\n---\n# Alpha\n"
 
-    assert routes.dependency_skill_entry("alpha", source, lambda _source: text) == {
+    assert indexes.dependency_skill_entry("alpha", source, lambda _source: text) == {
         "name": "alpha",
         "description": "Useful skill.",
         "source": source,
@@ -236,10 +623,10 @@ def test_dependency_skill_entry_rejects_locked_name_mismatch() -> None:
     text = "---\nname: beta\ndescription: Different skill.\n---\n# Beta\n"
 
     with pytest.raises(
-        routes.RouteGenerationError,
+        RouteGenerationError,
         match="locked Skill name mismatch: alpha != beta",
     ):
-        routes.dependency_skill_entry("alpha", source, lambda _source: text)
+        indexes.dependency_skill_entry("alpha", source, lambda _source: text)
 
 
 @pytest.mark.unit
@@ -249,14 +636,14 @@ def test_skill_entries_include_external_dependency_entries(
     """외부 의존성들이 이름순으로 정렬되어 통합 색인에 포함되는지 검증한다."""
     rulesync_source = "https://example.test/rulesync/zeta"
     skills_cli_source = "https://example.test/skills-cli/alpha"
-    monkeypatch.setattr(routes, "find_local_skill_files", lambda: [])
+    monkeypatch.setattr(indexes, "find_local_skill_files", lambda: [])
     monkeypatch.setattr(
-        routes,
+        indexes,
         "rulesync_dependency_sources",
         lambda: {"zeta": rulesync_source},
     )
     monkeypatch.setattr(
-        routes,
+        indexes,
         "skills_cli_dependency_sources",
         lambda: {"alpha": skills_cli_source},
     )
@@ -265,7 +652,7 @@ def test_skill_entries_include_external_dependency_entries(
         name = "zeta" if source == rulesync_source else "alpha"
         return f"---\nname: {name}\ndescription: {name} skill\n---\n"
 
-    assert routes.skill_entries(loader) == [
+    assert indexes.skill_entries(loader) == [
         {
             "name": "alpha",
             "description": "alpha skill",
@@ -285,29 +672,29 @@ def test_skill_entries_reject_local_external_name_collision(
 ) -> None:
     """로컬 Skill과 외부 의존성 Skill 이름 중복 시 생성을 거부하는지 검증한다."""
     local_path = object()
-    monkeypatch.setattr(routes, "find_local_skill_files", lambda: [local_path])
+    monkeypatch.setattr(indexes, "find_local_skill_files", lambda: [local_path])
     monkeypatch.setattr(
-        routes,
+        indexes,
         "load_frontmatter",
         lambda _path: {"name": "shared", "description": "Local skill"},
     )
     monkeypatch.setattr(
-        routes,
+        indexes,
         "relative",
         lambda _path: ".rulesync/skills/shared/SKILL.md",
     )
     monkeypatch.setattr(
-        routes,
+        indexes,
         "rulesync_dependency_sources",
         lambda: {"shared": "https://example.test/external"},
     )
-    monkeypatch.setattr(routes, "skills_cli_dependency_sources", lambda: {})
+    monkeypatch.setattr(indexes, "skills_cli_dependency_sources", lambda: {})
 
     with pytest.raises(
-        routes.RouteGenerationError,
+        RouteGenerationError,
         match="local and external Skill names overlap: shared",
     ):
-        routes.skill_entries()
+        indexes.skill_entries()
 
 
 @pytest.mark.unit
@@ -315,20 +702,20 @@ def test_skill_entries_reject_dependency_name_collision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """양쪽 lockfile에 동일한 Skill 이름이 중복 정의된 경우 거부하는지 검증한다."""
-    monkeypatch.setattr(routes, "find_local_skill_files", lambda: [])
+    monkeypatch.setattr(indexes, "find_local_skill_files", lambda: [])
     monkeypatch.setattr(
-        routes,
+        indexes,
         "rulesync_dependency_sources",
         lambda: {"shared": "https://example.test/rulesync"},
     )
     monkeypatch.setattr(
-        routes,
+        indexes,
         "skills_cli_dependency_sources",
         lambda: {"shared": "https://example.test/skills-cli"},
     )
 
     with pytest.raises(
-        routes.RouteGenerationError,
+        RouteGenerationError,
         match="Skill dependency exists in both locks: shared",
     ):
-        routes.skill_entries()
+        indexes.skill_entries()
