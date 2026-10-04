@@ -113,6 +113,7 @@ jobs:
         run: uv sync --locked
 
       - name: Check Python dependency boundaries
+        id: boundaries
         if: steps.scope.outputs.tach == 'true'
         run: |
           set -euo pipefail
@@ -139,16 +140,18 @@ jobs:
         run: uvx lefthook@2.1.10 validate
 
       - name: Run selected tests
+        id: selected_tests
         if: steps.scope.outputs.tests == 'true'
         env:
           FULL_TESTS: ${{ steps.scope.outputs.full_tests }}
           FULL_UNIT: ${{ steps.scope.outputs.full_unit }}
           TARGETS: ${{ steps.scope.outputs.targets }}
           CI_TARGETS: ${{ steps.scope.outputs.ci_targets }}
+          BOUNDARIES_CHECKED: ${{ steps.boundaries.outcome == 'success' }}
         run: bash scripts/ci/pytest.sh
 
       - name: Run dependency runtime smoke
-        if: steps.scope.outputs.runtime_smoke == 'true'
+        if: steps.scope.outputs.runtime_smoke == 'true' && !(steps.scope.outputs.full_tests == 'true' && steps.selected_tests.outcome == 'success')
         run: |
           set -euo pipefail
           uv run --no-sync pytest \

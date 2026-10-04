@@ -47,7 +47,70 @@ def test_workflow_passes_ci_component_targets(
         "FULL_UNIT": "${{ steps.scope.outputs.full_unit }}",
         "TARGETS": "${{ steps.scope.outputs.targets }}",
         "CI_TARGETS": "${{ steps.scope.outputs.ci_targets }}",
+        "BOUNDARIES_CHECKED": "${{ steps.boundaries.outcome == 'success' }}",
     }
+
+
+def test_workflow_deduplicates_only_successful_prior_checks(
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    boundary = workflow_steps["Check Python dependency boundaries"]
+    selected = workflow_steps["Run selected tests"]
+    smoke = workflow_steps["Run dependency runtime smoke"]
+    names = list(workflow_steps)
+
+    assert boundary["id"] == "boundaries"
+    assert selected["id"] == "selected_tests"
+    assert (
+        names.index("Check Python dependency boundaries")
+        < names.index("Run selected tests")
+        < names.index("Run dependency runtime smoke")
+    )
+    assert smoke["if"] == (
+        "steps.scope.outputs.runtime_smoke == 'true' && "
+        "!(steps.scope.outputs.full_tests == 'true' && "
+        "steps.selected_tests.outcome == 'success')"
+    )
+    for step in (boundary, selected, smoke):
+        assert step.get("continue-on-error", False) is False
+
+
+@pytest.mark.parametrize("fail_command", ["", "uv run --no-sync pytest"])
+def test_workflow_runtime_smoke_preserves_targets_and_failure(
+    repo: Path,
+    tool_env: dict[str, str],
+    workflow_steps: dict[str, dict[str, object]],
+    fail_command: str,
+) -> None:
+    step = workflow_steps["Run dependency runtime smoke"]
+    proc = subprocess.run(
+        ["bash", "-c", str(step["run"])],
+        cwd=repo,
+        env=tool_env | {"FAIL_COMMAND": fail_command},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode == (17 if fail_command else 0)
+    assert tool_calls(tool_env) == [
+        [
+            "uv",
+            "run",
+            "--no-sync",
+            "pytest",
+            "-q",
+            "-p",
+            "no:sugar",
+            "--color=no",
+            "--tb=short",
+            "-ra",
+            "-m",
+            "not memory and not stress",
+            "tests/dbt/test_analytics_foundation.py",
+            "tests/orchestration/test_airflow_dag.py",
+        ]
+    ]
 
 
 def test_workflow_tach_step_runs_required_checks(

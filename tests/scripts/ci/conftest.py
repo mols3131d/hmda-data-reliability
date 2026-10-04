@@ -67,6 +67,7 @@ if failure and args[:len(failure)] == failure:
         "FULL_UNIT": "false",
         "TARGETS": "",
         "CI_TARGETS": "",
+        "BOUNDARIES_CHECKED": "false",
         "FULL_TYPE": "false",
         "TYPE_TARGETS": "",
         "BULK": "false",

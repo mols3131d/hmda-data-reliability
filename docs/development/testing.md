@@ -84,7 +84,8 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 - Direct-mapped repository Python script는 해당 wrapper 또는 workflow contract test를 실행한다. 여러 wrapper가 소비하는 shared script helper는 consumer script까지 type-check하고 관련 contract test를 함께 실행하며, 미매핑 script는 전체 `unit` suite와 project-wide `ty check`로 fallback한다.
 - CI workflow와 [`scripts/ci/`](../../scripts/ci/) helper 변경은 classifier와 CI step contract test를 실행한다. CI 파일이라는 이유만으로 Tach나 domain runtime suite를 선택하지 않으며 source·dependency 변경이 함께 있으면 해당 검증은 독립적으로 유지한다. 전체 `unit` fallback과 CI 변경이 겹치면 선택된 CI 계약의 non-unit test를 이어서 실행하며 전체 non-resource suite에서는 중복 실행하지 않는다. CI 계약 test 자체의 변경도 같은 보완 규칙을 따른다.
 - Domain source는 own test와 현재 reverse dependency에 따른 consumer test directory를 선택한다.
-- Python source, Tach configuration과 dependency state 변경은 [Tach](tooling/tach.md) runtime dependency check와 negative-path regression, source-level AST guard를 실행한다. Tach configuration 단독 변경도 locked environment를 준비한다.
+- Python source, Tach configuration과 dependency state 변경은 [Tach](tooling/tach.md) runtime dependency check와 negative-path regression, source-level AST guard를 실행한다. Tach configuration 단독 변경도 locked environment를 준비한다. Boundary step이 성공한 경우에만 이후 scoped/full non-resource suite에서 AST guard 파일의 재실행을 제외한다. Boundary가 생략되거나 독립 local script에서 성공 근거가 없으면 guard를 유지한다.
+- Dependency state 변경은 dbt·Airflow runtime smoke를 선택한다. 앞선 전체 non-resource suite가 성공한 경우에만 두 smoke 파일의 별도 반복을 생략하며, 전체 `unit` 실행은 component·integration smoke를 대체하지 않는다.
 - Scoped domain test는 `unit`, `component`, `integration`을 유지하고 `memory`, `stress`만 제외한다.
 - 선택된 test directory가 3개 이상이면 xdist를 사용한다.
 - Domain test 자체의 변경은 해당 test directory만 실행한다.
@@ -109,6 +110,8 @@ FULL_TESTS=false FULL_UNIT=false TARGETS="tests/scripts/ci" bash scripts/ci/pyte
 ```
 
 파일을 수집하는 step의 기본 비교는 CI prospective merge의 `HEAD^1`과 `HEAD`다. Local branch의 전체 PR 변경을 확인하려면 적절한 base/head를 명시한다. Git 비교 실패와 필수 도구 실패는 nonzero이며, Markdown formatter의 정보성 진단과 non-blocking diff는 docs lint 실패와 별도로 표시한다.
+
+`pytest.sh`의 `BOUNDARIES_CHECKED` 기본값은 false다. CI는 앞선 boundary step의 성공 여부를 전달하며, local에서 true로 지정하려면 같은 revision의 전체 boundary 검사가 먼저 성공했어야 한다. 이 값은 전체 `unit` 뒤 CI non-unit 보완의 범위를 바꾸지 않는다.
 
 ## Select Tests
 
