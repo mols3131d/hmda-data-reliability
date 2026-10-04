@@ -6,7 +6,7 @@ description: PR 253의 불필요한 검증 제거, inline shell 분리와 동작
 
 # CI Validation Scope and Script Extraction
 
-PR [#253](https://github.com/mols3131d/hmda-data-reliability/pull/253)의 현재 branch에서 진행한다. 기준 revision은 `4f6c9960cda33136fe989e02ca90c40c46bc7e11`이며 [조사 보고서](../2026-10-02/22-55-research-ci-workflow-script-separation.md)와 [CI policy](../../docs/development/ci.md)가 근거다. 아래 계획은 [셀프 리뷰](01-review-ci-plan-self-review.md)를 반영했다.
+PR [#253](https://github.com/mols3131d/hmda-data-reliability/pull/253)의 현재 branch에서 진행한다. 기준 revision은 `4f6c9960cda33136fe989e02ca90c40c46bc7e11`이며 [조사 보고서](../2026-10-02/22-55-research-ci-workflow-script-separation.md)와 [CI policy](https://github.com/mols3131d/hmda-data-reliability/blob/4f6c9960cda33136fe989e02ca90c40c46bc7e11/docs/development/ci.md)가 근거다. 아래 계획은 [셀프 리뷰](01-review-ci-plan-self-review.md)를 반영했다.
 
 ## Goal
 

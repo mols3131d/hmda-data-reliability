@@ -79,7 +79,7 @@ Classifier는 `--stdin` 입력과 출력 계약을 제공하고 `tests/scripts/t
 
 #### Policy Evidence
 
-- [CI policy](../../docs/development/ci.md)
+- [CI policy](https://github.com/mols3131d/hmda-data-reliability/blob/4f6c9960cda33136fe989e02ca90c40c46bc7e11/docs/development/ci.md)
   - 영향 불확실 시 검증 확대 또는 fail-safe, Markdown과 Inbox의 blocking 경계를 구분한다.
 - [Inbox guidance](../AGENTS.md)
   - artifact 내용·구조·lifecycle은 Inbox contract를 따르며 CI는 현재 변경 artifact만 검증한다.

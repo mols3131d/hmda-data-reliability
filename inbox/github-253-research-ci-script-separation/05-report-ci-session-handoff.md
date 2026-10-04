@@ -77,4 +77,4 @@ Fake CLI 검사는 wiring, argv와 실패 전파를 검증하며 실제 Tach dep
 1. 정확한 PR update 도구에 title/body만 전달한다. 해당 도구가 실제로 노출되지 않거나 실패하면 같은 실패를 무관한 API로 우회하지 않는다. 사용 가능한 갱신 경로나 blocker를 설명한다.
 1. PR을 다시 읽어 저장된 제목·본문과 head·Draft 보존을 확인한 뒤 종료한다. 로컬 두 파일과 이 보고서는 계속 미커밋 상태다. Commit/push는 별도 사용자 승인 사항이다.
 
-본문의 근거는 [구현 계획](00-plan-ci-validation-and-script-extraction.md), [추출 검증 보고서](02-report-ci-script-extraction-validation.md), [보정된 리뷰](04-review-ci-script-extraction-current-head.md)와 [CI policy](../../docs/development/ci.md)를 참조한다. 과거 검증 보고서의 revision을 현재 결과로 소급 해석하지 않으며, 미커밋 보고서를 원격에서 이미 열 수 있는 자료로 설명하지 않는다.
+본문의 근거는 [구현 계획](00-plan-ci-validation-and-script-extraction.md), [추출 검증 보고서](02-report-ci-script-extraction-validation.md), [보정된 리뷰](04-review-ci-script-extraction-current-head.md)와 [CI policy](https://github.com/mols3131d/hmda-data-reliability/blob/21fbaa9f72e4193a32259bd8f4853f83838b5e08/docs/development/ci.md)를 참조한다. 과거 검증 보고서의 revision을 현재 결과로 소급 해석하지 않으며, 미커밋 보고서를 원격에서 이미 열 수 있는 자료로 설명하지 않는다.

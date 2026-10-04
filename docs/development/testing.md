@@ -15,7 +15,7 @@ tags:
 
 # Testing Guide
 
-이 문서는 local runtime에서 pytest를 선택하고 실행하는 방법을 설명한다. 사람과 local runtime을 사용할 수 있는 agent 모두에 적용할 수 있다. Local runtime을 사용할 수 없는 기여자는 이 command를 필수 절차로 간주하지 않고, 병합에 필요한 repository-side evidence는 [Continuous Integration](ci.md)을 따른다. 어떤 behavior를 test로 설계할지는 [Test Design](test-design.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
+이 문서는 local runtime에서 pytest를 선택하고 실행하는 방법을 설명한다. 사람과 local runtime을 사용할 수 있는 agent 모두에 적용할 수 있다. Local runtime을 사용할 수 없는 기여자는 이 command를 필수 절차로 간주하지 않고, 병합에 필요한 repository-side evidence는 [Continuous Integration](ci/README.md)을 따른다. 어떤 behavior를 test로 설계할지는 [Test Design](test-design.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
 
 ## Start Here
 
@@ -58,7 +58,7 @@ flowchart TB
 
 ## Git Hooks
 
-Lefthook은 local Git hook을 실행할 수 있는 환경에서 빠른 feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. Hook을 사용할 수 없는 기여자에게 이를 병합 필수 검증의 유일한 실행 경로로 요구하지 않는다. `main` admission에서 CI가 소유하는 책임 경계는 [Continuous Integration](ci.md)을 따른다.
+Lefthook은 local Git hook을 실행할 수 있는 환경에서 빠른 feedback만 담당한다. Commit 전에는 staged file을 자동 수정하고, push 전에는 pushed Python의 정적 검사와 affected test, dbt test만 빠르게 확인한다. Hook을 사용할 수 없는 기여자에게 이를 병합 필수 검증의 유일한 실행 경로로 요구하지 않는다. `main` admission에서 CI가 소유하는 책임 경계는 [Admission Boundary](ci/admission.md)를 따른다.
 
 | Hook | Trigger | Action |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 ## Pull Request CI
 
-이 section은 `CI Lite`의 현재 validation behavior를 설명한다. Merge admission policy와 validation responsibility는 [Continuous Integration](ci.md)이 소유한다.
+이 section은 `CI Lite`의 현재 validation behavior를 설명한다. Merge admission policy와 validation responsibility는 [Continuous Integration](ci/README.md)의 책임별 계약이 소유한다.
 
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
@@ -253,7 +253,7 @@ uv run --extra langfuse pytest tests/review_ai/test_langfuse_projection.py::test
 
 ## Related Guides
 
-- [Continuous Integration](ci.md): `main` merge admission과 CI validation responsibility
+- [Continuous Integration](ci/README.md): CI의 목적·원칙·패턴과 책임별 운영 계약
 - [Test Design](test-design.md): requirement를 scenario와 oracle로 바꾸는 방법
 - [`tests/AGENTS.md`](../../tests/AGENTS.md): `tests/` 파일을 수정할 때의 agent context
 - [`pyproject.toml`](../../pyproject.toml): pytest correctness/safety defaults와 marker 등록

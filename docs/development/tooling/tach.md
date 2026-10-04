@@ -94,7 +94,7 @@ uv run --no-sync tach check
 
 실제 command와 dependency 상태는 `pyproject.toml`, `uv.lock`과 `tach.toml`을 기준으로 확인한다. 일반적인 Tach command 설명은 upstream 문서를 따른다.
 
-Python source, Tach configuration 또는 dependency state가 boundary 의미를 바꿀 수 있다면 PR CI에서 Tach 검증을 우회해서는 안 된다. Exact selector와 command routing은 [CI](../ci.md)의 ownership에 따라 `.github/workflows/**`, classifier와 관련 regression test가 소유한다.
+Python source, Tach configuration 또는 dependency state가 boundary 의미를 바꿀 수 있다면 PR CI에서 Tach 검증을 우회해서는 안 된다. Exact selector와 command routing은 [CI Ownership](../ci/README.md#ownership)에 따라 `.github/workflows/**`, classifier와 관련 regression test가 소유한다.
 
 `tach` selector는 `src/**/*.py`, `tach.toml`, Python runtime/dependency state와 해당 CI/test 변경에서 dependency boundary step을 선택한다. `tach.toml` 단독 변경도 Python/uv setup과 locked dependency sync를 거친다. 이 step은 `tach check`, temporary project의 negative-path regression과 기존 AST guard를 함께 실행한다.
 

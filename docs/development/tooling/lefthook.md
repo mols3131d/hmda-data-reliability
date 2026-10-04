@@ -65,7 +65,7 @@ Hook 내부 command를 문서에 전체 복제하지 않는다. Formatter와 lin
 
 Lefthook은 local runtime이 있는 환경의 빠른 feedback과 자동 수정을 최적화하지만 repository validation 전체를 대체하지 않는다. Hook을 사용할 수 없는 기여자에게 hook 실행을 필수 기여 절차로 요구하지 않는다.
 
-Hook 통과는 CI 또는 matching revision의 validation evidence를 대신하지 않는다. 반대로 hook을 실행할 수 없다는 이유만으로 병합 필수 검증이 빠져서는 안 되며, 해당 책임은 [Continuous Integration](../ci.md)의 admission boundary를 따른다.
+Hook 통과는 CI 또는 matching revision의 validation evidence를 대신하지 않는다. 반대로 hook을 실행할 수 없다는 이유만으로 병합 필수 검증이 빠져서는 안 되며, 해당 책임은 [Admission Boundary](../ci/admission.md)를 따른다.
 
 Test 설계와 pytest 실행 기준은 [Testing Guide](../testing.md), Git/GitHub workflow는 [Version Control and GitHub](../vcs-git/README.md)가 소유한다.
 

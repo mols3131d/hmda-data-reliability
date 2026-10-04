@@ -1,6 +1,6 @@
 ---
 title: "Continuous Integration"
-description: "CI의 목적, 판단 원칙, 운영 패턴과 필수 경계를 정의합니다."
+description: "CI를 추가·변경하거나 병합 검증을 판단할 때 목적, 원칙, 운영 패턴, 권한·신뢰 경계와 검증별 계약을 확인하는 진입점입니다."
 categories:
   - software-engineering
 tags:
@@ -11,11 +11,18 @@ tags:
 
 # Continuous Integration
 
-CI는 변경을 `main`에 받아들여도 되는지 판단할 **신뢰할 수 있는 자동 검증 근거**를 제공한다.
+CI는 변경을 `main`에 받아들여도 되는지 판단할 **신뢰할 수 있는 자동 검증 근거**를 제공한다. 목표는 검사를 많이 돌리는 것이 아니라 **필요한 신뢰를 가장 낮은 운영 비용으로 확보하는 것**이다.
 
-목표는 검사를 많이 돌리는 것이 아니다. **필요한 신뢰를 가장 낮은 운영 비용으로 확보하는 것**이다.
+CI를 추가·변경하거나 병합 검증의 범위를 판단할 때 여기서 시작한다. 이 README는 Goal·Principles·Patterns, 공통 권한·신뢰 경계와 번들의 읽기 안내를 소유한다. 검증별 적용 조건과 필수 결과는 아래 계약이 소유하며, 현재 실행 동작과 local 실행 방법은 [Testing Guide](../testing.md#pull-request-ci)에서 확인한다.
 
-이 문서는 CI의 목적과 원칙, 반복해서 쓰는 패턴, 반드시 지켜야 할 경계를 정의한다. 정확한 trigger, job, setup과 step 조건은 [`.github/workflows/`](../../.github/workflows/)가, 변경 경로의 검증 선택과 step 실행 로직은 [`scripts/ci/`](../../scripts/ci/)가 소유한다.
+## Read Next
+
+| Question | Contract |
+| --- | --- |
+| 병합 전에 무엇을 검증하고 어떤 상태를 기준으로 판단하는가? | [Admission Boundary](admission.md) |
+| 변경에 필요한 검증을 어떻게 선택하고 영향 범위를 모르면 어떻게 하는가? | [Change Impact](change-impact.md) |
+| Markdown formatting과 병합 차단 lint의 범위는 무엇인가? | [Markdown Validation](markdown-validation.md) |
+| 현재 변경한 Inbox artifact만 어떻게 검증하는가? | [Inbox Validation](inbox-validation.md) |
 
 ## Goal
 
@@ -53,12 +60,9 @@ CI는 다음 상태를 지향한다.
 
 ### Change Impact
 
-- 변경된 소스, 테스트, 설정과 계약의 영향 범위를 우선 검증한다.
-- 공용 영역처럼 영향이 넓은 변경은 검증 범위도 넓힌다.
-- 영향 범위를 안전하게 좁힐 수 있으면 전체 검증보다 우선한다.
-- 영향 범위를 확신할 수 없으면 검증을 넓히거나 selector를 실패시킨다.
-- 중요한 검증이 path 분류 때문에 조용히 빠지지 않게 한다.
-- 정확한 glob과 routing table은 [`classify_changes.sh`](../../scripts/ci/classify_changes.sh)에 둔다. OpenSpec의 capability mapping과 연관 Change 탐색은 classifier가 불러오는 [`classify_openspec.sh`](../../scripts/ci/classify_openspec.sh)에 모은다. Step 분기와 반복되는 변경 파일 수집은 독립 script로 검증하며, CI script 자체의 변경도 대응 contract test를 선택한다.
+변경의 영향과 위험에 맞는 가장 좁은 충분한 검증을 선택한다. 공용 영역처럼 영향이 넓은 변경은 검증도 넓히며, 검증 비용을 줄이는 것과 필요한 검증을 생략하는 것을 구분한다.
+
+필수 선택 규칙, 불확실한 영향 범위의 처리와 CI 자체 변경의 검증은 [Change Impact 계약](change-impact.md)을 따른다. 정확한 경로별 선택과 현재 test 실행 동작은 [Testing Guide](../testing.md#pull-request-ci)와 구현에서 확인한다.
 
 ### Validation Surfaces
 
@@ -75,7 +79,7 @@ CI는 다음 상태를 지향한다.
 
 Local hook은 빠른 피드백과 자동 수정을 위한 장치다. 우회되거나 환경이 다를 수 있으므로 병합에 꼭 필요한 검증은 CI가 다시 확인한다.
 
-Lefthook의 세부 동작은 [Lefthook](tooling/lefthook.md), test 실행 기준은 [Testing Guide](testing.md)와 [Test Design](test-design.md)를 따른다.
+Lefthook의 세부 동작은 [Lefthook](../tooling/lefthook.md), test 실행 기준은 [Testing Guide](../testing.md)와 [Test Design](../test-design.md)를 따른다.
 
 ### Contributor Environments
 
@@ -96,6 +100,8 @@ Lefthook의 세부 동작은 [Lefthook](tooling/lefthook.md), test 실행 기준
 - 쓰기 권한, commit loop, race, 검토 혼란이 더 커지면 local autofix나 별도 maintenance로 분리한다.
 - 단순 formatting 때문에 불필요한 수동 수정과 재실행을 만드는 것은 기본값이 아니다. 표현 형식이 실제 correctness, compatibility 또는 명시적 계약에 영향을 줄 때만 병합을 막는다.
 
+현재 Markdown의 formatting·lint·write-back 경계는 [Markdown Validation](markdown-validation.md), 자동화 권한은 [Safety and Authority](#safety-and-authority)를 따른다.
+
 ### CI Change Checklist
 
 CI를 추가하거나 바꿀 때는 다음 순서로 판단한다.
@@ -108,39 +114,9 @@ CI를 추가하거나 바꿀 때는 다음 순서로 판단한다.
 1. 영향 범위를 모를 때 안전하게 넓어지는가?
 1. 기존 검증과 중복되거나 새로운 운영 부담을 만들지 않는가?
 
-## Contracts
+## Safety and Authority
 
-### Admission Boundary
-
-- 이 저장소의 통합 경계는 `main`이다.
-- `main`에 들어가면 안 되는 문제는 병합 전에 차단할 수 있어야 한다.
-- 검사가 비싸다는 이유만으로 필요한 검증을 post-merge로 미루지 않는다.
-- PR은 단독 head보다 `main`과 합쳐질 상태를 기준으로 검증한다.
-- `main` 대상 PR에는 required workflow가 항상 생성되어야 한다. 불필요한 검증은 workflow 내부에서 선택적으로 생략한다.
-- 영향 범위를 결정할 수 없으면 검증을 넓히거나 실패시킨다. 불완전한 검증을 정상 결과로 처리하지 않는다.
-
-### Markdown Boundary
-
-Markdown formatting과 merge-blocking lint를 분리한다.
-
-- 현재 prospective change set에 포함된 모든 Markdown은 CI의 disposable workspace에서 `rumdl fmt`를 실행한다. Formatting 차이는 수정 제안으로 제공하되 병합을 막지 않으며 branch에 write-back하지 않는다.
-- `docs/**`의 변경된 Markdown만 formatting 이후 `rumdl check`를 실행한다. 이 범위에서 formatter 이후에도 남는 lint 위반은 병합을 막는다.
-- `docs/**` 밖의 Markdown에는 `rumdl check`를 실행하지 않으며 Markdown lint 자체를 merge admission 조건으로 사용하지 않는다.
-- Frontmatter, artifact naming, generated-state consistency처럼 Markdown 표현 형식과 별개의 repository contract가 있으면 해당 deterministic validator가 독립적으로 검증할 수 있다.
-
-### Inbox Boundary
-
-Inbox 전체를 매 PR마다 다시 검사하지 않는다. **현재 prospective change set에 포함된 Inbox artifact만** 현재 변경으로 취급한다.
-
-- 현재 변경된 일반 Inbox Markdown은 [Markdown Boundary](#markdown-boundary)의 non-blocking formatting만 적용하고, common artifact root의 required frontmatter·이름 정합성처럼 명시적인 Inbox contract만 별도로 검증한다.
-- Standalone artifact와 변경된 bundle에서 도달 가능한 `README.md` root는 `type`, `title`, `description`과 artifact name의 `type` 정합성을 확인한다.
-- 현재 변경에 포함되지 않은 과거·완료·보관 artifact는 scan, reformat, migration 또는 재검증하지 않는다.
-- 일반 Inbox artifact 변경만으로 unrelated source test나 platform-specific runtime 검증을 실행하지 않는다.
-- `inbox/AGENTS.md`, `inbox/_guidelines/**`, `inbox/_templates/**`도 Markdown lint 자체로 병합을 막지 않는다. 해당 path가 소유하는 별도 deterministic contract가 있으면 그 검증은 유지한다.
-
-Inbox 자체의 내용과 lifecycle은 [`inbox/AGENTS.md`](../../inbox/AGENTS.md)가 소유한다.
-
-### Safety and Authority
+CI와 관련 자동화에 권한을 주거나 외부 도구·API를 연결할 때 적용한다.
 
 - CI는 필요한 최소 권한만 사용한다. 읽기 권한으로 충분하면 쓰기 권한을 주지 않는다.
 - secret이 필요한 검증은 신뢰할 수 없는 PR과 분리한다.
@@ -148,11 +124,13 @@ Inbox 자체의 내용과 lifecycle은 [`inbox/AGENTS.md`](../../inbox/AGENTS.md
 - generated file, index, formatting 결과와 maintenance commit은 저장소가 달리 정하지 않는 한 파생 상태다.
 - 자동화 결과가 canonical source를 대신하지 않는다.
 
-### Ownership
+이 계약은 write-back을 허용하는 일반 승인으로 사용하지 않는다. 현재 Markdown의 branch write-back 경계는 [Markdown Validation](markdown-validation.md)이 소유하며, 실제 권한과 step 조건은 [workflow](../../../.github/workflows/ci-lite.yml)에서 확인한다.
 
-- 이 문서는 CI의 목적, 원칙, 패턴과 계약을 소유한다.
-- [`.github/workflows/`](../../.github/workflows/)는 정확한 trigger, job, setup과 step 조건을 소유하고 [`scripts/ci/`](../../scripts/ci/)는 변경 경로의 검증 선택, step command·분기와 변경 파일 수집을 소유한다.
-- [Testing Guide](testing.md)는 test 실행 방법과 현재 CI test 동작의 사용자-facing 설명을 소유한다.
-- [Lefthook](tooling/lefthook.md)은 pre-commit과 pre-push의 기준을 소유한다.
+## Ownership
 
-구현이나 운영 경험에 따라 패턴과 계약은 바꿀 수 있다. 다만 변경은 항상 이 문서의 목적과 원칙에 맞아야 한다.
+- 이 README는 CI의 목적, 원칙, 패턴, 공통 권한·신뢰 경계와 번들 안내를 소유한다. Read Next의 각 문서는 해당 검증 계약을 소유한다.
+- [`.github/workflows/`](../../../.github/workflows/)는 정확한 trigger, job, setup과 step 조건을 소유하고 [`scripts/ci/`](../../../scripts/ci/)는 변경 경로의 검증 선택, step command·분기와 변경 파일 수집을 소유한다.
+- [Testing Guide](../testing.md)는 test 실행 방법과 현재 CI test 동작의 사용자-facing 설명을 소유한다.
+- [Lefthook](../tooling/lefthook.md)은 pre-commit과 pre-push의 기준을 소유한다.
+
+구현이나 운영 경험에 따라 패턴과 계약은 바꿀 수 있다. 다만 변경은 항상 이 번들의 목적과 원칙에 맞아야 한다. 계약이나 test의 존재는 실제 통과 근거가 아니며, 통과 여부는 해당 revision의 실행 결과에서 확인한다.
