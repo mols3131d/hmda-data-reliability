@@ -463,6 +463,70 @@ def test_workflow_passes_ci_component_targets(
     }
 
 
+def test_workflow_tach_step_runs_required_checks(
+    repo: Path,
+    tool_env: dict[str, str],
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    step = workflow_steps["Check Python dependency boundaries"]
+    assert step["if"] == "steps.scope.outputs.tach == 'true'"
+
+    proc = subprocess.run(
+        ["bash", "-c", str(step["run"])],
+        cwd=repo,
+        env=tool_env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    assert tool_calls(tool_env) == [
+        ["uv", "run", "--no-sync", "tach", "check"],
+        [
+            "uv",
+            "run",
+            "--no-sync",
+            "pytest",
+            "-q",
+            "-p",
+            "no:sugar",
+            "--tb=short",
+            "tests/scripts/test_tach.py",
+            "tests/scripts/test_tach_config.py",
+            "tests/review_ai/test_dependency_boundaries.py",
+        ],
+    ]
+
+
+@pytest.mark.parametrize(
+    ("command", "expected_call_count"),
+    [
+        ("uv run --no-sync tach check", 1),
+        ("uv run --no-sync pytest", 2),
+    ],
+)
+def test_workflow_tach_step_failure_propagates(
+    repo: Path,
+    tool_env: dict[str, str],
+    workflow_steps: dict[str, dict[str, object]],
+    command: str,
+    expected_call_count: int,
+) -> None:
+    step = workflow_steps["Check Python dependency boundaries"]
+    proc = subprocess.run(
+        ["bash", "-c", str(step["run"])],
+        cwd=repo,
+        env=tool_env | {"FAIL_COMMAND": command},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode == 17
+    assert len(tool_calls(tool_env)) == expected_call_count
+
+
 @pytest.mark.parametrize(
     ("step_name", "script", "selector"),
     [
