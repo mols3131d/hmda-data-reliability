@@ -206,7 +206,7 @@ def test_script_test_modify_targets_only_changed_test() -> None:
     "path",
     [
         "README.md",
-        "docs/development/ci.md",
+        "docs/development/ci/README.md",
         "inbox/AGENTS.md",
         "inbox/_guidelines/research.md",
         "inbox/_templates/research.md",
@@ -227,7 +227,7 @@ def test_markdown_path_selection_stays_within_changed_scope() -> None:
     """Mixed Markdown에서도 입력된 changed path만 workflow에 전달한다."""
     paths = [
         "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
-        "docs/development/ci.md",
+        "docs/development/ci/README.md",
         "inbox/AGENTS.md",
     ]
     assert run_markdown_paths(paths) == paths
