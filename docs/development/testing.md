@@ -105,7 +105,7 @@ git -c core.quotePath=false diff --name-only <base> <head> | bash scripts/ci/cla
 bash scripts/ci/markdown.sh <base> <head>
 FULL_TYPE=false TYPE_TARGETS="src/hmda_reliability/review_ai tests/review_ai" bash scripts/ci/python.sh <base> <head>
 BULK=false SPEC_TARGETS="reliability-agentic-review" bash scripts/ci/openspec.sh
-FULL_TESTS=false FULL_UNIT=false TARGETS="tests/scripts/test_ci_classifier.py tests/scripts/test_ci_steps.py" bash scripts/ci/pytest.sh
+FULL_TESTS=false FULL_UNIT=false TARGETS="tests/scripts/ci" bash scripts/ci/pytest.sh
 ```
 
 파일을 수집하는 step의 기본 비교는 CI prospective merge의 `HEAD^1`과 `HEAD`다. Local branch의 전체 PR 변경을 확인하려면 적절한 base/head를 명시한다. Git 비교 실패와 필수 도구 실패는 nonzero이며, Markdown formatter의 정보성 진단과 non-blocking diff는 docs lint 실패와 별도로 표시한다.
