@@ -1,7 +1,7 @@
 ---
 type: research
 title: CI Cost and Complexity Improvement Research
-description: 현재 CI에서 필수 검증을 보존하며 제거할 중복과 추가 측정이 필요한 비용을 구분해 후속 개선 범위를 판단한다.
+description: F1 중복 선택의 과거 근거와 F2 cold·warm 측정으로 CI 환경 분리의 실익과 추가 검증 필요성을 판단한다.
 tags:
   - ci
   - change-impact
@@ -11,7 +11,7 @@ tags:
 # CI Cost and Complexity Improvement Research
 
 > [!IMPORTANT]
-> **F1의 중복 선택은 현재 구현에서도 확인됐다. 환경 분리와 packaging 축소의 실익은 아직 미확인이다.** 가장 작은 후보는 이미 성공한 AST guard의 재실행과 전체 non-resource suite 뒤의 runtime smoke 반복을 제거하는 것이다. 필수 검증 범위는 유지하며, 시간 절감이나 과금 절감은 아직 주장하지 않는다.
+> **F2 측정은 완료했으며 현재는 전체 환경 유지가 적절하다.** 로컬 full sync의 cold 중앙값은 25.64초, warm은 0.23초였다. 현재 Actions는 cache hit이며 uv setup 13초 중 cache 복원이 약 10초, sync는 3초다. 작은 환경의 비용·검증 동등성은 측정하지 않았으므로 환경 분리의 실익과 과금 절감은 아직 미확인이다. 아래 `Findings`는 F1 구현 전 snapshot이며 현재 F1 결과는 [Execution Record](plan.md#execution-record)를 따른다.
 
 ## Question
 
@@ -21,7 +21,7 @@ tags:
 
 2026-10-04, branch `agent/research-ci-script-separation`의 HEAD `6251c91aafd2a2db0d41d2136ff6f773f02df03e`와 조사 시작 시 clean 작업 트리를 기준으로 한다. [원 보고서](../06-review-ci-cost-and-complexity.md)는 과거 비용 표본의 근거로, 현재 workflow·classifier·pytest script는 선택 계약의 근거로 사용했다.
 
-F1의 두 중복 조합, F2의 환경 준비, F3의 wheel build 조건과 F4의 영향 매핑만 포함한다. 애플리케이션 변경, Tach boundary 재설계, 전체 CI 재설계, provider 이전과 권한 변경은 제외한다. 새 pytest suite·원격 실행 통계·cold install·과금·before/after benchmark는 수집하지 않았다.
+F1의 두 중복 조합, F2의 환경 준비, F3의 wheel build 조건과 F4의 영향 매핑만 포함한다. 애플리케이션 변경, Tach boundary 재설계, 전체 CI 재설계, provider 이전과 권한 변경은 제외한다. 위 snapshot에서는 새 pytest suite·원격 실행 통계·cold install·과금·before/after benchmark를 수집하지 않았다. 2026-10-05의 [F2 Measurement](#f2-measurement)는 전달된 HEAD `ec81d5d3abb27b036a50ed79e73b18565199f394`와 해당 CI 로그를 사용한 별도 후속 근거다.
 
 ## Findings
 
@@ -84,8 +84,66 @@ Dependency 변경은 `full_unit=true`, `runtime_smoke=true`를 선택한다. 여
 
 이 조사는 기존 PR의 검증 완료와 다른 작업이다. 이전 follow-up을 새 blocker로 만들거나 이번 문서 작성만으로 구현·commit·push를 승인하지 않는다.
 
+## F2 Measurement
+
+### State Basis
+
+2026-10-05 재개 시 worktree는 clean이었고 로컬·원격 head는 `ec81d5d3abb27b036a50ed79e73b18565199f394`, base는 `5532dca2fd93696d40ba870471fa2359c5662335`였다. [PR #253](https://github.com/mols3131d/hmda-data-reliability/pull/253)은 Open·Draft, mergeable이며 본문의 revision·Validation은 최신 CI와 일치했다. 조회한 review·review thread에는 feedback이 없었다. 이 상태의 review readiness는 `ready`이며 correctness approval이나 merge permission은 아니다. Required approval·protection 설정의 미확인 상태를 무승인 merge 허용으로 해석하지 않는다.
+
+[CI Lite run 37216063423](https://github.com/mols3131d/hmda-data-reliability/actions/runs/37216063423)은 success다. Checkout 로그와 commit parents로 prospective merge `0b02ef08a69e2e5b1992fb5dffe579a605e04f3e`가 위 base/head 조합임을 확인했다. F1 구현·독립 리뷰는 반복하지 않았으며 새로운 CI 실행도 요청하지 않았다.
+
+### Actions Cache Restore Is Separate from Sync
+
+현재 revision의 [job 111476703631](https://github.com/mols3131d/hmda-data-reliability/actions/runs/37216063423/job/111476703631)의 native step 시각과 로그를 사용했다. Runner는 Ubuntu 24.04 x86_64, Python 3.13.15, uv 0.11.32다.
+
+| Stage | Observed Time | Evidence and Limit |
+| --- | --- | --- |
+| Run creation → job start | 3초 | `16:15:00Z → 16:15:03Z`; scheduling·runner 준비 원인은 분리 불가 |
+| Python setup | 같은 초 내 완료 | Runtime은 이미 hosted tool cache에 존재; 실제 비용 0을 뜻하지 않음 |
+| uv setup | 13초 | `16:15:09Z → 16:15:22Z`; uv 설치와 dependency cache 복원 포함 |
+| Cache restore | 약 10초 | 로그 `16:15:12.141Z → 16:15:22.273Z`; exact-key hit, 348,447,326 B archive, extraction 포함 |
+| Full sync | 3초 | `16:15:22Z → 16:15:25Z`; 프로젝트 1개 준비 241ms, 223개 설치 1.97초 |
+| Job total | 49초 | `16:15:03Z → 16:15:52Z`; 테스트와 다른 검증 포함 |
+
+uv 다운로드는 `16:15:10.175Z`, 설치 완료는 `16:15:11.437Z`이며 cache 복원과 다른 비용이다. Sync는 새 `.venv`를 만들었지만 package cache는 warm이었다. 따라서 이 실행을 cold install 표본으로 세지 않는다. 직전 run의 로그는 조회에서 비어 있어 추가 표본으로 사용하지 않았다. 위 시각이나 캐시 크기를 과금 절감액 또는 환경 축소로 줄일 수 있는 시간으로 환산하지 않는다.
+
+### Local Cold and Warm Samples
+
+같은 HEAD의 `git archive`를 저장소 밖 임시 영역에 풀고, 각 cold마다 빈 uv cache를 만들었다. 그 cache를 재사용하는 warm도 별도의 새 venv에서 실행했다. 같은 cache를 사용하는 cold → warm 순서의 세 쌍을 순차 실행했으며 warm이 이미 설치된 venv의 audit으로 끝나는 경우는 없었다.
+
+| Condition | Value |
+| --- | --- |
+| Date / Host | 2026-10-05, Linux WSL2 x86_64, ext4 disk; GitHub runner 아님 |
+| Toolchain | uv 0.11.32, CPython 3.13.15; Python build·filesystem은 hosted runner와 다름 |
+| Source | HEAD `ec81d5d3abb27b036a50ed79e73b18565199f394`; CI는 위 prospective merge 사용 |
+| Lock SHA-256 | `9ee5ff429ffeb5ef6b140d6bb173595c7c290bf51167eced72fa960077de0221` |
+| Project SHA-256 | `25cb277ce7cb00497175c53b703cdd445c77fc525691ea8d8f6610f34d5bd0a8` |
+| Command | `uv sync --locked --project "$checkout" --no-progress`; root dependencies와 default dev group 유지 |
+| Controls | `UV_CACHE_DIR`, `UV_PROJECT_ENVIRONMENT`, `UV_PYTHON`을 명시; ambient `UV_ENV_FILE`, `PYTHONPATH`, `VIRTUAL_ENV`, `UV_OFFLINE`, `UV_NO_CACHE` 제거; Python 자동 다운로드 비활성화 |
+| Timing | GNU `/usr/bin/time`의 wall clock; tool·runtime 준비와 cache 복사·복원은 제외 |
+
+공식 uv 0.11.32 archive의 SHA-256 `aab924fd522efd06f1c5f3b93a243864fc453132c94b2dc49f1371b528a4b967`을 확인했다. 이 uv의 Python catalog에는 3.13.15가 없어 runtime만 별도 uv 0.12.5로 준비했으며 실제 sync는 모두 0.11.32로 실행했다. 주 `.venv`와 공유 cache를 삭제·교체하지 않았고, repository source·lock·workflow·test는 변경하지 않았다.
+
+| Pair | Cold Wall (s) | Cold Prepare (s) | Cold Install (ms) | Warm Wall (s) | Warm Install (ms) |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 27.26 | 26.89 | 163 | 0.23 | 162 |
+| 2 | 25.64 | 25.41 | 115 | 0.25 | 174 |
+| 3 | 25.31 | 25.09 | 114 | 0.18 | 112 |
+
+Cold는 중앙값 **25.64초**, 범위 **25.31~27.26초**이고 warm은 중앙값 **0.23초**, 범위 **0.18~0.25초**다. 모든 sync exit code는 0이며 226개 resolution record 중 실제 설치는 223개였다. 여섯 환경의 정렬된 `name==version` 목록은 동일했고 SHA-256은 `4d5e4f775b0937eb82e683b064bdde7fd9b4eded27814ed9b74d41540ada5a6f`였다. 이는 설치 목록의 일치이지 pytest plugin·fixture 실행 동등성의 증명은 아니다.
+
+Cold에는 다운로드·build·unpack이 포함됐다. Warm에는 download·prepare 로그가 없으며, 마지막 cache에서 `--offline`과 새 venv로 추가 실행해 223개 설치 성공을 확인했다. Offline 검사는 시간 표본에서 제외했다. Pair별 cache의 디스크 사용량은 약 1.09GiB로, Actions의 압축 archive 크기와 직접 비교하지 않는다. OS page cache·DNS·upstream cache는 초기화하지 않았으므로 cold는 **빈 uv cache**를 뜻하며 완전히 cold인 host나 network를 뜻하지 않는다.
+
+재현할 때는 같은 source·lock·toolchain으로 pair별 빈 cache와 새 cold/warm venv를 만들고, 위 환경값으로 GNU time을 감싼 sync를 실행한다. Raw log는 repository에 추가하지 않는다. 이번 임시 근거는 `/home/mols3131d/.cache/hmda-pr253-f2.PgXHZ7/pair-{1,2,3}/{cold,warm}.{time,log}`와 `offline.log`에 남아 있으며 임시 자료이므로 지속 보존을 보장하지 않는다.
+
+### Decision Gate Remains Open
+
+빈 cache에서의 준비 비용과 Actions의 cache 복원 비용은 확인됐지만 **작은 locked 환경의 전후 비교·fixture/plugin·정적 검사 동등성은 확인하지 않았다.** 현재 evidence만으로 별도 lock·cache·workflow를 도입할 근거는 부족하다. 기본 권고는 기존 전체 환경을 유지하고 F2를 PR 완료 blocker로 만들지 않는 것이다.
+
+추가 개선을 선택한다면 먼저 기존 성공 Actions 표본으로 cache hit/miss 빈도와 복원 시간을 확인하고, 절감 후보가 유지 비용을 감당할 때만 작은 환경의 계약 동등성·전후 비용을 별도 범위로 제안한다. F3 build 조건과 금액 절감은 이번 측정의 결론이 아니다. 추가 구현·commit·push·본문 갱신·Ready 전환·승인·merge는 수행하지 않았다.
+
 ## Open Questions
 
-- F1의 실제 반복 시간은 어느 정도인가? 수정 전후 같은 target·marker·환경의 실행 기록으로 확인해야 하며 target 수 감소를 시간 절감으로 대체하지 않는다.
-- Cold/warm 환경의 설치·다운로드 비용과 uv setup·runner 대기를 구분할 수 있는가? 확인하지 못한 cache 상태는 unknown으로 남겨야 한다.
-- 환경 분리의 이득이 추가 dependency·plugin·cache 계약을 유지할 비용보다 큰가? 측정 전에는 분리하지 않는 것이 기본값이다.
+- 작은 환경이 cold 준비와 Actions cache 복원에서 실제로 얼마나 줄이며, fixture·pytest plugin·정적 검사 계약을 유지할 수 있는가? 비교 환경은 아직 만들지 않았다.
+- 현재 lock/runtime의 Actions cache hit·miss 빈도와 비용 분포는 어떤가? 이번 관측은 exact-key hit 한 회이며 cold hosted-runner 표본·실제 과금은 없다.
+- F1의 실제 반복 시간은 어느 정도인가? 수정 전후 같은 target·marker·환경의 실행 기록이 없으므로 target 수 감소를 시간 절감으로 대체하지 않는다.

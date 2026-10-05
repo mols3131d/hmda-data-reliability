@@ -11,7 +11,7 @@ tags:
 # CI Cost and Complexity Improvement Plan
 
 > [!IMPORTANT]
-> **이번 구현은 F1의 AST guard와 runtime smoke 중복 제거로 한정한다.** 로컬 검증은 [Execution Record](#execution-record)에 기록한다. 2026-10-05 사용자가 commit·push·PR 본문 갱신을 승인했다. F2 측정과 후속 판단은 [Next Session](README.md#next-session)에서 재개하며 별도 환경 도입과 F3는 진행하지 않는다.
+> **F1 구현·전달과 F2 초기 측정은 완료했다.** F1 로컬 검증은 [Execution Record](#execution-record), 2026-10-05의 비용 실측은 [F2 Measurement](research.md#f2-measurement)가 소유한다. 현재는 전체 환경 유지를 권고하며 별도 환경 도입과 F3는 진행하지 않는다.
 
 [조사](research.md)는 HEAD `6251c91aafd2a2db0d41d2136ff6f773f02df03e`의 선택 계약과 [원 보고서](../06-review-ci-cost-and-complexity.md)의 과거 비용 표본을 구분한다. F1은 같은 PR #253 branch에서 이 HEAD에 대한 로컬 후속 변경으로 구현한다. 별도 branch·change를 만들지 않으며 remote delivery는 별도 요청을 따른다.
 
@@ -126,7 +126,7 @@ Before/after 비교에는 같은 target·marker·환경·revision 관계를 남�
 
 ## Execution Boundary
 
-사용자 실행 요청으로 단계 1과 F1 구현을 진행했다. 2026-10-05 종료 요청은 오늘 변경과 내일 인계 문서의 commit·push·PR 본문 갱신을 포함한다. F2는 다음 세션의 측정 작업으로 구분하고 결과에 따라 후속 결정을 요청한다. Ready 전환·승인·merge와 다음 세션의 추가 delivery 권한은 포함하지 않는다. PR #253의 기존 완료 작업과 이 개선 단위의 evidence를 섞지 않는다.
+사용자 실행 요청으로 단계 1과 F1 구현을 진행했다. 2026-10-05 종료 요청으로 해당 변경을 commit·push하고 PR 본문을 갱신했다. 같은 날 재개 요청은 최신 상태 확인, F2 측정과 결과 기록으로 수행했다. 이후 병합 전 준비 요청에서 사용자는 로컬 보완·검증만 선택했다. 전체 PR 독립 리뷰의 필수 root blob lock 보완과 검증은 [Merge Preparation](../08-agent-routes-skills-lock-compatibility/02-report.md#2026-10-05-merge-preparation)에 구분한다. 환경 분리·F3·추가 delivery·Ready 전환·승인·merge는 수행하지 않는다. PR #253의 기존 완료 작업과 이 개선 단위의 evidence를 섞지 않는다.
 
 ## Execution Record
 
@@ -154,4 +154,4 @@ Before/after 비교에는 같은 target·marker·환경·revision 관계를 남�
 
 Collection은 동일 worktree·환경·`not memory and not stress` marker로 guard 제외 전후를 비교했다. Smoke 5개는 component/integration이며 unit-only suite가 대체할 수 없다. 실행 수 감소는 확인했지만 동일 조건 runtime 전후 측정, Actions latency와 과금 절감은 unknown이다.
 
-F1 로컬 완료 gate를 충족했다. 종료 작업은 승인된 delivery와 새 prospective merge CI 확인·본문 갱신이며, 해당 결과는 최신 PR가 소유한다. 이후 작업은 [Next Session](README.md#next-session)의 최신 상태 확인과 F2 cold/warm 측정이다. 새 환경 도입은 측정 결과에 따른 별도 판단을 거친다.
+F1 로컬 완료 gate와 승인된 delivery를 완료했다. Head `ec81d5d`의 새 prospective merge CI와 본문도 확인했으며 해당 외부 상태는 최신 PR가 소유한다. F2 cold/warm 세 쌍의 측정과 별도 offline cache 확인은 [F2 Measurement](research.md#f2-measurement)에 기록한다. 새 환경의 이득·검증 동등성은 미확인이며 기본 권고는 전체 환경 유지다. 다음 판단은 [Next Session](README.md#next-session)을 따른다.
