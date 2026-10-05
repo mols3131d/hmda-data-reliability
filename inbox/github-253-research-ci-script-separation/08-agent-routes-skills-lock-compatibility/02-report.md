@@ -6,6 +6,8 @@ description: PR 253 route 번들의 최종 로컬 구현, 검증한 파일 ident
 
 # Agent Routes Implementation Results
 
+아래 초기 구현·검증·delivery 기록은 HEAD `cf9c1384bdd9c8c8cedc01c001f0806095ff766e` 당시 snapshot이다. 현재 PR의 필수 보완과 로컬 검증은 [2026-10-05 Merge Preparation](#2026-10-05-merge-preparation)을 따른다.
+
 > [!IMPORTANT]
 > 로컬 구현과 독립 리뷰를 완료했다. 최종 관련 suite는 178개 통과, 범위 밖 문서 이동에 따른 2개 실패다. 새 구현의 원격 CI는 실행하지 않았으며 commit·push·PR 수정도 수행하지 않았다.
 
@@ -83,3 +85,47 @@ Owning branch는 `agent/research-ci-script-separation`, baseline과 변경되지
 ## Delivery Boundary
 
 Commit·push·PR 本문 갱신·Ready 전환·merge는 수행하지 않았다. 기존 PR 본문의 Skills lock 제외 항목은 추후 승인된 delivery에서 실제 추가 scope와 맞춰야 한다. 원격 전체 CI 성공은 prospective merge 상태에서 별도 확인해야 하며, 병행 문서 변경의 두 실패는 해당 작업 owner가 해결할 사항이다.
+
+## 2026-10-05 Merge Preparation
+
+사용자는 PR #253의 병합 가능한 품질을 요청하고 delivery 범위를 **로컬 보완·검증만**으로 선택했다. Base는 `5532dca2fd93696d40ba870471fa2359c5662335`, HEAD는 `ec81d5d3abb27b036a50ed79e73b18565199f394`다. 전체 PR와 로컬 F2 문서의 독립 리뷰는 `changes_required`였으며, R1 한 건을 `current_required`로 채택했다. 과거 `clear` 판정은 이번 보완 상태의 리뷰를 대신하지 않는다.
+
+### Root Blob Lock
+
+Skills CLI `1.7.0`의 [공식 npm 배포본](https://registry.npmjs.org/skills/-/skills-1.7.0.tgz)을 직접 읽었다. `tryBlobInstall()`은 ref가 없을 때만 실행되며 root Skill snapshot에서 `SKILL.md`만 남긴다. `runAdd()`는 성공한 설치의 `snapshotHash`를 project lock의 `computedHash`에 기록하며 `skillPath: SKILL.md`도 기록할 수 있다. 기존 parser는 root에서도 저장소 전체를 hash해 정상 blob lock을 거부했다. 정상 입력 회귀는 수정 전 `Skills CLI hash mismatch: alpha`로 실패했고 변경된 Skill 내용 거부는 통과했다.
+
+[Source parser](../../../scripts/agent_routes/sources.py)는 전체 폴더 hash를 먼저 검증하고, ref가 없고 확인한 vendor 허용 owner인 `vercel`, `vercel-labs`, `heygen-com`, `remotion-dev` 또는 `zapier/connectors`의 root Skill일 때만 단일 파일 hash도 인정한다. Optional `skillPath`가 있어도 지원한다. 다른 source, 명시적 ref와 nested Skill의 전체 폴더 검증은 완화하지 않는다. Lock에는 blob·clone 설치 방식이 기록되지 않으므로 ref 없는 허용 source의 root는 두 vendor hash를 구별 없이 검증한다. 이 한계는 임의 hash 허용이나 내용 검증 생략을 뜻하지 않는다.
+
+### Local Validation
+
+Python 3.13.13의 기존 repository 환경에서 실행했다. 외부 Skill을 설치하거나 실제 network를 테스트에 사용하지 않았다.
+
+| Check | Observed Result |
+| --- | --- |
+| 수정 전 관련 기준선 | CI·route·Agent Assets 200 passed |
+| Root blob RED | 정상 입력 1 failed, 변경 내용 거부 1 passed; collection·fixture 오류 아님 |
+| Root·nested 경계 | Blob의 path 유무·허용 source, root clone 성공·변경 거부, clone-only 입력과 nested 폴더 변경 거부: 12 passed |
+| 최종 관련 suite | 아래 command로 211 passed; 이전 문서 경로 실패는 이미 전달된 수정으로 해소됨 |
+| 변경 Python 정적 검사 | Ruff lint·format `--check`, ty, editor diagnostics 통과 |
+
+```bash
+uv run --no-sync pytest tests/scripts/ci tests/scripts/test_generate_agent_routes.py tests/scripts/test_agent_assets.py -q -p no:sugar -p no:cacheprovider --color=no --tb=short
+uv run --no-sync ruff check scripts/agent_routes/sources.py tests/scripts/test_generate_agent_routes.py
+uv run --no-sync ruff format --check scripts/agent_routes/sources.py tests/scripts/test_generate_agent_routes.py
+uv run --no-sync ty check scripts/agent_routes/sources.py tests/scripts/test_generate_agent_routes.py
+```
+
+최종 로컬 implementation identity는 아래와 같다. 이 실행 결과와 새 독립 판정은 구분하며, 원격 CI 성공으로 간주하지 않는다.
+
+| File | SHA256 |
+| --- | --- |
+| [scripts/agent_routes/sources.py](../../../scripts/agent_routes/sources.py) | `df4a2dff66c989df346931326c1bad891fad56a78b13e422192953b9efde58fc` |
+| [tests/scripts/test_generate_agent_routes.py](../../../tests/scripts/test_generate_agent_routes.py) | `f5d3ce3e5f892566b249d254c5216291e254d64a8e045e0a5633a6f7bbe7b048` |
+
+최종 로컬 여섯 파일 snapshot의 fresh `review-lead` 판정은 **`clear`**다. Quality·adversarial 검토를 통합해 R1 해소와 신규 필수 finding 부재를 확인했다. 이는 전체 PR 최초 리뷰 이후 변경한 보완 범위의 독립 판정이며 GitHub approval이나 merge 허가는 아니다. Reviewer는 소스·vendor·테스트·문서를 대조하고 editor diagnostics를 확인했지만, 위 pytest·Ruff·ty·Markdown 실행과 SHA-256 계산은 구현 담당자의 제공 근거이며 독립 재실행하지 않았다.
+
+비차단 `follow_up`은 설치 provenance 강화다. Vendor hash는 구분자 없이 경로와 파일 바이트를 연결하므로 ref 없는 허용 root에서 서로 다른 blob·clone 파일 구성이 같은 해시 입력을 만들 수 있다. 추가 설치 방식·원본 revision 계약 없이는 두 형식을 구별할 수 없으며, 리뷰는 이 별도 requirement를 이번 필수 보완으로 확대하지 않았다. 해당 구성은 정적 추론이고 런타임 재현은 하지 않았다.
+
+### Delivery Status
+
+Commit·push·PR 본문 갱신·Ready 전환·승인·merge는 수행하지 않았다. 최신 성공한 원격 [CI run 37216063423](https://github.com/mols3131d/hmda-data-reliability/actions/runs/37216063423)은 위 HEAD와 base의 prospective merge `0b02ef08a69e2e5b1992fb5dffe579a605e04f3e`를 검증했으며 이번 미커밋 보완은 포함하지 않는다. 이후 delivery를 승인하면 새 head의 CI를 별도로 확인해야 한다. Branch protection과 적용 rules 조회는 모두 403으로 approval 요구사항이 미확인이고 PR는 Draft다. 환경 분리·F3와 비차단 follow-up은 이번 필수 보완에 포함하지 않았다.

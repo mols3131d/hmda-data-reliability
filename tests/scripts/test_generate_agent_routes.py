@@ -210,26 +210,30 @@ def test_skills_cli_dependency_sources_use_locked_ref(
 
 
 def _github_snapshot(
-    monkeypatch: pytest.MonkeyPatch, files: dict[str, bytes]
+    monkeypatch: pytest.MonkeyPatch,
+    files: dict[str, bytes],
+    *,
+    repository: str = "owner/assets",
+    ref: str | None = None,
 ) -> list[str]:
     payload = io.BytesIO()
     with ZipFile(payload, "w") as archive:
         for path, content in files.items():
             archive.writestr(f"assets-{'a' * 40}/{path}", content)
     calls: list[str] = []
+    commits_url = f"https://api.github.com/repos/{repository}/commits?per_page=1"
+    if ref is not None:
+        commits_url += f"&sha={ref}"
 
     def fake_urlopen(request: Request, *, timeout: int) -> io.BytesIO:
         assert timeout == 30
         assert request.get_header("Authorization") is None
         calls.append(request.full_url)
-        if (
-            request.full_url
-            == "https://api.github.com/repos/owner/assets/commits?per_page=1"
-        ):
+        if request.full_url == commits_url:
             return io.BytesIO(json.dumps([{"sha": "a" * 40}]).encode())
         if (
             request.full_url
-            == f"https://codeload.github.com/owner/assets/zip/{'a' * 40}"
+            == f"https://codeload.github.com/{repository}/zip/{'a' * 40}"
         ):
             return io.BytesIO(payload.getvalue())
         pytest.fail(f"unexpected remote request: {request.full_url}")
@@ -270,6 +274,158 @@ def test_skills_cli_version_one_resolves_hash_verified_snapshot(
         "https://api.github.com/repos/owner/assets/commits?per_page=1",
         f"https://codeload.github.com/owner/assets/zip/{'a' * 40}",
     ]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("repository", ["vercel-labs/assets", "zapier/connectors"])
+@pytest.mark.parametrize("skill_path", [None, "SKILL.md"])
+def test_skills_cli_version_one_resolves_root_blob_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+    repository: str,
+    skill_path: str | None,
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    entry: dict[str, str] = {
+        "source": repository,
+        "sourceType": "github",
+        "computedHash": hashlib.sha256(b"SKILL.md" + text).hexdigest(),
+    }
+    if skill_path is not None:
+        entry["skillPath"] = skill_path
+    lock = {
+        "version": 1,
+        "skills": {"alpha": entry},
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    _github_snapshot(
+        monkeypatch,
+        {"SKILL.md": text, "README.md": b"outside the blob snapshot"},
+        repository=repository,
+    )
+
+    assert sources.skills_cli_dependency_sources() == {
+        "alpha": f"https://raw.githubusercontent.com/{repository}/{'a' * 40}/SKILL.md"
+    }
+
+
+@pytest.mark.unit
+def test_skills_cli_version_one_rejects_changed_root_blob(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": "vercel-labs/assets",
+                "sourceType": "github",
+                "skillPath": "SKILL.md",
+                "computedHash": hashlib.sha256(b"SKILL.md" + text).hexdigest(),
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    _github_snapshot(
+        monkeypatch,
+        {
+            "SKILL.md": text + b"Changed instructions\n",
+            "README.md": b"outside the blob",
+        },
+        repository="vercel-labs/assets",
+    )
+
+    with pytest.raises(RouteGenerationError, match="Skills CLI hash mismatch: alpha"):
+        sources.skills_cli_dependency_sources()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("repository", ["owner/assets", "vercel-labs/assets"])
+def test_skills_cli_version_one_resolves_root_clone_snapshot(
+    monkeypatch: pytest.MonkeyPatch, repository: str
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    readme = b"part of the cloned folder"
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": repository,
+                "sourceType": "github",
+                "computedHash": hashlib.sha256(
+                    b"README.md" + readme + b"SKILL.md" + text
+                ).hexdigest(),
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    _github_snapshot(
+        monkeypatch, {"SKILL.md": text, "README.md": readme}, repository=repository
+    )
+
+    assert sources.skills_cli_dependency_sources() == {
+        "alpha": f"https://raw.githubusercontent.com/{repository}/{'a' * 40}/SKILL.md"
+    }
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("repository", ["owner/assets", "vercel-labs/assets"])
+def test_skills_cli_version_one_rejects_changed_root_clone_folder(
+    monkeypatch: pytest.MonkeyPatch, repository: str
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    lock = {
+        "version": 1,
+        "skills": {
+            "alpha": {
+                "source": repository,
+                "sourceType": "github",
+                "computedHash": hashlib.sha256(
+                    b"README.md" + b"original readme" + b"SKILL.md" + text
+                ).hexdigest(),
+            }
+        },
+    }
+    monkeypatch.setattr(sources, "SKILLS_LOCK", _TextFile(json.dumps(lock)))
+    _github_snapshot(
+        monkeypatch,
+        {"SKILL.md": text, "README.md": b"changed readme"},
+        repository=repository,
+    )
+
+    with pytest.raises(RouteGenerationError, match="Skills CLI hash mismatch: alpha"):
+        sources.skills_cli_dependency_sources()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("repository", "ref"), [("owner/assets", None), ("vercel-labs/assets", "stable")]
+)
+def test_skills_cli_version_one_rejects_blob_hash_for_clone_only_source(
+    monkeypatch: pytest.MonkeyPatch, repository: str, ref: str | None
+) -> None:
+    text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
+    entry: dict[str, str] = {
+        "source": repository,
+        "sourceType": "github",
+        "skillPath": "SKILL.md",
+        "computedHash": hashlib.sha256(b"SKILL.md" + text).hexdigest(),
+    }
+    if ref is not None:
+        entry["ref"] = ref
+    monkeypatch.setattr(
+        sources,
+        "SKILLS_LOCK",
+        _TextFile(json.dumps({"version": 1, "skills": {"alpha": entry}})),
+    )
+    _github_snapshot(
+        monkeypatch,
+        {"SKILL.md": text, "README.md": b"part of the cloned folder"},
+        repository=repository,
+        ref=ref,
+    )
+
+    with pytest.raises(RouteGenerationError, match="Skills CLI hash mismatch: alpha"):
+        sources.skills_cli_dependency_sources()
 
 
 @pytest.mark.unit

@@ -19,6 +19,9 @@ from .metadata import parse_frontmatter, strip_jsonc_comments
 
 _MAX_ARCHIVE_BYTES = 32 * 1024 * 1024
 _MAX_SNAPSHOT_BYTES = 128 * 1024 * 1024
+_BLOB_ALLOWED_OWNERS = frozenset(
+    {"vercel", "vercel-labs", "heygen-com", "remotion-dev"}
+)
 
 
 def normalize_github_source(source: str) -> str:
@@ -246,7 +249,12 @@ def _skill_folder_hash(files: dict[str, bytes], folder: str) -> str:
 
 
 def _snapshot_skill_path(
-    name: str, path: str | None, expected_hash: str, files: dict[str, bytes]
+    name: str,
+    path: str | None,
+    expected_hash: str,
+    files: dict[str, bytes],
+    *,
+    allow_root_blob: bool,
 ) -> str:
     if path is not None and path not in files:
         raise RouteGenerationError(f"missing Skills CLI skillPath: {name}: {path}")
@@ -274,6 +282,8 @@ def _snapshot_skill_path(
         )
     folder = PurePosixPath(skill_path).parent.as_posix()
     actual_hash = _skill_folder_hash(files, "" if folder == "." else folder)
+    if actual_hash != expected_hash and allow_root_blob and skill_path == "SKILL.md":
+        actual_hash = hashlib.sha256(b"SKILL.md" + files[skill_path]).hexdigest()
     if actual_hash != expected_hash:
         raise RouteGenerationError(
             f"Skills CLI hash mismatch: {name}; upstream snapshot differs from lock"
@@ -282,10 +292,12 @@ def _snapshot_skill_path(
 
 
 def skills_cli_dependency_sources() -> dict[str, str]:
-    """version 1 lock의 폴더 hash를 검증한 immutable raw URL을 반환한다.
+    """version 1 lock의 내용 hash를 검증한 immutable raw URL을 반환한다.
 
     ref와 skillPath는 vendor의 optional 필드다. 누락 시 실제 default revision과
-    Skill 이름으로 source를 찾되 폴더 내용이 computedHash와 같을 때만 채택한다.
+    Skill 이름으로 source를 찾되 computedHash와 내용이 같을 때만 채택한다.
+    Skills CLI 1.7.0의 ref 없는 허용 source는 root blob의 SKILL.md hash도 지원한다.
+    그 외 입력은 전체 폴더 hash를 요구한다. Lock에는 설치 방식 구분이 없다.
     version과 computedHash가 없는 기존 explicit ref/path 입력도 계속 지원한다.
     """
     if not SKILLS_LOCK.is_file():
@@ -345,7 +357,17 @@ def skills_cli_dependency_sources() -> dict[str, str]:
             if key not in snapshots:
                 snapshots[key] = _github_snapshot(repository, ref)
             revision, files = snapshots[key]
-            resolved_path = _snapshot_skill_path(skill_name, path, expected_hash, files)
+            resolved_path = _snapshot_skill_path(
+                skill_name,
+                path,
+                expected_hash,
+                files,
+                allow_root_blob=ref is None
+                and (
+                    repository.lower().split("/", 1)[0] in _BLOB_ALLOWED_OWNERS
+                    or repository.lower() == "zapier/connectors"
+                ),
+            )
         except (OSError, HTTPException) as exc:
             raise RouteGenerationError(
                 f"failed to load Skills CLI snapshot: {skill_name}: {exc}"
