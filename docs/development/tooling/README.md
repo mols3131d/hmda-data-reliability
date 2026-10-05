@@ -28,6 +28,14 @@ tags:
 
 Application 또는 runtime을 구성하는 기술 스택은 이 directory의 소유 범위가 아니다. 예를 들어 DuckDB, dbt, Apache Airflow, LangGraph와 application SDK는 [`DEVELOPMENT.md`](../../../DEVELOPMENT.md), [`ARCHITECTURE.md`](../../ARCHITECTURE.md)와 domain guide의 owning boundary를 따른다.
 
+## Deferred Dependency Audit
+
+현재 MVP 개발 중에는 dependency vulnerability audit를 CI나 Lefthook에 도입하지 않는다. 현재 [`MVP`](../../mvp.md)의 acceptance가 완료되어 이 개발 단계가 종료되면, locked dependency graph의 알려진 취약점을 검증하는 자동화된 audit를 도입한다.
+
+도입 시점에는 당시의 공식 문서와 tool stability를 다시 확인하되, Python dependency authority가 `uv`와 `uv.lock`으로 유지된다면 `uv audit`을 기본 후보로 사용한다. PR에서는 `pyproject.toml` 또는 `uv.lock` 변경에 대해 blocking audit을 수행하고, dependency file 변경 없이 새 advisory가 공개되는 경우도 탐지할 수 있도록 scheduled audit을 별도로 둔다.
+
+`uv audit`의 stability나 governance가 이 용도에 충분하지 않거나 Python 외 ecosystem, PR base/head vulnerability diff, richer suppression lifecycle 같은 요구가 실제로 생기면 OSV-Scanner를 대안으로 평가한다. 이 trigger 전에는 audit workflow, ignore policy 또는 별도 scanner configuration을 repository에 추가하지 않는다.
+
 ## Guides
 
 | Guide | Repository-specific responsibility |
