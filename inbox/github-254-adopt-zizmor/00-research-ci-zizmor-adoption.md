@@ -45,8 +45,8 @@ tags:
 
 #### Evidence
 
-- [`DEVELOPMENT.md`](../../../DEVELOPMENT.md): 현재 repository tooling과 validation stack
-- [`docs/development/ci.md`](../../../docs/development/ci.md): merge admission, 최소 권한, third-party action을 trust boundary로 취급하는 CI 계약
+- [`DEVELOPMENT.md`](../../DEVELOPMENT.md): 현재 repository tooling과 validation stack
+- [`docs/development/ci.md`](../../docs/development/ci.md): merge admission, 최소 권한, third-party action을 trust boundary로 취급하는 CI 계약
 - [`zizmor` Audit Rules](https://docs.zizmor.sh/audits/): Actions 전용 audit 목록과 각 audit의 offline 지원 여부
 - [`zizmor` Usage](https://docs.zizmor.sh/usage/): workflow/action 정의만 분석하는 정적 분석 도구라는 범위와 한계
 
@@ -67,7 +67,7 @@ tags:
 
 #### Evidence
 
-- [`.github/workflows/ci-lite.yml`](../../../.github/workflows/ci-lite.yml): trigger, permissions, action references와 credential 설정
+- [`.github/workflows/ci-lite.yml`](../../.github/workflows/ci-lite.yml): trigger, permissions, action references와 credential 설정
 - [`unpinned-uses`](https://docs.zizmor.sh/audits/#unpinned-uses): v1.20.0 이후 모든 action에 적용되는 기본 hash-pinning 정책
 - [GitHub Secure use reference](https://docs.github.com/en/actions/reference/security/secure-use): full-length SHA pinning 권고와 immutable reference 설명
 - [`actions/checkout` v6.0.2 tag ref](https://api.github.com/repos/actions/checkout/git/ref/tags/v6.0.2)
@@ -96,9 +96,9 @@ npm install --prefix .local/tooling --no-save --package-lock=false @biomejs/biom
 
 #### Evidence
 
-- [`.github/workflows/ci-lite.yml`](../../../.github/workflows/ci-lite.yml): structured-data tooling install step
-- [`scripts/bootstrap.py`](../../../scripts/bootstrap.py): `NODE_TOOL_PACKAGES`, `_install_node_tools()`와 lockless local install 계약
-- [`docs/development/tooling/bootstrap.md`](../../../docs/development/tooling/bootstrap.md): `.local/tooling` 기반 repository-local Node tool 경계
+- [`.github/workflows/ci-lite.yml`](../../.github/workflows/ci-lite.yml): structured-data tooling install step
+- [`scripts/bootstrap.py`](../../scripts/bootstrap.py): `NODE_TOOL_PACKAGES`, `_install_node_tools()`와 lockless local install 계약
+- [`docs/development/tooling/bootstrap.md`](../../docs/development/tooling/bootstrap.md): `.local/tooling` 기반 repository-local Node tool 경계
 - [`adhoc-packages`](https://docs.zizmor.sh/audits/#adhoc-packages): direct package install의 위험과 lockfile 기반 remediation
 - [`zizmor` ignore controls](https://docs.zizmor.sh/usage/#ignoring-results): 좁은 inline ignore와 config ignore 지원
 
@@ -122,7 +122,7 @@ uvx zizmor@1.30.1 \
 
 #### Evidence
 
-- [`docs/development/ci.md`](../../../docs/development/ci.md): 가장 싼 충분한 검증, least privilege, 외부 trust boundary 원칙
+- [`docs/development/ci.md`](../../docs/development/ci.md): 가장 싼 충분한 검증, least privilege, 외부 trust boundary 원칙
 - [`zizmor` Usage](https://docs.zizmor.sh/usage/): operating mode, collection mode와 `--strict-collection`
 - [`zizmor` Installation](https://docs.zizmor.sh/installation/): PyPI/uv/`uvx` 지원
 - [`uv` tool version documentation](https://docs.astral.sh/uv/concepts/tools/#tool-versions): `uvx <tool>@<version>` exact-version 실행
