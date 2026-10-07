@@ -7,44 +7,29 @@ import pytest
 from tests.scripts.ci.helpers import run_classifier
 
 
-@pytest.mark.unit
+@pytest.mark.component
 @pytest.mark.parametrize(
-    ("spec_path", "expected_targets"),
+    "spec_path",
     [
-        (
-            "openspec/specs/data-platform-dbt-analytics/spec.md",
-            {"tests/dbt"},
-        ),
-        (
-            "openspec/specs/orchestration-pipeline/spec.md",
-            {
-                "tests/orchestration",
-                "tests/data_operations/test_quality_gate.py",
-                "tests/data_operations/test_dbt_runner.py",
-                "tests/reliability/test_quality_gate.py",
-            },
-        ),
-        (
-            "openspec/specs/reliability-agentic-review/spec.md",
-            {"tests/review_ai", "tests/runtime_ai"},
-        ),
+        "openspec/specs/data-platform-dbt-analytics/spec.md",
+        "openspec/specs/orchestration-pipeline/spec.md",
+        "openspec/specs/reliability-agentic-review/spec.md",
     ],
 )
-def test_canonical_openspec_changes_select_executable_targets(
+def test_canonical_openspec_changes_select_full_executable_validation(
     spec_path: str,
-    expected_targets: set[str],
 ) -> None:
-    """Canonical Spec 변경은 구조 검증과 대응 executable test를 함께 선택한다."""
+    """Canonical Spec은 capability 매핑 없이 전체 실행 검사를 선택한다."""
     out = run_classifier([spec_path])
 
     assert out["openspec"] == "true"
     assert out["openspec_bulk"] == "false"
     assert out["tests"] == "true"
-    assert out["full_tests"] == "false"
-    assert set(out["targets"].split()) == expected_targets
+    assert out["full_tests"] == out["python"] == out["full_type"] == "true"
+    assert out["targets"] == ""
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_unknown_canonical_openspec_change_fails_safe_to_full_tests() -> None:
     """알 수 없는 신규 Spec capability는 executable validation을 생략하지 않는다."""
     out = run_classifier(["openspec/specs/new-capability/spec.md"])
@@ -53,11 +38,11 @@ def test_unknown_canonical_openspec_change_fails_safe_to_full_tests() -> None:
     assert out["openspec_bulk"] == "true"
     assert out["tests"] == "true"
     assert out["full_tests"] == "true"
-    assert out["full_unit"] == "true"
+    assert out["python"] == "true"
     assert out["full_type"] == "true"
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_active_openspec_change_uses_affected_validation_target(
     openspec_repo: Path,
 ) -> None:
@@ -73,7 +58,7 @@ def test_active_openspec_change_uses_affected_validation_target(
     assert out["tests"] == "false"
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_archived_openspec_change_requests_archived_validation() -> None:
     """Archive 변경은 전체 active item 대신 archived validation을 선택한다."""
     out = run_classifier(
@@ -89,7 +74,7 @@ def test_archived_openspec_change_requests_archived_validation() -> None:
     assert out["tests"] == "false"
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_openspec_configuration_change_uses_bulk_validation() -> None:
     """OpenSpec configuration 변경은 bulk validation을 사용한다."""
     out = run_classifier(["openspec/config.yaml"])
@@ -100,7 +85,7 @@ def test_openspec_configuration_change_uses_bulk_validation() -> None:
     assert out["openspec_change_targets"].strip() == ""
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_canonical_spec_selects_direct_active_change_validation(
     openspec_repo: Path,
 ) -> None:
@@ -113,7 +98,7 @@ def test_canonical_spec_selects_direct_active_change_validation(
     assert out["openspec_change_targets"].strip() == "orchestration-quality-gate"
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_canonical_spec_without_active_delta_keeps_change_targets_empty(
     openspec_repo: Path,
 ) -> None:
@@ -126,7 +111,7 @@ def test_canonical_spec_without_active_delta_keeps_change_targets_empty(
     assert out["openspec_change_targets"].strip() == ""
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_mixed_canonical_spec_and_active_change_preserves_both_targets(
     openspec_repo: Path,
 ) -> None:

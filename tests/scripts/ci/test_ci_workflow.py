@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -14,6 +15,58 @@ from tests.scripts.ci.helpers import (
 )
 
 pytestmark = pytest.mark.component
+
+
+@pytest.mark.parametrize("path", ["rulesync.lock", ".rulesync/rules/markdown.md"])
+def test_route_changes_select_isolated_workflow_steps(
+    path: str, workflow_steps: dict[str, dict[str, object]]
+) -> None:
+    scope = run_classifier([path])
+    for name, expected in (
+        ("Set up uv", True),
+        ("Sync dependencies", False),
+        ("Validate Python", False),
+        ("Run selected tests", False),
+        ("Validate chatbot routes", True),
+    ):
+        condition = workflow_steps[name]["if"]
+        assert isinstance(condition, str), name
+        selectors = []
+        for clause in condition.split(" || "):
+            match = re.fullmatch(r"steps\.scope\.outputs\.(\w+) == 'true'", clause)
+            assert match is not None, clause
+            selectors.append(match.group(1))
+        assert any(scope[key] == "true" for key in selectors) is expected, name
+
+
+@pytest.mark.parametrize(
+    "script", ["scripts/biome.py", "scripts/tombi.py", "scripts/bootstrap.py"]
+)
+@pytest.mark.parametrize("changed_data", [None, "changed.json", "changed.toml"])
+def test_wrapper_changes_select_node_tooling_only_for_changed_data(
+    repo: Path,
+    script: str,
+    changed_data: str | None,
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    paths = [script]
+    if changed_data:
+        (repo / changed_data).write_text("fixture\n", encoding="utf-8")
+        paths.append(changed_data)
+    scope = run_classifier(paths, repo_root=repo)
+
+    assert scope["tests"] == scope["full_tests"] == "true"
+    assert scope["python"] == scope["full_type"] == "true"
+    assert scope["json"] == str(changed_data == "changed.json").lower()
+    assert scope["toml"] == str(changed_data == "changed.toml").lower()
+    assert workflow_steps["Install structured-data tooling"]["if"] == (
+        "steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true'"
+    )
+    for name, selector in (
+        ("Validate changed JSON", "json"),
+        ("Validate changed TOML", "toml"),
+    ):
+        assert workflow_steps[name]["if"] == f"steps.scope.outputs.{selector} == 'true'"
 
 
 @pytest.mark.parametrize(
@@ -137,7 +190,7 @@ def test_workflow_classifier_writes_scope_outputs(
     scope = dict(line.split("=", 1) for line in output.read_text().splitlines())
     assert scope["tests"] == "true"
     assert scope["tach"] == "false"
-    assert scope["ci_targets"].split() == ["tests/scripts/ci"]
+    assert scope["targets"].split() == ["tests/scripts/ci"]
 
 
 def test_renamed_build_input_still_selects_package_build(
@@ -162,14 +215,12 @@ def test_renamed_build_input_still_selects_package_build(
     assert scope["lock"] == "false"
 
 
-def test_workflow_passes_ci_component_targets(
+def test_workflow_passes_only_full_or_scoped_test_selection(
     workflow_steps: dict[str, dict[str, object]],
 ) -> None:
     assert workflow_steps["Run selected tests"]["env"] == {
         "FULL_TESTS": "${{ steps.scope.outputs.full_tests }}",
-        "FULL_UNIT": "${{ steps.scope.outputs.full_unit }}",
         "TARGETS": "${{ steps.scope.outputs.targets }}",
-        "CI_TARGETS": "${{ steps.scope.outputs.ci_targets }}",
         "BOUNDARIES_CHECKED": "${{ steps.boundaries.outcome == 'success' }}",
     }
 
@@ -179,61 +230,16 @@ def test_workflow_deduplicates_only_successful_prior_checks(
 ) -> None:
     boundary = workflow_steps["Check Python dependency boundaries"]
     selected = workflow_steps["Run selected tests"]
-    smoke = workflow_steps["Run dependency runtime smoke"]
     names = list(workflow_steps)
 
     assert boundary["id"] == "boundaries"
     assert selected["id"] == "selected_tests"
-    assert (
-        names.index("Check Python dependency boundaries")
-        < names.index("Run selected tests")
-        < names.index("Run dependency runtime smoke")
+    assert names.index("Check Python dependency boundaries") < names.index(
+        "Run selected tests"
     )
-    assert smoke["if"] == (
-        "steps.scope.outputs.runtime_smoke == 'true' && "
-        "!(steps.scope.outputs.full_tests == 'true' && "
-        "steps.selected_tests.outcome == 'success')"
-    )
-    for step in (boundary, selected, smoke):
+    assert "Run dependency runtime smoke" not in workflow_steps
+    for step in (boundary, selected):
         assert step.get("continue-on-error", False) is False
-
-
-@pytest.mark.parametrize("fail_command", ["", "uv run --no-sync pytest"])
-def test_workflow_runtime_smoke_preserves_targets_and_failure(
-    repo: Path,
-    tool_env: dict[str, str],
-    workflow_steps: dict[str, dict[str, object]],
-    fail_command: str,
-) -> None:
-    step = workflow_steps["Run dependency runtime smoke"]
-    proc = subprocess.run(
-        ["bash", "-c", str(step["run"])],
-        cwd=repo,
-        env=tool_env | {"FAIL_COMMAND": fail_command},
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert proc.returncode == (17 if fail_command else 0)
-    assert tool_calls(tool_env) == [
-        [
-            "uv",
-            "run",
-            "--no-sync",
-            "pytest",
-            "-q",
-            "-p",
-            "no:sugar",
-            "--color=no",
-            "--tb=short",
-            "-ra",
-            "-m",
-            "not memory and not stress",
-            "tests/dbt/test_analytics_foundation.py",
-            "tests/orchestration/test_airflow_dag.py",
-        ]
-    ]
 
 
 def test_workflow_tach_step_runs_required_checks(

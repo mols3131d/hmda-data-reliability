@@ -4,16 +4,34 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
 
 from tests.scripts.ci.helpers import (
     CLASSIFIER_SCRIPT,
+    REPO_ROOT,
     commit_change,
     run_classifier,
     run_markdown_paths,
 )
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("input_kind", ["readme", "module", "resource"])
+def test_packaging_inputs_select_build(input_kind: str) -> None:
+    with (REPO_ROOT / "pyproject.toml").open("rb") as source:
+        config = tomllib.load(source)
+    if input_kind == "readme":
+        path = config["project"]["readme"]
+    else:
+        backend = config["tool"]["uv"]["build-backend"]
+        module = backend["module-name"].replace(".", "/")
+        filename = "__init__.py" if input_kind == "module" else "data/probe.bin"
+        path = f"{backend.get('module-root', 'src')}/{module}/{filename}"
+
+    assert run_classifier([path])["build"] == "true", path
 
 
 @pytest.mark.component
@@ -33,50 +51,30 @@ def test_git_path_line_breaks_fail_before_actions_outputs(repo: Path) -> None:
     assert not output.exists()
 
 
-@pytest.mark.unit
+@pytest.mark.component
 @pytest.mark.parametrize(
-    ("path", "expected_ci_targets"),
+    "path",
     [
-        (
-            "tests/scripts/ci/test_ci_classifier.py",
-            "tests/scripts/ci/test_ci_classifier.py",
-        ),
-        ("tests/scripts/ci/test_ci_classifier_openspec.py", ""),
-        ("tests/scripts/ci/test_ci_classifier_python.py", ""),
-        (
-            "tests/scripts/ci/test_ci_steps.py",
-            "tests/scripts/ci/test_ci_steps.py",
-        ),
-        (
-            "tests/scripts/ci/test_ci_pytest.py",
-            "tests/scripts/ci/test_ci_pytest.py",
-        ),
-        (
-            "tests/scripts/ci/test_ci_workflow.py",
-            "tests/scripts/ci/test_ci_workflow.py",
-        ),
+        "tests/scripts/ci/test_ci_classifier.py",
+        "tests/scripts/ci/test_new_contract.py",
     ],
 )
-def test_script_test_modify(path: str, expected_ci_targets: str) -> None:
-    """존재하는 scripts 테스트 파일 수정 시 해당 테스트만 targets에 추가된다."""
+def test_script_test_modify(path: str) -> None:
+    """CI 테스트 변경은 파일별 매핑 없이 CI 계약 suite를 선택한다."""
     out = run_classifier([path])
     assert out["tests"] == "true"
-    assert out["full_unit"] == "false"
-    assert out["targets"].strip() == path
-    assert out["ci_targets"].strip() == expected_ci_targets
+    assert out["full_tests"] == "false"
+    assert out["targets"].split() == ["tests/scripts/ci"]
     assert out["python"] == "true"
     assert out["full_type"] == "false"
 
 
-@pytest.mark.unit
+@pytest.mark.component
 @pytest.mark.parametrize(
     "path",
     [
         ".github/workflows/ci-lite.yml",
         "scripts/ci/classify_changes.py",
-        "scripts/ci/classify_openspec.py",
-        "scripts/ci/markdown.py",
-        "scripts/ci/changed_files.py",
         "scripts/ci/future-helper.py",
     ],
 )
@@ -84,60 +82,34 @@ def test_ci_changes_select_contract_tests_without_domain_validation(path: str) -
     out = run_classifier([path])
 
     assert out["targets"].split() == ["tests/scripts/ci"]
-    assert set(out["ci_targets"].split()) == set(out["targets"].split())
     assert out["tests"] == "true"
     assert out["python"] == ("true" if path.endswith(".py") else "false")
-    for flag in ("tach", "runtime_smoke", "full_unit", "full_type"):
+    for flag in ("tach", "full_tests", "full_type"):
         assert out[flag] == "false", flag
 
 
-@pytest.mark.unit
+@pytest.mark.component
 @pytest.mark.parametrize(
-    ("path", "expected"),
+    "path",
     [
-        (
-            "scripts/ci/pytest.py",
-            {"tests/scripts/ci"},
-        ),
-        (
-            "tests/scripts/ci/test_ci_classifier.py",
-            {"tests/scripts/ci/test_ci_classifier.py"},
-        ),
-        (
-            "tests/scripts/ci/test_ci_classifier_openspec.py",
-            set(),
-        ),
-        (
-            "tests/scripts/ci/test_ci_classifier_python.py",
-            set(),
-        ),
-        (
-            "tests/scripts/ci/test_ci_steps.py",
-            {"tests/scripts/ci/test_ci_steps.py"},
-        ),
-        (
-            "tests/scripts/ci/test_ci_pytest.py",
-            {"tests/scripts/ci/test_ci_pytest.py"},
-        ),
-        (
-            "tests/scripts/ci/test_ci_workflow.py",
-            {"tests/scripts/ci/test_ci_workflow.py"},
-        ),
-        ("tests/scripts/ci/helpers.py", {"tests/scripts/ci"}),
+        "scripts/ci/run_checks.py",
+        "tests/scripts/ci/test_ci_classifier.py",
+        "tests/scripts/ci/helpers.py",
     ],
 )
 def test_ci_and_dependency_changes_preserve_component_contract_targets(
-    path: str, expected: set[str]
+    path: str,
 ) -> None:
     out = run_classifier(["uv.lock", path])
 
-    assert out["full_unit"] == "true"
+    assert out["full_tests"] == "true"
     assert out["tach"] == "true"
-    assert out["runtime_smoke"] == "true"
-    assert set(out["ci_targets"].split()) == expected
+    assert out["targets"].split() == ["tests/scripts/ci"]
+    assert "ci_targets" not in out
+    assert "full_unit" not in out
 
 
-@pytest.mark.unit
+@pytest.mark.component
 @pytest.mark.parametrize(
     "path",
     [
@@ -150,23 +122,35 @@ def test_ci_and_dependency_changes_preserve_component_contract_targets(
 def test_ci_support_changes_select_all_contracts(path: str) -> None:
     out = run_classifier([path])
 
-    assert out["targets"].split() == ["tests/scripts/ci"]
-    assert out["ci_targets"].split() == ["tests/scripts/ci"]
+    assert out["targets"].split() == [
+        "tests/scripts" if path == "tests/scripts/__init__.py" else "tests/scripts/ci"
+    ]
     assert out["tests"] == "true"
     assert out["python"] == "true"
-    for flag in ("tach", "runtime_smoke", "full_unit", "full_type"):
+    for flag in ("tach", "full_tests", "full_type"):
         assert out[flag] == "false", flag
 
 
-@pytest.mark.unit
-def test_deleted_ci_test_is_not_selected() -> None:
+@pytest.mark.component
+def test_deleted_ci_test_still_selects_remaining_contracts() -> None:
     out = run_classifier(["tests/scripts/ci/test_nonexistent_deleted.py"])
 
-    assert out["tests"] == "false"
-    assert out["targets"] == ""
-    assert out["ci_targets"] == ""
-    assert out["full_unit"] == "false"
+    assert out["tests"] == "true"
+    assert out["targets"] == "tests/scripts/ci"
+    assert out["full_tests"] == "false"
     assert out["full_type"] == "false"
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("directory", ["scripts/ci", "data_platform"])
+def test_missing_test_directory_broadens_to_full_validation(
+    repo: Path, directory: str
+) -> None:
+    out = run_classifier([f"tests/{directory}/test_deleted.py"], repo_root=repo)
+
+    assert out["tests"] == out["full_tests"] == "true"
+    assert out["python"] == out["full_type"] == "true"
+    assert out["targets"] == ""
 
 
 @pytest.mark.component
@@ -185,43 +169,42 @@ def test_git_comparison_failure_is_not_success(tmp_path: Path, args: list[str]) 
     assert "tests=false" not in proc.stdout
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_root_test_delete() -> None:
-    """삭제된 루트 테스트 파일은 디스크에 없으므로 targets에서 제외된다."""
+    """루트 테스트 변경은 남아 있는 전체 suite를 검사한다."""
     out = run_classifier(["tests/test_nonexistent_deleted.py"])
-    assert out["tests"] == "false"
-    assert out["full_unit"] == "false"
+    assert out["tests"] == "true"
+    assert out["full_tests"] == "true"
     assert out["targets"].strip() == ""
     assert out["python"] == "true"
-    assert out["full_type"] == "false"
+    assert out["full_type"] == "true"
     assert out["type_targets"].strip() == ""
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_script_test_rename() -> None:
-    """scripts 테스트 이름 변경 시 존재하는 신규 파일만 targets에 추가된다."""
+    """테스트 rename은 이전과 신규 디렉터리의 계약을 모두 선택한다."""
     path = "tests/scripts/ci/test_ci_classifier.py"
     out = run_classifier(["tests/scripts/test_ci_classifier.py", path])
     assert out["tests"] == "true"
-    assert out["full_unit"] == "false"
-    assert out["targets"].strip() == path
-    assert out["ci_targets"].strip() == path
+    assert out["full_tests"] == "false"
+    assert out["targets"].split() == ["tests/scripts", "tests/scripts/ci"]
     assert out["full_type"] == "false"
 
 
-@pytest.mark.unit
-def test_script_test_modify_targets_only_changed_test() -> None:
-    """scripts 전용 테스트 수정은 해당 테스트만 실행 대상으로 선택한다."""
+@pytest.mark.component
+def test_script_test_modify_targets_script_suite() -> None:
+    """scripts 전용 테스트 수정은 scripts 디렉터리 계약을 선택한다."""
     path = "tests/scripts/test_commands.py"
     out = run_classifier([path])
     assert out["tests"] == "true"
-    assert out["full_unit"] == "false"
-    assert out["targets"].strip() == path
+    assert out["full_tests"] == "false"
+    assert out["targets"].strip() == "tests/scripts"
     assert out["python"] == "true"
     assert out["full_type"] == "false"
 
 
-@pytest.mark.unit
+@pytest.mark.component
 @pytest.mark.parametrize(
     "path",
     [
@@ -236,7 +219,7 @@ def test_changed_markdown_paths_are_selected(path: str) -> None:
     assert run_markdown_paths([path]) == [path]
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_markdown_path_selection_stays_within_changed_scope() -> None:
     """Mixed Markdown에서도 입력된 changed path만 workflow에 전달한다."""
     paths = [
@@ -258,7 +241,7 @@ def test_inbox_only_changes_select_no_validation(repo: Path, suffix: str) -> Non
     assert all(value == "false" or not value for value in out.values())
 
 
-@pytest.mark.unit
+@pytest.mark.component
 def test_inbox_deleted_and_renamed_paths_do_not_hide_other_changes() -> None:
     out = run_classifier(
         ["inbox/deleted.py", "inbox/renamed.json", "scripts/ci/markdown.py"]
@@ -266,7 +249,7 @@ def test_inbox_deleted_and_renamed_paths_do_not_hide_other_changes() -> None:
     assert out == run_classifier(["scripts/ci/markdown.py"])
 
 
-@pytest.mark.unit
+@pytest.mark.component
 @pytest.mark.parametrize(
     "route_path",
     [
@@ -285,24 +268,13 @@ def test_route_only_change_isolates_heavy_execution(route_path: str) -> None:
     assert out["routes"] == "true"
     assert out["tests"] == "false"
     assert out["python"] == "false"
-    assert out["full_unit"] == "false"
+    assert out["full_tests"] == "false"
     assert out["full_type"] == "false"
     assert out["targets"].strip() == ""
     assert out["type_targets"].strip() == ""
 
-    # ci-lite.yml 스텝 실행 조건 대조 검증:
-    step_sync_dependencies = (out["tests"] == "true") or (out["python"] == "true")
-    step_validate_python = out["python"] == "true"
-    step_run_tests = out["tests"] == "true"
-    step_validate_routes = out["routes"] == "true"
 
-    assert not step_sync_dependencies, "전체 의존성 동기화가 실행되면 안 됨"
-    assert not step_validate_python, "Python 검증이 실행되면 안 됨"
-    assert not step_run_tests, "단위 테스트가 실행되면 안 됨"
-    assert step_validate_routes, "챗봇 라우트 격리 검증은 반드시 실행되어야 함"
-
-
-@pytest.mark.unit
+@pytest.mark.component
 def test_workflow_change_targets_classifier_test() -> None:
     """CI 워크플로 파일 변경 시 classifier 자체의 회귀 테스트가 실행된다."""
     out = run_classifier([".github/workflows/ci-lite.yml"])

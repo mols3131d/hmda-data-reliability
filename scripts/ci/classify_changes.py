@@ -11,51 +11,9 @@ from pathlib import Path
 from changed_files import changed_paths, entrypoint
 from classify_openspec import classify_openspec_path
 
-DOMAIN_CONSUMERS = {
-    "data_platform": (
-        "data_platform",
-        "hmda_data",
-        "reliability",
-        "review_ai",
-        "data_operations",
-        "orchestration",
-        "dbt",
-    ),
-    "hmda_data": (
-        "hmda_data",
-        "reliability",
-        "review_ai",
-        "data_operations",
-        "orchestration",
-        "dbt",
-    ),
-    "data_operations": ("reliability", "data_operations", "orchestration"),
-    "reliability": ("reliability", "review_ai", "data_operations", "orchestration"),
-    "review_ai": ("review_ai",),
-    "runtime_ai": ("runtime_ai", "review_ai"),
-    "orchestration": ("orchestration",),
-}
-SCRIPT_TESTS = {
-    "scripts/agent_assets.py": ("tests/scripts/test_agent_assets.py",),
-    "scripts/_commands.py": (
-        "tests/scripts/test_commands.py",
-        "tests/scripts/test_tool_wrappers.py",
-        "tests/scripts/test_bootstrap.py",
-        "tests/scripts/test_agent_assets.py",
-    ),
-    "scripts/bootstrap.py": ("tests/scripts/test_bootstrap.py",),
-    "scripts/biome.py": ("tests/scripts/test_tool_wrappers.py",),
-    "scripts/tombi.py": ("tests/scripts/test_tool_wrappers.py",),
-    "scripts/generate_docs_indexes.py": (
-        "tests/scripts/test_generate_docs_indexes.py",
-    ),
-    "scripts/validate_inbox_artifacts.py": (
-        "tests/scripts/test_validate_inbox_artifacts.py",
-    ),
-    "scripts/log_agent_event.py": ("tests/scripts/test_log_agent_event.py",),
-    "scripts/run_actual_source.py": ("tests/hmda_data/eda/test_eda_evidence.py",),
-    "scripts/run_agentic_review_live.py": ("tests/review_ai/test_live_harness.py",),
-}
+DEPENDENCY_INPUTS = (".python-version", "pyproject.toml", "uv.lock")
+CI_SOURCE_ROOT = "scripts/ci"
+CI_TEST_ROOT = "tests/scripts/ci"
 
 
 def matches(path: str, *patterns: str) -> bool:
@@ -81,23 +39,16 @@ class Scope:
     build: bool = False
     lefthook: bool = False
     routes: bool = False
-    runtime_smoke: bool = False
     tach: bool = False
-    full_unit: bool = False
     full_tests: bool = False
     full_type: bool = False
     openspec_spec_targets: list[str] = field(default_factory=list)
     openspec_change_targets: list[str] = field(default_factory=list)
     targets: list[str] = field(default_factory=list)
-    ci_targets: list[str] = field(default_factory=list)
     type_targets: list[str] = field(default_factory=list)
 
     def add_target(self, target: str) -> None:
         add_unique(self.targets, target)
-
-    def add_ci_target(self, target: str) -> None:
-        add_unique(self.ci_targets, target)
-        self.add_target(target)
 
     def add_type_target(self, target: str) -> None:
         add_unique(self.type_targets, target)
@@ -107,8 +58,8 @@ class Scope:
         self.add_target(target)
         self.add_type_target(target)
 
-    def full_test_scope(self) -> None:
-        self.tests = self.full_tests = self.full_unit = self.full_type = True
+    def require_full_test_and_type(self) -> None:
+        self.tests = self.full_tests = self.python = self.full_type = True
 
     def outputs(self) -> str:
         lines = []
@@ -119,15 +70,34 @@ class Scope:
         return "".join(lines)
 
 
-def add_domain_closure(scope: Scope, domain: str) -> None:
-    if domain not in DOMAIN_CONSUMERS:
-        scope.full_unit = scope.full_type = True
-        return
-    for consumer in DOMAIN_CONSUMERS[domain]:
-        scope.add_target(f"tests/{consumer}")
-        for directory in (f"src/hmda_reliability/{consumer}", f"tests/{consumer}"):
-            if Path(directory).is_dir():
-                scope.add_type_target(directory)
+def _select_execution_scope(path: str, scope: Scope, dependency_changed: bool) -> None:
+    if path == "lefthook.yml":
+        scope.lefthook = True
+    elif dependency_changed or matches(path, "dbt/*.sql", "dbt/*.yml", "dbt/*.yaml"):
+        scope.require_full_test_and_type()
+    elif matches(path, ".github/workflows/*", f"{CI_SOURCE_ROOT}/*"):
+        scope.add_focused_test(CI_TEST_ROOT)
+        if path.endswith(".py"):
+            scope.add_type_target(CI_SOURCE_ROOT)
+    elif matches(path, "src/*", "scripts/*.py"):
+        scope.require_full_test_and_type()
+    elif matches(path, f"{CI_TEST_ROOT}/*"):
+        if Path(CI_TEST_ROOT).is_dir():
+            scope.add_focused_test(CI_TEST_ROOT)
+        else:
+            scope.require_full_test_and_type()
+    elif path.startswith("tests/"):
+        directory = f"tests/{path.split('/')[1]}"
+        if (
+            Path(directory).is_dir()
+            and Path(directory).name != "__pycache__"
+            and not any(character in directory for character in " \t")
+        ):
+            scope.add_focused_test(directory)
+        else:
+            scope.require_full_test_and_type()
+    elif path.endswith(".py"):
+        scope.require_full_test_and_type()
 
 
 def classify(paths: list[str]) -> Scope:
@@ -136,6 +106,7 @@ def classify(paths: list[str]) -> Scope:
         if not path or path.startswith("inbox/"):
             continue
         exists = Path(path).is_file()
+        dependency_changed = path in DEPENDENCY_INPUTS
         if matches(
             path,
             ".rulesync/rules/*",
@@ -151,22 +122,15 @@ def classify(paths: list[str]) -> Scope:
             scope.json = True
         if exists and matches(path, "*.toml"):
             scope.toml = True
-        if path in ("scripts/biome.py", "scripts/bootstrap.py"):
-            scope.json = True
-        if path in ("scripts/tombi.py", "scripts/bootstrap.py"):
-            scope.toml = True
-        if matches(path, "*.py", ".python-version", "pyproject.toml", "uv.lock"):
+        if path.endswith(".py") or dependency_changed:
             scope.python = True
-        if path in (".python-version", "pyproject.toml", "uv.lock"):
+        if dependency_changed:
             scope.lock = scope.build = True
         if matches(path, "src/hmda_reliability/*", "README.md", "LICENSE"):
             scope.build = True
-        if matches(
+        if dependency_changed or matches(
             path,
-            ".python-version",
             "tach.toml",
-            "pyproject.toml",
-            "uv.lock",
             "src/*.py",
             "tests/scripts/test_tach*.py",
             "tests/review_ai/test_dependency_boundaries.py",
@@ -178,65 +142,7 @@ def classify(paths: list[str]) -> Scope:
             scope.markdown |= exists
             continue
 
-        if path == "lefthook.yml":
-            scope.lefthook = True
-        elif path in (".python-version", "pyproject.toml", "uv.lock"):
-            scope.tests = scope.runtime_smoke = scope.full_unit = scope.full_type = True
-        elif matches(path, "dbt/*.sql", "dbt/*.yml", "dbt/*.yaml"):
-            scope.tests = True
-            for domain in ("dbt", "data_operations", "reliability", "orchestration"):
-                scope.add_target(f"tests/{domain}")
-        elif matches(path, ".github/workflows/*", "scripts/ci/*"):
-            scope.tests = True
-            scope.add_ci_target("tests/scripts/ci")
-            if path.endswith(".py"):
-                scope.add_type_target("scripts/ci")
-                scope.add_type_target("tests/scripts/ci")
-        elif matches(path, "scripts/agent_routes/*.py"):
-            scope.add_focused_test("tests/scripts/test_generate_agent_routes.py")
-            scope.add_type_target("scripts/agent_routes")
-        elif path in SCRIPT_TESTS:
-            for target in SCRIPT_TESTS[path]:
-                scope.add_focused_test(target)
-            if path == "scripts/_commands.py":
-                scope.add_type_target("scripts")
-        elif matches(path, "scripts/*.py"):
-            scope.tests = scope.full_unit = scope.full_type = True
-        elif path == "src/hmda_reliability/logger.py":
-            scope.tests = scope.full_type = True
-            scope.add_target("tests/scripts/test_log_agent_event.py")
-        elif matches(path, "src/hmda_reliability/*/*"):
-            scope.tests = True
-            add_domain_closure(scope, path.split("/")[2])
-        elif matches(path, "tests/test_*.py") or path in (
-            "tests/scripts/ci/test_ci_classifier_openspec.py",
-            "tests/scripts/ci/test_ci_classifier_python.py",
-        ):
-            if exists:
-                scope.tests = True
-                scope.add_target(path)
-        elif matches(path, "tests/scripts/ci/test_*.py"):
-            if exists:
-                scope.tests = True
-                scope.add_ci_target(path)
-        elif matches(path, "tests/scripts/ci/*.py", "tests/scripts/__init__.py"):
-            scope.tests = True
-            scope.add_ci_target("tests/scripts/ci")
-        elif matches(path, "tests/scripts/test_*.py"):
-            if exists:
-                scope.tests = True
-                scope.add_target(path)
-        elif matches(path, "tests/*/*"):
-            scope.tests = True
-            domain = path.split("/")[1]
-            if domain in (*DOMAIN_CONSUMERS, "dbt"):
-                scope.add_target(f"tests/{domain}")
-            else:
-                scope.full_unit = scope.full_type = True
-        elif matches(path, "src/hmda_reliability/*", "tests/*"):
-            scope.tests = scope.full_unit = scope.full_type = True
-        elif path.endswith(".py"):
-            scope.full_type = True
+        _select_execution_scope(path, scope, dependency_changed)
     return scope
 
 

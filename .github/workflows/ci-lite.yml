@@ -118,22 +118,6 @@ jobs:
         if: steps.scope.outputs.tests == 'true'
         env:
           FULL_TESTS: ${{ steps.scope.outputs.full_tests }}
-          FULL_UNIT: ${{ steps.scope.outputs.full_unit }}
           TARGETS: ${{ steps.scope.outputs.targets }}
-          CI_TARGETS: ${{ steps.scope.outputs.ci_targets }}
           BOUNDARIES_CHECKED: ${{ steps.boundaries.outcome == 'success' }}
         run: python3 scripts/ci/run_checks.py pytest
-
-      - name: Run dependency runtime smoke
-        if: steps.scope.outputs.runtime_smoke == 'true' && !(steps.scope.outputs.full_tests == 'true' && steps.selected_tests.outcome == 'success')
-        run: |
-          set -euo pipefail
-          uv run --no-sync pytest \
-            -q \
-            -p no:sugar \
-            --color=no \
-            --tb=short \
-            -ra \
-            -m "not memory and not stress" \
-            tests/dbt/test_analytics_foundation.py \
-            tests/orchestration/test_airflow_dag.py

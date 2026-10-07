@@ -102,25 +102,21 @@ def pytest() -> None:
     if os.environ.get("FULL_TESTS", "false") == "true":
         run([*common, *selected_args, "-n", "auto", "-m", "not memory and not stress"])
         return
-    if os.environ.get("FULL_UNIT", "false") == "true":
-        run([*common, "-n", "auto", "-m", "unit and not memory and not stress"])
-        ci_targets = environment_targets("CI_TARGETS")
-        if ci_targets:
-            run([*common, "-m", "not unit and not memory and not stress", *ci_targets])
-        return
     targets = environment_targets("TARGETS")
-    if targets:
-        parallel = ["-n", "auto"] if len(targets) >= 3 else []
-        run(
-            [
-                *common,
-                *selected_args,
-                *parallel,
-                "-m",
-                "not memory and not stress",
-                *targets,
-            ]
-        )
+    if not targets:
+        print("Pytest was not assigned a validation target", file=sys.stderr)
+        raise SystemExit(1)
+    parallel = ["-n", "auto"] if len(targets) >= 3 else []
+    run(
+        [
+            *common,
+            *selected_args,
+            *parallel,
+            "-m",
+            "not memory and not stress",
+            *targets,
+        ]
+    )
 
 
 def json() -> None:

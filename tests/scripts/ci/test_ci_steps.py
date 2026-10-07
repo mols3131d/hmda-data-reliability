@@ -19,9 +19,73 @@ from tests.scripts.ci.helpers import (
 pytestmark = pytest.mark.component
 
 
-@pytest.mark.parametrize("full_unit", ["false", "true"])
+@pytest.mark.parametrize(
+    "target",
+    ["scripts/renamed_entrypoint.py", "openspec/specs/new-capability/spec.md"],
+)
+def test_unregistered_names_select_full_suite_and_preserve_spec_structure(
+    repo: Path, tool_env: dict[str, str], target: str
+) -> None:
+    commit_change(repo, {target: "fixture\n"})
+    (repo / "openspec/changes").mkdir(parents=True, exist_ok=True)
+    scope = run_classifier([target], repo_root=repo)
+
+    assert scope["tests"] == scope["full_tests"] == "true"
+    assert scope["python"] == scope["full_type"] == "true"
+    assert scope["targets"] == ""
+    if target.startswith("openspec/"):
+        assert scope["openspec_bulk"] == "false"
+        assert scope["openspec_spec_targets"] == "new-capability"
+    proc = run_step(
+        "pytest",
+        repo,
+        tool_env,
+        FULL_TESTS=scope["full_tests"],
+        TARGETS=scope["targets"],
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    calls = tool_calls(tool_env)
+    assert len(calls) == 1
+    assert calls[0][calls[0].index("-n") :] == [
+        "-n",
+        "auto",
+        "-m",
+        "not memory and not stress",
+    ]
+
+
+@pytest.mark.parametrize("separator", [" ", "\t"])
+def test_ascii_whitespace_directory_uses_full_suite_without_split_targets(
+    repo: Path, tool_env: dict[str, str], separator: str
+) -> None:
+    target = f"tests/data_platform{separator}scripts/test_probe.py"
+    commit_change(repo, {target: "assert False\n"})
+    scope = run_classifier([target], repo_root=repo)
+
+    assert scope["full_tests"] == scope["python"] == scope["full_type"] == "true"
+    assert scope["targets"] == ""
+    proc = run_step(
+        "pytest",
+        repo,
+        tool_env,
+        FULL_TESTS=scope["full_tests"],
+        TARGETS=scope["targets"],
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    calls = tool_calls(tool_env)
+    assert len(calls) == 1
+    assert calls[0][calls[0].index("-n") :] == [
+        "-n",
+        "auto",
+        "-m",
+        "not memory and not stress",
+    ]
+
+
 def test_selected_unicode_space_path_remains_one_argument(
-    repo: Path, tool_env: dict[str, str], full_unit: str
+    repo: Path, tool_env: dict[str, str]
 ) -> None:
     target = (
         "tests/scripts/ci/test_ci_pytest.py\u00a0"
@@ -34,12 +98,11 @@ def test_selected_unicode_space_path_remains_one_argument(
         "pytest",
         repo,
         tool_env,
-        FULL_UNIT=full_unit,
-        TARGETS=scope["targets"],
-        CI_TARGETS=scope["ci_targets"],
+        TARGETS=target,
     )
 
     assert proc.returncode == 0, proc.stderr
+    assert scope["targets"] == "tests/scripts/ci"
     call = tool_calls(tool_env)[-1]
     assert call[-1] == target
     assert "tests/scripts/ci/test_ci_pytest.py" not in call
