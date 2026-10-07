@@ -14,26 +14,26 @@ rumdl fmt "${files[@]}"
 diff=$(git diff -- "${files[@]}")
 # formatting 차이는 disposable 작업 공간의 수정 제안이며 branch에 반영하지 않는다.
 if [[ -n "$diff" ]]; then
-  echo "Markdown formatting suggestions (non-blocking):"
-  printf '%s\n' "$diff"
-  if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
-    {
-      echo "### Markdown formatting suggestions"
-      echo
-      echo "CI applied safe formatting changes only in its disposable workspace; formatting-only drift does not fail this check."
-      echo
-      echo '```diff'
-      printf '%s\n' "$diff"
-      echo '```'
-    } >> "$GITHUB_STEP_SUMMARY"
-  fi
+	echo "Markdown formatting suggestions (non-blocking):"
+	printf '%s\n' "$diff"
+	if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+		{
+			echo "### Markdown formatting suggestions"
+			echo
+			echo "CI applied safe formatting changes only in its disposable workspace; formatting-only drift does not fail this check."
+			echo
+			echo '```diff'
+			printf '%s\n' "$diff"
+			echo '```'
+		} >>"$GITHUB_STEP_SUMMARY"
+	fi
 fi
 
 # docs 밖의 선택된 문서는 formatting만 수행하고 Markdown lint로 병합을 막지 않는다.
 docs=()
 for path in "${files[@]}"; do
-  [[ "$path" == docs/* ]] && docs+=("$path")
+	[[ "$path" == docs/* ]] && docs+=("$path")
 done
 if ((${#docs[@]})); then
-  rumdl check "${docs[@]}"
+	rumdl check "${docs[@]}"
 fi
