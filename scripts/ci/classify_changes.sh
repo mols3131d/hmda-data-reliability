@@ -37,6 +37,9 @@ is_markdown_validation_path() {
 	local path="$1"
 
 	case "$path" in
+	inbox/*)
+		return 1
+		;;
 	*.md)
 		return 0
 		;;
@@ -58,7 +61,6 @@ fi
 
 json=false
 markdown=false
-inbox=false
 openspec=false
 openspec_archived=false
 openspec_bulk=false
@@ -173,6 +175,7 @@ add_domain_closure() {
 
 while IFS= read -r path; do
 	[[ -z "$path" ]] && continue
+	[[ "$path" == inbox/* ]] && continue
 
 	# 하나의 경로가 여러 검증을 요구할 수 있으므로 검증 종류별 조건은 독립 적용한다.
 	case "$path" in
@@ -224,7 +227,6 @@ while IFS= read -r path; do
 	if [[ "$path" == *.md ]]; then
 		if [[ -f "$path" ]] && is_markdown_validation_path "$path"; then
 			markdown=true
-			[[ "$path" == inbox/* ]] && inbox=true
 		fi
 		continue
 	fi
@@ -367,7 +369,6 @@ done <<<"$paths"
 write_outputs() {
 	echo "json=$json"
 	echo "markdown=$markdown"
-	echo "inbox=$inbox"
 	echo "openspec=$openspec"
 	echo "openspec_archived=$openspec_archived"
 	echo "openspec_bulk=$openspec_bulk"

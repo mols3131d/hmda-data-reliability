@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.scripts.ci.helpers import commit_change, run_step, tool_calls
+from tests.scripts.ci.helpers import commit_change, git, run_step, tool_calls
 
 pytestmark = pytest.mark.component
 
@@ -26,12 +26,12 @@ def test_markdown_lints_only_changed_docs(repo: Path, tool_env: dict[str, str]) 
 
     assert proc.returncode == 0, proc.stderr
     assert tool_calls(tool_env) == [
-        ["rumdl", "fmt", "docs/changed.md", "inbox/note with spaces.md"],
+        ["rumdl", "fmt", "docs/changed.md"],
         ["rumdl", "check", "docs/changed.md"],
     ]
 
 
-def test_inbox_format_diagnostics_are_informational(
+def test_inbox_changes_do_not_run_formatter(
     repo: Path, tool_env: dict[str, str]
 ) -> None:
     commit_change(repo, {"inbox/note.md": "# Note\n"})
@@ -41,17 +41,16 @@ def test_inbox_format_diagnostics_are_informational(
     )
 
     assert proc.returncode == 0
-    assert "informational" in proc.stdout
-    assert "Broken link diagnostic" in proc.stdout
-    assert tool_calls(tool_env) == [["rumdl", "fmt", "inbox/note.md"]]
+    assert proc.stdout == ""
+    assert tool_calls(tool_env) == []
 
 
 def test_formatting_diff_is_nonblocking_and_reported(
     repo: Path, tool_env: dict[str, str]
 ) -> None:
-    commit_change(repo, {"inbox/note.md": "# Note\n"})
+    commit_change(repo, {"note.md": "# Note\n"})
 
-    proc = run_step("markdown.sh", repo, tool_env, FORMAT_FILE="inbox/note.md")
+    proc = run_step("markdown.sh", repo, tool_env, FORMAT_FILE="note.md")
 
     assert proc.returncode == 0, proc.stderr
     assert "non-blocking" in proc.stdout
@@ -79,12 +78,29 @@ def test_deleted_markdown_is_noop(repo: Path, tool_env: dict[str, str]) -> None:
     assert tool_calls(tool_env) == []
 
 
+@pytest.mark.parametrize("script", ["markdown.sh", "python.sh"])
+@pytest.mark.parametrize("revision", ["missing-base", "--quiet", "--stat"])
+@pytest.mark.parametrize("position", [0, 1])
 def test_invalid_revision_fails_before_tools(
-    repo: Path, tool_env: dict[str, str]
+    repo: Path, tool_env: dict[str, str], script: str, revision: str, position: int
 ) -> None:
-    proc = run_step("markdown.sh", repo, tool_env, "missing-base", "HEAD")
+    revisions = ["HEAD", "HEAD"]
+    revisions[position] = revision
+    proc = run_step(script, repo, tool_env, *revisions)
 
     assert proc.returncode != 0
+    assert tool_calls(tool_env) == []
+
+
+@pytest.mark.parametrize("revision", ["HEAD", "refs/heads/comparison"])
+def test_valid_empty_comparison_is_noop(
+    repo: Path, tool_env: dict[str, str], revision: str
+) -> None:
+    git(repo, "branch", "comparison", "HEAD")
+    head = git(repo, "rev-parse", "HEAD")
+    proc = run_step("markdown.sh", repo, tool_env, revision, head)
+
+    assert proc.returncode == 0, proc.stderr
     assert tool_calls(tool_env) == []
 
 
@@ -156,7 +172,14 @@ def test_python_scoped_types_include_changed_files(
     repo: Path, tool_env: dict[str, str]
 ) -> None:
     commit_change(repo, {"deleted.py": "old = True\n", "unchanged.py": "keep = True\n"})
-    commit_change(repo, {"deleted.py": None, "changed file.py": "value = 1\n"})
+    commit_change(
+        repo,
+        {
+            "deleted.py": None,
+            "changed file.py": "value = 1\n",
+            "inbox/note.py": "invalid\n",
+        },
+    )
 
     proc = run_step("python.sh", repo, tool_env, TYPE_TARGETS="src/domain tests/domain")
 

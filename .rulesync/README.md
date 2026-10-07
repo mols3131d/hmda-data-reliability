@@ -11,7 +11,7 @@ Repository Agent asset policy는 [`docs/development/ai-agent/README.md`](../docs
 | `.agents/rules`, `.agents/skills`, `.agents/agents`, `.claude/**`, `.codex/**`, `.github/agents`, `.github/skills/**`, generated `CLAUDE.md` | Ignore | runtime projection이며 필요할 때 Rulesync로 재생성 |
 | `.agents/route` | Track | chatbot discovery용 derived index |
 
-External Rulesync와 Skills CLI 설치물은 추적하지 않는다. Chatbot routing은 설치 경로 대신 upstream Skill을 사용한다. Rulesync는 lock의 resolved revision을 사용하고, Skills CLI version 1 lock은 실제 source revision의 Skill 폴더가 `computedHash`와 일치할 때만 해당 commit URL을 채택한다.
+External Rulesync와 Skills CLI 설치물은 추적하지 않는다. Chatbot routing은 설치 경로 대신 upstream Skill을 사용한다. Rulesync는 lock의 resolved revision을 사용한다. Skills CLI version 1 lock은 실제 source revision의 Skill 폴더가 `computedHash`와 일치할 때 해당 commit URL을 채택한다. 단, `ref` 없는 허용 source(`vercel`, `vercel-labs`, `heygen-com`, `remotion-dev` 소유 repository와 `zapier/connectors`)의 root Skill은 단일 `SKILL.md` hash도 인정한다. Lock은 root-blob과 clone 설치 방식을 구분하지 않는다. Nested Skill, 명시적 `ref`와 그 밖의 source에는 전체 폴더 hash 검증을 유지한다.
 
 ## Agent Execution
 

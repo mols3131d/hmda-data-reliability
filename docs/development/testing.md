@@ -79,7 +79,7 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 `CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
 
-- Markdown은 prospective change set에 포함된 현재 존재하는 changed file만 formatting한다. `docs/**`의 changed Markdown만 formatter 이후 `rumdl check`까지 수행한다. 일반 Inbox artifact를 포함한 `docs/**` 밖의 Markdown은 Markdown lint를 merge admission 조건으로 사용하지 않는다.
+- `inbox/**`는 확장자와 무관하게 CI 분류와 파일 수집에서 제외한다. Inbox-only 변경에도 workflow는 생성되지만 검증 단계는 선택하지 않는다. Markdown은 그 밖의 prospective change set에 포함된 현재 존재하는 changed file만 formatting한다. `docs/**`의 changed Markdown만 formatter 이후 `rumdl check`까지 수행하며, `docs/**` 밖의 선택된 Markdown은 lint를 merge admission 조건으로 사용하지 않는다.
 - Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check를 실행한다. Type check는 source domain의 current reverse dependency closure와 직접 대응 test까지 넓히고, shared/common/runtime config 또는 unknown Python path처럼 영향 범위를 안정적으로 좁히기 어려우면 project-wide `ty check`로 fallback한다.
 - Direct-mapped repository Python script는 해당 wrapper 또는 workflow contract test를 실행한다. 여러 wrapper가 소비하는 shared script helper는 consumer script까지 type-check하고 관련 contract test를 함께 실행하며, 미매핑 script는 전체 `unit` suite와 project-wide `ty check`로 fallback한다.
 - CI workflow와 [`scripts/ci/`](../../scripts/ci/) helper 변경은 classifier와 CI step contract test를 실행한다. CI 파일이라는 이유만으로 Tach나 domain runtime suite를 선택하지 않으며 source·dependency 변경이 함께 있으면 해당 검증은 독립적으로 유지한다. 전체 `unit` fallback과 CI 변경이 겹치면 선택된 CI 계약의 non-unit test를 이어서 실행하며 전체 non-resource suite에서는 중복 실행하지 않는다. CI 계약 test 자체의 변경도 같은 보완 규칙을 따른다.

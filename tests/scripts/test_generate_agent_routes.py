@@ -568,12 +568,16 @@ def test_skills_cli_reports_snapshot_network_failure(
 
 
 @pytest.mark.component
-@pytest.mark.parametrize("phase", ["commits", "archive", "metadata"])
+@pytest.mark.parametrize("phase", ["commits", "archive", "archive-length", "metadata"])
+@pytest.mark.parametrize("argv", [[], ["--check"]])
+@pytest.mark.parametrize("existing_routes", [True, False])
 def test_cli_reports_incomplete_http_read_without_writing_routes(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
     phase: str,
+    argv: list[str],
+    existing_routes: bool,
 ) -> None:
     text = b"---\nname: alpha\ndescription: Alpha skill\n---\n"
     lock = {
@@ -592,9 +596,10 @@ def test_cli_reports_incomplete_http_read_without_writing_routes(
     monkeypatch.setattr(indexes, "SKILLS_ROOT", tmp_path / ".rulesync/skills")
     monkeypatch.setattr(indexes, "RULES_ROOT", tmp_path / ".rulesync/rules")
     route_root = tmp_path / ".agents/route"
-    route_root.mkdir(parents=True)
-    for name in ("skills.jsonl", "rules.jsonl"):
-        (route_root / name).write_text("stale\n", encoding="utf-8")
+    if existing_routes:
+        route_root.mkdir(parents=True)
+        for name in ("skills.jsonl", "rules.jsonl"):
+            (route_root / name).write_text("stale\n", encoding="utf-8")
     monkeypatch.setattr(indexes, "ROUTE_ROOT", route_root)
     monkeypatch.setattr(cli, "ROUTE_ROOT", route_root)
     _github_snapshot(monkeypatch, {"alpha/SKILL.md": text})
@@ -604,13 +609,30 @@ def test_cli_reports_incomplete_http_read_without_writing_routes(
         if (
             (phase == "commits" and request.full_url.startswith("https://api."))
             or (phase == "metadata" and request.full_url.startswith("https://raw."))
-            or (phase == "archive" and request.full_url.startswith("https://codeload."))
-        ):
-            payload = (
-                b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n14\r\npartial"
-                if phase == "archive"
-                else b"HTTP/1.1 200 OK\r\nContent-Length: 20\r\n\r\npartial"
+            or (
+                phase.startswith("archive")
+                and request.full_url.startswith("https://codeload.")
             )
+        ):
+            if phase == "archive-length":
+                buffer = io.BytesIO()
+                with ZipFile(buffer, "w") as archive:
+                    archive.writestr("snapshot/alpha/SKILL.md", text)
+                    archive.comment = b"comment truncated during transmission"
+                content = buffer.getvalue()
+                payload = (
+                    f"HTTP/1.1 200 OK\r\nContent-Length: {len(content)}\r\n\r\n".encode(
+                        "ascii"
+                    )
+                    + content[:-10]
+                )
+            else:
+                payload = (
+                    b"HTTP/1.1 200 OK\r\n"
+                    b"Transfer-Encoding: chunked\r\n\r\n14\r\npartial"
+                    if phase == "archive"
+                    else b"HTTP/1.1 200 OK\r\nContent-Length: 20\r\n\r\npartial"
+                )
             connection, sender = socket.socketpair()
             with connection:
                 with sender:
@@ -622,14 +644,17 @@ def test_cli_reports_incomplete_http_read_without_writing_routes(
 
     monkeypatch.setattr(sources, "urlopen", partial_request)
 
-    assert cli.main(["--check"]) == 2
+    assert cli.main(argv) == 2
     assert "IncompleteRead" in capsys.readouterr().err
-    assert {
-        path.name: path.read_text(encoding="utf-8") for path in route_root.iterdir()
-    } == {
-        "skills.jsonl": "stale\n",
-        "rules.jsonl": "stale\n",
-    }
+    if existing_routes:
+        assert {
+            path.name: path.read_text(encoding="utf-8") for path in route_root.iterdir()
+        } == {
+            "skills.jsonl": "stale\n",
+            "rules.jsonl": "stale\n",
+        }
+    else:
+        assert not route_root.exists()
 
 
 @pytest.mark.unit

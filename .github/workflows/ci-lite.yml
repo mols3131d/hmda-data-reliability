@@ -39,17 +39,6 @@ jobs:
         if: steps.scope.outputs.markdown == 'true'
         run: bash scripts/ci/markdown.sh
 
-      - name: Validate changed Inbox artifacts
-        if: steps.scope.outputs.inbox == 'true'
-        run: |
-          set -euo pipefail
-          source scripts/ci/changed_files.sh
-          files=()
-          collect_changed_files files HEAD^1 HEAD 'inbox/*.md'
-          if ((${#files[@]})); then
-            python3 scripts/validate_inbox_artifacts.py "${files[@]}"
-          fi
-
       - name: Validate OpenSpec
         if: steps.scope.outputs.openspec == 'true'
         env:

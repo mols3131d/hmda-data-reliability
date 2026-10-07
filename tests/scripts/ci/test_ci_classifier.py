@@ -207,18 +207,12 @@ def test_script_test_modify_targets_only_changed_test() -> None:
     [
         "README.md",
         "docs/development/ci/README.md",
-        "inbox/AGENTS.md",
-        "inbox/_guidelines/research.md",
-        "inbox/_templates/research.md",
-        "inbox/README.md",
-        "inbox/2026-09-04/07-12-guide-orchestration-sandbox-dag-testing.md",
     ],
 )
 def test_changed_markdown_paths_are_selected(path: str) -> None:
     """현재 change set의 Markdown만 lightweight 검증 대상으로 선택한다."""
     out = run_classifier([path])
     assert out["markdown"] == "true"
-    assert out["inbox"] == str(path.startswith("inbox/")).lower()
     assert run_markdown_paths([path]) == [path]
 
 
@@ -230,7 +224,26 @@ def test_markdown_path_selection_stays_within_changed_scope() -> None:
         "docs/development/ci/README.md",
         "inbox/AGENTS.md",
     ]
-    assert run_markdown_paths(paths) == paths
+    assert run_markdown_paths(paths) == ["docs/development/ci/README.md"]
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("suffix", ["md", "json", "jsonc", "toml", "py", "yml"])
+def test_inbox_only_changes_select_no_validation(repo: Path, suffix: str) -> None:
+    path = f"inbox/nested/note.{suffix}"
+    target = repo / path
+    target.parent.mkdir(parents=True)
+    target.write_text("fixture\n")
+    out = run_classifier([path], repo_root=repo)
+    assert all(value == "false" or not value for value in out.values())
+
+
+@pytest.mark.unit
+def test_inbox_deleted_and_renamed_paths_do_not_hide_other_changes() -> None:
+    out = run_classifier(
+        ["inbox/deleted.py", "inbox/renamed.json", "scripts/ci/markdown.sh"]
+    )
+    assert out == run_classifier(["scripts/ci/markdown.sh"])
 
 
 @pytest.mark.unit

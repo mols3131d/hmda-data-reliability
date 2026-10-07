@@ -29,7 +29,7 @@ if [[ -n "$diff" ]]; then
   fi
 fi
 
-# Inbox 등 docs 밖의 문서는 formatting만 수행하고 Markdown lint로 병합을 막지 않는다.
+# docs 밖의 선택된 문서는 formatting만 수행하고 Markdown lint로 병합을 막지 않는다.
 docs=()
 for path in "${files[@]}"; do
   [[ "$path" == docs/* ]] && docs+=("$path")

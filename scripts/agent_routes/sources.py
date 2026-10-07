@@ -8,7 +8,7 @@ import json
 import re
 import stat
 import subprocess
-from http.client import HTTPException
+from http.client import HTTPException, IncompleteRead
 from pathlib import PurePosixPath
 from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
@@ -180,6 +180,9 @@ def _github_snapshot(repository: str, ref: str | None) -> tuple[str, dict[str, b
     request = Request(url, headers={"User-Agent": "hmda-data-reliability-agent-route"})
     with urlopen(request, timeout=30) as response:  # noqa: S310
         content = response.read(_MAX_ARCHIVE_BYTES + 1)
+        remaining = getattr(response, "length", None)
+        if len(content) <= _MAX_ARCHIVE_BYTES and remaining:
+            raise IncompleteRead(content, remaining)
     if len(content) > _MAX_ARCHIVE_BYTES:
         raise RouteGenerationError(
             f"Skills CLI archive exceeds size limit: {repository}"

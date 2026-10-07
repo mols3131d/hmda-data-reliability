@@ -203,17 +203,6 @@ def test_workflow_calls_selected_script(
     ("step_name", "filename", "expected"),
     [
         (
-            "Validate changed Inbox artifacts",
-            "inbox/changed note.md",
-            [
-                [
-                    "python3",
-                    "scripts/validate_inbox_artifacts.py",
-                    "inbox/changed note.md",
-                ]
-            ],
-        ),
-        (
             "Validate changed JSON",
             "changed.jsonc",
             [["python", "scripts/biome.py", "check", "changed.jsonc"]],
@@ -238,7 +227,10 @@ def test_workflow_simple_steps_collect_only_existing_changed_files(
 ) -> None:
     (repo / "scripts").symlink_to(REPO_ROOT / "scripts", target_is_directory=True)
     commit_change(repo, {"unrelated.md": "# Keep\n"})
-    commit_change(repo, {filename: "fixture\n", "unrelated.md": None})
+    commit_change(
+        repo,
+        {filename: "fixture\n", f"inbox/{filename}": "invalid\n", "unrelated.md": None},
+    )
 
     proc = subprocess.run(
         ["bash", "-c", str(workflow_steps[step_name]["run"])],
@@ -256,7 +248,6 @@ def test_workflow_simple_steps_collect_only_existing_changed_files(
 @pytest.mark.parametrize(
     "step_name",
     [
-        "Validate changed Inbox artifacts",
         "Validate changed JSON",
         "Validate changed TOML",
     ],
@@ -280,3 +271,9 @@ def test_workflow_simple_steps_fail_on_invalid_comparison(
 
     assert proc.returncode != 0
     assert tool_calls(tool_env) == []
+
+
+def test_workflow_has_no_inbox_validator(
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    assert "Validate changed Inbox artifacts" not in workflow_steps

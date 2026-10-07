@@ -9,8 +9,10 @@ collect_changed_files() {
   shift 3
   local paths path
 
+  base=$(git rev-parse --verify --end-of-options "${base}^{commit}") || return
+  head=$(git rev-parse --verify --end-of-options "${head}^{commit}") || return
   # Git 비교 실패는 빈 변경 목록으로 취급하지 않고 호출자에게 전파한다.
-  paths=$(git -c core.quotePath=false diff --name-only "$base" "$head" -- "$@") || return
+  paths=$(git -c core.quotePath=false diff --name-only "$base" "$head" -- "$@" ':(exclude)inbox/**') || return
   collected=()
   # 삭제된 파일은 도구 입력에서 제외하고 공백이 포함된 경로는 그대로 유지한다.
   while IFS= read -r path; do
