@@ -3,15 +3,34 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 from tests.scripts.ci.helpers import (
     CLASSIFIER_SCRIPT,
+    commit_change,
     run_classifier,
     run_markdown_paths,
 )
+
+
+@pytest.mark.component
+def test_git_path_line_breaks_fail_before_actions_outputs(repo: Path) -> None:
+    commit_change(repo, {"tests/test_probe\npython=false\ntests=false\nunused=.py": ""})
+    output = repo / "scope-output"
+    proc = subprocess.run(
+        [sys.executable, str(CLASSIFIER_SCRIPT), str(output)],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode == 1
+    assert "unsupported line breaks" in proc.stderr
+    assert not output.exists()
 
 
 @pytest.mark.unit
@@ -54,11 +73,11 @@ def test_script_test_modify(path: str, expected_ci_targets: str) -> None:
     "path",
     [
         ".github/workflows/ci-lite.yml",
-        "scripts/ci/classify_changes.sh",
-        "scripts/ci/classify_openspec.sh",
-        "scripts/ci/markdown.sh",
-        "scripts/ci/changed_files.sh",
-        "scripts/ci/future-helper.sh",
+        "scripts/ci/classify_changes.py",
+        "scripts/ci/classify_openspec.py",
+        "scripts/ci/markdown.py",
+        "scripts/ci/changed_files.py",
+        "scripts/ci/future-helper.py",
     ],
 )
 def test_ci_changes_select_contract_tests_without_domain_validation(path: str) -> None:
@@ -67,7 +86,8 @@ def test_ci_changes_select_contract_tests_without_domain_validation(path: str) -
     assert out["targets"].split() == ["tests/scripts/ci"]
     assert set(out["ci_targets"].split()) == set(out["targets"].split())
     assert out["tests"] == "true"
-    for flag in ("tach", "python", "runtime_smoke", "full_unit", "full_type"):
+    assert out["python"] == ("true" if path.endswith(".py") else "false")
+    for flag in ("tach", "runtime_smoke", "full_unit", "full_type"):
         assert out[flag] == "false", flag
 
 
@@ -76,7 +96,7 @@ def test_ci_changes_select_contract_tests_without_domain_validation(path: str) -
     ("path", "expected"),
     [
         (
-            "scripts/ci/pytest.sh",
+            "scripts/ci/pytest.py",
             {"tests/scripts/ci"},
         ),
         (
@@ -154,7 +174,7 @@ def test_deleted_ci_test_is_not_selected() -> None:
 def test_git_comparison_failure_is_not_success(tmp_path: Path, args: list[str]) -> None:
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
     proc = subprocess.run(
-        ["bash", str(CLASSIFIER_SCRIPT), *args],
+        [sys.executable, str(CLASSIFIER_SCRIPT), *args],
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -241,9 +261,9 @@ def test_inbox_only_changes_select_no_validation(repo: Path, suffix: str) -> Non
 @pytest.mark.unit
 def test_inbox_deleted_and_renamed_paths_do_not_hide_other_changes() -> None:
     out = run_classifier(
-        ["inbox/deleted.py", "inbox/renamed.json", "scripts/ci/markdown.sh"]
+        ["inbox/deleted.py", "inbox/renamed.json", "scripts/ci/markdown.py"]
     )
-    assert out == run_classifier(["scripts/ci/markdown.sh"])
+    assert out == run_classifier(["scripts/ci/markdown.py"])
 
 
 @pytest.mark.unit

@@ -24,9 +24,14 @@ jobs:
           persist-credentials: false
           fetch-depth: 2
 
+      - name: Set up Python
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version-file: ".python-version"
+
       - name: Classify changes
         id: scope
-        run: bash scripts/ci/classify_changes.sh "$GITHUB_OUTPUT"
+        run: python3 scripts/ci/classify_changes.py "$GITHUB_OUTPUT"
 
       - name: Set up rumdl
         if: steps.scope.outputs.markdown == 'true'
@@ -37,7 +42,7 @@ jobs:
 
       - name: Format changed Markdown and validate docs
         if: steps.scope.outputs.markdown == 'true'
-        run: bash scripts/ci/markdown.sh
+        run: python3 scripts/ci/run_checks.py markdown
 
       - name: Validate OpenSpec
         if: steps.scope.outputs.openspec == 'true'
@@ -46,45 +51,25 @@ jobs:
           BULK: ${{ steps.scope.outputs.openspec_bulk }}
           CHANGE_TARGETS: ${{ steps.scope.outputs.openspec_change_targets }}
           SPEC_TARGETS: ${{ steps.scope.outputs.openspec_spec_targets }}
-        run: bash scripts/ci/openspec.sh
-
-      - name: Set up Python
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true' || steps.scope.outputs.tach == 'true'
-        uses: actions/setup-python@v6.2.0
-        with:
-          python-version-file: ".python-version"
+        run: python3 scripts/ci/run_checks.py openspec
 
       - name: Install structured-data tooling
         if: steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true'
-        run: npm install --prefix .local/tooling --no-save --package-lock=false @biomejs/biome@2 tombi@1
+        env:
+          JSON: ${{ steps.scope.outputs.json }}
+          TOML: ${{ steps.scope.outputs.toml }}
+        run: python3 scripts/ci/run_checks.py tooling
 
       - name: Validate changed JSON
         if: steps.scope.outputs.json == 'true'
-        run: |
-          set -euo pipefail
-          source scripts/ci/changed_files.sh
-          files=()
-          collect_changed_files files HEAD^1 HEAD '*.json' '*.jsonc'
-          if ((${#files[@]})); then
-            python scripts/biome.py check "${files[@]}"
-          fi
+        run: python3 scripts/ci/run_checks.py json
 
       - name: Validate changed TOML
         if: steps.scope.outputs.toml == 'true'
-        run: |
-          set -euo pipefail
-          source scripts/ci/changed_files.sh
-          files=()
-          collect_changed_files files HEAD^1 HEAD '*.toml'
-          if ((${#files[@]})); then
-            python scripts/tombi.py format --check "${files[@]}"
-            python scripts/tombi.py lint "${files[@]}"
-          else
-            python scripts/tombi.py --version
-          fi
+        run: python3 scripts/ci/run_checks.py toml
 
       - name: Set up uv
-        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.tach == 'true'
+        if: steps.scope.outputs.tests == 'true' || steps.scope.outputs.python == 'true' || steps.scope.outputs.build == 'true' || steps.scope.outputs.lefthook == 'true' || steps.scope.outputs.routes == 'true' || steps.scope.outputs.tach == 'true'
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           version: "0.11.32"
@@ -94,7 +79,7 @@ jobs:
             uv.lock
 
       - name: Verify dependency lock
-        if: steps.scope.outputs.python == 'true'
+        if: steps.scope.outputs.lock == 'true'
         run: uv lock --check
 
       - name: Sync dependencies
@@ -110,7 +95,7 @@ jobs:
           uv run --no-sync pytest -q -p no:sugar --tb=short tests/scripts/test_tach.py tests/scripts/test_tach_config.py tests/review_ai/test_dependency_boundaries.py
 
       - name: Verify package build
-        if: steps.scope.outputs.python == 'true'
+        if: steps.scope.outputs.build == 'true'
         run: uv build --wheel --out-dir /tmp/dist
 
       - name: Validate Python
@@ -118,7 +103,7 @@ jobs:
         env:
           FULL_TYPE: ${{ steps.scope.outputs.full_type }}
           TYPE_TARGETS: ${{ steps.scope.outputs.type_targets }}
-        run: bash scripts/ci/python.sh
+        run: python3 scripts/ci/run_checks.py python
 
       - name: Validate chatbot routes
         if: steps.scope.outputs.routes == 'true'
@@ -137,7 +122,7 @@ jobs:
           TARGETS: ${{ steps.scope.outputs.targets }}
           CI_TARGETS: ${{ steps.scope.outputs.ci_targets }}
           BOUNDARIES_CHECKED: ${{ steps.boundaries.outcome == 'success' }}
-        run: bash scripts/ci/pytest.sh
+        run: python3 scripts/ci/run_checks.py pytest
 
       - name: Run dependency runtime smoke
         if: steps.scope.outputs.runtime_smoke == 'true' && !(steps.scope.outputs.full_tests == 'true' && steps.selected_tests.outcome == 'success')

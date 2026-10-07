@@ -81,6 +81,8 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 - `inbox/**`는 확장자와 무관하게 CI 분류와 파일 수집에서 제외한다. Inbox-only 변경에도 workflow는 생성되지만 검증 단계는 선택하지 않는다. Markdown은 그 밖의 prospective change set에 포함된 현재 존재하는 changed file만 formatting한다. `docs/**`의 changed Markdown만 formatter 이후 `rumdl check`까지 수행하며, `docs/**` 밖의 선택된 Markdown은 lint를 merge admission 조건으로 사용하지 않는다.
 - Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check를 실행한다. Type check는 source domain의 current reverse dependency closure와 직접 대응 test까지 넓히고, shared/common/runtime config 또는 unknown Python path처럼 영향 범위를 안정적으로 좁히기 어려우면 project-wide `ty check`로 fallback한다.
+- 명시적 `uv lock --check`는 `.python-version`, `pyproject.toml`, `uv.lock` 변경에 실행한다. Wheel 빌드는 해당 입력과 패키지 소스·리소스, root README·license 변경에 실행한다. 테스트나 CI script만 변경하면 두 검사를 선택하지 않으며 필요한 검증 환경의 `uv sync --locked`는 유지한다.
+- JSON/JSONC와 TOML은 각각 Biome과 Tombi로 검증한다. 선택된 도구만 한 번의 npm 설치로 준비하며 TOML 대상이 없으면 버전 출력만을 위한 명령은 실행하지 않는다.
 - Direct-mapped repository Python script는 해당 wrapper 또는 workflow contract test를 실행한다. 여러 wrapper가 소비하는 shared script helper는 consumer script까지 type-check하고 관련 contract test를 함께 실행하며, 미매핑 script는 전체 `unit` suite와 project-wide `ty check`로 fallback한다.
 - CI workflow와 [`scripts/ci/`](../../scripts/ci/) helper 변경은 classifier와 CI step contract test를 실행한다. CI 파일이라는 이유만으로 Tach나 domain runtime suite를 선택하지 않으며 source·dependency 변경이 함께 있으면 해당 검증은 독립적으로 유지한다. 전체 `unit` fallback과 CI 변경이 겹치면 선택된 CI 계약의 non-unit test를 이어서 실행하며 전체 non-resource suite에서는 중복 실행하지 않는다. CI 계약 test 자체의 변경도 같은 보완 규칙을 따른다.
 - Domain source는 own test와 현재 reverse dependency에 따른 consumer test directory를 선택한다.
@@ -98,20 +100,21 @@ Markdown formatting은 `rumdl fmt`를 현재 changed Markdown 전체에 대해 C
 
 ### Local CI Steps
 
-변경 경로 분류와 긴 step 분기는 [`scripts/ci/`](../../scripts/ci/)에서 Bash script로 실행한다. [`classify_changes.sh`](../../scripts/ci/classify_changes.sh)는 OpenSpec 분류 helper를 불러오며, [`changed_files.sh`](../../scripts/ci/changed_files.sh)는 step들이 공유하는 파일 수집 helper다. 두 helper는 직접 실행하지 않는다. Actions setup과 step 조건은 workflow에 유지한다. 필요한 도구와 locked Python 환경을 먼저 준비한 뒤 repository root에서 호출한다.
+변경 경로 분류와 step 분기는 [`scripts/ci/`](../../scripts/ci/)에서 표준 라이브러리만 사용하는 Python script로 실행한다. [`classify_changes.py`](../../scripts/ci/classify_changes.py)는 선택 상태를 명시적으로 관리하고 [`classify_openspec.py`](../../scripts/ci/classify_openspec.py)에 전달한다. [`changed_files.py`](../../scripts/ci/changed_files.py)는 Git의 NUL 구분 출력을 사용해 파일 수집과 실패 전파를 담당한다. 두 helper는 직접 실행하지 않는다. 검사 실행은 [`run_checks.py`](../../scripts/ci/run_checks.py)의 `markdown`, `python`, `openspec`, `pytest`, `json`, `toml`, `tooling` 중 하나를 지정한다. Actions setup과 step 조건은 workflow에 유지한다. Python interpreter는 분류 전에 준비하며 프로젝트 의존성은 선택된 검증에 필요한 경우에만 설치한다. Local 실행도 필요한 도구와 locked 환경을 준비한 뒤 repository root에서 호출한다.
 
 ```bash
 set -o pipefail
-git -c core.quotePath=false diff --name-only <base> <head> | bash scripts/ci/classify_changes.sh --stdin
-bash scripts/ci/markdown.sh <base> <head>
-FULL_TYPE=false TYPE_TARGETS="src/hmda_reliability/review_ai tests/review_ai" bash scripts/ci/python.sh <base> <head>
-BULK=false SPEC_TARGETS="reliability-agentic-review" bash scripts/ci/openspec.sh
-FULL_TESTS=false FULL_UNIT=false TARGETS="tests/scripts/ci" bash scripts/ci/pytest.sh
+git -c core.quotePath=false diff --name-only <base> <head> | python3 scripts/ci/classify_changes.py --stdin
+python3 scripts/ci/run_checks.py markdown
+FULL_TYPE=false TYPE_TARGETS="src/hmda_reliability/review_ai tests/review_ai" python3 scripts/ci/run_checks.py python
+BULK=false SPEC_TARGETS="reliability-agentic-review" python3 scripts/ci/run_checks.py openspec
+FULL_TESTS=false FULL_UNIT=false TARGETS="tests/scripts/ci" python3 scripts/ci/run_checks.py pytest
+JSON=true TOML=false python3 scripts/ci/run_checks.py tooling
 ```
 
-파일을 수집하는 step의 기본 비교는 CI prospective merge의 `HEAD^1`과 `HEAD`다. Local branch의 전체 PR 변경을 확인하려면 적절한 base/head를 명시한다. Git 비교 실패와 필수 도구 실패는 nonzero이며, Markdown formatter의 정보성 진단과 non-blocking diff는 docs lint 실패와 별도로 표시한다.
+파일을 수집하는 검사는 CI prospective merge의 `HEAD^1`과 `HEAD`를 비교하며 외부 revision 인자를 받지 않는다. 일반 local branch에서는 마지막 commit 변경만 비교하므로 전체 PR 검증으로 해석하지 않는다. 임의 범위의 분류는 위 `--stdin` 명령으로 확인하고, 해당 파일·도메인 검증은 도구나 pytest를 직접 호출한다. Git 비교 실패와 필수 도구 실패는 nonzero이며, Markdown formatter의 정보성 진단과 non-blocking diff는 docs lint 실패와 별도로 표시한다.
 
-`pytest.sh`의 `BOUNDARIES_CHECKED` 기본값은 false다. CI는 앞선 boundary step의 성공 여부를 전달하며, local에서 true로 지정하려면 같은 revision의 전체 boundary 검사가 먼저 성공했어야 한다. 이 값은 전체 `unit` 뒤 CI non-unit 보완의 범위를 바꾸지 않는다.
+`pytest` 검사의 `BOUNDARIES_CHECKED` 기본값은 false다. CI는 앞선 boundary step의 성공 여부를 전달하며, local에서 true로 지정하려면 같은 revision의 전체 boundary 검사가 먼저 성공했어야 한다. 이 값은 전체 `unit` 뒤 CI non-unit 보완의 범위를 바꾸지 않는다.
 
 ## Select Tests
 

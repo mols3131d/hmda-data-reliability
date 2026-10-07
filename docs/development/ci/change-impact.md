@@ -33,9 +33,9 @@ tags:
 
 | Source | Responsibility |
 | --- | --- |
-| [`classify_changes.sh`](../../../scripts/ci/classify_changes.sh) | 정확한 glob과 routing table |
-| [`classify_openspec.sh`](../../../scripts/ci/classify_openspec.sh) | Classifier가 호출하는 OpenSpec capability mapping과 연관 Change 탐색 |
-| [Testing Guide](../testing.md#pull-request-ci), [`pytest.sh`](../../../scripts/ci/pytest.sh) | 선택된 테스트의 실행과 복합 변경의 현재 보완 규칙 |
+| [`classify_changes.py`](../../../scripts/ci/classify_changes.py) | 정확한 glob과 routing table |
+| [`classify_openspec.py`](../../../scripts/ci/classify_openspec.py) | Classifier가 호출하는 OpenSpec capability mapping과 연관 Change 탐색 |
+| [Testing Guide](../testing.md#pull-request-ci), [`run_checks.py`](../../../scripts/ci/run_checks.py) | 선택된 검사의 실행과 복합 변경의 현재 보완 규칙 |
 | [CI 계약 테스트](../../../tests/scripts/ci/) | 검증 선택과 실행의 회귀 검증 |
 
 선택값이나 호출 계약을 검증했다고 해서 실제 domain runtime까지 통과했다고 주장하지 않는다.

@@ -42,6 +42,8 @@ import sys
 from pathlib import Path
 
 name = Path(sys.argv[0]).name
+if name == "python3" and len(sys.argv) > 1 and sys.argv[1].startswith("scripts/ci/"):
+    os.execv(sys.executable, [sys.executable, *sys.argv[1:]])
 args = [name, *sys.argv[1:]]
 with Path(os.environ["CI_LOG"]).open("a", encoding="utf-8") as log:
     log.write(json.dumps(args) + "\\n")

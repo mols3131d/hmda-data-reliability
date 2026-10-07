@@ -5,9 +5,106 @@ from pathlib import Path
 
 import pytest
 
-from tests.scripts.ci.helpers import CI_SCRIPTS, REPO_ROOT, commit_change, tool_calls
+from tests.scripts.ci.helpers import (
+    CI_SCRIPTS,
+    REPO_ROOT,
+    commit_change,
+    run_classifier,
+    tool_calls,
+)
 
 pytestmark = pytest.mark.component
+
+
+@pytest.mark.parametrize(
+    ("path", "build", "lock"),
+    [
+        ("scripts/ci/changed_files.py", False, False),
+        ("tests/scripts/ci/test_ci_steps.py", False, False),
+        ("src/hmda_reliability/logger.py", True, False),
+        ("src/hmda_reliability/configs/default.yaml", True, False),
+        ("pyproject.toml", True, True),
+        ("uv.lock", True, True),
+        (".python-version", True, True),
+        ("README.md", True, False),
+        ("LICENSE", True, False),
+        ("inbox/note.py", False, False),
+    ],
+)
+def test_package_and_lock_selection(
+    path: str,
+    build: bool,
+    lock: bool,
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    scope = run_classifier([path])
+    assert scope["build"] == str(build).lower()
+    assert scope["lock"] == str(lock).lower()
+    assert workflow_steps["Verify package build"]["if"] == (
+        "steps.scope.outputs.build == 'true'"
+    )
+    assert workflow_steps["Verify dependency lock"]["if"] == (
+        "steps.scope.outputs.lock == 'true'"
+    )
+    if build:
+        setup_condition = workflow_steps["Set up uv"]["if"]
+        assert isinstance(setup_condition, str)
+        assert "steps.scope.outputs.build == 'true'" in setup_condition
+
+
+@pytest.mark.parametrize(
+    ("json_selected", "toml_selected", "packages"),
+    [
+        ("true", "false", ["@biomejs/biome@2"]),
+        ("false", "true", ["tombi@1"]),
+        ("true", "true", ["@biomejs/biome@2", "tombi@1"]),
+        ("false", "false", []),
+    ],
+)
+@pytest.mark.parametrize("failure", ["", "npm install"])
+def test_workflow_installs_only_selected_tools(
+    repo: Path,
+    tool_env: dict[str, str],
+    workflow_steps: dict[str, dict[str, object]],
+    json_selected: str,
+    toml_selected: str,
+    packages: list[str],
+    failure: str,
+) -> None:
+    (repo / "scripts").symlink_to(REPO_ROOT / "scripts", target_is_directory=True)
+    step = workflow_steps["Install structured-data tooling"]
+    assert step["env"] == {
+        "JSON": "${{ steps.scope.outputs.json }}",
+        "TOML": "${{ steps.scope.outputs.toml }}",
+    }
+    assert step["if"] == (
+        "steps.scope.outputs.json == 'true' || steps.scope.outputs.toml == 'true'"
+    )
+    proc = subprocess.run(
+        ["bash", "-c", str(step["run"])],
+        cwd=repo,
+        env=tool_env
+        | {"JSON": json_selected, "TOML": toml_selected, "FAIL_COMMAND": failure},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == (17 if failure and packages else 0), proc.stderr
+    assert tool_calls(tool_env) == (
+        [
+            [
+                "npm",
+                "install",
+                "--prefix",
+                ".local/tooling",
+                "--no-save",
+                "--package-lock=false",
+                *packages,
+            ]
+        ]
+        if packages
+        else []
+    )
 
 
 def test_workflow_classifier_writes_scope_outputs(
@@ -21,7 +118,11 @@ def test_workflow_classifier_writes_scope_outputs(
     step = workflow_steps["Classify changes"]
 
     assert step["id"] == "scope"
-    assert step["run"] == 'bash scripts/ci/classify_changes.sh "$GITHUB_OUTPUT"'
+    assert step["run"] == 'python3 scripts/ci/classify_changes.py "$GITHUB_OUTPUT"'
+    assert "if" not in workflow_steps["Set up Python"]
+    assert list(workflow_steps).index("Set up Python") < list(workflow_steps).index(
+        "Classify changes"
+    )
     proc = subprocess.run(
         ["bash", "-c", str(step["run"])],
         cwd=repo,
@@ -37,6 +138,28 @@ def test_workflow_classifier_writes_scope_outputs(
     assert scope["tests"] == "true"
     assert scope["tach"] == "false"
     assert scope["ci_targets"].split() == ["tests/scripts/ci"]
+
+
+def test_renamed_build_input_still_selects_package_build(
+    repo: Path, tool_env: dict[str, str], workflow_steps: dict[str, dict[str, object]]
+) -> None:
+    commit_change(repo, {"README.md": "# Package readme\n"})
+    (repo / "README.md").rename(repo / "PROJECT.md")
+    commit_change(repo, {})
+    (repo / "scripts").symlink_to(REPO_ROOT / "scripts", target_is_directory=True)
+    output = repo / "scope-output"
+    proc = subprocess.run(
+        ["bash", "-c", str(workflow_steps["Classify changes"]["run"])],
+        cwd=repo,
+        env=tool_env | {"GITHUB_OUTPUT": str(output)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    scope = dict(line.split("=", 1) for line in output.read_text().splitlines())
+    assert scope["build"] == "true"
+    assert scope["lock"] == "false"
 
 
 def test_workflow_passes_ci_component_targets(
@@ -178,25 +301,25 @@ def test_workflow_tach_step_failure_propagates(
 
 
 @pytest.mark.parametrize(
-    ("step_name", "script", "selector"),
+    ("step_name", "check", "selector"),
     [
-        ("Format changed Markdown and validate docs", "markdown.sh", "markdown"),
-        ("Validate OpenSpec", "openspec.sh", "openspec"),
-        ("Validate Python", "python.sh", "python"),
-        ("Run selected tests", "pytest.sh", "tests"),
+        ("Format changed Markdown and validate docs", "markdown", "markdown"),
+        ("Validate OpenSpec", "openspec", "openspec"),
+        ("Validate Python", "python", "python"),
+        ("Run selected tests", "pytest", "tests"),
     ],
 )
 def test_workflow_calls_selected_script(
     workflow_steps: dict[str, dict[str, object]],
     step_name: str,
-    script: str,
+    check: str,
     selector: str,
 ) -> None:
     step = workflow_steps[step_name]
 
-    assert step["run"] == f"bash scripts/ci/{script}"
+    assert step["run"] == f"python3 scripts/ci/run_checks.py {check}"
     assert step["if"] == f"steps.scope.outputs.{selector} == 'true'"
-    assert (CI_SCRIPTS / script).is_file()
+    assert (CI_SCRIPTS / "run_checks.py").is_file()
 
 
 @pytest.mark.parametrize(

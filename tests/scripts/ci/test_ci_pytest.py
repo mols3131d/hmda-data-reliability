@@ -42,7 +42,7 @@ def test_pytest_selection_preserves_markers_and_parallel_threshold(
     selection: dict[str, str],
     expected: list[str],
 ) -> None:
-    proc = run_step("pytest.sh", repo, tool_env, **selection)
+    proc = run_step("pytest", repo, tool_env, **selection)
 
     assert proc.returncode == 0, proc.stderr
     prefix = [
@@ -112,7 +112,7 @@ def test_pytest_excludes_guard_only_after_boundaries_succeed(
     expected: list[str],
 ) -> None:
     env = {key: value for key, value in tool_env.items() if key != "BOUNDARIES_CHECKED"}
-    proc = run_step("pytest.sh", repo, env, **(selection | boundary_state))
+    proc = run_step("pytest", repo, env, **(selection | boundary_state))
 
     assert proc.returncode == 0, proc.stderr
     calls = tool_calls(tool_env)
@@ -122,7 +122,7 @@ def test_pytest_excludes_guard_only_after_boundaries_succeed(
 
 def test_pytest_failure_propagates(repo: Path, tool_env: dict[str, str]) -> None:
     proc = run_step(
-        "pytest.sh", repo, tool_env, TARGETS="tests/one", FAIL_COMMAND="uv run"
+        "pytest", repo, tool_env, TARGETS="tests/one", FAIL_COMMAND="uv run"
     )
 
     assert proc.returncode == 17
@@ -137,7 +137,7 @@ def test_boundary_success_does_not_hide_selected_test_failure(
     repo: Path, tool_env: dict[str, str], selection: dict[str, str]
 ) -> None:
     proc = run_step(
-        "pytest.sh",
+        "pytest",
         repo,
         tool_env,
         **selection,
@@ -161,7 +161,7 @@ def test_full_unit_also_runs_selected_ci_component_contracts(
     repo: Path, tool_env: dict[str, str], targets: str, boundaries_checked: str
 ) -> None:
     proc = run_step(
-        "pytest.sh",
+        "pytest",
         repo,
         tool_env,
         FULL_UNIT="true",
@@ -185,7 +185,7 @@ def test_full_unit_failure_does_not_run_ci_followup(
     repo: Path, tool_env: dict[str, str]
 ) -> None:
     proc = run_step(
-        "pytest.sh",
+        "pytest",
         repo,
         tool_env,
         FULL_UNIT="true",
@@ -201,7 +201,7 @@ def test_full_unit_ci_followup_failure_propagates(
     repo: Path, tool_env: dict[str, str]
 ) -> None:
     proc = run_step(
-        "pytest.sh",
+        "pytest",
         repo,
         tool_env,
         FULL_UNIT="true",
@@ -239,7 +239,7 @@ def test_full_unit_ci_followup_failure_propagates(
             [["-n", "auto", "-m", "unit and not memory and not stress"]],
         ),
         (
-            ["uv.lock", "scripts/ci/pytest.sh"],
+            ["uv.lock", "scripts/ci/pytest.py"],
             "false",
             [
                 ["-n", "auto", "-m", "unit and not memory and not stress"],
@@ -265,7 +265,7 @@ def test_dependency_selection_preserves_full_suite_and_unit_followup(
     assert scope["full_tests"] == full_tests
 
     proc = run_step(
-        "pytest.sh",
+        "pytest",
         repo,
         tool_env,
         FULL_TESTS=scope["full_tests"],
@@ -292,7 +292,7 @@ def test_dependency_and_unit_only_ci_test_run_no_followup(
     scope = run_classifier(["uv.lock", path])
 
     proc = run_step(
-        "pytest.sh",
+        "pytest",
         repo,
         tool_env,
         FULL_UNIT=scope["full_unit"],

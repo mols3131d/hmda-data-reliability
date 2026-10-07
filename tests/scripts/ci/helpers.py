@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 CI_SCRIPTS = REPO_ROOT / "scripts/ci"
-CLASSIFIER_SCRIPT = CI_SCRIPTS / "classify_changes.sh"
+CLASSIFIER_SCRIPT = CI_SCRIPTS / "classify_changes.py"
 
 
 def run_classifier(paths: list[str], *, repo_root: Path = REPO_ROOT) -> dict[str, str]:
     """Execute the classifier script against the provided paths via stdin."""
     proc = subprocess.run(
-        ["bash", str(CLASSIFIER_SCRIPT), "--stdin"],
+        [sys.executable, str(CLASSIFIER_SCRIPT), "--stdin"],
         input="\n".join(paths) + "\n",
         capture_output=True,
         text=True,
@@ -30,7 +31,7 @@ def run_classifier(paths: list[str], *, repo_root: Path = REPO_ROOT) -> dict[str
 def run_markdown_paths(paths: list[str]) -> list[str]:
     """Return changed Markdown paths selected for validation."""
     proc = subprocess.run(
-        ["bash", str(CLASSIFIER_SCRIPT), "--stdin", "--markdown-paths"],
+        [sys.executable, str(CLASSIFIER_SCRIPT), "--stdin", "--markdown-paths"],
         input="\n".join(paths) + "\n",
         capture_output=True,
         text=True,
@@ -66,7 +67,12 @@ def run_step(
     **overrides: str,
 ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["bash", str(CI_SCRIPTS / name), *args],
+        [
+            sys.executable,
+            str(CI_SCRIPTS / "run_checks.py"),
+            name,
+            *args,
+        ],
         cwd=repo,
         env=env | overrides,
         capture_output=True,

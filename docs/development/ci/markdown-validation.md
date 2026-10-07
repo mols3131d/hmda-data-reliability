@@ -32,4 +32,4 @@ Workflow 생성은 [Admission Boundary](admission.md)를 따른다.
 - **Inbox만 변경:** 검증 단계를 선택하지 않는다.
 - **다른 경로도 변경:** 다른 경로에 필요한 검증만 수행한다.
 
-구현은 [`markdown.sh`](../../../scripts/ci/markdown.sh), 로컬 실행과 현재 결과 제공 방식은 [Testing Guide](../testing.md#local-ci-steps)에서 확인한다.
+구현은 [`run_checks.py`](../../../scripts/ci/run_checks.py)의 `markdown` 검사, 로컬 실행과 현재 결과 제공 방식은 [Testing Guide](../testing.md#local-ci-steps)에서 확인한다.

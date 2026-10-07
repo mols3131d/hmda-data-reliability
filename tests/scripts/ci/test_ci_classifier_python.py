@@ -37,6 +37,9 @@ def test_architecture_changes_prepare_and_run_boundary_check(path: str) -> None:
         "Sync dependencies",
         "Check Python dependency boundaries",
     ):
+        if name == "Set up Python":
+            assert "if" not in steps[name]
+            continue
         # 실제 workflow의 OR selector를 확인해 setup 누락도 회귀로 잡는다.
         conditions = steps[name]["if"].split(" || ")
         keys = []
