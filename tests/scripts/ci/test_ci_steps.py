@@ -210,7 +210,9 @@ def test_python_dependency_only_full_type_check(
     )
 
     assert proc.returncode == 0, proc.stderr
-    assert tool_calls(tool_env) == [["uv", "run", "--no-sync", "ty", "check"]]
+    assert tool_calls(tool_env) == [
+        ["uv", "run", "--no-sync", "ty", "check", "--exclude", "inbox/**"]
+    ]
 
 
 @pytest.mark.parametrize("command", ["ruff check", "ruff format", "ty check"])

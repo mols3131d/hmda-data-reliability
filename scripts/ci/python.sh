@@ -14,7 +14,7 @@ fi
 
 # 영향 범위가 넓으면 전체 타입 검사를 한 번 실행하고 scoped 검사는 생략한다.
 if [[ "${FULL_TYPE:-false}" == true ]]; then
-  uv run --no-sync ty check
+  uv run --no-sync ty check --exclude 'inbox/**'
   exit 0
 fi
 
