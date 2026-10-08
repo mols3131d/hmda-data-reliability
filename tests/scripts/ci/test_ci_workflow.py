@@ -493,9 +493,13 @@ def test_workflow_validates_actions_with_pinned_actionlint(
 ) -> None:
     step = workflow_steps["Validate GitHub Actions with actionlint"]
     assert step["if"] == "steps.scope.outputs.actionlint == 'true'"
+    image = (
+        "rhysd/actionlint:1.7.12@sha256:"
+        "b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667"
+    )
     assert step["run"].strip() == (
         'docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -w /repo '
-        "rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color"
+        f"{image} -color"
     )
     assert "env" not in step
     assert list(workflow_steps).index("Classify changes") < list(workflow_steps).index(
