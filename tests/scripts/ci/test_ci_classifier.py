@@ -304,3 +304,27 @@ def test_workflow_change_targets_classifier_test() -> None:
     out = run_classifier([".github/workflows/ci-lite.yml"])
     assert out["tests"] == "true"
     assert "tests/scripts/ci" in out["targets"].split()
+
+@pytest.mark.component
+@pytest.mark.parametrize(
+    "path",
+    [
+        ".github/workflows/ci-lite.yml",
+        ".github/workflows/future.yaml",
+        "action.yml",
+        "action.yaml",
+        ".github/actions/local/action.yml",
+        "nested/local/action.yaml",
+    ],
+)
+def test_actionlint_selected_for_actions_definitions(path: str) -> None:
+    assert run_classifier([path])["actionlint"] == "true"
+
+
+@pytest.mark.component
+@pytest.mark.parametrize(
+    "path",
+    ["scripts/ci/classify_changes.py", "src/hmda_reliability/example.py", "README.md"],
+)
+def test_actionlint_not_selected_for_unrelated_changes(path: str) -> None:
+    assert run_classifier([path])["actionlint"] == "false"

@@ -486,3 +486,21 @@ def test_workflow_has_no_inbox_validator(
     workflow_steps: dict[str, dict[str, object]],
 ) -> None:
     assert "Validate changed Inbox artifacts" not in workflow_steps
+
+def test_workflow_validates_actions_with_pinned_actionlint(
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    step = workflow_steps["Validate GitHub Actions with actionlint"]
+    assert step["if"] == "steps.scope.outputs.actionlint == 'true'"
+    assert step["env"] == {
+        "ACTIONLINT_VERSION": "1.7.12",
+        "ACTIONLINT_ARCHIVE_SHA256": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
+    }
+    script = str(step["run"])
+    assert "set -euo pipefail" in script
+    assert "sha256sum --check -" in script
+    assert 'tar -xzf "$archive"' in script
+    assert '"$RUNNER_TEMP/actionlint"' in script
+    assert list(workflow_steps).index("Classify changes") < list(workflow_steps).index(
+        "Validate GitHub Actions with actionlint"
+    )
