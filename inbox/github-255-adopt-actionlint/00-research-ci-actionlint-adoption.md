@@ -12,7 +12,7 @@ tags:
 # Actionlint Adoption Research
 
 > [!NOTE]
-> GitHub Actions의 정적 정확성 검증에는 **actionlint 도입이 적절하다**. YAML 문법뿐 아니라 Expression, Job 관계, 일부 Action 계약과 인라인 스크립트를 검증하며, 이미 도입된 zizmor의 보안 감사와 역할이 구분된다. 다만 **외부 Action의 SHA 고정 참조와 독립적인 local action, 실제 실행 결과까지 검증한다고 해석해서는 안 된다**. PR #255의 실제 CI는 성공했지만 오류 주입 negative control과 독립 리뷰 결과는 별도로 구분한다.
+> GitHub Actions의 정적 정확성 검증에는 **actionlint 도입이 적절하다**. YAML 문법뿐 아니라 Expression, Job 관계, 일부 Action 계약과 인라인 스크립트를 검증하며, 이미 도입된 zizmor의 보안 감사와 역할이 구분된다. 다만 **외부 Action의 SHA 고정 참조와 독립적인 local action, 실제 실행 결과까지 검증한다고 해석해서는 안 된다**. 공식 Docker 이미지를 digest로 고정하는 방식으로 설치 코드를 단순화했고, PR #255의 실제 CI 성공과 미검증 영역을 별도로 구분한다.
 
 ## Question
 
@@ -84,44 +84,47 @@ actionlint는 일부 script injection·credential 문제도 지적할 수 있으
 
 - 근거: [actionlint checks](https://github.com/rhysd/actionlint/blob/v1.7.12/docs/checks.md), [zizmor audits](https://docs.zizmor.sh/audits/), [CI ownership](../../docs/development/ci/README.md)
 
-### PR #255는 현재 CI Lite 구조를 재사용하는 작은 도입이다
+### PR #255는 공식 이미지와 digest 고정으로 설치 코드를 없앨 수 있다
 
-현재 [PR #255](https://github.com/mols3131d/hmda-data-reliability/pull/255)는 `main`을 기준으로 하는 별도 Draft PR이며, 다음 변경을 포함한다.
+기존 actionlint 실행은 GitHub Release 아카이브를 수동 다운로드하고 고정 SHA-256으로 검증한 뒤 압축을 풀어 실행했다. 이는 무결성 통제로는 타당했지만 `curl`·`sha256sum`·`tar`·환경 변수·실패 처리를 workflow 안에서 유지하는 비용이 있었다. [actionlint 공식 사용 문서](https://github.com/rhysd/actionlint/blob/v1.7.12/docs/usage.md#docker-image)는 **공식 Docker 이미지**를 제공하며 ShellCheck와 pyflakes를 함께 포함한다고 명시한다.
 
-1. `classify_changes.py`의 `Scope.actionlint`와 workflow/action 경로 선택.
-1. 기존 `check` Job에 조건부 **Validate GitHub Actions with actionlint** Step 추가.
-1. 공식 `actionlint_1.7.12_linux_amd64.tar.gz`를 다운로드하고 고정 SHA-256을 확인한 후 전체 Workflow를 검사.
-1. `tests/scripts/ci/test_ci_classifier.py`와 `test_ci_workflow.py`에서 검사 선택과 Step 연결을 보호.
-1. 기존 zizmor, 별도 Python 검사, Lefthook 설정 및 `main` admission 방식을 유지.
+선택지는 세 가지다.
 
-릴리스 메타데이터의 Linux AMD64 asset digest는 다음과 일치한다.
+| Candidate | Complexity | Reproducibility | Observation |
+| --- | --- | --- | --- |
+| 직접 바이너리 다운로드 + checksum | 높음 | tar.gz SHA-256 고정 | 이전 PR #255 구현 |
+| `uses: docker://rhysd/actionlint:1.7.12` | 가장 낮음 | **mutable tag** | 공식 GitHub Actions 예시와 동일한 방식 |
+| `docker run` + `@sha256` | **낮음** | **OCI 이미지 digest 고정** | **현재 권고 및 구현** |
 
-```text
-actionlint v1.7.12
-actionlint_1.7.12_linux_amd64.tar.gz
-sha256:8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+공식 이미지의 **multi-platform index digest**를 Docker Hub에서 확인했다. GitHub의 `uses: docker://` 입력 문서는 이미지 태그 구문을 예시로 제시하므로, digest를 사용하려면 표준 Docker CLI의 이미지 참조로 넘긴다. `docker run`은 Docker가 제공되는 GitHub-hosted Ubuntu runner에서 실행한다.
+
+```yaml
+- name: Validate GitHub Actions with actionlint
+  if: steps.scope.outputs.actionlint == 'true'
+  run: >-
+    docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -w /repo
+    rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
 ```
 
-이는 바이트 무결성을 검증하지만 다운로드 가용성, upstream 자체의 안전성 및 실제 실행의 완전성을 보장하지 않는다. 설치 방식은 새 GitHub Action과 별도 프로젝트 의존성을 추가하지 않는 대신 GitHub Release 다운로드에 의존한다.
+이 방식은 Repository를 읽기 전용으로 컨테이너에 마운트하며, `-w /repo`에서 actionlint가 전체 Workflow를 자동 탐색한다. 이미지 다운로드/실행/검사 실패는 `docker run`의 nonzero 종료 상태로 CI에 전달된다. 새 repository 권한이나 project dependency는 필요하지 않다. 이미지 레지스트리 가용성은 외부 의존성으로 남으며, SHA-256 고정도 upstream 자체의 안전성을 증명하지는 못한다.
 
-- 근거: [PR #255 diff](https://github.com/mols3131d/hmda-data-reliability/pull/255/files), [v1.7.12 release](https://github.com/rhysd/actionlint/releases/tag/v1.7.12)
+- 근거: [Official Docker usage](https://github.com/rhysd/actionlint/blob/v1.7.12/docs/usage.md#docker-image), [Docker Hub 1.7.12 index digest](https://hub.docker.com/layers/rhysd/actionlint/1.7.12/images/sha256-9d36088643581e728c969f35141f88139fec77280b2be23c1f66f8e40e1025e7), [PR #255](https://github.com/mols3131d/hmda-data-reliability/pull/255)
 
-### 현재 PR의 CI 성공은 관찰됐지만 오류 탐지 범위 전부를 증명하지 않는다
+### 실제 CI 검증은 재현 가능한 범위와 한계를 나눠야 한다
 
-2026-10-08 PR #255 head `2c6404a14945f1b7d45af3fb8818f2ad0845bbe6`에서 [CI Lite run 37760251837](https://github.com/mols3131d/hmda-data-reliability/actions/runs/37760251837)이 **success**로 완료됐다.
+2026-10-08 PR #255 head `ecd05dea6fc23ba120dbb8d8718307b9b19a4d4a`의 [CI Lite run 37775456827](https://github.com/mols3131d/hmda-data-reliability/actions/runs/37775456827)은 **success**였다.
 
 | Check | Observed result | Evidence boundary |
 | --- | --- | --- |
-| actionlint Step | Pass | 실제 다운로드·checksum 검증 후 workflow scan 성공 |
-| zizmor Step | Pass | 기존 보안 감사 실행 성공 |
-| Ruff lint/format, ty | Pass | 변경 Python과 선택된 코드 검사 성공 |
-| CI contract tests | **238 passed** | 변경 선택·wiring 계약 포함; 실제 오류 유형별 검증 전체는 아님 |
-| Invalid Workflow negative control | **Not independently verified** | 오류를 주입했을 때 actionlint가 non-zero를 반환하는 실행 근거 없음 |
-| Human approval / independent PR review | **Not verified** | 성공한 CI와 구분해야 함 |
+| Docker 기반 actionlint | Pass | 공식 이미지의 digest 참조, Repository read-only mount, 전체 Workflow 검사 성공 |
+| zizmor | Pass | 기존 offline security audit 실행 |
+| Ruff/ty | Pass | 변경 Python CI 계약 검증 |
+| CI contract tests | **238 passed** | 선택·Step wiring 회귀 검증 |
+| 새 Docker 방식의 negative control | Not independently verified | 잘못된 Workflow와 네트워크 실패를 컨테이너로 주입하는 실제 테스트는 수행하지 않음 |
+| Updated independent review | Not verified | 이전 reviewer assessment는 변경 전 head에 관한 결과임 |
 
-CI가 성공했다는 것은 현재 Workflow가 이 도구 구성에서 통과했다는 뜻이다. 모든 잠재적 Expression·Action 입력·보안 위험이 검증됐다는 뜻은 아니다. 특히 **CI Lite YAML 자체가 실행 불가능할 정도로 잘못되면 그 안의 actionlint Step도 시작되지 않을 수 있다**. GitHub의 필수 체크/병합 정책과 조기 로컬 실행은 이런 자기 검증 한계를 보완하는 별도 경계다.
+CI 성공은 현재 Workflow가 통과했다는 직접 증거일 뿐, **GitHub Actions 전체 실행 경로·외부 Action 입력·독립 Local Action까지 모두 검사했다는 증거가 아니다**. Workflow 자체가 파싱 불가능하면 내부 actionlint Step이 시작하지 못할 수 있으므로 required check 정책은 별도로 유지해야 한다.
 
-- 근거: [CI run](https://github.com/mols3131d/hmda-data-reliability/actions/runs/37760251837), [CI Admission Boundary](../../docs/development/ci/admission.md)
 
 ## Options
 
@@ -137,14 +140,14 @@ CI가 성공했다는 것은 현재 Workflow가 이 도구 구성에서 통과�
 ## Implications
 
 - **도입 범위:** PR #255의 조건부 actionlint Step과 기존 classifier/계약 테스트 재사용을 유지하는 것이 현재 목적에 부합한다. 별도 workflow, 범용 YAML lint 체계나 wrapper 프레임워크는 필요하지 않다.
-- **검사 정의:** "actionlint passed"는 Workflow 정적 검증 성공으로 기록한다. local action 전수 검사, ShellCheck·pyflakes 항상 실행, 외부 Action 전체 입력 계약 및 실제 CI 경로 검증으로 확장해 주장하지 않는다.
+- **검사 정의:** "actionlint passed"는 Workflow 정적 검증 성공으로 기록한다. local action 전수 검사, 외부 Action 전체 입력 계약 및 실제 CI 경로 검증으로 확장해 주장하지 않는다.
 - **보안 구분:** SHA pinning과 zizmor 감사 정책을 actionlint 도입 때문에 약화시키지 않는다.
 - **로컬 Hook:** Lefthook 통합은 초기 범위에서 제외한다. Workflow 변경이 잦아지거나 CI 실패 피드백 비용이 커질 때만 재검토한다.
 - **버전 갱신:** GitHub Actions schema·context 변화로 false positive 또는 누락이 드러나면 upstream 릴리스 노트와 실제 Workflow baseline을 기준으로 고정 버전을 의도적으로 갱신한다.
 
 ## Open Questions
 
-- **오류 주입 검증:** 잘못된 Expression, 존재하지 않는 `needs` 대상, malformed YAML, 다운로드/체크섬 실패를 실제로 재현해 실패 전파를 증명할 필요가 있는가?
+- **오류 주입 검증:** 잘못된 Expression, 존재하지 않는 `needs` 대상, malformed YAML, Docker pull·컨테이너 실행 실패를 실제로 재현해 실패 전파를 증명할 필요가 있는가?
   - 현재 계약 테스트 및 성공한 CI만으로는 모든 negative path가 실제 검증됐다고 볼 수 없다.
 - **Local action scope:** 참조되지 않는 `action.yml` 파일의 *정적 정확성*까지 병합 조건으로 강제할 실제 요구가 있는가?
   - 필요한 경우 actionlint 선택 플래그와 실제 커버리지 차이를 명시적으로 해결해야 한다.
