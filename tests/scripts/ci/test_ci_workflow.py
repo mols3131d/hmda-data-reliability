@@ -498,8 +498,7 @@ def test_workflow_validates_actions_with_pinned_actionlint(
         "b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667"
     )
     assert step["run"].strip() == (
-        'docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -w /repo '
-        f"{image} -color"
+        f'docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -w /repo {image} -color'
     )
     assert "env" not in step
     assert list(workflow_steps).index("Classify changes") < list(workflow_steps).index(
