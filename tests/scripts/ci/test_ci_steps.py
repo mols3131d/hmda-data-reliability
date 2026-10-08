@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -17,6 +19,128 @@ from tests.scripts.ci.helpers import (
 )
 
 pytestmark = pytest.mark.component
+
+
+def test_actual_zizmor_collects_ignored_inputs_and_excludes_mixed_inbox(
+    repo: Path,
+) -> None:
+    uvx = shutil.which("uvx")
+    if uvx is None:
+        pytest.skip("Actual audit requires uvx and cached zizmor@1.30.1")
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in {"UV_ENV_FILE", "GH_TOKEN", "GITHUB_TOKEN", "ZIZMOR_GITHUB_TOKEN"}
+    } | {"UV_OFFLINE": "true", "ZIZMOR_VERSION": "1.30.1"}
+    if cache := environment.get("UV_CACHE_DIR"):
+        environment["UV_CACHE_DIR"] = str(Path(cache).resolve())
+    version = subprocess.run(
+        [uvx, "zizmor@1.30.1", "--version"],
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if version.returncode and "network was disabled" in version.stderr.lower():
+        pytest.skip("Actual audit requires zizmor@1.30.1 cached by the audit step")
+    assert version.returncode == 0, version.stderr
+    assert version.stdout.strip() == "zizmor 1.30.1"
+    workflow = (
+        "name: Check\non: push\npermissions:\n  contents: read\n"
+        "jobs:\n  check:\n    runs-on: ubuntu-latest\n"
+        "    steps:\n      - run: echo ok\n"
+    )
+    unsafe_action = (
+        "name: Probe\ndescription: Input probe\nruns:\n  using: composite\n"
+        "  steps:\n    - uses: actions/checkout@v6.0.2\n"
+        "      with:\n        persist-credentials: false\n"
+    )
+    commit_change(
+        repo,
+        {
+            ".github/workflows/check.yml": workflow,
+            "tools/with spaces/action.yml": unsafe_action,
+            "inbox/probe/action.yml": "runs: [invalid\n",
+        },
+    )
+    commit_change(repo, {".gitignore": "tools/\n"})
+
+    unsafe = run_step("zizmor", repo, environment)
+
+    assert unsafe.returncode == 14, unsafe.stdout + unsafe.stderr
+    assert "unpinned-uses" in unsafe.stdout
+    assert "tools/with spaces/action.yml" in unsafe.stdout
+    safe_action = unsafe_action.replace(
+        "actions/checkout@v6.0.2",
+        "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd",
+    )
+    commit_change(repo, {"tools/with spaces/action.yml": safe_action})
+
+    safe = run_step("zizmor", repo, environment)
+
+    assert safe.returncode == 0, safe.stdout + safe.stderr
+    assert "inbox/probe" not in safe.stdout + safe.stderr
+
+
+@pytest.mark.parametrize("failure", ["", "uvx"])
+def test_zizmor_audits_tracked_ignored_definitions_without_inbox(
+    repo: Path, tool_env: dict[str, str], failure: str
+) -> None:
+    commit_change(
+        repo,
+        {
+            ".github/workflows/check.yaml": "fixture\n",
+            "action.yml": "fixture\n",
+            "tools/with spaces/action.yaml": "fixture\n",
+            "inbox/example/action.yml": "fixture\n",
+            "notes.yaml": "fixture\n",
+        },
+    )
+    commit_change(repo, {".gitignore": ".github/workflows/\naction.yml\naction.yaml\n"})
+    untracked = repo / "untracked/action.yml"
+    untracked.parent.mkdir()
+    untracked.write_text("fixture\n", encoding="utf-8")
+    binary_dir = Path(tool_env["PATH"].split(":", 1)[0])
+    (binary_dir / "uvx").symlink_to(binary_dir / "uv")
+    scope = run_classifier(
+        [".github/workflows/check.yaml", "inbox/example/action.yml"], repo_root=repo
+    )
+    assert scope["zizmor"] == "true"
+
+    proc = run_step(
+        "zizmor", repo, tool_env, ZIZMOR_VERSION="1.30.1", FAIL_COMMAND=failure
+    )
+
+    assert proc.returncode == (17 if failure else 0), proc.stderr
+    assert tool_calls(tool_env) == [
+        [
+            "uvx",
+            "zizmor@1.30.1",
+            "--offline",
+            "--strict-collection",
+            "--collect=workflows,actions",
+            "--persona=regular",
+            "--no-config",
+            "--format=github",
+            "./.github/workflows/check.yaml",
+            "./action.yml",
+            "./tools/with spaces/action.yaml",
+        ]
+    ]
+
+
+@pytest.mark.parametrize("git_available", [True, False])
+def test_zizmor_fails_without_tracked_inputs(
+    repo: Path, tool_env: dict[str, str], git_available: bool
+) -> None:
+    root = repo if git_available else repo.parent
+    if not git_available:
+        git(root, "init", "-qb", "empty")
+        (root / ".git").rename(root / "broken-git")
+    proc = run_step("zizmor", root, tool_env, GIT_CEILING_DIRECTORIES=str(root.parent))
+
+    assert proc.returncode == (1 if git_available else 128), proc.stderr
+    assert tool_calls(tool_env) == []
 
 
 @pytest.mark.parametrize(

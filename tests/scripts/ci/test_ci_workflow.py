@@ -51,9 +51,12 @@ def test_zizmor_workflow_command_preserves_flags_and_failure(
     workflow_steps: dict[str, dict[str, object]],
     failure: str,
 ) -> None:
+    commit_change(repo, {"action.yml": "fixture\n"})
+    (repo / "scripts").symlink_to(REPO_ROOT / "scripts", target_is_directory=True)
     binary_dir = Path(tool_env["PATH"].split(":", 1)[0])
     (binary_dir / "uvx").symlink_to(binary_dir / "uv")
     step = workflow_steps["Audit GitHub Actions with zizmor"]
+    assert step["run"] == "python3 scripts/ci/run_checks.py zizmor"
     step_env = step["env"]
     assert isinstance(step_env, dict)
     proc = subprocess.run(
@@ -75,7 +78,7 @@ def test_zizmor_workflow_command_preserves_flags_and_failure(
             "--persona=regular",
             "--no-config",
             "--format=github",
-            ".",
+            "./action.yml",
         ]
     ]
 

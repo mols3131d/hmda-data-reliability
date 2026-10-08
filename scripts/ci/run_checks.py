@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 import sys
+from fnmatch import fnmatchcase
 from pathlib import Path
 
 from changed_files import collect_changed_files, entrypoint, environment_targets, run
@@ -152,6 +154,44 @@ def tooling() -> None:
         )
 
 
+def zizmor() -> None:
+    tracked = subprocess.run(
+        ["git", "ls-files", "-z"], stdout=subprocess.PIPE, check=True
+    ).stdout
+    patterns = (
+        ".github/workflows/*.yml",
+        ".github/workflows/*.yaml",
+        "action.yml",
+        "action.yaml",
+        "*/action.yml",
+        "*/action.yaml",
+    )
+    files = [
+        f"./{path}"
+        for raw_path in tracked.split(b"\0")
+        if raw_path
+        and not (path := os.fsdecode(raw_path)).startswith("inbox/")
+        and any(fnmatchcase(path, pattern) for pattern in patterns)
+        and Path(path).is_file()
+    ]
+    if not files:
+        print("No tracked GitHub Actions definitions to audit", file=sys.stderr)
+        raise SystemExit(1)
+    run(
+        [
+            "uvx",
+            f"zizmor@{os.environ['ZIZMOR_VERSION']}",
+            "--offline",
+            "--strict-collection",
+            "--collect=workflows,actions",
+            "--persona=regular",
+            "--no-config",
+            "--format=github",
+            *files,
+        ]
+    )
+
+
 def main() -> None:
     checks = {
         "markdown": markdown,
@@ -161,6 +201,7 @@ def main() -> None:
         "json": json,
         "toml": toml,
         "tooling": tooling,
+        "zizmor": zizmor,
     }
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("check", choices=checks)
