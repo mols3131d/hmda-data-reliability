@@ -35,7 +35,7 @@ Python과 Markdown configuration은 각각 [`pyproject.toml`](../../../pyproject
 
 [`lefthook.yml`](../../../lefthook.yml)은 local Git hook을 사용할 수 있는 환경에서 staged file에 fix를 적용하고 push 전에는 관련 file을 read-only로 검사한다. 세부 hook baseline은 [Lefthook](lefthook.md)을 따른다.
 
-Local runtime을 사용할 수 있는 기여자는 위 fix/check command를 직접 사용할 수 있다. Local runtime을 사용할 수 없는 기여자에게 이 command 실행을 유일한 복구 경로로 요구하지 않는다. 병합에 필요한 검증과 실패 정보의 기준은 [Continuous Integration](../ci.md)을 따른다.
+Local runtime을 사용할 수 있는 기여자는 위 fix/check command를 직접 사용할 수 있다. Local runtime을 사용할 수 없는 기여자에게 이 command 실행을 유일한 복구 경로로 요구하지 않는다. 병합에 필요한 검증과 실패 정보의 기준은 [Continuous Integration](../ci/README.md)을, Markdown의 formatting·lint 경계는 [Markdown Validation](../ci/markdown-validation.md)을 따른다.
 
 PR CI의 file selection과 validation scope는 [`.github/workflows/ci-lite.yml`](../../../.github/workflows/ci-lite.yml)이 소유한다. Hook 또는 CI command를 이 문서에 복제하지 않고, 수동 작업에는 위의 repository entrypoint를 사용한다.
 
