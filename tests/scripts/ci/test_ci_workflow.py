@@ -497,7 +497,7 @@ def test_workflow_validates_actions_with_pinned_actionlint(
         "rhysd/actionlint:1.7.12@sha256:"
         "b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667"
     )
-    assert step["run"].strip() == (
+    assert str(step["run"]).strip() == (
         f'docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -w /repo {image} -color'
     )
     assert "env" not in step
