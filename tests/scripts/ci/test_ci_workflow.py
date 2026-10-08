@@ -494,7 +494,10 @@ def test_workflow_validates_actions_with_pinned_actionlint(
     assert step["if"] == "steps.scope.outputs.actionlint == 'true'"
     assert step["env"] == {
         "ACTIONLINT_VERSION": "1.7.12",
-        "ACTIONLINT_ARCHIVE_SHA256": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
+        "ACTIONLINT_ARCHIVE_SHA256": (
+            "8aca8db96f1b94770f1b0d72b6dddcb1"
+            "ebb8123cb3712530b08cc387b349a3d8"
+        ),
     }
     script = str(step["run"])
     assert "set -euo pipefail" in script
