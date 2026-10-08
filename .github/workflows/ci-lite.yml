@@ -47,6 +47,7 @@ jobs:
           printf '%s  %s\n' "$ACTIONLINT_ARCHIVE_SHA256" "$archive" | sha256sum --check -
           tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint"
+
       - name: Set up rumdl
         if: steps.scope.outputs.markdown == 'true'
         uses: rvben/rumdl@4997ff07b63c7a54d6a495ebcd3ce7f23ee1173f # v0

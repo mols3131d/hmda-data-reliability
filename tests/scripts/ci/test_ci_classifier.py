@@ -305,6 +305,7 @@ def test_workflow_change_targets_classifier_test() -> None:
     assert out["tests"] == "true"
     assert "tests/scripts/ci" in out["targets"].split()
 
+
 @pytest.mark.component
 @pytest.mark.parametrize(
     "path",
