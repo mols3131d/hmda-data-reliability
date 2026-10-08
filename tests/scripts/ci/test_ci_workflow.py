@@ -17,6 +17,86 @@ from tests.scripts.ci.helpers import (
 pytestmark = pytest.mark.component
 
 
+def test_action_only_changes_prepare_isolated_zizmor(
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    scope = run_classifier([".github/actions/deleted/action.yaml"])
+    setup = str(workflow_steps["Set up uv"]["if"])
+    selectors = []
+    for clause in setup.split(" || "):
+        match = re.fullmatch(r"steps\.scope\.outputs\.(\w+) == 'true'", clause)
+        assert match is not None, clause
+        selectors.append(match.group(1))
+    assert any(scope[key] == "true" for key in selectors)
+    assert scope["zizmor"] == "true"
+    assert scope["tests"] == scope["python"] == scope["tach"] == "false"
+    assert workflow_steps["Sync dependencies"]["if"] == (
+        "steps.scope.outputs.tests == 'true' || "
+        "steps.scope.outputs.python == 'true' || "
+        "steps.scope.outputs.tach == 'true'"
+    )
+    audit = workflow_steps["Audit GitHub Actions with zizmor"]
+    assert audit["if"] == "steps.scope.outputs.zizmor == 'true'"
+    assert list(workflow_steps).index("Set up uv") < list(workflow_steps).index(
+        "Audit GitHub Actions with zizmor"
+    )
+    assert audit["env"] == {"ZIZMOR_VERSION": "1.30.1"}
+    assert not audit.get("continue-on-error", False)
+
+
+@pytest.mark.parametrize("failure", ["", "uvx"])
+def test_zizmor_workflow_command_preserves_flags_and_failure(
+    repo: Path,
+    tool_env: dict[str, str],
+    workflow_steps: dict[str, dict[str, object]],
+    failure: str,
+) -> None:
+    commit_change(repo, {"action.yml": "fixture\n"})
+    (repo / "scripts").symlink_to(REPO_ROOT / "scripts", target_is_directory=True)
+    binary_dir = Path(tool_env["PATH"].split(":", 1)[0])
+    (binary_dir / "uvx").symlink_to(binary_dir / "uv")
+    step = workflow_steps["Audit GitHub Actions with zizmor"]
+    assert step["run"] == "python3 scripts/ci/run_checks.py zizmor"
+    step_env = step["env"]
+    assert isinstance(step_env, dict)
+    proc = subprocess.run(
+        ["bash", "-e", "-c", str(step["run"])],
+        cwd=repo,
+        env=tool_env | step_env | {"FAIL_COMMAND": failure},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == (17 if failure else 0), proc.stderr
+    assert tool_calls(tool_env) == [
+        [
+            "uvx",
+            "zizmor@1.30.1",
+            "--offline",
+            "--strict-collection",
+            "--collect=workflows,actions",
+            "--persona=regular",
+            "--no-config",
+            "--format=github",
+            "./action.yml",
+        ]
+    ]
+
+
+def test_checkout_and_python_actions_are_sha_pinned(
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    assert workflow_steps["Checkout prospective merge"]["uses"] == (
+        "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd"
+    )
+    checkout_options = workflow_steps["Checkout prospective merge"]["with"]
+    assert isinstance(checkout_options, dict)
+    assert checkout_options["persist-credentials"] is False
+    assert workflow_steps["Set up Python"]["uses"] == (
+        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405"
+    )
+
+
 @pytest.mark.parametrize("path", ["rulesync.lock", ".rulesync/rules/markdown.md"])
 def test_route_changes_select_isolated_workflow_steps(
     path: str, workflow_steps: dict[str, dict[str, object]]

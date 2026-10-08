@@ -40,6 +40,7 @@ class Scope:
     lefthook: bool = False
     routes: bool = False
     tach: bool = False
+    zizmor: bool = False
     full_tests: bool = False
     full_type: bool = False
     openspec_spec_targets: list[str] = field(default_factory=list)
@@ -105,6 +106,16 @@ def classify(paths: list[str]) -> Scope:
     for path in paths:
         if not path or path.startswith("inbox/"):
             continue
+        if matches(
+            path,
+            ".github/workflows/*.yml",
+            ".github/workflows/*.yaml",
+            "action.yml",
+            "action.yaml",
+            "*/action.yml",
+            "*/action.yaml",
+        ):
+            scope.zizmor = True
         exists = Path(path).is_file()
         dependency_changed = path in DEPENDENCY_INPUTS
         if matches(
