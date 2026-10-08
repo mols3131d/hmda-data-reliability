@@ -19,6 +19,30 @@ from tests.scripts.ci.helpers import (
 
 
 @pytest.mark.component
+@pytest.mark.parametrize(
+    ("path", "selected"),
+    [
+        (".github/workflows/ci-lite.yml", True),
+        (".github/workflows/deleted.yaml", True),
+        ("action.yml", True),
+        ("action.yaml", True),
+        (".github/actions/example/action.yml", True),
+        ("tools/deleted/action.yaml", True),
+        ("scripts/ci/classify_changes.py", False),
+        (".github/workflows/classify_changes.sh", False),
+        ("src/hmda_reliability/example.py", False),
+        ("README.md", False),
+        ("inbox/example/action.yml", False),
+        ("tools/action.yaml.txt", False),
+    ],
+)
+def test_actions_definitions_select_zizmor_even_when_deleted(
+    path: str, selected: bool
+) -> None:
+    assert run_classifier([path])["zizmor"] == str(selected).lower()
+
+
+@pytest.mark.component
 @pytest.mark.parametrize("input_kind", ["readme", "module", "resource"])
 def test_packaging_inputs_select_build(input_kind: str) -> None:
     with (REPO_ROOT / "pyproject.toml").open("rb") as source:
