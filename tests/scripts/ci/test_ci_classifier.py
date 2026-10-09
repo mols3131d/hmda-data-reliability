@@ -24,9 +24,11 @@ from tests.scripts.ci.helpers import (
     [
         (".github/workflows/ci-lite.yml", True),
         (".github/workflows/deleted.yaml", True),
+        (".github/workflows/future.yaml", True),
         ("action.yml", True),
         ("action.yaml", True),
         (".github/actions/example/action.yml", True),
+        ("nested/local/action.yaml", True),
         ("tools/deleted/action.yaml", True),
         ("scripts/ci/classify_changes.py", False),
         (".github/workflows/classify_changes.sh", False),
@@ -36,10 +38,12 @@ from tests.scripts.ci.helpers import (
         ("tools/action.yaml.txt", False),
     ],
 )
-def test_actions_definitions_select_zizmor_even_when_deleted(
+def test_actions_definitions_select_linters_even_when_deleted(
     path: str, selected: bool
 ) -> None:
-    assert run_classifier([path])["zizmor"] == str(selected).lower()
+    scope = run_classifier([path])
+    for flag in ("zizmor", "actionlint"):
+        assert scope[flag] == str(selected).lower(), flag
 
 
 @pytest.mark.component
@@ -304,28 +308,3 @@ def test_workflow_change_targets_classifier_test() -> None:
     out = run_classifier([".github/workflows/ci-lite.yml"])
     assert out["tests"] == "true"
     assert "tests/scripts/ci" in out["targets"].split()
-
-
-@pytest.mark.component
-@pytest.mark.parametrize(
-    "path",
-    [
-        ".github/workflows/ci-lite.yml",
-        ".github/workflows/future.yaml",
-        "action.yml",
-        "action.yaml",
-        ".github/actions/local/action.yml",
-        "nested/local/action.yaml",
-    ],
-)
-def test_actionlint_selected_for_actions_definitions(path: str) -> None:
-    assert run_classifier([path])["actionlint"] == "true"
-
-
-@pytest.mark.component
-@pytest.mark.parametrize(
-    "path",
-    ["scripts/ci/classify_changes.py", "src/hmda_reliability/example.py", "README.md"],
-)
-def test_actionlint_not_selected_for_unrelated_changes(path: str) -> None:
-    assert run_classifier([path])["actionlint"] == "false"
