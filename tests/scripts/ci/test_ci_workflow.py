@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -486,3 +487,53 @@ def test_workflow_has_no_inbox_validator(
     workflow_steps: dict[str, dict[str, object]],
 ) -> None:
     assert "Validate changed Inbox artifacts" not in workflow_steps
+
+
+def test_workflow_validates_actions_with_pinned_actionlint(
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    step = workflow_steps["Validate GitHub Actions with actionlint"]
+    assert step["if"] == "steps.scope.outputs.actionlint == 'true'"
+    assert step.get("continue-on-error", False) is False
+    arguments = shlex.split(str(step["run"]))
+    assert arguments[:2] == ["docker", "run"]
+    assert "--rm" in arguments
+    assert arguments[arguments.index("-v") + 1] == "$GITHUB_WORKSPACE:/repo:ro"
+    assert arguments[arguments.index("-w") + 1] == "/repo"
+    images = [
+        argument for argument in arguments if argument.startswith("rhysd/actionlint:")
+    ]
+    assert len(images) == 1
+    assert re.fullmatch(
+        r"rhysd/actionlint:\d+\.\d+\.\d+@sha256:[0-9a-f]{64}", images[0]
+    )
+    assert arguments[arguments.index(images[0]) + 1 :] in ([], ["-color"])
+    assert list(workflow_steps).index("Classify changes") < list(workflow_steps).index(
+        "Validate GitHub Actions with actionlint"
+    )
+
+
+@pytest.mark.parametrize("failure", ["", "docker"])
+def test_actionlint_workflow_command_propagates_docker_failure(
+    repo: Path,
+    tool_env: dict[str, str],
+    workflow_steps: dict[str, dict[str, object]],
+    failure: str,
+) -> None:
+    binary_dir = Path(tool_env["PATH"].split(":", 1)[0])
+    (binary_dir / "docker").symlink_to(binary_dir / "uv")
+    step = workflow_steps["Validate GitHub Actions with actionlint"]
+    proc = subprocess.run(
+        ["bash", "-e", "-c", str(step["run"])],
+        cwd=repo,
+        env=tool_env | {"GITHUB_WORKSPACE": str(repo), "FAIL_COMMAND": failure},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode == (17 if failure else 0), proc.stderr
+    calls = tool_calls(tool_env)
+    assert len(calls) == 1
+    assert calls[0][:2] == ["docker", "run"]
+    assert f"{repo}:/repo:ro" in calls[0]

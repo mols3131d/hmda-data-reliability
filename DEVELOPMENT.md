@@ -37,7 +37,7 @@
 | --- | --- |
 | Runtime | `Python>=3.13`, `Node.js` |
 | Package manager | `uv`, `npm` |
-| Repository tooling | `OpenSpec`, `Rulesync`, `Skills CLI`, `Lefthook`, `Ruff`, `rumdl`, `Biome`, `Tombi`, `Tach`, `zizmor` |
+| Repository tooling | `OpenSpec`, `Rulesync`, `Skills CLI`, `Lefthook`, `Ruff`, `rumdl`, `Biome`, `Tombi`, `Tach`, `zizmor`, `actionlint` |
 | Data platform | `DuckDB`, `dbt` |
 | Orchestration | `Apache Airflow 3.3.0` |
 | Analysis | `Polars` |
