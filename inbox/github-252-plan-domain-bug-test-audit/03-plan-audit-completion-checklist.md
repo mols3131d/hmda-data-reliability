@@ -64,3 +64,16 @@ GitHub connector는 repo 내용을 읽고 이 문서를 갱신할 수 있지만,
 - Git tree `29c48e468d470ee02ac470059b556fed9af960ce`의 all 187 domain source/test/spec paths와 file inventory를 직접 대조했다. 187 valid, zero duplicate, zero nonexistent.
 - Self-review에서 `tests/dbt/test_analytics_foundation.py`가 Data Platform tests prefix로 잘못 축약된 항목을 발견해 수정했다. 이후 path set 검증을 재실행했다.
 - Coverage status는 모든 파일 `pending` 또는 `sampled`; domain semantic review와 pytest는 미완료다.
+
+## Required Execution Commands (unrun)
+
+Repository guidance: [Testing](../../docs/development/testing.md). 아래는 작업 실행자가 고정 baseline의 isolated checkout에서 수행해야 할 검증이며, 여기서는 **실행하지 않았다**.
+
+```bash
+uv sync --locked
+uv run pytest tests/reliability/test_schema_recovery_candidate.py tests/reliability/test_schema_recovery_executor.py tests/reliability/test_schema_drift_evaluation.py
+uv run pytest tests/reliability tests/data_operations tests/hmda_data tests/data_platform tests/dbt
+uv run pytest tests/review_ai tests/runtime_ai tests/orchestration
+```
+
+Optional integration prerequisites/marker가 있는 테스트의 skipped 결과는 로그에 따로 적는다. baseline GitHub main 및 PR head의 코드 차이가 Inbox 문서뿐이라 해도, run 없이 pass로 표시하지 않는다. 최종 domain validation의 pass/fail/skip, revision 및 환경을 이 목록에 연결한다.
