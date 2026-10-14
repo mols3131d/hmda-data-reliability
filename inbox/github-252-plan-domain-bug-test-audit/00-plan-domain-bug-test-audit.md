@@ -12,21 +12,21 @@ tags:
 
 기존 도메인의 실제 결함과 테스트 설계의 빈틈을 함께 조사한다. 정상 동작을 보호하는 테스트가 잘못된 구현에도 통과하는지 확인하고, 재현된 결함과 검증 공백을 근거에 따라 수정한다.
 
-이 Draft PR의 현재 산출물은 **검토 계획**이다. 도메인 코드 리뷰, 테스트 파일별 설계 평가, pytest 실행과 결함 재현은 아직 수행하지 않았다. 아래 위험은 조사 질문이며 확인된 버그가 아니다.
+이 Draft PR은 검토 계획과 제한된 첫 감사 결과를 함께 보유한다. Schema recovery의 계약·구현·테스트 정적 검토를 시작했으나 전체 도메인 감사, pytest 실행과 결함 재현은 완료하지 않았다. 아래 위험은 조사 질문이며 확인된 버그가 아니다.
 
 ## State And Ownership
 
 | Field | Value |
 | --- | --- |
-| Status | Planned |
-| Snapshot Date | 2026-10-01 Asia/Seoul |
+| Status | In Progress |
+| Snapshot Date | 2026-10-14 Asia/Seoul |
 | Owning Branch | `agent/docs/plan-domain-bug-test-audit` |
-| Audit Baseline | `5532dca2fd93696d40ba870471fa2359c5662335` |
+| Audit Baseline | `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9` (`main`) |
 | Scope | HMDA Data, Data Platform, Data Operations, Reliability, Review AI, Runtime AI, Orchestration |
-| Current Evidence | 원격 main 조회, domain guide와 source/test/spec 경로 확인 |
-| Not Verified | 구현 정확성, 테스트 설계 품질, 테스트 실행 결과, 결함 검출력, 독립 도메인 리뷰 |
+| Current Evidence | `main`/PR 동기화 확인, schema recovery source·spec·test 제한 범위 정적 대조, [첫 감사 결과](02-report-reliability-schema-recovery-first-pass.md) |
+| Not Verified | 나머지 Reliability 및 일곱 도메인 전수 감사, pytest 실행, 결함 재현, 검출력 실험, 독립 도메인 리뷰 |
 
-Baseline은 계획 작성 시 fetch한 `origin/main`이다. PR #251의 미병합 Review AI evaluation 리팩토링은 이 baseline에 포함하지 않는다. 실제 조사 시작 시 대상 full SHA를 다시 고정하고, base 또는 관련 코드가 바뀌면 영향받는 검토와 실행 근거를 갱신한다.
+초기 계획 baseline은 `5532dca2fd93696d40ba870471fa2359c5662335`(2026-10-01)이었다. 2026-10-14 `main` 동기화 뒤 현재 full SHA로 감사 기준을 갱신했으며, 이전에 미병합 상태였던 변경도 최신 `main`에 포함된 범위에서 검토한다. Base 또는 관련 코드가 바뀌면 영향받는 검토와 실행 근거를 다시 확인한다.
 
 이 문서는 이 작업의 non-canonical 계획이다. 현재 행동 계약은 [OpenSpec Specs](../../openspec/specs/), domain 책임은 [Domain Guides](../../docs/domains/OVERVIEW.md), 테스트 방법은 [Test Design](../../docs/development/test-design.md)이 소유한다. 새 capability나 계약 변경이 필요하면 별도 OpenSpec 변경으로 다루며 결함 수정으로 위장하지 않는다.
 
