@@ -12,7 +12,7 @@ tags:
 
 기존 도메인의 실제 결함과 테스트 설계의 빈틈을 함께 조사한다. 정상 동작을 보호하는 테스트가 잘못된 구현에도 통과하는지 확인하고, 재현된 결함과 검증 공백을 근거에 따라 수정한다.
 
-이 Draft PR은 검토 계획과 제한된 첫 감사 결과를 함께 보유한다. Schema recovery의 계약·구현·테스트 정적 검토를 시작했으나 전체 도메인 감사, pytest 실행과 결함 재현은 완료하지 않았다. 아래 위험은 조사 질문이며 확인된 버그가 아니다.
+이 Draft PR은 검토 계획, [완료 투두리스트](03-plan-audit-completion-checklist.md), [일곱 도메인 위험 경계 첫 정적 감사](04-report-seven-domain-risk-first-pass.md), [187개 파일 인벤토리](05-report-file-inventory.md)를 함께 보유한다. 전체 파일별 의미론 검토, pytest, 결함 재현, 독립 리뷰는 아직 완료하지 않았다. 아래 위험은 조사 질문이며 확인된 버그가 아니다.
 
 ## State And Ownership
 
@@ -23,8 +23,8 @@ tags:
 | Owning Branch | `agent/docs/plan-domain-bug-test-audit` |
 | Audit Baseline | `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9` (`main`) |
 | Scope | HMDA Data, Data Platform, Data Operations, Reliability, Review AI, Runtime AI, Orchestration |
-| Current Evidence | `main`/PR 동기화 확인, schema recovery source·spec·test 제한 범위 정적 대조, [첫 감사 결과](02-report-reliability-schema-recovery-first-pass.md) |
-| Not Verified | 나머지 Reliability 및 일곱 도메인 전수 감사, pytest 실행, 결함 재현, 검출력 실험, 독립 도메인 리뷰 |
+| Current Evidence | baseline tree 187개 대상 path 검증(존재/중복 없음), [Reliability 첫 감사](02-report-reliability-schema-recovery-first-pass.md), [일곱 도메인 위험 경계 first pass](04-report-seven-domain-risk-first-pass.md) |
+| Not Verified | 187개 대상의 전수 의미론 검토, domain pytest, 재현·검출력 실험, 독립 도메인 리뷰 |
 
 초기 계획 baseline은 `5532dca2fd93696d40ba870471fa2359c5662335`(2026-10-01)이었다. 2026-10-14 `main` 동기화 뒤 현재 full SHA로 감사 기준을 갱신했으며, 이전에 미병합 상태였던 변경도 최신 `main`에 포함된 범위에서 검토한다. Base 또는 관련 코드가 바뀌면 영향받는 검토와 실행 근거를 다시 확인한다.
 
