@@ -18,20 +18,20 @@ tags:
 - [ ] `__init__.py` — pending
 - [ ] `contracts/__init__.py` — pending
 - [ ] `contracts/approval.py` — sampled
-- [ ] `contracts/base.py` — pending
+- [ ] `contracts/base.py` — sampled
 - [ ] `contracts/evidence.py` — pending
 - [ ] `contracts/incident.py` — pending
 - [ ] `contracts/lineage.py` — pending
-- [ ] `contracts/profile.py` — pending
+- [ ] `contracts/profile.py` — sampled
 - [ ] `contracts/recovery_proposal.py` — pending
 - [ ] `contracts/schema_recovery.py` — sampled
 - [ ] `contracts/table_state.py` — pending
 - [ ] `contracts/validation.py` — pending
 - [ ] `detection/__init__.py` — pending
-- [ ] `detection/detector.py` — pending
-- [ ] `detection/request.py` — pending
-- [ ] `detection/result.py` — pending
-- [ ] `detection/thresholds.py` — pending
+- [ ] `detection/detector.py` — sampled
+- [ ] `detection/request.py` — sampled
+- [ ] `detection/result.py` — sampled
+- [ ] `detection/thresholds.py` — sampled
 - [ ] `errors.py` — pending
 - [ ] `evaluation/__init__.py` — pending
 - [ ] `evaluation/case_result.py` — pending
@@ -82,7 +82,7 @@ tags:
 - [ ] `contracts/test_schema_recovery.py` — pending
 - [ ] `contracts/test_validation.py` — pending
 - [ ] `test_approval_backfill_validation.py` — sampled
-- [ ] `test_basic_incident_detection.py` — pending
+- [ ] `test_basic_incident_detection.py` — sampled
 - [ ] `test_evaluation_report.py` — pending
 - [ ] `test_fixtures.py` — pending
 - [ ] `test_freshness_delay_evaluation.py` — pending
@@ -251,7 +251,7 @@ tags:
 - [ ] `reliability-evaluation-report/spec.md` — pending
 - [ ] `reliability-evidence-table-metadata/spec.md` — pending
 - [ ] `reliability-impact-analysis/spec.md` — pending
-- [ ] `reliability-incident-detection/spec.md` — pending
+- [ ] `reliability-incident-detection/spec.md` — sampled
 - [ ] `reliability-profile-snapshots/spec.md` — pending
 - [ ] `reliability-recovery-backfill/spec.md` — sampled
 - [ ] `reliability-remediation-draft/spec.md` — pending
@@ -260,3 +260,7 @@ tags:
 ## Self-Review
 
 Inventory comes from complete Git tree (1,134 items, `truncated=false`), not filename guesses. All `__init__.py`, domain `conftest.py`, shared dbt test are retained. Data Platform의 dbt test는 별도 경로이므로 prefix 규칙에서 예외로 표기했다. No item is `reviewed` or `excluded` yet; the first-pass report never claimed file-by-file deep review. No tests were run. Domain-level completion stays pending.
+
+## Supplemental Detector Review (2026-10-14)
+
+[Zero-threshold 및 baseline 결측률 경계 감사](06-review-reliability-detection-boundaries.md)에서 detector source, threshold model, request/result contracts, canonical spec와 unit test를 대조했다. 위 8개 경로는 일부 함수·계약을 검토한 `sampled`이며 full-file semantic review나 pytest 완료가 아니다. 추가로 10개 테스트 모듈의 테스트 함수와 assertion/raises 구조를 표본 스캔했지만, assertion이 존재한다는 사실을 oracle 충실도 증명으로 간주하지 않아 각 파일의 status를 임의로 승격하지 않았다.
