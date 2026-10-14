@@ -168,7 +168,7 @@ tags:
 - [ ] `test_artifacts.py` — sampled
 - [ ] `test_duckdb.py` — sampled
 - [ ] `test_sql.py` — pending
-- [ ] `tics_foundation.py` — pending
+- [ ] `tests/dbt/test_analytics_foundation.py` — pending (별도 test root; 위 prefix 적용 제외)
 
 ## review ai
 
@@ -259,4 +259,4 @@ tags:
 
 ## Self-Review
 
-Inventory comes from complete Git tree (1,134 items, `truncated=false`), not filename guesses. All `__init__.py`, domain `conftest.py`, shared dbt test are retained. No item is `reviewed` or `excluded` yet; the first-pass report never claimed file-by-file deep review. No tests were run. Domain-level completion stays pending.
+Inventory comes from complete Git tree (1,134 items, `truncated=false`), not filename guesses. All `__init__.py`, domain `conftest.py`, shared dbt test are retained. Data Platform의 dbt test는 별도 경로이므로 prefix 규칙에서 예외로 표기했다. No item is `reviewed` or `excluded` yet; the first-pass report never claimed file-by-file deep review. No tests were run. Domain-level completion stays pending.
