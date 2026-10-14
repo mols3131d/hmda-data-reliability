@@ -1,0 +1,199 @@
+{
+  "baseline_revision": "6e64cc70a5dca8ff8cd423a9f2240848f4b2e7dd",
+  "compared": {
+    "comparison_id": "comparison-1",
+    "case_id": "null-spike-case",
+    "case_version": "v1",
+    "project_revision": "revision-1",
+    "rubric_id": "rubric_v1",
+    "baseline_evaluation_id": "evaluation-baseline",
+    "baseline_output_kind": "baseline",
+    "baseline_invocation_id": "invocation-baseline",
+    "baseline_output_fixture_id": "fixture-baseline",
+    "baseline_output_digest": "sha256:ec197c419184c9a82869f0736f709cb5e76ca0b74c7a5e12fd59fd1e237329b5",
+    "candidate_evaluation_id": "evaluation-candidate",
+    "candidate_invocation_id": "invocation-candidate",
+    "candidate_output_fixture_id": "fixture-candidate",
+    "candidate_output_digest": "sha256:9d9bda299b782cc2bcd8df56ea194b30c09e344562deed6c69d9bd479d8766bc",
+    "baseline_output": {
+      "incident_id": "incident-1",
+      "incident_type": "null_spike",
+      "target_column": "income",
+      "deterministic_facts": {
+        "baseline_null_rate": 0.01,
+        "current_null_rate": 0.21,
+        "delta": 0.2,
+        "threshold": 0.1
+      },
+      "review_summary": "The output restates the deterministic facts.",
+      "evidence_used": ["ev-1"],
+      "findings": [],
+      "uncertainties": ["Root cause remains unconfirmed."],
+      "advisory_recommendation": "needs_human_review",
+      "utility_contributions": []
+    },
+    "candidate_output": {
+      "incident_id": "incident-1",
+      "incident_type": "null_spike",
+      "target_column": "income",
+      "deterministic_facts": {
+        "baseline_null_rate": 0.01,
+        "current_null_rate": 0.21,
+        "delta": 0.2,
+        "threshold": 0.1
+      },
+      "review_summary": "The output adds an evidence gap.",
+      "evidence_used": ["ev-1"],
+      "findings": [],
+      "uncertainties": ["Root cause remains unconfirmed."],
+      "advisory_recommendation": "needs_human_review",
+      "utility_contributions": [
+        {
+          "kind": "evidence_gap",
+          "description": "Lineage evidence remains unconfirmed.",
+          "evidence_refs": ["ev-1"],
+          "priority": null
+        }
+      ]
+    },
+    "candidate_output_kind": "candidate",
+    "change_under_test": "Add bounded context utility contribution.",
+    "status": "compared",
+    "criterion_deltas": [
+      {
+        "criterion": "added_value",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      },
+      {
+        "criterion": "actionability",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      },
+      {
+        "criterion": "evidence_awareness",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      },
+      {
+        "criterion": "uncertainty_handling",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      },
+      {
+        "criterion": "prioritization",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      }
+    ],
+    "baseline_total": 0,
+    "candidate_total": 10,
+    "total_delta": 10,
+    "decision": "accept",
+    "rationale": "The candidate adds an actionable, evidence-bound contribution.",
+    "blocker_code": null
+  },
+  "blocked": {
+    "comparison_id": "comparison-1",
+    "case_id": "null-spike-case",
+    "case_version": "v1",
+    "project_revision": "revision-1",
+    "rubric_id": "rubric_v1",
+    "baseline_evaluation_id": "evaluation-baseline",
+    "baseline_output_kind": "baseline",
+    "baseline_invocation_id": "invocation-baseline",
+    "baseline_output_fixture_id": "fixture-baseline",
+    "baseline_output_digest": "sha256:ec197c419184c9a82869f0736f709cb5e76ca0b74c7a5e12fd59fd1e237329b5",
+    "candidate_evaluation_id": "evaluation-candidate",
+    "candidate_invocation_id": "invocation-candidate",
+    "candidate_output_fixture_id": "fixture-candidate",
+    "candidate_output_digest": "sha256:9d9bda299b782cc2bcd8df56ea194b30c09e344562deed6c69d9bd479d8766bc",
+    "baseline_output": {
+      "incident_id": "incident-1",
+      "incident_type": "null_spike",
+      "target_column": "income",
+      "deterministic_facts": {
+        "baseline_null_rate": 0.01,
+        "current_null_rate": 0.21,
+        "delta": 0.2,
+        "threshold": 0.1
+      },
+      "review_summary": "The output restates the deterministic facts.",
+      "evidence_used": ["ev-1"],
+      "findings": [],
+      "uncertainties": ["Root cause remains unconfirmed."],
+      "advisory_recommendation": "needs_human_review",
+      "utility_contributions": []
+    },
+    "candidate_output": {
+      "incident_id": "incident-1",
+      "incident_type": "null_spike",
+      "target_column": "income",
+      "deterministic_facts": {
+        "baseline_null_rate": 0.01,
+        "current_null_rate": 0.21,
+        "delta": 0.2,
+        "threshold": 0.1
+      },
+      "review_summary": "The output adds an evidence gap.",
+      "evidence_used": ["ev-1"],
+      "findings": [],
+      "uncertainties": ["Root cause remains unconfirmed."],
+      "advisory_recommendation": "needs_human_review",
+      "utility_contributions": [
+        {
+          "kind": "evidence_gap",
+          "description": "Lineage evidence remains unconfirmed.",
+          "evidence_refs": ["ev-1"],
+          "priority": null
+        }
+      ]
+    },
+    "candidate_output_kind": "candidate",
+    "change_under_test": "Add bounded context utility contribution.",
+    "status": "blocked",
+    "criterion_deltas": [
+      {
+        "criterion": "added_value",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      },
+      {
+        "criterion": "actionability",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      },
+      {
+        "criterion": "evidence_awareness",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      },
+      {
+        "criterion": "uncertainty_handling",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      },
+      {
+        "criterion": "prioritization",
+        "baseline_score": 0,
+        "candidate_score": 2,
+        "delta": 2
+      }
+    ],
+    "baseline_total": 0,
+    "candidate_total": 10,
+    "total_delta": 10,
+    "decision": null,
+    "rationale": "The candidate adds an actionable, evidence-bound contribution.",
+    "blocker_code": "case_mismatch"
+  }
+}

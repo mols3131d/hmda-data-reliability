@@ -32,3 +32,9 @@ description: 합성 live review의 검증된 record를 optional 관찰 및 human
 ## Impact
 
 - Review AI 전용 연동 모듈, live harness, 선택 dependency, 관련 테스트와 사용 안내.
+
+## Contract Handoff
+
+로컬 구현의 두 요구사항은 #251의 문서 정합성 후속 작업에서 [canonical Spec](../../specs/reliability-agentic-review/spec.md)으로 동기화했다. Current behavior의 normative owner는 canonical Spec이며, 이 Change는 구현 의도와 delta 이력을 보존한다.
+
+이 Change는 #251의 문서·Spec 정합성 수정이 전달되는 동안 active로 유지하고, 해당 변경의 병합 후 archive 대상으로 정리한다. 실제 ingestion/UI와 human annotation은 별도 후속 검증이며 로컬 구현의 완료, Spec 동기화 또는 archive 조건에 포함하지 않는다. 미검증 상태는 [Review AI Evaluation](../../../docs/development/review-ai-evaluation.md#optional-langfuse-projection)의 실행 절차와 revision별 evidence에서 계속 구분한다.

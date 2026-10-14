@@ -125,7 +125,6 @@ actionlint는 일부 script injection·credential 문제도 지적할 수 있으
 
 CI 성공은 현재 Workflow가 통과했다는 직접 증거일 뿐, **GitHub Actions 전체 실행 경로·외부 Action 입력·독립 Local Action까지 모두 검사했다는 증거가 아니다**. Workflow 자체가 파싱 불가능하면 내부 actionlint Step이 시작하지 못할 수 있으므로 required check 정책은 별도로 유지해야 한다.
 
-
 ## Options
 
 | Criterion | actionlint (preferred) | yamllint | act | Super-Linter |

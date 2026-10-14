@@ -67,4 +67,4 @@ description: 검증된 합성 invocation의 외부 projection과 human annotatio
 #### Scenario: Complete local annotation shape
 
 - **WHEN** accepted output이 재검증되고 그 exact digest 및 `rubric_v1` target과 다섯 유효한 criterion/rationale가 제공된다
-- **THEN** integration-local completeness만 확인하며 HumanUtilityEvaluation, candidate 승인 또는 recovery action을 만들지 않는다
+- **THEN** integration-local completeness만 확인하며 `ReviewValueAssessment`, candidate 승인 또는 recovery action을 만들지 않는다

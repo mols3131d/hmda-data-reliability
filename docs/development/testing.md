@@ -15,34 +15,24 @@ tags:
 
 # Testing Guide
 
-이 문서는 local runtime에서 pytest를 선택하고 실행하는 방법을 설명한다. 사람과 local runtime을 사용할 수 있는 agent 모두에 적용할 수 있다. Local runtime을 사용할 수 없는 기여자는 이 command를 필수 절차로 간주하지 않고, 병합에 필요한 repository-side evidence는 [Continuous Integration](ci/README.md)을 따른다. 어떤 behavior를 test로 설계할지는 [Test Design](test-design.md)을, `tests/` file을 수정하는 agent 규칙은 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
+로컬 runtime을 사용할 수 있는 사람과 agent가 pytest를 선택·실행하고 결과를 해석할 때 사용한다. Git hook과 PR CI가 어떤 검사를 실행하는지도 안내한다. 로컬 runtime을 사용할 수 없는 기여자에게 아래 명령은 필수 절차가 아니며, 병합에 필요한 repository-side 검증은 [Continuous Integration](ci/README.md)을 따른다.
+
+테스트 시나리오와 oracle을 설계할 때는 [Test Design](test-design.md)을, `tests/` 파일을 수정하는 agent는 [`tests/AGENTS.md`](../../tests/AGENTS.md)를 참고한다.
 
 ## Start Here
 
-가장 좁은 범위의 command부터 실행한다. 실패 원인이 현재 변경과 관련 있는지 빠르게 알 수 있고, 실행 시간도 짧다.
+변경과 직접 관련된 가장 좁은 범위부터 실행한다. 통과하면 관련 package suite로 넓히고, shared fixture·import·설정을 바꿨거나 영향 범위가 불확실할 때 전체 suite를 실행한다.
 
 | Context | Command |
 | --- | --- |
-| 현재 suite 전체 | `uv run pytest` |
-| domain directory | `uv run pytest tests/data_platform` |
-| test module | `uv run pytest tests/data_platform/test_sql.py` |
 | 한 test | `uv run pytest tests/data_platform/test_sql.py::test_name` |
+| test module | `uv run pytest tests/data_platform/test_sql.py` |
+| domain directory | `uv run pytest tests/data_platform` |
+| 현재 suite 전체 | `uv run pytest` |
 | 이름으로 선택 | `uv run pytest -k "keyword"` |
 | marker로 선택 | `uv run pytest -m unit` |
 
-```mermaid
-flowchart TB
-    focused["Focused test"] --> result{"Pass?"}
-    result -->|no| diagnose["Diagnose failure"]
-    diagnose --> focused
-    result -->|yes| related["Related package suite"]
-    related --> broader{"Shared fixture, import, or config changed<br/>or impact uncertain?"}
-    broader -->|yes| full["Full suite"]
-    broader -->|no| scoped(["Validation scoped"])
-    full --> scoped
-```
-
-변경한 test가 통과하면 관련 package suite를 실행한다. 전체 suite는 shared fixture, import 또는 configuration을 바꿨거나 영향 범위를 확신할 수 없을 때 실행한다.
+실패하면 먼저 원인을 조사한 뒤 같은 범위에서 다시 확인한다.
 
 ## Default Behavior
 
@@ -77,7 +67,9 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 
 이 section은 `CI Lite`의 현재 validation behavior를 설명한다. Merge admission policy와 validation responsibility는 [Continuous Integration](ci/README.md)의 책임별 계약이 소유한다.
 
-`CI Lite`는 `main` 대상 Pull Request마다 항상 시작하고 내부 step만 변경 범위에 따라 선택한다. Workflow-level path filter를 사용하지 않아 required check로 사용할 때 workflow 자체가 생성되지 않는 상태를 피한다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
+`CI Lite`는 `main` 대상 Pull Request마다 시작한다. Workflow-level path filter 없이 변경 범위에 따라 내부 step을 선택하므로 required check 자체가 누락되지 않는다. 검증 대상은 PR head 단독이 아니라 현재 base와 합쳐진 prospective merge다.
+
+### Change Routing
 
 - `inbox/**`는 확장자와 무관하게 CI 분류와 파일 수집에서 제외한다. Inbox-only 변경에도 workflow는 생성되지만 검증 단계는 선택하지 않는다. Markdown은 그 밖의 prospective change set에 포함된 현재 존재하는 changed file만 formatting한다. `docs/**`의 changed Markdown만 formatter 이후 `rumdl check`까지 수행하며, `docs/**` 밖의 선택된 Markdown은 lint를 merge admission 조건으로 사용하지 않는다.
 - Python, `.python-version`, `pyproject.toml`, `uv.lock` 변경은 locked environment를 준비하고 changed Python file의 Ruff check + format check를 실행한다. 소스·의존성·일반 script와 영향이 불명확한 Python 변경은 project-wide `ty check`를 선택하고, CI 및 test directory 변경은 선택한 계약 범위와 changed Python file을 type-check한다.
@@ -94,7 +86,11 @@ Git에는 모든 `git pull`을 실행 전에 차단하는 `pre-pull` hook이 없
 - Lefthook 설정 변경은 `lefthook validate`로 configuration을 확인한다.
 - Python dependency setup은 Python/test/dependency boundary validation이 필요할 때만 수행하고 uv cache를 재사용한다.
 
-Markdown formatting은 `rumdl fmt`를 현재 changed Markdown 전체에 대해 CI의 disposable workspace에서 실행한다. 자동 수정 가능한 formatting 차이는 병합을 막지 않고 diff를 log와 step summary에 남긴다. Formatting 이후 `rumdl check`는 `docs/**`의 changed Markdown에만 실행하며 남는 lint 위반은 실패한다. `docs/**` 밖의 Markdown에는 `rumdl check`를 실행하지 않는다. CI는 formatting 결과를 branch에 write-back하지 않으며 별도의 post-merge Markdown autofix workflow도 두지 않는다. Local runtime이 없는 기여자도 출력된 diff를 수정 근거로 사용할 수 있다.
+### Markdown Handling
+
+CI는 prospective change set에서 현재 존재하는 Markdown만 disposable workspace에서 `rumdl fmt`로 formatting한다. 자동 수정 가능한 차이는 병합을 막지 않고 log와 step summary에 diff를 남긴다. `docs/**`의 변경 Markdown만 formatting 후 `rumdl check`를 실행하며, 남은 lint 위반은 실패한다. 일반 Inbox artifact 등 `docs/**` 밖의 Markdown은 Markdown lint를 merge admission 조건으로 사용하지 않는다.
+
+CI는 formatting 결과를 branch에 write-back하지 않으며 별도의 post-merge Markdown autofix workflow도 두지 않는다. 로컬 runtime이 없는 기여자도 출력된 diff를 수정 근거로 사용할 수 있다.
 
 ### Local CI Steps
 
@@ -189,8 +185,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
 
 ## HMDA EDA
 
-HMDA EDA는 six-core descriptive evidence, YAML export, static chart와 controlled
-actual-source evidence를 검증한다. 작은 deterministic correctness suite부터 실행한다.
+HMDA EDA는 six-core descriptive evidence, YAML export, static chart와 controlled actual-source evidence를 검증한다. 작은 deterministic correctness suite부터 실행한다.
 
 ```bash
 uv run pytest tests/hmda_data/eda/
@@ -205,53 +200,9 @@ uv run python scripts/run_actual_source.py
 > [!WARNING]
 > 이 observation은 성능 또는 OOM 안전성 보장이 아니다. source fingerprint, revision과 실행 시각이 일치하는지 확인한다.
 
-## Review AI And Runtime AI
+## Review AI Evaluation
 
-Review AI의 default suite는 fake transport와 temporary artifact root만 사용하며 network provider를 호출하지 않는다. Runtime AI의 settings와 provider-neutral contract도 함께 검증한다.
-
-```bash
-uv run pytest tests/review_ai tests/runtime_ai
-```
-
-Review AI utility 계약은 `tests/review_ai`에서 provider/network 없이 검증한다. 다섯 human rubric criterion, test-only positive/restatement/hedging fixtures, evaluation identity와 baseline/candidate comparison을 확인한다. 이 deterministic suite는 사람의 실제 utility assessment를 대신하지 않는다. Live provider proof는 아래 opt-in command와 분리해 판정한다.
-
-실제 Ollama proof는 default suite와 분리된 명시적 opt-in command다. `.env.example`의 `HMDA_AGENTIC_REVIEW_*` 값을 local `.env`에 설정한 뒤 실행한다. `HMDA_AGENTIC_REVIEW_API_KEY`는 OpenAI-compatible client에 필요한 값이지만 invocation evidence에는 저장되지 않는다.
-
-```bash
-uv run --env-file .env python scripts/run_agentic_review_live.py
-```
-
-`HMDA_AGENTIC_REVIEW_LIVE=true`와 non-empty base URL, API key, model이 있어야 provider를 호출한다. `HMDA_AGENTIC_REVIEW_PROJECT_REVISION`은 기본 `auto`에서 현재 Git HEAD를 사용하며, 잘못된 provenance를 피하기 위해 tracked worktree가 clean해야 한다. 필요하면 non-empty revision을 명시적으로 제공할 수 있다. 결과는 `accepted` 또는 typed failure이며, provider-started call은 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
-
-### Optional Langfuse Projection
-
-기존 synthetic live proof를 Langfuse에도 표시하려면 선택 dependency를 설치하고 별도 export opt-in을 설정한다. Provider opt-in만으로는 전송하지 않는다.
-
-```bash
-uv sync --extra langfuse
-uv run --extra langfuse --env-file .env python scripts/run_agentic_review_live.py
-```
-
-Local `.env`에 `HMDA_LANGFUSE_EXPORT=true`, `LANGFUSE_BASE_URL`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`를 설정한다. Endpoint/project는 사용자가 선택하고 합성 사례 전송을 허용한 대상이어야 한다. Key는 commit하거나 로그에 복사하지 않는다. 전체 연동 대기는 `HMDA_LANGFUSE_TIMEOUT_SECONDS`로 조절하며 기본 5초, 최대 60초다. 기존 `HMDA_AGENTIC_REVIEW_*` 설정도 필요하다.
-
-Harness는 local provenance 검증 후 현재 합성 사례와 일치하는 record만 projection한다. Provider URL/trace ID, rendered prompt, raw error와 전체 환경 변수는 전송하지 않는다. Accepted input/output은 허용된 필드만 보내며 크기 상한을 넘으면 자르지 않고 생략한다. SDK는 단기 child에서만 초기화한다. Child는 [`LANGFUSE_MEDIA_UPLOAD_ENABLED`](https://github.com/langfuse/langfuse-python/blob/v4.15.6/langfuse/_client/environment_variables.py)를 `false`로 고정한다. SDK는 기본적으로 base64 data URI를 media로 바꾸고 별도 업로드를 시도하므로, 이를 꺼서 structured output과 digest가 같은 문자열을 가리키게 한다. `timeout`, `export_failed`, `projection_failed`, `invalid_config`, `skipped_*` 상태는 stderr에 표시하며 core result와 exit code를 바꾸지 않는다. 종료 코드 0만으로 export 성공을 판단하지 않는다.
-
-`submitted_unverified`는 SDK 반환만 뜻한다. 실제 프로젝트에서 `review-ai-post-hoc-projection` observation을 찾아 invocation/revision/output digest와 input/output을 확인해야 한다. Span duration은 projection 시간이며 model 실행 시간은 `recorded_latency_ms`다. 동일 payload 재전송은 같은 trace로 묶이고 observation이 추가될 수 있으므로 정확한 observation 하나를 채점한다.
-
-Human setup은 다음 순서로 수행한다.
-
-1. `rubric_v1`의 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`별 score config를 만든다. 각 config는 categorical option 0/1/2에 대응하는 값만 사용하고, 이름·설명에 rubric과 criterion을 식별한다.
-1. Accepted observation의 input, draft, evidence/context gaps와 output을 읽고 다섯 score 각각에 근거 comment를 남긴다. 실패 observation은 채점 대상이 아니다.
-1. `invocation_id + output_digest + rubric_v1`이 일치하는지 확인한다. 항목 누락·중복, 0/1/2 밖의 값 또는 빈 comment가 있으면 incomplete다. UI의 완료 표시는 repository completeness를 보장하지 않는다.
-1. 필요하면 `review_ai.langfuse_projection.annotation_complete()`에 수동 score snapshot을 넘겨 accepted structured output의 canonical JSON 값/타입, metadata digest, `rubric_v1` target과 score shape의 일치를 검사한다. 각 score는 `criterion`, integer `score`, `rationale`다. 이 helper는 human authorship나 판단 품질을 증명하지 않으며 evaluation을 저장하거나 import하지 않는다.
-
-선택 SDK의 data URI media 변환 차단도 project 없이 확인하려면 다음 network-free test를 실행한다.
-
-```bash
-uv run --extra langfuse pytest tests/review_ai/test_langfuse_projection.py::test_pinned_langfuse_media_processor_keeps_data_uri_when_disabled
-```
-
-점수 판단은 사람이 수행한다. Annotation queue는 수동 setup으로 충분하며 importer, automatic judge, prompt 관리와 candidate/recovery 승인은 포함하지 않는다. Offline tests와 SDK smoke는 실제 ingestion, 배포 UI와 사람의 utility 판단을 증명하지 않는다. 실제 proof가 필요하면 동일 implementation revision에서 원격 observation 확인과 다섯 항목 채점을 수행하고 별도 evidence로 기록한다.
+Review AI의 deterministic suite, live provider proof, human rubric 평가와 optional Langfuse projection은 [Review AI Evaluation](review-ai-evaluation.md)을 따른다. 이 문서는 일반 pytest 선택, CI behavior와 공통 test result 해석을 소유한다.
 
 ## Interpret Results
 

@@ -25,7 +25,8 @@ tags:
 | [AI Agent](ai-agent/README.md) | instruction surface 선택과 agent asset 관리 정책 | Agent instruction 또는 asset의 owner와 관리 경로를 결정할 때 |
 | [Tooling](tooling/README.md) | repository workflow를 지원하는 개발 도구의 project-specific usage | bootstrap, OpenSpec, Rulesync, Git hook 또는 formatter 사용 경로를 확인할 때 |
 | [Continuous Integration](ci/README.md) | CI의 목적·원칙·패턴과 책임별 운영 계약의 진입점 | CI scope, change-impact routing 또는 merge gate를 설계·변경할 때 |
-| [Testing Guide](testing.md) | pytest command, marker, report, coverage, tracing | test를 실행하거나 결과를 확인할 때 |
+| [Testing Guide](testing.md) | pytest command, marker, report, coverage, tracing | 일반 test를 실행하거나 결과를 확인할 때 |
+| [Review AI Evaluation](review-ai-evaluation.md) | Review AI의 offline/live/human/Langfuse evaluation workflow | Review AI 품질과 LLMOps evidence를 실행하거나 해석할 때 |
 | [Test Design](test-design.md) | requirement를 observable contract, scenario와 oracle로 변환하는 기준 | test를 설계하거나 requirement를 추적할 때 |
 | [Version Control and GitHub](vcs-git/README.md) | branch, commit, Pull Request와 review 운영 규칙 | Git/GitHub 작업을 수행할 때 |
 

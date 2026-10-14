@@ -16,4 +16,4 @@ tasks_total: 3
 - [x] Integration-local annotation completeness와 수동 setup 안내를 제공한다.
   - **Done when:** 다섯 score/rationale의 누락·중복·잘못된 값·target mismatch, unsupported rubric, missing/changed/malformed output, model coercion으로 달라지는 JSON 값/타입과 재계산 digest mismatch를 test-first 검증하고 사용 안내에 live/human proof 미검증을 명시한다.
 
-실제 endpoint/project가 없어 live ingestion과 human annotation은 이 로컬 구현 실행의 완료 조건에 포함하지 않는다. PR 전체 proof는 후속 live 실행이 필요하다.
+실제 endpoint/project가 없어 live ingestion과 human annotation은 이 로컬 구현 실행의 완료 조건에 포함하지 않는다. 원격 수집/UI와 human utility proof는 후속 live 실행이 필요하며, 로컬 구현 완료와 Spec 동기화·archive의 선행 조건은 아니다. Contract 이관과 archive 시점은 [Proposal](proposal.md#contract-handoff)을 따른다.

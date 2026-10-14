@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import json
+from importlib import import_module
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -13,14 +17,14 @@ from hmda_reliability.review_ai.contracts import (
 from hmda_reliability.review_ai.evaluation import (
     RUBRIC_V1,
     HumanDecision,
-    HumanUtilityEvaluation,
+    ReviewValueAssessment,
+    ReviewValueComparisonEvidence,
+    ReviewValueComparisonStatus,
     RubricCriterion,
     RubricScore,
-    UtilityComparisonEvidence,
-    UtilityComparisonStatus,
-    compare_utility_evaluations,
-    render_utility_comparison_markdown,
-    utility_output_digest,
+    compare_review_value,
+    render_review_value_comparison_markdown,
+    review_output_digest,
 )
 
 pytestmark = pytest.mark.unit
@@ -82,9 +86,9 @@ def _evaluation(
     case_version: str = "v1",
     project_revision: str = "revision-1",
     output: AgenticReviewOutput | None = None,
-) -> HumanUtilityEvaluation:
+) -> ReviewValueAssessment:
     output = output or _output(utility=output_kind == "candidate")
-    return HumanUtilityEvaluation(
+    return ReviewValueAssessment(
         evaluation_id=evaluation_id,
         case_id=case_id,
         case_version=case_version,
@@ -93,7 +97,7 @@ def _evaluation(
         rubric_id=RUBRIC_V1.rubric_id,
         output_kind=output_kind,
         output_fixture_id=f"fixture-{output_kind}",
-        output_digest=utility_output_digest(output),
+        output_digest=review_output_digest(output),
         output=output,
         scores=_scores(score),
     )
@@ -101,10 +105,11 @@ def _evaluation(
 
 def _compare(
     *,
-    baseline: HumanUtilityEvaluation | None = None,
-    candidate: HumanUtilityEvaluation | None = None,
-) -> UtilityComparisonEvidence:
-    return compare_utility_evaluations(
+    baseline: ReviewValueAssessment | None = None,
+    candidate: ReviewValueAssessment | None = None,
+    decision: HumanDecision = HumanDecision.ACCEPT,
+) -> ReviewValueComparisonEvidence:
+    return compare_review_value(
         comparison_id="comparison-1",
         baseline=baseline
         or _evaluation(
@@ -121,8 +126,67 @@ def _compare(
             score=2,
         ),
         change_under_test="Add bounded context utility contribution.",
-        decision=HumanDecision.ACCEPT,
+        decision=decision,
         rationale="The candidate adds an actionable, evidence-bound contribution.",
+    )
+
+
+def test_review_value_api_exposes_only_intended_names() -> None:
+    value_api = import_module("hmda_reliability.review_ai.evaluation.value")
+    evaluation_api = import_module("hmda_reliability.review_ai.evaluation")
+    public_api = import_module("hmda_reliability.review_ai")
+
+    assert evaluation_api.ReviewValueRubric is value_api.ReviewValueRubric
+    assert set(evaluation_api.__all__) == {
+        "RUBRIC_V1",
+        "CriterionDelta",
+        "HumanDecision",
+        "ReviewValueAssessment",
+        "ReviewValueComparisonEvidence",
+        "ReviewValueComparisonStatus",
+        "ReviewValueRubric",
+        "RubricCriterion",
+        "RubricScore",
+        "compare_review_value",
+        "render_review_value_comparison_markdown",
+        "review_output_digest",
+    }
+    assert "HumanUtilityEvaluation" not in evaluation_api.__all__
+    assert "ReviewValueAssessment" in public_api.__all__
+    assert "ReviewValueComparisonEvidence" in public_api.__all__
+    assert "HumanUtilityEvaluation" not in public_api.__all__
+
+
+@pytest.mark.parametrize(
+    ("decision", "case_version", "golden_key"),
+    [
+        ("accept", "v1", "compared"),
+        ("reject", "v1", "compared"),
+        ("no_change", "v1", "compared"),
+        ("accept", "v2", "blocked"),
+    ],
+)
+def test_comparison_json_matches_pre_refactor_golden(
+    decision: str, case_version: str, golden_key: str
+) -> None:
+    """Compare complete JSON to the captured 6e64cc7 API, including nested types."""
+    fixture = Path(__file__).with_name("fixtures") / "utility_comparison_6e64cc7.json"
+    expected = json.loads(fixture.read_text(encoding="utf-8"))[golden_key]
+    if golden_key == "compared":
+        expected["decision"] = decision
+
+    candidate = _evaluation(
+        evaluation_id="evaluation-candidate",
+        invocation_id="invocation-candidate",
+        output_kind="candidate",
+        score=2,
+        case_version=case_version,
+    )
+    actual = _compare(candidate=candidate, decision=HumanDecision(decision))
+
+    # JSON text also distinguishes bool/int and int/float values that Python equals.
+    assert json.dumps(actual.model_dump(mode="json"), sort_keys=True) == json.dumps(
+        expected, sort_keys=True
     )
 
 
@@ -141,7 +205,7 @@ def test_rubric_and_evaluation_require_all_five_human_scores() -> None:
     payload["scores"] = payload["scores"][:-1]
 
     with pytest.raises(ValidationError, match="at least 5 items"):
-        HumanUtilityEvaluation.model_validate(payload)
+        ReviewValueAssessment.model_validate(payload)
 
 
 def test_evaluation_digest_is_bound_to_exact_review_output() -> None:
@@ -155,7 +219,7 @@ def test_evaluation_digest_is_bound_to_exact_review_output() -> None:
     payload["output_digest"] = "sha256:" + "0" * 64
 
     with pytest.raises(ValidationError, match="output digest"):
-        HumanUtilityEvaluation.model_validate(payload)
+        ReviewValueAssessment.model_validate(payload)
 
 
 def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() -> None:
@@ -183,7 +247,7 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
             "utility_contributions": [],
         }
     )
-    positive = HumanUtilityEvaluation(
+    positive = ReviewValueAssessment(
         evaluation_id="fixture-positive",
         case_id="null-spike-case",
         case_version="v1",
@@ -192,11 +256,11 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
         rubric_id=RUBRIC_V1.rubric_id,
         output_kind="candidate",
         output_fixture_id="positive-output",
-        output_digest=utility_output_digest(positive_output),
+        output_digest=review_output_digest(positive_output),
         output=positive_output,
         scores=_scores(2),
     )
-    restatement = HumanUtilityEvaluation(
+    restatement = ReviewValueAssessment(
         evaluation_id="fixture-restatement",
         case_id="null-spike-case",
         case_version="v1",
@@ -205,7 +269,7 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
         rubric_id=RUBRIC_V1.rubric_id,
         output_kind="baseline",
         output_fixture_id="restatement-output",
-        output_digest=utility_output_digest(restatement_output),
+        output_digest=review_output_digest(restatement_output),
         output=restatement_output,
         scores=fixture_scores(
             tuple((criterion, 0) for criterion in RubricCriterion),
@@ -228,7 +292,7 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
         ),
         label="hedging",
     )
-    hedging = HumanUtilityEvaluation(
+    hedging = ReviewValueAssessment(
         evaluation_id="fixture-hedging",
         case_id="null-spike-case",
         case_version="v1",
@@ -237,7 +301,7 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
         rubric_id=RUBRIC_V1.rubric_id,
         output_kind="baseline",
         output_fixture_id="hedging-output",
-        output_digest=utility_output_digest(hedging_output),
+        output_digest=review_output_digest(hedging_output),
         output=hedging_output,
         scores=hedging_scores,
     )
@@ -253,18 +317,18 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
 def test_comparison_records_human_deltas_and_round_trips() -> None:
     comparison = _compare()
 
-    assert comparison.status is UtilityComparisonStatus.COMPARED
+    assert comparison.status is ReviewValueComparisonStatus.COMPARED
     assert comparison.baseline_evaluation_id == "evaluation-baseline"
     assert comparison.candidate_invocation_id == "invocation-candidate"
     assert comparison.total_delta == 10
     assert [delta.delta for delta in comparison.criterion_deltas] == [2] * 5
     assert comparison.decision is HumanDecision.ACCEPT
     assert (
-        UtilityComparisonEvidence.model_validate_json(comparison.model_dump_json())
+        ReviewValueComparisonEvidence.model_validate_json(comparison.model_dump_json())
         == comparison
     )
     assert "Add bounded context utility contribution." in (
-        render_utility_comparison_markdown(comparison)
+        render_review_value_comparison_markdown(comparison)
     )
 
 
@@ -277,7 +341,7 @@ def test_comparison_evidence_preserves_evaluation_roles() -> None:
     payload = comparison.model_dump(mode="json")
     payload["baseline_output_kind"] = "candidate"
     with pytest.raises(ValidationError, match="baseline output role"):
-        UtilityComparisonEvidence.model_validate(payload)
+        ReviewValueComparisonEvidence.model_validate(payload)
 
 
 @pytest.mark.parametrize(
@@ -303,7 +367,7 @@ def test_comparison_blocks_evaluations_with_wrong_roles(
         ),
     )
 
-    assert comparison.status is UtilityComparisonStatus.BLOCKED
+    assert comparison.status is ReviewValueComparisonStatus.BLOCKED
     assert comparison.blocker_code == "evaluation_role_mismatch"
     assert comparison.decision is None
 
@@ -351,7 +415,7 @@ def test_comparison_blocks_mismatched_attribution(
 
     comparison = _compare(candidate=candidate)
 
-    assert comparison.status is UtilityComparisonStatus.BLOCKED
+    assert comparison.status is ReviewValueComparisonStatus.BLOCKED
     assert comparison.blocker_code == expected_blocker
     assert comparison.decision is None
 
@@ -373,7 +437,7 @@ def test_comparison_blocks_different_deterministic_facts() -> None:
 
     comparison = _compare(candidate=candidate)
 
-    assert comparison.status is UtilityComparisonStatus.BLOCKED
+    assert comparison.status is ReviewValueComparisonStatus.BLOCKED
     assert comparison.blocker_code == "same_case_fact_mismatch"
 
 
@@ -392,4 +456,4 @@ def test_comparison_evidence_rejects_inconsistent_deltas(tampering: str) -> None
         expected_error = "comparison totals must match criterion deltas"
 
     with pytest.raises(ValidationError, match=expected_error):
-        UtilityComparisonEvidence.model_validate(payload)
+        ReviewValueComparisonEvidence.model_validate(payload)
