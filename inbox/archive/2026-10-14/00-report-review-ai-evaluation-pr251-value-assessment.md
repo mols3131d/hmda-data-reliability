@@ -1,53 +1,87 @@
 ---
 type: report
-title: Review AI Evaluation PR #251 Value Assessment
-description: PR #251의 실효성에 의문을 제기한 사용자 의견과 기술적 효용·비용의 구분, 명시적인 머지 결정의 근거와 한계를 보존한다.
+title: Review AI Capability Value Assessment
+description: Review AI 기능 자체와 human utility evaluation·baseline comparison·Langfuse 관찰 기능의 필요성에 관한 사용자 의문, 확인된 사실과 검증 과제를 보존한다.
 tags:
   - review-ai
   - evaluation
-  - pull-request
+  - product-value
   - decision
 ---
 
-# Review AI Evaluation PR #251 Value Assessment
+# Review AI Capability Value Assessment
 
 > [!IMPORTANT]
 > **사용자 의견 (2026-10-14):** "이거 pr 닫아야하는거 아닐까? 실효성이 없어 보이는데 맞니?"
 >
-> 이 의견은 PR #251의 **투자 대비 실효성에 대한 명시적인 문제 제기**다. 기능 오류를 입증한 finding이나 최종 채택 판단과 혼동하지 않는다. 후속 사용자 요청은 이 의문과 평가를 아카이브에 기록한 다음 **PR #251을 머지하라는 명시적 지시**였다. 머지는 실효성 의문이 해소됐다는 증거가 아니다.
+> **후속 정정:** "pr 에 대한 실효성을 넘어서 이 기능에 대한 의문이다."
+>
+> 핵심 의문은 PR #251의 코드 변경 규모나 리팩터링 타당성이 아니다. **Review AI 기능 자체가 사람의 reliability 판단에 실질적으로 도움이 되는지, 이를 위해 구축한 human utility evaluation·baseline/candidate 비교와 선택적 Langfuse 연동이 실제로 필요한지**에 관한 문제 제기다. 이는 결함 확정이나 제거 결정이 아니라, 기능의 가치가 충분히 입증됐는지에 대한 미해결 질문이다.
 
-## Context
+## Question and Scope
 
-- 대상: [PR #251 — refactor(review-ai): isolate evaluation subdomain](https://github.com/mols3131d/hmda-data-reliability/pull/251).
-- 비교 기준: `main@79e2e1eec6ad34c1457a815888c00556213ef195`, 검토 당시 PR head `1193397d01e7202893e084c642e4cb8dcc58f00d`. 머지 결과의 최종 revision은 GitHub를 확인한다.
-- 범위: Review AI의 human utility evaluation과 optional Langfuse adapter를 `review_ai.evaluation`로 이동, Python API를 `ReviewValue*`로 rename, 기존 JSON 계약·fail-closed 비교와 관찰 경계를 유지하는 리팩터링.
-- 변경량: 검토 당시 49개 파일, +2,168/−181줄이며, 이 중 23개 Inbox 파일(+1,281줄)은 보고서·작업 근거다. 라인 수 자체는 품질의 척도가 아니다.
+이 프로젝트는 이미 결정론적인 incident detection, evidence와 `RemediationDraft`를 만든다. 여기에 Review AI가 덧붙이는 결과가 사람이 **더 나은 조사·복구 판단을 내리도록 돕는가?** 그리고 그 효과를 입증하는 데 현재 평가·관찰 기능의 비용이 정당한가?
 
-## Assessment
+다음 세 층을 구별한다.
 
-### Why the practical value was questioned
+1. **Review AI:** 근거를 활용해 advisory review를 생성하는 기능. 이것 자체가 기존 deterministic evidence보다 나은 판단을 제공하는지가 첫 질문이다.
+2. **Human utility evaluation / comparison:** 다섯 항목 `rubric_v1`으로 사람이 채점하고 동일 case의 baseline/candidate를 비교하는 기능. 실제 변경 결정에 활용되는지가 두 번째 질문이다.
+3. **Optional Langfuse projection:** 검증된 synthetic invocation을 외부 UI에 사후 투영하고 수동 annotation을 돕는 기능. 로컬 provenance·평가 기록만으로 부족한 실질적 필요가 있는지가 세 번째 질문이다.
 
-1. **기존 기능의 대부분이 이미 존재했다.** 이전에도 `review_ai/evaluation.py`와 `review_ai/langfuse_projection.py`가 역할별로 분리돼 있었다. 새 하위 패키지는 소유권 표현을 개선하지만 사용자가 체감하는 Review AI 품질을 직접 높이지 않는다.
-2. **의도적인 호환성 비용이 있다.** `HumanUtilityEvaluation` 등 구 Python import 이름을 alias 없이 없앤다. Repository 내부 소비자는 갱신됐지만 외부 소비자는 확인되지 않았다.
-3. **MVP 핵심 증명과는 거리가 있다.** 지금 더 중요한 목표는 AI review가 deterministic facts의 재진술을 넘어 사람의 조사·판단을 실제로 개선하는지 representative case와 human rubric으로 검증하는 것이다. 패키지 재구성만으로는 그 증명이 되지 않는다.
-4. **변경과 검토 표면이 넓다.** 폴더·public import·CLI module path·문서·테스트가 함께 바뀌어 작은 구조 개선에 비해 검토 비용이 크다. Inbox 보고서가 diff에서 큰 비중을 차지한다.
+이 문서의 질문은 특정 Python class 이름, 패키지 구조 또는 PR #251의 diff 자체를 평가하는 질문과 **다르다**.
 
-### What still has concrete value
+## Current Evidence
 
-- **정확성 수정:** Langfuse `project_invocation()`의 input equality를 deterministic JSON 직렬화 비교로 강화했다. Python의 `True == 1` 때문에 이전에는 놓칠 수 있던 JSON boolean/number 타입 차이를 감지하고 회귀 테스트로 보호한다.
-- **회귀 근거:** 과거 `compared`/`blocked` JSON 전체를 golden fixture로 비교하고, output digest와 fail-closed 동작을 보존하는 검증을 추가했다.
-- **소유권 가독성:** evaluation value와 optional Langfuse adapter의 위치와 entrypoint를 일관되게 명명한 점은 제한적인 유지보수 이점이 있다.
+| 확인된 사실 | 의미와 한계 |
+| --- | --- |
+| Review AI는 bounded evidence와 deterministic structured-fact validation을 사용한다. | 안전한 계약과 사실 정합성의 근거이지, 추가적인 **판단 효용**의 증거는 아니다. |
+| `ReviewValueAssessment`와 `compare_review_value()`가 versioned rubric, 평가 근거, 비교 조건 및 `blocked` 상태를 지원한다. | 같은 기준의 평가를 표현하고 비교할 **수단**이 존재한다. 사람이 이를 이용해 더 나은 결정을 내렸다는 뜻은 아니다. |
+| 테스트는 positive/restatement/hedging fixture, serialized contract와 회귀 동작을 검증한다. | 규칙과 fixture 판별력을 확인한다. 실제 인간 평가의 일관성·효과를 대신하지 않는다. |
+| Langfuse는 opt-in child process projection이고 원격 전달은 `submitted_unverified`로 구분한다. | 관찰 경계가 분리돼 있다. 원격 ingestion, annotation 완료 또는 운영상의 필요를 증명하지 않는다. |
 
-이 이점들이 **반드시 지금 이 규모의 리팩터링을 해야만 얻을 수 있었는지**는 별개 질문이다. 특히 입력 타입 수정은 작은 독립 PR로도 전달 가능했을 것으로 판단한다.
+근거: [MVP 목표](../../../docs/mvp.md), [Review AI domain](../../../docs/domains/review-ai.md), [canonical Spec](../../../openspec/specs/reliability-agentic-review/spec.md), [평가 구현](../../../src/hmda_reliability/review_ai/evaluation/value.py), [평가 실행 가이드](../../../docs/development/review-ai-evaluation.md).
 
-## Decision and Limits
+**아직 확인되지 않은 핵심 증거:** representative incident에서 Review AI 유무에 따른 사람의 최종 조사 방향·판단 품질·소요 노력의 차이, 실제 사람이 수행한 rubric 결과와 반복성, baseline/candidate 비교가 실제 변경 채택 결정을 개선한 사례, Langfuse를 사용해야만 얻을 수 있었던 통찰. 이 기록에서 이를 확인하지 못했다는 뜻이며, 존재하지 않는다고 확정하는 것은 아니다.
 
-- **기술 검토:** 기존 검토에서는 새로운 merge-blocking correctness defect를 확인하지 못했다. 이는 제품적 효용이나 투자 대비 가치를 승인한다는 뜻이 아니다.
-- **가치 판단:** 실효성이 낮다는 사용자 의문은 타당하다. 초기에는 PR을 닫고 입력 타입 수정만 분리하는 선택을 권고했다.
-- **후속 결정:** 사용자는 이 의문을 기록한 상태에서 PR 머지를 **명시적으로 요청**했다. 이 문서는 그 결정 과정을 보존하지만 의문이 해소됐다고 주장하지 않는다.
-- **검증 경계:** 문서 작성 전 [CI Lite #38531266945](https://github.com/mols3131d/hmda-data-reliability/actions/runs/38531266945)는 기존 head 기반 통합 검증에서 **916 passed, 3 skipped** 및 별도 **11 passed**를 기록했다. 이후 문서 커밋이나 머지 결과의 검증을 자동으로 대표하지 않는다. 실제 Langfuse 원격 ingestion/UI, 외부 Python consumer, 사람의 utility 평가도 검증하지 않았다.
-- **OpenSpec과의 구분:** 이 문서는 비정본 판단 기록이다. 현재 기능 계약은 `openspec/specs/**`, 구현은 `src/**`가 소유한다.
+## Value Hypotheses and Doubts
 
-## Follow-up Principle
+### Review AI
 
-다음 구조 변경은 실제 소비자·반복된 유지보수 문제·측정 가능한 이익이 확인될 때 우선한다. MVP의 다음 판단은 **실제 human utility proof**를 먼저 수집해 결정하며, 테스트 통과와 패키지 정리만으로 AI review의 추가 가치를 주장하지 않는다.
+- **기대 가치:** deterministic evidence가 놓친 조사 우선순위, 근거 공백, remediation 위험 또는 불확실성을 지적할 수 있다.
+- **의문:** 결과가 이미 제공된 incident/evidence/`RemediationDraft`의 자연어 재진술에 머문다면 LLM 실행과 검토 비용을 정당화할 수 없다. 구조적 검증 통과와 유용함은 다른 문제다.
+
+### Human Evaluation and Comparison
+
+- **기대 가치:** 인간 평가를 동일한 case·rubric·output identity에 연결하고 prompt/model/context 변경 전후의 결정을 추적할 수 있다.
+- **의문:** 실제로 사람이 반복 채점하거나 baseline을 비교해 변경을 채택하는 흐름이 없다면, 다섯 항목 점수와 여러 비교 모델·identity·digest 계약은 실효성보다 운영 부담이 클 수 있다.
+- **구분:** 사람의 간단한 사례 리뷰가 필요한 것과 지금 구현된 **비교 계약 전체**가 필요한 것은 같은 주장이 아니다.
+
+### Langfuse Projection
+
+- **기대 가치:** 동일 invocation의 input/output, metadata와 수동 annotation을 UI에서 살펴볼 수 있다.
+- **의문:** 현재 범위가 소수 synthetic live proof와 수동 평가라면 기존 로컬 invocation evidence만으로 충분할 수 있다. 별도 SDK, 설정, 전송·검증 경계는 운영 복잡성을 만든다.
+- **구분:** Langfuse 유무는 Review AI의 본질적 효용과 별개이며, 특정 observability 제품을 필수 전제로 삼을 이유가 입증된 것은 아니다.
+
+## Smallest Useful Proof
+
+기능을 더 확장하기 전에 다음과 같은 **작은 실험의 증거**가 먼저 필요하다.
+
+1. 동일한 대표 incident에 대해 사람에게 **deterministic evidence + RemediationDraft만 제공한 경우**와 **Review AI 결과를 함께 제공한 경우**를 비교한다.
+2. AI가 발견한 추가 evidence gap·우선순위·위험 또는 중요한 불확실성이 **실제 다음 행동이나 판단을 바꿨는지** 기록한다. 단순히 보기 좋게 요약한 것은 추가 가치와 구별한다.
+3. 서로 다른 prompt/model/context를 실제로 선택해야 하는 상황에서만 `rubric_v1`과 baseline/candidate 비교가 결정을 더 명확하게 만드는지 시험한다.
+4. 로컬 evidence를 읽는 방식과 Langfuse UI 방식을 비교해, 외부 투영 없이는 해결하기 어려운 문제와 실제 절약된 노력이 있는지 확인한다.
+
+이는 검증 제안이지 이미 실행된 실험이나 채택된 새로운 acceptance 기준이 아니다. 적절한 사례 수·평가 방법·중단 기준은 별도 판단이 필요하다.
+
+## Decision Record
+
+- **현재 판단:** Review AI 및 평가·관찰 기능의 **실질적 가치는 아직 이 기록에서 입증되지 않았다**. "기능이 동작한다", "테스트가 통과한다", "코드가 정리됐다"는 사실만으로 유지·확대의 충분한 근거가 되지 않는다.
+- **선택지:** 작은 실험에서 도움이 확인되면 필요한 최소 evaluation을 유지하고, 반복적인 비교 수요나 Langfuse의 고유 이익이 없으면 해당 부가 기능은 단순화·보류를 검토한다. 핵심 Review AI 자체도 추가 가치가 없다면 계속할 이유를 재평가한다.
+- **기술적 경계:** 효용 의문이 있다고 해서 deterministic reliability truth, evidence binding, human approval, review output 안전 검증을 무단으로 제거하지 않는다. 기능 축소나 MVP acceptance 변경은 별도의 명시적 결정을 필요로 한다.
+- **현행 목표와의 관계:** [MVP](../../../docs/mvp.md)는 실질적인 Agentic utility와 human evaluation의 proof를 요구한다. 이 기록은 그 목표를 수정하거나 달성했다고 주장하지 않고, **어떤 실증이 아직 필요한지**를 드러낸다.
+
+## Historical Context
+
+[PR #251](https://github.com/mols3131d/hmda-data-reliability/pull/251)은 2026-10-14에 squash merge됐다(merge commit `0cd51b9035f85e2f3e1d2f6c405e2ecaf668bea4`). 해당 PR은 주로 기존 evaluation 코드를 재배치·rename하고 Langfuse JSON 타입 비교 회귀를 수정했다. **머지는 해당 구현의 채택 이력일 뿐, Review AI 또는 평가·Langfuse 기능의 실효성을 증명하거나 사용자 의문을 철회한 사건이 아니다.**
+
+이 문서는 의문과 기술적 판단을 보존하는 non-canonical archive다. 현재 계약은 [canonical Spec](../../../openspec/specs/reliability-agentic-review/spec.md), 현재 구현은 [source](../../../src/hmda_reliability/review_ai/evaluation/value.py)가 소유한다.
