@@ -14,7 +14,6 @@ except ModuleNotFoundError:
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RULESYNC_SCRIPT = REPO_ROOT / "scripts" / "rulesync.py"
-ROUTE_SCRIPT = REPO_ROOT / "scripts" / "generate_agent_routes.py"
 SKILLS_LOCK = REPO_ROOT / "skills-lock.json"
 
 _SKILLS_ACTIONS: dict[str, tuple[str, ...]] = {
@@ -85,7 +84,7 @@ def _sync(action: str) -> int:
        - Rulesync 실패 시 즉시 중단하고 해당 오류 코드 반환.
     2. Skills CLI 실행 (`skills <action>`):
        - `skills-lock.json`이 있는 경우 보조 external skills 동기화.
-    3. Chatbot route 인덱스 생성 (`scripts/generate_agent_routes.py`):
+    3. Chatbot route 인덱스 생성 (`python -m scripts.agent_routes`):
        - Rulesync 및 Skills CLI 완료 후 최종 라우팅 인덱스 갱신.
 
     Returns:
@@ -96,7 +95,7 @@ def _sync(action: str) -> int:
         return rulesync_code
 
     skills_code = _run_skills(action)
-    routes_code = _run_script(ROUTE_SCRIPT)
+    routes_code = run([sys.executable, "-m", "scripts.agent_routes"], cwd=REPO_ROOT)
     return skills_code or routes_code
 
 
