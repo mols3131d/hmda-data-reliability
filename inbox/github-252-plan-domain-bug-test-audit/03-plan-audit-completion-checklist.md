@@ -10,11 +10,11 @@ tags:
 
 # PR #252 Completion Checklist
 
-**Status: In Progress; not merge-ready.** First-pass evidence: [7개 도메인 위험 경계 보고서](04-report-seven-domain-risk-first-pass.md). 도메인별 전수 검증은 여전히 미완료다. Baseline: `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9` (`main`).
+**Status: In Progress; not merge-ready.** First-pass evidence: [7개 도메인 위험 경계 보고서](04-report-seven-domain-risk-first-pass.md), [187-file audit matrix](05-report-file-inventory.md). 도메인별 전수 검증은 여전히 미완료다. Baseline: `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9` (`main`).
 
 ## Completion Work Packages
 
-- [x] L1 — 기준 소스 트리에서 도메인별 source/test/spec 목록을 추출한다. 인벤토리는 검토 완료를 의미하지 않는다.
+- [x] L1 — 기준 Git tree에서 [187개 source/test/spec file inventory](05-report-file-inventory.md)를 추출했고 모든 경로의 존재·중복 없음 확인. 인벤토리는 review 완료를 의미하지 않는다.
 - [ ] L2 — Reliability 전수 감사 (첫 정적 패스 수행; 전수 미완료): 승인, 상태 identity, recovery, detector, profile, impact, remediation, evaluation.
 - [ ] L3 — Data Operations 전수 감사 (첫 정적 패스 수행; 전수 미완료): quality gate, dbt lock, promotion 및 failure boundary.
 - [ ] L4 — HMDA Data 전수 감사 (첫 정적 패스 수행; 전수 미완료): input/source validation, partition re-ingestion, stale guard, synthetic defects.
@@ -58,3 +58,9 @@ GitHub connector는 repo 내용을 읽고 이 문서를 갱신할 수 있지만,
 ## Review Loops 2–8 — First Static Pass
 
 [Seven-domain first pass](04-report-seven-domain-risk-first-pass.md)에 계약·구현·테스트 샘플, 기존 safeguard, 반례 후보 및 미검증 부분을 기록했다. 전 도메인 source/test inventory만 확인했으며 full-file semantic review 또는 pytest가 아니므로 L2–L8의 완료 체크박스는 변경하지 않았다. R-TD-01 외 확정 production defect 없음. CI-only evidence는 기능 테스트의 대체재가 아님.
+
+## Loop 9 — Inventory Consistency Review
+
+- Git tree `29c48e468d470ee02ac470059b556fed9af960ce`의 all 187 domain source/test/spec paths와 file inventory를 직접 대조했다. 187 valid, zero duplicate, zero nonexistent.
+- Self-review에서 `tests/dbt/test_analytics_foundation.py`가 Data Platform tests prefix로 잘못 축약된 항목을 발견해 수정했다. 이후 path set 검증을 재실행했다.
+- Coverage status는 모든 파일 `pending` 또는 `sampled`; domain semantic review와 pytest는 미완료다.
