@@ -1,4 +1,9 @@
-"""Optional post-hoc projection; the SDK runs only in a bounded child process."""
+"""검증된 Review AI 호출 결과를 선택적으로 Langfuse에 사후 투영한다.
+
+상위 프로세스는 호출 기록과 새로 만든 합성 입력을 대조한 뒤 크기가 제한된 자료를
+전달한다. SDK는 별도 자식 프로세스에서만 실행한다. 반환 상태는 원격 저장 여부를
+확인해 주지 않는다.
+"""
 
 from __future__ import annotations
 
@@ -22,7 +27,7 @@ from hmda_reliability.review_ai.evaluation import (
     RUBRIC_V1,
     RubricCriterion,
     RubricScore,
-    utility_output_digest,
+    review_output_digest,
 )
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
 
@@ -31,6 +36,7 @@ _TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
 def _encode(payload: Mapping[str, object]) -> str:
+    """크기 제한을 적용해 재현 가능한 JSON 문자열을 만든다."""
     encoded = json.dumps(
         payload,
         ensure_ascii=False,
@@ -46,10 +52,12 @@ def _encode(payload: Mapping[str, object]) -> str:
 def project_invocation(
     record: AgenticInvocationEvidence, *, expected_input: dict[str, object]
 ) -> dict[str, Any]:
-    """Project a verified record against the harness's freshly built synthetic input.
+    """검증된 호출 기록을 실행기가 새로 만든 합성 입력과 대조해 투영한다.
 
-    The harness owns verification and the synthetic fixture. This is not a generic
-    record-export API: callers must not source expected_input from the record itself.
+    실행기가 출처 검증과 시험 자료를 만든다. `expected_input`은 호출 기록 자체에서
+    가져오면 안 된다. `accepted` 결과만 입력과 출력을 포함하고, 나머지는 최소한의
+    메타데이터만 내보낸다. 입력이 다르거나 투영할 수 없는 상태면 `ValueError`를
+    발생시킨다.
     """
     metadata: dict[str, object] = {
         "invocation_id": record.invocation_id,
@@ -57,7 +65,7 @@ def project_invocation(
         "status": record.status.value,
     }
     payload: dict[str, Any] = {"metadata": metadata}
-    if record.canonical_input != expected_input:
+    if _encode(record.canonical_input) != _encode(expected_input):
         raise ValueError("record does not match synthetic input")
     if record.status is AgenticReviewStatus.ACCEPTED:
         if record.parsed_output is None or record.validation is None:
@@ -69,7 +77,7 @@ def project_invocation(
                 "prompt_version": record.prompt_identity.version,
                 "prompt_digest": record.prompt_digest,
                 "rubric_id": RUBRIC_V1.rubric_id,
-                "output_digest": utility_output_digest(record.parsed_output),
+                "output_digest": review_output_digest(record.parsed_output),
                 "validation_policy": record.validation.policy_id,
                 "validation_status": record.validation.status.value,
                 "model": config.model,
@@ -90,7 +98,7 @@ def project_invocation(
                 "completion_tokens": record.usage.completion_tokens,
                 "total_tokens": record.usage.total_tokens,
             }
-        # The exact synthetic comparison above closes nested dictionaries too.
+        # 합성 입력 전체를 비교해 중첩 항목까지 확인한 뒤 필요한 값만 복사한다.
         payload["input"] = {
             key: expected_input[key]
             for key in (
@@ -131,7 +139,11 @@ def annotation_complete(
     target: Mapping[str, object],
     scores: Sequence[Mapping[str, object]],
 ) -> bool:
-    """Check a manually supplied snapshot's shape, never human authorship or utility."""
+    """수동 주석 스냅샷의 구조와 대상 연결을 확인한다.
+
+    `accepted` 결과의 정규화 형태와 해시, 대상 식별 정보, 평가 항목 다섯 개의
+    점수가 각각 한 번씩 있는지 확인한다. 작성자, 진정성, 평가 품질은 증명하지 않는다.
+    """
     metadata = payload.get("metadata")
     if (
         not isinstance(metadata, Mapping)
@@ -149,7 +161,7 @@ def annotation_complete(
             return False
     except (TypeError, ValueError):
         return False
-    if metadata.get("output_digest") != utility_output_digest(output):
+    if metadata.get("output_digest") != review_output_digest(output):
         return False
     target_keys = ("invocation_id", "output_digest", "rubric_id")
     if any(
@@ -177,7 +189,12 @@ def annotation_complete(
 
 
 def export_projection(payload: Mapping[str, object], *, env: Mapping[str, str]) -> str:
-    """Bound SDK init/export/flush/shutdown without changing the review outcome."""
+    """SDK 실행을 제한하고 선택적 전송 상태를 반환한다.
+
+    반환값은 `disabled`, `invalid_config`, `timeout`, `export_failed`,
+    `submitted_unverified` 중 하나다. 마지막 상태는 자식 프로세스가 오류 없이
+    끝났다는 뜻일 뿐, 원격 저장을 확인하지 않는다. 검토 결과에도 영향을 주지 않는다.
+    """
     if env.get("HMDA_LANGFUSE_EXPORT", "").strip().lower() not in _TRUE_VALUES:
         return "disabled"
     try:
@@ -201,7 +218,7 @@ def export_projection(payload: Mapping[str, object], *, env: Mapping[str, str]) 
     except (ValueError, TypeError):
         return "invalid_config"
     child_env = {key: env[key] for key in required}
-    # Keep only interpreter startup essentials, never ambient OTEL/provider config.
+    # 자식 실행에 필요한 변수만 전달하고 OpenTelemetry 관련 환경 변수는 제외한다.
     child_env.update(
         {
             key: os.environ[key]
@@ -209,11 +226,15 @@ def export_projection(payload: Mapping[str, object], *, env: Mapping[str, str]) 
             if key in os.environ
         }
     )
-    # Keep data-URI output as text; the SDK otherwise converts and uploads media.
+    # SDK가 data URI를 미디어로 바꿔 올리지 않도록 문자열로 유지한다.
     child_env["LANGFUSE_MEDIA_UPLOAD_ENABLED"] = "false"
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "hmda_reliability.review_ai.langfuse_projection"],
+            [
+                sys.executable,
+                "-m",
+                "hmda_reliability.review_ai.evaluation.langfuse",
+            ],
             input=encoded,
             text=True,
             env=child_env,
@@ -230,7 +251,8 @@ def export_projection(payload: Mapping[str, object], *, env: Mapping[str, str]) 
 
 
 def _send_to_langfuse(payload: dict[str, Any]) -> None:
-    # The optional SDK is resolved only in the isolated child.
+    """자식 프로세스에서 관측 항목 하나를 전송하고 `flush()`를 호출한다."""
+    # 선택적 SDK와 제공자는 부모 프로세스의 Review AI 경로에서 불러오지 않는다.
     from importlib import import_module
 
     from opentelemetry.sdk.resources import Resource
@@ -265,7 +287,7 @@ def _send_to_langfuse(payload: dict[str, Any]) -> None:
 
 
 if __name__ == "__main__":
-    # Parent suppresses SDK diagnostics and owns timeout, including atexit handlers.
+    # 부모가 SDK 출력을 버리고 자식 종료 처리까지 제한 시간으로 통제한다.
     try:
         _send_to_langfuse(json.loads(sys.stdin.buffer.read(_MAX_BYTES + 1)))
     except Exception:
