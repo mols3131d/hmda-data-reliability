@@ -41,9 +41,9 @@ tags:
 
 ### R-TD-01 · Low · Candidate unit/component test의 approval 차단 주장 과도
 
-- **Location:** `tests/reliability/test_schema_recovery_candidate.py`의 `test_candidate_state_failure_blocks_approval_and_target_access`, `test_candidate_dbt_failure_blocks_approval_and_target_access`.
+- **Location:** [candidate component tests](https://github.com/mols3131d/hmda-data-reliability/blob/8bc62fa6ec995f2e57456d55712b36ff11b1f1d9/tests/reliability/test_schema_recovery_candidate.py#L48-L126)의 `test_candidate_state_failure_blocks_approval_and_target_access`, `test_candidate_dbt_failure_blocks_approval_and_target_access`.
 - **Observed:** `approval_calls.append(...)`가 `pytest.raises` 내부의 `preflight(...)` 다음에만 위치하므로, 예외 발생 시 자동으로 실행되지 않는다. 테스트에서 검사하는 `target_path`도 실제 production target operation에 전달되지 않는다. 따라서 두 assertion은 approval callback 차단이나 target mutation을 직접 검증하지 않는다.
-- **Counterevidence:** `tests/reliability/test_schema_drift_evaluation.py::test_schema_drift_evaluation_rejects_incomplete_candidate_before_approval`는 실제 evaluation caller에 `approve` callback을 연결하고, 미호출과 target state 보존을 검증한다. 따라서 approval 차단에 대한 전체 테스트 공백이나 production 취약점으로 확대하지 않는다.
+- **Counterevidence:** [integration regression](https://github.com/mols3131d/hmda-data-reliability/blob/8bc62fa6ec995f2e57456d55712b36ff11b1f1d9/tests/reliability/test_schema_drift_evaluation.py#L264-L327)은 실제 [evaluation caller](https://github.com/mols3131d/hmda-data-reliability/blob/8bc62fa6ec995f2e57456d55712b36ff11b1f1d9/src/hmda_reliability/reliability/evaluation/schema_drift.py#L130-L196)에 `approve` callback을 연결하고, 미호출과 target state 보존을 검증한다. 따라서 approval 차단에 대한 전체 테스트 공백이나 production 취약점으로 확대하지 않는다.
 - **Disposition:** 테스트 의미론 개선 후보. 위 두 테스트는 preflight rejection으로 정확히 명명하고 무의미한 sentinel을 제거하는 편이 명확하다. 수정이 필요하다면 감사 기록과 분리된 최소 테스트 PR에서 다룬다. 이번 문서 PR에는 test/source를 변경하지 않는다.
 
 ## Self Review Loop
