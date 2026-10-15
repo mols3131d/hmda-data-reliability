@@ -9,253 +9,253 @@ tags:
 
 # Seven-Domain File Inventory
 
-**All paths are at `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9`.** `sampled` = 일부 함수와 관련 테스트를 정적으로 확인했으나 전수 검토 전. `pending` = 아직 파일별 의미론 검토 전. 이 목록은 체크리스트의 L1 산출물이며 L2–L8 완료 증거가 아니다.
+**Baseline:** `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9`. PR head `b9f9c7657f1d65e5b583ed16afd035ec218e1ed6`의 domain code/spec와 동일하다. `reviewed (static, quality)`는 Quality specialist가 파일 전체를 읽고 관련 계약·테스트와 대조했음을 뜻한다. 102 source + 67 test + 18 spec = 187 reviewed, excluded 0. 두 reviewer 모두 모든 파일을 중복 전수 검토했다는 의미가 아니며, 실행 성공을 뜻하지도 않는다. 실행 결과는 [Cloud validation](08-report-cloud-validation.md), 독립 리뷰는 [Final review](09-review-cloud-audit.md)를 본다.
 
 ## reliability
 
 **Source** (path prefix: `src/hmda_reliability/reliability/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `contracts/__init__.py` — pending
-- [ ] `contracts/approval.py` — sampled
-- [ ] `contracts/base.py` — sampled
-- [ ] `contracts/evidence.py` — pending
-- [ ] `contracts/incident.py` — pending
-- [ ] `contracts/lineage.py` — pending
-- [ ] `contracts/profile.py` — sampled
-- [ ] `contracts/recovery_proposal.py` — pending
-- [ ] `contracts/schema_recovery.py` — sampled
-- [ ] `contracts/table_state.py` — pending
-- [ ] `contracts/validation.py` — pending
-- [ ] `detection/__init__.py` — pending
-- [ ] `detection/detector.py` — sampled
-- [ ] `detection/request.py` — sampled
-- [ ] `detection/result.py` — sampled
-- [ ] `detection/thresholds.py` — sampled
-- [ ] `errors.py` — pending
-- [ ] `evaluation/__init__.py` — pending
-- [ ] `evaluation/case_result.py` — pending
-- [ ] `evaluation/freshness_delay.py` — pending
-- [ ] `evaluation/null_spike.py` — pending
-- [ ] `evaluation/recovery_case.py` — pending
-- [ ] `evaluation/report.py` — pending
-- [ ] `evaluation/reporter.py` — pending
-- [ ] `evaluation/schema_drift.py` — pending
-- [ ] `evaluation/volume_drop.py` — pending
-- [ ] `impact/__init__.py` — pending
-- [ ] `impact/analyzer.py` — pending
-- [ ] `impact/manifest.py` — pending
-- [ ] `impact/request.py` — pending
-- [ ] `impact/result.py` — pending
-- [ ] `metadata/__init__.py` — pending
-- [ ] `metadata/builder.py` — pending
-- [ ] `metadata/request.py` — pending
-- [ ] `profiling/__init__.py` — pending
-- [ ] `profiling/profile_snapshot_builder.py` — pending
-- [ ] `profiling/profile_snapshot_request.py` — pending
-- [ ] `profiling/table_state_builder.py` — pending
-- [ ] `quality_gate.py` — pending
-- [ ] `recovery/__init__.py` — pending
-- [ ] `recovery/executor.py` — sampled
-- [ ] `recovery/request.py` — pending
-- [ ] `recovery/result.py` — pending
-- [ ] `recovery/schema_candidate.py` — sampled
-- [ ] `recovery/schema_executor.py` — sampled
-- [ ] `recovery/schema_request.py` — sampled
-- [ ] `recovery/schema_result.py` — pending
-- [ ] `remediation/__init__.py` — pending
-- [ ] `remediation/draft.py` — pending
-- [ ] `remediation/request.py` — pending
-- [ ] `remediation/workflow.py` — pending
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `contracts/__init__.py` — reviewed (static, quality)
+- [x] `contracts/approval.py` — reviewed (static, quality)
+- [x] `contracts/base.py` — reviewed (static, quality)
+- [x] `contracts/evidence.py` — reviewed (static, quality)
+- [x] `contracts/incident.py` — reviewed (static, quality)
+- [x] `contracts/lineage.py` — reviewed (static, quality)
+- [x] `contracts/profile.py` — reviewed (static, quality)
+- [x] `contracts/recovery_proposal.py` — reviewed (static, quality)
+- [x] `contracts/schema_recovery.py` — reviewed (static, quality)
+- [x] `contracts/table_state.py` — reviewed (static, quality)
+- [x] `contracts/validation.py` — reviewed (static, quality)
+- [x] `detection/__init__.py` — reviewed (static, quality)
+- [x] `detection/detector.py` — reviewed (static, quality)
+- [x] `detection/request.py` — reviewed (static, quality)
+- [x] `detection/result.py` — reviewed (static, quality)
+- [x] `detection/thresholds.py` — reviewed (static, quality)
+- [x] `errors.py` — reviewed (static, quality)
+- [x] `evaluation/__init__.py` — reviewed (static, quality)
+- [x] `evaluation/case_result.py` — reviewed (static, quality)
+- [x] `evaluation/freshness_delay.py` — reviewed (static, quality)
+- [x] `evaluation/null_spike.py` — reviewed (static, quality)
+- [x] `evaluation/recovery_case.py` — reviewed (static, quality)
+- [x] `evaluation/report.py` — reviewed (static, quality)
+- [x] `evaluation/reporter.py` — reviewed (static, quality)
+- [x] `evaluation/schema_drift.py` — reviewed (static, quality)
+- [x] `evaluation/volume_drop.py` — reviewed (static, quality)
+- [x] `impact/__init__.py` — reviewed (static, quality)
+- [x] `impact/analyzer.py` — reviewed (static, quality)
+- [x] `impact/manifest.py` — reviewed (static, quality)
+- [x] `impact/request.py` — reviewed (static, quality)
+- [x] `impact/result.py` — reviewed (static, quality)
+- [x] `metadata/__init__.py` — reviewed (static, quality)
+- [x] `metadata/builder.py` — reviewed (static, quality)
+- [x] `metadata/request.py` — reviewed (static, quality)
+- [x] `profiling/__init__.py` — reviewed (static, quality)
+- [x] `profiling/profile_snapshot_builder.py` — reviewed (static, quality)
+- [x] `profiling/profile_snapshot_request.py` — reviewed (static, quality)
+- [x] `profiling/table_state_builder.py` — reviewed (static, quality)
+- [x] `quality_gate.py` — reviewed (static, quality)
+- [x] `recovery/__init__.py` — reviewed (static, quality)
+- [x] `recovery/executor.py` — reviewed (static, quality)
+- [x] `recovery/request.py` — reviewed (static, quality)
+- [x] `recovery/result.py` — reviewed (static, quality)
+- [x] `recovery/schema_candidate.py` — reviewed (static, quality)
+- [x] `recovery/schema_executor.py` — reviewed (static, quality)
+- [x] `recovery/schema_request.py` — reviewed (static, quality)
+- [x] `recovery/schema_result.py` — reviewed (static, quality)
+- [x] `remediation/__init__.py` — reviewed (static, quality)
+- [x] `remediation/draft.py` — reviewed (static, quality)
+- [x] `remediation/request.py` — reviewed (static, quality)
+- [x] `remediation/workflow.py` — reviewed (static, quality)
 
 **Tests** (path prefix: `tests/reliability/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `conftest.py` — pending
-- [ ] `contracts/__init__.py` — pending
-- [ ] `contracts/test_approval.py` — pending
-- [ ] `contracts/test_evidence.py` — pending
-- [ ] `contracts/test_incident.py` — pending
-- [ ] `contracts/test_lineage.py` — pending
-- [ ] `contracts/test_profile.py` — pending
-- [ ] `contracts/test_recovery_proposal.py` — pending
-- [ ] `contracts/test_schema_recovery.py` — pending
-- [ ] `contracts/test_validation.py` — pending
-- [ ] `test_approval_backfill_validation.py` — sampled
-- [ ] `test_basic_incident_detection.py` — sampled
-- [ ] `test_evaluation_report.py` — pending
-- [ ] `test_fixtures.py` — pending
-- [ ] `test_freshness_delay_evaluation.py` — pending
-- [ ] `test_impact_analysis.py` — pending
-- [ ] `test_null_spike_evaluation.py` — pending
-- [ ] `test_profile_snapshots.py` — pending
-- [ ] `test_quality_gate.py` — pending
-- [ ] `test_recovery_runtime_evidence.py` — pending
-- [ ] `test_remediation_draft.py` — pending
-- [ ] `test_schema_drift_evaluation.py` — sampled
-- [ ] `test_schema_recovery_candidate.py` — sampled
-- [ ] `test_schema_recovery_executor.py` — sampled
-- [ ] `test_table_metadata_evidence.py` — pending
-- [ ] `test_table_state_identity.py` — pending
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `conftest.py` — reviewed (static, quality)
+- [x] `contracts/__init__.py` — reviewed (static, quality)
+- [x] `contracts/test_approval.py` — reviewed (static, quality)
+- [x] `contracts/test_evidence.py` — reviewed (static, quality)
+- [x] `contracts/test_incident.py` — reviewed (static, quality)
+- [x] `contracts/test_lineage.py` — reviewed (static, quality)
+- [x] `contracts/test_profile.py` — reviewed (static, quality)
+- [x] `contracts/test_recovery_proposal.py` — reviewed (static, quality)
+- [x] `contracts/test_schema_recovery.py` — reviewed (static, quality)
+- [x] `contracts/test_validation.py` — reviewed (static, quality)
+- [x] `test_approval_backfill_validation.py` — reviewed (static, quality)
+- [x] `test_basic_incident_detection.py` — reviewed (static, quality)
+- [x] `test_evaluation_report.py` — reviewed (static, quality)
+- [x] `test_fixtures.py` — reviewed (static, quality)
+- [x] `test_freshness_delay_evaluation.py` — reviewed (static, quality)
+- [x] `test_impact_analysis.py` — reviewed (static, quality)
+- [x] `test_null_spike_evaluation.py` — reviewed (static, quality)
+- [x] `test_profile_snapshots.py` — reviewed (static, quality)
+- [x] `test_quality_gate.py` — reviewed (static, quality)
+- [x] `test_recovery_runtime_evidence.py` — reviewed (static, quality)
+- [x] `test_remediation_draft.py` — reviewed (static, quality)
+- [x] `test_schema_drift_evaluation.py` — reviewed (static, quality)
+- [x] `test_schema_recovery_candidate.py` — reviewed (static, quality)
+- [x] `test_schema_recovery_executor.py` — reviewed (static, quality)
+- [x] `test_table_metadata_evidence.py` — reviewed (static, quality)
+- [x] `test_table_state_identity.py` — reviewed (static, quality)
 
 ## data operations
 
 **Source** (path prefix: `src/hmda_reliability/data_operations/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `dbt_result.py` — pending
-- [ ] `errors.py` — pending
-- [ ] `incident_lifecycle.py` — pending
-- [ ] `lifecycle_result.py` — pending
-- [ ] `quality_gate.py` — sampled
-- [ ] `raw_result.py` — pending
-- [ ] `request.py` — pending
-- [ ] `runner.py` — sampled
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `dbt_result.py` — reviewed (static, quality)
+- [x] `errors.py` — reviewed (static, quality)
+- [x] `incident_lifecycle.py` — reviewed (static, quality)
+- [x] `lifecycle_result.py` — reviewed (static, quality)
+- [x] `quality_gate.py` — reviewed (static, quality)
+- [x] `raw_result.py` — reviewed (static, quality)
+- [x] `request.py` — reviewed (static, quality)
+- [x] `runner.py` — reviewed (static, quality)
 
 **Tests** (path prefix: `tests/data_operations/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `test_dbt_runner.py` — sampled
-- [ ] `test_incident_lifecycle.py` — pending
-- [ ] `test_quality_gate.py` — sampled
-- [ ] `test_system_recovery_e2e.py` — pending
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `test_dbt_runner.py` — reviewed (static, quality)
+- [x] `test_incident_lifecycle.py` — reviewed (static, quality)
+- [x] `test_quality_gate.py` — reviewed (static, quality)
+- [x] `test_system_recovery_e2e.py` — reviewed (static, quality)
 
 ## hmda data
 
 **Source** (path prefix: `src/hmda_reliability/hmda_data/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `contracts/__init__.py` — pending
-- [ ] `eda/__init__.py` — pending
-- [ ] `eda/analysis.py` — pending
-- [ ] `eda/explorer.py` — pending
-- [ ] `errors.py` — pending
-- [ ] `ingestion/__init__.py` — pending
-- [ ] `ingestion/_common.py` — pending
-- [ ] `ingestion/_source_query.py` — pending
-- [ ] `ingestion/discovery.py` — pending
-- [ ] `ingestion/full_load.py` — pending
-- [ ] `ingestion/identity.py` — sampled
-- [ ] `ingestion/partition.py` — sampled
-- [ ] `synthetic/__init__.py` — pending
-- [ ] `synthetic/_source.py` — pending
-- [ ] `synthetic/_writer.py` — pending
-- [ ] `synthetic/cases.py` — pending
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `contracts/__init__.py` — reviewed (static, quality)
+- [x] `eda/__init__.py` — reviewed (static, quality)
+- [x] `eda/analysis.py` — reviewed (static, quality)
+- [x] `eda/explorer.py` — reviewed (static, quality)
+- [x] `errors.py` — reviewed (static, quality)
+- [x] `ingestion/__init__.py` — reviewed (static, quality)
+- [x] `ingestion/_common.py` — reviewed (static, quality)
+- [x] `ingestion/_source_query.py` — reviewed (static, quality)
+- [x] `ingestion/discovery.py` — reviewed (static, quality)
+- [x] `ingestion/full_load.py` — reviewed (static, quality)
+- [x] `ingestion/identity.py` — reviewed (static, quality)
+- [x] `ingestion/partition.py` — reviewed (static, quality)
+- [x] `synthetic/__init__.py` — reviewed (static, quality)
+- [x] `synthetic/_source.py` — reviewed (static, quality)
+- [x] `synthetic/_writer.py` — reviewed (static, quality)
+- [x] `synthetic/cases.py` — reviewed (static, quality)
 
 **Tests** (path prefix: `tests/hmda_data/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `conftest.py` — pending
-- [ ] `eda/test_eda.py` — pending
-- [ ] `eda/test_eda_evidence.py` — pending
-- [ ] `eda/test_eda_explorer.py` — pending
-- [ ] `test_ingestion.py` — pending
-- [ ] `test_ingestion_partition.py` — sampled
-- [ ] `test_synthetic.py` — sampled
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `conftest.py` — reviewed (static, quality)
+- [x] `eda/test_eda.py` — reviewed (static, quality)
+- [x] `eda/test_eda_evidence.py` — reviewed (static, quality)
+- [x] `eda/test_eda_explorer.py` — reviewed (static, quality)
+- [x] `test_ingestion.py` — reviewed (static, quality)
+- [x] `test_ingestion_partition.py` — reviewed (static, quality)
+- [x] `test_synthetic.py` — reviewed (static, quality)
 
 ## data platform
 
 **Source** (path prefix: `src/hmda_reliability/data_platform/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `artifacts.py` — sampled
-- [ ] `duckdb.py` — sampled
-- [ ] `sql.py` — pending
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `artifacts.py` — reviewed (static, quality)
+- [x] `duckdb.py` — reviewed (static, quality)
+- [x] `sql.py` — reviewed (static, quality)
 
 **Tests** (path prefix: `tests/data_platform/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `test_artifacts.py` — sampled
-- [ ] `test_duckdb.py` — sampled
-- [ ] `test_sql.py` — pending
-- [ ] `tests/dbt/test_analytics_foundation.py` — pending (별도 test root; 위 prefix 적용 제외)
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `test_artifacts.py` — reviewed (static, quality)
+- [x] `test_duckdb.py` — reviewed (static, quality)
+- [x] `test_sql.py` — reviewed (static, quality)
+- [x] `tests/dbt/test_analytics_foundation.py` — reviewed (static, quality) (별도 test root; 위 prefix 적용 제외)
 
 ## review ai
 
 **Source** (path prefix: `src/hmda_reliability/review_ai/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `context.py` — pending
-- [ ] `contracts.py` — pending
-- [ ] `evaluation/__init__.py` — pending
-- [ ] `evaluation/langfuse.py` — sampled
-- [ ] `evaluation/value.py` — pending
-- [ ] `evidence.py` — sampled
-- [ ] `prompt.py` — pending
-- [ ] `service.py` — sampled
-- [ ] `settings.py` — pending
-- [ ] `store.py` — pending
-- [ ] `validator.py` — sampled
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `context.py` — reviewed (static, quality)
+- [x] `contracts.py` — reviewed (static, quality)
+- [x] `evaluation/__init__.py` — reviewed (static, quality)
+- [x] `evaluation/langfuse.py` — reviewed (static, quality)
+- [x] `evaluation/value.py` — reviewed (static, quality)
+- [x] `evidence.py` — reviewed (static, quality)
+- [x] `prompt.py` — reviewed (static, quality)
+- [x] `service.py` — reviewed (static, quality)
+- [x] `settings.py` — reviewed (static, quality)
+- [x] `store.py` — reviewed (static, quality)
+- [x] `validator.py` — reviewed (static, quality)
 
 **Tests** (path prefix: `tests/review_ai/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `conftest.py` — pending
-- [ ] `evaluation/test_langfuse_projection.py` — pending
-- [ ] `evaluation/test_utility_evaluation.py` — pending
-- [ ] `test_context.py` — pending
-- [ ] `test_contracts.py` — pending
-- [ ] `test_dependency_boundaries.py` — pending
-- [ ] `test_evidence_store.py` — pending
-- [ ] `test_live_harness.py` — pending
-- [ ] `test_prompt_provider.py` — pending
-- [ ] `test_public_surface.py` — pending
-- [ ] `test_service.py` — sampled
-- [ ] `test_settings.py` — pending
-- [ ] `test_validator.py` — sampled
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `conftest.py` — reviewed (static, quality)
+- [x] `evaluation/test_langfuse_projection.py` — reviewed (static, quality)
+- [x] `evaluation/test_utility_evaluation.py` — reviewed (static, quality)
+- [x] `test_context.py` — reviewed (static, quality)
+- [x] `test_contracts.py` — reviewed (static, quality)
+- [x] `test_dependency_boundaries.py` — reviewed (static, quality)
+- [x] `test_evidence_store.py` — reviewed (static, quality)
+- [x] `test_live_harness.py` — reviewed (static, quality)
+- [x] `test_prompt_provider.py` — reviewed (static, quality)
+- [x] `test_public_surface.py` — reviewed (static, quality)
+- [x] `test_service.py` — reviewed (static, quality)
+- [x] `test_settings.py` — reviewed (static, quality)
+- [x] `test_validator.py` — reviewed (static, quality)
 
 ## runtime ai
 
 **Source** (path prefix: `src/hmda_reliability/runtime_ai/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `contracts.py` — pending
-- [ ] `provider.py` — sampled
-- [ ] `settings.py` — sampled
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `contracts.py` — reviewed (static, quality)
+- [x] `provider.py` — reviewed (static, quality)
+- [x] `settings.py` — reviewed (static, quality)
 
 **Tests** (path prefix: `tests/runtime_ai/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `test_provider.py` — sampled
-- [ ] `test_settings.py` — pending
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `test_provider.py` — reviewed (static, quality)
+- [x] `test_settings.py` — reviewed (static, quality)
 
 ## orchestration
 
 **Source** (path prefix: `src/hmda_reliability/orchestration/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `config.py` — sampled
-- [ ] `dags/__init__.py` — pending
-- [ ] `dags/hmda_data_plane.py` — sampled
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `config.py` — reviewed (static, quality)
+- [x] `dags/__init__.py` — reviewed (static, quality)
+- [x] `dags/hmda_data_plane.py` — reviewed (static, quality)
 
 **Tests** (path prefix: `tests/orchestration/`)
 
-- [ ] `__init__.py` — pending
-- [ ] `test_airflow_dag.py` — sampled
-- [ ] `test_airflow_dagrun.py` — pending
-- [ ] `test_airflow_execution.py` — sampled
-- [ ] `test_config.py` — sampled
+- [x] `__init__.py` — reviewed (static, quality)
+- [x] `test_airflow_dag.py` — reviewed (static, quality)
+- [x] `test_airflow_dagrun.py` — reviewed (static, quality)
+- [x] `test_airflow_execution.py` — reviewed (static, quality)
+- [x] `test_config.py` — reviewed (static, quality)
 
 ## Normative Spec Inventory (unique: 18)
 
-- [ ] `data-operations-incident-lifecycle/spec.md` — pending
-- [ ] `data-operations-stage-execution/spec.md` — sampled
-- [ ] `data-platform-dbt-analytics/spec.md` — pending
-- [ ] `data-platform-duckdb-access/spec.md` — pending
-- [ ] `hmda-data-eda-descriptive-evidence/spec.md` — pending
-- [ ] `hmda-data-ingestion/spec.md` — pending
-- [ ] `hmda-data-synthetic-defects/spec.md` — pending
-- [ ] `orchestration-pipeline/spec.md` — sampled
-- [ ] `reliability-agentic-review/spec.md` — pending
-- [ ] `reliability-data-contracts/spec.md` — pending
-- [ ] `reliability-evaluation-report/spec.md` — pending
-- [ ] `reliability-evidence-table-metadata/spec.md` — pending
-- [ ] `reliability-impact-analysis/spec.md` — pending
-- [ ] `reliability-incident-detection/spec.md` — sampled
-- [ ] `reliability-profile-snapshots/spec.md` — pending
-- [ ] `reliability-recovery-backfill/spec.md` — sampled
-- [ ] `reliability-remediation-draft/spec.md` — pending
-- [ ] `reliability-schema-recovery/spec.md` — sampled
+- [x] `data-operations-incident-lifecycle/spec.md` — reviewed (static, quality)
+- [x] `data-operations-stage-execution/spec.md` — reviewed (static, quality)
+- [x] `data-platform-dbt-analytics/spec.md` — reviewed (static, quality)
+- [x] `data-platform-duckdb-access/spec.md` — reviewed (static, quality)
+- [x] `hmda-data-eda-descriptive-evidence/spec.md` — reviewed (static, quality)
+- [x] `hmda-data-ingestion/spec.md` — reviewed (static, quality)
+- [x] `hmda-data-synthetic-defects/spec.md` — reviewed (static, quality)
+- [x] `orchestration-pipeline/spec.md` — reviewed (static, quality)
+- [x] `reliability-agentic-review/spec.md` — reviewed (static, quality)
+- [x] `reliability-data-contracts/spec.md` — reviewed (static, quality)
+- [x] `reliability-evaluation-report/spec.md` — reviewed (static, quality)
+- [x] `reliability-evidence-table-metadata/spec.md` — reviewed (static, quality)
+- [x] `reliability-impact-analysis/spec.md` — reviewed (static, quality)
+- [x] `reliability-incident-detection/spec.md` — reviewed (static, quality)
+- [x] `reliability-profile-snapshots/spec.md` — reviewed (static, quality)
+- [x] `reliability-recovery-backfill/spec.md` — reviewed (static, quality)
+- [x] `reliability-remediation-draft/spec.md` — reviewed (static, quality)
+- [x] `reliability-schema-recovery/spec.md` — reviewed (static, quality)
 
 ## Self-Review
 

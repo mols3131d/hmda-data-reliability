@@ -10,6 +10,8 @@ tags:
 
 # Reliability Detection Boundary Review
 
+2026-10-15 후속 실행: [Cloud validation](08-report-cloud-validation.md)에서 실제 재현·테스트 결과를 기록했다. 현재 진행 상태는 [completion checklist](03-plan-audit-completion-checklist.md)를 따른다. 이 문서의 실행 불가/미실행 표기는 이전 세션의 이력이다.
+
 > **Assessment: finding confirmed at source-predicate level; full runtime regression Not Verified.** 실제 `pytest` 실행이 아닌 고정 source 확인과 격리된 경계식 검산 결과다. 일반 기본값으로 사용하는 감지 경로의 실패로 확대하지 않는다.
 
 - **Target:** Reliability incident detection의 threshold, null-rate baseline, related test oracle

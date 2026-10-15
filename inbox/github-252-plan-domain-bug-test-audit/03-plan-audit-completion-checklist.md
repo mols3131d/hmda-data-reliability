@@ -10,24 +10,24 @@ tags:
 
 # PR #252 Completion Checklist
 
-**Status: In Progress; not merge-ready.** First-pass evidence: [7개 도메인 위험 경계 보고서](04-report-seven-domain-risk-first-pass.md), [187-file audit matrix](05-report-file-inventory.md), [Reliability detector 경계 리뷰](06-review-reliability-detection-boundaries.md). 도메인별 전수 검증은 여전히 미완료다. Baseline: `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9` (`main`).
+**Status: Audit evidence recorded; not merge-ready.** 187개 source/test/spec 정적 검토와 실행·재현을 진행했다. Airflow 통합 실행은 환경 오류로 검증되지 않았고 production 결함은 미해결이다. 현재 근거는 [Cloud validation](08-report-cloud-validation.md), [file inventory](05-report-file-inventory.md), [independent review](09-review-cloud-audit.md)가 소유한다. 아래 이전 loop는 당시 수행 이력이다.
 
 ## Completion Work Packages
 
-- [x] L1 — 기준 Git tree에서 [187개 source/test/spec file inventory](05-report-file-inventory.md)를 추출했고 모든 경로의 존재·중복 없음 확인. 인벤토리는 review 완료를 의미하지 않는다.
-- [ ] L2 — Reliability 전수 감사 (schema recovery 및 detector zero-threshold 정적 리뷰, 전수 미완료): 승인, 상태 identity, recovery, detector, profile, impact, remediation, evaluation.
-- [ ] L3 — Data Operations 전수 감사 (첫 정적 패스 수행; 전수 미완료): quality gate, dbt lock, promotion 및 failure boundary.
-- [ ] L4 — HMDA Data 전수 감사 (첫 정적 패스 수행; 전수 미완료): input/source validation, partition re-ingestion, stale guard, synthetic defects.
-- [ ] L5 — Data Platform 및 dbt 전수 감사 (첫 정적 패스 수행; 전수 미완료): DuckDB locks, transaction, artifact pair, SQL/dbt contracts.
-- [ ] L6 — Review AI 전수 감사 (첫 정적 패스 수행; 전수 미완료): evidence binding, structured outputs, advisory and evaluation/projection boundary.
-- [ ] L7 — Runtime AI 전수 감사 (첫 정적 패스 수행; 전수 미완료): settings, provider, error/timeout normalization and tests.
-- [ ] L8 — Orchestration 전수 감사 (첫 정적 패스 수행; 전수 미완료): DAG dependencies, quality gate blocking, config, re-execution.
-- [ ] L9 — 기준 revision에서 관련 pytest 단독 및 통합 실행, pass/fail/skip evidence.
-- [ ] L10 — 결함 의심 재현 또는 반증 (R-DET-01의 Pydantic + 분기식 격리 검산 완료; 앱 pytest/회귀 재현 미완료), spec/기존 safeguard와 교차 검증.
-- [ ] L11 — 중요한 검출력 공백에 bounded negative/fault-injection check(격리된 환경에서만).
-- [ ] L12 — 확인된 결함·test gaps를 회귀 검증하거나 독립적인 작은 PR에 연결. 미해결 risk/owner 기록.
-- [ ] L13 — 최종 revision에 대한 independent reviewer assessment와 blocker 해소.
-- [ ] L14 — 모든 source/test의 reviewed 또는 excluded(reason) 상태와 PR validation/readiness 최종 판단. Ready 전환·merge는 별도 승인.
+- [x] L1 — 고정 tree의 187개 source/test/spec inventory 확인.
+- [x] L2 — Reliability 전수 정적 감사; detector·schema recovery 결함과 기존 safeguard 대조.
+- [x] L3 — Data Operations 전수 정적 감사; quality gate, dbt lock, promotion/failure boundary.
+- [x] L4 — HMDA Data 전수 정적 감사; source validation, partition re-ingestion 및 값 손상 재현.
+- [x] L5 — Data Platform 및 dbt 전수 정적 감사; locks, transaction, artifact pair, SQL/dbt contracts.
+- [x] L6 — Review AI 전수 정적 감사; evidence binding, structured outputs, advisory/evaluation/projection boundary.
+- [x] L7 — Runtime AI 전수 정적 감사; settings, provider, normalization 및 SDK test gap 검증.
+- [x] L8 — Orchestration 전수 정적 감사; DAG dependencies, blocking, config/re-execution. 실제 DAGRun 통과는 미검증.
+- [x] L9 — 고정 revision의 focused/full domain pytest 실행 및 pass/fail/skip 기록. 실행 완료이지 통과 판정이 아님.
+- [x] L10 — detector, HMDA, Review AI, schema unlock 경계 실제 재현 및 safeguard 반증 확인.
+- [x] L11 — 격리 copy의 SDK negative control 및 temporary DuckDB unlock fault injection.
+- [x] L12 — 미해결 결함·test gap별 영향, 후속 책임 도메인과 acceptance oracle 기록. 수정 PR/담당자 수락은 아직 없음.
+- [x] L13 — 두 specialist와 lead의 독립 감사/최종 문서 assessment 완료: clear (감사 기록 한정). 실행 blocker는 별도 유지.
+- [x] L14 — 187 reviewed / excluded 0 확인; 최종 readiness는 not_ready. Airflow 정상 runner 재실행 및 후속 결함 처리 필요. Ready 전환·merge는 별도 승인.
 
 ## Inventory Snapshot
 
@@ -35,18 +35,18 @@ Untruncated Git tree에서 직접 추출한 Python 파일 수. `__init__.py`와 
 
 | Domain | Source | Test | Related Specs | Full Audit |
 | --- | ---: | ---: | ---: | --- |
-| Reliability | 52 | 27 | 10 | Pending; schema recovery partial |
-| Data Operations | 9 | 5 | 2 | Pending |
-| HMDA Data | 17 | 8 | 3 | Pending |
-| Data Platform | 4 | 5 | 2 | Pending |
-| Review AI | 12 | 14 | shared reliability-agentic-review | Pending |
-| Runtime AI | 4 | 3 | no dedicated spec | Pending |
-| Orchestration | 4 | 5 | 1 | Pending |
-| **Total** | **102** | **67** | **18 unique** | Pending |
+| Reliability | 52 | 27 | 10 | Reviewed (static) |
+| Data Operations | 9 | 5 | 2 | Reviewed (static) |
+| HMDA Data | 17 | 8 | 3 | Reviewed (static) |
+| Data Platform | 4 | 5 | 2 | Reviewed (static) |
+| Review AI | 12 | 14 | shared reliability-agentic-review | Reviewed (static) |
+| Runtime AI | 4 | 3 | no dedicated spec | Reviewed (static) |
+| Orchestration | 4 | 5 | 1 | Reviewed (static) |
+| **Total** | **102** | **67** | **18 unique** | Reviewed (static) |
 
 ## Validation Boundary
 
-GitHub connector는 repo 내용을 읽고 이 문서를 갱신할 수 있지만, 현재 runtime에서 private GitHub clone은 DNS resolution 실패로 실행하지 못했다. DuckDB 패키지도 현재 실행 Python 환경에 없어 repo-native `pytest`는 **Not Verified**다. 문서-only CI Lite success로 대체하지 않는다. 독립 reviewer도 아직 호출하지 못했다.
+클라우드 Python 3.13.16과 locked dependencies로 실행했다. Private clone 인증 대신 connector로 받은 exact-head snapshot을 Git blob SHA와 대조했다. Full suite는 **548 passed / 4 failed / 1 skipped**였고 Airflow serial retry는 5 failed였다. PID/proc 불일치와 SQLite 오류를 기록했으며 정상 runner 재실행이 필요하다. 상세 원인·명령·독립 검토 범위는 08/09 문서를 따른다. 아래 과거 loop의 “unrun”은 당시 상태이며 현행 상태가 아니다.
 
 ## Review Loop 1
 
@@ -65,7 +65,7 @@ GitHub connector는 repo 내용을 읽고 이 문서를 갱신할 수 있지만,
 - Self-review에서 `tests/dbt/test_analytics_foundation.py`가 Data Platform tests prefix로 잘못 축약된 항목을 발견해 수정했다. 이후 path set 검증을 재실행했다.
 - Coverage status는 모든 파일 `pending` 또는 `sampled`; domain semantic review와 pytest는 미완료다.
 
-## Required Execution Commands (unrun)
+## Historical Execution Plan (previously unrun)
 
 Repository guidance: [Testing](../../docs/development/testing.md). 아래는 작업 실행자가 고정 baseline의 isolated checkout에서 수행해야 할 검증이며, 여기서는 **실행하지 않았다**.
 
