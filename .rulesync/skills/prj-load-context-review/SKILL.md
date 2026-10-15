@@ -79,6 +79,8 @@ Priority order:
 
 Report admitted material items with disposition, scope relation, affected surface, decisive evidence, reachability and impact. State validation performed/not run, coverage gaps and unresolved unknowns. `scope_decision`, `follow_up`, `unrelated` and non-blocking `unknown` do not silently authorize current remediation. Review does not mutate or approve the target.
 
+`current_required`에는 필요한 조치를, `scope_decision`에는 필요한 결정과 결정권자를 기록한다. `follow_up`에는 현재 작업과 분리하는 이유를 기록하고, 후속 담당자는 필요한 경우에만 명시한다. `unrelated`는 최종 finding에 포함하지 않으며, 제외 판단 자체가 Caller에 중요할 때만 간략히 남긴다.
+
 ## Boundary
 
 - This Skill selects review context, the top-level review entrypoint and caller-owned assessment policy; it does not own code-review methodology, severity policy, VCS lifecycle, OpenSpec planning, or review artifact format.
