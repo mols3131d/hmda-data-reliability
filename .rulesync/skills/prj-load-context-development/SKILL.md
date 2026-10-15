@@ -41,9 +41,9 @@ The agent or workflow that owns the **final implementation completion decision**
 
 Before declaring the implementation complete, when the runtime supports the repository's review subagents:
 
-1. delegate one bounded review to `review-lead` in a separate subagent context;
+1. load `prj-load-context-review` for caller-owned finding admission and assessment policy, then delegate one bounded review to `mols-review-dualvantage` in a separate subagent context;
 1. pass only the target/revision or observable state, intended behavior, active scope, applicable contract, and validation already performed;
-1. let `review-lead` coordinate its own specialist reviewers and return the reconciled `Assessment` plus finding dispositions;
+1. let `mols-review-dualvantage` coordinate its own Verifier and Challenger and adjudicate technical candidate claims, then apply `prj-load-context-review` to classify findings and produce the caller-owned `Assessment`;
 1. admit review output against the current task authority before any remediation:
    - `current_required` — remediate only when the action stays inside the current user boundary and governing plan/contract;
    - `scope_decision` — do not mutate. Route to the workflow that owns Scope Control when one exists; otherwise require the authority that owns the affected Goal, scope or contract;
@@ -51,7 +51,7 @@ Before declaring the implementation complete, when the runtime supports the repo
    - `unknown` — gather only evidence needed to decide the current Goal when that uncertainty blocks completion; otherwise preserve it as a limitation;
 1. handle the assessment after admission:
    - `clear` — the independent review gate is satisfied for the exact reviewed state, subject to reported limitations;
-   - `changes_required` — remediate admitted `current_required` findings, then obtain a fresh `review-lead` assessment only if the reviewed state materially changed;
+   - `changes_required` — remediate admitted `current_required` findings, then obtain a fresh DualVantage handoff and caller assessment only if the reviewed state materially changed;
    - `blocked` — this assessment takes precedence for completion, so the independent review gate remains unsatisfied. Resolve or route the identified evidence, coverage or scope-authority blocker. A confirmed `current_required` item may still receive bounded remediation before blocker resolution only when its validity does not depend on that blocker and the action stays fully inside current authority; otherwise preserve it for the next admissible implementation step.
 
 If bounded remediation occurs while the same blocker still prevents gate closure, do not re-run independent review solely because that state changed. Resolve the blocker first, then review the resulting state once when a current independent assessment can materially change the completion decision.
@@ -64,7 +64,7 @@ Any post-review change that can affect reviewed behavior, contract, validation e
 
 A repeated or rephrased candidate that adds no new material evidence, creates no admitted `current_required` finding and does not change the current blocker is not a reason for another remediation/re-review cycle. Preserve non-blocking follow-ups separately and stop the automatic review loop at the current gate state.
 
-Do not call `review-quality` or `review-adversarial` directly. In VS Code they are excluded from general model invocation and explicitly allowlisted by `review-lead`. If `review-lead`, its specialist delegation, or required nested subagent invocation is unavailable in the active runtime, report the independent-review coverage gap instead of presenting self-review as independent Review.
+Do not call `mols-review-dualvantage-verifier` or `mols-review-dualvantage-challenger` directly. They belong to the DualVantage Root; runtime capability restrictions may differ. If `mols-review-dualvantage`, its specialist delegation, or required nested subagent invocation is unavailable, report the independent-review coverage gap instead of presenting self-review as independent Review.
 
 ## Boundary
 
