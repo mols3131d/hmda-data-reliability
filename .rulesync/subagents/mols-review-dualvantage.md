@@ -26,14 +26,18 @@ copilot:
     - read
     - search
     - agent
-  disable-model-invocation: true
+  agents:
+    - mols-review-dualvantage-verifier
+    - mols-review-dualvantage-challenger
   user-invocable: false
 copilotcli:
   tools:
     - read
     - search
     - agent
-  disable-model-invocation: true
+  agents:
+    - mols-review-dualvantage-verifier
+    - mols-review-dualvantage-challenger
   user-invocable: false
 antigravity-ide:
   tools:
