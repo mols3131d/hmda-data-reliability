@@ -66,6 +66,7 @@ def execute_approved_schema_recovery(
             approved_candidate_state=proposal.candidate_state,
             staging_directory=Path(temporary_directory),
         )
+        completed_result: SchemaRecoveryValidationResult | None = None
         try:
             with (
                 database_mutation_lock(validated_request.target_database_path),
@@ -82,7 +83,7 @@ def execute_approved_schema_recovery(
                         connection,
                         validated_request.profile_request,
                     )
-                    return SchemaRecoveryValidationResult(
+                    completed_result = SchemaRecoveryValidationResult(
                         approval_id=validated_request.approval.approval_id,
                         incident_id=validated_request.approval.incident_id,
                         table_name=proposal.table_name,
@@ -95,6 +96,7 @@ def execute_approved_schema_recovery(
                         validation_passed=True,
                         executed_actions=("rerun_profile_snapshot",),
                     )
+                    return completed_result
                 if current_state != proposal.approved_before_state:
                     raise SchemaRecoveryValidationError(
                         "schema recovery target이 approved before/after state와 "
@@ -111,23 +113,49 @@ def execute_approved_schema_recovery(
                             ),
                         },
                     )
-                return _replace_table(
+                completed_result = _replace_table(
                     connection,
                     validated_request,
                     staged_candidate.artifact_path,
                 )
+                return completed_result
         except SchemaRecoveryValidationError:
             raise
-        except DuckDBMutationLockError as exc:
-            raise SchemaRecoveryValidationError(
-                "schema recovery target mutation lock을 획득할 수 없습니다.",
-                failure_stage="before_target_mutation",
-                reconciliation_action="retry_same_approval",
-                context={
-                    "target_database_path": str(validated_request.target_database_path)
-                },
-            ) from exc
-        except (duckdb.Error, ProfileSnapshotError, TableStateIdentityError) as exc:
+        except (
+            DuckDBMutationLockError,
+            duckdb.Error,
+            ProfileSnapshotError,
+            TableStateIdentityError,
+        ) as exc:
+            if completed_result is not None:
+                raise SchemaRecoveryValidationError(
+                    "schema recovery 완료 후 target resource 해제에 실패했습니다.",
+                    failure_stage=(
+                        "after_target_mutation"
+                        if completed_result.mutation_state == "table_replaced"
+                        else "replay_verification"
+                    ),
+                    mutation_state=completed_result.mutation_state,
+                    reconciliation_action="resume_verification",
+                    context={
+                        "table_name": proposal.table_name,
+                        "actual_state": completed_result.actual_state.model_dump(
+                            mode="json"
+                        ),
+                        "mutation_state": completed_result.mutation_state,
+                    },
+                ) from exc
+            if isinstance(exc, DuckDBMutationLockError):
+                raise SchemaRecoveryValidationError(
+                    "schema recovery target mutation lock을 획득할 수 없습니다.",
+                    failure_stage="before_target_mutation",
+                    reconciliation_action="retry_same_approval",
+                    context={
+                        "target_database_path": str(
+                            validated_request.target_database_path
+                        )
+                    },
+                ) from exc
             raise SchemaRecoveryValidationError(
                 "schema recovery target state를 검증할 수 없습니다.",
                 failure_stage="before_target_mutation",

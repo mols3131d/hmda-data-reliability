@@ -201,7 +201,7 @@ def evaluate_schema_drift_vertical_slice(
             schema_drift_lifecycle=schema_drift_lifecycle,
             case_name=_recovery_failure_case_name(exc),
             failure_stage=getattr(exc, "failure_stage", "before_target_mutation"),
-            target_mutated=False,
+            target_mutated=getattr(exc, "mutation_state", None) == "table_replaced",
             reconciliation_action=getattr(exc, "reconciliation_action", None),
             candidate_projection_id=candidate_evidence.dbt_projection_id,
             exc=exc,

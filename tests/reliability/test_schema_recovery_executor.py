@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import fcntl
 import subprocess
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from subprocess import CompletedProcess
 from threading import Event, Thread
+from typing import TextIO
 
 import duckdb
 import pytest
@@ -111,6 +114,60 @@ def test_schema_recovery_replays_exact_after_without_replacement(
     assert result.mutation_state == "already_restored"
     assert result.reconciliation_action == "resume_verification"
     assert result.executed_actions == ("rerun_profile_snapshot",)
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("target_state", ["before", "after"])
+@pytest.mark.parametrize("failure", ["unlock", "close"])
+def test_schema_recovery_preserves_completed_state_on_cleanup_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    target_state: str,
+    failure: str,
+) -> None:
+    request = _request(tmp_path, target_state=target_state)
+    original_flock = fcntl.flock
+
+    def fail_target_unlock(file: TextIO, operation: int) -> None:
+        if operation == fcntl.LOCK_UN and Path(file.name).name == (
+            f".{request.target_database_path.name}.mutation.lock"
+        ):
+            raise OSError("injected target unlock failure")
+        original_flock(file, operation)
+
+    @contextmanager
+    def fail_target_close(
+        database_path: Path,
+    ) -> Iterator[duckdb.DuckDBPyConnection]:
+        with DuckDBConnectionManager(database_path) as connection:
+            yield connection
+        raise duckdb.IOException("injected target close failure")
+
+    with monkeypatch.context() as faults:
+        if failure == "unlock":
+            faults.setattr(fcntl, "flock", fail_target_unlock)
+        else:
+            faults.setattr(
+                schema_executor, "DuckDBConnectionManager", fail_target_close
+            )
+        with pytest.raises(SchemaRecoveryValidationError) as error:
+            reliability.execute_approved_schema_recovery(request)
+
+    with DuckDBConnectionManager(request.target_database_path) as connection:
+        actual = reliability.create_table_state_identity(
+            connection, request.proposal.table_name
+        )
+    assert actual == request.proposal.expected_after_state
+    assert error.value.failure_stage == (
+        "after_target_mutation" if target_state == "before" else "replay_verification"
+    )
+    assert error.value.mutation_state == (
+        "table_replaced" if target_state == "before" else "already_restored"
+    )
+    assert error.value.reconciliation_action == "resume_verification"
+    replay = reliability.execute_approved_schema_recovery(request)
+    assert replay.mutation_state == "already_restored"
+    assert replay.executed_actions == ("rerun_profile_snapshot",)
 
 
 @pytest.mark.component
