@@ -38,7 +38,7 @@ tags:
 - [x] I1 — R-HMDA-01: exact-value regression RED/GREEN, unrelated partition 보존. HMDA domain 77 passed; 최종 independent gate는 I8.
 - [x] I2 — R-REV-01: parser failure의 typed result와 persisted invocation RED/GREEN. Review AI domain 159 passed; 최종 independent gate는 I8.
 - [x] I3 — R-SCH-01: post-commit failure evidence, evaluator, safe replay 회귀. Candidate/executor/evaluator 36 passed; 최종 independent gate는 I8.
-- [ ] I4 — R-TD-02: 실제 SDK adapter test와 negative-control 검출.
+- [x] I4 — R-TD-02: 실제 SDK adapter test와 negative-control 검출. 35 passed; 격리 model mapping mutation에서 1 failed / 34 passed.
 - [ ] I5 — R-DET-01: 계약 결정 기록 후 경계 회귀와 수정. 현재 사용자 답변 대기.
 - [ ] I6 — Airflow DAGRun 5개 정상 환경 재실행 및 environment/product 분류.
 - [ ] I7 — 최종 revision의 영향 범위/full suite 및 정적 검사.

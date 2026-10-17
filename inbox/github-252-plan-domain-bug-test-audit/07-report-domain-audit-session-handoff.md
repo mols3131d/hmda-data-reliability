@@ -15,7 +15,7 @@ tags:
 
 Goal은 확인된 결함 수정과 테스트 검출력 보강·통합 검증까지다. 사용자는 이 branch에서 실행하고 세션이 끊겨도 재개할 수 있는 artifact를 요구했다. [실행 계획](11-plan-remediation-execution.md)이 현재 작업 범위를, [체크리스트](03-plan-audit-completion-checklist.md)의 I1–I9가 미완료 gate를 소유한다. 초기 감사의 L1–L14 완료는 구현 완료가 아니다.
 
-Phase: RPI Main Loop. Loops used: 3/30. Acceptance: open. R-HMDA-01(HMDA 77 passed), R-REV-01(Review AI 159 passed), R-SCH-01(candidate/executor/evaluator 36 passed)의 local 수정·회귀 검증 완료. Next: R-TD-02에서 actual SDK adapter의 kwargs/response/errors와 잘못된 model mapping 검출을 검증한다. 근거는 [12](12-report-remediation-loops.md).
+Phase: RPI Main Loop. Loops used: 4/30. Acceptance: open. R-HMDA-01(HMDA 77 passed), R-REV-01(Review AI 159 passed), R-SCH-01(candidate/executor/evaluator 36 passed), R-TD-02(Runtime AI 35 passed와 isolated model mutation 검출)의 local 구현·검증 완료. Next: Airflow DAGRun 5개를 실행하고 최종 통합 검사·독립 리뷰를 진행한다. Detector 결정은 답변 대기. 근거는 [12](12-report-remediation-loops.md).
 
 ## Evidence And Decisions
 

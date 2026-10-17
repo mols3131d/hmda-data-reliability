@@ -8,7 +8,7 @@ description: PR 252 결함 수정 루프의 실행 근거, 검토 결과와 다�
 
 ## Current State
 
-Phase: RPI Main Loop. Loops used: 3/30. Acceptance: open. Next: R-TD-02 actual SDK adapter test and negative control.
+Phase: RPI Main Loop. Loops used: 4/30. Acceptance: open. Next: Airflow runtime validation; detector contract answer pending.
 
 Starting revision과 scope는 [11](11-plan-remediation-execution.md), 실행할 항목은 [03](03-plan-audit-completion-checklist.md)을 따른다. 아래 실행은 실제 수행 후 결과와 검토 근거를 기록한다. 과거 [08](08-report-cloud-validation.md)의 수치를 이번 실행으로 표현하지 않는다.
 
@@ -37,3 +37,12 @@ Starting revision과 scope는 [11](11-plan-remediation-execution.md), 실행할 
 - GREEN: candidate/executor/schema-drift evaluator 3 modules, `-q -n 2` → 36 passed. Fault 제거 후 동일 승인 replay는 already-restored이고 executed actions는 profile 재실행뿐이다.
 - Review: approval mismatch·diverged state·rollback 경계는 기존 회귀를 유지한다. Test는 OS lock/connection 종료 boundary만 제어하고 actual DB mutation과 identity를 사용한다. 완료 결과가 없는 오류를 commit됐다고 추정하지 않는다.
 - Dispatch: I3 local implementation/validation 완료. 전체 runtime validation과 independent assessment는 아직 남아 있다.
+
+## Loop 4 — SDK Boundary Detection Strength
+
+- Research: 기존 RecordingTransport는 actual SDK adapter를 대체하므로 SDK kwargs의 model mapping 오동작을 검출하지 못했다.
+- Work: OpenAI SDK와 `_OpenAIChatCompletionTransport`를 그대로 통과시키고 httpx MockTransport에서만 네트워크를 대체한다. 독립된 고정 payload 전체, normalized output/usage/request ID, 400/500/connection error와 hidden retry 부재를 확인했다. Production 변경 없음.
+- GREEN: `tests/runtime_ai -q` → 35 passed.
+- Negative control: 임시 directory에 src·Runtime AI tests·pyproject를 복사하고 해당 provider의 `model=request.model`만 `model="audit-wrong-model"`로 바꿨다. Autouse fixture로 실제 provider import가 복사본인지 검증했다. 새 SDK payload test 1 failed / 나머지 34 passed; assertion에 잘못된 model이 표시됐다. 원본에는 mutation을 적용하지 않았다.
+- Experiment limits: 처음 격리 시도들은 pytest config의 원본 `pythonpath` 때문에 import guard에서 35 errors였다. 이 결과를 검출 성공으로 계산하지 않았다. Config도 복사본에 고정하고 editable import hook을 제외한 interpreter에서 위 결과를 얻었다. 실제 외부 SDK 서버 호출은 없었다.
+- Review/Dispatch: I4 완료. Actual adapter response/error 경계를 검증하며 production request를 테스트 double로 재구현하지 않았다. 다음 Airflow 정상 환경 재검증.

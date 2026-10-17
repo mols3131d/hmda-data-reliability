@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import json
+from functools import partial
+
+import httpx
 import pytest
+from openai import OpenAI
 
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
 from hmda_reliability.runtime_ai import provider as provider_module
@@ -88,6 +93,100 @@ def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile() -> None:
     assert response.content == transport_response.content
     assert response.attempt_count == 1
     assert response.usage == transport_response.usage
+
+
+def test_default_sdk_transport_maps_request_and_normalizes_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payloads: list[dict[str, object]] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        payloads.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            headers={"x-request-id": "sdk-request"},
+            json={
+                "id": "completion-1",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": '{"ok":true}'},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 3,
+                    "total_tokens": 13,
+                },
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        result = provider_module.OpenAICompatibleAdapter(_settings()).invoke(
+            _messages()
+        )
+
+    assert payloads == [
+        {
+            "messages": [
+                {"role": "system", "content": "Return one JSON object."},
+                {"role": "user", "content": '{"value":1}'},
+            ],
+            "model": "test-model",
+            "temperature": 0,
+            "max_tokens": 1024,
+            "response_format": {"type": "json_object"},
+            "stream": False,
+        }
+    ]
+    assert result.content == '{"ok":true}'
+    assert result.attempt_count == 1
+    assert result.trace_id == "sdk-request"
+    assert result.usage == runtime_contracts.ProviderUsage(
+        prompt_tokens=10, completion_tokens=3, total_tokens=13
+    )
+
+
+@pytest.mark.parametrize(
+    ("status_code", "failure_code"),
+    [
+        (400, "provider_client_error"),
+        (500, "provider_server_error"),
+        (None, "provider_connection_error"),
+    ],
+)
+def test_default_sdk_transport_normalizes_errors_without_hidden_retries(
+    monkeypatch: pytest.MonkeyPatch,
+    status_code: int | None,
+    failure_code: str,
+) -> None:
+    calls = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if status_code is None:
+            raise httpx.ConnectError("injected connection failure", request=request)
+        return httpx.Response(status_code, json={"error": {"message": "test failure"}})
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        adapter = provider_module.OpenAICompatibleAdapter(_settings(max_retries=0))
+        with pytest.raises(provider_module.ProviderUnavailableError) as error:
+            adapter.invoke(_messages())
+
+    assert calls == 1
+    assert error.value.failure_code == failure_code
+    assert error.value.attempt_count == 1
 
 
 def test_adapter_owns_bounded_retry_for_retryable_transport_failures() -> None:
