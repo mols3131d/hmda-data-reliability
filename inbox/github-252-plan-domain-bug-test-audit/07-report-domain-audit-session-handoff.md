@@ -26,6 +26,6 @@ Run: COMPLETE. Terminal: goal. Loops: 6/30. Owning ref: `agent/docs/plan-domain-
 
 ## Resume
 
-필수 구현 잔여 작업은 없다. [완료 체크리스트](03-plan-audit-completion-checklist.md)와 [쉬운 보고서](16-report-pr-completion-remaining-work.md)를 진입점으로 사용한다. 재개 시 local/remote head, source/test/Spec 동일성, 실제 main, 최신 checks와 새로운 review feedback을 확인한다. 변경이 없다면 유효한 완료 검증을 반복하지 않는다.
+필수 구현 잔여 작업은 없다. 전체 내역은 [작업 완료 보고서](20-report-pr-work-completion.md), acceptance는 [완료 체크리스트](03-plan-audit-completion-checklist.md), 짧은 설명은 [쉬운 보고서](16-report-pr-completion-remaining-work.md)를 사용한다. 재개 시 local/remote head, source/test/Spec 동일성, 실제 main, 최신 checks와 새로운 review feedback을 확인한다. 변경이 없다면 유효한 완료 검증을 반복하지 않는다.
 
 새 source·contract·base 또는 blocking feedback이 생기면 해당 영향만 다시 검증한다. Ready assessment는 인간의 lifecycle 권한을 대신하지 않으며 다음 사용자 지시를 기다린다.

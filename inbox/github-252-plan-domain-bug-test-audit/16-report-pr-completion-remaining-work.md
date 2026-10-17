@@ -37,4 +37,4 @@ tags:
 
 이 보고서는 구현 `fe8c324a`와 main `6ed9882a`의 완료 근거를 요약합니다. 이후 문서만 추가한 head의 최신 CI는 [PR checks](https://github.com/mols3131d/hmda-data-reliability/pull/252/checks)와 PR 본문에서 확인할 수 있습니다.
 
-세부 근거는 [체크리스트](03-plan-audit-completion-checklist.md), [검증 보고서](18-report-detector-implementation-validation.md), [독립 리뷰](19-review-detector-completion.md)에 있습니다.
+전체 감사·수정·검증·전달 내역은 [작업 완료 보고서](20-report-pr-work-completion.md)에 정리했습니다. 세부 근거는 [체크리스트](03-plan-audit-completion-checklist.md), [검증 보고서](18-report-detector-implementation-validation.md), [독립 리뷰](19-review-detector-completion.md)에 있습니다.
