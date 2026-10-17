@@ -405,7 +405,7 @@ def _replace_partition_rows(
     )
     connection.execute(
         f"""
-        INSERT INTO {qualify_table_name(table_name)}
+        INSERT INTO {qualify_table_name(table_name)} BY NAME
         SELECT *
         FROM {quote_identifier(_STAGING_TABLE)}
         """,
