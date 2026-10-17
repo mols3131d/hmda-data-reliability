@@ -18,13 +18,13 @@ tags:
 
 | Field | Value |
 | --- | --- |
-| Status | In Progress |
-| Snapshot Date | 2026-10-14 Asia/Seoul |
+| Status | Remediation In Progress |
+| Snapshot Date | 2026-10-17 Asia/Seoul |
 | Owning Branch | `agent/docs/plan-domain-bug-test-audit` |
 | Audit Baseline | `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9` (`main`) |
 | Scope | HMDA Data, Data Platform, Data Operations, Reliability, Review AI, Runtime AI, Orchestration |
-| Current Evidence | baseline tree 187개 대상 path 검증(존재/중복 없음), [Reliability 첫 감사](02-report-reliability-schema-recovery-first-pass.md), [일곱 도메인 위험 경계 first pass](04-report-seven-domain-risk-first-pass.md) |
-| Not Verified | 187개 대상의 전수 의미론 검토, domain pytest, 재현·검출력 실험, 독립 도메인 리뷰 |
+| Current Evidence | [완료된 정적 감사](09-review-cloud-audit.md), [실제 수정·회귀 검증](12-report-remediation-loops.md) |
+| Not Verified | detector 0 계약 결정과 해당 수정, 최종 구현 independent assessment 및 최신 main과의 prospective-merge CI |
 
 초기 계획 baseline은 `5532dca2fd93696d40ba870471fa2359c5662335`(2026-10-01)이었다. 2026-10-14 `main` 동기화 뒤 현재 full SHA로 감사 기준을 갱신했으며, 이전에 미병합 상태였던 변경도 최신 `main`에 포함된 범위에서 검토한다. Base 또는 관련 코드가 바뀌면 영향받는 검토와 실행 근거를 다시 확인한다.
 
@@ -96,9 +96,9 @@ tags:
 
 독립 리뷰는 이 문서의 작성자 검토와 구분한다. 필요한 독립 reviewer가 없으면 `Not Verified`로 남기며 같은 context의 self-review로 대체하지 않는다.
 
-## Completion Criteria
+## Audit Completion Criteria
 
-전체 감사는 다음 조건을 만족할 때 완료한다. 이 계획 문서가 전달되었다는 사실은 감사 완료를 뜻하지 않는다.
+아래는 감사 단계의 완료 조건이다. 전체 수정 작업의 완료는 [11](11-plan-remediation-execution.md)과 [03](03-plan-audit-completion-checklist.md)의 Implementation gate를 충족해야 하며, 미해결 owner 기록만으로 구현 완료를 선언하지 않는다.
 
 - 일곱 도메인과 대응 test 파일마다 검토 상태가 있고, 미검토·제외 범위와 이유가 명확하다.
 - 중요한 계약이 scenario와 oracle에 연결되며 missing coverage와 false-green 위험이 식별되어 있다.

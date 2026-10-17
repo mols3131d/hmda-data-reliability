@@ -15,7 +15,7 @@ tags:
 
 Goal은 확인된 결함 수정과 테스트 검출력 보강·통합 검증까지다. 사용자는 이 branch에서 실행하고 세션이 끊겨도 재개할 수 있는 artifact를 요구했다. [실행 계획](11-plan-remediation-execution.md)이 현재 작업 범위를, [체크리스트](03-plan-audit-completion-checklist.md)의 I1–I9가 미완료 gate를 소유한다. 초기 감사의 L1–L14 완료는 구현 완료가 아니다.
 
-Phase: RPI Main Loop. Loops used: 4/30. Acceptance: open. R-HMDA-01(HMDA 77 passed), R-REV-01(Review AI 159 passed), R-SCH-01(candidate/executor/evaluator 36 passed), R-TD-02(Runtime AI 35 passed와 isolated model mutation 검출)의 local 구현·검증 완료. Next: Airflow DAGRun 5개를 실행하고 최종 통합 검사·독립 리뷰를 진행한다. Detector 결정은 답변 대기. 근거는 [12](12-report-remediation-loops.md).
+Phase: Finalize. Loops used: 5/30. Acceptance: open. 네 단위의 수정·회귀 검증과 [독립 리뷰 clear](13-review-remediation-implementation.md)를 확보했다. Implementation revision은 `e49eee7352b0deab87f8c507f21606afc42e64c9`이며 이후 doc-only commit은 같은 source/test tree다. 전체 non-resource 926 passed / 2 skipped와 별도 실제 Airflow DAGRun 5 passed다. Next: detector threshold 0 질문의 답변을 확인하고 해당 계약·test·최소 수정을 진행한다. 답변 없이 그 동작을 바꾸지 않는다.
 
 ## Evidence And Decisions
 
@@ -23,7 +23,7 @@ Phase: RPI Main Loop. Loops used: 4/30. Acceptance: open. R-HMDA-01(HMDA 77 pass
 - 수정 순서와 oracle은 [11](11-plan-remediation-execution.md), 실제 loop 결과는 [12](12-report-remediation-loops.md)에 기록한다.
 - Detector threshold 0의 의미는 사용자에게 비동기로 질문했다. 답변 전 해당 동작을 변경하지 않는다. 다른 세 major defect와 SDK test 보강은 독립적으로 진행 가능하다.
 - 기존 Python 3.13 venv의 DuckDB 1.5.5와 pytest 9.1.1 import를 확인했다. Interpreter가 기본 sandbox 밖이라 실행은 승인된 환경 접근이 필요했다. 설치를 새로 하지 않았다.
-- 정상 runner의 Airflow 5개 DAGRun tests는 재검증 전이다. 환경 제한이 해소됐다고 가정하지 않는다.
+- 정상 host proc/filesystem에서 실제 Airflow DAGRun 5개는 104.00s에 모두 통과했다. Production task/psutil monkeypatch를 사용하지 않았다. [08](08-report-cloud-validation.md)의 실패는 과거 실행 환경 기록이다.
 - 작업 전 untracked `.private/`는 현재 변경과 무관하므로 포함하지 않는다.
 
 ## Resume

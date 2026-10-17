@@ -8,7 +8,7 @@ description: PR 252 결함 수정 루프의 실행 근거, 검토 결과와 다�
 
 ## Current State
 
-Phase: RPI Main Loop. Loops used: 4/30. Acceptance: open. Next: Airflow runtime validation; detector contract answer pending.
+Phase: Finalize. Loops used: 5/30. Acceptance: open. Candidate exit: BLOCKED on detector 0 contract choice. Bounded finishing work: preserve/publish reviewed checkpoints and current PR description.
 
 Starting revision과 scope는 [11](11-plan-remediation-execution.md), 실행할 항목은 [03](03-plan-audit-completion-checklist.md)을 따른다. 아래 실행은 실제 수행 후 결과와 검토 근거를 기록한다. 과거 [08](08-report-cloud-validation.md)의 수치를 이번 실행으로 표현하지 않는다.
 
@@ -46,3 +46,23 @@ Starting revision과 scope는 [11](11-plan-remediation-execution.md), 실행할 
 - Negative control: 임시 directory에 src·Runtime AI tests·pyproject를 복사하고 해당 provider의 `model=request.model`만 `model="audit-wrong-model"`로 바꿨다. Autouse fixture로 실제 provider import가 복사본인지 검증했다. 새 SDK payload test 1 failed / 나머지 34 passed; assertion에 잘못된 model이 표시됐다. 원본에는 mutation을 적용하지 않았다.
 - Experiment limits: 처음 격리 시도들은 pytest config의 원본 `pythonpath` 때문에 import guard에서 35 errors였다. 이 결과를 검출 성공으로 계산하지 않았다. Config도 복사본에 고정하고 editable import hook을 제외한 interpreter에서 위 결과를 얻었다. 실제 외부 SDK 서버 호출은 없었다.
 - Review/Dispatch: I4 완료. Actual adapter response/error 경계를 검증하며 production request를 테스트 double로 재구현하지 않았다. 다음 Airflow 정상 환경 재검증.
+
+## Loop 5 — Integration Validation And Independent Review
+
+Tested implementation revision: `e49eee7352b0deab87f8c507f21606afc42e64c9`. 다음 결과는 동일 구현 tree에서 실행했다. 아래 doc-only 갱신은 source/test를 바꾸지 않는다.
+
+| Check | Result | Command / scope |
+| --- | --- | --- |
+| Full non-resource suite except separately run DAGRun | 926 passed / 2 skipped, 42.51s | `.venv/bin/python -m pytest --ignore=tests/orchestration/test_airflow_dagrun.py -q -ra -n 2` |
+| Actual Airflow DAGRun | 5 passed, 104.00s | `.venv/bin/python -m pytest tests/orchestration/test_airflow_dagrun.py -q -ra` |
+| Type check | Pass | `.venv/bin/python -m ty check` |
+| Ruff | Pass | changed 9 source/test files, `ruff check` |
+| Dependency boundaries | Pass | `.venv/bin/tach check`; negative-path/AST 회귀도 full suite에 포함 |
+| Wheel | Pass | `uv build --wheel --offline`; uv 0.12.5와 backend requires 범위의 경고가 있었으나 build 성공 |
+| Inbox metadata | Pass | native `scripts/validate_inbox_artifacts.py`, changed artifacts |
+
+Focused test는 full suite와 중복되므로 합산하지 않는다. 926개와 별도 DAGRun 5개는 중복되지 않는다. Skip은 zizmor cached audit 부족과 Windows npm/Node prerequisite 각 1건이며 domain assertion failure가 아니다. 외부 LLM/Langfuse live proof는 실행하지 않았다.
+
+Local `origin/main`의 추가 commit은 agent review workflow 이동 1건이며 runtime/source/tests 변경은 없다. 현 head 검증은 최신 main과의 prospective merge CI를 자동으로 대표하지 않는다.
+
+Review: [13](13-review-remediation-implementation.md)의 independent lead·quality·adversarial assessment는 네 구현 단위에 대해 clear다. 현재 acceptance gap은 detector 계약 선택이며 범위 밖 변경을 추측으로 구현하지 않는다. Dispatch: 넓은 추가 조사 없이 현재 blocker를 보존하고 Finalize에서 bounded delivery와 재개 상태를 검증한다. Loop count를 5로 증가시켰으며 Finalize는 새 loop로 계산하지 않는다.

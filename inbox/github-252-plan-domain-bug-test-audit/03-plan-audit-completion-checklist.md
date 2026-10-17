@@ -10,7 +10,7 @@ tags:
 
 # PR #252 Completion Checklist
 
-**Status: Audit evidence recorded; not merge-ready.** 187개 source/test/spec 정적 검토와 실행·재현을 진행했다. Airflow 통합 실행은 환경 오류로 검증되지 않았고 production 결함은 미해결이다. 현재 근거는 [Cloud validation](08-report-cloud-validation.md), [file inventory](05-report-file-inventory.md), [independent review](09-review-cloud-audit.md)가 소유한다. 아래 이전 loop는 당시 수행 이력이다.
+**Status: Remediation in progress; not_ready.** 세 major 결함 수정과 SDK 테스트 보강은 local 검증 및 [독립 리뷰 clear](13-review-remediation-implementation.md)를 확보했다. 926 passed / 2 skipped 및 별도 Airflow 5 passed다. Detector 계약 결정과 해당 구현·최종 gate는 남아 있다. 현행 실행 근거는 [12](12-report-remediation-loops.md), 이전 감사 근거는 [08](08-report-cloud-validation.md)·[09](09-review-cloud-audit.md)를 따른다.
 
 ## Completion Work Packages
 
@@ -40,9 +40,9 @@ tags:
 - [x] I3 — R-SCH-01: post-commit failure evidence, evaluator, safe replay 회귀. Candidate/executor/evaluator 36 passed; 최종 independent gate는 I8.
 - [x] I4 — R-TD-02: 실제 SDK adapter test와 negative-control 검출. 35 passed; 격리 model mapping mutation에서 1 failed / 34 passed.
 - [ ] I5 — R-DET-01: 계약 결정 기록 후 경계 회귀와 수정. 현재 사용자 답변 대기.
-- [ ] I6 — Airflow DAGRun 5개 정상 환경 재실행 및 environment/product 분류.
-- [ ] I7 — 최종 revision의 영향 범위/full suite 및 정적 검사.
-- [ ] I8 — 최종 구현 independent review-lead assessment와 finding 처리.
+- [x] I6 — Airflow DAGRun 5개 정상 환경 재실행: 5 passed, 104.00s. Production task/psutil monkeypatch 없음.
+- [x] I7 — 현 구현 revision `e49eee73`의 full suite 926 passed / 2 skipped와 별도 Airflow 5 passed, Ruff/ty/Tach/wheel 검증. Detector 또는 구현 변경 시 해당 evidence를 재평가한다.
+- [ ] I8 — 네 단위는 `e49eee73`에서 independent clear. Detector 구현 후 해당 변경의 검증·새 assessment까지 완료해야 전체 gate를 닫는다.
 - [ ] I9 — 현재 head와 evidence로 PR 설명·continuation을 갱신하고 원격 전달.
 
 ## Audit Inventory
