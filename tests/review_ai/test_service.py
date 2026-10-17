@@ -442,6 +442,49 @@ def test_schema_and_guard_failures_are_persisted_without_exposing_output(
             assert violation in record.validation.violations
 
 
+@pytest.mark.parametrize(
+    "content",
+    ["[" * 10_000 + "0" + "]" * 10_000, '{"n":' + "1" * 5_000 + "}"],
+    ids=["deep-json", "huge-integer"],
+)
+def test_json_parser_limits_are_typed_and_persisted(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    content: str,
+) -> None:
+    settings = _settings()
+    assert len(content.encode()) < settings.max_output_bytes
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content=content,
+            attempt_count=1,
+            latency_ms=5,
+            trace_id="parser-limit",
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    result = _call(
+        null_spike_review_material,
+        provider=provider,
+        evidence_store=store,
+        settings=settings,
+    )
+
+    assert provider.calls == 1
+    assert result.status == "validation_failed"
+    assert result.failure_code == "response_schema_invalid"
+    assert result.output is None
+    assert result.invocation_path is not None and result.invocation_path.exists()
+    record = store.delegate.load("inv-fixed")
+    assert record.status == "validation_failed"
+    assert record.attempt_count == 1
+    assert record.trace_id == "parser-limit"
+    assert record.parsed_output is None
+    assert record.validation is None
+    assert content not in result.invocation_path.read_text(encoding="utf-8")
+
+
 def test_unavailable_provider_is_typed_and_persisted(
     tmp_path: Path,
     null_spike_review_material: NullSpikeReviewMaterial,

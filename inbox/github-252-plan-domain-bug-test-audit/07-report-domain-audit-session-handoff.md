@@ -15,7 +15,7 @@ tags:
 
 Goal은 확인된 결함 수정과 테스트 검출력 보강·통합 검증까지다. 사용자는 이 branch에서 실행하고 세션이 끊겨도 재개할 수 있는 artifact를 요구했다. [실행 계획](11-plan-remediation-execution.md)이 현재 작업 범위를, [체크리스트](03-plan-audit-completion-checklist.md)의 I1–I9가 미완료 gate를 소유한다. 초기 감사의 L1–L14 완료는 구현 완료가 아니다.
 
-Phase: RPI Main Loop. Loops used: 1/30. Acceptance: open. R-HMDA-01은 이름 기반 insert로 수정했고 새 assertion RED → HMDA domain 77 passed를 확인했다. Next: R-REV-01의 deep JSON/huge integer failure를 public service에서 회귀 테스트한다. 근거는 [12](12-report-remediation-loops.md).
+Phase: RPI Main Loop. Loops used: 2/30. Acceptance: open. R-HMDA-01은 이름 기반 insert로 수정(HMDA domain 77 passed), R-REV-01은 parser resource-limit 오류를 typed failure와 invocation 저장으로 연결(Review AI domain 159 passed)했다. Next: R-SCH-01의 post-commit unlock failure와 evaluator evidence·동일 승인 replay 회귀를 작성한다. 근거는 [12](12-report-remediation-loops.md).
 
 ## Evidence And Decisions
 

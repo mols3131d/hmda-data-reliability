@@ -36,7 +36,7 @@ tags:
 실행 계획: [11 — Remediation execution](11-plan-remediation-execution.md). 실행·검토 근거: [12 — Loops](12-report-remediation-loops.md). 2026-10-17 사용자는 이 PR branch에서 수정과 검증을 진행하도록 요청했다.
 
 - [x] I1 — R-HMDA-01: exact-value regression RED/GREEN, unrelated partition 보존. HMDA domain 77 passed; 최종 independent gate는 I8.
-- [ ] I2 — R-REV-01: parser failure의 typed result와 persisted invocation RED/GREEN.
+- [x] I2 — R-REV-01: parser failure의 typed result와 persisted invocation RED/GREEN. Review AI domain 159 passed; 최종 independent gate는 I8.
 - [ ] I3 — R-SCH-01: post-commit failure evidence, evaluator, safe replay 회귀.
 - [ ] I4 — R-TD-02: 실제 SDK adapter test와 negative-control 검출.
 - [ ] I5 — R-DET-01: 계약 결정 기록 후 경계 회귀와 수정. 현재 사용자 답변 대기.
