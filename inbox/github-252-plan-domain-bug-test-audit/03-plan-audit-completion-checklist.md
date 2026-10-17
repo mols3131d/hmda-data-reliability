@@ -14,6 +14,8 @@ tags:
 
 ## Completion Work Packages
 
+아래 L1–L14는 감사 이력이며 구현 완료 항목이 아니다. 실제 수정 진행과 미완료 gate는 다음 Implementation Work Packages에서 추적한다.
+
 - [x] L1 — 고정 tree의 187개 source/test/spec inventory 확인.
 - [x] L2 — Reliability 전수 정적 감사; detector·schema recovery 결함과 기존 safeguard 대조.
 - [x] L3 — Data Operations 전수 정적 감사; quality gate, dbt lock, promotion/failure boundary.
@@ -29,7 +31,21 @@ tags:
 - [x] L13 — 두 specialist와 lead의 독립 감사/최종 문서 assessment 완료: clear (감사 기록 한정). 실행 blocker는 별도 유지.
 - [x] L14 — 187 reviewed / excluded 0 확인; 최종 readiness는 not_ready. Airflow 정상 runner 재실행 및 후속 결함 처리 필요. Ready 전환·merge는 별도 승인.
 
-## Inventory Snapshot
+## Implementation Work Packages
+
+실행 계획: [11 — Remediation execution](11-plan-remediation-execution.md). 실행·검토 근거: [12 — Loops](12-report-remediation-loops.md). 2026-10-17 사용자는 이 PR branch에서 수정과 검증을 진행하도록 요청했다.
+
+- [ ] I1 — R-HMDA-01: exact-value regression RED/GREEN, unrelated partition 보존.
+- [ ] I2 — R-REV-01: parser failure의 typed result와 persisted invocation RED/GREEN.
+- [ ] I3 — R-SCH-01: post-commit failure evidence, evaluator, safe replay 회귀.
+- [ ] I4 — R-TD-02: 실제 SDK adapter test와 negative-control 검출.
+- [ ] I5 — R-DET-01: 계약 결정 기록 후 경계 회귀와 수정. 현재 사용자 답변 대기.
+- [ ] I6 — Airflow DAGRun 5개 정상 환경 재실행 및 environment/product 분류.
+- [ ] I7 — 최종 revision의 영향 범위/full suite 및 정적 검사.
+- [ ] I8 — 최종 구현 independent review-lead assessment와 finding 처리.
+- [ ] I9 — 현재 head와 evidence로 PR 설명·continuation을 갱신하고 원격 전달.
+
+## Audit Inventory
 
 Untruncated Git tree에서 직접 추출한 Python 파일 수. `__init__.py`와 conftest도 포함한다. `tests/dbt` 1개는 Data Platform에 포함한다.
 

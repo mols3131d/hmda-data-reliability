@@ -12,7 +12,7 @@ tags:
 
 기존 도메인의 실제 결함과 테스트 설계의 빈틈을 함께 조사한다. 정상 동작을 보호하는 테스트가 잘못된 구현에도 통과하는지 확인하고, 재현된 결함과 검증 공백을 근거에 따라 수정한다.
 
-이 Draft PR은 검토 계획, [완료 투두리스트](03-plan-audit-completion-checklist.md), [일곱 도메인 위험 경계 첫 정적 감사](04-report-seven-domain-risk-first-pass.md), [187개 파일 인벤토리](05-report-file-inventory.md)를 함께 보유한다. 전체 파일별 의미론 검토, pytest, 결함 재현, 독립 리뷰는 아직 완료하지 않았다. 아래 위험은 조사 질문이며 확인된 버그가 아니다.
+현재 187개 파일의 정적 감사와 결함 재현 근거는 [08](08-report-cloud-validation.md)·[09](09-review-cloud-audit.md)에 있다. 2026-10-17부터 실제 수정·회귀 검증은 [실행 계획](11-plan-remediation-execution.md)과 [완료 체크리스트](03-plan-audit-completion-checklist.md)의 Implementation Work Packages로 이어간다. 아래 초기 감사 계획의 체크박스는 당시 이력이다.
 
 ## State And Ownership
 
