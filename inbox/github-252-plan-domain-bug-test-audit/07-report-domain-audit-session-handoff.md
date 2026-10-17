@@ -19,11 +19,12 @@ Phase: Finalize completed. Gate: BLOCKED on detector contract choice. Loops used
 
 ## Evidence And Decisions
 
+- 최신 남은 작업 조사: [14](14-research-remaining-work.md). 조사 기준 head `69cc4002`의 CI run `39018118751`은 success이며 dependency/build/Python/test step이 실제 통과했다. 남은 구현은 detector 계약 선택과 해당 회귀 수정·independent gate다. `0` 허용 + 양의 악화만 탐지를 권장하지만 아직 결정하지 않았다.
 - 감사 source baseline은 `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9`. [08](08-report-cloud-validation.md)과 [09](09-review-cloud-audit.md)의 과거 runtime/static 근거를 이번 실행 결과로 표현하지 않는다.
 - 수정 순서와 oracle은 [11](11-plan-remediation-execution.md), 실제 loop 결과는 [12](12-report-remediation-loops.md)에 기록한다.
 - Detector threshold 0의 의미는 사용자에게 비동기로 질문했다. 답변 전 해당 동작을 변경하지 않는다. 다른 세 major defect와 SDK test 보강은 독립적으로 진행 가능하다.
 - 기존 Python 3.13 venv의 DuckDB 1.5.5와 pytest 9.1.1 import를 확인했다. Interpreter가 기본 sandbox 밖이라 실행은 승인된 환경 접근이 필요했다. 설치를 새로 하지 않았다.
-- 첫 push의 native pre-push affected tests는 140 passed / 65 deselected였으며 Python check·format도 통과했다. 이 수는 전체 suite에 중복되므로 합산하지 않는다. 최신 remote CI는 PR checks에서 다시 확인한다.
+- 첫 push의 native pre-push affected tests는 140 passed / 65 deselected였으며 Python check·format도 통과했다. 이 수는 전체 suite에 중복되므로 합산하지 않는다. 위 CI 성공은 `69cc4002`에 고정된 근거이며 이후 head의 최신 checks는 다시 확인한다.
 - 정상 host proc/filesystem에서 실제 Airflow DAGRun 5개는 104.00s에 모두 통과했다. Production task/psutil monkeypatch를 사용하지 않았다. [08](08-report-cloud-validation.md)의 실패는 과거 실행 환경 기록이다.
 - 작업 전 untracked `.private/`는 현재 변경과 무관하므로 포함하지 않는다.
 

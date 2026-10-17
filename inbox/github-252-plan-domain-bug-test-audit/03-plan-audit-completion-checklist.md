@@ -33,6 +33,8 @@ tags:
 
 ## Implementation Work Packages
 
+최신 [남은 작업 조사](14-research-remaining-work.md)에서 head `69cc4002`의 prospective-merge CI 성공도 확인했다. 현재 미완료는 I5와 그 변경의 I8이며 완료 항목을 미수행으로 되돌리지 않는다.
+
 실행 계획: [11 — Remediation execution](11-plan-remediation-execution.md). 실행·검토 근거: [12 — Loops](12-report-remediation-loops.md). 2026-10-17 사용자는 이 PR branch에서 수정과 검증을 진행하도록 요청했다.
 
 - [x] I1 — R-HMDA-01: exact-value regression RED/GREEN, unrelated partition 보존. HMDA domain 77 passed; 최종 independent gate는 I8.
