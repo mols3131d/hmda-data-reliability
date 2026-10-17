@@ -17,7 +17,7 @@ Goal은 결정론적 계약의 결함 수정과 테스트 검출력 보강·통�
 
 현재 작업은 PR 전체 완료 조건 정리다. Acceptance: open / not_ready. 구현 loop는 5/30이며 이번 문서 정리를 추가 구현 loop로 세지 않는다. 네 단위의 수정·회귀 검증과 [독립 리뷰 clear](13-review-remediation-implementation.md)를 확보했다. Implementation revision은 `e49eee7352b0deab87f8c507f21606afc42e64c9`이며 조사 대상 원격 head `26068fa5e159e4035e2c6f6a2e07ddc9c935c8cc`까지 source/test/spec 및 dependency 파일 차이가 없다. 기존 전체 non-resource 926 passed / 2 skipped와 별도 실제 Airflow DAGRun 5 passed를 이번 정리에서 재실행하지 않았다.
 
-Next: [체크리스트의 C1–C6](03-plan-audit-completion-checklist.md#remaining-completion-path)에서 C1의 규칙별 판정표와 사용처 대조부터 진행한다. 사용자는 `0` 처리에 사례별 차이가 필요하다고 지적했다. 초기 허용/거부 질문에 대한 선택은 여전히 미확정이지만, 판정표 조사는 그 답변 없이 진행할 수 있다. 해당 계약이 정해지기 전 제품 동작을 바꾸지 않는다.
+사용자는 PR 완료까지의 실행을 명시적으로 위임했다. [규칙별 사례와 기술적 결정](17-report-detector-contract-cases.md)을 기록했고, [reliability-detection-positive-degradation](../../openspec/changes/reliability-detection-positive-degradation/) Change로 남은 구현을 진행한다. 기존 입력을 유지하며 volume/null의 실제 양의 악화 조건만 보완하고, 양수 equality와 freshness/schema는 보존한다. Next: schema planning을 완료한 뒤 회귀 RED → 최소 수정 → 검증 → 독립 리뷰 → 최종 CI와 전달을 수행한다. 기존 5/30 loop counter를 이어가며 비결정적 품질 평가는 계속 제외한다.
 
 ## Evidence And Decisions
 
