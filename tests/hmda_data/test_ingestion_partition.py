@@ -58,6 +58,38 @@ def test_load_hmda_loans_partition_is_idempotent(
     assert row == (2,)
 
 
+def test_partition_reload_preserves_values_after_source_columns_are_reordered(
+    hmda_csv_path: Path,
+    hmda_parquet_path: Path,
+) -> None:
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        load_hmda_loans_partition(connection, [hmda_parquet_path], 2024)
+        other_partition = connection.execute(
+            "SELECT * FROM raw.hmda_loans WHERE source_year = 2024"
+        ).fetchall()
+        hmda_csv_path.write_text(
+            "activity_year,loan_purpose,action_taken,income,loan_amount,"
+            "state_code,county_code\n"
+            "2025,1,1,120,350000,CA,06001\n"
+            "2025,31,3,95,420000,NY,36061\n",
+            encoding="utf-8",
+        )
+
+        assert load_hmda_loans_partition(connection, [hmda_csv_path], 2025) == 2
+
+        assert connection.execute(
+            "SELECT loan_amount, income FROM raw.hmda_loans "
+            "WHERE source_year = 2025 ORDER BY loan_amount"
+        ).fetchall() == [(350000, 120), (420000, 95)]
+        assert (
+            connection.execute(
+                "SELECT * FROM raw.hmda_loans WHERE source_year = 2024"
+            ).fetchall()
+            == other_partition
+        )
+
+
 def test_partition_content_identity_tracks_logical_row_multiset(
     hmda_csv_path: Path,
 ) -> None:

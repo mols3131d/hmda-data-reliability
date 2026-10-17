@@ -1,8 +1,8 @@
-"""기본 incident detector 테스트."""
+"""기본 탐지 계약과 실제 양의 악화·독립 규칙의 threshold 경계를 검증한다."""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -172,6 +172,209 @@ def test_detection_request_rejects_different_partitions() -> None:
 
     with pytest.raises(ValueError, match="partition"):
         DetectionRequest(baseline=baseline, current=current)
+
+
+@pytest.mark.parametrize(
+    ("row_count", "null_rate", "expected_types"),
+    [
+        (100, 0.125, []),
+        (99, 0.125, ["volume_drop"]),
+        (100, 0.25, ["null_spike"]),
+        (99, 0.25, ["volume_drop", "null_spike"]),
+        (101, 0.0, []),
+        (100, 0.0, []),
+        (101, 0.125, []),
+    ],
+    ids=[
+        "unchanged",
+        "volume-only",
+        "null-only",
+        "both",
+        "both-improve",
+        "null-improves",
+        "volume-improves",
+    ],
+)
+def test_zero_thresholds_detect_only_positive_degradation(
+    row_count: int,
+    null_rate: float,
+    expected_types: list[str],
+) -> None:
+    baseline = _snapshot(row_count=100, null_rates={"loan_amount": 0.125})
+    current = _snapshot(row_count=row_count, null_rates={"loan_amount": null_rate})
+
+    results = detect_basic_incidents(
+        DetectionRequest(
+            baseline=baseline,
+            current=current,
+            thresholds=DetectionThresholds(volume_drop_ratio=0, null_spike_delta=0),
+        )
+    )
+
+    assert [result.incident.incident_type for result in results] == expected_types
+    for result in results:
+        assert result.evidence.payload["threshold"] == 0
+        assert result.incident.evidence_refs == [result.evidence.evidence_id]
+        if result.incident.incident_type == "volume_drop":
+            assert result.evidence.payload["baseline_row_count"] == 100
+            assert result.evidence.payload["current_row_count"] == 99
+            assert result.evidence.payload["drop_ratio"] == 0.01
+        else:
+            assert result.evidence.payload["column"] == "loan_amount"
+            assert result.evidence.payload["baseline_null_rate"] == 0.125
+            assert result.evidence.payload["current_null_rate"] == 0.25
+            assert result.evidence.payload["delta"] == 0.125
+
+
+@pytest.mark.parametrize(
+    ("row_count", "null_rate", "expected_type", "metric", "expected_value"),
+    [
+        (50, 0.125, "volume_drop", "drop_ratio", 0.5),
+        (100, 0.25, "null_spike", "delta", 0.125),
+    ],
+)
+def test_positive_threshold_equality_remains_inclusive(
+    row_count: int,
+    null_rate: float,
+    expected_type: str,
+    metric: str,
+    expected_value: float,
+) -> None:
+    results = detect_basic_incidents(
+        DetectionRequest(
+            baseline=_snapshot(row_count=100, null_rates={"loan_amount": 0.125}),
+            current=_snapshot(
+                row_count=row_count, null_rates={"loan_amount": null_rate}
+            ),
+            thresholds=DetectionThresholds(
+                volume_drop_ratio=0.5, null_spike_delta=0.125
+            ),
+        )
+    )
+
+    assert [result.incident.incident_type for result in results] == [expected_type]
+    assert results[0].evidence.payload[metric] == expected_value
+    assert results[0].evidence.payload["threshold"] == expected_value
+
+
+@pytest.mark.parametrize(
+    ("row_count", "null_rate", "expected_types"),
+    [(0, 0.125, []), (1, 0.125, []), (1, 0.25, ["null_spike"])],
+)
+def test_zero_row_baseline_skips_only_volume_comparison(
+    row_count: int,
+    null_rate: float,
+    expected_types: list[str],
+) -> None:
+    results = detect_basic_incidents(
+        DetectionRequest(
+            baseline=_snapshot(row_count=0, null_rates={"loan_amount": 0.125}),
+            current=_snapshot(
+                row_count=row_count, null_rates={"loan_amount": null_rate}
+            ),
+            thresholds=DetectionThresholds(volume_drop_ratio=0, null_spike_delta=0),
+        )
+    )
+
+    assert [result.incident.incident_type for result in results] == expected_types
+
+
+@pytest.mark.parametrize(
+    ("age_minutes", "max_age", "schema_hash", "freshness_status", "expected_types"),
+    [
+        (
+            0,
+            0,
+            "sha256:stable",
+            FreshnessMeasurementStatus.MEASURED,
+            ["freshness_delay"],
+        ),
+        (
+            60,
+            60,
+            "sha256:stable",
+            FreshnessMeasurementStatus.MEASURED,
+            ["freshness_delay"],
+        ),
+        (
+            30,
+            60,
+            "sha256:changed",
+            FreshnessMeasurementStatus.MEASURED,
+            ["schema_drift"],
+        ),
+        (0, 0, "sha256:stable", FreshnessMeasurementStatus.UNAVAILABLE, []),
+        (
+            60,
+            60,
+            "sha256:changed",
+            FreshnessMeasurementStatus.MEASURED,
+            ["schema_drift", "freshness_delay"],
+        ),
+    ],
+    ids=[
+        "zero-age-equality",
+        "unchanged-stale-time",
+        "schema",
+        "unavailable",
+        "schema-and-freshness",
+    ],
+)
+def test_zero_thresholds_preserve_independent_rules(
+    age_minutes: int,
+    max_age: int,
+    schema_hash: str,
+    freshness_status: FreshnessMeasurementStatus,
+    expected_types: list[str],
+) -> None:
+    observed_at = datetime(2026, 6, 10, tzinfo=UTC)
+    freshness_at = observed_at - timedelta(minutes=age_minutes)
+    baseline = _snapshot(
+        row_count=100, observed_at=observed_at, freshness_at=freshness_at
+    )
+    current = _snapshot(
+        row_count=100,
+        schema_hash=schema_hash,
+        observed_at=observed_at,
+        freshness_at=freshness_at,
+        freshness_status=freshness_status,
+    )
+
+    results = detect_basic_incidents(
+        DetectionRequest(
+            baseline=baseline,
+            current=current,
+            thresholds=DetectionThresholds(
+                volume_drop_ratio=0,
+                null_spike_delta=0,
+                freshness_max_age_minutes=max_age,
+            ),
+        )
+    )
+
+    assert [result.incident.incident_type for result in results] == expected_types
+    for result in results:
+        if result.incident.incident_type == "freshness_delay":
+            assert result.evidence.payload["freshness_age_minutes"] == age_minutes
+            assert result.evidence.payload["max_age_minutes"] == max_age
+
+
+def test_zero_null_threshold_applies_to_each_column_independently() -> None:
+    results = detect_basic_incidents(
+        DetectionRequest(
+            baseline=_snapshot(
+                row_count=100, null_rates={"income": 0.125, "loan_amount": 0.125}
+            ),
+            current=_snapshot(
+                row_count=100, null_rates={"income": 0.125, "loan_amount": 0.25}
+            ),
+            thresholds=DetectionThresholds(volume_drop_ratio=0, null_spike_delta=0),
+        )
+    )
+
+    assert [result.incident.incident_type for result in results] == ["null_spike"]
+    assert results[0].evidence.payload["column"] == "loan_amount"
+    assert results[0].evidence.payload["delta"] == 0.125
 
 
 def _snapshot(

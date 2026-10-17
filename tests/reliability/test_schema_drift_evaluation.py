@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import fcntl
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 import duckdb
 import pytest
@@ -377,6 +378,50 @@ def test_schema_drift_evaluation_maps_stale_target_before_mutation(
         "current_state" in evidence
         for evidence in result.post_recovery_case.evidence_refs
     )
+
+
+@pytest.mark.integration
+def test_schema_drift_evaluation_records_committed_state_after_unlock_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    evaluate, _ = _evaluation_api()
+    workspace = tmp_path / "run"
+    source_paths = _write_complete_sources(tmp_path)
+    request = _request(tmp_path, workspace=workspace)
+    original_flock = fcntl.flock
+
+    def fail_target_unlock(file: TextIO, operation: int) -> None:
+        if operation == fcntl.LOCK_UN and Path(file.name).name == (
+            f".{request.database_path.name}.mutation.lock"
+        ):
+            raise OSError("injected target unlock failure")
+        original_flock(file, operation)
+
+    def approve(proposal: SchemaRecoveryProposal) -> SchemaRecoveryApproval:
+        monkeypatch.setattr(fcntl, "flock", fail_target_unlock)
+        return _approved(proposal)
+
+    result = evaluate(
+        request=request,
+        source_paths=source_paths,
+        workspace=workspace,
+        approve=approve,
+        validate_candidate=lambda candidate_request: _dbt_result(
+            tmp_path, candidate_request
+        ),
+        validate_target=lambda _: pytest.fail("cleanup failure must stop validation"),
+    )
+
+    assert result.recovery is None
+    assert result.post_recovery_case.failure_stage == "after_target_mutation"
+    assert result.post_recovery_case.target_mutated is True
+    assert result.post_recovery_case.reconciliation_action == "resume_verification"
+    with DuckDBConnectionManager(request.database_path, read_only=True) as connection:
+        actual = reliability.create_table_state_identity(
+            connection, request.raw_table_name
+        )
+    assert actual == result.expected_after_state
 
 
 @pytest.mark.integration

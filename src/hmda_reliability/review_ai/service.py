@@ -307,7 +307,7 @@ def _parse_output(content: str) -> AgenticReviewOutput | None:
     try:
         payload = json.loads(content)
         return AgenticReviewOutput.model_validate(payload)
-    except (json.JSONDecodeError, TypeError, ValidationError):
+    except (ValueError, TypeError, RecursionError):
         return None
 
 

@@ -4,7 +4,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class DetectionThresholds(BaseModel):
-    """기본 profile comparison threshold."""
+    """Volume/null은 양의 악화 기준이며 0은 어떤 양의 악화도 탐지한다.
+
+    Freshness는 current의 절대 age가 최대 허용 나이 이상인지 판정한다.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
