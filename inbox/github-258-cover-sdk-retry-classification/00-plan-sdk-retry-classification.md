@@ -39,9 +39,9 @@ tags:
 - [x] PR #252 병합과 최신 main baseline을 확인하고 별도 branch를 생성한다.
 - [x] 기존 SDK 오류 테스트를 확장하고 일시 오류 후 성공 회귀를 추가한다.
 - [x] Runtime AI suite, 변경 파일 Ruff/format·type 검사와 격리 negative control을 통과한다.
-- [ ] 정확한 구현 상태의 독립 review-lead assessment를 확보한다.
-- [ ] 실행·검토 근거를 보존하고 branch를 푸시해 신규 Draft PR을 연다.
+- [x] 정확한 구현 상태의 독립 review-lead assessment를 확보한다.
+- [x] 실행·검토 근거를 보존하고 branch를 푸시해 신규 Draft PR을 연다.
 
 ## Resume
 
-구현과 로컬 검증을 마쳤고 [실행 근거](01-report-sdk-retry-validation.md)를 기록했다. 다음은 정확한 commit의 독립 review-lead와 Draft PR 전달이다. Untracked 사용자 파일과 PR #252의 로컬 후속 검토 보고서는 포함하거나 되돌리지 않는다. PR을 생성하면 이 directory를 해당 번호의 GitHub work unit으로 전환하고 같은 artifact를 이어 쓴다.
+구현 `eb71f46e23a532d66c1a5ff8ce85c1af03965c03`의 로컬 검증과 [독립 리뷰](02-review-sdk-retry-implementation.md)를 마쳤고 [Draft PR #258](https://github.com/mols3131d/hmda-data-reliability/pull/258)을 생성했다. 이 PR이 branch와 현재 GitHub work unit을 소유한다. [실행 근거](01-report-sdk-retry-validation.md)와 같은 테스트 blob을 유지하며 최종 문서 head의 CI는 PR 본문과 checks에서 확인한다. 이후 재개 시 source/test 동일성·현재 main·새로운 feedback을 확인한다. Untracked 사용자 파일과 PR #252의 로컬 후속 검토 보고서는 포함하거나 되돌리지 않는다. 신규 PR의 Ready 전환·승인·병합은 별도 사용자 결정으로 남긴다.

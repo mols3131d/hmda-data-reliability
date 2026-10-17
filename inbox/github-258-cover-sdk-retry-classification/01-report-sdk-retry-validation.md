@@ -42,6 +42,10 @@ Tach plugin은 unaffected 경고를 표시했지만 이 실행은 `--tach`를 �
 
 이 결과는 지정한 세 가지 오류 분류 변형의 검출 근거다. 임의의 모든 잘못된 구현을 검출한다는 점수나 증명으로 확대하지 않는다.
 
-## Next Gate
+## Review And Delivery
 
-로컬 구현·검증은 완료했다. 정확한 commit의 독립 implementation review와 Draft PR 전달·현재 base/head의 CI는 다음 단계이며, 완료 전 통과로 표현하지 않는다. 사람의 승인·merge와 승인 정책 변경은 이 후속 PR의 준비 범위에 포함하지 않는다.
+최종 테스트 구현은 `eb71f46e23a532d66c1a5ff8ce85c1af03965c03`이며 [독립 review-lead](02-review-sdk-retry-implementation.md)의 assessment는 clear다. 두 specialist가 정적 검토를 완료했고 raw caller log를 대조했으며, 자체 pytest 재실행과 구분했다.
+
+[Draft PR #258](https://github.com/mols3131d/hmda-data-reliability/pull/258)을 생성했고 구현 head의 [CI Lite 39032342173](https://github.com/mols3131d/hmda-data-reliability/actions/runs/39032342173)이 success였다. Job `117395184304`의 Python·selected tests step이 실제 실행됐다. 이 테스트 전용 PR은 Runtime AI suite만 선택하며 source·build·boundary 등 불필요한 step은 scope상 생략한다. 후속 문서 head는 테스트 blob 동일성을 확인하고 최신 CI를 별도로 PR 본문과 checks에 남긴다.
+
+신규 브랜치의 native pre-push도 affected 16 passed와 OpenSpec 21 passed, lint/format을 통과했다. 수치가 겹치는 실행을 합산하지 않는다. 사람의 승인·merge와 승인 정책 변경은 이 후속 PR의 준비 범위에 포함하지 않는다.
