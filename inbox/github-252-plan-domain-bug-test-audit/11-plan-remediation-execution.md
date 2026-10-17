@@ -20,7 +20,7 @@ tags:
 - 기존 active OpenSpec change 두 개는 evaluation refactor와 optional projection을 소유한다. 해당 목적을 다시 구현하지 않으며 기존 canonical contract의 결함을 좁게 수정한다. 새 계약 결정이 필요한 detector는 결정 전 수정하지 않는다.
 - 외부 provider/Langfuse live 호출은 포함하지 않는다. 기존 local evidence와 optional live proof를 혼동하지 않는다.
 
-## Prepare
+## Initial Preparation
 
 Readiness: READY WITH LIMITS. 기존 Python 3.13 venv에 DuckDB 1.5.5, pytest 9.1.1이 준비돼 있다. Interpreter가 기본 sandbox 밖에 있어 실행 시 승인된 환경 접근을 사용한다. Airflow의 정상 runner 여부는 아직 검증하지 않았다.
 
@@ -37,7 +37,7 @@ Run: standard intensity, max_loops=30, loops_used=0. Main Loop는 Research → P
 | 5 | R-DET-01 / Reliability detection | 0의 계약 결정 후 최소 수정 | 선택된 계약에 따른 unchanged/positive degradation/threshold equality 검증; R-DET-02는 별도 Note 유지 |
 | 6 | Orchestration | 정상 proc/filesystem 환경에서 DAGRun 5개 재실행 | ordering, failure blocking, promotion/asset evidence; 실패하면 environment와 production 분류 |
 
-Detector `0` 허용 + 양의 악화만 탐지와 `0` 거부 중 사용자 선택을 처음 비동기로 요청했다. 이후 사용자가 사례별 차이를 지적했으므로, [03의 C1–C2](03-plan-audit-completion-checklist.md#remaining-completion-path)에 따라 규칙별 판정표와 현재 사용처를 먼저 대조한다. 상대적 악화, 고정 정상 기준과 절대 상태를 구분하고 결정 근거를 남긴다. 판정표 조사는 기존 질문의 답변 없이 진행할 수 있으며 계약이 정해지기 전 동작을 바꾸지 않는다. 다른 네 수정 단위와 Airflow 검증의 완료 근거는 03/12/13을 따른다.
+Detector의 초기 허용/거부 질문 이후 사용자가 사례별 검토와 전체 완료를 위임했다. [17](17-report-detector-contract-cases.md)에서 규칙별 계약을 확정했고 [18](18-report-detector-implementation-validation.md)의 test-first·전체 검증 및 [19](19-review-detector-completion.md)의 독립 리뷰로 남은 구현을 완료했다. 현재 진행·완료 상태는 [03](03-plan-audit-completion-checklist.md)을 따른다.
 
 각 단위는 기존 test area에 독립 oracle을 추가해 RED를 확인하고 production의 최소 변경 후 GREEN을 확인한다. 최소 focused test 다음 관련 suite를 실행한다. 최종에는 full non-resource suite, Ruff/format, type/Tach와 실제 변경에 해당하는 repository checks를 수행한다. 환경 실패는 제품 성공으로 바꾸지 않는다.
 

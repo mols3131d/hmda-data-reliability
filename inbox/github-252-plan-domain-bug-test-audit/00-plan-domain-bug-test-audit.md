@@ -30,13 +30,13 @@ tags:
 
 | Field | Value |
 | --- | --- |
-| Status | Remediation In Progress |
+| Status | Complete |
 | Snapshot Date | 2026-10-17 Asia/Seoul |
 | Owning Branch | `agent/docs/plan-domain-bug-test-audit` |
 | Audit Baseline | `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9` (`main`) |
 | Scope | Deterministic contracts across HMDA Data, Data Platform, Data Operations, Reliability, Review AI, Runtime AI, Orchestration |
-| Current Evidence | [완료된 정적 감사](09-review-cloud-audit.md), [실제 수정·회귀 검증](12-report-remediation-loops.md) |
-| Not Verified | detector 0의 규칙별 계약 결정과 필요한 수정 및 해당 revision의 최종 validation·independent assessment; 현재 근거는 [체크리스트](03-plan-audit-completion-checklist.md) 참조 |
+| Current Evidence | [완료 체크리스트](03-plan-audit-completion-checklist.md), [최종 검증](18-report-detector-implementation-validation.md), [독립 리뷰](19-review-detector-completion.md) |
+| Completion Scope | Deterministic implementation and validation; human lifecycle decisions remain separate |
 
 초기 계획 baseline은 `5532dca2fd93696d40ba870471fa2359c5662335`(2026-10-01)이었다. 2026-10-14 `main` 동기화 뒤 현재 full SHA로 감사 기준을 갱신했으며, 이전에 미병합 상태였던 변경도 최신 `main`에 포함된 범위에서 검토한다. Base 또는 관련 코드가 바뀌면 영향받는 검토와 실행 근거를 다시 확인한다.
 
