@@ -1,7 +1,7 @@
 ---
 type: plan
 title: Domain Audit Remediation Execution
-description: PR 252의 확인된 결함 수정, 회귀 검증과 세션 간 재개를 위한 실행 계획입니다.
+description: PR 252의 결정론적 결함 수정·회귀 검증과 재개를 위한 실행 계획이며 AI 리뷰의 비결정적 품질 평가를 제외합니다.
 tags:
   - reliability
   - testing
@@ -15,7 +15,8 @@ tags:
 
 - Owning ref: `agent/docs/plan-domain-bug-test-audit`.
 - Starting head: `5e313244f05d5bcd2967f55cc6904039eafba6af`; audit source baseline: `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9`.
-- 이번 작업은 확인된 다섯 finding과 Airflow 검증에 한정한다. 사용자 지정 branch에서 finding별 독립 commit으로 진행한다. 새 기능, AI 위임 권한, unrelated cleanup과 의존성 변경은 포함하지 않는다.
+- 사용자는 결정론적인 부분만 이 PR에서 수행하도록 확정했다. [범위 결정](00-plan-domain-bug-test-audit.md#deterministic-scope)에 따라 실제 AI 리뷰의 품질·유용성·rubric 적절성 평가를 작업 및 완료 조건에서 제외한다. 기존 평가 코드의 고정 계산·직렬화·근거 결합과 parser/SDK 회귀는 결정론적 계약으로 유지한다.
+- 이번 작업은 확인된 다섯 finding의 결정론적 계약과 Airflow 검증에 한정한다. 사용자 지정 branch에서 finding별 독립 commit으로 진행한다. 새 기능, AI 위임 권한, unrelated cleanup과 의존성 변경은 포함하지 않는다.
 - 기존 active OpenSpec change 두 개는 evaluation refactor와 optional projection을 소유한다. 해당 목적을 다시 구현하지 않으며 기존 canonical contract의 결함을 좁게 수정한다. 새 계약 결정이 필요한 detector는 결정 전 수정하지 않는다.
 - 외부 provider/Langfuse live 호출은 포함하지 않는다. 기존 local evidence와 optional live proof를 혼동하지 않는다.
 
@@ -42,6 +43,6 @@ Detector `0` 허용 + 양의 악화만 탐지와 `0` 거부 중 사용자 선택
 
 ## Completion And Resume
 
-다섯 finding별 구현·회귀 검증과 최종 통합/독립 리뷰가 완료되거나, 사용자에게 미해결 decision/evidence를 명확히 전달해야 한다. 단순 owner 기록으로 구현 완료를 선언하지 않는다. 기존 approval/Ready/merge 권한은 사람에게 남긴다.
+다섯 finding별 결정론적 구현·회귀 검증과 최종 통합/독립 코드 리뷰가 완료되거나, 사용자에게 미해결 decision/evidence를 명확히 전달해야 한다. 단순 owner 기록으로 구현 완료를 선언하지 않는다. 실제 모델 리뷰의 유용성 입증은 이 PR의 완료 gate가 아니다. 기존 approval/Ready/merge 권한은 사람에게 남긴다.
 
 현재 열린 작업은 [03](03-plan-audit-completion-checklist.md), loop 근거는 [12](12-report-remediation-loops.md), 정확한 재개 지점은 [07](07-report-domain-audit-session-handoff.md)이 소유한다. Material state 변화마다 이 문서를 재생성하지 않고 해당 owner를 갱신한다. Artifacts와 코드는 논리적 checkpoint commit으로 보존하며 원격 전달은 같은 PR branch에서 수행한다.

@@ -1,18 +1,30 @@
 ---
 type: plan
-title: Domain Bug And Test Design Audit
-description: 기존 일곱 도메인의 버그 탐색과 테스트 설계·검출력 검토를 위한 범위, 증거 기준과 실행 계획입니다.
+title: Deterministic Domain Bug And Test Design Audit
+description: 기존 일곱 도메인의 결정론적 결함과 테스트 검출력만 다루며, AI 리뷰의 비결정적 품질 평가를 제외하는 감사 범위와 근거 기준입니다.
 tags:
   - reliability
   - testing
   - review
 ---
 
-# Domain Bug And Test Design Audit
+# Deterministic Domain Bug And Test Design Audit
 
-기존 도메인의 실제 결함과 테스트 설계의 빈틈을 함께 조사한다. 정상 동작을 보호하는 테스트가 잘못된 구현에도 통과하는지 확인하고, 재현된 결함과 검증 공백을 근거에 따라 수정한다.
+기존 도메인의 결정론적 결함과 테스트 설계의 빈틈을 함께 조사한다. 고정된 입력과 실행 조건에서 계약으로 기대 결과를 정할 수 있는 동작을 대상으로, 잘못된 구현도 테스트를 통과하는지 확인하고 재현된 결함과 검증 공백을 수정한다.
 
 현재 187개 파일의 정적 감사와 결함 재현 근거는 [08](08-report-cloud-validation.md)·[09](09-review-cloud-audit.md)에 있다. 2026-10-17부터 실제 수정·회귀 검증은 [실행 계획](11-plan-remediation-execution.md)과 [완료 체크리스트](03-plan-audit-completion-checklist.md)의 Implementation Work Packages로 이어간다. 아래 초기 감사 계획의 체크박스는 당시 이력이다.
+
+## Deterministic Scope
+
+2026-10-17 사용자는 비결정적인 부분을 이 PR에서 제외하고 결정론적인 부분만 수행하도록 범위를 확정했다. 이 절이 PR #252의 해당 범위 결정을 소유한다.
+
+| Boundary | Work |
+| --- | --- |
+| In Scope | 데이터 값·상태 보존, 탐지 규칙과 경계값, 실패·재시도·복구 계약, 구조화 응답 검증과 provenance, SDK 요청·응답·오류 매핑, 독립 기대값을 사용하는 회귀 테스트 |
+| In Scope | 기존 utility evaluation의 고정 입력에 대한 계산·비교·직렬화·근거 결합 등 결정론적 구현 계약 |
+| Out of Scope | 실제 AI 리뷰의 유용성·설명 품질·우선순위 적절성 평가, rubric의 주관적 적절성 평가, 사람의 utility 채점, LLM judge, prompt/model 튜닝과 live 품질 실험 |
+
+독립 코드 리뷰는 위 결정론적 구현과 테스트의 계약 준수를 확인하는 검토 절차로 유지한다. 테스트 통과나 fixture 점수를 실제 모델의 리뷰 품질 입증으로 표현하지 않는다. [MVP](../../docs/mvp.md)의 review utility proof는 이 PR의 완료 판정과 분리한다.
 
 ## State And Ownership
 
@@ -22,9 +34,9 @@ tags:
 | Snapshot Date | 2026-10-17 Asia/Seoul |
 | Owning Branch | `agent/docs/plan-domain-bug-test-audit` |
 | Audit Baseline | `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9` (`main`) |
-| Scope | HMDA Data, Data Platform, Data Operations, Reliability, Review AI, Runtime AI, Orchestration |
+| Scope | Deterministic contracts across HMDA Data, Data Platform, Data Operations, Reliability, Review AI, Runtime AI, Orchestration |
 | Current Evidence | [완료된 정적 감사](09-review-cloud-audit.md), [실제 수정·회귀 검증](12-report-remediation-loops.md) |
-| Not Verified | detector 0 계약 결정과 해당 수정, 최종 구현 independent assessment 및 최신 main과의 prospective-merge CI |
+| Not Verified | detector 0의 규칙별 계약 결정과 필요한 수정 및 해당 revision의 최종 validation·independent assessment; 현재 근거는 [체크리스트](03-plan-audit-completion-checklist.md) 참조 |
 
 초기 계획 baseline은 `5532dca2fd93696d40ba870471fa2359c5662335`(2026-10-01)이었다. 2026-10-14 `main` 동기화 뒤 현재 full SHA로 감사 기준을 갱신했으며, 이전에 미병합 상태였던 변경도 최신 `main`에 포함된 범위에서 검토한다. Base 또는 관련 코드가 바뀌면 영향받는 검토와 실행 근거를 다시 확인한다.
 
@@ -40,11 +52,11 @@ tags:
 | 1 | Data Operations | quality gate와 mutation lock, dbt failure, candidate/current promotion, 오류·결과 경계가 일관적인가? | `tests/data_operations/` |
 | 1 | HMDA Data | 입력 검증·partition identity·재적재·부분 실패와 synthetic defect 생성이 기존 상태를 보호하는가? | `tests/hmda_data/` |
 | 1 | Data Platform | DuckDB transaction·SQL 경계·dbt 변환·artifact pair identity가 보존되는가? | `tests/data_platform/`, `tests/dbt/` |
-| 2 | Review AI | evidence/context binding, 구조화 응답 검증, provenance, utility comparison과 projection failure가 advisory 경계를 지키는가? | `tests/review_ai/` |
+| 2 | Review AI | evidence/context binding, 구조화 응답 검증, provenance, utility comparison의 고정 계산·직렬화와 projection failure가 계약을 지키는가? | `tests/review_ai/` |
 | 2 | Runtime AI | settings·bounded invocation·timeout·응답 정규화·provider 실패가 caller 계약을 지키는가? | `tests/runtime_ai/` |
 | 2 | Orchestration | dependency와 config 변환, quality gate 차단, 선행 실패·재실행의 결과가 맞는가? | `tests/orchestration/` |
 
-공유 fixture와 domain별 `conftest.py`, pytest 설정과 테스트 실행 경로는 해당 테스트의 신뢰성에 영향을 주는 범위에서 포함한다. `tests/scripts/`와 관찰 도구 자체의 전체 감사는 제외하되, domain 테스트를 잘못 skip하거나 결과를 숨기는 실행 문제는 기록한다. 외부 provider·Langfuse live 호출은 별도 opt-in evidence로 구분하고, 로컬 mock 성공을 live proof로 취급하지 않는다.
+공유 fixture와 domain별 `conftest.py`, pytest 설정과 테스트 실행 경로는 해당 테스트의 신뢰성에 영향을 주는 범위에서 포함한다. `tests/scripts/`와 관찰 도구 자체의 전체 감사는 제외하되, domain 테스트를 잘못 skip하거나 결과를 숨기는 실행 문제는 기록한다. 외부 provider·Langfuse live 호출과 실제 모델 품질 평가는 이 PR에서 수행하지 않으며, 로컬 mock 성공을 live proof로 취급하지 않는다.
 
 ## Test Design Review
 
