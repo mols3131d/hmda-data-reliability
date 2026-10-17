@@ -87,7 +87,7 @@ PR 본문은 현재 Goal을 감사·수정·회귀 검증까지로 명시하고,
 - [Detection boundary review](06-review-reliability-detection-boundaries.md)
 - [Cloud validation](08-report-cloud-validation.md)
   - `R-DET-01 — Zero Threshold False Positives`
-- [Detection implementation](../../src/hmda_reliability/reliability/detection/basic.py)
+- [Detection implementation](../../src/hmda_reliability/reliability/detection/detector.py)
 
 #### Evidence
 
