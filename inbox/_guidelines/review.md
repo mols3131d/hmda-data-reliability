@@ -137,6 +137,7 @@ Material residual risk, review coverage limit, unresolved uncertainty 또는 re-
 ## Resources
 
 - Template: [`inbox/_templates/review.md`](../_templates/review.md)
+- Multi-perspective template: [`inbox/_templates/review-multi-perspective.md`](../_templates/review-multi-perspective.md) — 관점별 검토와 후보 의견의 수용·드랍·미해결 판단을 기록할 때 사용한다.
 - Resolution template: [`inbox/_templates/review-resolution.md`](../_templates/review-resolution.md) — 기존 finding에 대한 대응과 검증을 기록할 때 사용하며 fresh review를 대체하지 않는다.
 - Skill: implementation 또는 test review에는 `prj-review-code`; 그 밖의 target에는 이를 강제하지 않고 이 guideline을 적용한다.
 
