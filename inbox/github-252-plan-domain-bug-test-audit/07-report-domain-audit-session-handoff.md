@@ -15,16 +15,18 @@ tags:
 
 Goal은 확인된 결함 수정과 테스트 검출력 보강·통합 검증까지다. 사용자는 이 branch에서 실행하고 세션이 끊겨도 재개할 수 있는 artifact를 요구했다. [실행 계획](11-plan-remediation-execution.md)이 현재 작업 범위를, [체크리스트](03-plan-audit-completion-checklist.md)의 I1–I9가 미완료 gate를 소유한다. 초기 감사의 L1–L14 완료는 구현 완료가 아니다.
 
-Phase: Finalize completed. Gate: BLOCKED on detector contract choice. Loops used: 5/30. Acceptance: open. 네 단위의 수정·회귀 검증과 [독립 리뷰 clear](13-review-remediation-implementation.md)를 확보했다. Implementation revision은 `e49eee7352b0deab87f8c507f21606afc42e64c9`이며 이후 doc-only commit은 같은 source/test tree다. 전체 non-resource 926 passed / 2 skipped와 별도 실제 Airflow DAGRun 5 passed다. 원격 checkpoint `f2477c859b0ada0a610a4e0cc356a3bf78ec6c4b` push를 확인했고 이 마지막 문서 갱신도 같은 branch로 전달한다. Next: detector threshold 0 질문의 답변을 확인하고 해당 계약·test·최소 수정을 진행한다. 답변 없이 그 동작을 바꾸지 않는다.
+현재 작업은 PR 전체 완료 조건 정리다. Acceptance: open / not_ready. 구현 loop는 5/30이며 이번 문서 정리를 추가 구현 loop로 세지 않는다. 네 단위의 수정·회귀 검증과 [독립 리뷰 clear](13-review-remediation-implementation.md)를 확보했다. Implementation revision은 `e49eee7352b0deab87f8c507f21606afc42e64c9`이며 조사 대상 원격 head `26068fa5e159e4035e2c6f6a2e07ddc9c935c8cc`까지 source/test/spec 및 dependency 파일 차이가 없다. 기존 전체 non-resource 926 passed / 2 skipped와 별도 실제 Airflow DAGRun 5 passed를 이번 정리에서 재실행하지 않았다.
+
+Next: [체크리스트의 C1–C6](03-plan-audit-completion-checklist.md#remaining-completion-path)에서 C1의 규칙별 판정표와 사용처 대조부터 진행한다. 사용자는 `0` 처리에 사례별 차이가 필요하다고 지적했다. 초기 허용/거부 질문에 대한 선택은 여전히 미확정이지만, 판정표 조사는 그 답변 없이 진행할 수 있다. 해당 계약이 정해지기 전 제품 동작을 바꾸지 않는다.
 
 ## Evidence And Decisions
 
-- 최신 남은 작업 조사: [14](14-research-remaining-work.md). 조사 기준 head `69cc4002`의 CI run `39018118751`은 success이며 dependency/build/Python/test step이 실제 통과했다. 남은 구현은 detector 계약 선택과 해당 회귀 수정·independent gate다. `0` 허용 + 양의 악화만 탐지를 권장하지만 아직 결정하지 않았다.
+- 남은 작업 조사: [14](14-research-remaining-work.md), 쉬운 설명: [15](15-report-detector-zero-threshold-explained.md). 최신 완료 경로와 확인 상태는 [03](03-plan-audit-completion-checklist.md)이 소유한다. `0` 허용 + 양의 악화만 탐지는 상대적 악화 규칙에 대한 권장안이며 확정된 계약이 아니다. 무변화를 전체 데이터의 정상으로 해석하지 않고, 절대 품질 위반과 freshness를 구분해야 한다.
 - 감사 source baseline은 `8bc62fa6ec995f2e57456d55712b36ff11b1f1d9`. [08](08-report-cloud-validation.md)과 [09](09-review-cloud-audit.md)의 과거 runtime/static 근거를 이번 실행 결과로 표현하지 않는다.
 - 수정 순서와 oracle은 [11](11-plan-remediation-execution.md), 실제 loop 결과는 [12](12-report-remediation-loops.md)에 기록한다.
-- Detector threshold 0의 의미는 사용자에게 비동기로 질문했다. 답변 전 해당 동작을 변경하지 않는다. 다른 세 major defect와 SDK test 보강은 독립적으로 진행 가능하다.
+- 세 major defect와 SDK test 보강은 완료됐다. 남은 핵심은 규칙별 판정·계약 확정, 필요한 최소 수정과 해당 검증·independent gate다. 새 컬럼별 정책이나 절대 품질 기능으로 조용히 범위를 확장하지 않는다.
 - 기존 Python 3.13 venv의 DuckDB 1.5.5와 pytest 9.1.1 import를 확인했다. Interpreter가 기본 sandbox 밖이라 실행은 승인된 환경 접근이 필요했다. 설치를 새로 하지 않았다.
-- 첫 push의 native pre-push affected tests는 140 passed / 65 deselected였으며 Python check·format도 통과했다. 이 수는 전체 suite에 중복되므로 합산하지 않는다. 위 CI 성공은 `69cc4002`에 고정된 근거이며 이후 head의 최신 checks는 다시 확인한다.
+- 첫 push의 native pre-push affected tests는 140 passed / 65 deselected였으며 Python check·format도 통과했다. 이 수는 전체 suite에 중복되므로 합산하지 않는다. 최신 조사 head `26068fa5`의 [CI Lite 39019803074](https://github.com/mols3131d/hmda-data-reliability/actions/runs/39019803074)은 success이고 prospective merge checkout·dependency boundary·build·Python·selected tests가 실제 성공했다. 이후 head/base의 CI는 별도 확인한다.
 - 정상 host proc/filesystem에서 실제 Airflow DAGRun 5개는 104.00s에 모두 통과했다. Production task/psutil monkeypatch를 사용하지 않았다. [08](08-report-cloud-validation.md)의 실패는 과거 실행 환경 기록이다.
 - 작업 전 untracked `.private/`는 현재 변경과 무관하므로 포함하지 않는다.
 

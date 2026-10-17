@@ -36,7 +36,7 @@ Run: standard intensity, max_loops=30, loops_used=0. Main Loop는 Research → P
 | 5 | R-DET-01 / Reliability detection | 0의 계약 결정 후 최소 수정 | 선택된 계약에 따른 unchanged/positive degradation/threshold equality 검증; R-DET-02는 별도 Note 유지 |
 | 6 | Orchestration | 정상 proc/filesystem 환경에서 DAGRun 5개 재실행 | ordering, failure blocking, promotion/asset evidence; 실패하면 environment와 production 분류 |
 
-Detector `0` 허용 + 양의 악화만 탐지와 `0` 거부 중 사용자 선택을 비동기로 요청했다. 답변은 결정 근거로 기록하며 기다리는 동안 다른 finding을 진행한다.
+Detector `0` 허용 + 양의 악화만 탐지와 `0` 거부 중 사용자 선택을 처음 비동기로 요청했다. 이후 사용자가 사례별 차이를 지적했으므로, [03의 C1–C2](03-plan-audit-completion-checklist.md#remaining-completion-path)에 따라 규칙별 판정표와 현재 사용처를 먼저 대조한다. 상대적 악화, 고정 정상 기준과 절대 상태를 구분하고 결정 근거를 남긴다. 판정표 조사는 기존 질문의 답변 없이 진행할 수 있으며 계약이 정해지기 전 동작을 바꾸지 않는다. 다른 네 수정 단위와 Airflow 검증의 완료 근거는 03/12/13을 따른다.
 
 각 단위는 기존 test area에 독립 oracle을 추가해 RED를 확인하고 production의 최소 변경 후 GREEN을 확인한다. 최소 focused test 다음 관련 suite를 실행한다. 최종에는 full non-resource suite, Ruff/format, type/Tach와 실제 변경에 해당하는 repository checks를 수행한다. 환경 실패는 제품 성공으로 바꾸지 않는다.
 
