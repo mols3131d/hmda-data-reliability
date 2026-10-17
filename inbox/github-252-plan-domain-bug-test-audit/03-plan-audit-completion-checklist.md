@@ -43,7 +43,7 @@ tags:
 - [x] I6 — Airflow DAGRun 5개 정상 환경 재실행: 5 passed, 104.00s. Production task/psutil monkeypatch 없음.
 - [x] I7 — 현 구현 revision `e49eee73`의 full suite 926 passed / 2 skipped와 별도 Airflow 5 passed, Ruff/ty/Tach/wheel 검증. Detector 또는 구현 변경 시 해당 evidence를 재평가한다.
 - [ ] I8 — 네 단위는 `e49eee73`에서 independent clear. Detector 구현 후 해당 변경의 검증·새 assessment까지 완료해야 전체 gate를 닫는다.
-- [ ] I9 — 현재 head와 evidence로 PR 설명·continuation을 갱신하고 원격 전달.
+- [x] I9 — 현재 네 단위 checkpoint를 원격 PR branch에 전달하고 continuation을 기록했다. PR 본문은 현재 source/test tree와 남은 detector 결정을 반영한다. 후속 구현 후 evidence·delivery를 다시 갱신한다.
 
 ## Audit Inventory
 
