@@ -47,3 +47,5 @@ tags:
 구현 `eb71f46e23a532d66c1a5ff8ce85c1af03965c03`의 로컬 검증과 [독립 리뷰](02-review-sdk-retry-implementation.md)를 마쳤고 [Draft PR #258](https://github.com/mols3131d/hmda-data-reliability/pull/258)을 생성했다. 이 PR이 branch와 현재 GitHub work unit을 소유한다. [실행 근거](01-report-sdk-retry-validation.md)와 같은 테스트 blob을 유지하며 최종 문서 head의 CI는 PR 본문과 checks에서 확인한다. 이후 재개 시 source/test 동일성·현재 main·새로운 feedback을 확인한다. Untracked 사용자 파일과 PR #252의 로컬 후속 검토 보고서는 포함하거나 되돌리지 않는다. 신규 PR의 Ready 전환·승인·병합은 별도 사용자 결정으로 남긴다.
 
 후속 요청의 [도메인·서브도메인 테스트 설계 리뷰](03-review-domain-test-design/README.md)도 PR #258에 귀속된다. 이 리뷰는 branch 전체 snapshot을 조사하되 SDK 변경의 검토 결과와 기존 영역의 후속 보강 제안을 구분한다. 세션 재개 시 해당 묶음의 inventory·validation을 함께 확인한다.
+
+2026-10-18 로컬 재개에서는 최신 main과 PR head의 prospective merge CI, Runtime AI 40개와 기존 리뷰 대상 동일성을 확인했다. 정확한 검증 revision·제한과 다음 action은 [최신 인계](04-brief-runtime-ai-local-handoff.md)를 따른다.
