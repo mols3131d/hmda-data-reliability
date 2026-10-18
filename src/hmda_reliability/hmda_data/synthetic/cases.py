@@ -51,6 +51,7 @@ def row_count_drop(
         connection=connection,
         case_name="row_count_drop",
         output_root=output_root,
+        source_paths=source_paths,
         query=case_query,
         params=[*source_paths_parameter(source_paths), sample_fraction],
     )
@@ -222,6 +223,7 @@ def null_spike(
         connection=connection,
         case_name=resolved_case_name,
         output_root=output_root,
+        source_paths=source_paths,
         query=case_query,
         params=params,
     )
@@ -257,6 +259,7 @@ def schema_drift(
         connection=connection,
         case_name="schema_drift",
         output_root=output_root,
+        source_paths=source_paths,
         query=case_query,
         params=[*source_paths_parameter(source_paths), sample_fraction],
     )
