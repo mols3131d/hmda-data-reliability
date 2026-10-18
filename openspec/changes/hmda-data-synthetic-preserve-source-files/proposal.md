@@ -7,7 +7,7 @@ description: 합성 결함 생성 시 입력 파일과 출력 삭제 범위가 �
 
 ## Why
 
-`row_count_drop`의 source가 기존 case output directory 내부에 있으면 생성 준비 과정에서 원본까지 삭제될 수 있다. PR #258의 [재현 근거](https://github.com/mols3131d/hmda-data-reliability/blob/b6b47606bdabf69221eff94c8f9c69dc03b6cc57/inbox/github-258-cover-sdk-retry-classification/03-review-domain-test-design/validation.md#a2-synthetic-source-preservation)는 원본 삭제 후 오류가 발생한 사례를 기록한다. 이는 현행 [Isolated synthetic output](../../../specs/hmda-data-synthetic-defects/spec.md#requirement-isolated-synthetic-output)의 원본 불변 계약에 어긋난다.
+`row_count_drop`의 source가 기존 case output directory 내부에 있으면 생성 준비 과정에서 원본까지 삭제될 수 있다. PR #258의 [재현 근거](https://github.com/mols3131d/hmda-data-reliability/blob/b6b47606bdabf69221eff94c8f9c69dc03b6cc57/inbox/github-258-cover-sdk-retry-classification/03-review-domain-test-design/validation.md#a2-synthetic-source-preservation)는 원본 삭제 후 오류가 발생한 사례를 기록한다. 이는 현행 [Isolated synthetic output](../../specs/hmda-data-synthetic-defects/spec.md#requirement-isolated-synthetic-output)의 원본 불변 계약에 어긋난다.
 
 ## What Changes
 
