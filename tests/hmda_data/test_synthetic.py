@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 
 import duckdb
@@ -18,6 +20,171 @@ from hmda_reliability.hmda_data.errors import SyntheticCaseError
 from hmda_reliability.hmda_data.synthetic._writer import write_case_file
 
 pytestmark = pytest.mark.component
+
+type SyntheticGenerator = Callable[[duckdb.DuckDBPyConnection, list[Path], Path], Path]
+
+
+@pytest.mark.parametrize(
+    ("generate_case", "case_name"),
+    [
+        (row_count_drop, "row_count_drop"),
+        (null_spike, "null_spike"),
+        (schema_drift, "schema_drift"),
+        (partial(null_spike, case_name="custom_spike"), "custom_spike"),
+        (partial(null_spike, target_year=2026), "null_spike_2026"),
+    ],
+)
+@pytest.mark.parametrize(
+    "path_alias",
+    [
+        "direct",
+        "relative",
+        "source_symlink",
+        "output_symlink",
+        "wildcard",
+        "outward_file_symlink",
+        "outward_directory_symlink",
+        "intermediate_file_symlink",
+        "intermediate_directory_symlink",
+    ],
+)
+def test_synthetic_case_preserves_sources_inside_case_directory(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+    generate_case: SyntheticGenerator,
+    case_name: str,
+    path_alias: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """다중 입력 중 하나라도 삭제 범위에 있으면 기존 파일을 모두 보존한다."""
+
+    source_bytes = hmda_csv_path.read_bytes()
+    output_root = tmp_path / "cases"
+    case_dir = output_root / case_name
+    case_dir.mkdir(parents=True)
+    source_path = case_dir / "year_2025.csv"
+    source_path.write_bytes(source_bytes)
+    previous_output = case_dir / "previous.parquet"
+    previous_output.write_bytes(b"previous case output")
+    source_argument = source_path
+    output_argument = output_root
+    if path_alias == "relative":
+        monkeypatch.chdir(tmp_path)
+        (case_dir / "nested").mkdir()
+        source_argument = Path("cases") / case_name / "nested/../year_2025.csv"
+        output_argument = Path("cases")
+    elif path_alias == "source_symlink":
+        source_argument = tmp_path / "source_alias.csv"
+        source_argument.symlink_to(source_path)
+    elif path_alias == "output_symlink":
+        output_argument = tmp_path / "output_alias"
+        output_argument.symlink_to(output_root, target_is_directory=True)
+    elif path_alias == "wildcard":
+        source_argument = output_root / "*" / "year_2025.csv"
+        sibling_source = output_root / "sibling" / "year_2025.csv"
+        sibling_source.parent.mkdir()
+        sibling_source.write_bytes(source_bytes)
+    elif path_alias == "outward_file_symlink":
+        source_path.unlink()
+        source_path.symlink_to(hmda_csv_path)
+    elif path_alias == "outward_directory_symlink":
+        source_argument = case_dir / "source_alias" / hmda_csv_path.name
+        source_argument.parent.symlink_to(
+            hmda_csv_path.parent, target_is_directory=True
+        )
+
+    elif path_alias == "intermediate_file_symlink":
+        source_path.unlink()
+        source_path.symlink_to(hmda_csv_path)
+        source_argument = tmp_path / "indirect_source.csv"
+        source_argument.symlink_to(source_path)
+    elif path_alias == "intermediate_directory_symlink":
+        intermediate = case_dir / "intermediate"
+        intermediate.symlink_to(hmda_csv_path.parent, target_is_directory=True)
+        alias = tmp_path / "indirect_source"
+        alias.symlink_to(intermediate, target_is_directory=True)
+        source_argument = alias / hmda_csv_path.name
+
+    with DuckDBConnectionManager() as connection, pytest.raises(SyntheticCaseError):
+        generate_case(connection, [hmda_csv_path, source_argument], output_argument)
+
+    assert source_path.is_file()
+    assert source_path.read_bytes() == source_bytes
+    assert hmda_csv_path.read_bytes() == source_bytes
+    assert previous_output.read_bytes() == b"previous case output"
+    if path_alias == "wildcard":
+        assert sibling_source.read_bytes() == source_bytes
+    else:
+        assert source_argument.read_bytes() == source_bytes
+
+
+@pytest.mark.parametrize("generate_case", [row_count_drop, null_spike, schema_drift])
+def test_synthetic_case_preserves_source_when_reusing_its_parquet_output(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+    generate_case: SyntheticGenerator,
+) -> None:
+    output_root = tmp_path / "cases"
+    with DuckDBConnectionManager() as connection:
+        source_path = generate_case(connection, [hmda_csv_path], output_root)
+        source_bytes = source_path.read_bytes()
+        with pytest.raises(SyntheticCaseError):
+            generate_case(connection, [source_path], output_root)
+
+    assert source_path.is_file()
+    assert source_path.read_bytes() == source_bytes
+
+
+@pytest.mark.parametrize(
+    ("generate_case", "case_name"),
+    [
+        (row_count_drop, "row_count_drop"),
+        (null_spike, "null_spike"),
+        (schema_drift, "schema_drift"),
+    ],
+)
+@pytest.mark.parametrize("source_form", ["direct", "wildcard", "symlink_parent"])
+def test_synthetic_case_replaces_output_without_changing_sibling_source(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+    generate_case: SyntheticGenerator,
+    case_name: str,
+    source_form: str,
+) -> None:
+    source_bytes = hmda_csv_path.read_bytes()
+    output_root = tmp_path / "cases"
+    source_path = output_root / f"{case_name}_source" / "year_2025.csv"
+    source_path.parent.mkdir(parents=True)
+    source_path.write_bytes(source_bytes)
+    source_argument = source_path
+    if source_form == "wildcard":
+        source_argument = source_path.parent / "*.csv"
+    elif source_form == "symlink_parent":
+        case_dir = output_root / case_name
+        case_dir.mkdir()
+        alias = tmp_path / "case_alias"
+        alias.symlink_to(case_dir, target_is_directory=True)
+        source_argument = alias / ".." / source_path.parent.name / source_path.name
+
+    with DuckDBConnectionManager() as connection:
+        first_output = generate_case(connection, [source_argument], output_root)
+        first_rows = connection.execute(
+            "SELECT * FROM read_parquet(?) ORDER BY ALL", [str(first_output)]
+        ).fetchall()
+        stale_output = first_output.parent / "nested" / "stale.txt"
+        stale_output.parent.mkdir()
+        stale_output.write_text("stale", encoding="utf-8")
+        regenerated = generate_case(connection, [source_argument], output_root)
+        regenerated_rows = connection.execute(
+            "SELECT * FROM read_parquet(?) ORDER BY ALL", [str(regenerated)]
+        ).fetchall()
+
+    assert regenerated == first_output
+    assert regenerated_rows == first_rows
+    assert list(regenerated.parent.iterdir()) == [regenerated]
+    assert source_path.read_bytes() == source_bytes
+    if source_form != "wildcard":
+        assert source_argument.read_bytes() == source_bytes
 
 
 def test_synthetic_cases_expose_expected_defect_statistics(
@@ -389,6 +556,7 @@ def test_write_case_file_rejects_parent_directory_case_name(tmp_path: Path) -> N
             connection=connection,
             case_name="..",
             output_root=output_root,
+            source_paths=[],
             query="SELECT 1",
             params=[],
         )
