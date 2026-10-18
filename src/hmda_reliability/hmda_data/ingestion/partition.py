@@ -180,6 +180,7 @@ def _overwrite_hmda_loans_partition(
             source_file=source_file,
             preserve_source_metadata=preserve_source_metadata,
         )
+        validate_source_required_columns(connection, source_paths)
         _validate_staging_rows(
             connection=connection,
             table_name=table_name,
@@ -187,7 +188,6 @@ def _overwrite_hmda_loans_partition(
             source_file=source_file,
             preserve_source_metadata=preserve_source_metadata,
         )
-        validate_source_required_columns(connection, source_paths)
         _replace_partition_in_transaction(
             connection=connection,
             table_name=table_name,

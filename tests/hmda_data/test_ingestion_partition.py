@@ -118,6 +118,89 @@ def test_partition_load_accepts_null_values_in_valid_csv_parquet_sources(
     ]
 
 
+def test_partition_load_validates_empty_requested_year_source_before_row_count(
+    hmda_csv_path: Path,
+    hmda_parquet_path: Path,
+    tmp_path: Path,
+) -> None:
+    """다른 연도의 정상 컬럼이 빈 대상 원천의 구조 누락을 가리지 않아야 한다."""
+
+    missing_path = tmp_path / "empty_missing_2025.parquet"
+    with DuckDBConnectionManager() as connection:
+        connection.execute(
+            """
+            CREATE TEMP TABLE empty_source AS
+            SELECT * EXCLUDE (income, county_code)
+            FROM read_parquet(?) WHERE FALSE
+            """,
+            [hmda_parquet_path.as_posix()],
+        )
+        connection.execute(
+            "COPY empty_source TO ? (FORMAT PARQUET)",
+            [missing_path.as_posix()],
+        )
+        assert load_hmda_loans_partition(connection, [hmda_csv_path], 2025) == 2
+        assert load_hmda_loans_partition(connection, [hmda_parquet_path], 2024) == 1
+        before = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY source_year, loan_amount"
+        ).fetchall()
+
+        with pytest.raises(HMDADataValidationError, match="필수 컬럼") as raised:
+            load_hmda_loans_partition(
+                connection,
+                [hmda_parquet_path, missing_path],
+                2025,
+            )
+
+        assert raised.value.context["missing_columns"] == ["county_code", "income"]
+        assert raised.value.context["source_path"] == missing_path.as_posix()
+        after = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY source_year, loan_amount"
+        ).fetchall()
+
+    assert len(before) == 3
+    assert after == before
+
+
+def test_partition_load_rejects_empty_requested_year_with_valid_source_columns(
+    hmda_csv_path: Path,
+    hmda_parquet_path: Path,
+    tmp_path: Path,
+) -> None:
+    empty_path = tmp_path / "empty_valid_2025.parquet"
+    with DuckDBConnectionManager() as connection:
+        connection.execute(
+            """
+            CREATE TEMP TABLE empty_source AS
+            SELECT * FROM read_parquet(?) WHERE FALSE
+            """,
+            [hmda_parquet_path.as_posix()],
+        )
+        connection.execute(
+            "COPY empty_source TO ? (FORMAT PARQUET)",
+            [empty_path.as_posix()],
+        )
+        assert load_hmda_loans_partition(connection, [hmda_csv_path], 2025) == 2
+        assert load_hmda_loans_partition(connection, [hmda_parquet_path], 2024) == 1
+        before = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY source_year, loan_amount"
+        ).fetchall()
+
+        with pytest.raises(HMDADataLoadError, match="적재할 행이 없습니다"):
+            load_hmda_loans_partition(
+                connection,
+                [hmda_parquet_path, empty_path],
+                2025,
+            )
+
+        after = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY source_year, loan_amount"
+        ).fetchall()
+
+    assert len(before) == 3
+    assert after == before
+
+
 def test_partition_reload_preserves_values_after_source_columns_are_reordered(
     hmda_csv_path: Path,
     hmda_parquet_path: Path,
