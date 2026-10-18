@@ -20,7 +20,6 @@ from hmda_reliability.hmda_data import (
 from hmda_reliability.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability.contracts import (
-    Approval,
     FreshnessMeasurementStatus,
     FreshnessObservation,
     FreshnessRecoveryBinding,
@@ -98,7 +97,8 @@ class ApprovalBackfillValidator:
         """승인된 이전 상태로 복구하거나 재현(replay) 시 정확한 상태를 검증한다."""
 
         # Approval scope is validated before the candidate source is read.
-        approval, proposal = _ensure_approved(request)
+        request = _ensure_approved(request)
+        approval, proposal = request.approval, request.proposal
         try:
             with TemporaryDirectory() as temporary_directory:
                 staged_source_path = _stage_approved_candidate_source(
@@ -269,16 +269,17 @@ def execute_approved_backfill(
 
 def _ensure_approved(
     request: ApprovedBackfillRequest,
-) -> tuple[Approval, RecoveryProposal]:
+) -> ApprovedBackfillRequest:
     try:
-        approval = Approval.model_validate(request.approval.model_dump(warnings=False))
-        proposal = RecoveryProposal.model_validate(
-            request.proposal.model_dump(warnings=False)
+        request = ApprovedBackfillRequest.model_validate(
+            request.model_dump(warnings=False)
         )
     except ValidationError as exc:
         raise ApprovalGateError(
-            "backfill approval 또는 recovery proposal contract가 유효하지 않습니다."
+            "backfill approval, recovery proposal 또는 profile request contract가 "
+            "유효하지 않습니다."
         ) from exc
+    approval, proposal = request.approval, request.proposal
     if not can_execute_risky_action(approval):
         msg = (
             "승인되지 않은 backfill 요청입니다: "
@@ -315,7 +316,7 @@ def _ensure_approved(
         raise ApprovalGateError(
             f"recovery proposal에 필요한 action이 없습니다: {joined_actions}"
         )
-    return approval, proposal
+    return request
 
 
 def _stage_approved_candidate_source(

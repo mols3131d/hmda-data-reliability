@@ -37,6 +37,7 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
     )
     request = SimpleNamespace(
         approval=approval,
+        proposal=proposal,
         source_year=2025,
         source_file=None,
         table_name="raw.hmda_loans",
@@ -46,7 +47,7 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
     monkeypatch.setattr(
         recovery_executor,
         "_ensure_approved",
-        lambda _request: (approval, proposal),
+        lambda _request: _request,
     )
     monkeypatch.setattr(
         recovery_executor,

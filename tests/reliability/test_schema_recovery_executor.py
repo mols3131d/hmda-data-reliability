@@ -71,10 +71,20 @@ def test_schema_recovery_rejects_mismatched_approval_before_candidate_access(
 
 
 @pytest.mark.component
-def test_schema_recovery_replaces_approved_before_state(tmp_path: Path) -> None:
+@pytest.mark.parametrize("partition_column", ["activity_year", "source_year"])
+def test_schema_recovery_replaces_approved_before_state(
+    tmp_path: Path, partition_column: str
+) -> None:
     """Approved before-state is replaced with the exact complete candidate."""
 
     request = _request(tmp_path, target_state="before")
+    request = request.model_copy(
+        update={
+            "profile_request": request.profile_request.model_copy(
+                update={"partition_column": partition_column}
+            )
+        }
+    )
 
     result = reliability.execute_approved_schema_recovery(request)
 
@@ -98,6 +108,57 @@ def test_schema_recovery_replaces_approved_before_state(tmp_path: Path) -> None:
         if identity.source_year == 2024
     )
     assert sentinel == expected_sentinel
+    assert result.profile_snapshot.row_count == 2
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("target_state", ["before", "after"])
+def test_schema_recovery_rejects_unrelated_profile_discriminator_without_mutation(
+    tmp_path: Path, target_state: str
+) -> None:
+    request = _request(tmp_path, target_state=target_state)
+    request = request.model_copy(
+        update={
+            "profile_request": request.profile_request.model_copy(
+                update={"partition_column": "income"}
+            )
+        }
+    )
+    with DuckDBConnectionManager(request.target_database_path) as connection:
+        before = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+
+    with pytest.raises(ApprovalGateError):
+        reliability.execute_approved_schema_recovery(request)
+
+    with DuckDBConnectionManager(request.target_database_path) as connection:
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == before
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("target_state", ["before", "after"])
+def test_schema_recovery_profile_uses_approved_year_when_activity_year_differs(
+    tmp_path: Path, target_state: str
+) -> None:
+    request = _request(tmp_path, target_state=target_state, activity_year=2024)
+    request = request.model_copy(
+        update={
+            "profile_request": request.profile_request.model_copy(
+                update={"partition_column": "activity_year"}
+            )
+        }
+    )
+
+    result = reliability.execute_approved_schema_recovery(request)
+
+    with DuckDBConnectionManager(request.target_database_path) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE source_year = 2025"
+        ).fetchone() == (2,)
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE activity_year = 2025"
+        ).fetchone() == (0,)
+    assert result.validation_passed
+    assert result.profile_snapshot.row_count == 2
 
 
 @pytest.mark.component
@@ -490,23 +551,26 @@ def _request(
     tmp_path: Path,
     *,
     target_state: str,
+    activity_year: int | None = None,
 ) -> ApprovedSchemaRecoveryRequest:
     candidate_path = tmp_path / "candidate.duckdb"
     target_path = tmp_path / "target.duckdb"
     with DuckDBConnectionManager(candidate_path) as connection:
-        _create_table(connection, drifted=False)
+        _create_table(connection, drifted=False, activity_year=activity_year)
         expected_after = reliability.create_table_state_identity(
             connection,
             "raw.hmda_loans",
         )
     with duckdb.connect(":memory:") as connection:
-        _create_table(connection, drifted=True)
+        _create_table(connection, drifted=True, activity_year=activity_year)
         approved_before = reliability.create_table_state_identity(
             connection,
             "raw.hmda_loans",
         )
     with DuckDBConnectionManager(target_path) as connection:
-        _create_table(connection, drifted=target_state != "after")
+        _create_table(
+            connection, drifted=target_state != "after", activity_year=activity_year
+        )
         if target_state == "diverged":
             connection.execute(
                 "UPDATE raw.hmda_loans SET income = income + 1 WHERE source_year = 2025"
@@ -626,6 +690,7 @@ def _create_table(
     connection: duckdb.DuckDBPyConnection,
     *,
     drifted: bool,
+    activity_year: int | None = None,
 ) -> None:
     loan_amount_type = "VARCHAR" if drifted else "INTEGER"
     connection.execute("CREATE SCHEMA raw")
@@ -633,6 +698,7 @@ def _create_table(
         f"""
         CREATE TABLE raw.hmda_loans (
             source_year INTEGER,
+            activity_year INTEGER,
             source_file_name VARCHAR,
             loan_amount {loan_amount_type},
             income INTEGER
@@ -641,11 +707,16 @@ def _create_table(
     )
     connection.execute(
         """
-        INSERT INTO raw.hmda_loans VALUES
+        INSERT INTO raw.hmda_loans
+            (source_year, source_file_name, loan_amount, income) VALUES
             (2024, '2024.csv', 100, 10),
             (2025, '2025-a.csv', 200, 20),
             (2025, '2025-b.csv', 300, 30)
         """
+    )
+    connection.execute(
+        "UPDATE raw.hmda_loans SET activity_year = coalesce(?, source_year)",
+        [activity_year],
     )
 
 

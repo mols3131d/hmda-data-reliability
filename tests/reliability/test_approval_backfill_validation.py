@@ -170,8 +170,10 @@ def test_mismatched_request_scope_is_rejected_before_source_access(
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("partition_column", ["activity_year", "source_year"])
 def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
     tmp_path: Path,
+    partition_column: str,
 ) -> None:
     """승인된 backfill은 source_year overwrite 후 profile snapshot을 재생성한다."""
 
@@ -186,6 +188,7 @@ def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
                 approval=approval,
                 proposal=proposal,
                 source_paths=(source_path,),
+                partition_column=partition_column,
             ),
         )
 
@@ -213,6 +216,118 @@ def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
         "overwrite_partition",
         "rerun_profile_snapshot",
     ]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("replay", [False, True])
+def test_backfill_rejects_unrelated_profile_discriminator_without_mutation(
+    tmp_path: Path, replay: bool
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    request = request.model_copy(
+        update={
+            "profile_request": request.profile_request.model_copy(
+                update={"partition_column": "income"}
+            )
+        }
+    )
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [source_path], 2025)
+        if not replay:
+            connection.execute("DELETE FROM raw.hmda_loans")
+        before = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+
+        with pytest.raises(ApprovalGateError, match="profile"):
+            execute_approved_backfill(connection, request)
+
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == before
+
+
+@pytest.mark.integration
+def test_backfill_profile_uses_approved_year_when_activity_year_differs(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    source_path.write_text(source_path.read_text().replace("2025,", "2024,"))
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    with DuckDBConnectionManager() as connection:
+        result = execute_approved_backfill(connection, request)
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE source_year = 2025"
+        ).fetchone() == (2,)
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE activity_year = 2025"
+        ).fetchone() == (0,)
+
+    assert result.validation_passed
+    assert result.profile_snapshot.row_count == 2
+
+
+@pytest.mark.integration
+def test_file_backfill_keeps_year_profile_and_other_file_content(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    sentinel_path = tmp_path / "sentinel_2025.csv"
+    sentinel_path.write_text(
+        "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,county_code\n"
+        "2025,1,1,700000,80,CA,06001\n"
+    )
+    with DuckDBConnectionManager() as candidate:
+        load_hmda_loans_partition(candidate, [source_path], 2025)
+        expected = partition_content_identity(
+            candidate, source_year=2025, source_file=source_path.name
+        )
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [sentinel_path], 2025)
+        before = partition_content_identity(
+            connection, source_year=2025, source_file=source_path.name
+        )
+        sentinel_before = connection.execute(
+            "SELECT * FROM raw.hmda_loans WHERE source_file_name = ?",
+            [sentinel_path.name],
+        ).fetchall()
+        proposal = RecoveryProposal.model_validate(
+            {
+                **_proposal().model_dump(),
+                "source_file": source_path.name,
+                "candidate_identity": expected,
+                "approved_before_identity": before,
+                "expected_after_identity": expected,
+            }
+        )
+        request = _request(
+            approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+            proposal=proposal,
+            source_paths=(source_path,),
+        ).model_copy(update={"source_file": source_path.name})
+
+        result = execute_approved_backfill(connection, request)
+        replay = execute_approved_backfill(connection, request)
+
+        assert (
+            connection.execute(
+                "SELECT * FROM raw.hmda_loans WHERE source_file_name = ?",
+                [sentinel_path.name],
+            ).fetchall()
+            == sentinel_before
+        )
+    assert result.row_count == 2
+    assert result.profile_snapshot.row_count == 3
+    assert result.validation_passed
+    assert replay.profile_snapshot.row_count == 3
+    assert replay.reconciliation_action == "resume_verification"
 
 
 @pytest.mark.integration
@@ -803,6 +918,7 @@ def _request(
     proposal: RecoveryProposal | None = None,
     source_paths: tuple[Path, ...],
     source_year: int = 2025,
+    partition_column: str = "activity_year",
 ) -> ApprovedBackfillRequest:
     return ApprovedBackfillRequest(
         approval=approval,
@@ -812,7 +928,7 @@ def _request(
         profile_request=ProfileSnapshotRequest(
             asset_name=HMDA_LOANS_TABLE,
             table_name=HMDA_LOANS_TABLE,
-            partition_column="activity_year",
+            partition_column=partition_column,
             partition=source_year,
             profile_columns=("loan_amount", "income"),
             observed_at=datetime(2026, 6, 10, 0, 0, tzinfo=UTC),
