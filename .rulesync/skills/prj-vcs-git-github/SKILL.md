@@ -1,10 +1,12 @@
 ---
 name: prj-vcs-git-github
 description: >-
-  Load repository-specific Git and GitHub guidance for branch, commit, Pull Request,
-  review, merge, and related VCS work. Select only the guides and templates relevant
-  to the current operation, and verify mutable GitHub state when it can change the
-  decision. Do not perform the operation itself.
+  Load repository-specific Git/GitHub guidance for repository content changes,
+  branch, staging, and commit operations, and Pull Request creation, updates,
+  reviews, readiness assessment, and merges. Also use when mutable GitHub state
+  (checks, approvals, protection, mergeability) affects a decision. Select only
+  operation-relevant guides and templates; do not perform VCS operations.
+  Do not select for read-only repository inspection without VCS concerns.
 ---
 
 # Git and GitHub Context
@@ -16,9 +18,9 @@ Git과 GitHub 작업 전에 필요한 repository context만 로드한다. 세부
 | Task | Read |
 | --- | --- |
 | 작업 종류가 아직 불명확함 | [`docs/development/vcs-git/README.md`](../../../docs/development/vcs-git/README.md) |
-| Branch 작업 | [`branch.md`](../../../docs/development/vcs-git/branch.md) |
+| Repository content 변경 준비 또는 Branch 작업 | [`branch.md`](../../../docs/development/vcs-git/branch.md) |
 | Stage, commit, amend, rebase, reset, history rewrite | [`commit.md`](../../../docs/development/vcs-git/commit.md); commit message를 작성하면 [`.gitmessage`](../../../.gitmessage), branch 정책이 판단에 영향을 주면 [`branch.md`](../../../docs/development/vcs-git/branch.md)도 읽음 |
-| Pull Request 생성·갱신·lifecycle | [`pull-request.md`](../../../docs/development/vcs-git/pull-request.md); body를 작성하면 [Pull Request template](../../../.github/templates/pull-request.md)도 읽음 |
+| Pull Request 생성·갱신·상태·readiness·merge 판단 | [`pull-request.md`](../../../docs/development/vcs-git/pull-request.md); body를 작성하면 [Pull Request template](../../../.github/templates/pull-request.md)도 읽음 |
 | Pull Request review | [`pull-request-review.md`](../../../docs/development/vcs-git/pull-request-review.md); review body를 작성하면 [review template](../../../.github/templates/pull-request-review.md)도 읽음 |
 | PR/review optional metadata | [GitHub templates guidance](../../../.github/templates/README.md) |
 
