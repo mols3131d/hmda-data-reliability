@@ -173,6 +173,85 @@ def test_load_hmda_loans_validates_required_columns(tmp_path: Path) -> None:
     assert "income" not in columns
 
 
+@pytest.mark.parametrize(
+    "reverse_paths", [False, True], ids=["valid-first", "missing-first"]
+)
+def test_full_load_rejects_missing_source_columns_after_replacing_target(
+    hmda_csv_path: Path,
+    mixed_schema_source_paths: tuple[Path, Path],
+    reverse_paths: bool,
+) -> None:
+    """개별 원천의 누락은 거부하되 full-load의 교체 후 검증 계약을 유지한다."""
+
+    valid_path, missing_path = mixed_schema_source_paths
+    paths = [missing_path, valid_path] if reverse_paths else [valid_path, missing_path]
+    with DuckDBConnectionManager() as connection:
+        assert load_hmda_loans(connection, [hmda_csv_path]) == 2
+
+        with pytest.raises(HMDADataValidationError, match="필수 컬럼") as raised:
+            load_hmda_loans(connection, paths)
+
+        assert raised.value.context["missing_columns"] == ["county_code", "income"]
+        assert raised.value.context["source_path"] == missing_path.as_posix()
+        rows = connection.execute(
+            """
+            SELECT activity_year, loan_purpose, action_taken, loan_amount,
+                   income, state_code, CAST(county_code AS VARCHAR), source_file,
+                   source_file_name, source_year, ingested_at IS NOT NULL
+            FROM raw.hmda_loans ORDER BY loan_amount
+            """
+        ).fetchall()
+
+    assert rows == [
+        (
+            2025,
+            1,
+            1,
+            111000,
+            80,
+            "TX",
+            "48113",
+            valid_path.as_posix(),
+            valid_path.name,
+            2025,
+            True,
+        ),
+        (
+            2025,
+            31,
+            3,
+            222000,
+            None,
+            "NY",
+            None,
+            missing_path.as_posix(),
+            missing_path.name,
+            2025,
+            True,
+        ),
+    ]
+
+
+def test_full_load_accepts_null_values_in_valid_csv_parquet_sources(
+    nullable_mixed_source_paths: tuple[Path, Path],
+) -> None:
+    with DuckDBConnectionManager() as connection:
+        assert load_hmda_loans(connection, nullable_mixed_source_paths) == 2
+        rows = connection.execute(
+            """
+            SELECT loan_amount, income, state_code, county_code,
+                   source_file_name, source_year, ingested_at IS NOT NULL
+            FROM raw.hmda_loans ORDER BY loan_amount
+            """
+        ).fetchall()
+
+    csv_path, parquet_path = nullable_mixed_source_paths
+    assert rows == [
+        (111000, None, "TX", "48113", csv_path.name, 2025, True),
+        (222000, None, "NY", "36061", parquet_path.name, 2025, True),
+    ]
+
+
 def test_load_hmda_loans_translates_mutation_lock_failure(
     hmda_csv_path: Path,
     monkeypatch: pytest.MonkeyPatch,

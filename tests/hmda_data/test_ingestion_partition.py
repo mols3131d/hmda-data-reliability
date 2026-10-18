@@ -16,7 +16,11 @@ from hmda_reliability.hmda_data import (
     partition_content_identity,
     partition_max_ingested_at,
 )
-from hmda_reliability.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
+from hmda_reliability.hmda_data.errors import (
+    HMDADataLoadError,
+    HMDADataValidationError,
+    HMDAStalePartitionError,
+)
 
 pytestmark = pytest.mark.component
 
@@ -56,6 +60,62 @@ def test_load_hmda_loans_partition_is_idempotent(
         row = connection.execute("SELECT count(*) FROM raw.hmda_loans").fetchone()
 
     assert row == (2,)
+
+
+@pytest.mark.parametrize(
+    "reverse_paths", [False, True], ids=["valid-first", "missing-first"]
+)
+def test_partition_load_rejects_missing_source_columns_without_changing_rows(
+    hmda_csv_path: Path,
+    hmda_parquet_path: Path,
+    mixed_schema_source_paths: tuple[Path, Path],
+    reverse_paths: bool,
+) -> None:
+    """누락 원천 실패 시 대상과 다른 연도의 값·provenance 전체를 보존한다."""
+
+    valid_path, missing_path = mixed_schema_source_paths
+    paths = [missing_path, valid_path] if reverse_paths else [valid_path, missing_path]
+    with DuckDBConnectionManager() as connection:
+        assert load_hmda_loans_partition(connection, [hmda_csv_path], 2025) == 2
+        assert load_hmda_loans_partition(connection, [hmda_parquet_path], 2024) == 1
+        before = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY source_year, loan_amount"
+        ).fetchall()
+
+        with pytest.raises(HMDADataValidationError, match="필수 컬럼") as raised:
+            load_hmda_loans_partition(connection, paths, 2025)
+
+        assert raised.value.context["missing_columns"] == ["county_code", "income"]
+        assert raised.value.context["source_path"] == missing_path.as_posix()
+        after = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY source_year, loan_amount"
+        ).fetchall()
+
+    assert len(before) == 3
+    assert after == before
+
+
+def test_partition_load_accepts_null_values_in_valid_csv_parquet_sources(
+    nullable_mixed_source_paths: tuple[Path, Path],
+) -> None:
+    with DuckDBConnectionManager() as connection:
+        assert (
+            load_hmda_loans_partition(connection, nullable_mixed_source_paths, 2025)
+            == 2
+        )
+        rows = connection.execute(
+            """
+            SELECT loan_amount, income, state_code, county_code,
+                   source_file_name, source_year, ingested_at IS NOT NULL
+            FROM raw.hmda_loans ORDER BY loan_amount
+            """
+        ).fetchall()
+
+    csv_path, parquet_path = nullable_mixed_source_paths
+    assert rows == [
+        (111000, None, "TX", "48113", csv_path.name, 2025, True),
+        (222000, None, "NY", "36061", parquet_path.name, 2025, True),
+    ]
 
 
 def test_partition_reload_preserves_values_after_source_columns_are_reordered(
