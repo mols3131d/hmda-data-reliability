@@ -1,10 +1,8 @@
 # HMDA Data Reliability Chatbot Instructions
 
-`CHATBOT.md`는 native discovery가 부족한 Chatbot을 repository guidance에 연결하는 compatibility bootstrap이다. 정책과 작업 계약은 각 원본이 소유한다.
-
 ## Bootstrap
 
-1. 플랫폼이 제공하지 않은 [root `AGENTS.md`](AGENTS.md)와 작업 경로에 적용되는 `AGENTS.md`를 해당 경로를 다루기 전에 읽는다. 이미 제공된 지침은 재사용한다.
+1. [`AGENTS.md`](AGENTS.md)와 대상 경로에 적용되는 하위 `AGENTS.md`를 읽는다.
 1. [`.agents/route/ROUTE.md`](.agents/route/ROUTE.md)에 따라 작업과 대상 경로에 필요한 Skill·Rule을 선택해 읽는다.
 1. 적용되는 지침이 요구하는 가이드라인·템플릿 등 후속 context를 작업 전에 읽고 적용한다.
 
