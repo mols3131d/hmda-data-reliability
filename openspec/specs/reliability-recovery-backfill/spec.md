@@ -59,6 +59,8 @@ Post-backfill profile request는 backfill target table과 같은 table을 가리
 
 Recovery profile의 `partition_column`은 `source_year` 또는 year alias인 `activity_year`여야 하며, 실제 profile population은 승인된 `source_year`의 전체 observation으로 정렬해야 한다(SHALL). 다른 discriminator는 target mutation 전에 거부해야 한다(SHALL). Optional `source_file`은 mutation 범위만 제한하며 year observation을 file 범위로 축소해서는 안 된다(MUST NOT).
 
+시스템은 target population 검사, mutation 또는 replay, profile과 actual state evidence 산출을 local managed writer와 직렬화해 같은 observation 상태에서 수행해야 한다(SHALL).
+
 #### Scenario: Misaligned profile request
 
 - **WHEN** profile target 또는 partition이 recovery target과 다를 때

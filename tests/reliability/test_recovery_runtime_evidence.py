@@ -49,6 +49,7 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
         "_ensure_approved",
         lambda _request: _request,
     )
+    monkeypatch.setattr(recovery_executor, "current_database_path", lambda _conn: None)
     monkeypatch.setattr(
         recovery_executor,
         "_stage_approved_candidate_source",

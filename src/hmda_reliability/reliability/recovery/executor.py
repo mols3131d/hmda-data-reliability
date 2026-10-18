@@ -10,6 +10,11 @@ from typing import NamedTuple
 import duckdb
 from pydantic import ValidationError
 
+from hmda_reliability.data_platform.duckdb import (
+    DuckDBMutationLockError,
+    current_database_path,
+    database_mutation_lock,
+)
 from hmda_reliability.data_platform.sql import quote_string_literal
 from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
@@ -101,6 +106,26 @@ class ApprovalBackfillValidator:
 
         # Approval scope is validated before the candidate source is read.
         request = _ensure_approved(request)
+        completed_result: BackfillValidationResult | None = None
+        try:
+            with database_mutation_lock(current_database_path(self._connection)):
+                completed_result = self._execute_locked(request)
+            return completed_result
+        except DuckDBMutationLockError as exc:
+            if completed_result is not None:
+                raise BackfillValidationError(
+                    "backfill 완료 후 target mutation lock 해제에 실패했습니다.",
+                    mutation_state=completed_result.mutation_state,
+                    reconciliation_action="resume_verification",
+                    context=completed_result.model_dump(mode="json"),
+                ) from exc
+            raise BackfillValidationError(
+                "backfill target mutation lock을 획득할 수 없습니다."
+            ) from exc
+
+    def _execute_locked(
+        self, request: ApprovedBackfillRequest
+    ) -> BackfillValidationResult:
         approval, proposal = request.approval, request.proposal
         try:
             with TemporaryDirectory() as temporary_directory:
