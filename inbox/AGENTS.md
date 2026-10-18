@@ -120,6 +120,8 @@ Handoff와 persistence는 artifact type과 별개의 cross-cutting concern으로
 
 그 밖의 type은 이 common contract만 따른다.
 
+템플릿을 작성하거나 개선할 때는 [Template Authoring](_guidelines/template-authoring.md)을 따른다. 이 기준은 `inbox/_templates/**`의 설계·유지보수에 적용하며 일반 Inbox artifact 작성 시 별도 로드를 요구하지 않는다.
+
 ## Writing
 
 - Human readability와 낮은 interpretation cost를 우선한다.
