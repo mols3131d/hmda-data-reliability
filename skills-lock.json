@@ -3,7 +3,9 @@
   "skills": {
     "langfuse": {
       "source": "langfuse/skills",
+      "ref": "b86532b77f16f1e27c7cffa32bb632aa3cd9a352",
       "sourceType": "github",
+      "skillPath": "skills/langfuse/SKILL.md",
       "computedHash": "14afde211553546dc280bbdd25feff7d20b64b17f7c5d0976db192f5998b3709"
     }
   }
