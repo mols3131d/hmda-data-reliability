@@ -106,9 +106,15 @@ class ApprovalBackfillValidator:
 
         # Approval scope is validated before the candidate source is read.
         request = _ensure_approved(request)
+        try:
+            database_path = current_database_path(self._connection)
+        except duckdb.Error as exc:
+            raise BackfillValidationError(
+                "backfill target database를 확인할 수 없습니다."
+            ) from exc
         completed_result: BackfillValidationResult | None = None
         try:
-            with database_mutation_lock(current_database_path(self._connection)):
+            with database_mutation_lock(database_path):
                 completed_result = self._execute_locked(request)
             return completed_result
         except DuckDBMutationLockError as exc:

@@ -552,6 +552,29 @@ def test_backfill_serializes_file_writer_through_profile_and_actual_state(
 
 
 @pytest.mark.integration
+def test_backfill_closed_target_connection_preserves_typed_failure(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    database_path = tmp_path / "target.duckdb"
+    with DuckDBConnectionManager(database_path) as connection:
+        load_hmda_loans_partition(connection, [source_path], 2025)
+        before = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+        connection.close()
+        with pytest.raises(BackfillValidationError) as error:
+            execute_approved_backfill(connection, request)
+        assert error.value.mutation_state is None
+    with DuckDBConnectionManager(database_path) as connection:
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == before
+
+
+@pytest.mark.integration
 def test_backfill_target_lock_failure_preserves_before_state(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
