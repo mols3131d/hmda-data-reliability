@@ -4,10 +4,10 @@
 
 ## Bootstrap
 
-1. [`AGENTS.md`](AGENTS.md)를 끝까지 읽고 root guidance를 적용한다.
+1. 플랫폼이 이미 제공한 root guidance를 재사용하고, 제공되지 않았다면 [`AGENTS.md`](AGENTS.md)를 끝까지 읽는다.
 1. [`.agents/route/ROUTE.md`](.agents/route/ROUTE.md)를 끝까지 읽고 current task intent와 known target path에 맞는 Skill과 Rule을 선택한다.
-1. Repository path를 읽거나 변경하기 전에 root부터 target까지 적용되는 `AGENTS.md`를 모두 읽는다.
-1. Route가 선택한 source와 그 source가 요구하는 context를 해당 작업 전에 읽는다.
+1. Repository path를 읽거나 변경하기 전에 root부터 target까지 적용되는 `AGENTS.md`를 확인하고, 플랫폼이 제공하지 않은 문서는 직접 읽는다.
+1. Route가 선택한 source와 적용되는 `AGENTS.md`가 해당 작업에 요구하는 context(가이드라인·템플릿 등)를 작업 전에 읽고 적용한다.
 1. Task intent, operation 또는 target path가 달라지면 applicable context를 다시 계산한다. 같은 revision에서 이미 읽었고 여전히 applicable한 context는 재사용한다.
 
 ## Routing Priority
@@ -18,6 +18,7 @@ Chatbot에서는 repository content를 변경하는 작업을 Git/GitHub context
 
 - Required source의 일부만 로드되거나 output이 truncated되면 읽은 것으로 간주하지 않는다. 필요한 경우 범위를 좁히거나 나눠서 끝까지 읽는다.
 - Required context를 확인할 수 없으면 그 context에 의존하는 mutation이나 판단을 추측으로 진행하지 않고 limitation을 명시한다.
+- 작성·수정한 산출물은 전달 전에 적용되는 source의 필수 계약에 대조한다. 확인하지 못한 항목은 준수한 것으로 표현하지 않고 limitation을 명시한다.
 - Route와 index metadata는 discovery만 소유한다. 선택된 canonical source가 실제 behavior와 policy를 소유한다.
 
 ## Boundary
