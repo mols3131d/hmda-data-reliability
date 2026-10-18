@@ -59,6 +59,11 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
         "partition_content_identity",
         lambda *_args, **_kwargs: approved_before_identity,
     )
+    monkeypatch.setattr(
+        recovery_executor,
+        "ensure_recovery_profile_population",
+        lambda *_args: None,
+    )
 
     def fail_target_load(*_args: object, **_kwargs: object) -> int:
         raise HMDADataLoadError("storage failed")

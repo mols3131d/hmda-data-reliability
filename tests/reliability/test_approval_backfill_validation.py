@@ -378,6 +378,100 @@ def test_recovery_blocks_diverged_target_without_mutation(tmp_path: Path) -> Non
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("replay", [False, True])
+def test_freshness_backfill_rejects_profile_population_mismatch_without_mutation(
+    tmp_path: Path, replay: bool
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(
+        source_path, tmp_path, source_year_scale=1
+    )
+    request = _freshness_request(
+        _freshness_approval(proposal), proposal, candidate_path
+    )
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        connection.execute(
+            "ALTER TABLE raw.hmda_loans ALTER source_year TYPE DECIMAL(6,1)"
+        )
+        if replay:
+            connection.execute(
+                "UPDATE raw.hmda_loans "
+                "SET ingested_at = TIMESTAMPTZ '2026-08-15 09:00:00+00'"
+            )
+        before = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE source_year = 2025"
+        ).fetchone() == (2,)
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans "
+            "WHERE CAST(source_year AS VARCHAR) = '2025'"
+        ).fetchone() == (0,)
+
+        with pytest.raises(ApprovalGateError, match="profile population"):
+            execute_approved_backfill(connection, request)
+
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == before
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("replay", [False, True])
+def test_freshness_backfill_accepts_equivalent_decimal_profile_population(
+    tmp_path: Path, replay: bool
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(
+        source_path, tmp_path, source_year_scale=0
+    )
+    request = _freshness_request(
+        _freshness_approval(proposal), proposal, candidate_path
+    )
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        connection.execute(
+            "ALTER TABLE raw.hmda_loans ALTER source_year TYPE DECIMAL(6,0)"
+        )
+        if replay:
+            connection.execute(
+                "UPDATE raw.hmda_loans "
+                "SET ingested_at = TIMESTAMPTZ '2026-08-15 09:00:00+00'"
+            )
+
+        result = execute_approved_backfill(connection, request)
+
+    assert result.validation_passed
+    assert result.freshness_validation_passed
+    assert result.profile_snapshot.row_count == 2
+
+
+@pytest.mark.integration
+def test_backfill_rejects_integer_candidate_for_empty_decimal_target(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [source_path], 2025)
+        connection.execute("DELETE FROM raw.hmda_loans")
+        connection.execute(
+            "ALTER TABLE raw.hmda_loans ALTER source_year TYPE DECIMAL(6,1)"
+        )
+        schema_before = connection.execute("DESCRIBE raw.hmda_loans").fetchall()
+
+        with pytest.raises(BackfillValidationError) as error:
+            execute_approved_backfill(connection, request)
+
+        assert error.value.mutation_state is None
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == []
+        assert connection.execute("DESCRIBE raw.hmda_loans").fetchall() == schema_before
+
+
+@pytest.mark.integration
 def test_freshness_recovery_changes_equal_content_stale_state(tmp_path: Path) -> None:
     source_path = _write_hmda_csv(tmp_path)
     candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
@@ -1021,12 +1115,19 @@ def _proposal_for_source(source_path: Path) -> RecoveryProposal:
 def _freshness_proposal_for_source(
     source_path: Path,
     tmp_path: Path,
+    *,
+    source_year_scale: int | None = None,
 ) -> tuple[Path, RecoveryProposal]:
     candidate_database_path = tmp_path / "freshness-candidate.duckdb"
     candidate_path = tmp_path / "freshness-candidate.parquet"
     candidate_at = datetime(2026, 8, 15, 9, 0, tzinfo=UTC)
     with DuckDBConnectionManager(candidate_database_path) as connection:
         load_hmda_loans_partition(connection, [source_path], 2025)
+        if source_year_scale is not None:
+            connection.execute(
+                "ALTER TABLE raw.hmda_loans ALTER source_year TYPE "
+                f"DECIMAL(6,{source_year_scale})"
+            )
         connection.execute(
             "UPDATE raw.hmda_loans SET ingested_at = ? WHERE source_year = 2025",
             [candidate_at],

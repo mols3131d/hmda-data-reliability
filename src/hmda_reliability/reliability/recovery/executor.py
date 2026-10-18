@@ -33,6 +33,9 @@ from hmda_reliability.reliability.errors import (
     ProfileSnapshotError,
 )
 from hmda_reliability.reliability.profiling import create_profile_snapshot
+from hmda_reliability.reliability.recovery.profile_scope import (
+    ensure_recovery_profile_population,
+)
 from hmda_reliability.reliability.recovery.request import ApprovedBackfillRequest
 from hmda_reliability.reliability.recovery.result import BackfillValidationResult
 
@@ -110,6 +113,9 @@ class ApprovalBackfillValidator:
                     table_name=request.table_name,
                     source_year=request.source_year,
                     source_file=request.source_file,
+                )
+                ensure_recovery_profile_population(
+                    self._connection, request.profile_request
                 )
                 mutation_state, reconciliation_action, executed_actions = (
                     self._reconcile_state(
@@ -347,6 +353,7 @@ def _stage_approved_candidate_source(
             raise ApprovalGateError(
                 "recovery source가 승인된 candidate content와 일치하지 않습니다."
             )
+        ensure_recovery_profile_population(source_connection, request.profile_request)
         if binding is not None:
             candidate_freshness_at = partition_max_ingested_at(
                 source_connection,
