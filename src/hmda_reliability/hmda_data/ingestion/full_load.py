@@ -20,6 +20,7 @@ from hmda_reliability.hmda_data.ingestion._common import (
     _LOGGER,
     HMDA_LOANS_TABLE,
     validate_required_columns,
+    validate_source_required_columns,
 )
 from hmda_reliability.hmda_data.ingestion._source_query import (
     source_union_sql,
@@ -47,6 +48,7 @@ def load_hmda_loans(
         with database_mutation_lock(current_database_path(connection)):
             _create_hmda_loans_table(connection, paths, table_name=table_name)
             validate_required_columns(connection, table_name)
+            validate_source_required_columns(connection, paths)
             row_count = table_row_count(connection, table_name)
             _LOGGER.debug(
                 "HMDA 원천 적재 완료",
