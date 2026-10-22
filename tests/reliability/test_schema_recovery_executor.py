@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from subprocess import CompletedProcess
+from tempfile import TemporaryDirectory
 from threading import Event, Thread
 from typing import TextIO
 
@@ -218,7 +219,7 @@ def test_schema_recovery_replays_exact_after_without_replacement(
 
 @pytest.mark.component
 @pytest.mark.parametrize("target_state", ["before", "after"])
-@pytest.mark.parametrize("failure", ["unlock", "close"])
+@pytest.mark.parametrize("failure", ["unlock", "close", "staging"])
 def test_schema_recovery_preserves_completed_state_on_cleanup_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -243,8 +244,16 @@ def test_schema_recovery_preserves_completed_state_on_cleanup_failure(
             yield connection
         raise duckdb.IOException("injected target close failure")
 
+    @contextmanager
+    def fail_staging_cleanup() -> Iterator[str]:
+        with TemporaryDirectory(dir=tmp_path) as directory:
+            yield directory
+        raise OSError("injected staging cleanup failure")
+
     with monkeypatch.context() as faults:
-        if failure == "unlock":
+        if failure == "staging":
+            faults.setattr(schema_executor, "TemporaryDirectory", fail_staging_cleanup)
+        elif failure == "unlock":
             faults.setattr(fcntl, "flock", fail_target_unlock)
         else:
             faults.setattr(
@@ -265,6 +274,9 @@ def test_schema_recovery_preserves_completed_state_on_cleanup_failure(
         "table_replaced" if target_state == "before" else "already_restored"
     )
     assert error.value.reconciliation_action == "resume_verification"
+    assert error.value.context["actual_state"] == actual.model_dump(mode="json")
+    if failure == "staging":
+        assert isinstance(error.value.__cause__, OSError)
     replay = reliability.execute_approved_schema_recovery(request)
     assert replay.mutation_state == "already_restored"
     assert replay.executed_actions == ("rerun_profile_snapshot",)

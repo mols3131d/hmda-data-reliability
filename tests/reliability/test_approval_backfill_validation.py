@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from threading import Event, Thread, current_thread
 from typing import TextIO, cast
 
@@ -1230,6 +1232,70 @@ def test_recovery_wraps_staging_directory_failure(
                 source_paths=(source_path,),
             ),
         )
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("target_state", ["before", "after"])
+@pytest.mark.parametrize("profile_fails", [False, True])
+def test_backfill_preserves_committed_state_on_staging_cleanup_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    target_state: str,
+    profile_fails: bool,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    database_path = tmp_path / "target.duckdb"
+
+    @contextmanager
+    def fail_staging_cleanup() -> Iterator[str]:
+        try:
+            with TemporaryDirectory(dir=tmp_path) as directory:
+                yield directory
+        finally:
+            raise OSError("injected staging cleanup failure")
+
+    def fail_profile(*args: object, **kwargs: object) -> None:
+        raise recovery_executor.ProfileSnapshotError("profile failed")
+
+    with DuckDBConnectionManager(database_path) as connection:
+        if target_state == "after":
+            execute_approved_backfill(connection, request)
+        with monkeypatch.context() as faults:
+            faults.setattr(
+                recovery_executor, "TemporaryDirectory", fail_staging_cleanup
+            )
+            if profile_fails:
+                faults.setattr(
+                    recovery_executor, "create_profile_snapshot", fail_profile
+                )
+            with pytest.raises(BackfillValidationError) as error:
+                execute_approved_backfill(connection, request)
+
+    with DuckDBConnectionManager(database_path) as connection:
+        actual = partition_content_identity(connection, source_year=2025)
+        assert actual == proposal.expected_after_identity
+        assert error.value.mutation_state == (
+            "partition_changed" if target_state == "before" else "already_recovered"
+        )
+        assert error.value.reconciliation_action == "resume_verification"
+        assert error.value.context["actual_identity"] == actual.model_dump(mode="json")
+        assert error.value.context["expected_after_identity"] == (
+            proposal.expected_after_identity.model_dump(mode="json")
+        )
+        assert (
+            error.value.context["cleanup_error"] == "injected staging cleanup failure"
+        )
+        assert isinstance(error.value.__cause__, OSError)
+        replay = execute_approved_backfill(connection, request)
+
+    assert replay.mutation_state == "already_recovered"
+    assert replay.executed_actions == ["rerun_profile_snapshot"]
 
 
 @pytest.mark.integration
