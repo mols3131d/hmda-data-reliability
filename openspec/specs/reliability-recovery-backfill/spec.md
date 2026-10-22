@@ -110,6 +110,20 @@ Post-backfill profile request는 backfill target table과 같은 table을 가리
 - **WHEN** recovery result를 반환할 때
 - **THEN** partition이 변경된 post-mutation failure임을 식별해야 한다.
 
+#### Scenario: Staging cleanup failure after commit
+
+- **GIVEN** approved partition replacement가 commit된 뒤 staging directory 종료가 `OSError`로 실패할 때
+- **WHEN** recovery API가 failure를 반환할 때
+- **THEN** `BackfillValidationError`는 완료된 mutation, actual content/temporal state와 reconciliation action을 보존해야 한다.
+- **AND** actual state가 expected recovered state와 같으면 `resume_verification`을 제공하고 오류 원인을 보존해야 한다.
+- **AND** 정상 완료나 rollback으로 보고하거나 mutation을 자동 재실행해서는 안 된다.
+
+#### Scenario: Staging cleanup failure during replay
+
+- **GIVEN** target이 expected recovered state와 같아 overwrite 없이 verification을 수행했을 때
+- **WHEN** staging directory 종료가 `OSError`로 실패할 때
+- **THEN** failure는 `already_recovered`와 actual state 및 `resume_verification`을 보존하고 이번 실행이 partition을 변경했다고 보고해서는 안 된다.
+
 ### Requirement: Recovery reconciliation
 
 시스템은 재실행 시 current target을 approved before state와 expected recovered state에 비교해야 한다(SHALL). Current target이 expected recovered state와 같으면 partition overwrite를 반복하지 않고 downstream verification을 재개해야 한다(SHALL). 어느 state와도 다르면 기존 approval로 추가 mutation해서는 안 된다(MUST NOT).

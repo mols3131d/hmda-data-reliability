@@ -99,6 +99,7 @@ class ApprovalBackfillValidator:
 
         # Approval scope is validated before the candidate source is read.
         approval, proposal = _ensure_approved(request)
+        completed_mutation_state: str | None = None
         try:
             with TemporaryDirectory() as temporary_directory:
                 staged_source_path = _stage_approved_candidate_source(
@@ -138,11 +139,18 @@ class ApprovalBackfillValidator:
                     )
                 else:
                     row_count = current_identity.row_count
+                completed_mutation_state = mutation_state
                 snapshot = create_profile_snapshot(
                     self._connection,
                     request.profile_request,
                 )
-        except ProfileSnapshotError as exc:
+        except (ProfileSnapshotError, OSError) as exc:
+            if isinstance(exc, OSError) and completed_mutation_state is None:
+                raise BackfillValidationError(
+                    "승인된 backfill validation 실행에 실패했습니다: "
+                    f"incident_id={request.approval.incident_id}, "
+                    f"source_year={request.source_year}"
+                ) from exc
             actual_identity = partition_content_identity(
                 self._connection,
                 table_name=request.table_name,
@@ -159,8 +167,13 @@ class ApprovalBackfillValidator:
                 if proposal.freshness_binding is not None
                 else None
             )
+            failure_operation = (
+                "profile validation"
+                if isinstance(exc, ProfileSnapshotError)
+                else "staging cleanup"
+            )
             msg = (
-                "partition commit 후 profile validation에 실패했습니다: "
+                f"partition commit 후 {failure_operation}에 실패했습니다: "
                 f"incident_id={request.approval.incident_id}, "
                 f"source_year={request.source_year}"
             )
@@ -172,7 +185,9 @@ class ApprovalBackfillValidator:
             raise BackfillValidationError(
                 msg,
                 mutation_state=(
-                    "diverged_after_profile_failure" if diverged else mutation_state
+                    "diverged_after_profile_failure"
+                    if diverged and isinstance(exc, ProfileSnapshotError)
+                    else mutation_state
                 ),
                 reconciliation_action=(
                     "request_new_validation_and_approval"
@@ -185,7 +200,11 @@ class ApprovalBackfillValidator:
                         proposal.expected_after_identity.model_dump(mode="json")
                     ),
                     "execution_mutation_state": mutation_state,
-                    "profile_error": str(exc),
+                    (
+                        "profile_error"
+                        if isinstance(exc, ProfileSnapshotError)
+                        else "cleanup_error"
+                    ): str(exc),
                     "actual_freshness_at": (
                         actual_freshness_at.isoformat()
                         if actual_freshness_at is not None
@@ -203,7 +222,7 @@ class ApprovalBackfillValidator:
                 "recovery target이 승인 후 변경되어 "
                 "새 validation과 approval이 필요합니다."
             ) from exc
-        except (HMDADataLoadError, OSError, duckdb.Error) as exc:
+        except (HMDADataLoadError, duckdb.Error) as exc:
             msg = (
                 "승인된 backfill validation 실행에 실패했습니다: "
                 f"incident_id={request.approval.incident_id}, "
