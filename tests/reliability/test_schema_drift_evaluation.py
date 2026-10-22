@@ -20,6 +20,8 @@ from hmda_reliability.reliability import (
     ApprovalStatus,
     SchemaRecoveryApproval,
     SchemaRecoveryProposal,
+    build_evaluation_report,
+    render_evaluation_report_markdown,
 )
 from hmda_reliability.reliability.errors import SchemaRecoveryValidationError
 
@@ -254,6 +256,14 @@ def test_schema_drift_evaluation_restores_exact_state_and_replays(
     assert result.post_recovery_case.target_mutated is True
     assert result.target_dbt_projection_id == "sha256:target"
     assert target_validation_states == [result.baseline_state]
+    assert result.clean_case.required_actions == []
+    assert result.clean_case.action_passed
+    assert result.post_recovery_case.action_passed
+    report = build_evaluation_report(
+        [result.clean_case, result.schema_drift_case, result.post_recovery_case]
+    )
+    assert report.action_passed_cases == 3
+    assert report.action_success_rate == 1.0
     with DuckDBConnectionManager(request.database_path, read_only=True) as connection:
         final_state = reliability.create_table_state_identity(
             connection,
@@ -318,6 +328,7 @@ def test_schema_drift_evaluation_rejects_incomplete_candidate_before_approval(
     assert result.post_recovery_case.reconciliation_action == (
         "request_new_validation_and_approval"
     )
+    assert not result.post_recovery_case.action_passed
     with DuckDBConnectionManager(request.database_path, read_only=True) as connection:
         current = reliability.create_table_state_identity(
             connection,
@@ -374,6 +385,7 @@ def test_schema_drift_evaluation_maps_stale_target_before_mutation(
     assert result.post_recovery_case.reconciliation_action == (
         "request_new_validation_and_approval"
     )
+    assert not result.post_recovery_case.action_passed
     assert any(
         "current_state" in evidence
         for evidence in result.post_recovery_case.evidence_refs
@@ -417,6 +429,7 @@ def test_schema_drift_evaluation_records_committed_state_after_unlock_failure(
     assert result.post_recovery_case.failure_stage == "after_target_mutation"
     assert result.post_recovery_case.target_mutated is True
     assert result.post_recovery_case.reconciliation_action == "resume_verification"
+    assert not result.post_recovery_case.action_passed
     with DuckDBConnectionManager(request.database_path, read_only=True) as connection:
         actual = reliability.create_table_state_identity(
             connection, request.raw_table_name
@@ -474,6 +487,7 @@ def test_schema_drift_evaluation_maps_rolled_back_replacement(
     assert result.post_recovery_case.failure_stage == "in_target_transaction"
     assert result.post_recovery_case.target_mutated is False
     assert result.post_recovery_case.reconciliation_action == "retry_same_approval"
+    assert not result.post_recovery_case.action_passed
 
 
 @pytest.mark.integration
@@ -533,6 +547,7 @@ def test_schema_drift_evaluation_maps_diverged_replay(
     assert result.post_recovery_case.reconciliation_action == (
         "request_new_validation_and_approval"
     )
+    assert not result.post_recovery_case.action_passed
 
 
 @pytest.mark.integration
@@ -574,6 +589,31 @@ def test_schema_drift_evaluation_maps_post_restoration_dbt_failure(
     assert result.target_dbt_failure_context == {
         "run_target_path": str(tmp_path / "failed-target-dbt")
     }
+    assert result.post_recovery_case.evidence_refs == [
+        "failure:DataOperationError",
+        "target dbt failed",
+        f"run_target_path:{tmp_path / 'failed-target-dbt'}",
+    ]
+    assert result.recovery.actual_state == result.baseline_state
+    assert result.replay.actual_state == result.baseline_state
+
+    report = build_evaluation_report(
+        [result.clean_case, result.schema_drift_case, result.post_recovery_case]
+    )
+    rendered = render_evaluation_report_markdown(report)
+    assert not result.post_recovery_case.action_passed, rendered
+    assert report.total_cases == 3
+    assert report.detection_passed_cases == 3
+    assert report.action_passed_cases == 2
+    assert report.action_success_rate == 2 / 3
+    assert "| Action passed | 2 |" in rendered
+    assert "| Action success rate | 66.67% |" in rendered
+    assert (
+        "| recovery_dbt_failure | - | - | PASS | FAIL | YES | "
+        "after_target_mutation | resume_verification | "
+        "failure:DataOperationError, target dbt failed, "
+        f"run_target_path:{tmp_path / 'failed-target-dbt'} | - |"
+    ) in rendered
 
 
 def _request(tmp_path: Path, *, workspace: Path) -> DataOperationRequest:
