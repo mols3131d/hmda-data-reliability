@@ -10,6 +10,11 @@ from typing import NamedTuple
 import duckdb
 from pydantic import ValidationError
 
+from hmda_reliability.data_platform.duckdb import (
+    DuckDBMutationLockError,
+    current_database_path,
+    database_mutation_lock,
+)
 from hmda_reliability.data_platform.sql import quote_string_literal
 from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
@@ -20,7 +25,6 @@ from hmda_reliability.hmda_data import (
 from hmda_reliability.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability.contracts import (
-    Approval,
     FreshnessMeasurementStatus,
     FreshnessObservation,
     FreshnessRecoveryBinding,
@@ -34,6 +38,9 @@ from hmda_reliability.reliability.errors import (
     ProfileSnapshotError,
 )
 from hmda_reliability.reliability.profiling import create_profile_snapshot
+from hmda_reliability.reliability.recovery.profile_scope import (
+    ensure_recovery_profile_population,
+)
 from hmda_reliability.reliability.recovery.request import ApprovedBackfillRequest
 from hmda_reliability.reliability.recovery.result import BackfillValidationResult
 
@@ -98,7 +105,34 @@ class ApprovalBackfillValidator:
         """승인된 이전 상태로 복구하거나 재현(replay) 시 정확한 상태를 검증한다."""
 
         # Approval scope is validated before the candidate source is read.
-        approval, proposal = _ensure_approved(request)
+        request = _ensure_approved(request)
+        try:
+            database_path = current_database_path(self._connection)
+        except duckdb.Error as exc:
+            raise BackfillValidationError(
+                "backfill target database를 확인할 수 없습니다."
+            ) from exc
+        completed_result: BackfillValidationResult | None = None
+        try:
+            with database_mutation_lock(database_path):
+                completed_result = self._execute_locked(request)
+            return completed_result
+        except DuckDBMutationLockError as exc:
+            if completed_result is not None:
+                raise BackfillValidationError(
+                    "backfill 완료 후 target mutation lock 해제에 실패했습니다.",
+                    mutation_state=completed_result.mutation_state,
+                    reconciliation_action="resume_verification",
+                    context=completed_result.model_dump(mode="json"),
+                ) from exc
+            raise BackfillValidationError(
+                "backfill target mutation lock을 획득할 수 없습니다."
+            ) from exc
+
+    def _execute_locked(
+        self, request: ApprovedBackfillRequest
+    ) -> BackfillValidationResult:
+        approval, proposal = request.approval, request.proposal
         completed_mutation_state: str | None = None
         try:
             with TemporaryDirectory() as temporary_directory:
@@ -111,6 +145,9 @@ class ApprovalBackfillValidator:
                     table_name=request.table_name,
                     source_year=request.source_year,
                     source_file=request.source_file,
+                )
+                ensure_recovery_profile_population(
+                    self._connection, request.profile_request
                 )
                 mutation_state, reconciliation_action, executed_actions = (
                     self._reconcile_state(
@@ -288,16 +325,17 @@ def execute_approved_backfill(
 
 def _ensure_approved(
     request: ApprovedBackfillRequest,
-) -> tuple[Approval, RecoveryProposal]:
+) -> ApprovedBackfillRequest:
     try:
-        approval = Approval.model_validate(request.approval.model_dump(warnings=False))
-        proposal = RecoveryProposal.model_validate(
-            request.proposal.model_dump(warnings=False)
+        request = ApprovedBackfillRequest.model_validate(
+            request.model_dump(warnings=False)
         )
     except ValidationError as exc:
         raise ApprovalGateError(
-            "backfill approval 또는 recovery proposal contract가 유효하지 않습니다."
+            "backfill approval, recovery proposal 또는 profile request contract가 "
+            "유효하지 않습니다."
         ) from exc
+    approval, proposal = request.approval, request.proposal
     if not can_execute_risky_action(approval):
         msg = (
             "승인되지 않은 backfill 요청입니다: "
@@ -334,7 +372,7 @@ def _ensure_approved(
         raise ApprovalGateError(
             f"recovery proposal에 필요한 action이 없습니다: {joined_actions}"
         )
-    return approval, proposal
+    return request
 
 
 def _stage_approved_candidate_source(
@@ -365,6 +403,7 @@ def _stage_approved_candidate_source(
             raise ApprovalGateError(
                 "recovery source가 승인된 candidate content와 일치하지 않습니다."
             )
+        ensure_recovery_profile_population(source_connection, request.profile_request)
         if binding is not None:
             candidate_freshness_at = partition_max_ingested_at(
                 source_connection,

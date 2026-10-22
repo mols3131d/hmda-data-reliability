@@ -37,6 +37,7 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
     )
     request = SimpleNamespace(
         approval=approval,
+        proposal=proposal,
         source_year=2025,
         source_file=None,
         table_name="raw.hmda_loans",
@@ -46,8 +47,9 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
     monkeypatch.setattr(
         recovery_executor,
         "_ensure_approved",
-        lambda _request: (approval, proposal),
+        lambda _request: _request,
     )
+    monkeypatch.setattr(recovery_executor, "current_database_path", lambda _conn: None)
     monkeypatch.setattr(
         recovery_executor,
         "_stage_approved_candidate_source",
@@ -57,6 +59,11 @@ def test_overwrite_boundary_is_recorded_before_storage_failure(
         recovery_executor,
         "partition_content_identity",
         lambda *_args, **_kwargs: approved_before_identity,
+    )
+    monkeypatch.setattr(
+        recovery_executor,
+        "ensure_recovery_profile_population",
+        lambda *_args: None,
     )
 
     def fail_target_load(*_args: object, **_kwargs: object) -> int:

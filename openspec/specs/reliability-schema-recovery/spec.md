@@ -79,6 +79,8 @@ Table-wide schema drift를 external approval과 검증된 complete-table state�
 
 시스템은 partition-scoped incident observation과 table-wide recovery target을 명시적으로 구분해야 한다(SHALL). Incident partition을 table mutation의 partition scope로 해석하거나 partial schema recovery에 사용해서는 안 된다(MUST NOT).
 
+Recovery profile의 `partition_column`은 `source_year` 또는 year alias인 `activity_year`여야 하며, 실제 profile population은 승인된 `observation_partition`의 `source_year` 범위로 정렬해야 한다(SHALL). 다른 discriminator는 target mutation 전에 거부해야 한다(SHALL).
+
 #### Scenario: Partition-observed schema drift
 
 - **GIVEN** 한 partition profile 비교에서 table-wide schema hash mismatch가 탐지됐을 때
