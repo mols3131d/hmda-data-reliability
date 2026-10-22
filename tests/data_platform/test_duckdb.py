@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
+from multiprocessing import get_context
+from multiprocessing.synchronize import Event as ProcessEvent
 from pathlib import Path
 from threading import Event, Thread
 
@@ -69,6 +72,114 @@ def test_database_mutation_lock_serializes_canonical_aliases(
     assert acquired.wait(timeout=1)
     worker.join(timeout=1)
     assert not worker.is_alive()
+
+
+def _exercise_nested_mutation_lock(
+    database_path: Path,
+    alias_path: Path,
+    inner_failure: bool,
+) -> None:
+    attempted = Event()
+    acquired = Event()
+
+    def acquire_alias() -> None:
+        attempted.set()
+        with database_mutation_lock(alias_path):
+            acquired.set()
+
+    with database_mutation_lock(database_path):
+        expected_error = (
+            pytest.raises(ValueError, match="nested mutation failed")
+            if inner_failure
+            else nullcontext()
+        )
+        with expected_error, database_mutation_lock(alias_path):
+            if inner_failure:
+                raise ValueError("nested mutation failed")
+
+        worker = Thread(target=acquire_alias, daemon=True)
+        worker.start()
+        assert attempted.wait(timeout=1)
+        assert not acquired.wait(timeout=0.05)
+
+    assert acquired.wait(timeout=1)
+    worker.join(timeout=1)
+    assert not worker.is_alive()
+
+
+@pytest.mark.parametrize("alias_kind", ["relative", "symlink"])
+@pytest.mark.parametrize("inner_failure", [False, True], ids=["success", "exception"])
+def test_database_mutation_lock_reenters_alias_without_releasing_outer_lock(
+    alias_kind: str,
+    inner_failure: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """중첩 획득의 deadlock은 격리하고 outer lock의 thread 배타성을 보존한다."""
+
+    database_path = tmp_path / "hmda-reliability.duckdb"
+    database_path.touch()
+    if alias_kind == "relative":
+        monkeypatch.chdir(tmp_path)
+        alias_path = Path(database_path.name)
+    else:
+        alias_path = tmp_path / "hmda-reliability-alias.duckdb"
+        alias_path.symlink_to(database_path)
+
+    worker = get_context("spawn").Process(
+        target=_exercise_nested_mutation_lock,
+        args=(database_path, alias_path, inner_failure),
+    )
+    worker.start()
+    try:
+        worker.join(timeout=3)
+        assert worker.exitcode == 0, (
+            "nested mutation lock did not complete successfully"
+        )
+    finally:
+        if worker.is_alive():
+            worker.kill()
+            worker.join(timeout=1)
+        worker.close()
+
+
+def _acquire_forked_mutation_lock(
+    database_path: Path,
+    attempted: ProcessEvent,
+    acquired: ProcessEvent,
+) -> None:
+    attempted.set()
+    with database_mutation_lock(database_path):
+        acquired.set()
+
+
+def test_database_mutation_lock_does_not_inherit_reentrancy_after_fork(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "hmda-reliability.duckdb"
+    context = get_context("fork")
+    attempted = context.Event()
+    acquired = context.Event()
+    worker = context.Process(
+        target=_acquire_forked_mutation_lock,
+        args=(database_path, attempted, acquired),
+    )
+
+    try:
+        with database_mutation_lock(database_path):
+            worker.start()
+            assert attempted.wait(timeout=1)
+            assert not acquired.wait(timeout=0.05)
+
+        assert acquired.wait(timeout=1)
+        worker.join(timeout=1)
+        assert worker.exitcode == 0
+    finally:
+        if worker.pid is not None:
+            if worker.is_alive():
+                worker.kill()
+                worker.join(timeout=1)
+            worker.close()
 
 
 def test_database_mutation_lock_is_noop_for_in_memory_database(

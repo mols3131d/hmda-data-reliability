@@ -57,6 +57,10 @@
 
 Post-backfill profile request는 backfill target table과 같은 table을 가리키고 partition identity는 recovery target과 일치해야 한다(SHALL).
 
+Recovery profile의 `partition_column`은 `source_year` 또는 year alias인 `activity_year`여야 하며, 실제 profile population은 승인된 `source_year`의 전체 observation으로 정렬해야 한다(SHALL). 다른 discriminator는 target mutation 전에 거부해야 한다(SHALL). Optional `source_file`은 mutation 범위만 제한하며 year observation을 file 범위로 축소해서는 안 된다(MUST NOT).
+
+시스템은 target population 검사, mutation 또는 replay, profile과 actual state evidence 산출을 local managed writer와 직렬화해 같은 observation 상태에서 수행해야 한다(SHALL).
+
 #### Scenario: Misaligned profile request
 
 - **WHEN** profile target 또는 partition이 recovery target과 다를 때
@@ -109,6 +113,20 @@ Post-backfill profile request는 backfill target table과 같은 table을 가리
 - **GIVEN** partition replacement는 완료됐지만 profile 또는 dbt verification이 실패했을 때
 - **WHEN** recovery result를 반환할 때
 - **THEN** partition이 변경된 post-mutation failure임을 식별해야 한다.
+
+#### Scenario: Staging cleanup failure after commit
+
+- **GIVEN** approved partition replacement가 commit된 뒤 staging directory 종료가 `OSError`로 실패할 때
+- **WHEN** recovery API가 failure를 반환할 때
+- **THEN** `BackfillValidationError`는 완료된 mutation, actual content/temporal state와 reconciliation action을 보존해야 한다.
+- **AND** actual state가 expected recovered state와 같으면 `resume_verification`을 제공하고 오류 원인을 보존해야 한다.
+- **AND** 정상 완료나 rollback으로 보고하거나 mutation을 자동 재실행해서는 안 된다.
+
+#### Scenario: Staging cleanup failure during replay
+
+- **GIVEN** target이 expected recovered state와 같아 overwrite 없이 verification을 수행했을 때
+- **WHEN** staging directory 종료가 `OSError`로 실패할 때
+- **THEN** failure는 `already_recovered`와 actual state 및 `resume_verification`을 보존하고 이번 실행이 partition을 변경했다고 보고해서는 안 된다.
 
 ### Requirement: Recovery reconciliation
 

@@ -10,6 +10,11 @@ from typing import NamedTuple
 import duckdb
 from pydantic import ValidationError
 
+from hmda_reliability.data_platform.duckdb import (
+    DuckDBMutationLockError,
+    current_database_path,
+    database_mutation_lock,
+)
 from hmda_reliability.data_platform.sql import quote_string_literal
 from hmda_reliability.hmda_data import (
     PartitionContentIdentity,
@@ -20,7 +25,6 @@ from hmda_reliability.hmda_data import (
 from hmda_reliability.hmda_data.errors import HMDADataLoadError, HMDAStalePartitionError
 from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability.contracts import (
-    Approval,
     FreshnessMeasurementStatus,
     FreshnessObservation,
     FreshnessRecoveryBinding,
@@ -34,6 +38,9 @@ from hmda_reliability.reliability.errors import (
     ProfileSnapshotError,
 )
 from hmda_reliability.reliability.profiling import create_profile_snapshot
+from hmda_reliability.reliability.recovery.profile_scope import (
+    ensure_recovery_profile_population,
+)
 from hmda_reliability.reliability.recovery.request import ApprovedBackfillRequest
 from hmda_reliability.reliability.recovery.result import BackfillValidationResult
 
@@ -98,7 +105,35 @@ class ApprovalBackfillValidator:
         """승인된 이전 상태로 복구하거나 재현(replay) 시 정확한 상태를 검증한다."""
 
         # Approval scope is validated before the candidate source is read.
-        approval, proposal = _ensure_approved(request)
+        request = _ensure_approved(request)
+        try:
+            database_path = current_database_path(self._connection)
+        except duckdb.Error as exc:
+            raise BackfillValidationError(
+                "backfill target database를 확인할 수 없습니다."
+            ) from exc
+        completed_result: BackfillValidationResult | None = None
+        try:
+            with database_mutation_lock(database_path):
+                completed_result = self._execute_locked(request)
+            return completed_result
+        except DuckDBMutationLockError as exc:
+            if completed_result is not None:
+                raise BackfillValidationError(
+                    "backfill 완료 후 target mutation lock 해제에 실패했습니다.",
+                    mutation_state=completed_result.mutation_state,
+                    reconciliation_action="resume_verification",
+                    context=completed_result.model_dump(mode="json"),
+                ) from exc
+            raise BackfillValidationError(
+                "backfill target mutation lock을 획득할 수 없습니다."
+            ) from exc
+
+    def _execute_locked(
+        self, request: ApprovedBackfillRequest
+    ) -> BackfillValidationResult:
+        approval, proposal = request.approval, request.proposal
+        completed_mutation_state: str | None = None
         try:
             with TemporaryDirectory() as temporary_directory:
                 staged_source_path = _stage_approved_candidate_source(
@@ -110,6 +145,9 @@ class ApprovalBackfillValidator:
                     table_name=request.table_name,
                     source_year=request.source_year,
                     source_file=request.source_file,
+                )
+                ensure_recovery_profile_population(
+                    self._connection, request.profile_request
                 )
                 mutation_state, reconciliation_action, executed_actions = (
                     self._reconcile_state(
@@ -138,11 +176,18 @@ class ApprovalBackfillValidator:
                     )
                 else:
                     row_count = current_identity.row_count
+                completed_mutation_state = mutation_state
                 snapshot = create_profile_snapshot(
                     self._connection,
                     request.profile_request,
                 )
-        except ProfileSnapshotError as exc:
+        except (ProfileSnapshotError, OSError) as exc:
+            if isinstance(exc, OSError) and completed_mutation_state is None:
+                raise BackfillValidationError(
+                    "승인된 backfill validation 실행에 실패했습니다: "
+                    f"incident_id={request.approval.incident_id}, "
+                    f"source_year={request.source_year}"
+                ) from exc
             actual_identity = partition_content_identity(
                 self._connection,
                 table_name=request.table_name,
@@ -159,8 +204,13 @@ class ApprovalBackfillValidator:
                 if proposal.freshness_binding is not None
                 else None
             )
+            failure_operation = (
+                "profile validation"
+                if isinstance(exc, ProfileSnapshotError)
+                else "staging cleanup"
+            )
             msg = (
-                "partition commit 후 profile validation에 실패했습니다: "
+                f"partition commit 후 {failure_operation}에 실패했습니다: "
                 f"incident_id={request.approval.incident_id}, "
                 f"source_year={request.source_year}"
             )
@@ -172,7 +222,9 @@ class ApprovalBackfillValidator:
             raise BackfillValidationError(
                 msg,
                 mutation_state=(
-                    "diverged_after_profile_failure" if diverged else mutation_state
+                    "diverged_after_profile_failure"
+                    if diverged and isinstance(exc, ProfileSnapshotError)
+                    else mutation_state
                 ),
                 reconciliation_action=(
                     "request_new_validation_and_approval"
@@ -185,7 +237,11 @@ class ApprovalBackfillValidator:
                         proposal.expected_after_identity.model_dump(mode="json")
                     ),
                     "execution_mutation_state": mutation_state,
-                    "profile_error": str(exc),
+                    (
+                        "profile_error"
+                        if isinstance(exc, ProfileSnapshotError)
+                        else "cleanup_error"
+                    ): str(exc),
                     "actual_freshness_at": (
                         actual_freshness_at.isoformat()
                         if actual_freshness_at is not None
@@ -203,7 +259,7 @@ class ApprovalBackfillValidator:
                 "recovery target이 승인 후 변경되어 "
                 "새 validation과 approval이 필요합니다."
             ) from exc
-        except (HMDADataLoadError, OSError, duckdb.Error) as exc:
+        except (HMDADataLoadError, duckdb.Error) as exc:
             msg = (
                 "승인된 backfill validation 실행에 실패했습니다: "
                 f"incident_id={request.approval.incident_id}, "
@@ -269,16 +325,17 @@ def execute_approved_backfill(
 
 def _ensure_approved(
     request: ApprovedBackfillRequest,
-) -> tuple[Approval, RecoveryProposal]:
+) -> ApprovedBackfillRequest:
     try:
-        approval = Approval.model_validate(request.approval.model_dump(warnings=False))
-        proposal = RecoveryProposal.model_validate(
-            request.proposal.model_dump(warnings=False)
+        request = ApprovedBackfillRequest.model_validate(
+            request.model_dump(warnings=False)
         )
     except ValidationError as exc:
         raise ApprovalGateError(
-            "backfill approval 또는 recovery proposal contract가 유효하지 않습니다."
+            "backfill approval, recovery proposal 또는 profile request contract가 "
+            "유효하지 않습니다."
         ) from exc
+    approval, proposal = request.approval, request.proposal
     if not can_execute_risky_action(approval):
         msg = (
             "승인되지 않은 backfill 요청입니다: "
@@ -315,7 +372,7 @@ def _ensure_approved(
         raise ApprovalGateError(
             f"recovery proposal에 필요한 action이 없습니다: {joined_actions}"
         )
-    return approval, proposal
+    return request
 
 
 def _stage_approved_candidate_source(
@@ -346,6 +403,7 @@ def _stage_approved_candidate_source(
             raise ApprovalGateError(
                 "recovery source가 승인된 candidate content와 일치하지 않습니다."
             )
+        ensure_recovery_profile_population(source_connection, request.profile_request)
         if binding is not None:
             candidate_freshness_at = partition_max_ingested_at(
                 source_connection,

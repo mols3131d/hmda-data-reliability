@@ -5,7 +5,9 @@ from __future__ import annotations
 import fcntl
 from collections.abc import Iterator
 from contextlib import contextmanager
+from os import getpid
 from pathlib import Path
+from threading import local
 from types import TracebackType
 
 import duckdb
@@ -14,6 +16,14 @@ from hmda_reliability.data_platform.sql import qualify_table_name, quote_identif
 from hmda_reliability.logger import get_logger
 
 _LOGGER = get_logger(__name__)
+
+
+class _MutationLockOwnership(local):
+    def __init__(self) -> None:
+        self.paths: set[tuple[int, Path]] = set()
+
+
+_MUTATION_LOCK_OWNERSHIP = _MutationLockOwnership()
 
 
 class DuckDBMetadataError(Exception):
@@ -34,6 +44,9 @@ def database_mutation_lock(
         - `None`과 `:memory:`는 메모리 내 격리 DB이므로 파일 락 없이 no-op 통과한다.
         - 파일 기반 DB는 symlink나 relative alias에 관계없이 canonical 경로 기준의
           락 파일(`.<dbname>.mutation.lock`)을 배타적(`fcntl.LOCK_EX`)으로 획득한다.
+        - 같은 process/thread의 canonical path 중첩은 outer lock을 재사용한다.
+          Inner exit나 예외는 outer lock을 해제하지 않으며 다른 thread나 fork된
+          child process는 별도로 lock을 획득해야 한다.
         - Body 블록의 예외는 뒤따른 unlock/close 실패보다 우선 보존된다.
         - Body가 성공한 경우에만 락 해제 실패가 `DuckDBMutationLockError`로 노출된다.
 
@@ -46,6 +59,11 @@ def database_mutation_lock(
         return
 
     canonical_path = Path(database_path).resolve(strict=False)
+    ownership = (getpid(), canonical_path)
+    owned_paths = _MUTATION_LOCK_OWNERSHIP.paths
+    if ownership in owned_paths:
+        yield
+        return
     lock_path = canonical_path.with_name(f".{canonical_path.name}.mutation.lock")
     try:
         lock_path.parent.mkdir(parents=True, exist_ok=True)
@@ -55,6 +73,7 @@ def database_mutation_lock(
         msg = f"DuckDB mutation lock을 획득할 수 없습니다: {canonical_path}"
         raise DuckDBMutationLockError(msg) from exc
 
+    owned_paths.add(ownership)
     body_failed = False
     try:
         yield
@@ -62,6 +81,7 @@ def database_mutation_lock(
         body_failed = True
         raise
     finally:
+        owned_paths.remove(ownership)
         release_error: OSError | None = None
         try:
             fcntl.flock(lock_file, fcntl.LOCK_UN)

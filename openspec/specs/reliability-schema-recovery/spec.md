@@ -79,6 +79,8 @@ Table-wide schema drift를 external approval과 검증된 complete-table state�
 
 시스템은 partition-scoped incident observation과 table-wide recovery target을 명시적으로 구분해야 한다(SHALL). Incident partition을 table mutation의 partition scope로 해석하거나 partial schema recovery에 사용해서는 안 된다(MUST NOT).
 
+Recovery profile의 `partition_column`은 `source_year` 또는 year alias인 `activity_year`여야 하며, 실제 profile population은 승인된 `observation_partition`의 `source_year` 범위로 정렬해야 한다(SHALL). 다른 discriminator는 target mutation 전에 거부해야 한다(SHALL).
+
 #### Scenario: Partition-observed schema drift
 
 - **GIVEN** 한 partition profile 비교에서 table-wide schema hash mismatch가 탐지됐을 때
@@ -135,6 +137,19 @@ Table-wide schema drift를 external approval과 검증된 complete-table state�
 - **WHEN** commit 전에 aligned profile validation이 실패할 때
 - **THEN** transaction을 rollback해 exact before-state를 보존해야 한다.
 - **AND** 같은 approval로 recovery를 다시 시도할 수 있어야 한다.
+
+#### Scenario: Staging cleanup failure after commit
+
+- **GIVEN** exact table restoration과 aligned profile validation이 commit된 뒤 staging directory 종료가 `OSError`로 실패할 때
+- **WHEN** recovery API가 failure를 반환할 때
+- **THEN** `SchemaRecoveryValidationError`는 `after_target_mutation`, `table_replaced`, actual table state와 `resume_verification`을 보존해야 한다.
+- **AND** 오류 원인을 보존하고 정상 완료나 rollback으로 보고하거나 table replacement를 자동 재실행해서는 안 된다.
+
+#### Scenario: Staging cleanup failure during replay
+
+- **GIVEN** target이 expected after-state와 같아 table replacement 없이 verification을 수행했을 때
+- **WHEN** staging directory 종료가 `OSError`로 실패할 때
+- **THEN** failure는 `replay_verification`, `already_restored`, actual table state와 `resume_verification`을 보존해야 한다.
 
 ### Requirement: Table-recovery reconciliation
 

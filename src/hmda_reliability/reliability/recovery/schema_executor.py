@@ -25,6 +25,9 @@ from hmda_reliability.reliability.profiling import (
     create_profile_snapshot,
     create_table_state_identity,
 )
+from hmda_reliability.reliability.recovery.profile_scope import (
+    ensure_recovery_profile_population,
+)
 from hmda_reliability.reliability.recovery.schema_candidate import (
     stage_approved_schema_recovery_candidate,
 )
@@ -60,14 +63,14 @@ def execute_approved_schema_recovery(
 
     validated_request = _ensure_approved_schema_recovery(request)
     proposal = validated_request.proposal
-    with TemporaryDirectory() as temporary_directory:
-        staged_candidate = stage_approved_schema_recovery_candidate(
-            candidate_database_path=validated_request.candidate_database_path,
-            approved_candidate_state=proposal.candidate_state,
-            staging_directory=Path(temporary_directory),
-        )
-        completed_result: SchemaRecoveryValidationResult | None = None
-        try:
+    completed_result: SchemaRecoveryValidationResult | None = None
+    try:
+        with TemporaryDirectory() as temporary_directory:
+            staged_candidate = stage_approved_schema_recovery_candidate(
+                candidate_database_path=validated_request.candidate_database_path,
+                approved_candidate_state=proposal.candidate_state,
+                staging_directory=Path(temporary_directory),
+            )
             with (
                 database_mutation_lock(validated_request.target_database_path),
                 DuckDBConnectionManager(
@@ -79,6 +82,9 @@ def execute_approved_schema_recovery(
                     proposal.table_name,
                 )
                 if current_state == proposal.expected_after_state:
+                    ensure_recovery_profile_population(
+                        connection, validated_request.profile_request
+                    )
                     profile_snapshot = create_profile_snapshot(
                         connection,
                         validated_request.profile_request,
@@ -119,49 +125,51 @@ def execute_approved_schema_recovery(
                     staged_candidate.artifact_path,
                 )
                 return completed_result
-        except SchemaRecoveryValidationError:
-            raise
-        except (
-            DuckDBMutationLockError,
-            duckdb.Error,
-            ProfileSnapshotError,
-            TableStateIdentityError,
-        ) as exc:
-            if completed_result is not None:
-                raise SchemaRecoveryValidationError(
-                    "schema recovery 완료 후 target resource 해제에 실패했습니다.",
-                    failure_stage=(
-                        "after_target_mutation"
-                        if completed_result.mutation_state == "table_replaced"
-                        else "replay_verification"
-                    ),
-                    mutation_state=completed_result.mutation_state,
-                    reconciliation_action="resume_verification",
-                    context={
-                        "table_name": proposal.table_name,
-                        "actual_state": completed_result.actual_state.model_dump(
-                            mode="json"
-                        ),
-                        "mutation_state": completed_result.mutation_state,
-                    },
-                ) from exc
-            if isinstance(exc, DuckDBMutationLockError):
-                raise SchemaRecoveryValidationError(
-                    "schema recovery target mutation lock을 획득할 수 없습니다.",
-                    failure_stage="before_target_mutation",
-                    reconciliation_action="retry_same_approval",
-                    context={
-                        "target_database_path": str(
-                            validated_request.target_database_path
-                        )
-                    },
-                ) from exc
+    except SchemaRecoveryValidationError:
+        raise
+    except (
+        OSError,
+        DuckDBMutationLockError,
+        duckdb.Error,
+        ProfileSnapshotError,
+        TableStateIdentityError,
+    ) as exc:
+        if completed_result is not None:
             raise SchemaRecoveryValidationError(
-                "schema recovery target state를 검증할 수 없습니다.",
-                failure_stage="before_target_mutation",
-                reconciliation_action="request_new_validation_and_approval",
-                context={"table_name": proposal.table_name},
+                "schema recovery 완료 후 resource 정리에 실패했습니다.",
+                failure_stage=(
+                    "after_target_mutation"
+                    if completed_result.mutation_state == "table_replaced"
+                    else "replay_verification"
+                ),
+                mutation_state=completed_result.mutation_state,
+                reconciliation_action="resume_verification",
+                context={
+                    "table_name": proposal.table_name,
+                    "actual_state": completed_result.actual_state.model_dump(
+                        mode="json"
+                    ),
+                    "mutation_state": completed_result.mutation_state,
+                    "cleanup_error": str(exc),
+                },
             ) from exc
+        if isinstance(exc, OSError):
+            raise
+        if isinstance(exc, DuckDBMutationLockError):
+            raise SchemaRecoveryValidationError(
+                "schema recovery target mutation lock을 획득할 수 없습니다.",
+                failure_stage="before_target_mutation",
+                reconciliation_action="retry_same_approval",
+                context={
+                    "target_database_path": str(validated_request.target_database_path)
+                },
+            ) from exc
+        raise SchemaRecoveryValidationError(
+            "schema recovery target state를 검증할 수 없습니다.",
+            failure_stage="before_target_mutation",
+            reconciliation_action="request_new_validation_and_approval",
+            context={"table_name": proposal.table_name},
+        ) from exc
 
 
 def _ensure_approved_schema_recovery(
@@ -188,6 +196,9 @@ def _replace_table(
     try:
         connection.execute("BEGIN TRANSACTION")
         transaction_started = True
+        ensure_recovery_profile_population(
+            connection, request.profile_request, artifact_path=staged_artifact_path
+        )
         connection.execute(
             f"CREATE OR REPLACE TABLE {qualify_table_name(proposal.table_name)} AS "
             f"SELECT * FROM read_parquet("
@@ -218,7 +229,7 @@ def _replace_table(
                 "incident_id": request.approval.incident_id,
             },
         )
-    except SchemaRecoveryValidationError:
+    except (SchemaRecoveryValidationError, ApprovalGateError):
         if transaction_started:
             connection.execute("ROLLBACK")
         raise

@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import cast
+from tempfile import TemporaryDirectory
+from threading import Event, Thread, current_thread
+from typing import TextIO, cast
 
 import duckdb
 import pytest
 from pydantic import ValidationError
 
+import hmda_reliability.data_platform.duckdb as duckdb_module
 import hmda_reliability.reliability.recovery.executor as recovery_executor
 from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
 from hmda_reliability.hmda_data import (
@@ -170,8 +174,10 @@ def test_mismatched_request_scope_is_rejected_before_source_access(
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("partition_column", ["activity_year", "source_year"])
 def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
     tmp_path: Path,
+    partition_column: str,
 ) -> None:
     """승인된 backfill은 source_year overwrite 후 profile snapshot을 재생성한다."""
 
@@ -186,6 +192,7 @@ def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
                 approval=approval,
                 proposal=proposal,
                 source_paths=(source_path,),
+                partition_column=partition_column,
             ),
         )
 
@@ -213,6 +220,118 @@ def test_approved_backfill_overwrites_partition_and_rebuilds_profile(
         "overwrite_partition",
         "rerun_profile_snapshot",
     ]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("replay", [False, True])
+def test_backfill_rejects_unrelated_profile_discriminator_without_mutation(
+    tmp_path: Path, replay: bool
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    request = request.model_copy(
+        update={
+            "profile_request": request.profile_request.model_copy(
+                update={"partition_column": "income"}
+            )
+        }
+    )
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [source_path], 2025)
+        if not replay:
+            connection.execute("DELETE FROM raw.hmda_loans")
+        before = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+
+        with pytest.raises(ApprovalGateError, match="profile"):
+            execute_approved_backfill(connection, request)
+
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == before
+
+
+@pytest.mark.integration
+def test_backfill_profile_uses_approved_year_when_activity_year_differs(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    source_path.write_text(source_path.read_text().replace("2025,", "2024,"))
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    with DuckDBConnectionManager() as connection:
+        result = execute_approved_backfill(connection, request)
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE source_year = 2025"
+        ).fetchone() == (2,)
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE activity_year = 2025"
+        ).fetchone() == (0,)
+
+    assert result.validation_passed
+    assert result.profile_snapshot.row_count == 2
+
+
+@pytest.mark.integration
+def test_file_backfill_keeps_year_profile_and_other_file_content(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    sentinel_path = tmp_path / "sentinel_2025.csv"
+    sentinel_path.write_text(
+        "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,county_code\n"
+        "2025,1,1,700000,80,CA,06001\n"
+    )
+    with DuckDBConnectionManager() as candidate:
+        load_hmda_loans_partition(candidate, [source_path], 2025)
+        expected = partition_content_identity(
+            candidate, source_year=2025, source_file=source_path.name
+        )
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [sentinel_path], 2025)
+        before = partition_content_identity(
+            connection, source_year=2025, source_file=source_path.name
+        )
+        sentinel_before = connection.execute(
+            "SELECT * FROM raw.hmda_loans WHERE source_file_name = ?",
+            [sentinel_path.name],
+        ).fetchall()
+        proposal = RecoveryProposal.model_validate(
+            {
+                **_proposal().model_dump(),
+                "source_file": source_path.name,
+                "candidate_identity": expected,
+                "approved_before_identity": before,
+                "expected_after_identity": expected,
+            }
+        )
+        request = _request(
+            approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+            proposal=proposal,
+            source_paths=(source_path,),
+        ).model_copy(update={"source_file": source_path.name})
+
+        result = execute_approved_backfill(connection, request)
+        replay = execute_approved_backfill(connection, request)
+
+        assert (
+            connection.execute(
+                "SELECT * FROM raw.hmda_loans WHERE source_file_name = ?",
+                [sentinel_path.name],
+            ).fetchall()
+            == sentinel_before
+        )
+    assert result.row_count == 2
+    assert result.profile_snapshot.row_count == 3
+    assert result.validation_passed
+    assert replay.profile_snapshot.row_count == 3
+    assert replay.reconciliation_action == "resume_verification"
 
 
 @pytest.mark.integration
@@ -260,6 +379,376 @@ def test_recovery_blocks_diverged_target_without_mutation(tmp_path: Path) -> Non
         after = partition_content_identity(connection, source_year=2025)
 
     assert after == diverged
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("replay", [False, True])
+def test_backfill_serializes_file_writer_through_profile_and_actual_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replay: bool
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(
+        source_path, tmp_path, source_year_type="VARCHAR"
+    )
+    proposal = RecoveryProposal.model_validate(
+        {
+            **proposal.model_dump(),
+            "source_file": source_path.name,
+            **{
+                field: getattr(proposal, field).model_copy(
+                    update={"source_file": source_path.name}
+                )
+                for field in (
+                    "candidate_identity",
+                    "approved_before_identity",
+                    "expected_after_identity",
+                )
+            },
+        }
+    )
+    request = _freshness_request(
+        _freshness_approval(proposal), proposal, candidate_path
+    ).model_copy(update={"source_file": source_path.name})
+    writer_path = tmp_path / "writer.parquet"
+    with DuckDBConnectionManager() as connection:
+        connection.execute(
+            "CREATE TABLE writer_candidate AS SELECT * REPLACE "
+            "('02025'::VARCHAR AS source_year, 'file-b.csv' AS source_file_name) "
+            "FROM read_parquet(?) LIMIT 1",
+            [candidate_path.as_posix()],
+        )
+        connection.execute(
+            "COPY writer_candidate TO ? (FORMAT PARQUET)", [writer_path.as_posix()]
+        )
+    database_path = tmp_path / "target.duckdb"
+    writer_ready, writer_start, writer_at_lock, writer_done = (
+        Event(),
+        Event(),
+        Event(),
+        Event(),
+    )
+    writer_errors: list[Exception] = []
+    observations: list[tuple[int, int]] = []
+    actual_state_observations: list[int] = []
+    original_flock = duckdb_module.fcntl.flock
+    original_guard = recovery_executor.ensure_recovery_profile_population
+    original_profile = recovery_executor.create_profile_snapshot
+    original_identity = recovery_executor.partition_content_identity
+
+    def observe_flock(file: TextIO, operation: int) -> None:
+        if current_thread() is worker and operation == duckdb_module.fcntl.LOCK_EX:
+            writer_at_lock.set()
+        original_flock(file, operation)
+
+    def write_other_file() -> None:
+        try:
+            with DuckDBConnectionManager(database_path) as writer_connection:
+                writer_ready.set()
+                assert writer_start.wait(5)
+                load_hmda_loans_partition(
+                    writer_connection,
+                    [writer_path],
+                    2025,
+                    source_file="file-b.csv",
+                    preserve_source_metadata=True,
+                )
+        except Exception as exc:
+            writer_errors.append(exc)
+        finally:
+            writer_done.set()
+
+    with DuckDBConnectionManager(database_path) as connection:
+        _load_stale_freshness_target(connection, source_path)
+        connection.execute("ALTER TABLE raw.hmda_loans ALTER source_year TYPE VARCHAR")
+        if replay:
+            connection.execute(
+                "UPDATE raw.hmda_loans "
+                "SET ingested_at = TIMESTAMPTZ '2026-08-15 09:00:00+00'"
+            )
+
+        def guard_with_writer(
+            target: duckdb.DuckDBPyConnection, profile: ProfileSnapshotRequest
+        ) -> None:
+            original_guard(target, profile)
+            if target is connection and not writer_start.is_set():
+                writer_start.set()
+                assert writer_at_lock.wait(5)
+                assert not writer_done.wait(0.1)
+
+        def capture_profile(
+            target: duckdb.DuckDBPyConnection, profile: ProfileSnapshotRequest
+        ) -> recovery_executor.ProfileSnapshot:
+            snapshot = original_profile(target, profile)
+            count = target.execute(
+                "SELECT count(*) FROM raw.hmda_loans WHERE source_year = 2025"
+            ).fetchone()
+            assert count is not None
+            observations.append((snapshot.row_count, count[0]))
+            assert not writer_done.is_set()
+            return snapshot
+
+        def capture_identity(
+            target: duckdb.DuckDBPyConnection,
+            *,
+            source_year: int,
+            source_file: str | None = None,
+            table_name: str = HMDA_LOANS_TABLE,
+        ) -> PartitionContentIdentity:
+            identity = original_identity(
+                target,
+                source_year=source_year,
+                source_file=source_file,
+                table_name=table_name,
+            )
+            if target is connection and recording and observations:
+                assert not writer_done.is_set()
+                count = target.execute(
+                    "SELECT count(*) FROM raw.hmda_loans WHERE source_year = 2025"
+                ).fetchone()
+                assert count is not None
+                actual_state_observations.append(count[0])
+            return identity
+
+        monkeypatch.setattr(duckdb_module.fcntl, "flock", observe_flock)
+        monkeypatch.setattr(
+            recovery_executor, "ensure_recovery_profile_population", guard_with_writer
+        )
+        monkeypatch.setattr(
+            recovery_executor, "create_profile_snapshot", capture_profile
+        )
+        monkeypatch.setattr(
+            recovery_executor, "partition_content_identity", capture_identity
+        )
+        worker = Thread(target=write_other_file, daemon=True)
+        recording = True
+        worker.start()
+        try:
+            assert writer_ready.wait(5)
+            result = execute_approved_backfill(connection, request)
+            recording = False
+        finally:
+            writer_start.set()
+            worker.join(5)
+        assert not worker.is_alive()
+        assert writer_errors == []
+        assert writer_done.is_set()
+        assert observations == [(2, 2)]
+        assert actual_state_observations == [2]
+        assert result.approval_id == request.approval.approval_id
+        assert result.actual_identity == proposal.expected_after_identity
+        assert result.validation_passed and result.freshness_validation_passed
+        assert result.mutation_state == (
+            "already_recovered" if replay else "partition_changed"
+        )
+        assert connection.execute(
+            "SELECT source_year, source_file_name FROM raw.hmda_loans "
+            "WHERE source_file_name = 'file-b.csv'"
+        ).fetchall() == [("02025", "file-b.csv")]
+        before_replay = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+        with pytest.raises(ApprovalGateError, match="profile population"):
+            execute_approved_backfill(connection, request)
+        assert (
+            connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+            == before_replay
+        )
+
+
+@pytest.mark.integration
+def test_backfill_closed_target_connection_preserves_typed_failure(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    database_path = tmp_path / "target.duckdb"
+    with DuckDBConnectionManager(database_path) as connection:
+        load_hmda_loans_partition(connection, [source_path], 2025)
+        before = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+        connection.close()
+        with pytest.raises(BackfillValidationError) as error:
+            execute_approved_backfill(connection, request)
+        assert error.value.mutation_state is None
+    with DuckDBConnectionManager(database_path) as connection:
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == before
+
+
+@pytest.mark.integration
+def test_backfill_target_lock_failure_preserves_before_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
+    request = _freshness_request(
+        _freshness_approval(proposal), proposal, candidate_path
+    )
+    database_path = tmp_path / "target.duckdb"
+    original_flock = duckdb_module.fcntl.flock
+
+    def fail_target_lock(file: TextIO, operation: int) -> None:
+        if Path(file.name).name == f".{database_path.name}.mutation.lock":
+            raise OSError("target lock unavailable")
+        original_flock(file, operation)
+
+    with DuckDBConnectionManager(database_path) as connection:
+        _load_stale_freshness_target(connection, source_path)
+        before = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+        monkeypatch.setattr(duckdb_module.fcntl, "flock", fail_target_lock)
+
+        with pytest.raises(BackfillValidationError) as error:
+            execute_approved_backfill(connection, request)
+
+        assert error.value.mutation_state is None
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == before
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("replay", [False, True])
+def test_backfill_unlock_failure_preserves_completed_result_and_can_replay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, replay: bool
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(source_path, tmp_path)
+    request = _freshness_request(
+        _freshness_approval(proposal), proposal, candidate_path
+    )
+    database_path = tmp_path / "target.duckdb"
+    original_flock = duckdb_module.fcntl.flock
+
+    def fail_target_unlock(file: TextIO, operation: int) -> None:
+        if (
+            Path(file.name).name == f".{database_path.name}.mutation.lock"
+            and operation == duckdb_module.fcntl.LOCK_UN
+        ):
+            raise OSError("target unlock failed")
+        original_flock(file, operation)
+
+    with DuckDBConnectionManager(database_path) as connection:
+        _load_stale_freshness_target(connection, source_path)
+        if replay:
+            connection.execute(
+                "UPDATE raw.hmda_loans "
+                "SET ingested_at = TIMESTAMPTZ '2026-08-15 09:00:00+00'"
+            )
+        with monkeypatch.context() as faults:
+            faults.setattr(duckdb_module.fcntl, "flock", fail_target_unlock)
+            with pytest.raises(BackfillValidationError) as error:
+                execute_approved_backfill(connection, request)
+
+        assert error.value.mutation_state == (
+            "already_recovered" if replay else "partition_changed"
+        )
+        assert error.value.reconciliation_action == "resume_verification"
+        assert error.value.context["actual_identity"] == (
+            proposal.expected_after_identity.model_dump(mode="json")
+        )
+        assert error.value.context["validation_passed"] is True
+        assert error.value.context["freshness_validation_passed"] is True
+        assert error.value.context["profile_snapshot"]["row_count"] == 2
+        assert error.value.context["actual_freshness"]["freshness_at"] == (
+            "2026-08-15T09:00:00Z"
+        )
+        resumed = execute_approved_backfill(connection, request)
+
+    assert resumed.mutation_state == "already_recovered"
+    assert resumed.validation_passed and resumed.freshness_validation_passed
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("replay", [False, True])
+def test_freshness_backfill_rejects_profile_population_mismatch_without_mutation(
+    tmp_path: Path, replay: bool
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(
+        source_path, tmp_path, source_year_type="DECIMAL(6,1)"
+    )
+    request = _freshness_request(
+        _freshness_approval(proposal), proposal, candidate_path
+    )
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        connection.execute(
+            "ALTER TABLE raw.hmda_loans ALTER source_year TYPE DECIMAL(6,1)"
+        )
+        if replay:
+            connection.execute(
+                "UPDATE raw.hmda_loans "
+                "SET ingested_at = TIMESTAMPTZ '2026-08-15 09:00:00+00'"
+            )
+        before = connection.execute("SELECT * FROM raw.hmda_loans").fetchall()
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans WHERE source_year = 2025"
+        ).fetchone() == (2,)
+        assert connection.execute(
+            "SELECT count(*) FROM raw.hmda_loans "
+            "WHERE CAST(source_year AS VARCHAR) = '2025'"
+        ).fetchone() == (0,)
+
+        with pytest.raises(ApprovalGateError, match="profile population"):
+            execute_approved_backfill(connection, request)
+
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == before
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("replay", [False, True])
+def test_freshness_backfill_accepts_equivalent_decimal_profile_population(
+    tmp_path: Path, replay: bool
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    candidate_path, proposal = _freshness_proposal_for_source(
+        source_path, tmp_path, source_year_type="DECIMAL(6,0)"
+    )
+    request = _freshness_request(
+        _freshness_approval(proposal), proposal, candidate_path
+    )
+    with DuckDBConnectionManager() as connection:
+        _load_stale_freshness_target(connection, source_path)
+        connection.execute(
+            "ALTER TABLE raw.hmda_loans ALTER source_year TYPE DECIMAL(6,0)"
+        )
+        if replay:
+            connection.execute(
+                "UPDATE raw.hmda_loans "
+                "SET ingested_at = TIMESTAMPTZ '2026-08-15 09:00:00+00'"
+            )
+
+        result = execute_approved_backfill(connection, request)
+
+    assert result.validation_passed
+    assert result.freshness_validation_passed
+    assert result.profile_snapshot.row_count == 2
+
+
+@pytest.mark.integration
+def test_backfill_rejects_integer_candidate_for_empty_decimal_target(
+    tmp_path: Path,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [source_path], 2025)
+        connection.execute("DELETE FROM raw.hmda_loans")
+        connection.execute(
+            "ALTER TABLE raw.hmda_loans ALTER source_year TYPE DECIMAL(6,1)"
+        )
+        schema_before = connection.execute("DESCRIBE raw.hmda_loans").fetchall()
+
+        with pytest.raises(BackfillValidationError) as error:
+            execute_approved_backfill(connection, request)
+
+        assert error.value.mutation_state is None
+        assert connection.execute("SELECT * FROM raw.hmda_loans").fetchall() == []
+        assert connection.execute("DESCRIBE raw.hmda_loans").fetchall() == schema_before
 
 
 @pytest.mark.integration
@@ -745,6 +1234,70 @@ def test_recovery_wraps_staging_directory_failure(
         )
 
 
+@pytest.mark.component
+@pytest.mark.parametrize("target_state", ["before", "after"])
+@pytest.mark.parametrize("profile_fails", [False, True])
+def test_backfill_preserves_committed_state_on_staging_cleanup_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    target_state: str,
+    profile_fails: bool,
+) -> None:
+    source_path = _write_hmda_csv(tmp_path)
+    proposal = _proposal_for_source(source_path)
+    request = _request(
+        approval=_approval(ApprovalStatus.APPROVED, proposal=proposal),
+        proposal=proposal,
+        source_paths=(source_path,),
+    )
+    database_path = tmp_path / "target.duckdb"
+
+    @contextmanager
+    def fail_staging_cleanup() -> Iterator[str]:
+        try:
+            with TemporaryDirectory(dir=tmp_path) as directory:
+                yield directory
+        finally:
+            raise OSError("injected staging cleanup failure")
+
+    def fail_profile(*args: object, **kwargs: object) -> None:
+        raise recovery_executor.ProfileSnapshotError("profile failed")
+
+    with DuckDBConnectionManager(database_path) as connection:
+        if target_state == "after":
+            execute_approved_backfill(connection, request)
+        with monkeypatch.context() as faults:
+            faults.setattr(
+                recovery_executor, "TemporaryDirectory", fail_staging_cleanup
+            )
+            if profile_fails:
+                faults.setattr(
+                    recovery_executor, "create_profile_snapshot", fail_profile
+                )
+            with pytest.raises(BackfillValidationError) as error:
+                execute_approved_backfill(connection, request)
+
+    with DuckDBConnectionManager(database_path) as connection:
+        actual = partition_content_identity(connection, source_year=2025)
+        assert actual == proposal.expected_after_identity
+        assert error.value.mutation_state == (
+            "partition_changed" if target_state == "before" else "already_recovered"
+        )
+        assert error.value.reconciliation_action == "resume_verification"
+        assert error.value.context["actual_identity"] == actual.model_dump(mode="json")
+        assert error.value.context["expected_after_identity"] == (
+            proposal.expected_after_identity.model_dump(mode="json")
+        )
+        assert (
+            error.value.context["cleanup_error"] == "injected staging cleanup failure"
+        )
+        assert isinstance(error.value.__cause__, OSError)
+        replay = execute_approved_backfill(connection, request)
+
+    assert replay.mutation_state == "already_recovered"
+    assert replay.executed_actions == ["rerun_profile_snapshot"]
+
+
 @pytest.mark.integration
 def test_equal_count_content_mismatch_is_rejected_before_target_mutation(
     tmp_path: Path,
@@ -803,6 +1356,7 @@ def _request(
     proposal: RecoveryProposal | None = None,
     source_paths: tuple[Path, ...],
     source_year: int = 2025,
+    partition_column: str = "activity_year",
 ) -> ApprovedBackfillRequest:
     return ApprovedBackfillRequest(
         approval=approval,
@@ -812,7 +1366,7 @@ def _request(
         profile_request=ProfileSnapshotRequest(
             asset_name=HMDA_LOANS_TABLE,
             table_name=HMDA_LOANS_TABLE,
-            partition_column="activity_year",
+            partition_column=partition_column,
             partition=source_year,
             profile_columns=("loan_amount", "income"),
             observed_at=datetime(2026, 6, 10, 0, 0, tzinfo=UTC),
@@ -905,12 +1459,18 @@ def _proposal_for_source(source_path: Path) -> RecoveryProposal:
 def _freshness_proposal_for_source(
     source_path: Path,
     tmp_path: Path,
+    *,
+    source_year_type: str | None = None,
 ) -> tuple[Path, RecoveryProposal]:
     candidate_database_path = tmp_path / "freshness-candidate.duckdb"
     candidate_path = tmp_path / "freshness-candidate.parquet"
     candidate_at = datetime(2026, 8, 15, 9, 0, tzinfo=UTC)
     with DuckDBConnectionManager(candidate_database_path) as connection:
         load_hmda_loans_partition(connection, [source_path], 2025)
+        if source_year_type is not None:
+            connection.execute(
+                f"ALTER TABLE raw.hmda_loans ALTER source_year TYPE {source_year_type}"
+            )
         connection.execute(
             "UPDATE raw.hmda_loans SET ingested_at = ? WHERE source_year = 2025",
             [candidate_at],
