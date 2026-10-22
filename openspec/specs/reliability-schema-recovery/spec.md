@@ -136,6 +136,19 @@ Table-wide schema drift를 external approval과 검증된 complete-table state�
 - **THEN** transaction을 rollback해 exact before-state를 보존해야 한다.
 - **AND** 같은 approval로 recovery를 다시 시도할 수 있어야 한다.
 
+#### Scenario: Staging cleanup failure after commit
+
+- **GIVEN** exact table restoration과 aligned profile validation이 commit된 뒤 staging directory 종료가 `OSError`로 실패할 때
+- **WHEN** recovery API가 failure를 반환할 때
+- **THEN** `SchemaRecoveryValidationError`는 `after_target_mutation`, `table_replaced`, actual table state와 `resume_verification`을 보존해야 한다.
+- **AND** 오류 원인을 보존하고 정상 완료나 rollback으로 보고하거나 table replacement를 자동 재실행해서는 안 된다.
+
+#### Scenario: Staging cleanup failure during replay
+
+- **GIVEN** target이 expected after-state와 같아 table replacement 없이 verification을 수행했을 때
+- **WHEN** staging directory 종료가 `OSError`로 실패할 때
+- **THEN** failure는 `replay_verification`, `already_restored`, actual table state와 `resume_verification`을 보존해야 한다.
+
 ### Requirement: Table-recovery reconciliation
 
 시스템은 재실행 시 current target table state를 approved before-state와 expected after-state에 비교해야 한다(SHALL). Current state가 expected after-state와 같으면 table replacement를 반복하지 않고 downstream verification을 재개해야 한다(SHALL). 어느 state와도 다르면 기존 approval로 추가 mutation해서는 안 된다(MUST NOT).
