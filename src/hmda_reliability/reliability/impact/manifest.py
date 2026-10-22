@@ -54,22 +54,16 @@ class DbtManifestGraph:
 
 
 def _resources(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    nodes = manifest.get("nodes", {})
-    sources = manifest.get("sources", {})
     resources: dict[str, dict[str, Any]] = {}
-    if isinstance(nodes, dict):
+    for container_name in ("nodes", "sources"):
+        container = manifest.get(container_name, {})
+        if not isinstance(container, dict):
+            msg = f"dbt manifest {container_name}는 object여야 합니다."
+            raise ImpactAnalysisError(msg)
         resources.update(
             {
                 str(node_id): node
-                for node_id, node in nodes.items()
-                if isinstance(node, dict)
-            }
-        )
-    if isinstance(sources, dict):
-        resources.update(
-            {
-                str(node_id): node
-                for node_id, node in sources.items()
+                for node_id, node in container.items()
                 if isinstance(node, dict)
             }
         )
