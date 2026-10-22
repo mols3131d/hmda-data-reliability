@@ -404,6 +404,7 @@ def _failure_result(
         case_name=case_name,
         expected_incident_types=([] if post_recovery_lifecycle else ["schema_drift"]),
         detected_incident_types=list(observed_lifecycle.detected_incident_types),
+        required_actions=["complete_recovery"],
         failure_stage=failure_stage,
         target_mutated=target_mutated,
         reconciliation_action=reconciliation_action,
