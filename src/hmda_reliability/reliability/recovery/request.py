@@ -48,6 +48,18 @@ class ApprovedBackfillRequest(BaseModel):
             raise ValueError(msg)
         return value
 
+    @field_validator("profile_request")
+    @classmethod
+    def _align_profile_year(
+        cls, value: ProfileSnapshotRequest
+    ) -> ProfileSnapshotRequest:
+        if value.partition_column not in {"activity_year", "source_year"}:
+            raise ValueError(
+                "recovery profile partition_column은 activity_year 또는 "
+                "source_year여야 합니다."
+            )
+        return value.model_copy(update={"partition_column": "source_year"})
+
     @model_validator(mode="after")
     def _validate_profile_partition(self) -> ApprovedBackfillRequest:
         if str(self.profile_request.partition) != str(self.source_year):

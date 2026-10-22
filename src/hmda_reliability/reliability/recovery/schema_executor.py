@@ -25,6 +25,9 @@ from hmda_reliability.reliability.profiling import (
     create_profile_snapshot,
     create_table_state_identity,
 )
+from hmda_reliability.reliability.recovery.profile_scope import (
+    ensure_recovery_profile_population,
+)
 from hmda_reliability.reliability.recovery.schema_candidate import (
     stage_approved_schema_recovery_candidate,
 )
@@ -79,6 +82,9 @@ def execute_approved_schema_recovery(
                     proposal.table_name,
                 )
                 if current_state == proposal.expected_after_state:
+                    ensure_recovery_profile_population(
+                        connection, validated_request.profile_request
+                    )
                     profile_snapshot = create_profile_snapshot(
                         connection,
                         validated_request.profile_request,
@@ -190,6 +196,9 @@ def _replace_table(
     try:
         connection.execute("BEGIN TRANSACTION")
         transaction_started = True
+        ensure_recovery_profile_population(
+            connection, request.profile_request, artifact_path=staged_artifact_path
+        )
         connection.execute(
             f"CREATE OR REPLACE TABLE {qualify_table_name(proposal.table_name)} AS "
             f"SELECT * FROM read_parquet("
@@ -220,7 +229,7 @@ def _replace_table(
                 "incident_id": request.approval.incident_id,
             },
         )
-    except SchemaRecoveryValidationError:
+    except (SchemaRecoveryValidationError, ApprovalGateError):
         if transaction_started:
             connection.execute("ROLLBACK")
         raise
