@@ -52,3 +52,24 @@ description: HMDA Data의 서브도메인별 테스트 설계를 전수 검토�
 - **Writable tests:** `tests/hmda_data/**`.
 - **Reserved for final #277 (review-only here):** 없음 (아래 공통 공유 파일은 전부 제외).
 - **Focus:** Source discovery, ingestion/partition, EDA, synthetic 데이터의 자체 계약.
+
+## Current Tracked Test Inventory Seed
+
+**Snapshot:** `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25). 아래는 GitHub tracked file 목록을 기반으로 구성한 **착수용 seed**이며, 검사한 테스트 목록이나 전수 검토 완료 근거가 아닙니다. 착수 시 현재 main을 다시 조회하고 신규/이동/삭제된 파일, fixture·design·실제 소유 계약을 반영합니다. `__init__.py` 등 지원 파일도 inventory 대상입니다.
+
+### Exclusive Modification Candidates (8)
+
+- `tests/hmda_data/__init__.py`
+- `tests/hmda_data/conftest.py`
+- `tests/hmda_data/eda/test_eda.py`
+- `tests/hmda_data/eda/test_eda_evidence.py`
+- `tests/hmda_data/eda/test_eda_explorer.py`
+- `tests/hmda_data/test_ingestion.py`
+- `tests/hmda_data/test_ingestion_partition.py`
+- `tests/hmda_data/test_synthetic.py`
+
+### Inspect Here, Change Only In Final #277 (0)
+
+- 없음
+
+- 다른 PR에서 필요한 공용 설정·workflow·source 수정이 확인돼도 파일을 이 PR에 끌어오지 말고 증거를 #277의 접점 작업에 인계합니다.
