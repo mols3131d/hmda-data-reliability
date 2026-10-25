@@ -160,3 +160,27 @@ tags:
 | ⚪ Not Verified | 원본 runner double-fault/partial-copy fault injection, 로컬 pytest, 독립 specialist | 수행하지 않음. |
 
 **Next:** Data Operations owner가 원본 `_promote_dbt_artifacts`를 임시 pair에서 두 fault와 partial copy로 각각 실행해 exact bytes, 남은 `.next/.previous`, primary/secondary error cause를 확인; source의 rollback failure policy를 먼저 결정. 인간 승인·merge는 건드리지 않음. Reviewed head는 갱신 전 SHA입니다.
+
+## R7 · 2026-10-26 KST · Extracted Promotion Fault Matrix
+
+> [!IMPORTANT]
+> **Research → Plan → Review / handoff.** R6의 독립 제어 흐름 모사 대신 `main`의 `_promote_dbt_artifacts` **함수 본문과 `_ArtifactPromotion` 경로 계산**을 별도 Python 파일에 옮겨, 실제 임시 파일에서 실패 지점별로 실행했습니다. `DataOperationError` 타입은 동일 생성자 계약의 최소 stub입니다. **원본 repository 모듈 import/pytest가 아니므로** integration 재현으로 표현하지 않습니다.
+
+- **Revision:** R6 pre-write `bd9761752379036e1db67d4fead4d376f7e7a2e2` → R7 authoritative pre-write `b247582fdec29d0bf4c139cf445d2db970b6792e`: 이 Inbox만 변경한 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; source/test/Spec 불변, PR comments 0.
+- **Contract/locations:** [Data Operations stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md) `dbt failure boundary`; [runner](../../src/hmda_reliability/data_operations/runner.py) `_ArtifactPromotion` (L36–57), `_promote_dbt_artifacts` (L386–437); [changed test](../../tests/data_operations/test_dbt_runner.py) `test_artifact_promotion_restores_pair_when_second_replace_fails` (L850–884).
+
+| ID | Severity | Decision / scope relation | New evidence and limitation | Next |
+| --- | --- | --- | --- | --- |
+| C4 | 🟡 Minor | **Keep follow_up / pre-existing source** | 두 번째 `shutil.copyfile`이 `run_results.json.next`에 `PARTIAL`을 쓴 뒤 `OSError` 발생하도록 주입: `DataOperationError` 반환, **old current pair 유지**, 첫 `.next` 삭제, **두 번째 partial `.next` 잔존**. `staged_promotions.append`가 copy 성공 *뒤*이기 때문. R6의 미실행 C4를 격리 추출 함수 수준에서 확인. | 원본 모듈 기반 copy interruption 검증 및 orphan cleanup 정책; current pair corruption으로 과장하지 않음. |
+| C6 | 🟠 Major (conditional) | **Keep follow_up / pre-existing source** | 두 번째 `.next.replace`의 primary `OSError` + rollback의 동일 `.next.unlink` secondary `OSError`를 함께 주입: 최종 예외 **raw secondary `OSError`**, current는 **new manifest + missing results**, `*.previous`에 old pair, `run_results.json.next` 잔존. R6 시뮬레이션의 상태를 함수 본문 실행으로 강화. | 원본 모듈 fault test에서 exact bytes·error cause·recovery policy 결정. 이중 fault를 단일 replace-failure 테스트의 통과로 대체하지 않음. |
+
+### R7 Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R6→R7 head, 정본 Spec/source/test 및 파일 소유권 대조 | `bd976175..b247582f` Inbox-only; #269/#271/#272 테스트와 경로 비중복. |
+| ✅ Pass | 로컬 **격리 추출 함수 본문**의 실제 파일 fault matrix | partial-copy와 double-fault 두 독립 시나리오에서 current/staged/backup 파일의 bytes·존재, 예외 타입을 assertion으로 확인. **실제 package/pytest 실행 아님**. |
+| ✅ Pass | R7 pre-write head의 원격 prospective-merge CI | [CI Lite 40242536478](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40242536478), merge `9895f51` into `ea39a4fd`, **57 passed in 34.24s**; 복합 fault 미포함. |
+| ⚪ Not Verified | 원본 runner import 기반 fault, local domain pytest, 독립 specialist, #277 통합 | 미실행; extraction stub 및 단일 CI 성공은 최종 contract 검증 아님. |
+
+**Next:** Data Operations owner가 원본 `_promote_dbt_artifacts`에 (a) partial copy, (b) replace+rollback unlink double fault를 각각 주입해 `.next/.previous` 상태·primary/secondary cause를 검증. rollback cleanup failure를 추가 failure로 덮지 않을 정책은 source owner가 결정. #277은 cross-domain current projection 소비 계약만 담당. 이 절의 head는 **Inbox 갱신 전** SHA입니다.
