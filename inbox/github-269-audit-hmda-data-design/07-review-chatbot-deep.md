@@ -115,3 +115,26 @@ tags:
 | ⚪ Not Verified | #277 integrated interface validation | Prerequisite PRs unmerged; #277 still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, with initial base `81fe44b2` one commit behind current main. |
 
 **Next:** Preserve C7 Drop unless an executable counterexample refutes the actual guard. For R3 C6, run only a disposable first-`json_tmp.replace` fault and assert old JSON/Markdown exact bytes plus no orphan `.bak/.tmp`; route any source correction to HMDA Data. #277 should test Source→Bronze→gate→dbt and shared fixture boundaries after domain integration, not absorb the internal evidence-writer cleanup. Recheck post-write head, CI and any new feedback; no approval/merge decision.
+
+## R5 · 2026-10-26 KST · Evidence-Pair Cleanup Failure Matrix
+
+> [!NOTE]
+> **Handoff / independent review pending.** 기존 H5의 **서로 다른 실패 지점**을 분리해 반증했습니다. 새 PR-introduced defect 확정은 없으며, 제품 코드·테스트·Spec은 수정하지 않았습니다.
+
+- **Revision:** R4 pre-write `10d4912e0d6c8afc91531085357d3c142d54987b` → authoritative pre-write `1b095077d92ada7bb252075e0ff3ec98ed87bc66`는 이 Inbox 파일의 단일 commit뿐. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; code/test/Spec 변경 없음.
+- **Research → Plan → Review:** R3의 첫 JSON replace 실패와 별도로, [writer](../../scripts/run_actual_source.py) `write_evidence`의 **Markdown 교체 성공 뒤 JSON backup 삭제 실패**를 추적하고 [EDA 정본 Spec](../../openspec/specs/hmda-data-eda-descriptive-evidence/spec.md)의 JSON↔Markdown key-metric 일치 조건 및 [변경 테스트](../../tests/hmda_data/eda/test_eda_evidence.py)와 대조. 정상 rollback이라는 반대 가설은 두 번째 replace 실패에는 성립하지만, backup `unlink` 실패에는 적용되지 않습니다.
+
+| ID | Severity | Decision / Evidence | Next |
+| --- | --- | --- | --- |
+| C8 (existing H5 refined) | 🟠 Major **if reached** | **Keep pre-existing source risk / not new current_required.** `md_tmp.replace(markdown_path)` 성공 후 `json_backup.unlink()`가 `OSError`를 내면 같은 `except`가 backup JSON만 원상복원하고 이미 교체한 Markdown은 복원하지 않습니다. 따라서 **old JSON + new Markdown**이라는 Spec 불일치 상태가 가능. R3 C6의 **첫 JSON replace 실패 시 .bak 잔존**과 다른 경로입니다. 현재 변경 테스트는 **두 번째 replace 실패**만 주입해 이 상태를 검출하지 않습니다. 실행 재현은 없음. | HMDA Data source owner가 임시 pair에서 `.json.bak` `unlink` 실패를 주입해 정확한 old/new bytes와 잔여 파일을 관측한 뒤 rollback/cleanup 계약을 결정. 테스트 owner는 해당 회귀 oracle을 domain lane에 연결; #277에 내부 cleanup을 떠넘기지 않음. |
+
+### R5 Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R4→head 비교 및 정본/소스/테스트 분기 정적 추적 | 위 exact SHA; PR의 변경 테스트는 `tests/hmda_data/**` 전용이며 #270/#271/#272와 경로 충돌 없음. |
+| ✅ Pass | 최신 **원격** prospective-merge CI log | [CI Lite 40232604636](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40232604636), job `121287337590`: **197 passed in 8.39s**, selected Python checks 성공. Cleanup-fault 주입은 이 CI에 없음. |
+| ⚪ Not Verified | 로컬 pytest, `unlink` fault injection, 독립 specialist | 이번 회차 미실행; C8은 코드 제어 흐름에 따른 조건부 반례. |
+| ⚪ Not Verified | #277 통합·인간 승인 | #277은 선행 PR 미병합 Draft. |
+
+**Next:** 첫-replace orphan과 backup-cleanup mismatch를 별도 fault로 재현해 영향/우선순위를 분리하고, 실제 fix는 source owner가 결정. #277은 선행 병합 후 Source→Bronze→gate→dbt 통합과 공용 fixture만 검증. 이 R5의 reviewed head는 **Inbox 갱신 전** SHA이며 갱신 후 CI는 별도 확인합니다.
