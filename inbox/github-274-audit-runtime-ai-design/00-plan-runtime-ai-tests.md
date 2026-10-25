@@ -49,3 +49,19 @@ description: Runtime AI의 하위 영역 전체 테스트 설계를 새로 검�
 - **Writable tests:** `tests/runtime_ai/**`.
 - **Reserved for final #277 (review-only here):** tests/review_ai/test_live_harness.py 및 실제 Review AI→Runtime AI 연결 시나리오.
 - **Focus:** provider settings, SDK wire contract, bounded retry (PR #258 merge 반영 후 현행 검토).
+
+## Current Tracked Test Inventory Seed
+
+**Snapshot:** `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25). 아래는 GitHub tracked file 목록을 기반으로 구성한 **착수용 seed**이며, 검사한 테스트 목록이나 전수 검토 완료 근거가 아닙니다. 착수 시 현재 main을 다시 조회하고 신규/이동/삭제된 파일, fixture·design·실제 소유 계약을 반영합니다. `__init__.py` 등 지원 파일도 inventory 대상입니다.
+
+### Exclusive Modification Candidates (3)
+
+- `tests/runtime_ai/__init__.py`
+- `tests/runtime_ai/test_provider.py`
+- `tests/runtime_ai/test_settings.py`
+
+### Inspect Here, Change Only In Final #277 (0)
+
+- 없음
+
+- 다른 PR에서 필요한 공용 설정·workflow·source 수정이 확인돼도 파일을 이 PR에 끌어오지 말고 증거를 #277의 접점 작업에 인계합니다.
