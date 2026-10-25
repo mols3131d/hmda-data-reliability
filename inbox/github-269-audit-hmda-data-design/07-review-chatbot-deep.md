@@ -86,3 +86,32 @@ tags:
 | ⚪ Not Verified | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) integrated contract test | Still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2`; prerequisite domain PRs remain unmerged. |
 
 **Next:** Re-check exact head/base/CI before reuse. Follow the candidate-specific owner and counterexample above; run only the narrow relevant fault/alias/integration test in a disposable isolated environment if authorized. Preserve the difference between remote CI success, static inference and independent review. Do not modify shared code/Spec or approve/merge. This reviewed head is the **pre-Inbox-update** SHA; verify the resulting commit changed only this document.
+
+
+## R4 · 2026-10-26 KST · Synthetic Source-Deletion Countercheck
+
+> [!NOTE]
+> **Assessment: blocked for the independent specialist gate; no newly confirmed `current_required`.** This loop closes the prior synthetic-path counterexample with source, Spec and actual test-oracle inspection rather than repeating R3's EDA backup finding.
+
+- **Target** — PR #269, `agent/test/audit-hmda-data-design`, existing review artifact only.
+- **Revision** — previous R3 reviewed head `ab3d2fc734a3900b8bec31e1ff330aa2e72c636f` → authoritative pre-write head `10d4912e0d6c8afc91531085357d3c142d54987b`; compare is one Inbox-only commit. Current `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Source/Spec/test blobs unchanged; PR conversation has no new feedback.
+- **Scope** — `write_case_file` path safety and source preservation, changed synthetic negative tests, canonical synthetic Spec, domain ownership, latest prospective-merge CI. No implementation/shared file changes.
+
+### R4 Candidate Decision
+
+| ID | Severity | Scope relation / disposition | Evidence and counterevidence | Action |
+| --- | --- | --- | --- | --- |
+| C7 | 🔵 Note | `contract_dependency` / **Drop** | [Canonical synthetic Spec](../../openspec/specs/hmda-data-synthetic-defects/spec.md), `Isolated synthetic output`, requires rejection of output traversal and preservation of input files. [Writer](../../src/hmda_reliability/hmda_data/synthetic/_writer.py), `_prepare_case_dir` and `_validate_source_paths`, rejects empty, `.`, `..`, path-containing case names before any `rmtree`, and checks both resolved file membership and intermediate symlink entries before deleting a case directory. [Changed tests](../../tests/hmda_data/test_synthetic.py), `test_write_case_file_rejects_unsafe_case_name` and existing `test_synthetic_case_preserves_sources_inside_case_directory`, assert outside sentinel bytes, no output-root creation, and original source bytes across direct, relative, glob and symlink aliases. The hypothesis that this test-only PR lacks *any* traversal/source-preservation oracle is refuted. No claim that every platform-specific alias or TOCTOU race is tested. | Do not duplicate as a new defect. Keep narrowly scoped source/alias race work separate unless an authorized contract and reproducible counterexample appear. |
+
+**Research → Plan → Review:** Tested the R1 continuation's path-sanitization concern against the current writer's validation-before-delete ordering, canonical MUST, and test assertions. The tests observe real file bytes and a DuckDB-backed case generator rather than only mock calls; static review does not replace a fresh filesystem runtime run. R3 C6 (first JSON replace `.bak` orphan) remains a pre-existing HMDA Data source-owner follow-up, **not** a #277 internal cleanup assignment. R2 C2/C3 remain Drop.
+
+### R4 Validation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | Revision and path ownership static comparison | `ab3d2fc7..10d4912e` is this Inbox file only; #269's six changed tests are confined to `tests/hmda_data/**` and do not overlap #270/#271/#272 test changes. |
+| ✅ Pass | Remote prospective-merge CI log inspection | [CI Lite 40228407524](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40228407524), job `121274710778`, merge `3956d24f6245759538fdb30817f0bd7dfda96e05` of head `10d4912e` into base `ea39a4fd`: **197 passed in 8.50s**; selected Python checks succeeded. |
+| ⚪ Not Verified | Local pytest, first-replace `.bak` fault injection, symlink race/stress or isolated specialist | None executed in this continuation; historical tests and current remote CI are separate evidence tiers. |
+| ⚪ Not Verified | #277 integrated interface validation | Prerequisite PRs unmerged; #277 still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, with initial base `81fe44b2` one commit behind current main. |
+
+**Next:** Preserve C7 Drop unless an executable counterexample refutes the actual guard. For R3 C6, run only a disposable first-`json_tmp.replace` fault and assert old JSON/Markdown exact bytes plus no orphan `.bak/.tmp`; route any source correction to HMDA Data. #277 should test Source→Bronze→gate→dbt and shared fixture boundaries after domain integration, not absorb the internal evidence-writer cleanup. Recheck post-write head, CI and any new feedback; no approval/merge decision.
