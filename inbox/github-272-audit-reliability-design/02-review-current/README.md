@@ -6,12 +6,13 @@ description: PR 272의 현행 테스트 전수 검토, 과거 finding 재판정�
 
 # Current Reliability Test Design Audit
 
-**State:** 28/28 전수 조사와 test-only 회귀 보강 완료. 첫 독립 리뷰의 fixture 회귀 1건을 수정했고 재검토 대기 중이다. 인간 승인을 뜻하지 않는다.
+**State:** 28/28 전수 조사·test-only 보강 완료. 첫 독립 리뷰의 fixture 회귀를 수정한 `e772c53f`는 재검토 `clear`, CI 성공이다. 이 code revision에 대한 review readiness는 `ready`이며 Draft를 유지한다.
 
 - **Baseline:** `b16ad5734b4a5a35c1db3d12fe03124438e71348` (원격 PR head `7a93a60c8b345dadc401968e2100ba19a395fd52` + main `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`).
 - **Scope:** Reliability 소유의 tracked test/support/design 28개 전체. Production·Spec은 계약 대조를 위해 읽으며 수정하지 않는다.
 - **Historical evidence:** [과거 보고서](../01-review-historical/README.md)의 조사 revision은 `3ab899100fc0b35e23d464bd761f3b144a978ae7`이고 반입 기준은 PR #258 `bdce0f4e`다. 현재 결함으로 자동 승격하지 않는다.
-- **Next:** [독립 리뷰 기록](independent.md)의 필수 수정 후 snapshot을 재검토하고 Draft PR에 최종 상태를 전달한다.
+- **Code revision:** `e772c53fb975232e776d240cb61ff9a13cb896d1`. 이 보고서의 후속 delivery는 검증 결과·인계 metadata만 바꾼다. 재개할 때 원격 head/base/check를 새로 확인한다.
+- **Next:** 인간의 PR 검토. 이 lane의 필수 수정은 없으며 H1–H4는 #277 후속 범위다.
 
 ## Audit Coverage
 
@@ -67,9 +68,11 @@ Baseline의 `git ls-files tests/reliability` 28개와 각 보고서의 file row�
 | ✅ Pass | Final domain | 첫 수정 268 passed in 22.97s; 독립 리뷰 후 fixture 보정에서도 268 passed in 25.69s. Tach skip 미사용 |
 | ✅ Pass | Negative controls | 처음 10종의 기존 PASS/보강 FAIL 및 추가 table-MAX 반례 검출 확인 |
 | ✅ Pass | Python static checks | `ruff check tests/reliability`, `ruff format --check tests/reliability` (28 files), `ty check tests/reliability` |
-| ✅ Pass | Inbox validation | rumdl 15개, Inbox structure/YAML frontmatter 15개, 현재 보고서 local link 68개 목적지 존재, diff check |
+| ✅ Pass | Inbox validation | rumdl·Inbox structure·YAML frontmatter 16개, 현재 검토 local link 70개 목적지 존재, diff check. Delivery delta는 Inbox-only이며 검증한 code와 동일 |
 | ✅ Pass | Git 환경 격리 후 push hook | `a85cac28`에서 testmon 선택 166 passed, 1 skipped in 95.30s; Ruff 통과. 전체 suite 성공으로 일반화하지 않음 |
-| ⚪ Not Verified | 최종 독립 리뷰·원격 CI | fixture 보정 snapshot을 별도 확인 후 갱신. 첫 리뷰의 changes_required와 인계 당시 Inbox-only CI를 최종 성공으로 사용하지 않음 |
+| ✅ Pass | 최종 독립 리뷰 | `e772c53f`의 quality/adversarial 재검토를 lead가 `clear`로 조정. [첫 판정과 보정 이력](independent.md) 보존 |
+| ✅ Pass | Code revision CI | [CI Lite 40208484838](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40208484838), merge `4f0042d707fc0afcb9f92653933e0e691e5ea5dd` (parents `ea39a4fd`/`e772c53f`), `TARGETS=tests/reliability`, 268 passed in 21.10s 및 Ruff/ty 실행 log 확인 |
+| ✅ Pass | 수정 후 push hook | `e772c53f`의 testmon 선택 3 passed in 4.59s, Ruff 통과. Local domain 268개 실행과 별개의 선택 cache 결과 |
 
 ## PR 277 Handoff
 
