@@ -179,3 +179,26 @@ tags:
 | ⚪ Not Verified | #277 integrated gate and human approval | #269–#276 all open/unmerged Draft; #277 Draft `74ac659d084fadd5e93900b132ef5b995ef8d919` and initial base `81fe44b2` lags `main@ea39a4fd`. |
 
 **Next:** C8 Drop 유지; 실제 dbt→promotion→locked consumer identity는 선행 병합 후 #277 owner가 exact run/manifest/result projection으로 재현. Missing-THEN wording은 Spec owner가 결정. Reviewed head는 Inbox 갱신 전 SHA; 승인/merge/Ready 상태 변경 없음.
+
+## R7 · 2026-10-26 KST · Rejection-Metadata Oracle and Canonical Contract
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R6의 promotion-evidence 경계와 다른 **신규 변경 approval test**의 독립 oracle 근거를 정본 Spec에 대조했습니다. 구현 동작을 보존하는 test와 정본이 명시한 acceptance를 구별하며, 새 필수 수정 결함은 확정하지 않았습니다.
+
+- **Revision:** R6 pre-write `700bde2e7c0290d3926814c9b98a7684796c90cf` → R7 authoritative pre-write `47c98d33754dd2e8a44fac92530fc9624779cb56`: 이 Inbox만 변경한 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; source/test/Spec 불변, PR comments 0.
+- **Contract/locations:** [canonical Approval Spec](../../openspec/specs/reliability-data-contracts/spec.md) `Approval contract` (L65–81); [implementation](../../src/hmda_reliability/reliability/contracts/approval.py) `Approval._validate_review_fields` / `can_execute_risky_action`; [changed test](../../tests/reliability/contracts/test_approval.py) L31–86.
+
+| ID | Severity | Decision / scope relation | Evidence and counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C9 | 🔵 Note | **Accept as follow_up / pre-existing implementation policy, not `current_required`** | 새 `test_rejected_approval_requires_reviewer_and_time`는 `rejected_by`와 `rejected_at` 누락 3종에 `ValidationError`를 요구하며, **현재** Pydantic validator의 조건을 정확히 구별합니다. 그러나 정본 Spec의 `승인 상태 기록`은 `approved_by/approved_at`만 명시하고, `미승인 작업 차단`은 `pending/rejected`의 실행 거부만 요구합니다. **거절 메타데이터 필수 여부는 정본에서 명시되지 않음.** 이를 현재 제품 결함이나 테스트 false green으로 확대하지 말고, 해당 불변식을 장기 public contract로 보존할지 Spec owner가 결정해야 합니다. | Contract를 명시할 필요가 있을 때만 Spec owner에 의도 확인. 현 PR은 test-only이므로 Spec 변경 금지. |
+| C10 | 🔵 Note | **Drop / rejection bypass 가설** | 같은 PR이 추가한 `rejected` 사례는 `can_execute_risky_action(rejected) is False`를 직접 검사하고, 구현도 `status is APPROVED`만 허용합니다. 정본 `미승인 작업 차단`의 최소 status gate는 이미 검출됩니다. 다만 **exact proposal/action binding**은 owning recovery 실행 경계의 별도 contract이며 이 단위 테스트가 증명한다고 주장하지 않습니다. | 중복 단위 테스트를 요구하지 않음; #277에서 실제 proposal→approval→recovery→revalidation 통합만 확인. |
+
+### R7 Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R6→R7 head, PR patch 및 Spec→validator→test 정적 대조 | `700bde2e..47c98d33` Inbox-only; `tests/reliability/**` 5파일은 #269/#270/#271의 test lane과 비중복. |
+| ✅ Pass | R7 pre-write head의 원격 prospective-merge CI | [CI Lite 40242543901](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40242543901), merge `d344f75` into `ea39a4fd`, **268 passed in 24.81s**. |
+| ⚪ Not Verified | 로컬 pytest/approval mutation, 독립 specialist, #277 integration | 미실행. CI 통과는 proposal-bound human approval이나 cross-domain recovery 증명이 아님. |
+
+**Next:** C9는 정책이 정본에 고정되어야 하는지에 대한 **Spec owner의 후속 판단**으로 남기되, 이 test-only PR의 blocker로 만들지 않음. R6 C8 promotion-evidence 가설 Drop과 R3 C5 evaluation missing-THEN follow_up은 유지. #277은 선행 병합 뒤 exact proposal binding과 recovery 결과를 실제 경계에서 검증. 이 절의 head는 **Inbox 갱신 전** SHA; 승인·merge·Ready 변경 없음.
