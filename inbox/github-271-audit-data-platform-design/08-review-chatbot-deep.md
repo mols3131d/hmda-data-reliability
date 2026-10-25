@@ -83,3 +83,26 @@ tags:
 | ⚪ Not Verified | #277 최종 통합 및 공용 Git hook 영구 수정 | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277)은 `74ac659d084fadd5e93900b132ef5b995ef8d919`, base `81fe44b2...`의 Draft; #269–#276은 아직 모두 병합 전. 순차 통합 후 재검증 필요 |
 
 **Next transition:** 신규 `current_required`를 만들기 위해 기존 finding을 반복하지 않는다. 다음 Run은 현 PR head와 source/test/Spec blob, CI run을 먼저 비교하고, 독립 specialist 검토가 실제 가능할 때만 independent gate를 진행한다. #277 owner는 기존 감사의 H/F 항목을 참조해 선행 PR이 main에 통합된 **한 revision**에서 current/candidate artifact·approval/recovery·dbt log·Git fixture isolation의 부정 경로를 검증한다. 이 문서 수정 commit은 Inbox-only이며 이 절의 `reviewed head`는 수정 **직전** SHA다. 변경 후 head는 PR에서 다시 확인한다.
+
+## R3 · 2026-10-26 KST · Fresh-Head Challenge and Handoff
+
+> [!NOTE]
+> **Research → Plan → Review:** Compared previous R2 head `f4d09358302a35f46ec85c1cfeb306889be930ed` to authoritative head `a06c6093f3ae2afda232d649755987a504cc05c0` and main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`: only this Inbox review changed, so earlier code/Spec/test findings remain revision-applicable. No new PR conversation feedback. The plan was to challenge one unresolved inference against a separate source/test path, keep test-only PR ownership, and validate latest remote CI without claiming local execution. This is same-session multi-perspective analysis, **not** isolated independent review.
+
+
+### R3 · Data Platform · Lock Oracle Countercheck
+
+- **Candidate C5 — 🔵 Note / Drop:** The conjecture that artifact lock tests use only a fake lock is refuted by [test_artifacts.py](../../tests/data_platform/test_artifacts.py), `test_projection_lock_enforces_shared_and_exclusive_access`: it calls the real [`fcntl.flock` implementation](../../src/hmda_reliability/data_platform/artifacts.py) and changes only the contender to `LOCK_NB` to observe reader/reader and conflicting writer combinations. The source also preserves body failure over unlock failure; separate tests exercise setup/release error translation. These are direct code/test inspections, **not a new local runtime reproduction**.
+- **C4 stays Open / follow_up:** Pair-byte identity and real primitive locking do not prove the #270 candidate-to-current promotion plus Reliability consumer sees one consistent integrated state. The existing [#277 interface plan](../github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md) owns that integration after upstream merges. The existing one-warning CI is a Python fork deprecation warning, not a failed test; no evidence here that it causes flakiness.
+- **Disposition:** No new confirmed `current_required`; independent specialist gate still **blocked**. Do not promote the 43 scoped dbt/data-platform cases to a cross-domain acceptance claim.
+
+### R3 Validation and Next Transition
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | Remote revision and changed-path comparison | `f4d09358302a..a06c6093f3ae` is one Inbox-only commit; no new test/source/Spec diff; domain test file paths do not overlap #269/#270/#271/#272. |
+| ✅ Pass | Latest remote CI selected-suite log | [CI Lite 40223438251](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40223438251), job `121259738359`: **43 passed, 1 warning in 24.34s** with selected Python checks success on prospective merge. GitHub runner evidence only. |
+| ⚪ Not Verified | This session's local pytest, targeted fault injection, and independent specialist | No local execution or isolated reviewer; earlier run reports are historical evidence, not this run's result. |
+| ⚪ Not Verified | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) integrated contract test | Still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2`; prerequisite domain PRs remain unmerged. |
+
+**Next:** Re-check exact head/base/CI before reuse. Follow the candidate-specific owner and counterexample above; run only the narrow relevant fault/alias/integration test in a disposable isolated environment if authorized. Preserve the difference between remote CI success, static inference and independent review. Do not modify shared code/Spec or approve/merge. This reviewed head is the **pre-Inbox-update** SHA; verify the resulting commit changed only this document.
