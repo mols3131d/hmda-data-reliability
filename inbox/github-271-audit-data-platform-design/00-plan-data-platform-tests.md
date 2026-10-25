@@ -6,7 +6,7 @@ description: Data Platform 전수 테스트 검토, 과거 finding의 선택 수
 
 # Data Platform Test Design Audit and Adoption
 
-**State:** 2026-10-26 인계 후 현행 전수 조사·테스트 보강 진행 중. **Current main:** `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. **Inherited head:** `f1cf36e5baf74f356333c7a7ff70240287e27c55`. 최신 main을 additive merge하여 검증 기반을 맞췄습니다. Draft를 유지하며 Ready·approval·merge는 인간 판단으로 남깁니다.
+**State:** 2026-10-26 인계 후 현행 전수 조사·테스트 보강·독립 리뷰와 검증을 완료했습니다. **Current main:** `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. **Inherited head:** `f1cf36e5baf74f356333c7a7ff70240287e27c55`. 최신 main을 additive merge하여 검증 기반을 맞췄습니다. 현재 결과·readiness와 다음 판단은 [current audit](05-report-current-audit.md)를 봅니다. Draft를 유지하며 Ready·approval·merge는 인간 판단으로 남깁니다.
 
 ## Continuation Execution
 
@@ -16,7 +16,7 @@ description: Data Platform 전수 테스트 검토, 과거 finding의 선택 수
 - **Validation:** 담당 test module → 전체 `tests/data_platform tests/dbt`와 변경 Python의 Ruff·format·type 검사, Inbox frontmatter·Markdown·diff 검사 순으로 확인합니다. 실제 dbt 실행과 가능한 최소 mutation 실험은 temporary copy에서 격리합니다.
 - **Review:** 보강 이후 별도 `review-lead`가 변경 테스트와 evidence를 검토합니다. 제품 결함·Spec gap·공용 파일 변경은 #277 인계 항목으로 남깁니다.
 - **Delivery:** 검증·리뷰 결과와 handoff를 이 PR 소유 Inbox에 기록하고 같은 Draft PR에 commit/push 및 description 갱신으로 전달합니다. CI는 최신 base/head의 prospective merge에 연결해 확인합니다.
-- **Loop control:** `mols-loops`, standard, 최대 30회; 현재 substantive Review 1회 완료. Implementation `8bf4e6b0`의 전수 coverage·legacy disposition·43개 targeted test·독립 리뷰(`clear`)를 확인했습니다. 다음 Work는 [shared hook 환경 격리](07-report-pre-push-environment.md) 후 delivery와 current CI 확인입니다.
+- **Loop control:** `mols-loops`, standard, 최대 30회; substantive Review 2회 완료 후 Finalize. Implementation `8bf4e6b0`의 전수 coverage·legacy disposition·43개 targeted test·독립 리뷰(`clear`)와 [shared hook 격리 후 delivery](07-report-pre-push-environment.md), head `37c53d04`의 prospective-merge CI를 확인했습니다. 남은 bounded finishing은 현재 결과의 Inbox-only 전달과 최신 원격 상태 재확인입니다.
 
 ## Scope
 
@@ -38,7 +38,7 @@ description: Data Platform 전수 테스트 검토, 과거 finding의 선택 수
 - [x] 계약·실패·경계·격리·복구의 독립 oracle 및 검출력 확인
 - [x] 모든 legacy finding별 수용·기각·보류·기해결 판단과 이유
 - [x] 채택한 필요한 테스트 보강과 현재 main 기준 targeted/related 검사
-- [ ] 새 revision에 대한 독립 리뷰, evidence와 human review readiness
+- [x] 새 revision에 대한 독립 리뷰, evidence와 human review readiness
 
 ## Boundary
 

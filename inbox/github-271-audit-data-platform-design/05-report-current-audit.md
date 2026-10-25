@@ -6,7 +6,7 @@ description: PR 271의 현행 전수 검토 범위, legacy finding 수용, 회�
 
 # Data Platform Current Test Audit and Handoff
 
-**State:** 현행 테스트 5개 파일 전수 검토와 회귀 보강을 완료했습니다. 전체 도메인 테스트 43개, Python 정적 검사와 독립 리뷰(`clear`)를 마쳤습니다. 공유 pre-push 환경 경고에 따라 안전한 실행 경계로 delivery를 진행 중입니다.
+**State:** 현행 테스트 5개 파일 전수 검토와 회귀 보강, 로컬 검증, 독립 리뷰(`clear`), 안전한 push와 prospective-merge CI 확인을 완료했습니다. 아래 exact base/head 기준 **review readiness: ready**입니다. PR은 Draft이며 인간 review·Ready 전환·approval·merge는 별도입니다.
 
 ## Revision And Scope
 
@@ -15,6 +15,7 @@ description: PR 271의 현행 전수 검토 범위, legacy finding 수용, 회�
 - **Inherited head:** `f1cf36e5baf74f356333c7a7ff70240287e27c55`.
 - **Integration anchor:** `4f2bebb4d5a5a6e64336e5df3c9c11b5da65f4ae` (현재 main additive merge). 이후 테스트·Inbox 변경은 이 commit 위에서 검증합니다.
 - **Validated implementation:** `8bf4e6b095aac7377ac0b22052711c96d929f926`. 모든 테스트 변경과 신규 design을 포함하며 이후 Inbox-only commit은 이 코드 검증을 변경하지 않습니다.
+- **Readiness / CI snapshot:** Head `37c53d04b0646bdbc0cb1341f54e0f87aafcd0ad`, prospective merge `d2367583965655a33e9e2f9a7cfd797da8501c56`; 부모는 위 base와 head임을 GitHub commit API 및 checkout log로 확인했습니다. 이후 이 결과를 기록하는 Inbox-only commit은 같은 tests/design를 유지합니다.
 - **In scope:** [plan](00-plan-data-platform-tests.md)의 exclusive test lane과 현행 source·Spec 대조. 제품 코드, Spec, 공유 설정과 다른 도메인 테스트는 검토만 합니다.
 
 ## Inventory And Review Coverage
@@ -68,8 +69,12 @@ Baseline에 별도 helper·fixture·design 파일은 없습니다. 이번에 추
 | ✅ Pass | Final Markdown / frontmatter / diff | `rumdl fmt/check` 11개 Markdown, repository Inbox validator와 YAML parser 기반 required frontmatter 검사 9개 artifact, `git diff --check` 통과. Tests/design는 reviewed implementation과 추가 diff가 없습니다. |
 | ✅ Pass | Independent review | [별도 review-lead와 두 specialist의 최종 평가](06-review-independent.md): `clear`, confirmed current_required finding과 coverage gap 없음. Reviewed implementation `8bf4e6b0`. |
 | ✅ Pass | Git state / temporary hook isolation | [hook incident report](07-report-pre-push-environment.md). 중단 후 HEAD/index/tests는 `8bf4e6b0`과 일치. Git-local env scrub 후 synthetic Git init/add/commit probe 1개 통과. 중단된 broad hook을 pass로 세지 않습니다. |
-| ⚪ Not Verified | Current prospective-merge CI | 최종 push 후 current base/head와 실제 실행 command를 대조합니다. |
+| ✅ Pass | Safe normal pre-push | 실제 pytest child의 Git-local env가 비어 있음을 확인한 뒤 `pytest --testmon --testmon-forceselect`: **850 passed, 3 skipped, 79 deselected in 153.69s**. Python check도 통과. Push 후 HEAD/index/worktree와 테스트 코드 무손상 확인. Cache 기반 선택 범위를 전체 suite의 증거로 확대하지 않습니다. |
+| ✅ Pass | Prospective-merge CI | [CI Lite 40208654726](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40208654726), 위 `d2367583`에서 `python3 scripts/ci/run_checks.py pytest`, `FULL_TESTS=false`, `TARGETS=tests/data_platform tests/dbt`: **43 passed, 1 warning in 32.42s**. Python validation의 scoped type target도 동일했고 성공했습니다. 생략된 OpenSpec·Tach·wheel·다른 도메인 검증을 수행했다고 주장하지 않습니다. |
+| ⚪ Not Verified | Final cross-domain / permanent hook remediation | #277 소유입니다. Fixture 실행·로컬 primitive·녹색 CI를 live service나 모든 소비자 조합의 성공으로 승격하지 않습니다. |
 
-## Handoff
+## Review Readiness And Handoff
 
-남은 작업은 안전한 hook retry, 최종 문서 검증, 같은 Draft PR 반영과 current CI 확인입니다. Ready·approval·merge는 인간의 명시적 판단으로 남깁니다. 위 #277 인계 항목은 이번 exclusive lane에서 허용된 범위 밖이며 이 PR의 테스트를 약화해 닫지 않습니다.
+위 snapshot에서 scope·description·현재 validation·독립 리뷰가 충족됐고 unresolved blocking feedback은 없었습니다. 남은 domain-lane 구현 작업은 없습니다. 이 보고서의 상태를 기록하는 Inbox-only delivery 뒤에는 GitHub의 최신 base/head·Checks를 다시 조회해 같은 판단이 적용되는지 확인합니다. Base, tests, 계약 또는 material feedback이 바뀌면 이 assessment를 재평가합니다.
+
+인간의 다음 판단은 고정 metric fixture와 oracle 변경을 검토하고 Draft의 Ready 전환 여부를 결정하는 것입니다. 위 #277 인계 항목, 특히 공유 pre-push 환경의 영구 수정은 별도 owner의 다음 작업입니다. 이 PR의 테스트를 약화하거나 허용된 쓰기 경계를 넘어 닫지 않습니다.

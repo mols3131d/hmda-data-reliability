@@ -39,6 +39,10 @@ Synthetic probe에서는 `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMM
 
 이 wrapper는 이번 delivery의 임시 실행 경계입니다. 별도 세션은 이전 `/tmp` 경로가 남아 있다고 가정하지 말고 같은 원칙으로 준비·검증해야 합니다. 영구 hook 수정이 적용되기 전에는 원래 broad pre-push를 같은 환경으로 재실행하지 않습니다.
 
+재시도 때 실제 hook pytest process의 환경에서도 `git rev-parse --local-env-vars`가 반환한 이름이 **하나도 남아 있지 않음**을 확인했습니다. Wrapper log에서 실제 제거한 이름은 `GIT_DIR`, `GIT_PREFIX`였습니다. Normal pre-push의 `pytest --testmon --testmon-forceselect`는 **850 passed, 3 skipped, 79 deselected in 153.69s**였고 Python check도 통과했습니다. 이는 testmon이 선택한 추가 검증이며 전체 suite 전수 통과나 생략한 test의 성공을 뜻하지 않습니다.
+
+Push 후 local/remote head는 `37c53d04b0646bdbc0cb1341f54e0f87aafcd0ad`로 일치했고 index·working tree는 clean이었습니다. Tests/design는 검증·독립 리뷰 commit `8bf4e6b0`과 같은 상태였습니다. 이후 Inbox-only delivery도 같은 안전한 wrapper를 사용합니다.
+
 ## PR 277 Handoff
 
 공유 hook이 pytest를 시작하는 child 경계에서 Git 로컬 환경을 제거하도록 수정하고, 합성 parent 저장소의 override를 상속받은 child fixture가 parent HEAD/index/refs를 바꾸지 않는 회귀 검증을 추가하는 것이 권장 조치입니다. Hook의 정상 repository 조회에 필요한 환경과 pytest child 환경을 구분해야 합니다. 실제 사용자 저장소를 오염시키는 재현은 사용하지 않습니다.
