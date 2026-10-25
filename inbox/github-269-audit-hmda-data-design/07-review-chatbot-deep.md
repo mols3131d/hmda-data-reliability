@@ -157,3 +157,27 @@ tags:
 | ⚪ Not Verified | Repository 원본 `write_evidence` fault injection, 로컬 pytest, independent specialist | 실행하지 않음; 기존 CI를 해당 반례의 통과로 해석하지 않음. |
 
 **Next:** HMDA Data test/source owner가 disposable 실제 `write_evidence`에서 (a) 첫 JSON replace, (b) Markdown 성공 후 backup unlink를 **각각** 주입해 exact pair bytes와 `.tmp/.bak` 부재를 검증. #277은 선행 병합 뒤 통합만 수행. 이 section의 head는 **Inbox 갱신 전** SHA이며 갱신 후 head/CI를 별도로 재확인합니다.
+
+## R7 · 2026-10-26 KST · Extracted Writer Fault-Point Verification
+
+> [!IMPORTANT]
+> **Research → Plan → Review / handoff.** R6의 제어 흐름 *모사*보다 한 단계 높은 검증으로, 현재 `main`의 `write_evidence` 함수 본문을 별도 임시 Python 파일에 옮겨 실제 `Path` 파일 교체·복구 연산에 fault를 주입했습니다. 원본 repository 모듈 import나 해당 pytest 실행은 **아닙니다**. Markdown 생성 helper만 축약했고, pair 교체·예외·cleanup 본문은 source 순서를 유지했습니다.
+
+- **Revision:** R6 pre-write `615700a3dfce3d7ea88ced8823f7b14aaeed8c47` → R7 authoritative pre-write `8ff9f224a868c56ec7e2424d379149ccf1e1de2f`: `07-review-chatbot-deep.md` 한 파일의 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; test/source/Spec blob 불변. PR comments 0.
+- **Contract/locations:** [EDA Spec](../../openspec/specs/hmda-data-eda-descriptive-evidence/spec.md) `Observation consistency`; [writer](../../scripts/run_actual_source.py) `write_evidence` (약 L91–158); [PR test](../../tests/hmda_data/eda/test_eda_evidence.py) `test_write_evidence_restores_pair_on_second_replace_failure` (L155–210).
+
+| ID | Severity | Decision / scope relation | New direct evidence | Next |
+| --- | --- | --- | --- | --- |
+| C6 | 🔵 Note | **Keep follow_up / pre-existing source**, not `current_required` | 임시 실제 파일에서 **첫 `evidence.json.tmp.replace` 실패** 주입 시 old JSON/Markdown은 유지되지만 `evidence.json.bak`이 남음. `.tmp`는 삭제됨. R3의 orphan 가설을 원본과 동일한 함수 본문으로 강화함. | HMDA Data source owner가 실제 module import 기반 disposable fault test로 검증하고 cleanup 정책 결정. |
+| C8 | 🟠 Major (conditional) | **Keep follow_up / pre-existing source**, not `current_required` | **Markdown replace 성공 뒤 `evidence.json.bak.unlink` 실패** 주입 시 old JSON `row_count=100` + new Markdown `row_count=200` 잔존. `OSError` 발생. R6의 독립 모사 결과와 일치하며, 두 번째 replace 실패에 대한 기존 보호 테스트로 반박되지 않음. | 원본 module + 실제 `_markdown_summary`로 fault injection 및 exact bytes 확인. 복구 정책은 source owner가 결정; #277 내부 cleanup 과제로 넘기지 않음. |
+
+### R7 Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R6→R7 head 및 PR path/Spec/source/test 정적 재확인 | `615700a3..8ff9f224` Inbox-only; #270/#271/#272의 변경 테스트와 경로 중복 없음. |
+| ✅ Pass | 로컬 **격리 추출 함수 본문**의 두 실제 파일 fault probe | 임시 디렉터리에서 첫 replace와 backup unlink 실패를 각각 실행하고 예외·old/new content·잔여 파일을 assertion으로 확인. **원본 패키지 테스트 아님**; helper/exception import 경계 미검증. |
+| ✅ Pass | R7 pre-write head의 원격 prospective-merge CI | [CI Lite 40242533171](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40242533171), merge `96fe38c` into `ea39a4fd`, **197 passed in 8.01s**; 해당 fault들은 CI에 없음. |
+| ⚪ Not Verified | 원본 repository import 기반 fault/pytest, 독립 specialist, #277 통합 | 미실행. 원격 CI나 추출 함수 probe를 이 검증들의 PASS로 표기하지 않음. |
+
+**Next:** 두 failure point를 별도 테스트로 원본 `write_evidence`에 주입해 JSON/Markdown의 정확한 pair bytes, `.bak/.tmp` 부재, 에러 타입을 검증. 수정 권한은 HMDA Data source/test owner의 별도 결정에 두고, #277은 선행 병합 후 실제 cross-domain boundary만 검증. 이 절의 head는 **Inbox 갱신 전**이며 갱신 후 commit/CI는 재확인해야 합니다.
