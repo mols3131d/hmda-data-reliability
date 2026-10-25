@@ -267,20 +267,7 @@ def _mart_metric_rows(
             ORDER BY activity_year, state_code, loan_purpose
             """
         ).fetchall()
-    return [
-        (
-            int(row[0]),
-            str(row[1]),
-            int(row[2]),
-            int(row[3]),
-            int(row[4]),
-            int(row[5]),
-            float(row[6]),
-            float(row[7]),
-            float(row[8]),
-        )
-        for row in rows
-    ]
+    return cast(list[tuple[int, str, int, int, int, int, float, float, float]], rows)
 
 
 def _node_id(manifest: dict[str, object], resource_type: str, name: str) -> str | None:

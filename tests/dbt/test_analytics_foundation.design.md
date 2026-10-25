@@ -21,6 +21,8 @@
 
 TX는 `100000/50`, `200000/100`, `invalid/Exempt`의 세 행이다. Actions `1`, `2`, `4` 중 처음 두 행이 승인되어 `2/3`을 여섯 자리로 반올림하면 `0.666667`이다. 마지막 행은 평균에서 제외되지만 application count에는 포함된다. 이 결과는 action 2 누락, 반올림 제거·절삭, NULL의 zero 대체와 invalid numeric 행 제거를 구별한다. CA·NY의 기존 action `3`, `7`은 denial 의미를, action `4`는 미승인·미거절 application을 고정한다.
 
+DB에서 읽은 metric은 값 변환 없이 고정 tuple과 비교한다. Count를 `int()`로 보정해 fractional 오집계를 숨기지 않는다.
+
 ## Limits
 
 - 모든 metric 입력 공간이나 운영 규모 성능을 증명하지 않는다.
