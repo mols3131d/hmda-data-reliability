@@ -49,3 +49,44 @@ description: Reliability의 하위 영역별 모든 테스트 설계를 새로 �
 - **Writable tests:** `tests/reliability/**`.
 - **Reserved for final #277 (review-only here):** tests/data_operations/test_system_recovery_e2e.py 등 외부 도메인 소유 E2E.
 - **Focus:** Reliability의 profile/detection/impact/recovery/evaluation 및 내부 approval 계약.
+
+## Current Tracked Test Inventory Seed
+
+**Snapshot:** `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25). 아래는 GitHub tracked file 목록을 기반으로 구성한 **착수용 seed**이며, 검사한 테스트 목록이나 전수 검토 완료 근거가 아닙니다. 착수 시 현재 main을 다시 조회하고 신규/이동/삭제된 파일, fixture·design·실제 소유 계약을 반영합니다. `__init__.py` 등 지원 파일도 inventory 대상입니다.
+
+### Exclusive Modification Candidates (28)
+
+- `tests/reliability/__init__.py`
+- `tests/reliability/conftest.py`
+- `tests/reliability/contracts/__init__.py`
+- `tests/reliability/contracts/test_approval.py`
+- `tests/reliability/contracts/test_evidence.py`
+- `tests/reliability/contracts/test_incident.py`
+- `tests/reliability/contracts/test_lineage.py`
+- `tests/reliability/contracts/test_profile.py`
+- `tests/reliability/contracts/test_recovery_proposal.py`
+- `tests/reliability/contracts/test_schema_recovery.py`
+- `tests/reliability/contracts/test_validation.py`
+- `tests/reliability/test_approval_backfill_validation.py`
+- `tests/reliability/test_basic_incident_detection.py`
+- `tests/reliability/test_evaluation_report.py`
+- `tests/reliability/test_fixtures.py`
+- `tests/reliability/test_freshness_delay_evaluation.design.md`
+- `tests/reliability/test_freshness_delay_evaluation.py`
+- `tests/reliability/test_impact_analysis.py`
+- `tests/reliability/test_null_spike_evaluation.py`
+- `tests/reliability/test_profile_snapshots.py`
+- `tests/reliability/test_quality_gate.py`
+- `tests/reliability/test_recovery_runtime_evidence.py`
+- `tests/reliability/test_remediation_draft.py`
+- `tests/reliability/test_schema_drift_evaluation.py`
+- `tests/reliability/test_schema_recovery_candidate.py`
+- `tests/reliability/test_schema_recovery_executor.py`
+- `tests/reliability/test_table_metadata_evidence.py`
+- `tests/reliability/test_table_state_identity.py`
+
+### Inspect Here, Change Only In Final #277 (0)
+
+- 없음
+
+- 다른 PR에서 필요한 공용 설정·workflow·source 수정이 확인돼도 파일을 이 PR에 끌어오지 말고 증거를 #277의 접점 작업에 인계합니다.
