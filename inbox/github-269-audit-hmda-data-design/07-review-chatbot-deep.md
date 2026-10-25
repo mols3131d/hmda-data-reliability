@@ -138,3 +138,22 @@ tags:
 | ⚪ Not Verified | #277 통합·인간 승인 | #277은 선행 PR 미병합 Draft. |
 
 **Next:** 첫-replace orphan과 backup-cleanup mismatch를 별도 fault로 재현해 영향/우선순위를 분리하고, 실제 fix는 source owner가 결정. #277은 선행 병합 후 Source→Bronze→gate→dbt 통합과 공용 fixture만 검증. 이 R5의 reviewed head는 **Inbox 갱신 전** SHA이며 갱신 후 CI는 별도 확인합니다.
+
+## R6 · 2026-10-26 KST · Backup-Cleanup Counterexample Simulation
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R5 C8을 새로운 결함으로 중복 등록하지 않고, 첫 replace 실패와 구별되는 backup-cleanup 실패를 **임시 디렉터리의 독립 Python 제어 흐름 복제**로 반증했습니다. 독립 reviewer와 repository 원본 함수 실행은 여전히 미완료입니다.
+
+- **Revision:** R5 reviewed pre-write `1b095077d92ada7bb252075e0ff3ec98ed87bc66` → authoritative pre-write `615700a3dfce3d7ea88ced8823f7b14aaeed8c47`: 이 Inbox 파일만 변경한 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` 유지. Test/source/Spec 변경 없음; PR discussion feedback 없음.
+- **Contract and location:** [EDA Spec](../../openspec/specs/hmda-data-eda-descriptive-evidence/spec.md) `Observation consistency`; [writer](../../scripts/run_actual_source.py) `write_evidence` JSON backup → JSON replace → Markdown replace → backup unlink 순서; [changed test](../../tests/hmda_data/eda/test_eda_evidence.py) `test_write_evidence_restores_pair_on_second_replace_failure`는 두 번째 replace만 주입.
+- **C8 · 🟠 Major if reached · Keep existing source-owner follow_up / not new current_required:** 독립 Python 임시 경로에서 동일한 전이/except/finally 순서를 복제해 **backup `.bak` unlink만 OSError**로 만들면 old JSON `row_count=100`과 new Markdown `row_count=200`이 함께 남고 OSError가 발생했습니다. 정상 두 번째 replace 실패에 대한 기존 rollback test는 이 후행 cleanup 실패를 반박하지 않습니다. 이는 **원본 repository 함수를 import하여 실행한 재현이 아니므로** 실행된 production defect나 CI failure로 단정하지 않습니다. JSON↔Markdown consistency가 실제로 깨지는 상태 전이의 조건부 근거만 강화했습니다.
+- **Decision:** R3 C6(first JSON replace의 orphan backup)와 R5 C8(post-Markdown backup unlink mismatch)은 독립 fault point로 계속 분리. R4 C7 path-traversal 가설은 Drop 유지. 실제 source 변경은 HMDA Data owner 결정; #277 cross-domain lane에 내부 writer cleanup을 전가하지 않음.
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R5→R6 head, owner-path, Spec/source/test static comparison | `1b095077..615700a3`는 이 Inbox만 변경; 다른 PR 테스트 파일과 충돌 없음. |
+| ✅ Pass | Disposable Python control-flow simulation | backup unlink OSError → old JSON / new Markdown 확인; **source module 실행 아님**. |
+| ✅ Pass | Remote current-head prospective-merge CI | [CI Lite 40238115229](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40238115229): merge `cdd23622`, **197 passed in 8.47s**; 선택 Python checks 성공. 이 fault는 미포함. |
+| ⚪ Not Verified | Repository 원본 `write_evidence` fault injection, 로컬 pytest, independent specialist | 실행하지 않음; 기존 CI를 해당 반례의 통과로 해석하지 않음. |
+
+**Next:** HMDA Data test/source owner가 disposable 실제 `write_evidence`에서 (a) 첫 JSON replace, (b) Markdown 성공 후 backup unlink를 **각각** 주입해 exact pair bytes와 `.tmp/.bak` 부재를 검증. #277은 선행 병합 뒤 통합만 수행. 이 section의 head는 **Inbox 갱신 전** SHA이며 갱신 후 head/CI를 별도로 재확인합니다.
