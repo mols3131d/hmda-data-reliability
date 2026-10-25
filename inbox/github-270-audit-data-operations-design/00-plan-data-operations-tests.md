@@ -6,7 +6,15 @@ description: Data Operations 전수 테스트 검토, 과거 finding의 선택 �
 
 # Data Operations Test Design Audit and Adoption
 
-**State:** Draft 준비. 전수 검토·테스트 실행·finding 수용은 미완료. **Initial main:** `81fe44b2` (착수 시 재확인).
+**State:** 전수 검토·oracle 보강·독립 검토·로컬/CI 검증 완료. Human review readiness는 `ready`이며 PR은 Draft로 유지합니다. **Initial main:** `81fe44b2`. Exact revision 근거와 #277 인계는 [검토 결과](02-review-data-operations-tests.md)에 기록합니다.
+
+## Continuation Basis
+
+- 2026-10-25 인계 시 remote head는 `762870ac63fc030b513818fd1df0f4ac017e7069`, 최신 main은 `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`입니다. 기존 공개 history를 보존하고 main을 merge한 조사 기준은 `c0306551abe289fbe1838af114059059e7ba00b5`입니다.
+- 도메인 tracked inventory는 아래 6파일과 일치합니다. historical 검토 revision `3ab899100fc0b35e23d464bd761f3b144a978ae7`부터 최신 main까지 이 6파일, Data Operations source, artifact identity primitive와 두 Data Operations Spec에는 diff가 없습니다. 관련 병합 #263–#268은 확인했으며 이 사실을 현재 검토의 대체 근거로 사용하지 않습니다.
+- dbt runner와 lifecycle의 exclusive test 보강을 각각 수행하고, 예약 4파일은 수정 없이 현재 source/Spec에 대조합니다. 이후 도메인 suite, 관련 artifact suite, 정적 검사와 별도 `review-lead` 검토로 완료 여부를 판단합니다.
+- 첫 pre-push에서 공통 Git fixture의 환경 누수로 local metadata가 오염됐고 원격 push는 실패했습니다. 검토된 test commit과 두 blob은 보존됐으며 active worktree를 `hmda-data-reliability.worktrees/pr270-data-operations-delivery`로 복구했습니다. 공유 source 수정과 fixture ref 보존, 동일 hook의 환경 격리 검증은 [F3와 전달 근거](02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories)를 봅니다.
+- `mols-loops` standard, ceiling 30을 적용했습니다. 전수 검토·보강 후 Review에서 F3의 전달 환경 문제를 발견했고, 다음 Research/Plan/Work에서 작업 복구와 동일 hook의 환경 격리를 검증했습니다. 두 substantive Review의 근거는 검토 결과에 남기며 Finalize는 Inbox 전달과 최종 PR 상태 확인만 수행합니다.
 
 ## Scope
 
@@ -24,11 +32,11 @@ description: Data Operations 전수 테스트 검토, 과거 finding의 선택 �
 
 ## Acceptance
 
-- [ ] 현행 도메인·서브도메인 tracked tests/support/design 전수 inventory와 검토·제외 근거
-- [ ] 계약·실패·경계·격리·복구의 독립 oracle 및 검출력 확인
-- [ ] 모든 legacy finding별 수용·기각·보류·기해결 판단과 이유
-- [ ] 채택한 필요한 테스트 보강과 현재 main 기준 targeted/related 검사
-- [ ] 새 revision에 대한 독립 리뷰, evidence와 human review readiness
+- [x] 현행 도메인·서브도메인 tracked tests/support/design 전수 inventory와 검토·제외 근거
+- [x] 계약·실패·경계·격리·복구의 독립 oracle 및 검출력 확인
+- [x] 모든 legacy finding별 수용·기각·보류·기해결 판단과 이유
+- [x] 채택한 필요한 테스트 보강과 현재 main 기준 targeted/related 검사
+- [x] 새 revision에 대한 독립 리뷰, evidence와 human review readiness
 
 ## Boundary
 
@@ -68,5 +76,4 @@ description: Data Operations 전수 테스트 검토, 과거 finding의 선택 �
 - `tests/data_operations/test_quality_gate.py`
 - `tests/data_operations/test_system_recovery_e2e.design.md`
 - `tests/data_operations/test_system_recovery_e2e.py`
-
 - `__init__.py`는 support inventory 대상으로 검토하되 변경하지 않습니다. 예약 통합 파일은 #277에서, 공통 환경·CI 설정도 #277에서 선행 PR 병합 후 검토합니다.
