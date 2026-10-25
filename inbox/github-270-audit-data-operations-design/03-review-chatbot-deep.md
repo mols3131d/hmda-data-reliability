@@ -56,3 +56,33 @@ tags:
 - **Next:** artifact promotion implementation의 두 파일 atomicity와 result-only drift identity를 추적하고, lifecycle의 read-only 경계 및 projection lock 허용 범위를 source/Spec에 대조. 57-test suite 중 예약 4파일의 검토·제외 이유를 현행 코드와 교차 검증.
 - **Revalidation trigger:** main/base, head의 test/source/Spec blob, CI 상태, 새로운 feedback이 바뀌면 기존 판단을 stale로 표시하고 영향을 받는 영역을 다시 조사합니다. 전수 파일 수나 이전 에이전트가 표시한 `clear`를 독립 검증으로 대체하지 않습니다.
 - **Boundary:** 이 문서는 비정본입니다. 공유 CI/Git fixture와 교차 도메인 계약은 [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277)에서 선행 PR을 취합한 뒤 검증합니다. 승인·merge·thread resolution은 수행하지 않습니다.
+
+
+## R2 · 2026-10-26 KST · Contract, Cleanup and CI Revalidation
+
+> [!NOTE]
+> **Assessment: blocked (independent specialist gate not performed), no confirmed new `current_required`.** This section updates R1 candidates without treating previous reviewer claims or remote CI as local execution.
+
+- **Research / freshness:** authoritative PR head `2a6aa3117e1725827029b26f105da49c76338e12`, base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Comparing R1 code `5dd84ee53e56f089f6771d6a2ff9ae23f4105b29` to head shows **one added file only: this Inbox review**. The two tests, main source and Spec were not changed in that interval. PR conversation has no new feedback.
+- **Plan:** Reconcile R1 C3 against the actual lifecycle implementation and the stage/lifecycle Specs; challenge promotion's failed-copy cleanup separately from the already-tested second-replace rollback. Only this PR-owned Inbox may change.
+- **Review / sequential perspectives:** Source-contract, negative/fault-injection, CI, and cross-PR ownership were checked sequentially in this session. They are **not** independent specialist reviews.
+
+### R2 Candidate Decisions
+
+| ID | Severity | Scope relation / disposition | Evidence and counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C3 | 🔵 Note | `contract_dependency` / **Drop** | [Lifecycle implementation](../../src/hmda_reliability/data_operations/incident_lifecycle.py) opens DuckDB with `read_only=True`, calculates profile/impact/draft and uses a shared artifact lock whose only expected file-side effect is `.artifact-promotion.lock`. [Changed test](../../tests/data_operations/test_incident_lifecycle.py) compares ordered full rows, both artifact byte streams and complete file membership, allowing only that lock. The original conjecture that the test silently permits other newly created files is refuted. This is static inspection, not a proof against arbitrary external writes. | Do not duplicate R1 C3 as a finding. |
+| C4 | 🟡 Minor | `independent_requirement` / **Accept as follow_up; not current_required** | [Promotion source lines 386–424](../../src/hmda_reliability/data_operations/runner.py) runs `shutil.copyfile(source, staged_path)` **before** appending that item to `staged_promotions`; on an OSError during the current copy, cleanup iterates only previously appended items. A partially created `*.next` for the failing item can therefore survive. [Domain test lines 850–883](../../tests/data_operations/test_dbt_runner.py) injects failure on second `Path.replace` and asserts restored current pair, **not** failure during the first/second copy or orphan `.next` absence. This is a reachable conditional control-flow gap, **not a locally reproduced failure**; prior current pair is not shown corrupted. It predates this test-only PR and is outside the authorized source-edit boundary. | Data Operations source owner: consider a separate production cleanup correction; domain test owner: inject partial `copyfile` failure and assert old pair bytes plus no orphan `.next`. Do **not** assign internal runner cleanup to #277 by default. |
+| C5 | 🔵 Note | `contract_dependency` / **Drop** | [Stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md) requires process failure and missing artifact to be domain failures, but does not make every temporary staging-file cleanup error a new stage success criterion. No evidence that C4 alters the completed dbt run result or existing current pair. | Keep the distinction between cleanup hygiene and committed pair integrity. |
+
+### R2 Validation and Handoff
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | GitHub head comparison and path ownership | `5dd84ee5..2a6aa311`: Inbox review addition only; changed test files remain `tests/data_operations/test_dbt_runner.py` and `test_incident_lifecycle.py`; other PR test lanes do not overlap. |
+| ✅ Pass | Source and Spec static control-flow inspection | [Lifecycle](../../src/hmda_reliability/data_operations/incident_lifecycle.py), [promotion](../../src/hmda_reliability/data_operations/runner.py), [stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md), [lifecycle Spec](../../openspec/specs/data-operations-incident-lifecycle/spec.md). C4 is conditional inference, not executed reproduction. |
+| ✅ Pass | Current remote CI job log inspection | [CI Lite 40218904066](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40218904066), job `121245976491`: prospective merge checkout, `tests/data_operations` **57 passed in 42.05s** and selected Python checks succeeded. GitHub runner only. |
+| ⚪ Not Verified | Local pytest, partial-copy fault injection and mutation controls | No local execution in this run; existing historical mutant proof covers **results-only identity**, not C4. |
+| ⚪ Not Verified | New independent DualVantage specialist gate and cross-domain integration | No isolated specialist context was available. [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) remains a prerequisite-blocked Draft with no integrated #269–#276 main revision. |
+
+**Next transition:** On any base/head/test/Spec/CI change, compare exact revisions again. For C4, use a disposable target and fault injection during the *second* `copyfile` after writing partial bytes; assert `*.next` cleanup and current pair preservation, then distinguish source defect from test-oracle defect. Keep F1 timestamp-only E2E and F3 shared Git environment in #277, but route internal runner cleanup to its own source owner. This R2 reviewed head is the **pre-update** SHA; the subsequent Inbox-only commit must be re-compared.
