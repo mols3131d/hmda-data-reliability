@@ -57,6 +57,16 @@ GitHub의 `main` branch endpoint, remote fetch와 prospective merge의 두 paren
 
 도메인 요약의 G1–G6는 main의 [#263](https://github.com/mols3131d/hmda-data-reliability/pull/263), [#264](https://github.com/mols3131d/hmda-data-reliability/pull/264), [#266](https://github.com/mols3131d/hmda-data-reliability/pull/266), [#267](https://github.com/mols3131d/hmda-data-reliability/pull/267), [#268](https://github.com/mols3131d/hmda-data-reliability/pull/268), [#265](https://github.com/mols3131d/hmda-data-reliability/pull/265)에서 대응 코드·회귀가 추가된 것을 확인했다. 이번 통합 suite에서 해당 회귀가 통과했으므로 과거 반례를 그대로 현재 main의 미수정 결함으로 표현하지 않는다. 원래 probe 전체를 다시 실행하거나 각 수정의 독립 리뷰를 수행한 것은 아니다. G7·G8의 Review AI·CI 경로는 기존 snapshot과 동일하며 관련 후속 제안은 유지한다. 어느 항목도 PR #258의 필수 수정으로 확대하지 않는다.
 
+## Local Delivery Exception
+
+첫 문서 전달 commit `1811c8647f800906bcdb9fba36defc81f5f9d14a`의 push는 로컬 hook에서 실패했다. 로컬 작업 branch와 PR upstream의 이름이 달라 기본 `push.default=simple`에서 `@{push}`를 해석하지 못했고, hook이 문서 외 전체 파일까지 검사했다. 새 worktree의 Biome 미설치는 `JSON=true TOML=true python3 scripts/ci/run_checks.py tooling`으로 repository-local 도구만 복원해 해결했다. Tracked dependency·lock·CI 설정은 변경하지 않았다.
+
+추가로 hook 안의 Git 환경이 임시 Git fixture에 전파되어 CI 테스트 **10 failed / 943 passed / 3 skipped**가 발생했다. 임시 fixture가 실제 worktree Git metadata를 변경했으며, push는 실패하여 원격 PR에는 반영되지 않았다. `GIT_DIR`를 주입한 최소 재현에서도 classifier의 두 사례가 같은 assertion으로 실패했다. Git 환경 주입이 없는 직접 실행 `uv run --no-sync python -m pytest tests/scripts/ci -q -ra -p no:sugar`는 **232 passed / 1 skipped / 14.41s**였다. 이 결과들은 최신 main의 통합 suite 수치에 합산하지 않는다.
+
+검증된 문서 commit으로 이 작업의 local ref와 index를 복원하고 테스트가 만든 임시 ref·Git identity 변경을 되돌렸다. 복구 후 working tree와 index는 commit과 정확히 같고, 기존 main 및 PR branch ref도 작업 전 값과 같았다. 이후 `git -c push.default=upstream push origin`은 실제 문서 4개만 선택해 hook 우회 없이 성공했으며 원격 head는 `1811c864`가 됐다. 문서는 별도 검증했고 hook의 관련 없는 단계 skip을 테스트 성공으로 계산하지 않는다.
+
+Hook 환경에서 임시 Git fixture가 격리되지 않는 문제 자체는 기존 tooling의 후속 과제다. 이번 PR의 SDK 회귀 검증 및 최신 main 통합 실행은 해당 hook 환경 밖에서 완료했다. 이 후속 과제를 해결하기 위해 CI·공통 fixture·production scope를 확장하지 않는다.
+
 ## Final Self Review
 
 **✅ No findings** — 현재 SDK 변경 범위에서 material finding을 확인하지 못했다.
