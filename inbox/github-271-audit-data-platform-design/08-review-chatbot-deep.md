@@ -178,3 +178,27 @@ tags:
 | ⚪ Not Verified | 실제 dbt exit=1/error 결합, repository pytest, mutation/fault injection, 독립 specialist | 수행하지 않음. |
 
 **Next:** #271 test owner는 disposable run-results 추가-error oracle을 먼저 실패시키고 실제 dbt-version/adapter에서 `exit=1`과 `error`의 동시 발생 가능성을 확인한 뒤 보강/드랍 결정. #277은 선행 병합 후 integrated promotion↔Reliability 소비 경계를 검증. Reviewed head는 Inbox 갱신 전 SHA입니다.
+
+## R7 · 2026-10-26 KST · dbt Artifact Provenance and Oracle Countercheck
+
+> [!IMPORTANT]
+> **Research → Plan → Review / handoff.** R6 C6의 `fail`-only predicate를 새로운 finding으로 반복하지 않고, 실제 `dbt` 실행·artifact provenance 및 공식 run-results 계약에서 반증 가능한 전제를 분리했습니다. **dbt subprocess 실행은 하지 않았습니다.**
+
+- **Revision:** R6 pre-write `792363246ea056814d4c5cff2b7a85e9cf00cf67` → R7 authoritative pre-write `2c1876c672c2437fc2aa3bd8a03971b9a5f19c7c`: 이 Inbox만 변경한 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; code/test/Spec 불변, PR comments 0.
+- **Contract/locations:** [dbt analytics Spec](../../openspec/specs/data-platform-dbt-analytics/spec.md) `Analytics quality tests`; [changed test](../../tests/dbt/test_analytics_foundation.py) L87–166; [dbt 공식 run-results 문서](https://docs.getdbt.com/reference/artifacts/run-results-json) `results[*].unique_id/status` (2026-10-16 갱신). 공식 계약은 각 실행 노드의 `status`에 success/failure/error를 구별하며, artifact에는 **실행된 노드만** 포함한다고 명시합니다.
+
+| ID | Severity | Decision / scope relation | Evidence / counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C6 | 🟡 Minor (conditional) | **Keep provisional `current_required` for test-only oracle; runtime reachability unresolved** | `test_dbt_quality_tests_detect_source_staging_and_mart_violations`는 `_run_dbt(..., expected_returncode=1)` 뒤 `status == 'fail'`만 descriptor set으로 비교합니다. 공식 run-results 계약은 `error`를 `fail`과 다른 status로 기록합니다. 따라서 **네 예상 fail + 추가 error + CLI exit=1**이면 추가 error가 필터에서 소실된다는 R6 반례는 유효. 그러나 현재 dbt-core/duckdb 버전에서 이 결합이 실제 생성되는지, 별도 error가 exit 2를 만드는지 직접 확인하지 못했습니다. | Disposable 실제 dbt run에서 `error` node와 네 `fail`의 공존·exit code를 관찰하고, 가능하면 모든 unexpected non-success를 거부하는 최소 test-only oracle을 설계. |
+| C7 | 🔵 Note | **Drop / stale artifact false-green 가설** | `tmp_path`의 독립 DB와 `--target-path tmp_path/dbt-target`를 사용합니다. 선행 `build` artifact가 남아도 이후 `dbt test`가 실패 결과를 작성하지 않으면 이전 build의 model-success 결과로는 네 expected `fail` set equality를 충족할 수 없습니다. 따라서 **이전 run_results만으로 C6의 false-green이 성립한다**는 가설은 코드의 필터/expected set이 반박. 단, 실제 dbt artifact overwrite behavior의 runtime 검증은 아님. | 새 stale-artifact defect로 등록하지 않음. |
+
+### R7 Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R6→R7 head 및 source/Spec/test/공식 artifact schema 정적 대조 | `79236324..2c1876c6` Inbox-only; #269/#270/#272의 변경 테스트와 경로 충돌 없음. |
+| ✅ Pass | 원격 prospective-merge CI의 실제 selected test log | [CI Lite 40242540040](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40242540040), merge `44115e3` into `ea39a4fd`: **43 passed, 1 warning in 25.68s**; 예상 외 error fault 미포함. |
+| ⚪ Not Verified | dbt `exit=1 + error` 실제 조합, mutation/fault injection, 로컬 pytest, 독립 specialist | 본 회차 미실행. 공식 status schema만으로 특정 CLI exit code를 확정하지 않음. |
+| ⚪ Not Verified | #277 integrated promotion↔consumer | 선행 PR 미병합; 별도 cross-domain acceptance 필요. |
+
+**Next:** #271 test owner가 dbt-core 1.12+ / DuckDB 실제 adapter에서 controlled `error` node를 만들고 exit/result artifact를 함께 기록해 C6의 `current_required` admission을 확정/기각. `error`를 무시하는 predicate는 이미 정적 반례가 있으나 exit 조건을 생략해 실제 false green이라고 단정하지 않습니다. #277에는 내부 oracle 변경을 넘기지 않음. 이 절의 head는 **Inbox 갱신 전** SHA입니다.
