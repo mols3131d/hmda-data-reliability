@@ -49,3 +49,21 @@ description: Orchestration 독립 테스트 설계 전수 검토와 과거 findi
 - **Writable tests:** `tests/orchestration/** (아래 예약 파일 제외)`.
 - **Reserved for final #277 (review-only here):** tests/orchestration/test_airflow_dagrun.py, test_airflow_dagrun.design.md, test_airflow_execution.py.
 - **Focus:** DAG 정의·config 등 Orchestration 자체 불변식.
+
+## Current Tracked Test Inventory Seed
+
+**Snapshot:** `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25). 아래는 GitHub tracked file 목록을 기반으로 구성한 **착수용 seed**이며, 검사한 테스트 목록이나 전수 검토 완료 근거가 아닙니다. 착수 시 현재 main을 다시 조회하고 신규/이동/삭제된 파일, fixture·design·실제 소유 계약을 반영합니다. `__init__.py` 등 지원 파일도 inventory 대상입니다.
+
+### Exclusive Modification Candidates (3)
+
+- `tests/orchestration/__init__.py`
+- `tests/orchestration/test_airflow_dag.py`
+- `tests/orchestration/test_config.py`
+
+### Inspect Here, Change Only In Final #277 (3)
+
+- `tests/orchestration/test_airflow_dagrun.design.md`
+- `tests/orchestration/test_airflow_dagrun.py`
+- `tests/orchestration/test_airflow_execution.py`
+
+- 다른 PR에서 필요한 공용 설정·workflow·source 수정이 확인돼도 파일을 이 PR에 끌어오지 말고 증거를 #277의 접점 작업에 인계합니다.
