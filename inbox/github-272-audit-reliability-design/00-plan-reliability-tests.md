@@ -6,7 +6,15 @@ description: Reliability의 하위 영역별 모든 테스트 설계를 새로 �
 
 # Reliability Test Design Audit and Adoption
 
-**State:** Draft 준비. 현재 main 전체 코드에 대한 전수 검토나 새로운 테스트·negative control 실행은 미완료. **Initial base:** `81fe44b2` (착수 시 검증).
+**State:** 전수 조사·회귀 보강 진행 중. **Initial base:** `81fe44b2`. 2026-10-26 인계 시 원격 head `7a93a60c8b345dadc401968e2100ba19a395fd52`를 확인하고 최신 main `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`를 병합했다. 현재 조사 기준은 `b16ad5734b4a5a35c1db3d12fe03124438e71348`이다. [현재 검토](02-review-current/README.md)에서 inventory·finding 판정·검증 결과를 이어 기록한다.
+
+## Continuation State
+
+- **Goal:** 8개 하위 영역의 현행 테스트 설계 전수 검토와 수용한 gap의 최소 회귀 보강을 마치고 Draft PR로 전달한다.
+- **Work split:** contracts·metadata·profiling·detection·impact·remediation 및 공통 support 조사, recovery 조사·보강, evaluation 조사·보강을 독립 파일 소유권으로 병렬 진행한다.
+- **Validation:** 독립 worktree의 locked 환경에서 baseline → 변경 focused test → Reliability domain suite와 정적 검사 → 별도 `review-lead` 검토를 수행한다. 추가 테스트의 검출력은 잘못된 동작을 주입한 별도 실행으로 확인한다.
+- **Loops State:** Prepare `READY`; intensity `standard`; Main Loop `0/30`; acceptance `open`; next `Research → Plan → Work → Review`. 미완료 항목은 아래 Acceptance와 현재 검토 결과에서 추적한다.
+- **Authority:** production·공유 설정·타 도메인 변경은 #277로 인계한다. Draft 전환 해제·approval·merge는 별도 인간 결정이다.
 
 ## Scope
 
@@ -89,5 +97,4 @@ description: Reliability의 하위 영역별 모든 테스트 설계를 새로 �
 
 - `tests/reliability/__init__.py`
 - `tests/reliability/contracts/__init__.py`
-
 - `__init__.py`는 support inventory 대상으로 검토하되 변경하지 않습니다. 예약 통합 파일은 #277에서, 공통 환경·CI 설정도 #277에서 선행 PR 병합 후 검토합니다.
