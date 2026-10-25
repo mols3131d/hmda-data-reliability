@@ -135,3 +135,27 @@ tags:
 | ⚪ Not Verified | #277 integrated contract gate | #277 remains Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`; its initial base `81fe44b2` is one commit behind current main `ea39a4fd`, and upstream PRs are not integrated. |
 
 **Next:** Test owner should challenge C6 with a disposable extra-`error` `run_results` case and, if confirmed, strengthen only the #271-owned negative oracle. Retain prior C1–C3/C5 Drop and C4 cross-domain follow-up. Recompare the resulting Inbox-only commit/head and CI; no human review, approval, merge or thread resolution is implied.
+
+## R5 · 2026-10-26 KST · Extra-Error Counterexample Reachability Check
+
+> [!NOTE]
+> **Handoff / independent review pending.** R4 C6의 정적 false-green 논리는 유지하되, dbt CLI의 exit-code 조건을 명시해 실제 실행 가능성에 관한 과잉 확신을 제거합니다. 제품·테스트·Spec은 수정하지 않았습니다.
+
+- **Revision:** R4 pre-write `bf616f2af0272e8b8db61786570f0cb0cef7e37e` → authoritative pre-write `3a5271bcdcc96d37b907c3bae1dc97e6a1af6676`: 이 Inbox만 변경된 단일 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; test/source/Spec 변경 없음.
+- **Research → Plan → Review:** [실제 dbt quality test](../../tests/dbt/test_analytics_foundation.py)와 같은 파일의 `_run_dbt` helper를 함께 확인. 이전 C6가 제시한 `run_results`의 예상 네 `fail` + 추가 `error`가 **returncode=1일 때만** assertion을 통과한다는 필요조건을 재확인했습니다. `_run_dbt`는 exit 1이 아닌 경우 먼저 실패시키므로 모든 dbt error가 무조건 false green이라는 주장은 **Drop**입니다.
+
+| ID | Severity | Decision / Evidence | Next |
+| --- | --- | --- | --- |
+| C6 narrowed | 🟡 Minor | **Keep current_required test-oracle gap (static), runtime reachability unresolved.** `result["status"] == "fail"` 필터와 descriptor **set** equality는 추가 `error`를 무시합니다. 다만 helper가 `result.returncode == 1`을 먼저 요구하므로 **CLI exit=1 + 예상 네 fail + 추가 error**의 결합이 필요합니다. Exit 2 등 다른 코드면 test가 실패한다는 safeguard를 반영. 실제 dbt가 이 조합을 반환하는지는 검증하지 않았습니다. | #271 test owner: artifact 수준에서 exit=1 전제의 추가 error를 주입해 oracle false green을 검증하고, 전체 result의 예상 외 error/non-success를 거부하도록 강화. 실제 dbt 실행에서 해당 결합의 reachability도 별도 확인; 불가능하다는 근거가 나오면 disposition 재평가. |
+| C4 | 🔵 Note | **Keep cross-domain follow_up:** run-scoped candidate → current promotion → Reliability consumer의 동일 identity는 domain test 결과만으로 증명되지 않음. | 선행 병합 후 #277 E2E owner. |
+
+### R5 Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R4→head, helper/quality-oracle 정적 대조 | 단일 Inbox-only commit; changed tests `tests/data_platform/**`, `tests/dbt/**`로 다른 세 PR와 비중복. |
+| ✅ Pass | 최신 **원격** prospective-merge CI log | [CI Lite 40232562483](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40232562483), job `121287205029`: **43 passed, 1 warning in 25.20s**, Python checks 성공. Extra-error injection은 수행하지 않음. |
+| ⚪ Not Verified | 로컬 dbt fault injection, mutant, 독립 specialist | 이번 회차 미실행. Exit-code 조합은 실험 전 조건부 반례. |
+| ⚪ Not Verified | #277 통합·승인 | #277은 prerequisite-blocked Draft. |
+
+**Next:** C6를 실제 dbt exit/result 조합으로 반증하거나 수용하고, 현 PR 소유 테스트만 보강할지 owner가 결정. 원격 CI success를 통합 성공으로 확대하지 않음. Reviewed head는 Inbox 갱신 전 SHA입니다.
