@@ -84,3 +84,26 @@ tags:
 | ⚪ Not Verified | #277 최종 통합 및 공용 Git hook 영구 수정 | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277)은 `74ac659d084fadd5e93900b132ef5b995ef8d919`, base `81fe44b2...`의 Draft; #269–#276은 아직 모두 병합 전. 순차 통합 후 재검증 필요 |
 
 **Next transition:** 신규 `current_required`를 만들기 위해 기존 finding을 반복하지 않는다. 다음 Run은 현 PR head와 source/test/Spec blob, CI run을 먼저 비교하고, 독립 specialist 검토가 실제 가능할 때만 independent gate를 진행한다. #277 owner는 기존 감사의 H/F 항목을 참조해 선행 PR이 main에 통합된 **한 revision**에서 current/candidate artifact·approval/recovery·dbt log·Git fixture isolation의 부정 경로를 검증한다. 이 문서 수정 commit은 Inbox-only이며 이 절의 `reviewed head`는 수정 **직전** SHA다. 변경 후 head는 PR에서 다시 확인한다.
+
+## R3 · 2026-10-26 KST · Fresh-Head Challenge and Handoff
+
+> [!NOTE]
+> **Research → Plan → Review:** Compared previous R2 head `2e1daa1dd6a144bb816dd82f86bc09ce209671b5` to authoritative head `07e0a26436ff4196b916f86ab3cd07e1619406fd` and main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`: only this Inbox review changed, so earlier code/Spec/test findings remain revision-applicable. No new PR conversation feedback. The plan was to challenge one unresolved inference against a separate source/test path, keep test-only PR ownership, and validate latest remote CI without claiming local execution. This is same-session multi-perspective analysis, **not** isolated independent review.
+
+
+### R3 · Reliability · Missing-THEN Impact Reassessment
+
+- **C5 → 🔵 Note / follow_up (pre-existing Spec wording), not a current test defect:** [Canonical evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md) still has `Scenario: Existing or aliased evaluation database` with GIVEN/WHEN and **no THEN** (lines 193–196). However [existing schema-drift integration tests](../../tests/reliability/test_schema_drift_evaluation.py), lines 40–126, already exercise all three existing DB paths with exact original database bytes and no callback/new entries, plus canonical path aliases with no workspace/callback. This directly refutes the stronger R2 implication that the missing THEN entails an unprotected current test/implementation path. The missing normative wording remains a Spec-owner documentation decision, outside this test-only PR; do not make #277 invent acceptance semantics or call this a new regression.
+- **Counterexample limit:** Those tests do not prove all symlink/hardlink aliases or all platform-specific physical path cases; no new runtime mutation experiment was performed. A distinct alias mode should be promoted to a finding only with an authorized physical-path contract and reproducible counterexample.
+- **Disposition:** R2 C3/C4 stay Drop; C5 is bounded follow_up, not an independent-review clearance. No confirmed new `current_required`; independent specialist gate remains **blocked**.
+
+### R3 Validation and Next Transition
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | Remote revision and changed-path comparison | `2e1daa1dd6a1..07e0a26436ff` is one Inbox-only commit; no new test/source/Spec diff; domain test file paths do not overlap #269/#270/#271/#272. |
+| ✅ Pass | Latest remote CI selected-suite log | [CI Lite 40223434550](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40223434550), job `121259726551`: **268 passed in 24.01s** with selected Python checks success on prospective merge. GitHub runner evidence only. |
+| ⚪ Not Verified | This session's local pytest, targeted fault injection, and independent specialist | No local execution or isolated reviewer; earlier run reports are historical evidence, not this run's result. |
+| ⚪ Not Verified | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) integrated contract test | Still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2`; prerequisite domain PRs remain unmerged. |
+
+**Next:** Re-check exact head/base/CI before reuse. Follow the candidate-specific owner and counterexample above; run only the narrow relevant fault/alias/integration test in a disposable isolated environment if authorized. Preserve the difference between remote CI success, static inference and independent review. Do not modify shared code/Spec or approve/merge. This reviewed head is the **pre-Inbox-update** SHA; verify the resulting commit changed only this document.
