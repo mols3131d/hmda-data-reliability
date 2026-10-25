@@ -86,3 +86,33 @@ tags:
 | ⚪ Not Verified | New independent DualVantage specialist gate and cross-domain integration | No isolated specialist context was available. [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) remains a prerequisite-blocked Draft with no integrated #269–#276 main revision. |
 
 **Next transition:** On any base/head/test/Spec/CI change, compare exact revisions again. For C4, use a disposable target and fault injection during the *second* `copyfile` after writing partial bytes; assert `*.next` cleanup and current pair preservation, then distinguish source defect from test-oracle defect. Keep F1 timestamp-only E2E and F3 shared Git environment in #277, but route internal runner cleanup to its own source owner. This R2 reviewed head is the **pre-update** SHA; the subsequent Inbox-only commit must be re-compared.
+
+
+## R4 · 2026-10-26 KST · Rollback Fault Composition
+
+> [!NOTE]
+> **Assessment: blocked for the independent specialist gate; no confirmed new in-scope `current_required`.** R2 is the latest section actually persisted in this file before R4; the prior session's R3 summary must not be treated as an additional persisted artifact. A distinct *conditional* rollback-cleanup risk is now tracked without claiming runtime reproduction.
+
+- **Target** — PR #270, `agent/test/audit-data-operations-design`, this Inbox only.
+- **Revision** — persisted R2 reviewed head `2a6aa3117e1725827029b26f105da49c76338e12` → authoritative pre-write head `c645a3ae0cc09013a4f6cb9fdc9bf577c75e6eb0`; compare shows this Inbox file alone changed. `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` unchanged; reviewed source/test/Spec blobs unchanged. PR conversation has no comments.
+- **Scope** — composed failure in current artifact-pair promotion, changed runner test oracle, normative stage contract, ownership and remote CI. No production or shared files modified.
+
+### R4 Candidate Decisions
+
+| ID | Severity | Scope relation / disposition | Evidence and counterevidence | Action |
+| --- | --- | --- | --- | --- |
+| C4 | 🟡 Minor | `independent_requirement` / **Keep follow_up** | [Runner](../../src/hmda_reliability/data_operations/runner.py), `_promote_dbt_artifacts`, appends to `staged_promotions` after `copyfile`. An interrupted copy may leave the current item's `.next`; this is not a demonstrated corrupted current pair. Existing R2 disposition remains applicable. | Source owner: isolated partial-copy fault injection; domain test owner: old pair bytes + no orphan `.next`. |
+| C6 | 🟠 Major **if reached**; unverified double-fault | `contract_dependency` / **Unknown, not admitted as current_required** | [Runner rollback block](../../src/hmda_reliability/data_operations/runner.py), around lines 405–429: when a second `staged_path.replace` fails, the `except OSError` handler performs `staged_path.unlink`, committed-destination unlink and backup restoration **without guarding rollback I/O failures**. If cleanup `unlink` itself raises, control exits before restoring backed-up current manifest, potentially leaving the already-committed new manifest paired with the old run-results. [Changed test](../../tests/data_operations/test_dbt_runner.py), `test_artifact_promotion_restores_pair_when_second_replace_fails` (around lines 850–883), injects the first failure only; the normal rollback succeeds. This is a source-level two-fault reachability inference, **not** a reproduced failure or evidence that ordinary promotion corrupts data. The [stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md) protects last-known-good projection, but exact rollback-failure semantics need a source-owner decision. | Use a disposable current pair and inject (1) second replace OSError, (2) rollback `.next` unlink OSError; observe exact old/new pair bytes and primary error cause. If reproduced, source owner should define cleanup/restore ordering and failure evidence; test owner may add a focused regression after contract clarification. Do not silently reassign source remediation to #277. |
+
+**Research → Plan → Review:** Challenged the R2 single-fault rollback proof with a distinct two-fault cleanup path and traced the handler's operation order. Separate source correctness, test coverage, and cross-domain promotion/reader identity. A single-fault GREEN test does not refute C6; an unexecuted double-fault hypothesis does not prove a production incident.
+
+### R4 Validation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | Revision and lane comparison | `2a6aa311..c645a3ae` changes this Inbox file only; modified tests remain `tests/data_operations/test_dbt_runner.py` and `test_incident_lifecycle.py`, disjoint from #269/#271/#272. |
+| ✅ Pass | Remote prospective-merge CI log inspection | [CI Lite 40228362969](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40228362969), job `121274577764`, merge `a17c0cfec664c3f902c33ad495a24f424eba9391` of head `c645a3ae` into base `ea39a4fd`: **57 passed in 41.80s**; selected Python checks succeeded. |
+| ⚪ Not Verified | Local pytest, partial-copy/double-fault injection and actual pair observation | No execution in this continuation; C4/C6 remain conditional source analysis. |
+| ⚪ Not Verified | Independent DualVantage and #277 integrated E2E | No isolated reviewer context; #277 remains Draft, initial base `81fe44b2` one commit behind current main and prerequisite PRs unmerged. |
+
+**Next:** Challenge C6 first with a two-fault disposable file pair; if rollback can be interrupted, separate source-level remediation from #270's test-only oracle scope and retain a clear error/state reconciliation record. Keep R1 C1/C2 and R2 C3/C5 Drop. #277 owns only genuine integration (timestamp/identity E2E, dbt log isolation and shared Git environment), not the runner's internal cleanup by default. Revalidate the post-write head and current CI before using this note.
