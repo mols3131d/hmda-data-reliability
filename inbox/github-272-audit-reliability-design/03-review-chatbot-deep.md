@@ -136,3 +136,27 @@ tags:
 | ⚪ Not Verified | #277 integrated safety and recovery proof | #277 remains Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2` one commit behind current main; upstream PRs unmerged. |
 
 **Next:** Preserve the schema replay sentinel and complete-state/profile assertions. Reopen the candidate-preflight question only if the owning Spec explicitly changes replay availability semantics or an executable counterexample shows an authorized path failing. The evaluation-Spec missing THEN belongs to its Spec owner; #277 owns only integrated approval→recovery→revalidation and shared execution boundaries. Recheck post-write head/CI before claiming freshness. No Ready, approval, merge or review-thread mutation.
+
+## R5 · 2026-10-26 KST · Incompatible Detection Population Oracle
+
+> [!NOTE]
+> **Handoff / independent review pending; no new confirmed current_required.** R4의 schema replay가 아닌 변경된 incident-detection pair 검증을 반증했습니다.
+
+- **Revision:** R4 pre-write `ed62cb64397e23b20fcf6605792e53cd7d8678e8` → authoritative pre-write `b5945a43772ede3446767bf8679691095358046c`: 이 Inbox만 바뀐 단일 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; test/source/Spec 불변.
+- **Research → Plan → Review:** [변경된 negative test](../../tests/reliability/test_basic_incident_detection.py) `test_detection_request_rejects_different_populations`, [request validator](../../src/hmda_reliability/reliability/detection/request.py), [정본 detection Spec](../../openspec/specs/reliability-incident-detection/spec.md)의 incompatible-profile scenario를 독립된 계약·구현·oracle 관점에서 대조했습니다.
+
+| ID | Severity | Decision / Evidence | Next |
+| --- | --- | --- | --- |
+| C7 | 🔵 Note | **Drop:** `model_copy(update=...)`가 `ProfileSnapshot`의 자체 재검증을 생략한다는 이유만으로 false-green이라는 가설은 부적절. 테스트 대상은 **DetectionRequest의 pair compatibility**이며 validator는 `asset_name` 및 `partition` 불일치를 각각 명시적으로 거부합니다. Parametrized test는 각각의 mismatch와 field-specific `ValueError`를 검사해 정본 THEN과 일치합니다. 별도 두 field 동시 mismatch를 요구하는 계약은 없음. | 기존 두 독립 반례를 유지. 이 후보로 새 test나 source 변경을 요구하지 않음. |
+| C5 | 🔵 Note | **Keep prior Spec-owner follow_up:** evaluation의 existing/aliased DB scenario missing THEN은 정본 문구 gap이나 기존 read-only/무변경 테스트를 무효화하지 않음. | Spec owner가 기대 의미를 결정; #277은 approval→recovery→revalidation 실제 통합만 소유. |
+
+### R5 Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R4→head 및 Spec→validator→test 정적 대조 | Inbox-only commit; 변경된 `tests/reliability/**` 5파일은 #269/#270/#271와 비중복. |
+| ✅ Pass | 최신 **원격** prospective-merge CI log | [CI Lite 40232627257](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40232627257), job `121287403548`: **268 passed in 18.47s**, selected Python checks 성공. |
+| ⚪ Not Verified | 이번 회차 로컬 pytest/negative mutation, 독립 specialist | 미실행; 코드·Spec의 정적 일치와 실제 회귀 실행 증거는 구분. |
+| ⚪ Not Verified | #277 integrated recovery 및 승인 | 선행 PR 미병합, #277 Draft. |
+
+**Next:** 현재 Drop 판단은 pair-compatibility 계약 또는 validator/test가 변경될 때만 재개. 다른 도메인 PR의 test/source를 수정하지 않고 #277은 통합 boundary만 검증. Reviewed head는 Inbox 갱신 전 SHA입니다.
