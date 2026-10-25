@@ -49,3 +49,37 @@ description: Common Support 독립 테스트 설계 전수 검토와 과거 find
 - **Writable tests:** `tests/scripts/** (아래 예약 파일 제외)`.
 - **Reserved for final #277 (review-only here):** tests/scripts/ci/test_ci_workflow.py, test_ci_steps.py, test_ci_classifier_openspec.py, tests/test_pytest_opentelemetry.py.
 - **Focus:** 로컬 검증 도구 자체의 parser, routing, bootstrap, 스크립트 계약.
+
+## Current Tracked Test Inventory Seed
+
+**Snapshot:** `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25). 아래는 GitHub tracked file 목록을 기반으로 구성한 **착수용 seed**이며, 검사한 테스트 목록이나 전수 검토 완료 근거가 아닙니다. 착수 시 현재 main을 다시 조회하고 신규/이동/삭제된 파일, fixture·design·실제 소유 계약을 반영합니다. `__init__.py` 등 지원 파일도 inventory 대상입니다.
+
+### Exclusive Modification Candidates (18)
+
+- `tests/scripts/__init__.py`
+- `tests/scripts/ci/__init__.py`
+- `tests/scripts/ci/conftest.py`
+- `tests/scripts/ci/helpers.py`
+- `tests/scripts/ci/test_ci_classifier.py`
+- `tests/scripts/ci/test_ci_classifier_python.py`
+- `tests/scripts/ci/test_ci_pytest.py`
+- `tests/scripts/test_agent_assets.py`
+- `tests/scripts/test_bootstrap.py`
+- `tests/scripts/test_clean.py`
+- `tests/scripts/test_commands.py`
+- `tests/scripts/test_generate_agent_routes.py`
+- `tests/scripts/test_generate_docs_indexes.py`
+- `tests/scripts/test_log_agent_event.py`
+- `tests/scripts/test_tach.py`
+- `tests/scripts/test_tach_config.py`
+- `tests/scripts/test_tool_wrappers.py`
+- `tests/scripts/test_validate_inbox_artifacts.py`
+
+### Inspect Here, Change Only In Final #277 (4)
+
+- `tests/scripts/ci/test_ci_classifier_openspec.py`
+- `tests/scripts/ci/test_ci_steps.py`
+- `tests/scripts/ci/test_ci_workflow.py`
+- `tests/test_pytest_opentelemetry.py`
+
+- 다른 PR에서 필요한 공용 설정·workflow·source 수정이 확인돼도 파일을 이 PR에 끌어오지 말고 증거를 #277의 접점 작업에 인계합니다.
