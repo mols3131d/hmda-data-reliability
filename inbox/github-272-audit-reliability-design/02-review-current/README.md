@@ -6,12 +6,12 @@ description: PR 272의 현행 테스트 전수 검토, 과거 finding 재판정�
 
 # Current Reliability Test Design Audit
 
-**State:** 28/28 전수 조사와 test-only 회귀 보강 완료, 독립 리뷰 대기. 인간 승인을 뜻하지 않는다.
+**State:** 28/28 전수 조사와 test-only 회귀 보강 완료. 첫 독립 리뷰의 fixture 회귀 1건을 수정했고 재검토 대기 중이다. 인간 승인을 뜻하지 않는다.
 
 - **Baseline:** `b16ad5734b4a5a35c1db3d12fe03124438e71348` (원격 PR head `7a93a60c8b345dadc401968e2100ba19a395fd52` + main `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`).
 - **Scope:** Reliability 소유의 tracked test/support/design 28개 전체. Production·Spec은 계약 대조를 위해 읽으며 수정하지 않는다.
 - **Historical evidence:** [과거 보고서](../01-review-historical/README.md)의 조사 revision은 `3ab899100fc0b35e23d464bd761f3b144a978ae7`이고 반입 기준은 PR #258 `bdce0f4e`다. 현재 결함으로 자동 승격하지 않는다.
-- **Next:** 현재 test diff와 이 검토 근거를 별도 `review-lead`에 전달하고, 결과를 수용 범위에 대조한 뒤 Draft PR로 전달한다.
+- **Next:** [독립 리뷰 기록](independent.md)의 필수 수정 후 snapshot을 재검토하고 Draft PR에 최종 상태를 전달한다.
 
 ## Audit Coverage
 
@@ -38,7 +38,7 @@ Baseline의 `git ls-files tests/reliability` 28개와 각 보고서의 file row�
 
 ## Negative Controls
 
-각 process는 정상 기준 테스트를 먼저 통과시켰다. 잘못된 동작을 메모리에서만 치환하고 새 oracle의 observable assertion 실패를 확인했다. Production 파일이나 영구 mutant harness를 수정·추가하지 않았다.
+처음 10개 control은 정상 기준 테스트를 먼저 통과시킨 뒤 잘못된 동작을 메모리에서만 치환하고 새 oracle의 assertion 실패를 확인했다. 독립 리뷰 뒤 table-MAX 반례를 추가로 확인했다. Production 파일이나 영구 mutant harness를 수정·추가하지 않았다.
 
 | Wrong behavior | Existing oracle | Strengthened oracle |
 | --- | --- | --- |
@@ -52,6 +52,7 @@ Baseline의 `git ls-files tests/reliability` 28개와 각 보고서의 file row�
 | Detection all을 any로 변경 | 기존 singleton PASS | 부분 detection property FAIL |
 | Action all을 any로 변경 | 기존 singleton PASS | 부분 action property FAIL |
 | Empty rate를 1.0으로 변경 | 기존 singleton PASS | empty rate FAIL |
+| Partition MAX가 없으면 table MAX로 대체 | 첫 수정 `a85cac28`의 9개 profile 사례 모두 PASS; 원래 baseline empty는 FAIL | fixture 보정 후 empty/all-NULL FAIL, 나머지 7개 PASS |
 
 의도한 pytest exit `1`은 각 driver가 assertion 실패로 확인했다. Import/collection/fixture 실패를 검출력으로 세지 않았다. Source semantics 전체에 대한 mutation coverage 수치로 일반화하지 않는다.
 
@@ -63,16 +64,19 @@ Baseline의 `git ls-files tests/reliability` 28개와 각 보고서의 file row�
 | ✅ Pass | 독립 실행 환경 | PR worktree의 `uv sync --locked`, Python 3.13.13 |
 | ✅ Pass | Baseline domain | `uv run --no-sync pytest tests/reliability -q`: 258 passed in 52.43s |
 | ✅ Pass | Focused tests | Core 42, recovery 79, evaluation 77 passed. 상세 command는 각 보고서 |
-| ✅ Pass | Final domain | 같은 command로 보강 후 268 passed in 22.97s, Tach skip 미사용 |
-| ✅ Pass | Negative controls | 위 잘못된 동작 10종에서 기존 PASS / 보강 FAIL |
+| ✅ Pass | Final domain | 첫 수정 268 passed in 22.97s; 독립 리뷰 후 fixture 보정에서도 268 passed in 25.69s. Tach skip 미사용 |
+| ✅ Pass | Negative controls | 처음 10종의 기존 PASS/보강 FAIL 및 추가 table-MAX 반례 검출 확인 |
 | ✅ Pass | Python static checks | `ruff check tests/reliability`, `ruff format --check tests/reliability` (28 files), `ty check tests/reliability` |
-| ⚪ Not Verified | 독립 리뷰·원격 CI | 별도 확인 후 갱신. 인계 당시 Inbox-only CI 성공을 테스트 성공 근거로 사용하지 않음 |
+| ✅ Pass | Inbox validation | rumdl 15개, Inbox structure/YAML frontmatter 15개, 현재 보고서 local link 68개 목적지 존재, diff check |
+| ✅ Pass | Git 환경 격리 후 push hook | `a85cac28`에서 testmon 선택 166 passed, 1 skipped in 95.30s; Ruff 통과. 전체 suite 성공으로 일반화하지 않음 |
+| ⚪ Not Verified | 최종 독립 리뷰·원격 CI | fixture 보정 snapshot을 별도 확인 후 갱신. 첫 리뷰의 changes_required와 인계 당시 Inbox-only CI를 최종 성공으로 사용하지 않음 |
 
 ## PR 277 Handoff
 
 - **H1:** [Manifest node/edge shape](core.md#h1-deferred-manifest-node-and-edge-policy)의 거부/허용 정책을 결정하고 필요 시 Spec·source·회귀를 함께 수정한다. 확인된 parser 동작과 미정 계약을 구분한다.
 - **H2:** [Evaluation Spec](../../../openspec/specs/reliability-evaluation-report/spec.md)의 `Existing or aliased evaluation database` scenario에 `THEN`이 없다. 기존 preflight 안전 계약과 source를 대조해 정본 문구를 보완한다. 여기서는 Spec을 수정하지 않았다.
-- **H3:** 예약된 operations/lifecycle→recovery/evaluation 접점과 results-only projection, partition replay no-write, cleanup failure 전달을 최종 통합 상태에서 대조·실행한다. 외부 E2E는 targeted read-only 대조했으며 이 PR에서 실행하지 않았다.
+- **H3:** 예약된 operations/lifecycle→recovery/evaluation 접점과 results-only projection, partition replay no-write, cleanup failure 전달을 최종 통합 상태에서 대조·실행한다. 외부 E2E는 targeted read-only 대조했으며 담당 focused suite에서 선택하지 않았다. 추가 push hook의 166개 선택 결과를 그 전체 통합 계약의 입증으로 승격하지 않는다.
+- **H4:** Git hook 환경을 상속한 Git fixture의 실제 branch/index 오염을 조사하고 공용 실행 경계에서 방지한다. 첫 push의 pytest를 중단했고 remote는 기존 `7a93a60c`였다. 검증한 `a85cac28`로 private ref/index를 복원한 후 98개 관련 파일의 byte equality와 clean status를 독립 확인했다. 재시도에서는 임시 `uv` wrapper가 `git rev-parse --local-env-vars`의 변수들을 Python 실행 전에 제거했고 hook이 통과했다. Repository hook/config는 수정하지 않았다. #277은 hook 안의 Git fixture가 disposable repo의 ref/index만 바꾸는 회귀와 바깥 ref/index 불변 oracle을 소유한다. 중단된 첫 hook은 성공 근거가 아니다.
 
 ## Completion Boundary
 

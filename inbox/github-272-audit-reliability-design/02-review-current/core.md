@@ -90,7 +90,7 @@ Baseline에서 별도 `TemporaryDirectory`의 manifest/run-results를 사용한 
 | ✅ Pass | T1–T4 focused | 변경 3개 module의 42 tests passed |
 | ✅ Pass | H1 bounded probe | 정상 graph와 field 변경 3종, 위 actual result; repository 파일 변경 없음 |
 | ✅ Pass | T1–T4 검출력 | 6개 subprocess에서 기존 oracle PASS, 보강 oracle assertion FAIL. [통합 근거](README.md#negative-controls) |
-| ✅ Pass | 최종 domain | 268 passed in 22.97s. 독립 리뷰는 [통합 근거](README.md)에 별도 기록 |
+| ✅ Pass | 최종 domain | 독립 리뷰 후 sentinel 보정에서도 268 passed in 25.69s. [리뷰 기록](independent.md) |
 
 ## Risks And Limits
 

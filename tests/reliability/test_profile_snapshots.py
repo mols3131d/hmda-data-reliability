@@ -119,7 +119,11 @@ def test_unmeasurable_profile_reports_unavailable_freshness(
     with DuckDBConnectionManager() as connection:
         _create_profile_table(connection)
         if freshness_column is not None:
-            connection.execute("UPDATE raw.profile_test SET loaded_at = NULL")
+            connection.execute(
+                "UPDATE raw.profile_test SET loaded_at = NULL "
+                "WHERE CAST(partition_at AS DATE) = ?",
+                [date(2024, 1, partition_day)],
+            )
 
         snapshot = create_profile_snapshot(
             connection,
