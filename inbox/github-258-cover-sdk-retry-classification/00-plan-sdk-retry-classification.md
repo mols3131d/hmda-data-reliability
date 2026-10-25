@@ -48,4 +48,4 @@ tags:
 
 후속 요청의 [도메인·서브도메인 테스트 설계 리뷰](03-review-domain-test-design/README.md)도 PR #258에 귀속된다. 이 리뷰는 branch 전체 snapshot을 조사하되 SDK 변경의 검토 결과와 기존 영역의 후속 보강 제안을 구분한다. 세션 재개 시 해당 묶음의 inventory·validation을 함께 확인한다.
 
-2026-10-18 로컬 재개에서는 최신 main과 PR head의 prospective merge CI, Runtime AI 40개와 기존 리뷰 대상 동일성을 확인했다. 정확한 검증 revision·제한과 다음 action은 [최신 인계](04-brief-runtime-ai-local-handoff.md)를 따른다.
+2026-10-25 재개에서는 최신 main `81fe44b2`와 PR head `b6b47606`의 prospective merge `4a5159f1`을 검증했다. SDK 검토 대상은 동일하지만 전체 도메인 inventory는 통합 상태에서 84/94만 동일하므로 과거 리뷰의 적용 범위를 정정한다. 실행 결과·최종 셀프 리뷰·readiness는 [최종 보고서](05-report-review-readiness.md), 다음 인간 결정과 재개 지점은 [최신 인계](04-brief-runtime-ai-local-handoff.md)를 따른다.

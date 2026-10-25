@@ -9,6 +9,9 @@ tags:
 
 # PR 258 Domain And Subdomain Test Design Review
 
+> [!IMPORTANT]
+> 이 묶음은 아래 `3ab89910`의 historical review다. 2026-10-25 최신 main과의 통합 상태에서는 inventory 94개 중 10개가 변경됐다. 현재 적용 범위와 G1–G6 후속 수정의 확인 결과는 [최신 readiness 보고서](../05-report-review-readiness.md#prior-review-applicability)를 따른다. 아래 당시 실행 수와 finding을 현재 main의 상태로 해석하지 않는다.
+
 > [!NOTE]
 > 독립 검토를 완료했다. 실제 파일·DB와 고정 값 oracle의 기반은 좋지만, 현재 테스트가 놓치는 계약 위반과 회귀 공백을 확인해 보강이 필요하다.
 
