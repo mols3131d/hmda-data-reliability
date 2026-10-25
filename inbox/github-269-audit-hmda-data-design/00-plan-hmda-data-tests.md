@@ -6,7 +6,7 @@ description: HMDA Data의 서브도메인별 테스트 설계를 전수 검토�
 
 # HMDA Data Test Design Audit and Adoption
 
-**State:** Draft / 준비 완료, 최신 기준 전수 검토와 구현은 미수행. **Base:** `81fe44b2126e1c013dd2dd68259f12e34088c47b` (착수 시 최신 main으로 재확인).
+**State:** Draft / 최신 main 반영 후 전수 검토·회귀 보호 보강 진행 중. **Audit baseline:** `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25 착수 시 live main 확인). 기존 PR head `69afeef8b93eb348410b13eff3705cf302ef3983`에 main을 merge한 조사 기준은 `150d565a6be06bc71ca0c446ad26e8143523d780`이다.
 
 ## Goal And Scope
 
@@ -35,6 +35,16 @@ description: HMDA Data의 서브도메인별 테스트 설계를 전수 검토�
 
 - 다른 도메인의 내부 동작을 이 PR 테스트로 고정하지 않습니다. **도메인 간 실제 상호작용 검증은 마지막 cross-domain PR**에서, 앞선 PR이 main에 반영된 후 수행합니다.
 - 원본 보고서의 성공·오류 주장과 과거 CI 수치는 historical이며 현재 상태를 증명하지 않습니다. 인박스는 비정본이고 계약은 OpenSpec과 source가 소유합니다.
+
+## Execution And Evidence
+
+- **Active scope:** 현행 tracked 8파일의 전수 검토, H1–H8 재판정, 실제 회귀를 구별하는 최소 테스트, 도메인 검증과 독립 리뷰. 수정 허용 경계는 아래 Exclusive Lane을 유지한다.
+- **Research basis:** 최신 main과 최초 base 사이에는 HMDA Data source/test/Spec 변경이 없다. 따라서 main을 merge한 뒤 현재 도메인 파일을 기준으로 조사하며 과거 finding의 해결 여부는 코드와 실행으로 다시 판단한다.
+- **Work ownership:** ingestion 2개 module, EDA 3개 module, synthetic 1개 module을 독립 분담한다. Coordinator는 fixture/support/contracts 검토, 전체 inventory·검증·최종 인계를 소유한다. 공용 fixture는 필요가 입증되기 전까지 변경하지 않는다.
+- **Validation:** isolated worktree와 전용 `.venv`에서 기존 도메인 suite를 먼저 실행하고, 수정 module → 도메인 suite 및 Ruff/format/type 검사 순서로 확인한다. 새 oracle은 필요한 경우 transient negative control로 검출력을 확인한다. Production source를 수정하는 mutation 실험은 하지 않는다.
+- **Review gate:** 구현 담당과 분리된 review-lead에 최종 변경을 전달한다. 발견 사항은 현재 필수 수정과 #277 follow-up을 구분한다. Draft 유지와 인간 검토·승인·merge는 별도 lifecycle gate다.
+- **Artifacts:** [Ingestion](02-review-ingestion.md), [EDA](03-review-eda.md), [Synthetic](04-review-synthetic.md), [최종 inventory·검증·인계](05-report-hmda-data-audit.md)를 이 PR 경로에 남긴다.
+- **Loops state:** Prepare READY; RPI Main Loop 0/30, acceptance open. 다음 단계는 하위 영역 Research/Plan에 따른 Work와 최종 독립 Review다.
 
 ## Parallel Work And Ownership Gate
 
