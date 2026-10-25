@@ -10,10 +10,10 @@ tags:
 # Reliability Chatbot Deep Review
 
 > [!IMPORTANT]
-> **Blocked (review in progress)** — 새 `current_required` 결함은 아직 확정하지 않았습니다. 이는 머지 불가 판정이 아니라 이번 챗봇 리뷰의 검토 범위와 독립 재검증이 아직 닫히지 않았다는 뜻입니다. 로컬 테스트를 직접 실행하지 않았으므로 기존 CI·독립 리뷰 기록을 본 검토의 재현 결과로 간주하지 않습니다.
+> **Blocked (independent review gate pending; R2 source/CI revalidated)** — 새 `current_required` 결함은 아직 확정하지 않았습니다. 이는 머지 불가 판정이 아니라 이번 챗봇 리뷰의 검토 범위와 독립 재검증이 아직 닫히지 않았다는 뜻입니다. 로컬 테스트를 직접 실행하지 않았으므로 기존 CI·독립 리뷰 기록을 본 검토의 재현 결과로 간주하지 않습니다.
 
 - **Target** — [PR #272](https://github.com/mols3131d/hmda-data-reliability/pull/272), owning branch의 Inbox.
-- **Revision** — base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; reviewed code/head `22660aba530ec79a82deec2b12e3cc757cd5fd5f` (2026-10-26 KST 1차 확인). 이후 Inbox-only commit은 반드시 test blob 변경 여부를 대조합니다.
+- **Revision** — base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; reviewed code/head `22660aba530ec79a82deec2b12e3cc757cd5fd5f` (2026-10-26 KST 1차 확인). 직전 코드 검토 후 현재 head `2e1daa1dd6a144bb816dd82f86bc09ce209671b5`까지의 차이는 이 리뷰 문서 추가 1건뿐임을 commit compare로 확인했습니다. 이후에도 code/Spec/CI 변경은 다시 비교합니다.
 - **Scope** — 변경 5개 Reliability 테스트 모듈 diff, 도메인 28파일 전수 감사 기록, `reliability-evaluation-report` 정본 Spec과 평가 expected/actual 판정을 직접 비교.
 
 ## Findings
@@ -56,3 +56,31 @@ tags:
 - **Next:** schema recovery replay code에서 `_replace_table` guard와 expected after identity의 독립성을 추적하고, profile fixture의 비대상 연도 영향과 mutation detection evidence를 검토. 평가 Spec의 missing THEN은 #277 scope decision으로 분리.
 - **Revalidation trigger:** main/base, head의 test/source/Spec blob, CI 상태, 새로운 feedback이 바뀌면 기존 판단을 stale로 표시하고 영향을 받는 영역을 다시 조사합니다. 전수 파일 수나 이전 에이전트가 표시한 `clear`를 독립 검증으로 대체하지 않습니다.
 - **Boundary:** 이 문서는 비정본입니다. 공유 CI/Git fixture와 교차 도메인 계약은 [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277)에서 선행 PR을 취합한 뒤 검증합니다. 승인·merge·thread resolution은 수행하지 않습니다.
+
+## R2 · 2026-10-26 KST · Source and CI Revalidation
+
+> [!NOTE]
+> **이 절은 위 R1의 Open 후보·Not Verified 항목 중 직접 재검증한 부분을 갱신합니다.** 신규 `current_required` 확정 없음. 별도 subagent context의 DualVantage는 이번 runtime에서 수행하지 못했으므로 project-level independent review gate는 여전히 `blocked`이며, 사람의 Ready/approval/merge 판단을 대체하지 않습니다.
+
+- **Research:** `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`은 유지. R1 code revision → 현재 head `2e1daa1dd6a144bb816dd82f86bc09ce209671b5` compare는 **Inbox review 1파일 추가만** 포함; test/source/Spec blob은 그대로다. 원래 CI를 현재 코드 검증으로 일반화하기 전, 최신 head의 실제 workflow와 log를 새로 확인했다.
+- **Plan:** R1 Open 후보를 실제 source, normative Spec, fixture·oracle에 교차 대조하고 반례가 반박되면 Drop, 별개 ownership/계약 판단이 필요하면 Open으로 유지. 제품·Spec·공용 파일 변경 금지.
+- **Review:** 동일 세션에서 oracle/실패·오염/ownership/CI를 순차 관점으로 반증했다. 독립 reviewer가 수행했다고 주장하지 않는다.
+
+### R2 · Reliability
+
+- **C3 → Drop (bounded):** [`test_unmeasurable_profile_reports_unavailable_freshness`](https://github.com/mols3131d/hmda-data-reliability/blob/22660aba530ec79a82deec2b12e3cc757cd5fd5f/tests/reliability/test_profile_snapshots.py#L109-L145)는 `WHERE CAST(partition_at AS DATE) = ?`로 선택 partition만 NULL화한다. [`_calculate_partition_metrics`](https://github.com/mols3131d/hmda-data-reliability/blob/ea39a4fd6c8f483509cf00a1d1114feb4ef3b686/src/hmda_reliability/reliability/profiling/profile_snapshot_builder.py#L136-L199)는 같은 partition filter에서 `max(freshness_column)`을 읽고 None이면 `UNAVAILABLE`로 반환한다. empty/all-null/unconfigured 세 입력은 `observed_at` fallback mutant를 구별한다. 비대상 partition을 변경하는 fixture 오염 가설은 SQL predicate상 반박되지만, 비대상 행 bytes의 실행 후 독립 assertion은 없다.
+- **C4 → Drop (bounded):** [schema replay test](https://github.com/mols3131d/hmda-data-reliability/blob/22660aba530ec79a82deec2b12e3cc757cd5fd5f/tests/reliability/test_schema_recovery_executor.py#L204-L231)는 `_replace_table` 호출을 즉시 실패시키고 실제 target `create_table_state_identity`를 `expected_after_state`와 비교한다. [executor](https://github.com/mols3131d/hmda-data-reliability/blob/ea39a4fd6c8f483509cf00a1d1114feb4ef3b686/src/hmda_reliability/reliability/recovery/schema_executor.py#L75-L124)의 exact after 분기는 profile 재검증만 수행한다. Label-only oracle 가설은 반박되었으며 임의의 다른 mutation 경로까지 부재 증명한 것은 아니다.
+- **C5 → Open / scope_decision (pre-existing Spec):** [evaluation 정본](https://github.com/mols3131d/hmda-data-reliability/blob/ea39a4fd6c8f483509cf00a1d1114feb4ef3b686/openspec/specs/reliability-evaluation-report/spec.md)의 `Scenario: Existing or aliased evaluation database`는 GIVEN/WHEN만 있고 THEN이 없다. 이 PR의 `tests/reliability/**` 수정만으로 기대 거부 시점·무변경 oracle을 새로 확정할 수 없다. [기존 감사](02-review-current/README.md)의 H1–H4 인계와 합쳐 #277 또는 정본 소유자의 명시적 scope 결정을 기다린다. 이 PR이 새로 도입한 결함으로 기록하지 않는다.
+- **Ownership:** 변경된 5개 test module은 `tests/reliability/**` 전용이다. approval→recovery→data-operations E2E와 공유 hook은 #277의 통합·공용 경계이며 현 PR의 추가 테스트 PASS로 대체할 수 없다.
+
+### Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R1→current SHA 및 소유권 정적 비교 | `git compare`의 1 commit, 이 PR의 `review-chatbot-deep.md` 추가만 존재. 최신 main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` |
+| ✅ Pass | 원격 CI Lite 최신 head의 실제 실행 로그 | [Run 40218909695](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40218909695) — **268 passed in 24.87s**; prospective merge checkout, selected tests·Python validation 성공. 이는 GitHub runner의 실행이며 로컬 재실행이 아니다. |
+| ⚪ Not Verified | 이번 회차 로컬 pytest·mutant·integration 재실행 | GitHub connector 정적 조회 및 원격 CI log 검토만 수행; 독립 실행 증거 없음 |
+| ⚪ Not Verified | 별도 컨텍스트의 독립 DualVantage gate | 별도 reviewer/subagent 실행을 수행하지 못함. 동일 세션의 다관점 대조를 독립 리뷰로 승격하지 않음 |
+| ⚪ Not Verified | #277 최종 통합 및 공용 Git hook 영구 수정 | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277)은 `74ac659d084fadd5e93900b132ef5b995ef8d919`, base `81fe44b2...`의 Draft; #269–#276은 아직 모두 병합 전. 순차 통합 후 재검증 필요 |
+
+**Next transition:** 신규 `current_required`를 만들기 위해 기존 finding을 반복하지 않는다. 다음 Run은 현 PR head와 source/test/Spec blob, CI run을 먼저 비교하고, 독립 specialist 검토가 실제 가능할 때만 independent gate를 진행한다. #277 owner는 기존 감사의 H/F 항목을 참조해 선행 PR이 main에 통합된 **한 revision**에서 current/candidate artifact·approval/recovery·dbt log·Git fixture isolation의 부정 경로를 검증한다. 이 문서 수정 commit은 Inbox-only이며 이 절의 `reviewed head`는 수정 **직전** SHA다. 변경 후 head는 PR에서 다시 확인한다.
