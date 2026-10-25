@@ -106,3 +106,32 @@ tags:
 | ⚪ Not Verified | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) integrated contract test | Still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2`; prerequisite domain PRs remain unmerged. |
 
 **Next:** Re-check exact head/base/CI before reuse. Follow the candidate-specific owner and counterexample above; run only the narrow relevant fault/alias/integration test in a disposable isolated environment if authorized. Preserve the difference between remote CI success, static inference and independent review. Do not modify shared code/Spec or approve/merge. This reviewed head is the **pre-Inbox-update** SHA; verify the resulting commit changed only this document.
+
+
+## R4 · 2026-10-26 KST · Negative dbt-Result Oracle Challenge
+
+> [!IMPORTANT]
+> **Assessment: blocked for this continuation's independent specialist gate; one new in-scope test-oracle candidate admitted from static evidence, execution pending.** No approval/merge/readiness state was changed. This does not overturn the historical independent review at its earlier revision; it narrows a missed false-green condition for human/test-owner review.
+
+- **Target** — PR #271, `agent/test/audit-data-platform-design`, this Inbox review only.
+- **Revision** — prior R3 reviewed head `a06c6093f3ae2afda232d649755987a504cc05c0` → authoritative pre-write head `bf616f2af0272e8b8db61786570f0cb0cef7e37e`; compare shows exactly one Inbox-only commit. `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` remains current. Test/source/Spec changes since R3: none.
+- **Scope** — new negative oracle of the changed dbt quality test, canonical dbt quality contracts, other PR lane ownership and prospective-merge CI. No test/source/Spec/shared files edited.
+
+### R4 Candidate Decision
+
+| ID | Severity | Scope relation / disposition | Evidence and counterevidence | Action |
+| --- | --- | --- | --- | --- |
+| C6 | 🟡 Minor | `acceptance_gap` / **Accept as current_required test-oracle correction (static proof; runtime not verified)** | [Changed quality test](../../tests/dbt/test_analytics_foundation.py), `test_dbt_quality_tests_detect_source_staging_and_mart_violations` (around lines 100–140), requires `dbt test` returncode 1, then selects **only** `status == "fail"` results and compares a **set** of four known failure-node descriptors. If those four `fail` records coexist with an unexpected `status == "error"` result for another dbt node, the set and expected returncode remain unchanged: the test still passes while an unrelated dbt execution error is hidden. This is a deterministic predicate counterexample, **not** a reproduced dbt run or an observed production failure. Existing real dbt subprocess and exact four-node matching refute the broader claim that the test merely checks exit code, but do **not** refute this narrower extra-error case. | Within #271 test ownership, assert no unexpected `error`/unanticipated non-success status in all `run_results["results"]`, preserving the four intended `fail` descriptors. Negative control: inject one additional `error` record into a disposable result artifact and require the test to fail for this reason; rerun real dbt quality test and scoped suite. Do not edit the model/Spec or move this internal oracle to #277. |
+
+**Research → Plan → Review:** Cross-checked the new test diff, actual `_run_dbt(... expected_returncode=1)` boundary and the prior R2/R3 four-node declaration review. The plan was to falsify “exact four failures” by adding an orthogonal `error` status; the actual filter ignores that status. This is a same-context logic inspection, not an isolated specialist or fault-injection execution. The canonical [dbt analytics Spec](../../openspec/specs/data-platform-dbt-analytics/spec.md) defines model/quality semantics; it does not authorize treating an unrelated dbt execution error as a passing negative test.
+
+### R4 Validation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | Revision/ownership static comparison | `a06c6093..bf616f2a`: only this Inbox artifact changed; #269/#270/#272 modified test paths remain disjoint. |
+| ✅ Pass | Remote prospective-merge CI log inspection | [CI Lite 40228402935](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40228402935), job `121274696484`, checkout merge `c66a77a3e3f81387e218c4b1d78a85fd35a07eba` of head `bf616f2a` into base `ea39a4fd`: **43 passed, 1 warning in 28.36s**; Python checks succeeded. The warning is a multiprocessing `fork` deprecation warning. This CI does not inject C6's extra-error counterexample. |
+| ⚪ Not Verified | Local pytest, extra-error artifact injection, mutation experiment, independent DualVantage gate | None executed in this continuation; the predicate counterexample is static, not a test-run result. |
+| ⚪ Not Verified | #277 integrated contract gate | #277 remains Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`; its initial base `81fe44b2` is one commit behind current main `ea39a4fd`, and upstream PRs are not integrated. |
+
+**Next:** Test owner should challenge C6 with a disposable extra-`error` `run_results` case and, if confirmed, strengthen only the #271-owned negative oracle. Retain prior C1–C3/C5 Drop and C4 cross-domain follow-up. Recompare the resulting Inbox-only commit/head and CI; no human review, approval, merge or thread resolution is implied.
