@@ -116,3 +116,27 @@ tags:
 | ⚪ Not Verified | Independent DualVantage and #277 integrated E2E | No isolated reviewer context; #277 remains Draft, initial base `81fe44b2` one commit behind current main and prerequisite PRs unmerged. |
 
 **Next:** Challenge C6 first with a two-fault disposable file pair; if rollback can be interrupted, separate source-level remediation from #270's test-only oracle scope and retain a clear error/state reconciliation record. Keep R1 C1/C2 and R2 C3/C5 Drop. #277 owns only genuine integration (timestamp/identity E2E, dbt log isolation and shared Git environment), not the runner's internal cleanup by default. Revalidate the post-write head and current CI before using this note.
+
+## R5 · 2026-10-26 KST · Corrected Two-Fault State Reconstruction
+
+> [!IMPORTANT]
+> **Handoff / independent review pending.** R4 C6의 rollback 중단 가능성은 유지하되 **잔여 current pair 상태에 관한 잘못된 표현을 정정**합니다. 정적 경로 증명과 실행 재현을 구분합니다.
+
+- **Revision:** R4 pre-write `c645a3ae0cc09013a4f6cb9fdc9bf577c75e6eb0` → authoritative pre-write `29c19c540240f2415c14ff234e6dce552481cb21`: 이 Inbox만 바뀐 단일 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; test/source/Spec 불변.
+- **Research → Plan → Review:** [runner](../../src/hmda_reliability/data_operations/runner.py) `_promote_dbt_artifacts`의 두 promotion 순서를 파일별로 추적해 [변경 테스트](../../tests/data_operations/test_dbt_runner.py) `test_artifact_promotion_restores_pair_when_second_replace_fails`의 정상 rollback과 비교. R4가 서술한 **new manifest + old run-results**를 반증했습니다.
+
+| ID | Severity | Decision / Evidence | Next |
+| --- | --- | --- | --- |
+| C6 correction | 🟠 Major **if reached** | **Keep conditional source risk / Unknown runtime, not current_required.** Manifest는 old→`.previous` 뒤 new로 교체됩니다. 이어서 run-results도 old→`.previous`로 이동한 **다음** `run_results.json.next.replace`가 실패합니다. 이때 rollback의 `run_results.json.next.unlink`까지 실패하면 이후 committed manifest 제거·양쪽 backup 복원이 실행되지 않습니다. 정확한 잔여 상태는 **new current manifest + missing current run-results + old .previous pair**, **new + old current pair가 아닙니다**. 단일 replace failure만 주입한 테스트는 정상 rollback을 검증하므로 이 복합 실패를 포착하지 못합니다. | Data Operations source owner: disposable pair에서 second replace OSError와 rollback `.next` unlink OSError를 조합해 파일별 exact bytes/existence와 primary error를 확인. 결과에 따라 복구 순서/오류 evidence 결정. |
+| C4 | 🟡 Minor | **Keep prior follow_up:** `copyfile`가 현재 `.next`를 부분 생성한 후 실패하면 그 item은 `staged_promotions`에 추가되기 전이라 cleanup 대상에서 누락될 수 있음. Current pair 손상으로 확대 해석하지 않음. | Partial-copy fault와 orphan `.next` 부재를 별도 확인. |
+
+### R5 Validation and Continuation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | SHA 및 파일 소유권 정적 비교 | R4→현재 단일 Inbox commit; 수정 테스트는 `tests/data_operations/**` 두 파일로 #269/#271/#272와 비중복. |
+| ✅ Pass | 최신 **원격** prospective-merge CI log | [CI Lite 40232583736](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40232583736), job `121287269242`: **57 passed in 36.78s**, selected Python checks 성공. 단일 fault oracle이지 double fault 증거 아님. |
+| ⚪ Not Verified | 로컬 double-fault/partial-copy 실험, 독립 specialist | 이번 회차 미실행. R4의 파일 상태 표현은 이 절로 대체. |
+| ⚪ Not Verified | #277 실제 integration 및 승인 | 선행 PR 미병합. #277은 timestamp/identity E2E·dbt log 격리·공용 Git 환경 owner; 내부 runner cleanup은 이관하지 않음. |
+
+**Next:** C6의 정확한 상태 전이를 일시적 파일 pair에서 재현한 후 source-owner 수정 필요성을 판정. 사람이 승인/병합/Ready 상태를 결정하며 이 R5 reviewed head는 Inbox 갱신 전 SHA입니다.
