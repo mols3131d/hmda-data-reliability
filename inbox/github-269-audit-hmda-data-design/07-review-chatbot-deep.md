@@ -64,3 +64,25 @@ tags:
 - **Open / pre-existing H5 variant (scope_decision):** evidence writer의 첫 JSON replace 실패는 기존 backup을 남길 수 있는데 test는 두 번째 replace 실패만 주입한다. 현재 pair 손상으로 일반화하지 않고, 기존 [H5](05-report-hmda-data-audit.md)와 묶어 첫 replace 실패의 backup cleanup oracle을 #277에 인계한다. Production 변경은 이 PR 범위 밖이다.
 - **Validation:** GitHub [CI Lite 40218900666](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40218900666) log에서 **197 passed in 7.89s**, selected Python check 성공 확인. 이번 회차 로컬 pytest/negative control은 **Not Verified**; 별도 독립 specialist 검토도 **Not Verified**. 동일 세션의 source·oracle·ownership·CI 관점 대조는 독립 리뷰가 아니다.
 - **Boundary/Next:** 수정 소유권은 이 PR Inbox뿐. 다른 PR 테스트와 경로 중복 없음. #277은 선행 PR 병합 후 동일 main revision에서 교차 도메인·공용 Git fixture를 검증해야 한다. Review gate는 독립 specialist 미실행으로 `blocked`(PR 승인/merge 판단 아님). 이 기록의 reviewed head는 Inbox-only commit 직전 SHA이며 다음 회차에 다시 대조한다.
+
+## R3 · 2026-10-26 KST · Fresh-Head Challenge and Handoff
+
+> [!NOTE]
+> **Research → Plan → Review:** Compared previous R2 head `3cd6f778fc36aea71868f859d1eb971ea74433dd` to authoritative head `ab3d2fc734a3900b8bec31e1ff330aa2e72c636f` and main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`: only this Inbox review changed, so earlier code/Spec/test findings remain revision-applicable. No new PR conversation feedback. The plan was to challenge one unresolved inference against a separate source/test path, keep test-only PR ownership, and validate latest remote CI without claiming local execution. This is same-session multi-perspective analysis, **not** isolated independent review.
+
+
+### R3 · HMDA Data · H5 Ownership Correction
+
+- **Candidate C6 — 🔵 Note / Accept as follow_up, not current_required:** [Evidence writer lines 122–157](../../scripts/run_actual_source.py) copies an existing JSON to `.json.bak`, then calls `json_tmp.replace(json_path)` **outside** the inner rollback `try`. If that *first* replace raises, the outer `finally` deletes `.tmp` files but does not delete the `.bak`. [Changed test lines 155–210](../../tests/hmda_data/eda/test_eda_evidence.py) injects the **second** replace failure only. Therefore the specific first-replace backup-orphan path is not protected. The old JSON and Markdown remain in place in this branch; do not misreport a proven corrupt pair or executed failure. This script-internal pre-existing cleanup issue belongs to the HMDA Data/source owner (and any domain test correction to #269's lane), **not automatically #277's cross-domain lane**. A disposable first-replace fault injection with exact pair bytes and `.bak/.tmp` absence would distinguish it.
+- **Disposition:** R2 C2/C3 remain Drop; the H5 cleanup variant remains an unexecuted conditional source risk. No new confirmed `current_required`; independent specialist gate still **blocked**. #277 should retain only genuine Source→Bronze→gate→dbt and shared fixture integration after prerequisite merges.
+
+### R3 Validation and Next Transition
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | Remote revision and changed-path comparison | `3cd6f778fc36..ab3d2fc734a3` is one Inbox-only commit; no new test/source/Spec diff; domain test file paths do not overlap #269/#270/#271/#272. |
+| ✅ Pass | Latest remote CI selected-suite log | [CI Lite 40223479777](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40223479777), job `121259859470`: **197 passed in 6.65s** with selected Python checks success on prospective merge. GitHub runner evidence only. |
+| ⚪ Not Verified | This session's local pytest, targeted fault injection, and independent specialist | No local execution or isolated reviewer; earlier run reports are historical evidence, not this run's result. |
+| ⚪ Not Verified | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) integrated contract test | Still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2`; prerequisite domain PRs remain unmerged. |
+
+**Next:** Re-check exact head/base/CI before reuse. Follow the candidate-specific owner and counterexample above; run only the narrow relevant fault/alias/integration test in a disposable isolated environment if authorized. Preserve the difference between remote CI success, static inference and independent review. Do not modify shared code/Spec or approve/merge. This reviewed head is the **pre-Inbox-update** SHA; verify the resulting commit changed only this document.
