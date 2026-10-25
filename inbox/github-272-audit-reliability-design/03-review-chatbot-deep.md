@@ -107,3 +107,32 @@ tags:
 | ⚪ Not Verified | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) integrated contract test | Still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2`; prerequisite domain PRs remain unmerged. |
 
 **Next:** Re-check exact head/base/CI before reuse. Follow the candidate-specific owner and counterexample above; run only the narrow relevant fault/alias/integration test in a disposable isolated environment if authorized. Preserve the difference between remote CI success, static inference and independent review. Do not modify shared code/Spec or approve/merge. This reviewed head is the **pre-Inbox-update** SHA; verify the resulting commit changed only this document.
+
+
+## R4 · 2026-10-26 KST · Schema Replay Preflight and No-Write Countercheck
+
+> [!NOTE]
+> **Assessment: blocked for the independent specialist gate; no new confirmed `current_required`.** This loop examines the approved replay path separately from R3's evaluation-Spec missing-THEN wording.
+
+- **Target** — PR #272, `agent/test/audit-reliability-design`, existing review artifact only.
+- **Revision** — R3 reviewed head `07e0a26436ff4196b916f86ab3cd07e1619406fd` → authoritative pre-write head `ed62cb64397e23b20fcf6605792e53cd7d8678e8`; compare shows one Inbox-only commit. Current `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, no intervening test/source/Spec changes; no PR discussion feedback.
+- **Scope** — changed schema replay regression test, canonical schema-recovery contract, actual executor branch and staged-candidate preflight, other PR ownership and remote CI. No production/Spec/shared edits.
+
+### R4 Candidate Decision
+
+| ID | Severity | Scope relation / disposition | Evidence and counterevidence | Action |
+| --- | --- | --- | --- | --- |
+| C6 | 🔵 Note | `contract_dependency` / **Drop** | [Schema executor](../../src/hmda_reliability/reliability/recovery/schema_executor.py), `execute_approved_schema_recovery`, validates the exact approval, stages/verifies the approved candidate, takes the mutation lock, then branches on `current_state == expected_after_state` **before** calling `_replace_table`. [Changed replay test](../../tests/reliability/test_schema_recovery_executor.py), `test_schema_recovery_replays_exact_after_without_replacement` (around lines 207–241), replaces that mutation entry with a failing sentinel and independently reopens DuckDB to compare complete state, profile population and `already_restored/resume_verification` evidence. [Canonical schema-recovery Spec](../../openspec/specs/reliability-schema-recovery/spec.md), `Table-recovery reconciliation`, requires no repeated replacement on exact after-state. The stronger conjecture that the replay test accepts an unnecessary replacement merely because returned labels match is refuted. | Retain existing R3/R4 Drop. The sentinel guards this actual implementation entry, not hypothetical new mutation entrypoints; require a concrete bypass to reopen. |
+
+**Research → Plan → Review:** Rechecked the exact code path and independent table-state oracle, including the adversarial possibility of replay with an unavailable candidate. The executor intentionally stages the approved candidate **before** target-state reconciliation, and the Spec also requires approved staged-candidate identity; absence of the candidate is not, by itself, an authorized “replay must succeed” contract. Do not invent a missing-candidate success oracle or mark the code defective without an explicit owning contract. R3 C5 remains a pre-existing evaluation-Spec wording follow-up; no inferred current test failure.
+
+### R4 Validation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | Revision/ownership static comparison | `07e0a264..ed62cb64` is this Inbox file only; five changed tests remain under `tests/reliability/**`, disjoint from #269/#270/#271. |
+| ✅ Pass | Remote prospective-merge CI log inspection | [CI Lite 40228409557](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40228409557), job `121274716718`, merge `ff2ce32725d355fdac79e8249395da894545961c` of head `ed62cb64` into base `ea39a4fd`: **268 passed in 23.01s**; selected Python checks succeeded. |
+| ⚪ Not Verified | Local pytest, candidate removal/mutation, independent specialist or extra fault injection | Not executed in this continuation; code-path proof and GitHub CI are distinct from local execution. |
+| ⚪ Not Verified | #277 integrated safety and recovery proof | #277 remains Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2` one commit behind current main; upstream PRs unmerged. |
+
+**Next:** Preserve the schema replay sentinel and complete-state/profile assertions. Reopen the candidate-preflight question only if the owning Spec explicitly changes replay availability semantics or an executable counterexample shows an authorized path failing. The evaluation-Spec missing THEN belongs to its Spec owner; #277 owns only integrated approval→recovery→revalidation and shared execution boundaries. Recheck post-write head/CI before claiming freshness. No Ready, approval, merge or review-thread mutation.
