@@ -155,17 +155,30 @@ def test_default_sdk_transport_maps_request_and_normalizes_response(
 
 
 @pytest.mark.parametrize(
-    ("status_code", "failure_code"),
+    ("status_code", "failure_code", "max_retries", "expected_attempts"),
     [
-        (400, "provider_client_error"),
-        (500, "provider_server_error"),
-        (None, "provider_connection_error"),
+        (400, "provider_client_error", 0, 1),
+        (500, "provider_server_error", 0, 1),
+        (None, "provider_connection_error", 0, 1),
+        (400, "provider_client_error", 1, 1),
+        (500, "provider_server_error", 2, 3),
+        (None, "provider_connection_error", 2, 3),
+    ],
+    ids=[
+        "client-no-budget",
+        "server-no-budget",
+        "connection-no-budget",
+        "client-positive-budget",
+        "server-budget-exhausted",
+        "connection-budget-exhausted",
     ],
 )
-def test_default_sdk_transport_normalizes_errors_without_hidden_retries(
+def test_default_sdk_transport_obeys_retry_policy_for_errors(
     monkeypatch: pytest.MonkeyPatch,
     status_code: int | None,
     failure_code: str,
+    max_retries: int,
+    expected_attempts: int,
 ) -> None:
     calls = 0
 
@@ -180,13 +193,62 @@ def test_default_sdk_transport_normalizes_errors_without_hidden_retries(
         monkeypatch.setattr(
             provider_module, "OpenAI", partial(OpenAI, http_client=client)
         )
-        adapter = provider_module.OpenAICompatibleAdapter(_settings(max_retries=0))
+        adapter = provider_module.OpenAICompatibleAdapter(
+            _settings(max_retries=max_retries), sleep=lambda _: None
+        )
         with pytest.raises(provider_module.ProviderUnavailableError) as error:
             adapter.invoke(_messages())
 
-    assert calls == 1
+    assert calls == expected_attempts
     assert error.value.failure_code == failure_code
-    assert error.value.attempt_count == 1
+    assert error.value.attempt_count == expected_attempts
+
+
+@pytest.mark.parametrize("status_code", [500, None], ids=["server", "connection"])
+def test_default_sdk_transport_retries_transient_failure_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch,
+    status_code: int | None,
+) -> None:
+    calls = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            if status_code is None:
+                raise httpx.ConnectError("injected connection failure", request=request)
+            return httpx.Response(
+                status_code, json={"error": {"message": "transient test failure"}}
+            )
+        return httpx.Response(
+            200,
+            json={
+                "id": "retry-completion",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "{}"},
+                        "finish_reason": "stop",
+                    }
+                ],
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        adapter = provider_module.OpenAICompatibleAdapter(
+            _settings(max_retries=1), sleep=lambda _: None
+        )
+        result = adapter.invoke(_messages())
+
+    assert calls == 2
+    assert result.attempt_count == 2
+    assert result.content == "{}"
 
 
 def test_adapter_owns_bounded_retry_for_retryable_transport_failures() -> None:
