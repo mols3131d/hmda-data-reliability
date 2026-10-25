@@ -159,3 +159,22 @@ tags:
 | ⚪ Not Verified | #277 통합·승인 | #277은 prerequisite-blocked Draft. |
 
 **Next:** C6를 실제 dbt exit/result 조합으로 반증하거나 수용하고, 현 PR 소유 테스트만 보강할지 owner가 결정. 원격 CI success를 통합 성공으로 확대하지 않음. Reviewed head는 Inbox 갱신 전 SHA입니다.
+
+## R6 · 2026-10-26 KST · Negative Oracle Predicate Counterexample
+
+> [!IMPORTANT]
+> **Research → Plan → Review / handoff.** R5 C6를 실제 dbt 실행 결과라고 오인하지 않고 **검사 predicate 자체의 false-green**으로 한정해 별도 Python 계산으로 재확인했습니다. PR 테스트·Spec·model은 수정하지 않았습니다.
+
+- **Revision:** R5 reviewed pre-write `3a5271bcdcc96d37b907c3bae1dc97e6a1af6676` → authoritative pre-write `792363246ea056814d4c5cff2b7a85e9cf00cf67`: 1 Inbox-only commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` 유지; code/test/Spec unchanged, no new PR feedback.
+- **Location/contract:** [changed test](../../tests/dbt/test_analytics_foundation.py) `test_dbt_quality_tests_detect_source_staging_and_mart_violations`의 `status == "fail"` 필터와 descriptor `set` equality, 동일 파일 `_run_dbt(expected_returncode=1)`; [dbt Spec](../../openspec/specs/data-platform-dbt-analytics/spec.md) `Analytics quality tests`.
+- **C6 · 🟡 Minor · Keep provisional current_required (oracle predicate), real dbt reachability Not Verified:** 별도 Python에서 테스트의 동일한 `failed_nodes` 필터·descriptor set 계산을 **예상 네 `fail` + 추가 `error`**로 평가한 결과 `expected_set == observed_set`은 **True**, 추가 `error`는 여전히 결과에 남았습니다. 이는 검사 predicate의 deterministic counterexample이며, **repository pytest/dbt subprocess를 실행한 결과가 아닙니다**. 기존 `expected_returncode=1` safeguard는 유효: exit 2면 이 테스트는 먼저 실패합니다. 실제 dbt가 **exit 1 + 네 fail + error** 조합을 생성하는지는 아직 미확인입니다. 불가능하다는 dbt-version-specific 근거가 나오면 current_required disposition을 재평가해야 합니다.
+- **Decision:** R4의 더 넓은 “exit code만 검사한다”는 가설은 Drop 유지. 전체 `run_results["results"]`에서 예상 외 `error`/non-success를 거부하되 정확한 네 expected `fail`의 identity를 보존하는 가장 작은 test-only 수정이 제안됨. `#277`로 내부 oracle을 넘기지 않음. 기존 C4 promotion↔consumer identity는 별도의 #277 integration handoff.
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R5→R6 revision and ownership check | `3a5271bc..79236324` Inbox-only; changed `tests/dbt/**`와 다른 PR test 경로 비중복. |
+| ✅ Pass | Standalone Python predicate reproduction | 예상 네 fail + 추가 error에서도 set equality True; **dbt exit/result runtime 실험 아님**. |
+| ✅ Pass | Remote current-head prospective-merge CI | [CI Lite 40238120713](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40238120713): **43 passed, 1 fork deprecation warning in 31.40s**, 선택 Python checks 성공. 추가 error 주입 미포함. |
+| ⚪ Not Verified | 실제 dbt exit=1/error 결합, repository pytest, mutation/fault injection, 독립 specialist | 수행하지 않음. |
+
+**Next:** #271 test owner는 disposable run-results 추가-error oracle을 먼저 실패시키고 실제 dbt-version/adapter에서 `exit=1`과 `error`의 동시 발생 가능성을 확인한 뒤 보강/드랍 결정. #277은 선행 병합 후 integrated promotion↔Reliability 소비 경계를 검증. Reviewed head는 Inbox 갱신 전 SHA입니다.
