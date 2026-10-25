@@ -160,3 +160,22 @@ tags:
 | ⚪ Not Verified | #277 integrated recovery 및 승인 | 선행 PR 미병합, #277 Draft. |
 
 **Next:** 현재 Drop 판단은 pair-compatibility 계약 또는 validator/test가 변경될 때만 재개. 다른 도메인 PR의 test/source를 수정하지 않고 #277은 통합 boundary만 검증. Reviewed head는 Inbox 갱신 전 SHA입니다.
+
+## R6 · 2026-10-26 KST · Post-Promotion Evidence Boundary Countercheck
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R5 detection-pair validator와 다른 평가 경계를 조사했습니다. “promotion 후 DataOperationError가 발생하면 prior projection을 그대로 보고할 수 있다”는 신규 후보는 **현재 실제 테스트가 반박**합니다. 독립 specialist gate는 여전히 미완료입니다.
+
+- **Revision:** R5 reviewed pre-write `b5945a43772ede3446767bf8679691095358046c` → authoritative pre-write `700bde2e7c0290d3926814c9b98a7684796c90cf`: 단일 Inbox-only commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` 유지; code/test/Spec 변경 없음, 새 PR feedback 없음.
+- **Candidate C8 · 🔵 Note · Drop (existing safeguard):** [canonical evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md) `Artifact state after post-promotion domain failure`는 prior projection을 사실처럼 보고하는 것을 금지. [existing test](../../tests/reliability/test_evaluation_report.py) `test_post_promotion_data_operation_failure_reports_actual_current_projection` (around lines 838–887)는 **실제** `promote_dbt_artifacts`로 current pair를 변경한 뒤 `DataOperationError`를 발생시키고, report가 promoted projection ID를 포함하며 prior ID는 제외하고 `resume_verification`을 기록함을 검사합니다. 동일 파일 `test_volume_drop_vertical_slice_is_deterministic_and_replay_safe`의 별도 `RuntimeError` 경로는 예외 전파와 mutation persistence를 검사할 뿐, domain failure evidence와 혼동하지 않습니다. 따라서 이 계약에 **아무런 테스트가 없다**는 가설은 Drop.
+- **Scope limit / #277 handoff:** 해당 Reliability test는 fake dbt candidate/target validation과 실제 local promotion primitive를 조합합니다. 진짜 dbt subprocess → Data Operations current promotion → Reliability read를 하나의 동시 실행 계약으로 입증하지는 않으므로 #277은 그 **접점**만 확인해야 합니다. R3 C5의 schema evaluation Spec missing THEN은 별도 Spec-owner follow_up으로 유지; 이번 C8과 섞지 않음.
+- **Cross-PR ownership:** #272의 5개 changed test는 `tests/reliability/**`; #269 HMDA Data, #270 Operations, #271 Platform과 exclusive path 충돌 없음. 공용 fixture/CI/Spec 수정 없음.
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R5→R6 revision and canonical Spec→test→implementation boundary static review | `b5945a43..700bde2e` Inbox-only; existing test invokes actual promotion and asserts current projection evidence. |
+| ✅ Pass | Remote current-head prospective-merge CI | [CI Lite 40238122266](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40238122266): merge `82ea90b1`, **268 passed in 25.84s**, 선택 Python checks 성공. |
+| ⚪ Not Verified | Local reliability pytest, real dbt→promotion→consumer integration, independent specialist | 실행하지 않음; remote CI는 domain-selected test only. |
+| ⚪ Not Verified | #277 integrated gate and human approval | #269–#276 all open/unmerged Draft; #277 Draft `74ac659d084fadd5e93900b132ef5b995ef8d919` and initial base `81fe44b2` lags `main@ea39a4fd`. |
+
+**Next:** C8 Drop 유지; 실제 dbt→promotion→locked consumer identity는 선행 병합 후 #277 owner가 exact run/manifest/result projection으로 재현. Missing-THEN wording은 Spec owner가 결정. Reviewed head는 Inbox 갱신 전 SHA; 승인/merge/Ready 상태 변경 없음.
