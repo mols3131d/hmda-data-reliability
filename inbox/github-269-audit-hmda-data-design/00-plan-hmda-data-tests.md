@@ -6,7 +6,7 @@ description: HMDA Data의 서브도메인별 테스트 설계를 전수 검토�
 
 # HMDA Data Test Design Audit and Adoption
 
-**State:** Draft / 최신 main 반영 후 전수 검토·회귀 보호 보강 진행 중. **Audit baseline:** `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25 착수 시 live main 확인). 기존 PR head `69afeef8b93eb348410b13eff3705cf302ef3983`에 main을 merge한 조사 기준은 `150d565a6be06bc71ca0c446ad26e8143523d780`이다.
+**State:** Draft / 최신 main 기준 전수 검토·회귀 보강·독립 리뷰 완료, 원격 delivery 검증 진행 중. **Audit baseline:** `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25 착수 시 live main 확인). 기존 PR head `69afeef8b93eb348410b13eff3705cf302ef3983`에 main을 merge한 조사 기준은 `150d565a6be06bc71ca0c446ad26e8143523d780`이다.
 
 ## Goal And Scope
 
@@ -24,12 +24,12 @@ description: HMDA Data의 서브도메인별 테스트 설계를 전수 검토�
 
 ## Acceptance
 
-- [ ] 현재 main의 도메인·하위 도메인 테스트 및 support 파일 전수 inventory를 확정하고 모든 파일에 판정·제외 사유를 부여
-- [ ] 각 중요 계약·위험의 대표 정상/경계/실패/회귀 사례 및 독립 oracle 검토
-- [ ] 이전 리뷰의 모든 finding에 대해 수용/기각/보류/기해결 + 근거 기록
-- [ ] 수용한 gap에 대한 최소 test 보강 및 필요 시 분리된 production defect 처리
-- [ ] 관련 focused suite·정적 검사, 필요한 통합 검증을 현재 base/head 근거로 실행
-- [ ] 독립 리뷰, 최신 evidence와 인간 검토를 거쳐 review readiness 판단
+- [x] 현재 main의 도메인·하위 도메인 테스트 및 support 파일 전수 inventory를 확정하고 모든 파일에 판정·제외 사유를 부여
+- [x] 각 중요 계약·위험의 대표 정상/경계/실패/회귀 사례 및 독립 oracle 검토
+- [x] 이전 리뷰의 모든 finding에 대해 수용/기각/보류/기해결 + 근거 기록
+- [x] 수용한 gap에 대한 최소 test 보강 및 필요 시 분리된 production defect 처리
+- [x] 관련 focused suite·정적 검사, 필요한 통합 검증을 현재 base/head 근거로 실행
+- [ ] 독립 리뷰, 최신 evidence와 인간 검토를 거쳐 review readiness 판단 — 독립 기술 리뷰는 `clear`; 인간 review와 최종 lifecycle 판단은 남아 있다.
 
 ## Boundaries
 
@@ -44,7 +44,7 @@ description: HMDA Data의 서브도메인별 테스트 설계를 전수 검토�
 - **Validation:** isolated worktree와 전용 `.venv`에서 기존 도메인 suite를 먼저 실행하고, 수정 module → 도메인 suite 및 Ruff/format/type 검사 순서로 확인한다. 새 oracle은 필요한 경우 transient negative control로 검출력을 확인한다. Production source를 수정하는 mutation 실험은 하지 않는다.
 - **Review gate:** 구현 담당과 분리된 review-lead에 최종 변경을 전달한다. 발견 사항은 현재 필수 수정과 #277 follow-up을 구분한다. Draft 유지와 인간 검토·승인·merge는 별도 lifecycle gate다.
 - **Artifacts:** [Ingestion](02-review-ingestion.md), [EDA](03-review-eda.md), [Synthetic](04-review-synthetic.md), [최종 inventory·검증·인계](05-report-hmda-data-audit.md)를 이 PR 경로에 남긴다.
-- **Loops state:** Prepare READY; RPI Main Loop 0/30, acceptance open. 다음 단계는 하위 영역 Research/Plan에 따른 Work와 최종 독립 Review다.
+- **Loops state:** RPI Main Loop 2/30. 첫 Review의 문서 R1과 hook 환경 실패를 두 번째 Loop에서 정정·복구했고, 독립 targeted assessment는 `clear`다. 기술 산출물 acceptance는 candidate이며 다음 단계는 원격 delivery 검증 후 Finalize다. 인간 review·lifecycle gate는 별도로 남긴다.
 
 ## Parallel Work And Ownership Gate
 

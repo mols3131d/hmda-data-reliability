@@ -6,13 +6,14 @@ description: PR 269의 현행 전수 inventory, 과거 finding 재판정, 회귀
 
 # HMDA Data Test Audit and Delivery Evidence
 
-**State:** tracked 8파일 전수 검토와 회귀 테스트 보강을 완료했고, 최종 도메인 suite는 197개 통과했다. 독립 리뷰와 원격 delivery 검증은 진행 중이다. Production 후속 항목은 아래 별도로 남긴다.
+**State:** tracked 8파일 전수 검토와 회귀 테스트 보강을 완료했고, 최종 도메인 suite는 197개 통과했다. 독립 리뷰는 `clear`이며 원격 delivery 검증은 진행 중이다. Production 후속 항목은 아래 별도로 남긴다.
 
 ## Revision And Scope
 
 - **Main baseline:** `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, 2026-10-25 live branch API 및 fetch 확인.
 - **Inherited PR head:** `69afeef8b93eb348410b13eff3705cf302ef3983`.
 - **Audit head:** `150d565a6be06bc71ca0c446ad26e8143523d780`, 위 head에 최신 main을 merge했다. 최초 base `81fe44b2` 이후 main의 HMDA Data source/test/Spec 변경은 없다.
+- **Implementation candidate:** `637cdbd05640d859cff6eaf33866924c204f82ff`, 독립 리뷰를 고정한 테스트·하위 영역 보고서 commit이다.
 - **Writable scope:** HMDA Data authored tests와 이 PR 소유 Inbox. Production, OpenSpec, 공유 설정과 타 도메인 수정은 포함하지 않는다.
 
 ## Current File Inventory
@@ -47,7 +48,7 @@ description: PR 269의 현행 전수 inventory, 과거 finding 재판정, 회귀
 | H3 | accepted | 실제 UNIQUE index INSERT 실패 뒤 기존 행·provenance 보존과 staging 정리를 확인하는 rollback 회귀를 추가했다. [Ingestion](02-review-ingestion.md) |
 | H4 | accepted | 같은 연도 두 파일 중 선택한 파일만 갱신하고 sibling 전체 행이 동일함을 확인한다. [Ingestion](02-review-ingestion.md) |
 | H5 | accepted | 기존 EDA backup cleanup 실패의 JSON/Markdown 불일치를 재현했다. 소유 범위 밖인 production 수정은 #277에 인계한다. [EDA](03-review-eda.md) |
-| H6 | accepted | 음수·NULL·비대칭 값의 count/min/max/mean/median/p25/p75를 두 숫자 컬럼 모두 독립 고정값으로 비교한다. [EDA](03-review-eda.md) |
+| H6 | accepted | 음수·NULL·비대칭 값의 non_null_count/min/p25/median/p75/max를 두 숫자 컬럼 모두 독립 고정값으로 비교한다. [EDA](03-review-eda.md) |
 | H7 | accepted | symlink로 연 실제 file DB에서 canonical lock 획득 실패가 full/partition mutation을 막는지 검증한다. [Ingestion](02-review-ingestion.md) |
 | H8 | accepted | 희소 연도의 유지, 최소 1행 및 전체 정렬 결정성을 작은 고정 입력으로 직접 검증한다. [Synthetic](04-review-synthetic.md) |
 
@@ -67,7 +68,10 @@ description: PR 269의 현행 전수 inventory, 과거 finding 재판정, 회귀
 | ✅ Pass | static checks | `uv run --no-sync ruff check tests/hmda_data`, `ruff format --check tests/hmda_data` (8 files), `ty check tests/hmda_data`, `git diff --check` |
 | ✅ Pass | final synthetic assertions | 최종 no-output assertion 2개는 수정 뒤 별도 실행에서도 **2 passed in 1.01s** |
 | ✅ Pass | CI selection | changed path classifier: `targets=tests/hmda_data`, `type_targets=tests/hmda_data`, `full_tests=false` |
-| ⚪ Not Verified | independent review | 최종 변경 상태를 별도 reviewer context에 전달 예정 |
+| ✅ Pass | independent two-perspective review | `637cdbd0`의 실제 review-quality/review-adversarial 검토 완료. 테스트 결함 없음, H6 설명의 `mean` 과장 1건을 정정했다. [정정의 targeted 확인](06-review-hmda-data-independent.md)까지 `clear`로 종료했다. |
+| ❌ Fail | initial native pre-push environment | Git hook의 `GIT_DIR` 상속으로 임시 Git fixture가 owning HEAD/index를 바꿨다. **11 failed, 1113 passed, 3 skipped in 319.09s**; 뒤늦은 전체 경로 오분류로 tombi 미설치 오류도 발생했다. Push는 전송 전에 중단됐다. |
+| ✅ Pass | clean Git-fixture scope | Git hook 밖 정상 환경에서 `uv run --no-sync pytest tests/scripts/ci -q`: **232 passed, 1 skipped in 25.16s** |
+| ✅ Pass | Git isolation root cause | 두 임시 저장소만 쓰는 probe에서 inherited `GIT_DIR`가 fixture commit을 owning repository로 보내는 현상을 재현했다. 실제 후보는 복구 후 clean `637cdbd0` 및 전체 tracked blob 일치를 확인했다. |
 
 ## Follow-up And Handoff
 
@@ -77,6 +81,15 @@ description: PR 269의 현행 전수 inventory, 과거 finding 재판정, 회귀
 | --- | --- | --- |
 | H5 | production defect / deferred | backup 정리 실패 시 JSON은 이전 분석, Markdown은 새 분석이 될 수 있다. [EDA의 재현·pair oracle](03-review-eda.md)을 기준으로 overwrite commit과 cleanup 경계를 수정하고 fault regression을 추가한다. |
 | S1 | production defect / follow_up | 이미 VARCHAR인 `loan_amount`에 schema drift를 적용하면 physical type이 바뀌지 않는데 성공한다. [Synthetic의 유효 Parquet 재현](04-review-synthetic.md)을 기준으로 입력 type 처리와 type-change oracle을 결정한다. |
+| E1 | environment failure / shared tooling follow_up | Git hook의 repository-local Git 환경이 CI test fixture로 전파된다. 아래 재현과 격리 방식을 기준으로 #277에서 공용 실행 경계를 수정한다. |
 | S2 | spec gap / follow_up | `activity_year` target 금지 requirement와 `target_year` 동시 지정 scenario의 범위가 다르다. [Synthetic의 분기·재현](04-review-synthetic.md)을 읽고 Spec/source 정합을 먼저 결정한다. |
 
 PR #269의 suite 성공은 위 결함 해결, 제품 acceptance 또는 도메인 간 통합 검증을 뜻하지 않는다. #277의 실제 접점 검증은 선행 PR이 main에 반영된 뒤 수행하며, 인간 review·Ready 전환·approval·merge는 별도 gate다.
+
+### Git Hook Environment Isolation
+
+초기 push의 native pre-push가 새 testmon cache에서 전체 suite를 실행했다. Hook이 넘긴 `GIT_DIR`를 Git fixture가 그대로 상속해 임시 directory의 `git init`·`git commit`이 이 worktree의 HEAD/index를 변경했다. 검토 기준 객체는 보존되어 있었고 remote push는 실패했다. 변경 직전의 known candidate `637cdbd0`으로 own local ref를 expected-old 조건과 함께 복구하고 index만 재구성했다. 이후 `git status --short`가 비었고 모든 tracked working blob이 candidate와 일치했다. 이 과정에서 production/test 파일을 수정하지 않았다.
+
+별도 root-cause probe는 두 `TemporaryDirectory` 하위 저장소 A/B만 사용했다. A의 empty commit을 만든 다음 `GIT_DIR=A/.git`인 환경에서 B의 `git init`과 empty commit을 실행하자 A의 HEAD가 바뀌었다. 상속된 repository-local Git 환경이 원인이라는 직접 재현이며 실제 worktree를 다시 훼손하는 실험은 하지 않았다.
+
+재시도는 disposable pre-push wrapper가 `git rev-parse --local-env-vars`에 해당하는 변수만 제거한 뒤 **기존 hook을 그대로 exec**하도록 구성한다. 검사를 생략하거나 공용 hook/config를 수정하지 않는다. CI test fixture의 subprocess 환경 격리 또는 hook의 Git environment 정리가 필요한 영구 수정은 #277로 넘긴다. 초기 실패를 전체 suite 성공으로 바꾸어 기록하지 않으며, 재시도 결과는 별도로 기록한다.
