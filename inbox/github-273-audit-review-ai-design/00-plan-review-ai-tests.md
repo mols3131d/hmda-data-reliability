@@ -49,3 +49,29 @@ description: Review AI의 하위 영역 전체 테스트 설계를 새로 검증
 - **Writable tests:** `tests/review_ai/** (아래 예약 파일 제외)`.
 - **Reserved for final #277 (review-only here):** tests/review_ai/test_live_harness.py.
 - **Focus:** Review AI 계약·bounded context·prompt/validator·provenance·evaluation의 자체 동작.
+
+## Current Tracked Test Inventory Seed
+
+**Snapshot:** `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` (2026-10-25). 아래는 GitHub tracked file 목록을 기반으로 구성한 **착수용 seed**이며, 검사한 테스트 목록이나 전수 검토 완료 근거가 아닙니다. 착수 시 현재 main을 다시 조회하고 신규/이동/삭제된 파일, fixture·design·실제 소유 계약을 반영합니다. `__init__.py` 등 지원 파일도 inventory 대상입니다.
+
+### Exclusive Modification Candidates (13)
+
+- `tests/review_ai/__init__.py`
+- `tests/review_ai/conftest.py`
+- `tests/review_ai/evaluation/test_langfuse_projection.py`
+- `tests/review_ai/evaluation/test_utility_evaluation.py`
+- `tests/review_ai/test_context.py`
+- `tests/review_ai/test_contracts.py`
+- `tests/review_ai/test_dependency_boundaries.py`
+- `tests/review_ai/test_evidence_store.py`
+- `tests/review_ai/test_prompt_provider.py`
+- `tests/review_ai/test_public_surface.py`
+- `tests/review_ai/test_service.py`
+- `tests/review_ai/test_settings.py`
+- `tests/review_ai/test_validator.py`
+
+### Inspect Here, Change Only In Final #277 (1)
+
+- `tests/review_ai/test_live_harness.py`
+
+- 다른 PR에서 필요한 공용 설정·workflow·source 수정이 확인돼도 파일을 이 PR에 끌어오지 말고 증거를 #277의 접점 작업에 인계합니다.
