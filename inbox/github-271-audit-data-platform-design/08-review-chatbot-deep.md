@@ -247,3 +247,26 @@ tags:
 | ⚪ Not Verified | #277 통합 | #269–#276 미병합 Draft, #277 최초 base 81fe44b2, 통합 미실행. |
 
 **Next:** C6의 unknown을 실제 dbt CLI returncode + node status 실험으로 먼저 닫습니다. #277에는 promotion→Reliability consumer identity와 공용 CI 경계만 인계하고 내부 predicate 변경은 #271 test owner가 결정합니다. 이 절의 SHA는 갱신 전; 갱신 후 head/CI 별도 확인. 승인·Ready·merge 변경 없음.
+
+## R10 · 2026-10-26 KST · SQL Parser Negative Controls and Scope
+
+> [!NOTE]
+> **Research → Plan → Review / continuation.** R9의 dbt extra-error 미확정 후보를 재서술하지 않고, 변경된 SQL quoting test가 단순 escape 문자열 비교를 넘어 실제 parser 결과로 injection 회귀를 구별하는지 반증했습니다.
+
+- **Revision:** R9 reviewed pre-write `4357a6838966e0129e16b305aa96ab9e404d5ba5` → authoritative R10 pre-write `b8aa35575bf85573130d8a0316d3d2bc5fb4a653`: GitHub compare는 이 Inbox만 변경한 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; test/source/Spec 불변, PR discussion 0.
+- **Research / implementation:** [변경 SQL test](../../tests/data_platform/test_sql.py) L16–78은 `quote_identifier`/literal의 quote escaping과 empty/NUL identifier 거부를 확인하며, `@example('loan"; SELECT 99; --')` 및 `@example("borrower's file'; SELECT 99; --")`와 Hypothesis generated text를 **실제 DuckDB parser**에 전달합니다. Column name/row value가 입력 원문과 같고 query 결과가 정확히 `(7,)` 또는 `(value,)`인지 검사합니다. [구현](../../src/hmda_reliability/data_platform/sql.py)에서 identifier는 double quote, literal은 single quote를 escape합니다.
+- **Plan / challenge:** `quote_identifier`에서 double-quote escape를 빼거나 `quote_string_literal`에서 single-quote escape를 빼는 mutant는 명시적 injection payload의 parser/value oracle을 깨야 합니다. 단순 `startswith('"')` 같은 약한 assertion만 있다는 가설은 반박됩니다. **동적 사용자 값의 parameter binding**은 source docstring이 별도로 요구하는 호출자 계약이며 이 helper의 고정 literal test가 이를 전체 검증한다고 주장하지 않습니다.
+
+| ID | Severity | Disposition / scope relation | Evidence / counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C10 | 🔵 Note | **Drop / SQL quoting test가 문자열 형태만 확인한다는 가설** | 실제 DuckDB parser 및 반환된 식별자/원문 값·row assertion이 있고 명시적 injection payload 두 종류를 포함합니다. | 같은 quote-escape negative test 중복 추가 없음. |
+| C6 | 🟡 Minor if reachable | **Keep prior unknown / #271 test owner, not confirmed current_required** | R9의 dbt `fail` 네 개 외 추가 `error`를 무시할 가능성은 별개. CLI exit=1+네 fail+추가 error의 **동시 도달성은 미실행**입니다. | 격리 DB의 mart column corruption 후 dbt CLI returncode와 전체 node status를 기록해 검출 여부를 판정. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R9→R10 head, SQL test→implementation 정적 반증 | Inbox-only 1 commit; property/example와 실제 parser oracle 확인. |
+| ✅ Pass | **원격** R10 pre-write prospective-merge CI | [CI Lite 40256208247](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40256208247), job `121358482295`: `TARGETS=tests/data_platform tests/dbt` **43 passed, 1 fork warning in 31.78s**; 선택 Python checks 성공. dbt extra-error는 미주입. |
+| ⚪ Not Verified | 이번 회차 로컬 DuckDB/dbt/pytest, SQL mutant 실행, extra-error 조합, 독립 specialist | 미실행. |
+| ⚪ Not Verified | #277 promotion↔Reliability consumer 및 공용 hook/CI 통합 | 선행 PR 미병합, #277 Draft. |
+
+**Next:** C10 Drop. C6은 실행 가능한 dbt status/exit 반례가 확보될 때만 분류를 높이거나 Drop합니다. #277은 내부 dbt quality predicate가 아니라 cross-domain promotion/consumer identity를 소유합니다. 이 절의 SHA는 **Inbox 갱신 전** head이며 Ready·approval·merge는 변경하지 않습니다.
