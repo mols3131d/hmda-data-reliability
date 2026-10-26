@@ -272,3 +272,25 @@ tags:
 | ⚪ Not Verified | 로컬 pytest, traversal mutant, 원본 evidence writer fault, 독립 specialist, #277 통합 | 이번 회차 미실행. `inbox/**`는 [CI classifier](../../scripts/ci/classify_changes.py)에서 Markdown lint 대상으로 제외되므로 이 CI는 Inbox 문서 lint 증거가 아님. |
 
 **Next:** C13 Drop 유지. HMDA Data source owner가 C6/C8의 원본 writer fault를 격리 실행해 pair bytes 및 backup 잔존을 결정; #277은 선행 병합 후 실제 Source→Bronze→gate→dbt 경계만 담당. 갱신 후 head/CI는 별도 확인하고 Ready·approval·merge는 변경하지 않습니다.
+
+## R12 · 2026-10-26 KST · EDA Cleanup Handoff Ownership Reconciliation
+
+> [!IMPORTANT]
+> **Research → Plan → Review / owner-decision handoff.** R11의 traversal 반례를 반복하지 않고, 이미 수용된 EDA H5의 **수정 소유권 인계가 #277의 명시된 writable scope와 충돌**하는지 확인했습니다. 신규 production defect를 등록하지 않습니다.
+
+- **Revision:** R11 reviewed pre-write `b20fd090ad23ba18ea3d3f64ce0ed3778b42823f` → authoritative R12 pre-write `3609ee906f2ab3a40635486ebaa910d81239af95`; GitHub compare: 이 Inbox 한 파일만 바뀐 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, test/source/Spec 불변, PR feedback 없음.
+- **Research / contradiction:** [EDA review](03-review-eda.md) F1/H5와 [final audit](05-report-hmda-data-audit.md) H5는 [writer](../../scripts/run_actual_source.py) `write_evidence`의 backup cleanup 이후 JSON/Markdown 불일치를 **#277에서 production 수정**하도록 인계합니다. 그러나 [#277 owning plan](https://github.com/mols3131d/hmda-data-reliability/blob/agent/test/audit-cross-domain-design/inbox/github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md) `Write discipline`은 **exclusive integration tests + #277 Inbox 이외 파일 변경 금지**를 명시하고, 단일 도메인 내부 테스트 재작성을 제외합니다. EDA [정본 Spec](../../openspec/specs/hmda-data-eda-descriptive-evidence/spec.md) `Observation consistency`의 JSON/Markdown 일치 계약 자체는 유지됩니다.
+- **Plan / countercheck:** #277의 Source→Bronze→gate→dbt **interface test**와 EDA `scripts/run_actual_source.py`의 **내부 writer 수정**을 구별합니다. #277이 모든 공유 문제를 받는다는 해석은 위 writable-path 제한에 반합니다. 과거 EDA owner의 H5 재현은 기록된 근거이지만 이번 회차에 원본 writer를 재실행하지 않았습니다.
+
+| ID | Severity | Disposition / scope relation | Evidence and next |
+| --- | --- | --- | --- |
+| C14 | 🟡 Minor (handoff integrity) | **Accept / `scope_decision` (owner boundary), not #269 `current_required`** | H5를 #277의 현재 계획대로 자동 해결한다고 간주하면 수정 주체가 사라집니다. 인간 owner가 별도 HMDA Data source change를 지정하거나 #277 scope/writable policy를 **명시적으로 변경**해야 합니다. #269은 test-only, #277은 현재 계획상 interface oracle owner입니다. 기존 03/05 보고서의 H5 인계 문구는 이 correction과 함께 읽어야 합니다. |
+| H5 / C6 / C8 | 🟠 Major conditional source risk | **Keep prior source-owner follow_up / not rerun** | 기존 writer cleanup/rollback fault는 미해결이며 #277의 CI 또는 EDA test pass가 해결 근거가 아닙니다. 중복 finding 등록 없음. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R11→R12 head 및 owning artifact/Spec/#277 plan 정적 대조 | Inbox-only 1 commit, H5의 source 위치와 #277 writable scope 충돌 확인. 네 PR의 변경 test 경로는 비중복. |
+| ✅ Pass | **원격** current-head prospective-merge CI | [CI Lite 40266173379](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40266173379): merge `7508eafb` (parents base `ea39a4fd` + head `3609ee90`), `tests/hmda_data` **197 passed in 7.69s**. Inbox H5 정책·원본 cleanup fault는 검증하지 않음. |
+| ⚪ Not Verified | 원본 writer fault 재실행, local pytest, 독립 specialist, #277 실제 integration | 이번 회차 미실행; 이전 EDA 재현과 현재 직접 실행을 혼동하지 않음. |
+
+**Next:** H5의 **실제 source 수정 owner/PR**를 사람이 명시하거나 #277 계획의 writable scope 변경을 승인할 때만 해당 remediation을 진행합니다. #277은 선행 병합 후 integration만 수행; Draft→Ready·approval·merge는 변경하지 않습니다.
