@@ -202,3 +202,24 @@ tags:
 | ⚪ Not Verified | 로컬 pytest/approval mutation, 독립 specialist, #277 integration | 미실행. CI 통과는 proposal-bound human approval이나 cross-domain recovery 증명이 아님. |
 
 **Next:** C9는 정책이 정본에 고정되어야 하는지에 대한 **Spec owner의 후속 판단**으로 남기되, 이 test-only PR의 blocker로 만들지 않음. R6 C8 promotion-evidence 가설 Drop과 R3 C5 evaluation missing-THEN follow_up은 유지. #277은 선행 병합 뒤 exact proposal binding과 recovery 결과를 실제 경계에서 검증. 이 절의 head는 **Inbox 갱신 전** SHA; 승인·merge·Ready 변경 없음.
+
+## R8 · 2026-10-26 KST · Schema-Only Hash Metamorphic Oracle
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R7 approval metadata 정책 판단을 반복하지 않고, 변경된 schema hash 테스트가 **데이터 행만 변하는 경우**를 구별하는지 정본·구현·테스트의 독립 성질로 점검했습니다. 새로운 production defect는 확인되지 않았습니다.
+
+- **Revision:** R7 reviewed pre-write `47c98d33754dd2e8a44fac92530fc9624779cb56` → authoritative R8 pre-write `2af3bb20924e077e5965be45010d035bfe49c16d`; 한 Inbox-only commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, source/test/Spec 불변, PR comments 0.
+- **Contract/locations:** [schema-hash Spec](../../openspec/specs/reliability-profile-snapshots/spec.md) `Deterministic schema hash`는 column name·physical type에 바인딩; [implementation](../../src/hmda_reliability/reliability/profiling/profile_snapshot_builder.py) `calculate_schema_hash`는 `DESCRIBE`의 name/type만 hash; [changed test](../../tests/reliability/test_profile_snapshots.py) `test_schema_hash_is_deterministic_and_changes_with_schema`.
+
+| ID | Severity | Decision / scope relation | Evidence and counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C11 | 🟡 Minor (test-design gap) | **Accept as follow_up / pre-existing oracle omission, not `current_required`** | 변경 테스트는 같은 schema의 연속 두 계산이 같고 ADD/RENAME/TYPE 변화에서 hash가 달라짐을 검사합니다. 하지만 **schema 그대로 두고 row UPDATE/INSERT만 수행한 뒤 hash가 불변**인지 확인하지 않습니다. 예컨대 `hash(schema, row_count)` mutant는 연속 계산과 세 schema mutation을 모두 통과하면서 정본의 schema-only identity를 어깁니다. 현 구현은 name/type만 hash하므로 **제품 결함 근거는 없고**, 이 test-only PR의 필수 수정으로 격상할 근거도 부족합니다. | Reliability test owner가 후속 검출력 보강이 필요하다고 판단하면 같은 connection에서 row-only UPDATE/INSERT 전후 `calculate_schema_hash` 동일성을 고정하는 작은 metamorphic test 추가; mutant가 해당 test에서 실패하는지 확인. |
+| C12 | 🔵 Note | **Drop / type-only drift undetected 가설** | 변경 테스트의 `ALTER COLUMN loan_amount TYPE DECIMAL(12,2)`는 이름을 유지하면서 physical type만 바꿉니다. `hash(column names only)` mutant는 이 case에서 실패하므로 이름 변경만 검사한다는 가설은 반박됩니다. | 중복 타입 회귀 테스트 요구 없음. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R7→R8 revision 및 Spec→hash implementation→test 정적 대조 | 한 Inbox-only commit; 현재 hash는 name/type 기반, type-only negative control 존재, row-only invariant test 없음. |
+| ✅ Pass | 최신 **원격** prospective-merge CI | [CI Lite 40247154350](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40247154350): merge `dd2e9bbd3f3c1e1fbfbd4ffbe6812ba6c37eddb6`, `tests/reliability` **268 passed in 24.43s**. Row-only mutant 미포함. |
+| ⚪ Not Verified | Row-only mutant execution, local pytest, independent specialist, #277 integration | 미실행. 기존 R7 C9 rejection metadata Spec-owner 판단은 계속 열려 있음. |
+
+**Next:** C11은 실제 row-only mutant가 현재 테스트를 통과하는지와 schema-only acceptance 우선순위를 test owner가 판단. C9의 거절 메타데이터 필수 정책은 Spec owner의 별도 결정이며 #277에는 exact proposal→approval→recovery→revalidation 통합만 전달. 갱신 후 head/CI를 재확인하고 승인·merge·Ready는 변경하지 않습니다.
