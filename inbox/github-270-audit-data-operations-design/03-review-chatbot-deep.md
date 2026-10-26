@@ -230,3 +230,27 @@ tags:
 | ⚪ Not Verified | #277 integration | #269–#276 모두 미병합 Draft; #277 최초 base 81fe44b2, Draft. |
 
 **Next:** C8 Drop, C9는 #277 integration boundary로 유지. #270 source owner가 R7 C4/C6의 원본 module fault를 검증하고 cleanup/error 정책을 결정합니다. 이 절은 갱신 전 SHA; 이후 head/CI 재확인 필요. 승인·Ready·merge 변경 없음.
+
+## R10 · 2026-10-26 KST · Stale Current Artifacts Versus Isolated Run Target
+
+> [!NOTE]
+> **Research → Plan → Review / continuation.** R9의 quality-gate fake lock, R7의 double-fault promotion과 분리하여, 이전 current artifact만 있는 상태에서 새 dbt build를 성공으로 오인하는 경로를 반증했습니다. 새 `current_required`는 확인되지 않았습니다.
+
+- **Revision:** R9 reviewed pre-write `00f24f3d2c83751963658494fae3f9540091fed9` → authoritative R10 pre-write `d030b144d5312f6307997d2a02d8c9d4bc985ced`: GitHub compare에서 **2 commits, 이 Inbox 1파일만 변경**. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; test/source/Spec 불변, PR discussion 0.
+- **Research / contract:** [stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md) `Stale artifacts are not current success`와 `dbt failure boundary`는 과거 artifact를 현재 성공으로 승격하지 않도록 요구합니다. [변경 테스트](../../tests/data_operations/test_dbt_runner.py) `test_run_dbt_build_rejects_preexisting_artifacts` (L180–202)는 old manifest/results에 `stale` bytes를 쓴 뒤 fake subprocess `returncode=0`이 **새 run artifact를 생성하지 않게** 하고, `DataOperationError` 및 old current bytes 불변을 검사합니다. [runner](../../src/hmda_reliability/data_operations/runner.py) `_create_run_target`는 `mkdtemp(run-*)`로 별도 경로를 만들고, `_validate_dbt_artifacts`는 **그 run 경로의 두 파일** 존재를 검사합니다.
+- **Plan / challenge:** `returncode=0` 또는 old current pair의 존재만으로 `DbtBuildResult(succeeded=True)`를 반환하는 mutant라면 위 negative test의 `pytest.raises`에서 실패해야 합니다. 반면 해당 테스트는 dbt JSON **semantic schema**를 검증하지 않습니다. 정본 stage Spec의 현행 성공 계약은 현재 실행 artifact 존재 확인이며 JSON 전체 유효성 검사를 요구한다고 확대하지 않습니다.
+
+| ID | Severity | Disposition / scope relation | Evidence / counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C10 | 🔵 Note | **Drop / stale current pair를 build 성공으로 재사용하는 가설** | 테스트는 subprocess 성공에도 fresh run pair가 없으면 실패를 요구하며 current bytes를 보존합니다. Source의 unique target과 양쪽 artifact 존재 검사가 이를 지지합니다. | 같은 stale artifact case 중복 없음. |
+| C4 / C6 / C7 | 🟡 Minor / 🟠 Major conditional / 🔵 Note | **Keep prior source-owner follow_up** | Partial `.next` 잔존, replace+rollback unlink 이중 장애, candidate copy TOCTOU는 이 별도 run-target negative test로 해결되지 않습니다. | 원본 runner fault 및 candidate mutability threat model을 Data Operations source owner가 판정. |
+| C9 | 🔵 Note | **Keep #277 integration limitation** | 이전 R9의 gate ordering test는 fake gate/lock을 사용합니다. | 선행 병합 후 dirty Bronze→실제 gate 거부→dbt 미시작 및 current pair 불변을 검증. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R9→R10 revision 및 Spec→runner→negative test 정적 대조 | Inbox-only 2 commits; 현재 run target과 old current pair 경로 분리 확인. |
+| ✅ Pass | **원격** R10 pre-write prospective-merge CI | [CI Lite 40256317927](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40256317927), job `121358889288`: `TARGETS=tests/data_operations` **57 passed in 43.08s**, 선택 Python checks 성공. 복합 fault는 미포함. |
+| ⚪ Not Verified | 이번 회차 로컬 dbt/pytest, stale-success mutant 실행, 원본 promotion double-fault, 독립 specialist | 미실행. |
+| ⚪ Not Verified | #277 current projection→Reliability consumer 통합 | 선행 PR 미병합, #277 Draft. |
+
+**Next:** C10 Drop. C4/C6는 실제 module fault probe, C7은 candidate writer 계약 결정이 선행되어야 합니다. #277에는 실제 gate/lock 및 promotion-consumer identity 접점만 인계. 이 절의 SHA는 **Inbox 갱신 전** head이며 Ready·approval·merge는 변경하지 않습니다.
