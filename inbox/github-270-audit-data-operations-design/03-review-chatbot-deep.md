@@ -10,6 +10,44 @@ tags:
 # Data Operations Chatbot Deep Review
 
 > [!IMPORTANT]
+> **Current review adjudication (2026-10-26 21:32 KST): no confirmed in-scope current_required.** 도메인 테스트 보강의 신규 필수 결함은 확인되지 않았다. 진짜 공유 Git hook 오염은 기존 F3에 단일 소유로 유지한다. Runner rollback의 복합 장애는 구현 위험이지 test-only PR의 필수 수정은 아니다. 이전 회차의 `Blocked` 문구는 이 챗봇의 독립 검토 미완료를 의미하며 PR 자체의 Ready/merge 불가 판정은 아니다.
+
+- **Target** — [PR #270](https://github.com/mols3131d/hmda-data-reliability/pull/270); owner ref `agent/test/audit-data-operations-design`.
+- **Revision** — reviewed pre-write head `3146d87c2bde8c1eb4f9a15c96c6253d03390dd1`; original test-code revision `5dd84ee53e56f089f6771d6a2ff9ae23f4105b29`; main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Original code revision→R13 head 사이 변경 파일은 이 Inbox review 하나(13 commits). 다음 회차에는 head와 code/Spec/CI delta부터 다시 대조.
+- **Scope** — R1–R13의 각 후보를 원래 audit과 정본·source·test에 재입장 심사; 변경 없는 test/source에서 신규 결함을 만들어내지 않음. 이 판정은 동일 컨텍스트 adjudication이며 독립 specialist review가 아니다.
+
+## Current Findings
+
+현재 변경의 확정 `current_required` 없음. 기존 공유 도구 사고 및 조건부 source 위험은 아래 분리.
+
+## Current Disposition
+
+| ID | Severity / Kind | Decision | Evidence | Next |
+| --- | --- | --- | --- | --- |
+| F3 / R13 C13 | 🟠 Major · 실제 환경 오염 | **Keep scope_decision** | [원 감사 F3](02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories)는 상위 Git ref/index/config 오염을 실제 관측. 임시 wrapper 성공은 공유 hook의 영구 수정 증거가 아니다. | Shared tooling owner와 쓰기 범위 별도 결정. #277 현 계획은 `lefthook.yml`·Git helper/fixture 수정 권한을 포함하지 않음. |
+| C6 | 🟠 Major *conditional* · 기존 source 위험 | **Keep follow_up / runtime unverified** | [`runner.py::_promote_dbt_artifacts`](../../src/hmda_reliability/data_operations/runner.py)의 두 번째 replace 실패+rollback unlink 실패가 겹치면 복구 중단 가능. R7은 추출 함수 실행, 원본 runner fault 미실행. | Data Operations 구현 owner의 disposable 원본 함수 fault 실험 및 error/current pair 계약 결정. 이 PR blocker로 자동 승격 금지. |
+| C4 | 🔵 Note | **Drop active finding** | 부분 `*.next` 잔존은 현재 pair 손상으로 입증되지 않았고 cleanup hygiene 수준. 기존 `DataOperationError`는 반환됨. | 실제 중요해진 경우에만 C6 후속 안에서 다룸. |
+| C7 | 🔵 Note | **Drop speculative TOCTOU** | 후보 파일을 외부 concurrent writer가 바꾸는 threat model이 확인되지 않음; 일반 동기 dbt 빌드는 종료 후 promote. | 허용된 writer/재현 증거 없이 신규 테스트 요구 금지. |
+| C1–C3, C5, C8 | — | **Drop** | 결과 파일별 drift, read-only lifecycle bytes·files 보존, gate-before-dbt ordering 등 기존 regression guard 확인. | 반복 리뷰에서 재등록하지 않음. |
+| C9 / R12 C11 | 🔵 Note · integration | **Deduplicate** | 실제 Bronze+OS lock 경계는 #277. Symlink lock 손상은 #271 Data Platform primitive가 원인으로 #270에 별도 결함 등록하지 않음. | Cross-domain E2E 검증과 source owner correction을 분리. |
+
+## Current Validation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | GitHub PR/head 및 original code revision 대조 | Head `3146d87c2bde8c1eb4f9a15c96c6253d03390dd1`에서 test/source/Spec unchanged; 변경 경로는 이 Inbox 리뷰 하나. 네 domain test owner path 충돌 없음. |
+| ✅ Pass | 원본 감사·관련 정본/source/test와 후보별 재판정 | 위 linked locations와 R1–R13 원증거; R10 이후 새 실험을 이번 회차 실행한 것으로 주장하지 않음. |
+| ⚪ Not Verified | 이 회차의 로컬 pytest·dbt/원본 fault injection·independent specialist | 미실행. R13 원격 CI 결과는 과거 run의 별도 evidence이며 이 체크의 재실행 결과 아님. |
+| ⚪ Not Verified | #277 최신 통합 검증 및 shared-tooling 영구 수정 | 선행 도메인 PR 미병합, #277 initial base/owned paths 아직 별도 기준. 공유 Git hook/Spec/source를 본 PR에서 수정하거나 자동 인계 수락하지 않음. |
+
+**Continuation:** 이 `Current Disposition`만 활성 finding 판정으로 사용. 과거 R1–R13은 근거·기각 이력으로 보존하되 모순 시 최신 표를 우선한다. 다음 회차에서 의미 있는 head/CI/contract 변화 또는 미확정 후보의 도달성 증거가 없으면 반복 검토 문단을 누적하지 않고 짧게 unchanged로 보고. 승인·Ready 전환·merge·scope 확장은 수행하지 않음.
+
+---
+
+## Historical Review Evidence (R1–R13; superseded dispositions)
+
+
+> [!IMPORTANT]
 > **Blocked (review in progress)** — 새 `current_required` 결함은 아직 확정하지 않았습니다. 이는 머지 불가 판정이 아니라 이번 챗봇 리뷰의 검토 범위와 독립 재검증이 아직 닫히지 않았다는 뜻입니다. 로컬 테스트를 직접 실행하지 않았으므로 기존 CI·독립 리뷰 기록을 본 검토의 재현 결과로 간주하지 않습니다.
 
 - **Target** — [PR #270](https://github.com/mols3131d/hmda-data-reliability/pull/270), owning branch의 Inbox.
