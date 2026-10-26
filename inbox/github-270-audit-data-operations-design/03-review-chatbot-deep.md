@@ -184,3 +184,25 @@ tags:
 | ⚪ Not Verified | 원본 runner import 기반 fault, local domain pytest, 독립 specialist, #277 통합 | 미실행; extraction stub 및 단일 CI 성공은 최종 contract 검증 아님. |
 
 **Next:** Data Operations owner가 원본 `_promote_dbt_artifacts`에 (a) partial copy, (b) replace+rollback unlink double fault를 각각 주입해 `.next/.previous` 상태·primary/secondary cause를 검증. rollback cleanup failure를 추가 failure로 덮지 않을 정책은 source owner가 결정. #277은 cross-domain current projection 소비 계약만 담당. 이 절의 head는 **Inbox 갱신 전** SHA입니다.
+
+## R8 · 2026-10-26 KST · Candidate Identity Race and Owner Boundary
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R7의 copy failure·double-fault를 다시 모사하지 않고, candidate identity 확인과 current pair copy 사이의 동시 변경 가설을 실제 호출 순서와 ownership에 대조했습니다. 동시 writer를 실제 실행한 증거는 없습니다.
+
+- **Revision:** R7 reviewed pre-write `b247582fdec29d0bf4c139cf445d2db970b6792e` → authoritative R8 pre-write `f3734eb6f4209d8fc4ad61e77afe6af006079d8a`; 비교는 이 Inbox만 수정한 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, test/source/Spec 불변, PR comments 0.
+- **Contract/locations:** [runner](../../src/hmda_reliability/data_operations/runner.py) `run_dbt_build`, `_run_dbt_command`, `promote_dbt_artifacts`, `_ensure_artifact_projection`, `_promote_dbt_artifacts`; [changed test](../../tests/data_operations/test_dbt_runner.py) artifact-only drift / rollback cases; [stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md).
+
+| ID | Severity | Decision / scope relation | Evidence and counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C7 | 🔵 Note (conditional integrity risk) | **Keep pre-existing contract limitation / follow_up, not current_required** | `_ensure_artifact_projection`가 candidate 두 파일의 ID를 한 번 확인한 뒤 `_promote_dbt_artifacts`에서 두 파일을 **순차 copy**하고 staged pair ID를 재계산하지 않습니다. Current projection lock은 current directory를 보호하지만 candidate writer를 봉쇄한다는 증거는 없습니다. 검증 후 두 번째 candidate 파일을 바꾸면 채택 pair가 `result.projection_id`와 달라질 수 있다는 interleaving이 성립합니다. 반증 측면에서 `run_dbt_build`는 고유 target의 **동기 subprocess 종료 후** 결과를 반환하므로 정상 호출만으로 concurrent candidate writer가 있다는 주장은 성립하지 않습니다. 외부 mutation·복사 중 변형의 실제 reachability는 미확인입니다. | Source owner가 실제 concurrent writer/TOCTOU threat model을 결정할 때만, disposable candidate의 두 번째 copy 직전 mutation을 주입하고 promoted `artifact_projection_id`와 build result를 비교. 이 PR의 기존 test-only 범위를 임의로 넓히지 않음. |
+| C4 / C6 | 🟡 Minor / 🟠 Major (conditional) | **Keep R7 source-owner follow_up** | Partial `.next` 잔존 및 이중 rollback failure의 current pair 손상·raw secondary `OSError`는 R7의 추출 함수 probe 결과이며 이번 race 검토로 해결되지 않음. | 원본 runner module import 기반 두 fault probe; source owner가 rollback policy 결정. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R7→R8 revision, 호출 순서 및 scope 정적 대조 | 이 Inbox만 변경. Candidate 검증→순차 copy→current commit의 ordering과 동기 dbt 종료 safeguard를 함께 확인. |
+| ✅ Pass | 최신 **원격** prospective-merge CI | [CI Lite 40247096812](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40247096812): merge `ff5637609f80ce6859993d21c4926456d6bb5f75`, `tests/data_operations` **57 passed in 34.19s**. TOCTOU/복합 fault는 미포함. |
+| ⚪ Not Verified | 원본 module fault, concurrent mutation, 로컬 pytest, 독립 specialist | 이번 회차 미실행. |
+| ⚪ Not Verified | #277 candidate→current→Reliability 통합 | #269–#276 미병합; #277 Draft의 기존 base는 최신 main과 다름. |
+
+**Next:** C7을 production race로 단정하지 말고 candidate mutability contract를 owner에게 확인. 먼저 R7 C4/C6의 원본 함수 fault 재현을 분리 실행; #277은 실제 candidate/current 소비 identity만 선행 병합 후 검증. 갱신 후 head/CI는 별도 확인하며 승인·Ready·merge는 변경하지 않습니다.
