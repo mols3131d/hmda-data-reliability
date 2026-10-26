@@ -293,3 +293,27 @@ tags:
 | ⚪ Not Verified | 원본 reporter pipe/newline 실행, normal false-positive mutant, 로컬 pytest, 독립 specialist, #277 통합 | 미실행. `inbox/**` Markdown lint는 CI classifier에서 제외. |
 
 **Next:** C14의 이전 '정본이 negative를 명시한다'는 주장을 이 정정으로 대체; Spec owner 판단 전 필수 test 수정으로 승격하지 않음. C16은 Reliability reporter owner의 output escaping 정책 결정과 별도 component oracle 후보. #277에는 approval→recovery→revalidation 실제 경계만 인계하고 내부 reporter/normal-case 정책을 떠넘기지 않습니다. Ready·approval·merge는 변경하지 않습니다.
+
+## R12 · 2026-10-26 KST · Evaluation Markdown Row-Forgery Falsifier
+
+> [!IMPORTANT]
+> **Research → Plan → Review / strengthened C16.** R11의 `|` column drift에서 한 단계 더 나아가, **newline을 포함한 case_name이 Markdown에 별도 PASS 행을 삽입하는 것처럼 보이는** 오염 경계를 검토했습니다. C16과 동일한 root cause이므로 별도 신규 finding을 만들지 않습니다.
+
+- **Revision:** R11 reviewed pre-write `f2ed892f7902777f107ab520f1b8ea66117b9f03` → authoritative R12 pre-write `7ceb3809a3148787e3e75a856046b03e4b08c7a8`; GitHub compare Inbox-only 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, tests/source/Spec 불변, PR feedback 0.
+- **Contract / code:** [case model](../../src/hmda_reliability/reliability/evaluation/case_result.py) `_validate_case_name`은 `value.strip()` nonblank만 확인하므로 `normal\n| forged ...`를 금지하는 조건이 없습니다. [reporter](../../src/hmda_reliability/reliability/evaluation/reporter.py) `_case_line` (L65–79)는 case_name/evidence refs 등을 그대로 Markdown table cell에 삽입합니다. [changed report tests](../../tests/reliability/test_evaluation_report.py) L75–248은 safe fixed strings만 검사. [Evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md)의 현재 문구에서 임의 문자열 escaping 형식을 **MUST**로 단정하지 않습니다.
+- **Disposable falsifier:** `case_name="normal\n| forged | - | - | PASS | PASS | - | - | - | - | - |"`를 동일 f-string 구조로 조립하면 한 case row가 **두 물리적 행**으로 분리됩니다. 이는 source에서 보이는 입력 검증과 문자열 조립의 정적 결합을 강화하는 **별도 stdlib 문자열 probe**이며, **원본 Pydantic/reporter 모듈·Markdown renderer/pytest 미실행**입니다. 실제 소비자에 위조 PASS 행이 어떻게 렌더되는지는 미확인입니다.
+- **Disconfirmation:** Reporter가 `PASS`/ `FAIL`를 `detection_passed`로 계산하는 로직 자체를 우회하거나 evaluation summary count를 변경하는 증거는 없습니다. 위험은 **human-readable Markdown representation의 구조 오염**이며 domain result의 truth 변경으로 과장하지 않습니다.
+
+| ID | Severity | Disposition / scope relation | Evidence and next |
+| --- | --- | --- | --- |
+| C16 refined | 🟡 Minor **conditional output integrity** | **Keep pre-existing reporter/test `follow_up`, not current_required** | Pipe와 newline을 모두 escape/validate할 정책을 Reliability reporter owner가 결정하면, 허용 입력과 rendered row/column count 및 raw data 보존을 확인하는 component negative oracle을 추가. #277의 approval/recovery integration으로 내부 reporter 결함을 이관하지 않음. |
+| C14 | 🟡 Minor / uncertain contract | **Keep R11 `unknown` (Spec owner)** | Normal-case false-positive inverse MUST는 정본에 명시되지 않음. Spec owner 결정 전 test blocker 아님. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R11→R12 head, case validator→reporter→test→Spec 정적 대조 | Inbox-only 1 commit; 네 PR 변경 test 경로 비중복. |
+| ✅ Pass | Disposable stdlib Markdown row-template probe | Nonblank `case_name`에서 물리적 row 1→2; 원본 module/rendered UI 검증 아님. |
+| ✅ Pass | **원격** current-head prospective-merge CI | [CI Lite 40266177395](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40266177395): merge `400b78d2` (base `ea39a4fd` + head `7ceb3809`), `tests/reliability` **268 passed in 27.84s**. 오염 입력 미포함. |
+| ⚪ Not Verified | 원본 reporter/Pydantic newline, Markdown renderer, local pytest, 독립 specialist, #277 integration | 이번 회차 미실행. |
+
+**Next:** C16은 reporter owner의 escaping/validation policy 이후 원본 module 및 renderer에 대해 좁게 검증. C14는 정본 owner 판단을 기다립니다. #277은 선행 #269–#276 병합 뒤 approval→recovery→revalidation 경계만 소유. 인간 Ready·approval·merge 변경 없음.
