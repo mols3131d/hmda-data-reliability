@@ -214,7 +214,7 @@ tags:
 
 - **Revision:** R8 pre-write f3734eb6f4209d8fc4ad61e77afe6af006079d8a → authoritative pre-write 00f24f3d2c83751963658494fae3f9540091fed9: 이 Inbox만 변경한 1 commit. main/base ea39a4fd6c8f483509cf00a1d1114feb4ef3b686, test/source/Spec 불변, PR feedback 0.
 - **Research:** [변경 runner tests](../../tests/data_operations/test_dbt_runner.py) L322–405의 두 case는 gate 실패 시 subprocess 미시작과 성공 시 gate→dbt 호출 순서 및 동일 lock context를 확인합니다. [runner](../../src/hmda_reliability/data_operations/runner.py) L118–125, L162–181은 database_mutation_lock 안에서 evaluate_quality_gate 다음 _run_dbt_command를 실행합니다. [정본 stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md) L73–92는 dbt process 동안 공통 DB lock 유지와 lock 실패 시 process 미시작을 요구합니다.
-- **Plan:** gate ordering 검출력과 **실제 quality gate 판정·OS lock cross-writer interleaving** 검출력을 분리합니다. 후자는 [#277 계획](../github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md)의 reserved tests/data_operations/test_quality_gate.py 및 integration lane에서 검증할 대상이지 #270에 공용 fixture를 추가할 이유가 아닙니다.
+- **Plan:** gate ordering 검출력과 **실제 quality gate 판정·OS lock cross-writer interleaving** 검출력을 분리합니다. 후자는 [#277 계획](https://github.com/mols3131d/hmda-data-reliability/blob/agent/test/audit-cross-domain-design/inbox/github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md)의 reserved tests/data_operations/test_quality_gate.py 및 integration lane에서 검증할 대상이지 #270에 공용 fixture를 추가할 이유가 아닙니다.
 
 | ID | Severity | Disposition / ownership | Evidence / counterevidence | Next |
 | --- | --- | --- | --- | --- |
