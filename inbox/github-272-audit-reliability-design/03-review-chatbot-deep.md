@@ -246,3 +246,26 @@ tags:
 | ⚪ Not Verified | 로컬 원본 pytest, disk-loss/process-kill, 독립 specialist, #277 integration | 이번 회차 미실행. Remote CI의 selected suite 결과만 확인. |
 
 **Next:** C13 Drop, C11과 C9는 각각 Reliability test/Spec owner 후속 판단으로 유지. #277은 선행 #269–#276 병합 뒤 exact proposal binding→recovery→dbt/profile revalidation만 검증합니다. 이 절은 갱신 전 SHA; 이후 head/CI 재확인 필요. 승인·Ready·merge 변경 없음.
+
+## R10 · 2026-10-26 KST · Normal-Case False-Positive Evaluation Oracle
+
+> [!NOTE]
+> **Research → Plan → Review / continuation.** R9의 recovery cleanup 및 R8 schema hash와 별개로, normal synthetic evaluation에서 **예상하지 않은 incident가 발생한 경우**의 음성 oracle을 점검했습니다. 현재 구현은 정본과 일치하지만 변경 테스트의 회귀 검출 공백은 후속 판단으로 보존합니다.
+
+- **Revision:** R9 reviewed pre-write `10c66af65587f0547d9967a228ad763f80bfba71` → authoritative R10 pre-write `80ae1187b1c7556bc4c342268fdd18536f757e6f`: GitHub compare는 이 Inbox만 변경한 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; test/source/Spec 불변, PR discussion 0.
+- **Research / contract:** [정본 evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md) `Normal case handling`은 expected incident가 없을 때 실제 detection도 없어야 PASS라고 명시합니다. [구현](../../src/hmda_reliability/reliability/evaluation/case_result.py) `EvaluationCaseResult.detection_passed`는 `not expected`일 때 `not detected`를 반환하므로 **현재 제품 동작은 정본과 일치**합니다. [변경 테스트](../../tests/reliability/test_evaluation_report.py) L75–220의 normal case들은 `expected=[]/detected=[]` 성공, incident case들은 expected nonempty의 누락 및 action 누락을 검사하지만, `expected=[]/detected=["volume_drop"]` 실패는 직접 고정하지 않습니다.
+- **Plan / falsifier:** `if not expected_incident_types: return True`라는 false-positive mutant는 위 변경 테스트의 normal 성공·incident 누락·empty report assertion만으로는 거부되지 않습니다. 단, **전체 repository suite의 mutant 생존을 실행·증명한 것은 아니며**, 이는 해당 변경 테스트의 정적 coverage gap입니다.
+
+| ID | Severity | Disposition / scope relation | Evidence / counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C14 | 🟡 Minor | **Accept as follow_up / pre-existing test-oracle omission, not current_required** | 정본 normal-case negative contract에 대한 `expected=[]/detected≠[]` 독립 반례가 변경된 aggregation 테스트에 없습니다. 구현은 이미 올바르므로 production defect 또는 신규 regression으로 오인하지 않습니다. | Reliability test owner가 가치 있다고 판단하면 `EvaluationCaseResult(... expected_incident_types=[], detected_incident_types=["volume_drop"]).detection_passed is False` 및 mixed report의 success count를 추가하고 mutant red를 확인. |
+| C15 | 🔵 Note | **Drop / expected nonempty에서 모든 extra incident도 금지해야 한다는 가설** | 정본은 **모든 expected type의 포함**을 요구하며, 예상 외 type의 존재 자체를 무조건 FAIL로 규정하지 않습니다. 구현의 subset 비교를 임의로 exact-set 비교로 바꿀 근거가 없습니다. | 현 계약 밖의 strict equality oracle을 요구하지 않음. |
+| C11 / C9 | 🟡 Minor / 🔵 Note | **Keep prior owner-specific follow_up** | Schema-only hash row-only invariant(C11) 및 rejected approval metadata 정책(C9)은 이 normal-case oracle과 독립입니다. | 각각 Reliability test owner / Spec owner 결정. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R9→R10 head, Spec→case model→changed evaluation tests 정적 대조 | Inbox-only 1 commit; normal success와 false-positive negative case의 차이 확인. |
+| ✅ Pass | **원격** R10 pre-write prospective-merge CI | [CI Lite 40256307308](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40256307308), job `121358796639`: `TARGETS=tests/reliability` **268 passed in 27.83s**, 선택 Python checks 성공. Normal-case mutant는 미실행. |
+| ⚪ Not Verified | 이번 회차 로컬 pytest, normal-case mutant, 독립 specialist, #277 integrated recovery | 미실행. |
+
+**Next:** C14는 정본 normal-case 보호의 작은 test-only 보강 후보이며 현 PR의 merge blocker로 격상하지 않습니다. C15 Drop; 기존 C11/C9는 소유자별 판단 유지. #277에는 approval→recovery→revalidation 실제 경계만 인계. 이 절의 SHA는 **Inbox 갱신 전** head이고 Ready·approval·merge는 변경하지 않습니다.
