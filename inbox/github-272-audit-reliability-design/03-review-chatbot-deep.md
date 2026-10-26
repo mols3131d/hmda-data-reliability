@@ -24,9 +24,9 @@ tags:
 | --- | --- | --- |
 | C14–C15 | 🔵 Note · **drop** | [Evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md)은 `expected=[] AND detected=[] ⇒ pass`만 요구. 역명제나 모든 extra detection 금지를 MUST로 만들 수 없음. |
 | C16 | 🔵 Note · **follow_up, source conditional** | [`reporter.py::_case_line`](../../src/hmda_reliability/reliability/evaluation/reporter.py)은 `case_name`/refs를 Markdown table cell에 그대로 보간. 이전 R11/R12는 문자열 조립 반례일 뿐 원본 reporter→renderer·허용 입력 경계 실행은 미확인. Reporter source owner가 escaping/이름 정책 확정 후 재현. |
-| H2 / R13 C18 | 🔵 Note · **scope_decision, 기존 Spec gap** | [Evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md)의 existing/aliased DB scenario는 THEN 누락. 기존 `test_schema_drift_evaluation.py`가 DB bytes·callback 무변경 거부를 이미 검사하므로 test 무보호 주장 기각. `openspec/**`는 [#277 계획](../github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md)의 쓰기 범위 밖; Spec owner 결정 필요. |
+| H2 / R13 C18 | 🔵 Note · **scope_decision, 기존 Spec gap** | [Evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md)의 existing/aliased DB scenario는 THEN 누락. 기존 `test_schema_drift_evaluation.py`가 DB bytes·callback 무변경 거부를 이미 검사하므로 test 무보호 주장 기각. `openspec/**`는 [#277 계획](https://github.com/mols3131d/hmda-data-reliability/blob/agent/test/audit-cross-domain-design/inbox/github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md)의 쓰기 범위 밖; Spec owner 결정 필요. |
 | C1–C4, C6–C13 | 🔵 Note · **drop** | Targeted freshness, rejected approval, after-state replay sentinel+complete state, incompatible pair, schema drift/cleanup, post-promotion current projection evidence가 원 가설을 반박. |
-| H4 / R13 C17 | 🟠 Major **underlying F3** · **deduplicate / scope_decision** | 실제 Git hook 환경 오염은 [#270 F3](../github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories)에서 추적. 현재 Reliability 변경이 도입한 별도 결함 아님. |
+| H4 / R13 C17 | 🟠 Major **underlying F3** · **deduplicate / scope_decision** | 실제 Git hook 환경 오염은 [#270 F3](https://github.com/mols3131d/hmda-data-reliability/blob/agent/test/audit-data-operations-design/inbox/github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories)에서 추적. 현재 Reliability 변경이 도입한 별도 결함 아님. |
 
 ## Current Validation
 
