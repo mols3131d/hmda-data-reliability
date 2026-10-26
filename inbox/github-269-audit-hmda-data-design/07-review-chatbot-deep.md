@@ -227,3 +227,26 @@ tags:
 | ⚪ Not Verified | #277 integrated Source→Bronze→gate→dbt | #269–#276 미병합 Draft; #277은 최초 base 81fe44b2의 Draft. |
 
 **Next:** #269 C10 Drop, C11은 기존 #277 owner handoff 유지. Source owner는 C6/C8의 원본 writer fault를 별도 검증합니다. 이 절은 갱신 전 SHA이며 이후 head/CI 재확인 필요. 승인·Ready·merge 변경 없음.
+
+## R10 · 2026-10-26 KST · Numeric Null and Outlier Oracle Countercheck
+
+> [!NOTE]
+> **Research → Plan → Review / continuation.** R9의 lock 경계 및 R7의 writer cleanup 가설을 재포장하지 않고, 변경된 EDA numeric-summary test가 음수 clipping·NULL-as-zero 회귀를 구별하는지 별도 반례로 점검했습니다. 새 `current_required`는 확인되지 않았습니다.
+
+- **Revision:** R9 reviewed pre-write `4adf41d6869473896eaf009c13e7fe6565e2e784` → authoritative R10 pre-write `37206dd3f953b010c1fd10386deb76103013f3dc`: GitHub compare는 `07-review-chatbot-deep.md` 한 파일의 1 commit만 표시합니다. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`; test/source/Spec 불변, PR discussion 0.
+- **Research / contract:** [정본 EDA Spec](../../openspec/specs/hmda-data-eda-descriptive-evidence/spec.md) `Descriptive distributions and numeric summaries`는 NULL 제외·원천값 유지·non-null count 및 p25/median/p75를 요구합니다. [변경 테스트](../../tests/hmda_data/eda/test_eda.py) `test_analyze_hmda_csv_returns_numeric_summaries_without_clipping` (L124–169)는 `loan_amount=[-100,-20,NULL,40,200]`, `income=[NULL,-9,1,5,101]`에 대해 두 컬럼 모두 count 4와 독립적으로 계산된 min/분위수/max **전체 dict**를 비교합니다. [구현](../../src/hmda_reliability/hmda_data/eda/analysis.py) `_collect_numeric_summaries`는 `count(column)`과 `quantile_cont`를 사용합니다.
+- **Plan / adversarial falsifier:** `negative → 0` clipping mutant는 min `-100`/`-9`에서, `NULL → 0` mutant는 non-null count `4`와 분위수에서, `median만 검사`하는 약한 oracle 가설은 전체 dict equality에서 각각 거부되어야 합니다. 이는 **정적 oracle 판정**이지 mutant 실행 결과가 아닙니다.
+
+| ID | Severity | Disposition / scope relation | Evidence / counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C12 | 🔵 Note | **Drop / numeric clipping·NULL-as-zero false-green 가설** | 위 테스트의 음수 최소값, 양쪽 non-null count, exact quartile 및 max가 모두 고정돼 해당 단순 회귀를 구별합니다. NULL의 분모 문제(R8)와 다른 numeric aggregation 경계입니다. | 같은 수치 oracle을 중복 보강하지 않음. |
+| C6 / C8 | 🟠 Major (C8 conditional) | **Keep prior source-owner follow_up; not current_required** | 첫 JSON replace 실패의 orphan backup 및 Markdown 성공 뒤 backup unlink 실패의 pair mismatch는 R7의 **격리 추출 함수**에서만 관측. 이번 수치 검증으로 반박되지 않음. | 원본 `write_evidence` import 기반 별도 fault probe, exact bytes/잔여 `.bak/.tmp` 확인; #277 내부 writer 과제로 이관하지 않음. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R9→R10 head 비교, Spec→source→test 정적 oracle 반증 | Inbox-only 1 commit; exact negative/null/quantile assertions 확인. |
+| ✅ Pass | **원격** R10 pre-write prospective-merge CI | [CI Lite 40256243681](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40256243681), job `121358592325`: `TARGETS=tests/hmda_data` **197 passed in 9.16s**, 선택 Python checks 성공. 위 mutant는 실행하지 않음. |
+| ⚪ Not Verified | 이번 회차 로컬 pytest, numeric mutant 실행, 원본 writer fault, 독립 specialist | 미실행; 원격 selected CI와 정적 반증을 구분. |
+| ⚪ Not Verified | #277 Source→Bronze→gate→dbt 및 실제 cross-writer OS lock | 선행 PR 미병합, #277 Draft. |
+
+**Next:** C12 Drop. C6/C8 원본 모듈 fault 검증은 HMDA Data source/test owner의 별도 결정; 실제 cross-domain lock·quality gate는 선행 병합 후 #277에서 검증. 이 절의 SHA는 **Inbox 갱신 전** head입니다. 갱신 후 head/CI를 재확인하고 Ready·approval·merge는 변경하지 않습니다.
