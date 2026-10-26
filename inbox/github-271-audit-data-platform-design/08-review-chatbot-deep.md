@@ -10,6 +10,43 @@ tags:
 # Data Platform Chatbot Deep Review
 
 > [!IMPORTANT]
+> **Current review adjudication (2026-10-26 21:32 KST): no confirmed in-scope current_required.** 정본→dbt mart의 고정 지표·타입·실패 노드 테스트는 실제 경계를 관찰한다. C6은 예상 외 `error`를 무시하는 predicate이지만 CLI exit 조건 때문에 확정 불가. C11은 코드상 symlink-following `open('w')` 위험으로 별도 source 후속이다. 이전 회차의 `Blocked` 문구는 이 챗봇의 독립 검토 미완료를 의미하며 PR 자체의 Ready/merge 불가 판정은 아니다.
+
+- **Target** — [PR #271](https://github.com/mols3131d/hmda-data-reliability/pull/271); owner ref `agent/test/audit-data-platform-design`.
+- **Revision** — reviewed pre-write head `4e0284bc17e5ad8c62eb856e7bd96f6f0ee2cfbb`; original test-code revision `8ef30680eea1c9b6265545f7e913d2e6972ffa36`; main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Original code revision→R13 head 사이 변경 파일은 이 Inbox review 하나(13 commits). 다음 회차에는 head와 code/Spec/CI delta부터 다시 대조.
+- **Scope** — R1–R13의 각 후보를 원래 audit과 정본·source·test에 재입장 심사; 변경 없는 test/source에서 신규 결함을 만들어내지 않음. 이 판정은 동일 컨텍스트 adjudication이며 독립 specialist review가 아니다.
+
+## Current Findings
+
+현재 변경의 확정 `current_required` 없음. C6은 `unknown`, C11은 조건부 기존 source 무결성 위험이며 PR 필수 수정으로 계산하지 않는다.
+
+## Current Disposition
+
+| ID | Severity / Kind | Decision | Evidence | Next |
+| --- | --- | --- | --- | --- |
+| C6 | 🟡 Minor *if reachable* | **Keep unknown** | [`tests/dbt/test_analytics_foundation.py`](../../tests/dbt/test_analytics_foundation.py)의 `status=='fail'`만 선별하는 집합은 추가 `error`를 버림. 단 `_run_dbt(expected_returncode=1)` 보호가 있어 실제 `4 fail + error + exit 1` 도달 여부 미확인. | 실제 dbt subprocess에서 status/exit/unique_id 동시 확인 후 false-green 재현 시에만 test-only correction. |
+| C11 | 🟠 Major *conditional* · 기존 source | **Keep follow_up, not current_required** | [`artifact_projection_lock`](../../src/hmda_reliability/data_platform/artifacts.py)는 `.artifact-promotion.lock`을 `open('w')`해 symlink target을 truncate 가능. R12 표준라이브러리 임시 파일 실험은 manifest 58→0 bytes를 보였지만 원본 모듈·공격 표면 미확인. | Data Platform source owner가 lock-path trust model 결정, 원본 primitive의 격리 실행으로 재현. #270에는 동일 root 재등록 금지. |
+| C1–C3, C5, C7–C9 | — | **Drop** | Mart 독립 산술, 실제 SQL DuckDB parser, 네 dbt fail descriptor, 실제 `fcntl.flock` 경계가 반박한 중복·과잉 가설. | 기존 테스트가 실질 회귀 검출력을 제공하므로 수정 요구 없음. |
+| C4 | 🔵 Note · integration | **Follow_up #277** | Run-scoped candidate→current promotion→Reliability consumer의 identity 일치는 도메인 테스트 하나로 입증하지 않음. | 선행 PR 병합 후 #277 E2E 담당. |
+| R13 C12 / F3 | 🔵 Note · shared tooling | **De-duplicate** | Git hook 오염의 일차 증거는 [#270 F3](../github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories). 임시 wrapper는 correction 아님. | Shared config/fixture 변경은 권한 있는 담당 PR 결정. |
+
+## Current Validation
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | GitHub PR/head 및 original code revision 대조 | Head `4e0284bc17e5ad8c62eb856e7bd96f6f0ee2cfbb`에서 test/source/Spec unchanged; 변경 경로는 이 Inbox 리뷰 하나. 네 domain test owner path 충돌 없음. |
+| ✅ Pass | 원본 감사·관련 정본/source/test와 후보별 재판정 | 위 linked locations와 R1–R13 원증거; R10 이후 새 실험을 이번 회차 실행한 것으로 주장하지 않음. |
+| ⚪ Not Verified | 이 회차의 로컬 pytest·dbt/원본 fault injection·independent specialist | 미실행. R13 원격 CI 결과는 과거 run의 별도 evidence이며 이 체크의 재실행 결과 아님. |
+| ⚪ Not Verified | #277 최신 통합 검증 및 shared-tooling 영구 수정 | 선행 도메인 PR 미병합, #277 initial base/owned paths 아직 별도 기준. 공유 Git hook/Spec/source를 본 PR에서 수정하거나 자동 인계 수락하지 않음. |
+
+**Continuation:** 이 `Current Disposition`만 활성 finding 판정으로 사용. 과거 R1–R13은 근거·기각 이력으로 보존하되 모순 시 최신 표를 우선한다. 다음 회차에서 의미 있는 head/CI/contract 변화 또는 미확정 후보의 도달성 증거가 없으면 반복 검토 문단을 누적하지 않고 짧게 unchanged로 보고. 승인·Ready 전환·merge·scope 확장은 수행하지 않음.
+
+---
+
+## Historical Review Evidence (R1–R13; superseded dispositions)
+
+
+> [!IMPORTANT]
 > **Blocked (independent review gate pending; R2 source/CI revalidated)** — 새 `current_required` 결함은 아직 확정하지 않았습니다. 이는 머지 불가 판정이 아니라 이번 챗봇 리뷰의 검토 범위와 독립 재검증이 아직 닫히지 않았다는 뜻입니다. 로컬 테스트를 직접 실행하지 않았으므로 기존 CI·독립 리뷰 기록을 본 검토의 재현 결과로 간주하지 않습니다.
 
 - **Target** — [PR #271](https://github.com/mols3131d/hmda-data-reliability/pull/271), owning branch의 Inbox.
