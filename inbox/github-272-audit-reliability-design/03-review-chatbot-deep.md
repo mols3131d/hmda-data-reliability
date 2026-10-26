@@ -269,3 +269,27 @@ tags:
 | ⚪ Not Verified | 이번 회차 로컬 pytest, normal-case mutant, 독립 specialist, #277 integrated recovery | 미실행. |
 
 **Next:** C14는 정본 normal-case 보호의 작은 test-only 보강 후보이며 현 PR의 merge blocker로 격상하지 않습니다. C15 Drop; 기존 C11/C9는 소유자별 판단 유지. #277에는 approval→recovery→revalidation 실제 경계만 인계. 이 절의 SHA는 **Inbox 갱신 전** head이고 Ready·approval·merge는 변경하지 않습니다.
+
+## R11 · 2026-10-26 KST · Normal-Case Spec Direction and Markdown Contamination
+
+> [!IMPORTANT]
+> **Research → Plan → Review / correction and continuation.** R10 C14의 **정본 근거를 좁혀 정정**하고, 다른 surface인 evaluation Markdown output에서 구조적 오염 반례를 확인했습니다. 원본 reporter/pytest는 실행하지 않았습니다.
+
+- **Revision:** R10 reviewed pre-write `80ae1187b1c7556bc4c342268fdd18536f757e6f` → authoritative R11 pre-write `f2ed892f7902777f107ab520f1b8ea66117b9f03`; GitHub compare Inbox-only 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, tests/source/Spec 불변, PR discussion 0.
+- **C14 contract correction:** [Evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md) `Normal case without detection`는 **expected=[] AND detected=[] ⇒ PASS**만 명시합니다. R10의 `expected=[]/detected≠[] ⇒ FAIL`을 **명시적인 정본 MUST 계약**으로 서술한 부분은 과장입니다. [구현](../../src/hmda_reliability/reliability/evaluation/case_result.py) `detection_passed`는 실제로 unexpected detection을 FAIL 처리하며 [변경 테스트](../../tests/reliability/test_evaluation_report.py) (L75–220)는 이를 직접 고정하지 않습니다. 따라서 false-positive mutant는 **현재 구현의 동작을 바꾸지만**, Spec 위반이라고 단정하려면 Spec owner의 역방향 기대값 결정이 필요합니다.
+- **Markdown contamination:** [reporter](../../src/hmda_reliability/reliability/evaluation/reporter.py) `_case_line` (around L60–76)는 `case_name`, `evidence_refs` 등을 `| ... |` 셀에 escape 없이 삽입합니다. [case model](../../src/hmda_reliability/reliability/evaluation/case_result.py) `_validate_case_name`은 nonblank만 검사합니다. [변경 report 테스트](../../tests/reliability/test_evaluation_report.py) (L216–247)는 고정 안전한 이름만 사용합니다. 별도 disposable Python 문자열 조립 probe에서 `case_name="normal|PASS"`를 삽입하면 10-column case row가 **11개 셀**로 분할됩니다. Newline을 포함한 값은 임의 행처럼 보이게 할 가능성이 있으나 실제 Markdown renderer 및 public input reachability는 검증하지 않았습니다.
+
+| ID | Severity | Disposition / scope relation | Evidence and next |
+| --- | --- | --- | --- |
+| C14 correction | 🟡 Minor / **uncertain contract** | **Revise R10 `Accept` → `Unknown` (Spec-owner contract_dependency), not current_required** | 구현의 negative semantics는 유지되지만 정본의 역방향 MUST는 없음. Spec owner가 false-positive policy를 명시하면 #272 test owner가 `expected=[]/detected=[volume_drop]` mutant-red oracle을 추가할지 결정. |
+| C16 | 🟡 Minor **conditional output integrity** | **Accept as pre-existing source/test follow_up, not current_required** | Unescaped pipe로 case table column drift가 가능. Reporter owner가 escaping/validation policy를 정한 뒤 pipe/newline case의 정확한 row/column 및 user-readable output을 검증. |
+| C15 | 🔵 Note | **Keep Drop** | Expected incident nonempty일 때 extra detection까지 자동 FAIL이라는 exact-set 요구는 여전히 정본 근거 없음. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R10→R11 head, Spec implication 방향·model→reporter→test 정적 대조 | Inbox-only 1 commit; 정본 문구와 구현의 구별 확인. |
+| ✅ Pass | **로컬 disposable 문자열 조립 probe** | `case_name="normal|PASS"`에서 10개 예정 셀이 11개로 분할됨. **원본 reporter, Markdown renderer 또는 pytest 미실행**. |
+| ✅ Pass | **원격** 현재 head prospective-merge CI | [CI Lite 40261555507](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40261555507): `tests/reliability` **268 passed in 24.25s**, selected Python checks 성공; 2026-10-26 02:57 UTC 완료. |
+| ⚪ Not Verified | 원본 reporter pipe/newline 실행, normal false-positive mutant, 로컬 pytest, 독립 specialist, #277 통합 | 미실행. `inbox/**` Markdown lint는 CI classifier에서 제외. |
+
+**Next:** C14의 이전 '정본이 negative를 명시한다'는 주장을 이 정정으로 대체; Spec owner 판단 전 필수 test 수정으로 승격하지 않음. C16은 Reliability reporter owner의 output escaping 정책 결정과 별도 component oracle 후보. #277에는 approval→recovery→revalidation 실제 경계만 인계하고 내부 reporter/normal-case 정책을 떠넘기지 않습니다. Ready·approval·merge는 변경하지 않습니다.
