@@ -10,36 +10,32 @@ tags:
 # HMDA Data Chatbot Deep Review
 
 > [!IMPORTANT]
-> **Current review adjudication (2026-10-26 21:32 KST): no confirmed in-scope current_required.** 전수 감사 PR에 새로 도입된 필수 수정 결함은 확인되지 않았다. 기존 H5·S1은 실제 재현된 production 위험이므로 드랍하지 않되, 이 PR의 test-only `current_required`로 계산하지 않는다. 이전 회차의 `Blocked` 문구는 이 챗봇의 독립 검토 미완료를 의미하며 PR 자체의 Ready/merge 불가 판정은 아니다.
+> **Current adjudication · R14 (2026-10-26 23 KST): 확인한 범위의 새 `current_required` 없음.** R1–R13은 아래 역사적 증거로 보존한다. 기존 H5/S1의 **실제 재현**은 유지하되 test-only PR 필수 수정으로 오분류하지 않는다. 이번 세션의 독립 specialist gate는 **Not Verified**이며 `clear`/Ready/approval/merge를 뜻하지 않는다.
 
-- **Target** — [PR #269](https://github.com/mols3131d/hmda-data-reliability/pull/269); owner ref `agent/test/audit-hmda-data-design`.
-- **Revision** — reviewed pre-write head `a873e31f2fdae5da222656b751a33053368f297d`; original test-code revision `83a4dbc5d8e115c6437212ddc7cabc5f99a70bdb`; main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Original code revision→R13 head 사이 변경 파일은 이 Inbox review 하나(13 commits). 다음 회차에는 head와 code/Spec/CI delta부터 다시 대조.
-- **Scope** — R1–R13의 각 후보를 원래 audit과 정본·source·test에 재입장 심사; 변경 없는 test/source에서 신규 결함을 만들어내지 않음. 이 판정은 동일 컨텍스트 adjudication이며 독립 specialist review가 아니다.
+- **Target** — [PR #269](https://github.com/mols3131d/hmda-data-reliability/pull/269), owner `agent/test/audit-hmda-data-design`.
+- **Revision** — reviewed pre-write head `9b1d35d7eb51b8defd4d37d0f37b5afce82b5e63`; test-code `83a4dbc5d8e115c6437212ddc7cabc5f99a70bdb`; `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Code→head 14 commits의 유일한 변경 경로는 **이 Inbox 리뷰 1개**; PR feedback 0.
+- **Method** — Research: R1–R13·원 감사의 재현 기록과 [Synthetic Spec](../../openspec/specs/hmda-data-synthetic-defects/spec.md), [`cases.py`](../../src/hmda_reliability/hmda_data/synthetic/cases.py), [EDA writer](../../scripts/run_actual_source.py), 변경 테스트 대조 → Plan: 원인별 ownership/재현 등급 분리 → Review: 기존 oracle로 반박된 후보 드랍, 실제 데이터 위험 유지. 독립 새 실험은 수행하지 않음.
 
 ## Current Findings
 
-현재 변경의 확정 `current_required` 없음. 기존 source 결함은 아래 `Disposition`에 비차단 후속으로 분리.
+현재 PR이 도입한 **확정 필수 수정 없음**. 살아남은 위험의 severity는 scope와 별개다.
 
-## Current Disposition
-
-| ID | Severity / Kind | Decision | Evidence | Next |
-| --- | --- | --- | --- | --- |
-| H5 / C8 | 🟡 Minor · 기존 source 결함 | **Keep follow_up** | [`scripts/run_actual_source.py::write_evidence`](../../scripts/run_actual_source.py) backup unlink 실패는 [EDA 감사](03-review-eda.md#f1--minor-evidence-pair-cleanup-failure)에서 원본 함수 대상으로 old JSON/new Markdown 재현. R7 추출 함수 실험을 최초 근거로 과장하지 않는다. | HMDA Data source owner가 correction+regression scope를 명시 결정; #277 통합 테스트에 자동 편입 금지. |
-| S1 | 🟠 Major · 기존 source 결함 | **Keep follow_up** | [Synthetic 감사](04-review-synthetic.md#f1--major-unchanged-physical-type)에서 input/output 모두 VARCHAR인 schema_drift 성공이 재현됨; 현재 테스트 PR이 만든 변화는 아님. | Synthetic 구현·정본 소유자가 타입 변경 또는 거부 정책 판단. |
-| C6 (첫 replace `.bak`) | 🔵 Note | **Drop as independent finding** | 이전 JSON/Markdown은 그대로이고 `.bak`만 잔존하는 별도 cleanup 경계; H5와의 중복 확대를 피함. | 특정 backup 잔여물이 계약상 중요한 경우에만 H5 회귀 설계에서 고려. |
-| C1–C3, C7, C9, C10 | — | **Drop** | 고정 분위수, 실제 UNIQUE transaction rollback, writer pair 복구, synthetic 원본·alias, 분모 오라클, canonical DB lock의 기존 source·test safeguard가 반박. | 재발견 금지. 해당 보호 장치 변경 때만 재개. |
-| C11 / E1 / R13 C15 | 🔵 Note · shared tooling | **De-duplicate / scope_decision** | OS cross-domain lock 검증과 실제 Git pre-push 환경 오염은 별도 경계. Git 오염의 원증거는 [#270 F3](../github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories). | #277은 integration tests만 소유하며 shared hook/source/Spec 쓰기 범위는 사람의 승인 필요. |
+| ID | Severity / Disposition | Decisive evidence / next |
+| --- | --- | --- |
+| H5 / C8 | 🟡 Minor · **follow_up, 원본 재현됨** | [EDA 감사 F1](03-review-eda.md#f1--minor-evidence-pair-cleanup-failure): backup `unlink` 실패 시 JSON old / Markdown new. [writer](../../scripts/run_actual_source.py)는 두 replace 뒤 backup cleanup을 같은 rollback `except`로 처리. HMDA Data source owner가 수정·회귀 범위를 결정; #277 자동 배정 금지. |
+| S1 | 🟠 Major · **follow_up / scope_decision, 원본 재현됨** | [Synthetic 감사 F1](04-review-synthetic.md#f1--major-unchanged-physical-type): source/output `VARCHAR`인데 성공. [Spec](../../openspec/specs/hmda-data-synthetic-defects/spec.md)은 **서로 다른 physical type**을 요구하고 [`schema_drift`](../../src/hmda_reliability/hmda_data/synthetic/cases.py)는 항상 `CAST(... AS VARCHAR)`. Synthetic source/Spec owner의 거부·변환 정책 결정 필요. |
+| C6, C1–C3, C7, C9–C10 | 🔵 Note · **drop** | 첫 replace 후 `.bak`만 잔존하는 hygiene는 H5와 구분; exact EDA 수치, rollback/lock, synthetic 입력·원본 보호는 기존 변경 테스트가 검사. 새로운 원인/재현 없이 재등록하지 않음. |
+| C11 / E1 / R13 C15 | 🟠 Major **underlying F3** · **deduplicate / scope_decision** | Git 환경 오염 원증거는 [#270 F3](../github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories). 이 PR의 EDA-local Git fixture는 공용 hook 수정 아님. 공유 소유권 결정은 별도. |
 
 ## Current Validation
 
 | Result | Check | Evidence |
 | --- | --- | --- |
-| ✅ Pass | GitHub PR/head 및 original code revision 대조 | Head `a873e31f2fdae5da222656b751a33053368f297d`에서 test/source/Spec unchanged; 변경 경로는 이 Inbox 리뷰 하나. 네 domain test owner path 충돌 없음. |
-| ✅ Pass | 원본 감사·관련 정본/source/test와 후보별 재판정 | 위 linked locations와 R1–R13 원증거; R10 이후 새 실험을 이번 회차 실행한 것으로 주장하지 않음. |
-| ⚪ Not Verified | 이 회차의 로컬 pytest·dbt/원본 fault injection·independent specialist | 미실행. R13 원격 CI 결과는 과거 run의 별도 evidence이며 이 체크의 재실행 결과 아님. |
-| ⚪ Not Verified | #277 최신 통합 검증 및 shared-tooling 영구 수정 | 선행 도메인 PR 미병합, #277 initial base/owned paths 아직 별도 기준. 공유 Git hook/Spec/source를 본 PR에서 수정하거나 자동 인계 수락하지 않음. |
+| ✅ Pass | 현재 head/base·test blob·PR feedback·path 대조 | Code→head 변경은 이 Inbox 하나; 타 도메인 변경 테스트 경로와 충돌 없음. |
+| ✅ Pass | **원격** 최신 exact-head CI | [CI Lite 40324178560](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40324178560): prospective merge, `tests/hmda_data` **197 passed / 7.81s**, 선택 Python 검사 성공. Markdown 단계는 **skipped**. |
+| ⚪ Not Verified | 이번 실행의 로컬 pytest·writer/synthetic 원본 fault 재현·독립 specialist·post-write CI | 과거 재현과 현재 정적 재판정을 혼동하지 않음. |
 
-**Continuation:** 이 `Current Disposition`만 활성 finding 판정으로 사용. 과거 R1–R13은 근거·기각 이력으로 보존하되 모순 시 최신 표를 우선한다. 다음 회차에서 의미 있는 head/CI/contract 변화 또는 미확정 후보의 도달성 증거가 없으면 반복 검토 문단을 누적하지 않고 짧게 unchanged로 보고. 승인·Ready 전환·merge·scope 확장은 수행하지 않음.
+**Next:** H5/S1은 각각 원래 source/Spec owner의 계약·회귀 결정을 기다린다. #277은 선행 PR 병합 후 교차 도메인 통합만 검증하며, shared hook/Spec/source 변경 권한은 [#277 계획](../github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md)에 없음. #277의 과거 green CI는 selected tests skipped·stale base라 통합 PASS가 아니다. 의미 있는 code/Spec/test/CI 변화가 없으면 이 상단만 갱신하며 아래 역사적 근거는 변경하지 않는다.
 
 ---
 
