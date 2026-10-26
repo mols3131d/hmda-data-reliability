@@ -250,3 +250,25 @@ tags:
 | ⚪ Not Verified | #277 Source→Bronze→gate→dbt 및 실제 cross-writer OS lock | 선행 PR 미병합, #277 Draft. |
 
 **Next:** C12 Drop. C6/C8 원본 모듈 fault 검증은 HMDA Data source/test owner의 별도 결정; 실제 cross-domain lock·quality gate는 선행 병합 후 #277에서 검증. 이 절의 SHA는 **Inbox 갱신 전** head입니다. 갱신 후 head/CI를 재확인하고 Ready·approval·merge는 변경하지 않습니다.
+
+## R11 · 2026-10-26 KST · Case-Name Traversal Falsification
+
+> [!NOTE]
+> **Research → Plan → Review / continuation.** R10의 numeric oracle 및 기존 writer cleanup C6/C8을 반복하지 않고, synthetic output의 **case-name path traversal**에 대한 실제 negative oracle을 점검했습니다. 신규 `current_required` 없음.
+
+- **Revision:** R10 reviewed pre-write `37206dd3f953b010c1fd10386deb76103013f3dc` → authoritative R11 pre-write `b20fd090ad23ba18ea3d3f64ce0ed3778b42823f`; GitHub compare에서 이 Inbox 한 파일만 변경. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, test/source/Spec 불변, PR discussion 0.
+- **Contract and code:** [Synthetic Spec](../../openspec/specs/hmda-data-synthetic-defects/spec.md) `Output path traversal`은 output root 밖 파일 보존을 요구합니다. [변경 테스트](../../tests/hmda_data/test_synthetic.py) `test_write_case_file_rejects_unsafe_case_name` (L643–673)는 empty, dot, parent, relative traversal, nested path, absolute path를 실제 `write_case_file`에 전달하고 `SyntheticCaseError`, 외부 sentinel exact bytes, output root 미생성을 확인합니다. [구현](../../src/hmda_reliability/hmda_data/synthetic/_writer.py) `_prepare_case_dir`는 단일 이름 검증을 `rmtree`보다 먼저 실행합니다.
+- **Adversarial decision:** `case_name="../escape"` 또는 absolute path를 허용하는 mutant는 위 `pytest.raises`와 sentinel/root oracle을 깨야 합니다. 반면 임의의 concurrent filesystem race, Windows 경로 의미 또는 `COPY` 실패 뒤 빈 case directory 정리는 이 테스트가 증명하지 않습니다. Spec은 일반 SQL `COPY` 실패 뒤 기존 output 복원을 요구하지 않으므로 별도 blocker를 만들지 않습니다.
+
+| ID | Severity | Disposition / scope relation | Evidence and next |
+| --- | --- | --- | --- |
+| C13 | 🔵 Note | **Drop / covered traversal false-green hypothesis** | 위 여섯 입력과 외부 sentinel, pre-delete guard가 단순 path traversal 회귀를 구별합니다. 동일한 테스트 중복 제안 없음. |
+| C6 / C8 | 🟠 Major conditional | **Keep existing source-owner follow_up, not current_required** | 원본 evidence writer의 첫 replace / cleanup double-fault는 별도 미검증. 기존 R7의 extracted-function 결과를 실제 package 실행으로 승격하지 않음. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R10→R11 head/ownership 및 Spec→source→test 정적 검토 | Inbox-only 1 commit; 변경된 domain test 경로는 다른 세 PR과 비중복. |
+| ✅ Pass | **원격** 현재 head prospective-merge CI | [CI Lite 40261550608](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40261550608): `tests/hmda_data` **197 passed in 7.16s**, selected Python checks 성공; 2026-10-26 02:56 UTC 완료. |
+| ⚪ Not Verified | 로컬 pytest, traversal mutant, 원본 evidence writer fault, 독립 specialist, #277 통합 | 이번 회차 미실행. `inbox/**`는 [CI classifier](../../scripts/ci/classify_changes.py)에서 Markdown lint 대상으로 제외되므로 이 CI는 Inbox 문서 lint 증거가 아님. |
+
+**Next:** C13 Drop 유지. HMDA Data source owner가 C6/C8의 원본 writer fault를 격리 실행해 pair bytes 및 backup 잔존을 결정; #277은 선행 병합 후 실제 Source→Bronze→gate→dbt 경계만 담당. 갱신 후 head/CI는 별도 확인하고 Ready·approval·merge는 변경하지 않습니다.
