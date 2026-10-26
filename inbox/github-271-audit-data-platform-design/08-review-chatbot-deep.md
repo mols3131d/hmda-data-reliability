@@ -294,3 +294,27 @@ tags:
 | ⚪ Not Verified | 원본 primitive symlink fault, 로컬 DuckDB/dbt/pytest, extra-error C6, 독립 specialist, #277 통합 | 미실행. CI Markdown 검사는 PR의 non-Inbox `test_analytics_foundation.design.md` 때문이며 `inbox/**`는 classifier에서 제외. |
 
 **Next:** C11은 Data Platform source owner에게 좁게 인계하고 #270 lifecycle consumer oracle과 동일 root cause로 연결. 현재 PR의 test-only scope를 source 수정으로 임의 확장하지 않습니다. C6은 dbt CLI status/exit 실험이 우선이며 #277은 실제 projection→consumer integration만 담당. 승인·Ready·merge 미수행.
+
+## R12 · 2026-10-26 KST · Current Projection Self-Corruption via Lock Symlink
+
+> [!IMPORTANT]
+> **Research → Plan → Review / strengthened C11 impact.** R11의 unrelated external sentinel truncation을 반복하지 않고, **lock symlink가 보호 대상인 current manifest 자체를 가리키는 반례**로 영향 범위를 좁혔습니다. 새 root cause를 추가하지 않습니다.
+
+- **Revision:** R11 reviewed pre-write `209ee9842dfb9c7543aab1f7c1c23f4f8a5c65dc` → authoritative R12 pre-write `15fc014fa3e53f555a42da9d20fe03e5f38f848f`; GitHub compare Inbox-only 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, tests/source/Spec 불변, PR feedback 0.
+- **Contract / code:** [primitive](../../src/hmda_reliability/data_platform/artifacts.py) `artifact_projection_lock` (around L55–90)는 `directory.mkdir` 후 `.artifact-promotion.lock.open("w")`를 **flock 전** 수행합니다. 같은 모듈 `artifact_projection_id`는 manifest/results bytes를 하나의 current pair identity로 해시합니다. [changed lock tests](../../tests/data_platform/test_artifacts.py) L81–200은 정상 OS shared/exclusive contention과 typed errors를 검증하지만 pre-existing symlink는 주입하지 않습니다. DB mutation lock과 projection lock은 다른 primitive입니다.
+- **Disposable falsifier (actually executed):** 임시 디렉터리에 `manifest.json` 58 bytes와 `run_results.json`을 쓰고 `.artifact-promotion.lock -> manifest.json` symlink를 생성했습니다. Python stdlib `with lock.open("w"): pass` 후 **manifest 58→0 bytes**, results unchanged, length-prefixed pair SHA-256 identity **변경**을 관측했습니다. 이는 정상 read lock의 성공 여부와 무관한 open side effect입니다. **원본 repository 모듈/pytest 실행 아님**; 실제 공격자·외부 프로세스의 symlink 배치 가능성은 미확인입니다.
+- **Counterevidence:** 현재 정상 경로의 lock 파일은 일반 파일로 생성되며, R11의 정상 reader/writer lock CI 성공은 여전히 유효합니다. 따라서 임의 운영 환경에서 발생한다고 단정하지 않고 path trust boundary가 먼저 결정되어야 합니다.
+
+| ID | Severity | Disposition / scope relation | Evidence and next |
+| --- | --- | --- | --- |
+| C11 refined | 🟠 Major **if contaminated path reachable** | **Keep conditional pre-existing source integrity risk / `follow_up`; not #271 test-only `current_required`** | 외부 파일 손상뿐 아니라 **current last-known-good projection 자체가 손상**될 수 있습니다. Data Platform source owner가 lock file symlink/no-follow 및 existing-lock compatibility 정책을 결정하고, 실제 primitive를 임시 manifest pair로 호출해 both-file bytes·pair identity·error/lock semantics를 확인. 정책이 승인되면 component negative test. #270 lifecycle consumer는 같은 root의 integration oracle만 소유. |
+| C6 | 🟡 Minor if reachable | **Keep prior `unknown` / #271 test owner** | dbt `exit=1` + 네 `fail` + 추가 `error` 동시 도달성은 여전히 미실행; CI green으로 Drop/Accept하지 않음. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R11→R12 revision 및 primitive/test/consumer/ownership 정적 대조 | Inbox-only 1 commit, 네 PR exclusive test 경로 교집합 없음. |
+| ✅ Pass | Disposable **stdlib-only** manifest-symlink + pair hash probe | Manifest 58→0 bytes, results unchanged, identity changed; 원본 모듈 검증 아님. |
+| ✅ Pass | **원격** current-head prospective-merge CI | [CI Lite 40266178841](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40266178841): merge `ee2b34b8` (base `ea39a4fd` + head `15fc014f`), `tests/data_platform tests/dbt` **43 passed, 1 warning in 31.21s**. Symlink/extra-error fault 미포함. |
+| ⚪ Not Verified | 원본 artifact primitive fault, dbt C6 CLI status/exit, local pytest, 독립 specialist, #277 integration | 이번 회차 미실행. |
+
+**Next:** C11을 조건부 source risk로 유지하고 Data Platform owner가 실제 lock-path threat model을 판정할 때만 수정 범위를 결정합니다. #270에는 no-incident consumer sentinel oracle을 연결하고 #277에는 promotion→consumer identity만 인계. Ready·approval·merge 변경 없음.
