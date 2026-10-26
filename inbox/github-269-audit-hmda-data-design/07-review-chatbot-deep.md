@@ -203,3 +203,27 @@ tags:
 | ⚪ Not Verified | #277 통합 | #269–#276 미병합, #277 Draft `74ac659d084fadd5e93900b132ef5b995ef8d919`; main 기준 통합 전. |
 
 **Next:** R7 C6/C8의 원본 함수 failure probe를 source owner와 분리해 수행하고, #277에는 Source→Bronze→gate→dbt 경계만 인계. 이 절은 **갱신 전 head**에 묶인 기록이며, 갱신 후 SHA·CI를 별도 확인해야 합니다.
+
+## R9 · 2026-10-26 KST · Managed Writer Lock Oracle Boundary
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R8 EDA 분모와 R7 writer cleanup을 반복하지 않고, #269의 **실제 canonical lock-path 거부**와 **가짜 lock을 사용한 stale writer 경쟁**이 각각 무엇을 입증하는지 분리했습니다. 신규 product defect는 확인하지 않았습니다.
+
+- **Revision:** R8 pre-write 6deb058fd9645c9bf7db190dc53c03f5dba06fb0 → authoritative pre-write 4adf41d6869473896eaf009c13e7fe6565e2e784: GitHub compare에서 이 Inbox만 변경한 1 commit. main/base ea39a4fd6c8f483509cf00a1d1114feb4ef3b686, test/source/Spec 불변, PR feedback 0.
+- **Research:** [정본 Ingestion Spec](../../openspec/specs/hmda-data-ingestion/spec.md) L108–132는 file-based DB의 canonical mutation lock과 **lock 이후** stale identity 재확인을 별도 요구합니다. [변경 full-load test](../../tests/hmda_data/test_ingestion.py) L282–318은 실제 DB symlink alias와 canonical lock 경로에 directory를 생성해 full/partition 각각의 lock 획득 실패, domain error cause 및 전체 row 불변을 검사합니다. [변경 partition test](../../tests/hmda_data/test_ingestion_partition.py) L406–476은 두 thread/DB connection을 사용하지만 **database_mutation_lock을 in-process serialized_lock으로 교체**하고 stale 후행 요청 1건을 확인합니다. [source](../../src/hmda_reliability/hmda_data/ingestion/partition.py)는 lock 안에서 transaction identity를 재확인합니다.
+- **Plan:** 동일한 lock 테스트로 두 계약을 모두 증명했다고 과장하지 않고, alias/path 실패와 stale 재확인 oracle을 별도 판정합니다. 실제 full-load↔partition↔dbt/recovery writer의 cross-process lock lifetime은 #277의 예약 integration 범위입니다.
+
+| ID | Severity | Disposition / ownership | Evidence / counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C10 | 🔵 Note | **Drop / canonical alias bypass hypothesis** | 실제 symlink target과 canonical lock 위치를 사용한 negative test는 DB path를 잘못 넘기는 regression을 거부하고 full/partition 기존 행을 보존합니다. 단순 mock만 사용한다는 가설은 이 test가 반박합니다. | 중복 필수 테스트 요구 없음. |
+| C11 | 🔵 Note | **Keep already-deferred integration boundary / #277**, not current_required | 동시 writer stale test의 lock은 Python Lock 대체물입니다. identity recheck와 thread ordering은 검출하지만 **실제 공용 OS lock을 통한 서로 다른 domain writer의 전체 임계구역**은 직접 입증하지 않습니다. [기존 ingestion review](02-review-ingestion.md)도 이 구분을 이미 #277로 이관했습니다. | 선행 병합 후 실제 두 writer를 서로 다른 connection/process에서 제어하고 target row/identity, lock acquire 순서, rollback 후 상태를 관측. #269에 공용 fixture 추가 금지. |
+| C6 / C8 | 🟠 Major (C8 conditional) | **Keep existing source-owner follow_up** | writer JSON/Markdown backup cleanup 위험은 R7의 격리 추출 함수에서만 재현됐습니다. lock oracle 검토로 해결되거나 CI에 포함되지 않습니다. | 원본 write_evidence fault probe와 exact pair bytes는 HMDA Data source owner 결정. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R8→head compare, Spec→lock test→source 정적 반증 | Inbox-only; symlink real lock failure와 mocked concurrency의 검증 범위를 구별. |
+| ✅ Pass | **원격** prospective-merge CI | [CI Lite 40251443851](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40251443851): merge 740e50af7baffa398f1dc57acc4e6d3df76d38c8, tests/hmda_data **197 passed in 6.56s**. 교차 writer fault는 없음. |
+| ⚪ Not Verified | 실제 cross-domain writer concurrency, 원본 writer fault, 로컬 pytest, 독립 specialist | 이번 회차 미실행. CI 성공은 OS lock interleaving 전수 검증이 아님. |
+| ⚪ Not Verified | #277 integrated Source→Bronze→gate→dbt | #269–#276 미병합 Draft; #277은 최초 base 81fe44b2의 Draft. |
+
+**Next:** #269 C10 Drop, C11은 기존 #277 owner handoff 유지. Source owner는 C6/C8의 원본 writer fault를 별도 검증합니다. 이 절은 갱신 전 SHA이며 이후 head/CI 재확인 필요. 승인·Ready·merge 변경 없음.
