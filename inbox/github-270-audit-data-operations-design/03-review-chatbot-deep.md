@@ -206,3 +206,27 @@ tags:
 | ⚪ Not Verified | #277 candidate→current→Reliability 통합 | #269–#276 미병합; #277 Draft의 기존 base는 최신 main과 다름. |
 
 **Next:** C7을 production race로 단정하지 말고 candidate mutability contract를 owner에게 확인. 먼저 R7 C4/C6의 원본 함수 fault 재현을 분리 실행; #277은 실제 candidate/current 소비 identity만 선행 병합 후 검증. 갱신 후 head/CI는 별도 확인하며 승인·Ready·merge는 변경하지 않습니다.
+
+## R9 · 2026-10-26 KST · Quality Gate Revalidation Versus Real Lock
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R8 candidate TOCTOU와 R7 artifact rollback을 반복하지 않고, 오염된 Bronze에 대한 gate 재검사와 dbt process 시작 차단 테스트가 실제로 무엇을 검출하는지 반증했습니다. 새 production defect는 확정하지 않았습니다.
+
+- **Revision:** R8 pre-write f3734eb6f4209d8fc4ad61e77afe6af006079d8a → authoritative pre-write 00f24f3d2c83751963658494fae3f9540091fed9: 이 Inbox만 변경한 1 commit. main/base ea39a4fd6c8f483509cf00a1d1114feb4ef3b686, test/source/Spec 불변, PR feedback 0.
+- **Research:** [변경 runner tests](../../tests/data_operations/test_dbt_runner.py) L322–405의 두 case는 gate 실패 시 subprocess 미시작과 성공 시 gate→dbt 호출 순서 및 동일 lock context를 확인합니다. [runner](../../src/hmda_reliability/data_operations/runner.py) L118–125, L162–181은 database_mutation_lock 안에서 evaluate_quality_gate 다음 _run_dbt_command를 실행합니다. [정본 stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md) L73–92는 dbt process 동안 공통 DB lock 유지와 lock 실패 시 process 미시작을 요구합니다.
+- **Plan:** gate ordering 검출력과 **실제 quality gate 판정·OS lock cross-writer interleaving** 검출력을 분리합니다. 후자는 [#277 계획](../github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md)의 reserved tests/data_operations/test_quality_gate.py 및 integration lane에서 검증할 대상이지 #270에 공용 fixture를 추가할 이유가 아닙니다.
+
+| ID | Severity | Disposition / ownership | Evidence / counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C8 | 🔵 Note | **Drop / subprocess-before-gate hypothesis** | 실패 case는 lock context 내부에서 gate가 QualityGateError를 던지면 subprocess 호출을 AssertionError로 차단하고, 성공 case는 calls == ["gate", "dbt"]를 고정합니다. gate/process 순서가 바뀌는 mutant는 실패합니다. | 같은 ordering test 중복 추가 없음. |
+| C9 | 🔵 Note | **Keep cross-domain integration limitation / #277**, not current_required | 두 case는 **database_mutation_lock과 evaluate_quality_gate를 monkeypatch**하므로 실제 dirty Bronze 판정 또는 OS-level full-load/recovery writer와의 lock lifetime은 입증하지 않습니다. 테스트 이름과 source가 해당 기능을 보장한다고 해서 fake를 real integration으로 승격할 수 없습니다. | #277에서 실제 dirty Bronze → gate 거부 → dbt process 미시작/current artifact pair 불변, 별도 writer가 lock을 보유한 동안 dbt 시작 차단을 관측. |
+| C4 / C6 / C7 | 🟡 Minor / 🟠 Major conditional / 🔵 Note | **Keep existing source-owner follow_up** | Partial .next 잔존, replace+rollback unlink 이중 장애의 raw OSError/current pair 불일치, candidate TOCTOU는 R7/R8의 별도 조건부 위험입니다. 이 gate ordering 검토로 반박되지 않습니다. | 원본 runner fault와 candidate writer threat model은 Data Operations owner 판단. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R8→head compare, Spec→runner→positive/negative gate tests 정적 검토 | Inbox-only, gate와 process의 lock scope 및 mock boundary 확인. |
+| ✅ Pass | **원격** prospective-merge CI | [CI Lite 40251450541](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40251450541): merge 1ddde34159ad8d8ee6d6e614ffcec118559c58c2, tests/data_operations **57 passed in 26.38s**; 실제 cross-domain writer fault 미포함. |
+| ⚪ Not Verified | 실제 dbt/gate subprocess·cross-writer lock, 원본 runner 이중 fault, 로컬 pytest, 독립 specialist | 이번 회차 미실행. |
+| ⚪ Not Verified | #277 integration | #269–#276 모두 미병합 Draft; #277 최초 base 81fe44b2, Draft. |
+
+**Next:** C8 Drop, C9는 #277 integration boundary로 유지. #270 source owner가 R7 C4/C6의 원본 module fault를 검증하고 cleanup/error 정책을 결정합니다. 이 절은 갱신 전 SHA; 이후 head/CI 재확인 필요. 승인·Ready·merge 변경 없음.
