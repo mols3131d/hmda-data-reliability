@@ -278,3 +278,27 @@ tags:
 | ⚪ Not Verified | 원본 lifecycle symlink injection, local pytest, 원본 promotion fault, 독립 specialist, #277 통합 | 이번 회차 미실행. CI classifier는 `inbox/**` Markdown lint를 의도적으로 제외합니다. |
 
 **Next:** #271 Data Platform owner가 lock-file symlink 정책/수정 범위를 결정하기 전 #270에서 공용 primitive를 수정하지 않습니다. #277은 선행 병합 후 실제 dirty Bronze→gate 및 projection→Reliability consumer identity만 검증. 사람의 Ready·approval·merge 판단은 대체하지 않습니다.
+
+## R12 · 2026-10-26 KST · No-Incident Current Manifest Contamination
+
+> [!IMPORTANT]
+> **Research → Plan → Review / consumer falsifier.** R11 C11의 외부 sentinel 오염을 현재 dbt projection 자체로 좁혀, **incident가 없는 정상 lifecycle도 current manifest를 손상시킬 수 있는 조건**을 재검토했습니다. 동일 source root cause는 #271 C11에만 귀속합니다.
+
+- **Revision:** R11 reviewed pre-write `e947dd5b74328f094773ff3999aa6eb83cfad41f` → authoritative R12 pre-write `9554e06b16372eba65d41c23fc7c99f4791a5196`; GitHub compare Inbox-only 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, source/test/Spec 불변, PR feedback 0.
+- **Research / path:** [lifecycle](../../src/hmda_reliability/data_operations/incident_lifecycle.py) `run_incident_lifecycle` (around L82–93)는 `detections=[]`여도 `artifact_projection_lock(manifest.parent, exclusive=False)`를 실행합니다. [primitive](../../src/hmda_reliability/data_platform/artifacts.py) `artifact_projection_lock`은 shared lock에서도 `.artifact-promotion.lock.open("w")`를 호출합니다. Pre-existing lock symlink가 `manifest.json`을 가리키면 lock 획득 **전에 manifest가 truncate**됩니다. [정본 lifecycle Spec](../../openspec/specs/data-operations-incident-lifecycle/spec.md) read-only boundary와 대조했습니다.
+- **Test falsifier:** [변경 no-incident test](../../tests/data_operations/test_incident_lifecycle.py) `test_lifecycle_skips_impact_when_no_incident` (L99–129)는 반환된 빈 incident/identity만 검사하고 manifest/results bytes를 검사하지 않습니다. `test_lifecycle_has_no_recovery_or_evaluation_side_effects` (L181–218)는 정상 lock만 허용하며 사전 오염된 symlink를 주입하지 않습니다. 정상 lock의 cooperative 동작과 symlink path poisoning은 구별해야 합니다.
+- **Independent bounded probe:** 별도 disposable stdlib `Path.open("w")` 실험에서 `.artifact-promotion.lock -> manifest.json`, manifest **58→0 bytes**, run-results 불변, pair SHA-256 identity 변경을 관측했습니다. **원본 lifecycle/primitive 모듈·pytest 실행 아님**. Pre-existing symlink의 운영 reachability는 미확인입니다.
+
+| ID | Severity | Disposition / scope relation | Evidence and next |
+| --- | --- | --- | --- |
+| C11 refinement | 🟠 Major **conditional** | **Keep cross-owner `follow_up` / #271 source root, not #270 current_required** | 정상 no-incident 반환과 별개로 current projection이 손상될 수 있다는 구체적 impact를 추가. Data Platform owner가 lock-path trust/symlink 정책을 결정한 후 #270 test owner가 **no-incident + pre-existing symlink + manifest/results exact bytes + no unexpected files** integration oracle을 검토. #270에서 공용 primitive 수정 금지. |
+| C4 / C6 / C7 | 🟡 Minor / 🟠 Major conditional / 🔵 Note | **Keep prior Data Operations source-owner follow_up** | Promotion copy/rollback/TOCTOU는 lock symlink와 다른 원인; 원본 module fault는 여전히 미실행. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R11→R12 head 및 lifecycle→primitive→two tests→Spec 정적 반증 | Inbox-only 1 commit; 다른 세 PR의 exclusive test와 경로 충돌 없음. |
+| ✅ Pass | Disposable stdlib manifest-symlink probe | Manifest 58→0 bytes, results unchanged, pair identity changed. **원본 package 검증 아님**. |
+| ✅ Pass | **원격** current-head prospective-merge CI | [CI Lite 40266170787](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40266170787): merge `02596e7e` (base `ea39a4fd` + head `9554e06b`), `tests/data_operations` **57 passed in 41.48s**. 오염 case 미포함. |
+| ⚪ Not Verified | 원본 lifecycle symlink 재현, local pytest, double-fault runner, 독립 specialist, #277 통합 | 이번 회차 미실행. |
+
+**Next:** #271 source owner의 정책 결정 뒤 #270 consumer negative oracle을 고려합니다. #277은 projection→Reliability integration identity를 소유하되 내부 lock primitive 수정 책임을 암묵적으로 넘기지 않습니다. 승인·Ready·merge 변경 없음.
