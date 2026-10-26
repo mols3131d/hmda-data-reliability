@@ -254,3 +254,27 @@ tags:
 | ⚪ Not Verified | #277 current projection→Reliability consumer 통합 | 선행 PR 미병합, #277 Draft. |
 
 **Next:** C10 Drop. C4/C6는 실제 module fault probe, C7은 candidate writer 계약 결정이 선행되어야 합니다. #277에는 실제 gate/lock 및 promotion-consumer identity 접점만 인계. 이 절의 SHA는 **Inbox 갱신 전** head이며 Ready·approval·merge는 변경하지 않습니다.
+
+## R11 · 2026-10-26 KST · Read-Only Lifecycle Lock-File Poisoning Boundary
+
+> [!IMPORTANT]
+> **Research → Plan → Review / continuation.** R10 stale artifact와 R7 rollback fault를 재반복하지 않고, read-only lifecycle이 **incident가 없어도** 사용하는 shared projection lock의 오염 입력을 검토했습니다. 동일 원인의 source finding은 #271에만 귀속하고 이 PR에는 consumer-level oracle 공백만 기록합니다.
+
+- **Revision:** R10 reviewed pre-write `d030b144d5312f6307997d2a02d8c9d4bc985ced` → authoritative R11 pre-write `e947dd5b74328f094773ff3999aa6eb83cfad41f`; GitHub compare Inbox-only 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, test/source/Spec 불변, PR discussion 0.
+- **Contract and path:** [Lifecycle Spec](../../openspec/specs/data-operations-incident-lifecycle/spec.md) `Read-only lifecycle boundary`는 target mutation을 금지합니다. [구현](../../src/hmda_reliability/data_operations/incident_lifecycle.py) `run_incident_lifecycle`는 `analyses=[]`여도 `artifact_projection_lock(manifest.parent, exclusive=False)`를 실행합니다. [Data Platform primitive](../../src/hmda_reliability/data_platform/artifacts.py) `artifact_projection_lock`의 `(directory / ".artifact-promotion.lock").open("w")`는 pre-existing symlink를 따라가며 **lock 획득 전 대상 파일을 truncate**할 수 있습니다.
+- **Test oracle:** [변경 lifecycle 테스트](../../tests/data_operations/test_incident_lifecycle.py) `test_lifecycle_has_no_recovery_or_evaluation_side_effects` (L185–220)는 DB rows·current pair bytes·파일 집합을 비교하지만, 미리 존재하는 lock symlink가 가리키는 **제3의 sentinel 파일 bytes**는 검사하지 않습니다. `files_after - {projection_lock} == files_before`는 기존 sentinel의 내용 변조를 구별하지 못합니다. 이는 #271의 같은 source root cause에 대한 consumer 경계이지 새로운 독립 source 결함이 아닙니다.
+- **Disconfirmation:** 별도 디렉터리의 run-results 경로만으로 lock 우회가 된다는 가설은 **Drop**합니다. 정상 reader/writer는 모두 manifest parent를 동일한 cooperative lock key로 사용합니다. 비협조 외부 writer 문제는 경로 분리 여부와 독립입니다.
+
+| ID | Severity | Disposition / scope relation | Evidence and next |
+| --- | --- | --- | --- |
+| C11 | 🟠 Major **conditional** | **Accept as cross-owner follow_up / contract_dependency; not #270 current_required** | Lock-file symlink 오염 시 외부 sentinel truncate가 가능하다는 #271 source finding과 같은 원인. #270 test owner는 Data Platform source policy 결정 후 read-only lifecycle의 sentinel exact bytes·no incident path를 integration oracle로 검토. 실제 original lifecycle 실행은 미검증. |
+| C12 | 🔵 Note | **Drop / split artifact directories automatically bypass cooperative lock** | `runner.promote_dbt_artifacts`와 lifecycle reader 모두 manifest parent lock을 사용합니다. |
+| C4 / C6 / C7 | 🟡 Minor / 🟠 Major conditional / 🔵 Note | **Keep prior Data Operations source-owner follow_up** | Partial-copy, double-fault rollback 및 candidate TOCTOU는 이 lock-file contamination과 다른 원인입니다. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R10→R11 revision, lifecycle→Data Platform lock→test→Spec 정적 대조 | Inbox-only 1 commit, 다른 PR test 파일 수정 없음. |
+| ✅ Pass | **원격** 현재 head prospective-merge CI | [CI Lite 40261548947](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40261548947): `tests/data_operations` **57 passed in 36.79s**, selected Python checks 성공; 2026-10-26 02:57 UTC 완료. |
+| ⚪ Not Verified | 원본 lifecycle symlink injection, local pytest, 원본 promotion fault, 독립 specialist, #277 통합 | 이번 회차 미실행. CI classifier는 `inbox/**` Markdown lint를 의도적으로 제외합니다. |
+
+**Next:** #271 Data Platform owner가 lock-file symlink 정책/수정 범위를 결정하기 전 #270에서 공용 primitive를 수정하지 않습니다. #277은 선행 병합 후 실제 dirty Bronze→gate 및 projection→Reliability consumer identity만 검증. 사람의 Ready·approval·merge 판단은 대체하지 않습니다.
