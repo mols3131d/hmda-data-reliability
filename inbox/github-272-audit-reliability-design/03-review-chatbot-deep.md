@@ -223,3 +223,26 @@ tags:
 | ⚪ Not Verified | Row-only mutant execution, local pytest, independent specialist, #277 integration | 미실행. 기존 R7 C9 rejection metadata Spec-owner 판단은 계속 열려 있음. |
 
 **Next:** C11은 실제 row-only mutant가 현재 테스트를 통과하는지와 schema-only acceptance 우선순위를 test owner가 판단. C9의 거절 메타데이터 필수 정책은 Spec owner의 별도 결정이며 #277에는 exact proposal→approval→recovery→revalidation 통합만 전달. 갱신 후 head/CI를 재확인하고 승인·merge·Ready는 변경하지 않습니다.
+
+## R9 · 2026-10-26 KST · Recovery Cleanup Failure And Replay Countercheck
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R8 schema-only hash gap을 반복하지 않고, 승인된 schema recovery의 **commit 이후 cleanup failure**가 이미 완료된 target을 다시 교체하도록 오인하게 만드는지 부정·재실행 관점에서 검토했습니다. 현 테스트가 해당 후보를 반박하므로 새 결함으로 채택하지 않습니다.
+
+- **Revision:** R8 pre-write 2af3bb20924e077e5965be45010d035bfe49c16d → authoritative pre-write 10c66af65587f0547d9967a228ad763f80bfba71: GitHub compare에서 이 Inbox 한 파일만 변경한 1 commit. main/base ea39a4fd6c8f483509cf00a1d1114feb4ef3b686, source/test/Spec 불변, PR feedback 0.
+- **Research:** [정본 schema recovery Spec](../../openspec/specs/reliability-schema-recovery/spec.md) L139–168은 post-commit staging cleanup 실패와 replay 중 cleanup 실패에서 **actual state, mutation_state, resume_verification**을 보존하고 재실행 시 table replacement를 반복하지 않도록 요구합니다. [변경 test](../../tests/reliability/test_schema_recovery_executor.py) L237–299는 before/after target 각각에 unlock, DuckDB close, staging cleanup 세 fault를 주입하는 **2×3=6** case에서 SchemaRecoveryValidationError의 failure_stage, mutation_state, actual complete-table state, reconciliation_action을 확인하고 같은 approval로 replay한 뒤 already_restored 및 profile-only action을 요구합니다. [별도 exact replay test](../../tests/reliability/test_schema_recovery_executor.py) L205–235는 _replace_table을 금지한 채 동일 after-state를 검증합니다.
+- **Plan:** fault가 rollback 전/후인지 분리하고, cleanup 예외가 committed state를 되돌렸다는 추측을 actual state 및 replay assertion으로 반증합니다. 실제 cross-domain proposal→approval→dbt revalidation은 #277의 예약 integration입니다.
+
+| ID | Severity | Disposition / ownership | Evidence / counterevidence | Next |
+| --- | --- | --- | --- | --- |
+| C13 | 🔵 Note | **Drop / cleanup-error implies repeated mutation** | 여섯 fault case는 target expected_after_state와 actual identity의 일치, error stage 및 resume_verification, 재시도 시 already_restored를 모두 요구합니다. 별도 test는 after-state에서 table replacement 진입 자체를 차단합니다. 따라서 이 조건에 아무 회귀 검출력이 없다는 가설은 반박됩니다. 단, fault injection은 monkeypatch된 unlock/close/TemporaryDirectory이고 실제 disk-loss/process-kill 복구를 증명하지 않습니다. | 중복 test 요구 없음. |
+| C11 | 🟡 Minor | **Keep prior test-design follow_up / #272 test owner**, not current_required | R8의 schema hash row-only invariant 누락은 별개입니다. Cleanup replay test로 이를 해결하거나 부정하지 않습니다. | 필요 시 schema 그대로 row UPDATE/INSERT 후 hash 불변을 고정하는 metamorphic test와 mutant red 검증. |
+| C9 | 🔵 Note | **Keep Spec-owner follow_up** | Rejected approval reviewer/time 필수 조건은 구현/test에 있지만 approval Spec에 명시되지 않은 R7 정책 공백입니다. Cleanup/replay 결과와 독립입니다. | Spec owner가 public policy 여부 결정; 여기서 정본 수정 금지. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R8→head compare, recovery Spec→six fault test→exact replay oracle 정적 대조 | Inbox-only, 2×3 parameterization과 persisted state·error·replay assertion 확인. |
+| ✅ Pass | **원격** prospective-merge CI | [CI Lite 40251459699](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40251459699): merge 6f69c48fe18263fa9a6ecca696ea5788c5856fa2, tests/reliability **268 passed in 21.17s**. 실제 process-kill/cross-domain fault는 미포함. |
+| ⚪ Not Verified | 로컬 원본 pytest, disk-loss/process-kill, 독립 specialist, #277 integration | 이번 회차 미실행. Remote CI의 selected suite 결과만 확인. |
+
+**Next:** C13 Drop, C11과 C9는 각각 Reliability test/Spec owner 후속 판단으로 유지. #277은 선행 #269–#276 병합 뒤 exact proposal binding→recovery→dbt/profile revalidation만 검증합니다. 이 절은 갱신 전 SHA; 이후 head/CI 재확인 필요. 승인·Ready·merge 변경 없음.
