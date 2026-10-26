@@ -10,37 +10,33 @@ tags:
 # Reliability Chatbot Deep Review
 
 > [!IMPORTANT]
-> **Current review adjudication (2026-10-26 21:32 KST): no confirmed in-scope current_required.** 확정된 신규 test defect는 없다. R10의 normal-case inverse MUST 주장은 R11에서 바로잡았으므로 철회. C16 Markdown 표현 오염은 조건부 기존 source 후속이지 새로운 PR blocker가 아니다. 이전 회차의 `Blocked` 문구는 이 챗봇의 독립 검토 미완료를 의미하며 PR 자체의 Ready/merge 불가 판정은 아니다.
+> **Current adjudication · R14 (2026-10-26 23 KST): 확인한 범위의 새 `current_required` 없음.** Normal-case 역명제는 정본 요구가 아니며, Markdown cell 오염은 **기존 reporter의 조건부 위험**으로 분리한다. 새 독립 specialist·원본 renderer 실행은 **Not Verified**; `clear`/Ready/approval/merge 판단이 아니다.
 
-- **Target** — [PR #272](https://github.com/mols3131d/hmda-data-reliability/pull/272); owner ref `agent/test/audit-reliability-design`.
-- **Revision** — reviewed pre-write head `af84a09e54dbf24cbbd899968ab916f921e84751`; original test-code revision `22660aba530ec79a82deec2b12e3cc757cd5fd5f`; main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Original code revision→R13 head 사이 변경 파일은 이 Inbox review 하나(13 commits). 다음 회차에는 head와 code/Spec/CI delta부터 다시 대조.
-- **Scope** — R1–R13의 각 후보를 원래 audit과 정본·source·test에 재입장 심사; 변경 없는 test/source에서 신규 결함을 만들어내지 않음. 이 판정은 동일 컨텍스트 adjudication이며 독립 specialist review가 아니다.
+- **Target** — [PR #272](https://github.com/mols3131d/hmda-data-reliability/pull/272), owner `agent/test/audit-reliability-design`.
+- **Revision** — reviewed pre-write head `e926643826269da33223ddd462d76cdbb32e8da2`; test-code `22660aba530ec79a82deec2b12e3cc757cd5fd5f`; `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Code→head 14 commits의 유일한 변경 경로는 **이 Inbox 리뷰 1개**; PR feedback 0.
+- **Method** — Research: R1–R13·[현재 감사](02-review-current/README.md), [evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md), [reporter](../../src/hmda_reliability/reliability/evaluation/reporter.py), [replay test](../../tests/reliability/test_schema_recovery_executor.py) 대조 → Plan: MUST/기존 oracle/조건부 renderer/Spec owner 분리 → Review: 과장된 필수 test gap 반증.
 
 ## Current Findings
 
-현재 변경의 확정 `current_required` 없음. Spec 문구 빈자리와 조건부 output 포맷 위험을 테스트 변경 결함으로 계산하지 않는다.
+현재 test-only 변경의 **확정 필수 수정 없음**.
 
-## Current Disposition
-
-| ID | Severity / Kind | Decision | Evidence | Next |
-| --- | --- | --- | --- | --- |
-| C14 / C15 | 🔵 Note | **Drop as current finding** | [Evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md)의 normal case는 `expected=[] AND detected=[] => pass`만 명시. 역명제를 필수 요구로 승격한 R10 C14는 과장. 추가 detection을 모두 금지하는 exact-set 계약도 없음. | 정본 정책이 달라질 때만 후속 논의. |
-| C16 | 🔵 Note · 기존 reporter 위험 | **Defer, not current_required** | [`reporter.py::_case_line`](../../src/hmda_reliability/reliability/evaluation/reporter.py)는 `case_name`/refs를 raw Markdown cell로 포함함. R11/R12는 문자열 조립만 재현; 실제 reporter/renderer와 입력 경계 미확인. | Reporter owner가 허용 이름·escaping 정책을 결정할 경우에만 원본 출력 테스트. |
-| C9 / C11 | 🔵 Note | **Drop optional coverage** | Rejected metadata 강제는 구현 동작이나 Spec의 MUST는 아님. schema hash row-only 불변은 현 구현의 column name/type 기반과 맞고 추가 mutation은 선택적 테스트. | 현재 PR acceptance 지적에서 제거. |
-| C1–C4, C6–C8, C10, C12–C13 | — | **Drop** | Subset contract, actual after-state replay sentinel, targeted freshness, rejection gate, type-change drift, cleanup replay의 기존 oracle이 후보 가설을 반박. | 기존 보호가 바뀔 때만 다시 검토. |
-| H2 / R13 C18 | 🔵 Note · 기존 Spec gap | **Keep follow_up / spec owner** | [`reliability-evaluation-report/spec.md`](../../openspec/specs/reliability-evaluation-report/spec.md)의 existing/aliased evaluation DB scenario에 THEN 누락. 이미 preflight 거부·무변경 테스트 존재. | #277의 `openspec/**` 쓰기 범위 밖; Spec owner의 별도 결정 필요. |
-| H4 / R13 C17 | 🔵 Note · shared tooling | **De-duplicate** | 현재 Reliability 변경에 독립 Git-hook 결함 없음. 이미 [#270 F3](../github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories)에서 동일 root 추적. | #277 E2E 계약과 공유 hook 수정 담당을 구분. |
+| ID | Severity / Disposition | Decisive evidence / next |
+| --- | --- | --- |
+| C14–C15 | 🔵 Note · **drop** | [Evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md)은 `expected=[] AND detected=[] ⇒ pass`만 요구. 역명제나 모든 extra detection 금지를 MUST로 만들 수 없음. |
+| C16 | 🔵 Note · **follow_up, source conditional** | [`reporter.py::_case_line`](../../src/hmda_reliability/reliability/evaluation/reporter.py)은 `case_name`/refs를 Markdown table cell에 그대로 보간. 이전 R11/R12는 문자열 조립 반례일 뿐 원본 reporter→renderer·허용 입력 경계 실행은 미확인. Reporter source owner가 escaping/이름 정책 확정 후 재현. |
+| H2 / R13 C18 | 🔵 Note · **scope_decision, 기존 Spec gap** | [Evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md)의 existing/aliased DB scenario는 THEN 누락. 기존 `test_schema_drift_evaluation.py`가 DB bytes·callback 무변경 거부를 이미 검사하므로 test 무보호 주장 기각. `openspec/**`는 [#277 계획](../github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md)의 쓰기 범위 밖; Spec owner 결정 필요. |
+| C1–C4, C6–C13 | 🔵 Note · **drop** | Targeted freshness, rejected approval, after-state replay sentinel+complete state, incompatible pair, schema drift/cleanup, post-promotion current projection evidence가 원 가설을 반박. |
+| H4 / R13 C17 | 🟠 Major **underlying F3** · **deduplicate / scope_decision** | 실제 Git hook 환경 오염은 [#270 F3](../github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories)에서 추적. 현재 Reliability 변경이 도입한 별도 결함 아님. |
 
 ## Current Validation
 
 | Result | Check | Evidence |
 | --- | --- | --- |
-| ✅ Pass | GitHub PR/head 및 original code revision 대조 | Head `af84a09e54dbf24cbbd899968ab916f921e84751`에서 test/source/Spec unchanged; 변경 경로는 이 Inbox 리뷰 하나. 네 domain test owner path 충돌 없음. |
-| ✅ Pass | 원본 감사·관련 정본/source/test와 후보별 재판정 | 위 linked locations와 R1–R13 원증거; R10 이후 새 실험을 이번 회차 실행한 것으로 주장하지 않음. |
-| ⚪ Not Verified | 이 회차의 로컬 pytest·dbt/원본 fault injection·independent specialist | 미실행. R13 원격 CI 결과는 과거 run의 별도 evidence이며 이 체크의 재실행 결과 아님. |
-| ⚪ Not Verified | #277 최신 통합 검증 및 shared-tooling 영구 수정 | 선행 도메인 PR 미병합, #277 initial base/owned paths 아직 별도 기준. 공유 Git hook/Spec/source를 본 PR에서 수정하거나 자동 인계 수락하지 않음. |
+| ✅ Pass | Head/base/test blob·source/Spec·PR feedback 대조 | Code→head 변경은 이 Inbox 하나; 5개 Reliability 테스트 변경은 타 도메인과 비중복. |
+| ✅ Pass | **원격** 최신 exact-head CI | [CI Lite 40324202075](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40324202075): prospective merge, `tests/reliability` **268 passed / 26.10s**, 선택 Python 검사 성공. Markdown 단계 **skipped**. |
+| ⚪ Not Verified | 이번 실행의 local pytest·원본 reporter 렌더링 fault·독립 specialist·post-write CI | 과거 CI/검증과 새 실행을 구별. |
 
-**Continuation:** 이 `Current Disposition`만 활성 finding 판정으로 사용. 과거 R1–R13은 근거·기각 이력으로 보존하되 모순 시 최신 표를 우선한다. 다음 회차에서 의미 있는 head/CI/contract 변화 또는 미확정 후보의 도달성 증거가 없으면 반복 검토 문단을 누적하지 않고 짧게 unchanged로 보고. 승인·Ready 전환·merge·scope 확장은 수행하지 않음.
+**Next:** H2는 정본 Spec owner가 누락 THEN을 결정; C16은 reporter 입력·출력 경계 재현 뒤 정책 판단. #277은 선행 PR 병합 후 approval→recovery→revalidation의 실제 통합만 소유한다. 공유 hook/source/Spec 변경은 담당자·범위의 명시적 승인 없이 수행하지 않음. 아래 R1–R13은 역사적 증거로 보존.
 
 ---
 
