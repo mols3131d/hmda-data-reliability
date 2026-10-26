@@ -25,7 +25,7 @@ tags:
 | C11 | 🟠 Major **conditional** · **scope_decision / source follow_up** | [`artifact_projection_lock`](../../src/hmda_reliability/data_platform/artifacts.py)은 `.artifact-promotion.lock`에 `Path.open("w")`를 사용해 symlink target truncate 가능. R12의 **표준라이브러리 임시 파일** 실험은 manifest 58→0 bytes를 보였으나 **원본 primitive fault·허용 attacker/writer 모델은 미검증**. 무결성 위험을 삭제하지 않음. Data Platform source owner가 lock-path trust model 결정 후 disposable 원본 함수로 target bytes·lock result 재현. |
 | C6 | 🟡 Minor **if reachable** · **unknown, not current_required** | [dbt test](../../tests/dbt/test_analytics_foundation.py)는 `status=="fail"`만 추출해 추가 `error`를 집합에서 제외. 다만 `_run_dbt(expected_returncode=1)`이 실제 CLI exit를 보호함. `4 fail + extra error + exit 1` 실제 도달성·`unique_id` 확인 전 false-green 확정 금지. |
 | C1–C3, C5, C7–C9 | 🔵 Note · **drop** | 실제 mart 고정 산술, SQL parser, 4개 dbt fail descriptor, shared/exclusive `fcntl.flock` test가 기존 가설을 반박. |
-| C4 / R13 C12 | 🔵 Note · **follow_up #277 / F3 deduplicate** | candidate→current→Reliability consumer identity는 #277 통합 경계. Git hook 오염은 [#270 F3](../github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories) 한 곳에서 소유하고 공용 경로 권한을 별도 결정. |
+| C4 / R13 C12 | 🔵 Note · **follow_up #277 / F3 deduplicate** | candidate→current→Reliability consumer identity는 #277 통합 경계. Git hook 오염은 [#270 F3](https://github.com/mols3131d/hmda-data-reliability/blob/agent/test/audit-data-operations-design/inbox/github-270-audit-data-operations-design/02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories) 한 곳에서 소유하고 공용 경로 권한을 별도 결정. |
 
 ## Current Validation
 
