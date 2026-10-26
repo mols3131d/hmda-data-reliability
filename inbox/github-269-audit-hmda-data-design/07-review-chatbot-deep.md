@@ -181,3 +181,25 @@ tags:
 | ⚪ Not Verified | 원본 repository import 기반 fault/pytest, 독립 specialist, #277 통합 | 미실행. 원격 CI나 추출 함수 probe를 이 검증들의 PASS로 표기하지 않음. |
 
 **Next:** 두 failure point를 별도 테스트로 원본 `write_evidence`에 주입해 JSON/Markdown의 정확한 pair bytes, `.bak/.tmp` 부재, 에러 타입을 검증. 수정 권한은 HMDA Data source/test owner의 별도 결정에 두고, #277은 선행 병합 후 실제 cross-domain boundary만 검증. 이 절의 head는 **Inbox 갱신 전**이며 갱신 후 commit/CI는 재확인해야 합니다.
+
+## R8 · 2026-10-26 KST · Distribution-Denominator Mutation Challenge
+
+> [!NOTE]
+> **Research → Plan → Review / handoff.** R7의 evidence-pair fault를 반복하지 않고, 새 EDA distribution assertion이 NULL 제외 후 분모를 잘못 바꾸는 회귀를 실제로 구별하는지 정본·구현·fixture를 대조했습니다. 별도 reviewer나 원본 pytest는 실행하지 않았습니다.
+
+- **Revision:** R7 reviewed pre-write `8ff9f224a868c56ec7e2424d379149ccf1e1de2f` → authoritative R8 pre-write `6deb058fd9645c9bf7db190dc53c03f5dba06fb0`; 비교 결과 이 Inbox 파일 1개만 변경. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` 및 test/source/Spec 변경 없음; PR discussion 0.
+- **Contract/locations:** [EDA source](../../src/hmda_reliability/hmda_data/eda/analysis.py) `_collect_code_distributions`의 `WHERE ... IS NOT NULL` + `count / row_count`; [changed test](../../tests/hmda_data/eda/test_eda.py) `test_analyze_hmda_csv_returns_core_code_distributions`; [EDA Spec](../../openspec/specs/hmda-data-eda-descriptive-evidence/spec.md). 서로 다른 두 관점: NULL population 분모 및 exact expected dict.
+
+| ID | Severity | Decision / scope relation | Evidence / falsifier | Next |
+| --- | --- | --- | --- | --- |
+| C9 | 🔵 Note | **Drop / no new oracle defect** | 테스트의 총 5행 중 `state_code` 유효값은 CA 2, NY 1이고 나머지 2행은 NULL/NA입니다. 실제 oracle은 CA `0.4`, NY `0.2`를 고정하므로 `row_count=5` 대신 non-null count `3`으로 정규화하는 mutant(`2/3`, `1/3`)는 실패합니다. `loan_purpose`와 `action_taken`도 고정 dict로 관찰합니다. 이 검출력은 **정적 계산**이며 mutant 실행은 아닙니다. | 이 후보에 중복 테스트 요구 없음. |
+| C6 / C8 | 🟠 Major (conditional for C8) | **Keep prior source-owner follow_up; no new current_required** | 첫 JSON replace 실패의 orphan `.bak`와 Markdown 성공 후 backup unlink 실패의 old JSON/new Markdown은 R7의 추출 함수 수준에서만 재현됐습니다. 이번 EDA 분모 검토는 두 fault를 검증하거나 반박하지 않습니다. | 실제 `write_evidence` import 기반 두 fault-point probe; pair bytes/잔여 파일/예외를 분리 관측. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R7→R8 revision 및 정본·소스·변경 test 정적 oracle 대조 | 한 Inbox-only commit; CA `2/5`와 NY `1/5`가 기대값과 일치하고 non-null 분모 mutant를 구별. |
+| ✅ Pass | 최신 **원격** prospective-merge CI | [CI Lite 40247073431](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40247073431): merge `24e09f7661a2899e5afa1631a2c2dd4641718ce5`, `tests/hmda_data` **197 passed in 9.19s**. Fault injection/mutant는 이 run에 없음. |
+| ⚪ Not Verified | 이번 회차 원본 pytest, EDA mutant 실행, 원본 writer fault, 독립 specialist | 로컬 repository 접근/실행 없음. |
+| ⚪ Not Verified | #277 통합 | #269–#276 미병합, #277 Draft `74ac659d084fadd5e93900b132ef5b995ef8d919`; main 기준 통합 전. |
+
+**Next:** R7 C6/C8의 원본 함수 failure probe를 source owner와 분리해 수행하고, #277에는 Source→Bronze→gate→dbt 경계만 인계. 이 절은 **갱신 전 head**에 묶인 기록이며, 갱신 후 SHA·CI를 별도 확인해야 합니다.
