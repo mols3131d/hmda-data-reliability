@@ -10,10 +10,10 @@ tags:
 # Data Operations Chatbot Deep Review
 
 > [!IMPORTANT]
-> **Current adjudication · R14 (2026-10-26 23 KST): 확인한 범위의 새 `current_required` 없음.** 실제 공유 Git hook 오염 F3는 유지하고, runner 이중 실패는 기존 source의 **조건부·미재현** 위험으로 분리한다. 새 독립 specialist 검토와 로컬 실행은 **Not Verified**; `clear`/Ready/approval/merge 판단이 아니다.
+> **Current adjudication · R15 (2026-10-27 04 KST): 확인한 범위의 새 `current_required` 없음.** 실제 공유 Git hook 오염 F3는 유지하고, runner 이중 실패는 기존 source의 **조건부·미재현** 위험으로 분리한다. 새 독립 specialist 검토와 로컬 실행은 **Not Verified**; `clear`/Ready/approval/merge 판단이 아니다.
 
 - **Target** — [PR #270](https://github.com/mols3131d/hmda-data-reliability/pull/270), owner `agent/test/audit-data-operations-design`.
-- **Revision** — reviewed pre-write head `77517a1c4330dcade6cd1a1602d2983ed868eb4a`; test-code `5dd84ee53e56f089f6771d6a2ff9ae23f4105b29`; `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Code→head 14 commits의 유일한 변경 경로는 **이 Inbox 리뷰 1개**; PR feedback 0.
+- **Revision** — reviewed pre-write head `64de35e11d241b4bf1d82db22a5a1de6327d30ee`; test-code `5dd84ee53e56f089f6771d6a2ff9ae23f4105b29`; `main@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`. Code→head 16 commits의 유일한 변경 경로는 **이 Inbox 리뷰 1개**; PR feedback 0.
 - **Method** — Research: R1–R13·[원 감사](02-review-data-operations-tests.md), [stage Spec](../../openspec/specs/data-operations-stage-execution/spec.md), [runner](../../src/hmda_reliability/data_operations/runner.py) rollback 순서, 변경 test의 single-fault oracle 대조 → Plan: current test vs pre-existing source vs shared tooling 분리 → Review: 기존 safeguard/미재현 가설의 필수 finding 승격 거부.
 
 ## Current Findings
@@ -24,7 +24,8 @@ tags:
 | --- | --- | --- |
 | F3 / R13 C13 | 🟠 Major · **scope_decision, 실제 사고** | [원 감사 F3](02-review-data-operations-tests.md#f3--major-hook-git-environment-escapes-temporary-repositories)는 inherited `GIT_DIR`로 상위 HEAD/index/config 오염·최초 hook 실패를 관측. 임시 wrapper 성공은 영구 수정이 아님. `lefthook.yml`·`tests/scripts/ci/{helpers.py,conftest.py}`는 [#277 현 write lane](https://github.com/mols3131d/hmda-data-reliability/blob/agent/test/audit-cross-domain-design/inbox/github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md) 밖: **공용 담당자/허용 범위의 명시적 결정 필요**. |
 | C6 | 🟠 Major **if reached** · **follow_up / runtime unverified** | [`_promote_dbt_artifacts`](../../src/hmda_reliability/data_operations/runner.py)에서 두 번째 `.next.replace` 실패 뒤 rollback `unlink`까지 실패하면 backup restore 전 탈출 가능. [변경 test](../../tests/data_operations/test_dbt_runner.py)는 첫 fault만 주입해 복구를 검사. 원본 runner의 두 fault 동시 실행은 **미수행**; Data Operations source owner가 disposable pair와 primary error/current bytes로 재현·정책 결정. |
-| C4, C7 | 🔵 Note · **drop active** | 부분 `.next` 잔존은 current pair 훼손 증거가 없고, 외부 concurrent candidate writer threat model도 미확인. 원인별 새 근거 없이 current blocker로 재등록 금지. |
+| C4 | 🟡 Minor · **source follow_up / 추출 함수 재현** | 두 번째 `copyfile`이 partial `.next`를 쓴 뒤 실패하면 해당 파일이 cleanup에서 누락됨을 R7의 임시 파일에서 확인. **old current pair 유지**, 원본 runner 실행 미검증. Data Operations source owner가 cleanup·회귀 정책 결정. |
+| C7 | 🔵 Note · **drop active** | 외부 concurrent candidate writer threat model이 미확인. C4의 orphan `.next`를 current pair 손상으로 과장하지 않고 별도 관리. |
 | C1–C3, C5, C8–C9 | 🔵 Note · **drop / deduplicate** | 단독 results drift·read-only lifecycle rows/artifact bytes·gate ordering은 기존 oracle로 보호; 실제 Bronze+lock과 symlink root는 각각 #277 integration 및 #271 Data Platform source owner. |
 
 ## Current Validation
@@ -32,7 +33,7 @@ tags:
 | Result | Check | Evidence |
 | --- | --- | --- |
 | ✅ Pass | Head/base/test blob·소유권·PR feedback 대조 | Code→head 변경은 이 Inbox 하나; #269/#271/#272 테스트 경로와 비중복. |
-| ✅ Pass | **원격** 최신 exact-head CI | [CI Lite 40324184384](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40324184384): prospective merge, `tests/data_operations` **57 passed / 40.93s**, 선택 Python 검사 성공. Markdown 단계 **skipped**. |
+| ✅ Pass | **원격** 최신 exact-head CI | [CI Lite 40337615117](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40337615117): prospective merge, `tests/data_operations` **57 passed / 32.09s**, 선택 Python 검사 성공. Markdown 단계 **skipped**. |
 | ⚪ Not Verified | 이번 실행의 local pytest·runner double-fault·pre-push injection·독립 specialist·post-write CI | 과거 F3 사고와 이번 재실행을 혼동하지 않음. |
 
 **Next:** F3는 별도 공유-tooling 수정 소유권을 먼저 승인받고, parent+disposable child Git 환경·ref/index/config 불변을 회귀 검증한다. C6은 Data Operations source owner에게만 재현을 요청한다. #277은 선행 병합 후 실제 cross-domain E2E를 수행해야 하며 기존 green CI의 selected tests skipped는 통합 PASS가 아니다. 아래 R1–R13은 역사적 증거로 보존.
