@@ -202,3 +202,25 @@ tags:
 | ⚪ Not Verified | #277 integrated promotion↔consumer | 선행 PR 미병합; 별도 cross-domain acceptance 필요. |
 
 **Next:** #271 test owner가 dbt-core 1.12+ / DuckDB 실제 adapter에서 controlled `error` node를 만들고 exit/result artifact를 함께 기록해 C6의 `current_required` admission을 확정/기각. `error`를 무시하는 predicate는 이미 정적 반례가 있으나 exit 조건을 생략해 실제 false green이라고 단정하지 않습니다. #277에는 내부 oracle 변경을 넘기지 않음. 이 절의 head는 **Inbox 갱신 전** SHA입니다.
+
+## R8 · 2026-10-26 KST · In-Repository Fifth-Error Falsifier
+
+> [!IMPORTANT]
+> **Research → Plan → Review / handoff.** R7의 임의 `run_results` record 가설을 실제 dbt project의 **다섯 번째 test node**와 연결해 반증 가능성을 높였습니다. dbt 실행이나 CLI exit-code 관측은 하지 않았습니다.
+
+- **Revision:** R7 reviewed pre-write `2c1876c672c2437fc2aa3bd8a03971b9a5f19c7c` → authoritative R8 pre-write `dd46719155bfdd33ea90e9b5aa3caba3a81ec03a`; 비교는 이 Inbox만 바뀐 1 commit. `main/base@ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`, tests/models/Spec 불변, PR comments 0.
+- **Contract/locations:** [changed quality test](../../tests/dbt/test_analytics_foundation.py) `test_dbt_quality_tests_detect_source_staging_and_mart_violations` / `_run_dbt`; [source tests](../../dbt/models/sources.yml), [staging tests](../../dbt/models/staging/schema.yml), [mart tests](../../dbt/models/marts/schema.yml); [dbt analytics Spec](../../openspec/specs/data-platform-dbt-analytics/spec.md).
+
+| ID | Severity | Decision / scope relation | Evidence / disconfirmation | Next |
+| --- | --- | --- | --- | --- |
+| C6 refined | 🟡 Minor (conditional) | **Keep provisional `current_required` test-oracle candidate; real CLI reachability unresolved** | 정본 dbt YAML에는 source **5**, staging **5**, mart **8**개의 선언된 data test가 있습니다. 따라서 예상 네 `fail`만 실행 가능한 전부라는 반론은 **Drop**입니다. 구체적인 반례 fixture: 기존 raw `source_year=NULL` 및 mart `mart_grain_key=NULL`/NY 중복을 만든 **다음**, mart의 독립 `application_count` column을 `ALTER TABLE marts.mart_hmda_loan_outcomes DROP COLUMN application_count`로 제거합니다. 기존 네 not-null/unique 검사는 다른 column에 의존하므로 유지될 것으로 예상되지만 `application_count`의 `not_null` 검사는 SQL error를 낼 수 있습니다. Test는 `status == 'fail'` 네 descriptor만 비교하므로 **CLI exit=1 + 추가 error result**라면 여전히 false green입니다. 실제 dbt-core/duckdb adapter가 이 조합을 `run_results`에 남기고 exit 1을 반환하는지 미실행; 이 전제가 반박되면 disposition 재평가. | Disposable DB에서 기존 3 mutations 뒤 위 `DROP COLUMN`을 추가해 `dbt test`의 exact exit/status/unique_id를 기록. `error`와 네 `fail` 공존·exit 1이면 #271-owned test oracle을 전체 unexpected non-success 거부로 보강하고 mutant red→green 확인. |
+| C8 | 🔵 Note | **Drop / only-four-tests objection** | 실제 YAML inventory가 18개 test node를 선언합니다. 다른 14개가 있으므로 네 실패 descriptor가 모든 node를 망라한다고 해석할 수 없습니다. 다만 선언 수만으로 extra-error runtime 도달성을 증명하지는 않습니다. | 중복 blocker 등록 금지. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R7→R8 head, YAML node inventory, test predicate 정적 대조 | 한 Inbox-only commit; 5+5+8 declared tests, 기존 네 실패와 별개 `not_null(application_count)` 확인. |
+| ✅ Pass | 최신 **원격** prospective-merge CI | [CI Lite 40247127374](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40247127374): merge `17dbf2f1e9e1a00119d19487090035e9de046969`, `tests/data_platform tests/dbt` **43 passed, 1 fork deprecation warning in 25.33s**. 다섯 번째 error는 주입되지 않음. |
+| ⚪ Not Verified | `DROP COLUMN` 실제 DuckDB/dbt test 실행, exit 1+error 결합, 원본 pytest, 독립 specialist | 로컬 dbt/duckdb 설치·repository checkout 없이 직접 실행하지 못함. |
+| ⚪ Not Verified | #277 integrated promotion↔consumer | 선행 PR 미병합. 내부 quality oracle은 #271 owner, integration identity는 #277 owner. |
+
+**Next:** 제시한 SQL corruption을 격리 DB에서 실행해 C6의 도달성을 결정하고, exit/status가 반례를 거부하면 C6의 `current_required` 분류를 낮추거나 Drop. 정본 Spec·dbt model/공용 설정은 수정하지 않으며 갱신 후 head/CI를 재확인합니다.
