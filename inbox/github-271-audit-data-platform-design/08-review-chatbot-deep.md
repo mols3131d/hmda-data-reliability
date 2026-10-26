@@ -224,3 +224,26 @@ tags:
 | ⚪ Not Verified | #277 integrated promotion↔consumer | 선행 PR 미병합. 내부 quality oracle은 #271 owner, integration identity는 #277 owner. |
 
 **Next:** 제시한 SQL corruption을 격리 DB에서 실행해 C6의 도달성을 결정하고, exit/status가 반례를 거부하면 C6의 `current_required` 분류를 낮추거나 Drop. 정본 Spec·dbt model/공용 설정은 수정하지 않으며 갱신 후 head/CI를 재확인합니다.
+
+## R9 · 2026-10-26 KST · dbt Error Oracle Admission Recheck
+
+> [!IMPORTANT]
+> **Research → Plan → Review / handoff.** R8 C6의 추가 error 반례를 dbt model materialization과 공식 artifact contract로 재검토했습니다. 실제 dbt 실행 결과가 없으므로 기존의 **provisional current_required**는 확정 finding이 아닌 **unknown (runtime reachability 미확인)**으로 정정합니다. 후보 기각은 아닙니다.
+
+- **Revision:** R8 pre-write dd46719155bfdd33ea90e9b5aa3caba3a81ec03a → authoritative pre-write 4357a6838966e0129e16b305aa96ab9e404d5ba5: GitHub compare 결과 Inbox 한 파일만 변경한 1 commit. main/base ea39a4fd6c8f483509cf00a1d1114feb4ef3b686 유지, changed tests/models/Spec 불변, PR feedback 0.
+- **Research:** [변경 quality test](../../tests/dbt/test_analytics_foundation.py) L87–166는 build 이후 raw/mart를 오염시키고 **dbt test만** 재실행하며 status == "fail"인 네 descriptor만 set으로 비교합니다. [dbt project](../../dbt/dbt_project.yml)는 staging을 view, mart를 **table**로 materialize합니다. 따라서 R8의 ALTER TABLE marts.mart_hmda_loan_outcomes DROP COLUMN application_count가 dbt test 시 자동으로 복구된다는 반론은 현 helper/config와 맞지 않습니다. [mart YAML](../../dbt/models/marts/schema.yml) L20–22에는 독립 not_null(application_count) node가 있습니다. [정본 Spec](../../openspec/specs/data-platform-dbt-analytics/spec.md) L46–53는 model contract 위반을 성공으로 보고하지 않도록 요구합니다.
+- **Plan:** 네 기존 fail 유지 + 다섯 번째 error + CLI exit=1을 격리 dbt/DuckDB에서 **동시에** 관측할 때만 실제 false green으로 인정합니다. 제품/Spec/YAML 및 다른 PR 테스트는 수정하지 않습니다.
+
+| ID | Severity | Disposition / ownership | Evidence / falsifier | Next |
+| --- | --- | --- | --- | --- |
+| C6 | 🟡 Minor **if reachable** | **Unknown; not confirmed current_required** / #271 test owner | [dbt 공식 run-results 계약](https://docs.getdbt.com/reference/artifacts/run-results-json?version=1.12)은 fail과 error를 구별합니다. 현 predicate는 error를 버리므로 **가정된 exit=1**에서는 네 fail + 추가 error가 있어도 set equality가 참입니다. 하지만 실제 dbt-core/duckdb가 해당 조합을 반환하는지 미실행입니다. CLI exit=2이거나 네 fail 중 하나가 사라지면 현재 test가 이미 거부할 수 있습니다. | 실제 DROP COLUMN fault 후 returncode, results[*].status/unique_id, 네 fail 존재를 함께 기록. False green 재현 시 unexpected non-pass 거부하는 test-only oracle 수정과 red→green; 불가능하면 C6 Drop/하향. |
+| C9 | 🔵 Note | **Drop / mart auto-rebuild objection** | test helper는 build 재실행 없이 test만 호출하고 mart는 table입니다. 따라서 자동 재생성으로 반례가 사라진다는 가설은 반박되나 exit/error 조합은 여전히 미증명입니다. | 중복 결함으로 등록하지 않음. |
+
+| Result | Check | Evidence |
+| --- | --- | --- |
+| ✅ Pass | R8→head compare 및 test→dbt materialization→YAML→Spec 정적 대조 | Inbox-only, test command, mart table, error filter 확인. |
+| ✅ Pass | **원격** prospective-merge CI | [CI Lite 40251455386](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40251455386): merge f13ee134971b7b4cb5533d477d3c57890b954458, **43 passed, 1 warning in 33.53s**; 추가 error 미주입. |
+| ⚪ Not Verified | 실제 dbt error+exit 결합, 로컬 pytest, 독립 specialist | 원본 checkout 및 dbt/duckdb 실행 환경이 없어 미실행. 정적 근거를 runtime pass로 표시하지 않음. |
+| ⚪ Not Verified | #277 통합 | #269–#276 미병합 Draft, #277 최초 base 81fe44b2, 통합 미실행. |
+
+**Next:** C6의 unknown을 실제 dbt CLI returncode + node status 실험으로 먼저 닫습니다. #277에는 promotion→Reliability consumer identity와 공용 CI 경계만 인계하고 내부 predicate 변경은 #271 test owner가 결정합니다. 이 절의 SHA는 갱신 전; 갱신 후 head/CI 별도 확인. 승인·Ready·merge 변경 없음.
