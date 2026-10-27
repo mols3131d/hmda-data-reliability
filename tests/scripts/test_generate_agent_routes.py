@@ -40,6 +40,34 @@ class _TextFile:
         return self.content
 
 
+@pytest.mark.component
+def test_rule_index_omits_disabled_and_root_rules_with_a_literal_oracle(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    rules = tmp_path / ".rulesync/rules"
+    rules.mkdir(parents=True)
+    for filename, flags in (
+        ("enabled.md", ""),
+        ("disabled.md", "route: false\n"),
+        ("root.md", "root: true\n"),
+    ):
+        (rules / filename).write_text(
+            "---\ndescription: Rule fixture\nglobs: '*.py'\n" + flags + "---\n",
+            encoding="utf-8",
+        )
+    monkeypatch.setattr(indexes, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(indexes, "RULES_ROOT", rules)
+
+    assert indexes.rule_entries() == [
+        {
+            "description": "Rule fixture",
+            "globs": ["*.py"],
+            "source": ".rulesync/rules/enabled.md",
+        }
+    ]
+
+
 @pytest.mark.unit
 @pytest.mark.parametrize(
     ("source", "expected"),
