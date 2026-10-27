@@ -33,14 +33,23 @@ def test_lifecycle_compares_baseline_with_actual_current(tmp_path: Path) -> None
         row_count=8,
         null_rates={"income": 0.0, "loan_amount": 0.0},
     )
+    with DuckDBConnectionManager(request.database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO raw.hmda_loans VALUES
+                (2024, 999999, 999, 2024, 'other.csv', TIMESTAMPTZ '2026-07-19')
+            """
+        )
 
     result = run_incident_lifecycle(request, baseline)
 
-    assert result.metadata_row_count == 4
+    assert result.metadata_row_count == 5
     assert result.baseline_row_count == 8
     assert result.current_row_count == 4
     assert result.detected_incident_types == ["volume_drop", "null_spike"]
     assert result.target_content_identity is not None
+    assert result.target_content_identity.table_name == "raw.hmda_loans"
+    assert result.target_content_identity.source_year == 2025
     assert result.target_content_identity.row_count == 4
     assert result.dbt_projection_id is not None
 
@@ -59,6 +68,10 @@ def test_lifecycle_analyzes_all_detections_in_order(tmp_path: Path) -> None:
     result = run_incident_lifecycle(request, baseline)
 
     assert result.detected_incident_types == ["volume_drop", "null_spike"]
+    assert result.detected_incident_ids == [
+        "inc_volume_drop_source_hmda_reliability_raw_hmda_loans_2025",
+        "inc_null_spike_source_hmda_reliability_raw_hmda_loans_2025_loan_amount",
+    ]
     assert result.evidence_refs == [
         "ev_volume_drop_source_hmda_reliability_raw_hmda_loans_2025",
         "lineage_source_hmda_reliability_raw_hmda_loans_2025",
@@ -103,6 +116,7 @@ def test_lifecycle_skips_impact_when_no_incident(
 
     result = run_incident_lifecycle(request, baseline)
 
+    assert result.detected_incident_ids == []
     assert result.detected_incident_types == []
     assert result.evidence_refs == []
     assert result.affected_assets == []
@@ -168,19 +182,36 @@ def test_lifecycle_has_no_recovery_or_evaluation_side_effects(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """탐지 후에도 target partition과 파일 시스템을 변경하지 않는다."""
+    """같은 row count의 값 변경과 approval·report 파일 생성도 허용하지 않는다."""
 
     monkeypatch.chdir(tmp_path)
     request = _prepare_request(tmp_path)
     baseline = _baseline_snapshot(request, row_count=10)
+    with DuckDBConnectionManager(request.database_path, read_only=True) as connection:
+        rows_before = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY ALL"
+        ).fetchall()
+    artifact_bytes_before = {
+        path: path.read_bytes()
+        for path in (request.dbt_manifest_path, request.dbt_run_results_path)
+    }
+    files_before = {path for path in tmp_path.rglob("*") if path.is_file()}
 
     result = run_incident_lifecycle(request, baseline)
 
     with DuckDBConnectionManager(request.database_path, read_only=True) as connection:
-        row_count = connection.execute(
-            "SELECT count(*) FROM raw.hmda_loans WHERE activity_year = 2025"
-        ).fetchone()
-    assert row_count == (4,)
+        rows_after = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY ALL"
+        ).fetchall()
+    assert result.detected_incident_types == ["volume_drop"]
+    assert rows_after == rows_before
+    assert {path: path.read_bytes() for path in artifact_bytes_before} == (
+        artifact_bytes_before
+    )
+    # Current projection을 읽는 shared lock file 생성은 read-only 계약에 허용된다.
+    projection_lock = request.dbt_manifest_path.parent / ".artifact-promotion.lock"
+    files_after = {path for path in tmp_path.rglob("*") if path.is_file()}
+    assert files_after - {projection_lock} == files_before
     assert not (tmp_path / "scratch").exists()
     assert "evaluation_report_path" not in type(result).model_fields
     assert "backfill_validation_passed" not in type(result).model_fields

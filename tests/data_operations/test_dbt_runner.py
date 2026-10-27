@@ -1,4 +1,8 @@
-"""dbt 작업 runner 경계 테스트."""
+"""dbt candidate 실행, lock-bound gate와 current artifact pair 승격을 검증한다.
+
+Subprocess는 fake boundary로 통제하고 파일과 projection identity는 실제로 사용한다.
+실제 dbt SQL과 cross-domain recovery 조합은 system recovery E2E의 책임이다.
+"""
 
 import subprocess
 import threading
@@ -103,6 +107,7 @@ def test_run_dbt_build_wraps_timeout(
     """dbt 제한 시간 초과를 데이터 작업 오류로 변환한다."""
 
     def raise_timeout(*args: object, **kwargs: object) -> CompletedProcess[str]:
+        assert kwargs["timeout"] == 300
         raise TimeoutExpired(cmd="dbt build", timeout=300)
 
     monkeypatch.setattr(subprocess, "run", raise_timeout)
@@ -111,6 +116,29 @@ def test_run_dbt_build_wraps_timeout(
         runner.run_dbt_build(_request(tmp_path))
 
     assert error.value.context["command"][0:2] == ["dbt", "build"]
+    assert error.value.context["timeout_seconds"] == 300
+    assert (
+        Path(error.value.context["run_target_path"]).parent
+        == _request(tmp_path).dbt_run_target_path
+    )
+
+
+@pytest.mark.component
+def test_run_dbt_build_wraps_process_start_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    def fail_process_start(*args: object, **kwargs: object) -> CompletedProcess[str]:
+        raise FileNotFoundError("dbt executable unavailable")
+
+    monkeypatch.setattr(subprocess, "run", fail_process_start)
+
+    with pytest.raises(DataOperationError, match="프로세스") as error:
+        runner.run_dbt_build(_request(tmp_path))
+
+    assert error.value.context["command"][0:2] == ["dbt", "build"]
+    assert error.value.context["os_error"] == "dbt executable unavailable"
+    assert isinstance(error.value.__cause__, FileNotFoundError)
     assert (
         Path(error.value.context["run_target_path"]).parent
         == _request(tmp_path).dbt_run_target_path
@@ -574,29 +602,41 @@ def test_promotion_uses_the_verified_run_artifacts_after_a_later_run(
 
 
 @pytest.mark.component
+@pytest.mark.parametrize("artifact_field", ["manifest_path", "run_results_path"])
 def test_promotion_rejects_artifacts_changed_after_verification(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    artifact_field: str,
 ) -> None:
-    """검증 뒤 artifact bytes가 바뀌면 stale result를 승격하지 않는다."""
+    """어느 artifact만 바뀌어도 stale result를 거부하고 current pair를 보존한다."""
 
     request = _request(tmp_path)
+    old_manifest = b'{"run": "last-known-good"}\n'
+    old_results = b'{"results": [{"status": "success"}]}\n'
+    request.dbt_manifest_path.write_bytes(old_manifest)
+    request.dbt_run_results_path.write_bytes(old_results)
 
     def write_artifacts(command: list[str], **kwargs: object) -> CompletedProcess[str]:
         run_target = Path(command[-1])
-        run_target.joinpath("manifest.json").write_text("manifest", encoding="utf-8")
-        run_target.joinpath("run_results.json").write_text("results", encoding="utf-8")
+        run_target.joinpath("manifest.json").write_text(
+            '{"run": "candidate"}', encoding="utf-8"
+        )
+        run_target.joinpath("run_results.json").write_text(
+            '{"results": [{"status": "success"}]}', encoding="utf-8"
+        )
         return CompletedProcess(command, 0, "", "")
 
     monkeypatch.setattr(subprocess, "run", write_artifacts)
     result = runner.run_dbt_build(request)
-    result.manifest_path.write_text("changed", encoding="utf-8")
+    getattr(result, artifact_field).write_text('{"changed": true}', encoding="utf-8")
 
     with pytest.raises(DataOperationError, match="projection"):
         runner.promote_dbt_artifacts(result, request)
 
-    assert not request.dbt_manifest_path.exists()
-    assert not request.dbt_run_results_path.exists()
+    assert request.dbt_manifest_path.read_bytes() == old_manifest
+    assert request.dbt_run_results_path.read_bytes() == old_results
+    assert not list(tmp_path.glob("*.next"))
+    assert not list(tmp_path.glob("*.previous"))
 
 
 @pytest.mark.component
@@ -904,6 +944,7 @@ def test_build_dbt_command_structures_arguments(tmp_path: Path) -> None:
 
 def _request(tmp_path: Path) -> DataOperationRequest:
     return DataOperationRequest(
+        database_path=tmp_path / "warehouse.duckdb",
         dbt_manifest_path=tmp_path / "manifest.json",
         dbt_run_results_path=tmp_path / "run_results.json",
         dbt_run_target_path=tmp_path / "runs" / "current",
