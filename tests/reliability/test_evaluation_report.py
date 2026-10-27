@@ -148,6 +148,76 @@ def test_evaluation_report_calculates_case_success_rates() -> None:
     assert report.action_success_rate == 2 / 3
 
 
+@pytest.mark.unit
+def test_evaluation_report_requires_all_expected_incidents_and_actions() -> None:
+    missing_incident = EvaluationCaseResult(
+        case_name="missing_incident",
+        expected_incident_types=["volume_drop", "null_spike"],
+        detected_incident_types=["volume_drop"],
+        required_actions=["validate_source_partition", "prepare_partition_backfill"],
+        remediation_actions=["validate_source_partition", "prepare_partition_backfill"],
+    )
+    missing_action = EvaluationCaseResult(
+        case_name="missing_action",
+        expected_incident_types=["volume_drop", "null_spike"],
+        detected_incident_types=["volume_drop", "null_spike"],
+        required_actions=["validate_source_partition", "prepare_partition_backfill"],
+        remediation_actions=["validate_source_partition"],
+    )
+    complete = EvaluationCaseResult(
+        case_name="complete",
+        expected_incident_types=["volume_drop", "null_spike"],
+        detected_incident_types=["volume_drop", "null_spike"],
+        required_actions=["validate_source_partition", "prepare_partition_backfill"],
+        remediation_actions=["validate_source_partition", "prepare_partition_backfill"],
+    )
+
+    assert not missing_incident.detection_passed
+    assert missing_incident.action_passed
+    assert missing_action.detection_passed
+    assert not missing_action.action_passed
+    assert complete.detection_passed
+    assert complete.action_passed
+
+    report = build_evaluation_report(
+        [missing_incident, missing_action, complete],
+        generated_at=datetime(2026, 6, 10, 0, 0, tzinfo=UTC),
+    )
+    rendered = render_evaluation_report_markdown(report)
+
+    assert report.total_cases == 3
+    assert report.detection_passed_cases == 2
+    assert report.action_passed_cases == 2
+    assert report.detection_success_rate == 2 / 3
+    assert report.action_success_rate == 2 / 3
+    assert (
+        "| missing_incident | volume_drop, null_spike | volume_drop | FAIL | PASS | "
+        "- | - | - | - | - |"
+    ) in rendered
+    assert (
+        "| missing_action | volume_drop, null_spike | volume_drop, null_spike | "
+        "PASS | FAIL | - | - | - | - | - |"
+    ) in rendered
+    assert (
+        "| complete | volume_drop, null_spike | volume_drop, null_spike | "
+        "PASS | PASS | - | - | - | - | - |"
+    ) in rendered
+
+
+@pytest.mark.unit
+def test_evaluation_report_handles_empty_case_list() -> None:
+    report = build_evaluation_report(
+        [],
+        generated_at=datetime(2026, 6, 10, 0, 0, tzinfo=UTC),
+    )
+
+    assert report.total_cases == 0
+    assert report.detection_passed_cases == 0
+    assert report.action_passed_cases == 0
+    assert report.detection_success_rate == 0.0
+    assert report.action_success_rate == 0.0
+
+
 @pytest.mark.component
 def test_write_evaluation_report_creates_markdown(tmp_path: Path) -> None:
     """evaluation_report.md에 case별 기대/실제 결과를 표시한다."""
