@@ -344,6 +344,44 @@ def test_comparison_evidence_preserves_evaluation_roles() -> None:
         ReviewValueComparisonEvidence.model_validate(payload)
 
 
+def test_comparison_attributes_heterogeneous_scores_to_each_criterion() -> None:
+    evaluations = []
+    for role, values in (
+        ("baseline", (0, 1, 2, 0, 1)),
+        ("candidate", (2, 0, 1, 1, 2)),
+    ):
+        payload = _evaluation(
+            evaluation_id=f"evaluation-{role}",
+            invocation_id=f"invocation-{role}",
+            output_kind=role,
+            score=0,
+        ).model_dump(mode="python")
+        payload["scores"] = tuple(
+            RubricScore(criterion=criterion, score=value, rationale="Fixture score.")
+            for criterion, value in zip(RubricCriterion, values, strict=True)
+        )
+        evaluations.append(ReviewValueAssessment.model_validate(payload))
+
+    comparison = _compare(baseline=evaluations[0], candidate=evaluations[1])
+
+    assert comparison.status is ReviewValueComparisonStatus.COMPARED
+    assert (
+        comparison.baseline_total,
+        comparison.candidate_total,
+        comparison.total_delta,
+    ) == (4, 6, 2)
+    assert [
+        (item.criterion.value, item.baseline_score, item.candidate_score, item.delta)
+        for item in comparison.criterion_deltas
+    ] == [
+        ("added_value", 0, 2, 2),
+        ("actionability", 1, 0, -1),
+        ("evidence_awareness", 2, 1, -1),
+        ("uncertainty_handling", 0, 1, 1),
+        ("prioritization", 1, 2, 1),
+    ]
+
+
 @pytest.mark.parametrize(
     ("baseline_kind", "candidate_kind"),
     [("candidate", "candidate"), ("baseline", "baseline")],
