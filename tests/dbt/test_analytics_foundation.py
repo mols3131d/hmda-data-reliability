@@ -1,4 +1,7 @@
-"""dbt 분석 파운데이션 테스트."""
+"""실제 dbt build로 staging 타입·mart metric·lineage·재실행과 quality 실패를 검증한다.
+
+운영 runner의 quality gate와 artifact promotion은 Data Operations가 검증한다.
+"""
 
 from __future__ import annotations
 
@@ -67,18 +70,84 @@ def test_dbt_build_creates_artifacts_lineage_and_idempotent_mart(
         model_name="mart_hmda_loan_outcomes",
         dependency=_node_id(manifest, "model", "stg_hmda_loans"),
     )
-    assert first_stats == second_stats == (2, 2)
+    assert first_stats == second_stats == (5, 5)
     assert (
         first_metric_rows
         == second_metric_rows
         == [
+            (2024, "CA", 1, 1, 1, 0, 1.0, 200000.0, 80.0),
             (2025, "CA", 1, 2, 1, 0, 0.5, 400000.0, 125.0),
+            (2025, "CA", 31, 1, 0, 1, 0.0, 300000.0, 90.0),
             (2025, "NY", 31, 2, 0, 2, 0.0, 400000.0, 95.0),
+            (2025, "TX", 1, 3, 2, 0, 0.666667, 150000.0, 75.0),
         ]
     )
 
 
-def _run_dbt(database_path: Path, command: str) -> None:
+@pytest.mark.integration
+def test_dbt_quality_tests_detect_source_staging_and_mart_violations(
+    tmp_path: Path,
+) -> None:
+    database_path = tmp_path / "hmda_reliability.duckdb"
+    with DuckDBConnectionManager(database_path) as connection:
+        load_hmda_loans(connection, [_write_hmda_csv(tmp_path)])
+
+    _run_dbt(database_path, "build")
+    with DuckDBConnectionManager(database_path) as connection:
+        connection.execute(
+            "UPDATE raw.hmda_loans SET source_year = NULL WHERE state_code = 'TX'"
+        )
+        connection.execute(
+            "INSERT INTO marts.mart_hmda_loan_outcomes "
+            "SELECT * FROM marts.mart_hmda_loan_outcomes WHERE state_code = 'NY'"
+        )
+        connection.execute(
+            "UPDATE marts.mart_hmda_loan_outcomes SET mart_grain_key = NULL "
+            "WHERE state_code = 'TX'"
+        )
+
+    _run_dbt(database_path, "test", expected_returncode=1)
+
+    target = tmp_path / "dbt-target"
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    run_results = json.loads((target / "run_results.json").read_text(encoding="utf-8"))
+    unexpected_results = {
+        result["unique_id"]: result["status"]
+        for result in run_results["results"]
+        if result["status"] not in {"pass", "fail"}
+    }
+    assert not unexpected_results, f"Unexpected dbt test statuses: {unexpected_results}"
+    failed_nodes = [
+        manifest["nodes"][result["unique_id"]]
+        for result in run_results["results"]
+        if result["status"] == "fail"
+    ]
+    assert {
+        (
+            node["test_metadata"]["name"],
+            node["column_name"],
+            tuple(node["depends_on"]["nodes"]),
+        )
+        for node in failed_nodes
+    } == {
+        ("not_null", "source_year", ("source.hmda_reliability.raw.hmda_loans",)),
+        ("not_null", "source_year", ("model.hmda_reliability.stg_hmda_loans",)),
+        (
+            "not_null",
+            "mart_grain_key",
+            ("model.hmda_reliability.mart_hmda_loan_outcomes",),
+        ),
+        (
+            "unique",
+            "mart_grain_key",
+            ("model.hmda_reliability.mart_hmda_loan_outcomes",),
+        ),
+    }
+
+
+def _run_dbt(
+    database_path: Path, command: str, *, expected_returncode: int = 0
+) -> None:
     env = os.environ.copy()
     env["DBT_PROFILES_DIR"] = str(DBT_PROJECT_DIR)
     env["DBT_SEND_ANONYMOUS_USAGE_STATS"] = "false"
@@ -91,7 +160,7 @@ def _run_dbt(database_path: Path, command: str) -> None:
         "--log-path",
         str(database_path.parent / "dbt-logs"),
     ]
-    if command == "build":
+    if command in {"build", "test"}:
         arguments.extend(["--target-path", str(database_path.parent / "dbt-target")])
     result = subprocess.run(
         arguments,
@@ -100,7 +169,7 @@ def _run_dbt(database_path: Path, command: str) -> None:
         env=env,
         text=True,
     )
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == expected_returncode, result.stdout + result.stderr
 
 
 def _write_hmda_csv(tmp_path: Path) -> Path:
@@ -114,6 +183,11 @@ def _write_hmda_csv(tmp_path: Path) -> Path:
                 "2025,31,3,420000,95,NY,36061",
                 "2025,31,7,380000,95,NY,36061",
                 "2025,1,1,invalid,Exempt,,",
+                "2024,1,1,200000,80,CA,06001",
+                "2025,31,3,300000,90,CA,06001",
+                "2025,1,1,100000,50,TX,48001",
+                "2025,1,2,200000,100,TX,48001",
+                "2025,1,4,invalid,Exempt,TX,",
             ]
         ),
         encoding="utf-8",
@@ -126,7 +200,7 @@ def _assert_staging_oracle(database_path: Path) -> None:
         count = connection.execute(
             "SELECT count(*) FROM staging.stg_hmda_loans"
         ).fetchone()
-        assert count is not None and count[0] == 5
+        assert count is not None and count[0] == 10
 
         column_types = dict(
             connection.execute(
@@ -134,8 +208,18 @@ def _assert_staging_oracle(database_path: Path) -> None:
                 "WHERE table_schema = 'staging' AND table_name = 'stg_hmda_loans'"
             ).fetchall()
         )
-        assert column_types["loan_amount"] == "DOUBLE"
-        assert column_types["income"] == "DOUBLE"
+        for column, expected_type in {
+            "activity_year": "INTEGER",
+            "loan_purpose": "INTEGER",
+            "action_taken": "INTEGER",
+            "source_year": "INTEGER",
+            "state_code": "VARCHAR",
+            "county_code": "VARCHAR",
+            "source_file": "VARCHAR",
+            "loan_amount": "DOUBLE",
+            "income": "DOUBLE",
+        }.items():
+            assert column_types[column] == expected_type
 
         null_row = connection.execute(
             "SELECT state_code, county_code, loan_amount, income "
@@ -146,6 +230,13 @@ def _assert_staging_oracle(database_path: Path) -> None:
         assert null_row[1] is None
         assert null_row[2] is None
         assert null_row[3] is None
+
+        eligible_null_row = connection.execute(
+            "SELECT county_code, loan_amount, income "
+            "FROM staging.stg_hmda_loans "
+            "WHERE state_code = 'TX' AND action_taken = 4"
+        ).fetchall()
+        assert eligible_null_row == [(None, None, None)]
 
 
 def _mart_stats(database_path: Path) -> tuple[int, int]:
@@ -182,20 +273,7 @@ def _mart_metric_rows(
             ORDER BY activity_year, state_code, loan_purpose
             """
         ).fetchall()
-    return [
-        (
-            int(row[0]),
-            str(row[1]),
-            int(row[2]),
-            int(row[3]),
-            int(row[4]),
-            int(row[5]),
-            float(row[6]),
-            float(row[7]),
-            float(row[8]),
-        )
-        for row in rows
-    ]
+    return cast(list[tuple[int, str, int, int, int, int, float, float, float]], rows)
 
 
 def _node_id(manifest: dict[str, object], resource_type: str, name: str) -> str | None:
