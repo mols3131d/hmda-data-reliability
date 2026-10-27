@@ -1,4 +1,4 @@
-"""DuckDB 데이터 플랫폼 헬퍼 테스트."""
+"""실제 DuckDB 연결·metadata와 단일 호스트 mutation lock의 계약을 검증한다."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from multiprocessing.synchronize import Event as ProcessEvent
 from pathlib import Path
 from threading import Event, Thread
 
+import duckdb
 import pytest
 
 import hmda_reliability.data_platform as data_platform
@@ -15,10 +16,83 @@ import hmda_reliability.data_platform.duckdb as duckdb_module
 from hmda_reliability.data_platform.duckdb import (
     DuckDBConnectionManager,
     DuckDBMutationLockError,
+    current_database_path,
     database_mutation_lock,
+    ensure_schema,
+    table_columns,
+    table_row_count,
 )
 
 pytestmark = pytest.mark.component
+
+
+@pytest.mark.parametrize("body_failure", [False, True], ids=["success", "exception"])
+def test_duckdb_connection_manager_closes_connection_after_scope(
+    body_failure: bool,
+) -> None:
+    expected_error = (
+        pytest.raises(ValueError, match="connection body failed")
+        if body_failure
+        else nullcontext()
+    )
+
+    with expected_error, DuckDBConnectionManager() as connection:
+        assert connection.execute("SELECT 7").fetchone() == (7,)
+        if body_failure:
+            raise ValueError("connection body failed")
+
+    with pytest.raises(duckdb.ConnectionException, match="closed"):
+        connection.execute("SELECT 7")
+
+
+def test_duckdb_connection_manager_isolates_in_memory_databases() -> None:
+    with (
+        DuckDBConnectionManager() as first,
+        DuckDBConnectionManager() as second,
+    ):
+        first.execute("CREATE TABLE private_probe AS SELECT 7 AS value")
+
+        assert current_database_path(first) is None
+        assert current_database_path(second) is None
+        with pytest.raises(duckdb.CatalogException, match="private_probe"):
+            second.execute("SELECT * FROM private_probe")
+        assert first.execute("SELECT * FROM private_probe").fetchall() == [(7,)]
+
+
+def test_duckdb_read_only_connection_rejects_writes(tmp_path: Path) -> None:
+    database_path = tmp_path / "nested" / "probe.duckdb"
+    with DuckDBConnectionManager(database_path) as connection:
+        connection.execute("CREATE TABLE probe AS SELECT 7 AS value")
+
+    with DuckDBConnectionManager(database_path, read_only=True) as connection:
+        assert current_database_path(connection) == database_path
+        assert connection.execute("SELECT * FROM probe").fetchall() == [(7,)]
+        with pytest.raises(duckdb.InvalidInputException, match="read-only"):
+            connection.execute("INSERT INTO probe VALUES (9)")
+
+    with DuckDBConnectionManager(database_path) as connection:
+        assert connection.execute("SELECT * FROM probe").fetchall() == [(7,)]
+
+
+def test_duckdb_schema_and_metadata_preserve_quoted_names_and_null_rows() -> None:
+    with DuckDBConnectionManager() as connection:
+        ensure_schema(connection, 'probe"schema')
+        ensure_schema(connection, 'probe"schema')
+        connection.execute(
+            'CREATE TABLE "probe""schema"."loans""table" '
+            '("borrower""id" INTEGER, amount INTEGER)'
+        )
+        assert table_row_count(connection, 'probe"schema.loans"table') == 0
+        connection.execute(
+            'INSERT INTO "probe""schema"."loans""table" '
+            "VALUES (1, 5), (1, 5), (NULL, NULL)"
+        )
+
+        assert table_row_count(connection, 'probe"schema.loans"table') == 3
+        assert table_columns(connection, 'probe"schema.loans"table') == {
+            'borrower"id',
+            "amount",
+        }
 
 
 def test_duckdb_connection_manager_removes_database_file(tmp_path: Path) -> None:
@@ -204,22 +278,31 @@ def test_database_mutation_lock_is_noop_for_in_memory_database(
     )
 
 
-def test_database_mutation_lock_setup_failure_is_typed(
+@pytest.mark.parametrize("failure_stage", ["prepare", "acquire"])
+def test_database_mutation_lock_acquisition_failure_is_typed(
+    failure_stage: str,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """Lock 준비 I/O failure는 typed Data Platform error로 변환한다."""
+    """Lock 준비·획득 I/O failure는 body 진입 전에 typed error로 변환한다."""
 
-    def fail_mkdir(*args: object, **kwargs: object) -> None:
-        raise OSError("cannot create mutation lock directory")
+    failure = OSError("cannot acquire mutation lock")
 
-    monkeypatch.setattr(Path, "mkdir", fail_mkdir)
+    def fail_lock_io(*args: object, **kwargs: object) -> None:
+        raise failure
+
+    if failure_stage == "prepare":
+        monkeypatch.setattr(Path, "mkdir", fail_lock_io)
+    else:
+        monkeypatch.setattr(duckdb_module.fcntl, "flock", fail_lock_io)
 
     with (
-        pytest.raises(DuckDBMutationLockError, match="lock"),
+        pytest.raises(DuckDBMutationLockError, match="lock") as error,
         database_mutation_lock(tmp_path / "nested" / "hmda-reliability.duckdb"),
     ):
-        pass
+        pytest.fail("mutation body must not run after lock acquisition failure")
+
+    assert error.value.__cause__ is failure
 
 
 def test_database_mutation_lock_release_failure_is_typed(

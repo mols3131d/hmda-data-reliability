@@ -204,14 +204,28 @@ def test_schema_recovery_profile_uses_approved_year_when_activity_year_differs(
 @pytest.mark.component
 def test_schema_recovery_replays_exact_after_without_replacement(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Exact after-state replay resumes profile verification without replacement."""
 
     request = _request(tmp_path, target_state="after")
 
+    def forbid_replacement(*args: object, **kwargs: object) -> None:
+        pytest.fail("schema replay must not enter table replacement")
+
+    monkeypatch.setattr(schema_executor, "_replace_table", forbid_replacement)
+
     result = reliability.execute_approved_schema_recovery(request)
 
-    assert result.actual_state == request.proposal.expected_after_state
+    with DuckDBConnectionManager(request.target_database_path) as connection:
+        actual_state = reliability.create_table_state_identity(
+            connection, request.proposal.table_name
+        )
+
+    assert actual_state == result.actual_state == request.proposal.expected_after_state
+    assert result.validation_passed
+    assert result.profile_snapshot.row_count == 2
+    assert result.profile_snapshot.partition == "2025"
     assert result.mutation_state == "already_restored"
     assert result.reconciliation_action == "resume_verification"
     assert result.executed_actions == ("rerun_profile_snapshot",)

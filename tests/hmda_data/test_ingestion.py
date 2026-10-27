@@ -278,6 +278,45 @@ def test_load_hmda_loans_translates_mutation_lock_failure(
     assert table is None
 
 
+@pytest.mark.parametrize("partitioned", [False, True], ids=["full", "partition"])
+def test_loaders_use_canonical_database_lock_before_mutation(
+    hmda_csv_path: Path,
+    tmp_path: Path,
+    partitioned: bool,
+) -> None:
+    """실제 canonical lock file 획득 실패가 symlink로 연 DB의 교체도 막는다."""
+
+    database_path = tmp_path / "database" / "hmda.duckdb"
+    with DuckDBConnectionManager(database_path) as connection:
+        load_hmda_loans(connection, [hmda_csv_path])
+        before = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY loan_amount"
+        ).fetchall()
+
+    alias_path = tmp_path / "alias.duckdb"
+    alias_path.symlink_to(database_path)
+    lock_path = database_path.with_name(f".{database_path.name}.mutation.lock")
+    lock_path.unlink(missing_ok=True)
+    lock_path.mkdir()
+    hmda_csv_path.write_text(
+        hmda_csv_path.read_text(encoding="utf-8").replace("120,CA", "121,CA"),
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager(alias_path) as connection:
+        with pytest.raises(HMDADataLoadError, match="mutation lock") as raised:
+            if partitioned:
+                load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+            else:
+                load_hmda_loans(connection, [hmda_csv_path])
+        assert isinstance(raised.value.__cause__, DuckDBMutationLockError)
+        after = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY loan_amount"
+        ).fetchall()
+
+    assert after == before
+
+
 def test_load_hmda_loans_rejects_malformed_csv_rows(tmp_path: Path) -> None:
     """손상된 CSV 행을 조용히 버리지 않고 적재 실패로 반환한다."""
 
