@@ -129,9 +129,9 @@ def test_default_sdk_transport_maps_request_and_normalizes_response(
         monkeypatch.setattr(
             provider_module, "OpenAI", partial(OpenAI, http_client=client)
         )
-        result = provider_module.OpenAICompatibleAdapter(_settings()).invoke(
-            _messages()
-        )
+        result = provider_module.OpenAICompatibleAdapter(
+            _settings(max_output_tokens=17)
+        ).invoke(_messages())
 
     assert payloads == [
         {
@@ -141,7 +141,7 @@ def test_default_sdk_transport_maps_request_and_normalizes_response(
             ],
             "model": "test-model",
             "temperature": 0,
-            "max_tokens": 1024,
+            "max_tokens": 17,
             "response_format": {"type": "json_object"},
             "stream": False,
         }
@@ -294,10 +294,11 @@ def test_adapter_does_not_retry_non_retryable_transport_failures() -> None:
     assert len(transport.requests) == 1
 
 
-def test_adapter_rejects_oversized_response_without_retry() -> None:
+@pytest.mark.parametrize("content", ["x" * 33, "한" * 11])
+def test_adapter_rejects_oversized_response_without_retry(content: str) -> None:
     """응답 크기가 max_output_bytes 초과 시 ProviderResponseTooLargeError를 낸다."""
     transport = RecordingTransport(
-        [runtime_contracts.TransportResponse(content="x" * 33)]
+        [runtime_contracts.TransportResponse(content=content)]
     )
     adapter = provider_module.OpenAICompatibleAdapter(
         _settings(max_output_bytes=32),
