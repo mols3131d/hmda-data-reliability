@@ -86,8 +86,10 @@ def test_analyze_hmda_csv_returns_core_code_distributions(tmp_path: Path) -> Non
             [
                 "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
                 "2024,CA,06001,1,1,350000,120",
-                "2025,NY,36001,1,3,420000,150",
+                "2025,NY,36001,31,3,420000,150",
                 "2025,CA,06001,1,1,500000,200",
+                "2025,,36001,31,,420000,150",
+                "2025,NA,36001,,99,420000,150",
             ]
         ),
         encoding="utf-8",
@@ -102,14 +104,21 @@ def test_analyze_hmda_csv_returns_core_code_distributions(tmp_path: Path) -> Non
 
     assert "distributions" in evidence
     assert "county_code" not in evidence["distributions"]
-    state_dist = evidence["distributions"]["state_code"]
-    assert len(state_dist) == 2
-    assert state_dist[0]["value"] == "CA"
-    assert state_dist[0]["count"] == 2
-    assert state_dist[0]["share"] == pytest.approx(2 / 3)
-    assert state_dist[1]["value"] == "NY"
-    assert state_dist[1]["count"] == 1
-    assert state_dist[1]["share"] == pytest.approx(1 / 3)
+    assert evidence["distributions"] == {
+        "state_code": [
+            {"value": "CA", "count": 2, "share": 0.4},
+            {"value": "NY", "count": 1, "share": 0.2},
+        ],
+        "loan_purpose": [
+            {"value": "1", "count": 2, "share": 0.4},
+            {"value": "31", "count": 2, "share": 0.4},
+        ],
+        "action_taken": [
+            {"value": "1", "count": 2, "share": 0.4},
+            {"value": "3", "count": 1, "share": 0.2},
+            {"value": "99", "count": 1, "share": 0.2},
+        ],
+    }
 
 
 def test_analyze_hmda_csv_returns_numeric_summaries_without_clipping(
@@ -121,9 +130,11 @@ def test_analyze_hmda_csv_returns_numeric_summaries_without_clipping(
         "\n".join(
             [
                 "activity_year,state_code,county_code,loan_purpose,action_taken,loan_amount,income",
-                "2024,CA,06001,1,1,100,10",
-                "2025,NY,36001,1,3,200,20",
-                "2025,TX,48113,1,1,300,30",
+                "2024,CA,06001,1,1,-100,NA",
+                "2025,NY,36001,1,3,-20,-9",
+                "2025,TX,48113,1,1,,1",
+                "2025,TX,48113,1,1,40,5",
+                "2025,TX,48113,1,1,200,101",
             ]
         ),
         encoding="utf-8",
@@ -136,12 +147,25 @@ def test_analyze_hmda_csv_returns_numeric_summaries_without_clipping(
         temp_directory=tmp_path / "duckdb-temp",
     )
 
-    assert "numeric_summaries" in evidence
-    income_summary = evidence["numeric_summaries"]["income"]
-    assert income_summary["non_null_count"] == 3
-    assert income_summary["min"] == 10.0
-    assert income_summary["median"] == 20.0
-    assert income_summary["max"] == 30.0
+    # 네 관측값의 quartile은 인접 값 사이를 3/4, 1/2, 1/4 보간한다.
+    assert evidence["numeric_summaries"] == {
+        "loan_amount": {
+            "non_null_count": 4,
+            "min": -100.0,
+            "p25": -40.0,
+            "median": 10.0,
+            "p75": 80.0,
+            "max": 200.0,
+        },
+        "income": {
+            "non_null_count": 4,
+            "min": -9.0,
+            "p25": -1.5,
+            "median": 3.0,
+            "p75": 29.0,
+            "max": 101.0,
+        },
+    }
 
 
 def test_analyze_hmda_csv_omits_anomalies_key(tmp_path: Path) -> None:
@@ -261,23 +285,26 @@ def test_analyze_hmda_csv_grain_alignment_excludes_null_keys_from_distinct_count
     assert grain["coverage_rate"] == pytest.approx(2 / 4)
 
 
-def test_analyze_hmda_csv_rejects_missing_descriptive_column_without_partial_evidence(
-    tmp_path: Path,
+@pytest.mark.parametrize(
+    "income_value", [None, "unknown"], ids=["missing", "wrong-type"]
+)
+def test_analyze_hmda_csv_rejects_invalid_descriptive_column_without_partial_evidence(
+    tmp_path: Path, income_value: str | None
 ) -> None:
-    """필수 descriptive field 누락이 명시적으로 실패하는지 검증한다."""
+    """필수 field 누락과 type mismatch는 해당 column을 식별해 실패한다."""
     source_path = tmp_path / "hmda.csv"
+    header = "activity_year,state_code,loan_purpose,action_taken,loan_amount"
+    row = "2024,CA,1,1,100"
+    if income_value is not None:
+        header += ",income"
+        row += f",{income_value}"
     source_path.write_text(
-        "\n".join(
-            [
-                "activity_year,state_code,county_code,loan_purpose",
-                "2024,CA,06001,1",
-            ]
-        ),
+        f"{header}\n{row}\n",
         encoding="utf-8",
     )
 
     with pytest.raises(
-        HMDADataValidationError, match="Required EDA column validation failed"
+        HMDADataValidationError, match="Required EDA column validation failed.*income"
     ):
         analyze_hmda_csv(
             source_path,
@@ -453,6 +480,8 @@ def test_analyze_hmda_csv_returns_baseline_evidence(tmp_path: Path) -> None:
     )
 
     assert evidence["row_count"] == 3
+    assert isinstance(evidence["duration_seconds"], float)
+    assert evidence["duration_seconds"] >= 0.0
     assert evidence["activity_year_counts"] == [
         {"activity_year": 2024, "row_count": 1},
         {"activity_year": 2025, "row_count": 2},
