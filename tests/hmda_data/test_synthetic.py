@@ -1,4 +1,4 @@
-"""HMDA 합성 데이터 지표 생성 및 검증 테스트."""
+"""합성 결함의 크기·결정성·연도와 성공·실패 시 원본 보존을 실제 파일로 검증한다."""
 
 from __future__ import annotations
 
@@ -222,6 +222,66 @@ def test_synthetic_cases_expose_expected_defect_statistics(
     assert row_drop_count == 1
     assert null_ratio > source_null_ratio
     assert drift_type == "VARCHAR"
+
+
+@pytest.mark.parametrize(
+    ("sample_fraction", "dense_year_count"),
+    [(0.01, 1), (0.5, 2), (1.0, 4)],
+)
+def test_row_count_drop_preserves_sparse_year_with_exact_rows(
+    tmp_path: Path,
+    sample_fraction: float,
+    dense_year_count: int,
+) -> None:
+    """한 행짜리 연도도 보존하며, 중복 행으로 hash 순서와 독립적인 oracle을 둔다."""
+
+    source_path = tmp_path / "sparse-years.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "activity_year,loan_amount,income",
+                "2024,700,70",
+                *["2025,900,90"] * 4,
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager() as connection:
+        case_path = row_count_drop(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            sample_fraction=sample_fraction,
+        )
+        rows = connection.execute(
+            "SELECT * FROM read_parquet(?) ORDER BY ALL", [str(case_path)]
+        ).fetchall()
+
+    assert rows == [(2024, 700, 70), *[(2025, 900, 90)] * dense_year_count]
+
+
+def test_null_spike_full_fraction_preserves_rows_and_other_columns(
+    tmp_path: Path,
+) -> None:
+    source_path = tmp_path / "mixed-values.csv"
+    source_path.write_text(
+        "activity_year,loan_amount,income\n2024,100,\n2024,200,80\n2025,300,90\n",
+        encoding="utf-8",
+    )
+
+    with DuckDBConnectionManager() as connection:
+        case_path = null_spike(
+            connection,
+            [source_path],
+            tmp_path / "cases",
+            null_fraction=1.0,
+        )
+        rows = connection.execute(
+            "SELECT * FROM read_parquet(?) ORDER BY loan_amount", [str(case_path)]
+        ).fetchall()
+
+    assert rows == [(2024, 100, None), (2024, 200, None), (2025, 300, None)]
 
 
 def test_null_spike_increases_high_baseline_null_rate(tmp_path: Path) -> None:
@@ -456,9 +516,11 @@ def test_null_spike_requested_fraction_magnitude(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.parametrize("generate_case", [null_spike, schema_drift])
 def test_synthetic_case_rejects_missing_columns(
     tmp_path: Path,
     hmda_csv_path: Path,
+    generate_case: Callable[..., Path],
 ) -> None:
     """원천에 없는 컬럼 요청은 합성 데이터 예외로 실패한다."""
 
@@ -466,12 +528,49 @@ def test_synthetic_case_rejects_missing_columns(
         DuckDBConnectionManager() as connection,
         pytest.raises(SyntheticCaseError, match="필요한 컬럼"),
     ):
-        null_spike(
+        generate_case(
             connection,
             [hmda_csv_path],
             tmp_path / "cases",
             target_column="missing_column",
         )
+
+
+@pytest.mark.parametrize(
+    ("generate_case", "fraction_name"),
+    [
+        (row_count_drop, "sample_fraction"),
+        (null_spike, "sample_fraction"),
+        (null_spike, "null_fraction"),
+        (schema_drift, "sample_fraction"),
+    ],
+)
+@pytest.mark.parametrize(
+    "invalid_fraction", [0.0, -0.1, 1.1, float("nan"), float("inf")]
+)
+def test_synthetic_case_rejects_invalid_fraction_without_output(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+    generate_case: Callable[..., Path],
+    fraction_name: str,
+    invalid_fraction: float,
+) -> None:
+    source_bytes = hmda_csv_path.read_bytes()
+    output_root = tmp_path / "cases"
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match=fraction_name),
+    ):
+        generate_case(
+            connection,
+            [hmda_csv_path],
+            output_root,
+            **{fraction_name: invalid_fraction},
+        )
+
+    assert not output_root.exists()
+    assert hmda_csv_path.read_bytes() == source_bytes
 
 
 def test_row_count_drop_is_invariant_to_input_order_for_partial_key_ties(
@@ -541,7 +640,13 @@ def test_row_count_drop_wraps_source_schema_failure(tmp_path: Path) -> None:
         )
 
 
-def test_write_case_file_rejects_parent_directory_case_name(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "case_name", ["", ".", "..", "../escape", "nested/case", "absolute"]
+)
+def test_write_case_file_rejects_unsafe_case_name(
+    tmp_path: Path,
+    case_name: str,
+) -> None:
     """case name이 출력 root 밖의 디렉터리를 가리키지 못하게 한다."""
 
     output_root = tmp_path / "cases"
@@ -554,19 +659,47 @@ def test_write_case_file_rejects_parent_directory_case_name(tmp_path: Path) -> N
     ):
         write_case_file(
             connection=connection,
-            case_name="..",
+            case_name=str(tmp_path / "outside")
+            if case_name == "absolute"
+            else case_name,
             output_root=output_root,
             source_paths=[],
             query="SELECT 1",
             params=[],
         )
 
-    assert sentinel.exists()
+    assert sentinel.read_bytes() == b"keep"
+    assert not output_root.exists()
 
 
+def test_write_case_file_wraps_query_failure_without_changing_source(
+    tmp_path: Path,
+    hmda_csv_path: Path,
+) -> None:
+    source_bytes = hmda_csv_path.read_bytes()
+
+    with (
+        DuckDBConnectionManager() as connection,
+        pytest.raises(SyntheticCaseError, match="파일 생성") as error,
+    ):
+        write_case_file(
+            connection=connection,
+            case_name="failed_case",
+            output_root=tmp_path / "cases",
+            source_paths=[hmda_csv_path],
+            query="SELECT missing_column",
+            params=[],
+        )
+
+    assert isinstance(error.value.__cause__, duckdb.Error)
+    assert hmda_csv_path.read_bytes() == source_bytes
+
+
+@pytest.mark.parametrize("target_year", [2000, 2026, 2100])
 def test_null_spike_supports_target_year_override(
     tmp_path: Path,
     hmda_csv_path: Path,
+    target_year: int,
 ) -> None:
     """합성 결함 생성 시 target_year를 지정하면 activity_year 파티션이 교체된다."""
 
@@ -577,7 +710,7 @@ def test_null_spike_supports_target_year_override(
             [hmda_csv_path],
             case_root,
             null_fraction=0.3,
-            target_year=2026,
+            target_year=target_year,
         )
         years = connection.execute(
             "SELECT DISTINCT activity_year FROM read_parquet(?)",
@@ -585,8 +718,8 @@ def test_null_spike_supports_target_year_override(
         ).fetchall()
         null_ratio = _null_ratio(connection, null_path, "income")
 
-    assert null_path.name == "null_spike_2026.parquet"
-    assert years == [(2026,)]
+    assert null_path.name == f"null_spike_{target_year}.parquet"
+    assert years == [(target_year,)]
     assert null_ratio >= 0.3
 
 
@@ -658,6 +791,8 @@ def test_null_spike_rejects_case_name_with_conflicting_first_year(
             case_name="null_spike_2025_2026",
         )
 
+    assert not (tmp_path / "cases").exists()
+
 
 def test_null_spike_rejects_case_name_with_non_ascii_year(
     tmp_path: Path,
@@ -676,6 +811,8 @@ def test_null_spike_rejects_case_name_with_non_ascii_year(
             target_year=2026,
             case_name="null_spike_２０２６",
         )
+
+    assert not (tmp_path / "cases").exists()
 
 
 def test_null_spike_allows_case_name_with_matching_first_year(
