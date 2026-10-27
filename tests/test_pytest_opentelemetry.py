@@ -67,7 +67,7 @@ def test_pytest_opentelemetry_exports_span_contract(
 def test_pytest_opentelemetry_runs_with_xdist(
     pytester: pytest.Pytester,
 ) -> None:
-    """plugin의 per-test tracing이 실제 xdist worker에서 동작한다."""
+    """plugin을 로드한 채 xdist worker에서 테스트를 실행할 수 있다."""
 
     pytester.makepyfile(
         """

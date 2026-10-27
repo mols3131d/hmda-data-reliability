@@ -130,6 +130,16 @@ def _assert_analytics_outputs(database_path: Path, expected_rows: int = 10) -> N
         assert mart_count is not None
         assert int(mart_count[0]) == 2
 
+        outcomes = connection.execute(
+            "SELECT activity_year, state_code, loan_purpose, application_count, "
+            "approval_count, denial_count FROM marts.mart_hmda_loan_outcomes "
+            "ORDER BY state_code"
+        ).fetchall()
+        assert outcomes == [
+            (2025, "CA", 1, 5, 3, 2),
+            (2025, "NY", 31, 5, 2, 3),
+        ]
+
 
 def _build_approval(proposal: RecoveryProposal) -> Approval:
     """Create a valid matching Approval fixture for the exact proposal."""
