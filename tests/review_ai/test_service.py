@@ -14,6 +14,7 @@ from hmda_reliability.review_ai import contracts
 from hmda_reliability.review_ai import service as service_module
 from hmda_reliability.review_ai import store as store_module
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
+from hmda_reliability.review_ai.prompt import render_canonical_input
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
 from hmda_reliability.runtime_ai import provider as provider_module
@@ -77,12 +78,14 @@ class FakeProvider:
         self.outcome = outcome
         self.calls = 0
         self.events = events
+        self.messages: list[tuple[runtime_contracts.ChatMessage, ...]] = []
 
     def invoke(
         self,
         messages: tuple[runtime_contracts.ChatMessage, ...],
     ) -> runtime_contracts.ProviderResponse:
         self.calls += 1
+        self.messages.append(messages)
         if self.events is not None:
             self.events.append("provider")
         if isinstance(self.outcome, Exception):
@@ -192,6 +195,14 @@ def test_invocation_provenance_uses_the_same_bounded_projection_as_provider_inpu
     )
     store = RecordingStore(tmp_path)
 
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content=_safe_output(material).model_dump_json(),
+            attempt_count=1,
+            latency_ms=5,
+        )
+    )
+
     result = service_module.review_null_spike(
         incident=material.detection.incident,
         evidence=[bounded_evidence],
@@ -199,19 +210,21 @@ def test_invocation_provenance_uses_the_same_bounded_projection_as_provider_inpu
         prompt_identity=contracts.PromptIdentity(),
         project_revision="e09c54b",
         settings=_settings(),
-        provider=FakeProvider(
-            runtime_contracts.ProviderResponse(
-                content=_safe_output(material).model_dump_json(),
-                attempt_count=1,
-                latency_ms=5,
-            )
-        ),
+        provider=provider,
         evidence_store=store,
         invocation_id_factory=lambda: "inv-bounded",
     )
 
     assert result.status == "accepted"
     record = store.records[0]
+    replay = render_canonical_input(
+        record.canonical_input,
+        record.prompt_identity,
+        max_prompt_bytes=record.configuration.max_prompt_bytes,
+    )
+    assert provider.messages == [replay.messages]
+    assert [message.role for message in replay.messages] == ["system", "user"]
+    assert record.prompt_digest == replay.prompt_digest
     assert "raw_log" not in record.model_dump_json()
     canonical_evidence = record.canonical_input["evidence"]
     assert isinstance(canonical_evidence, list)
@@ -219,6 +232,65 @@ def test_invocation_provenance_uses_the_same_bounded_projection_as_provider_inpu
     assert record.evidence_refs == tuple(
         item["evidence_id"] for item in canonical_evidence if isinstance(item, dict)
     )
+
+
+def test_rejects_citation_of_provided_evidence_omitted_from_the_prompt(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    evidence = [material.detection.evidence] + [
+        Evidence(
+            evidence_id=f"ev-meta-{index}",
+            source="table_metadata",
+            asset_name=material.detection.incident.asset_name,
+            partition=material.detection.incident.partition,
+            observed_at=material.detection.evidence.observed_at,
+            summary="Small table metadata.",
+            payload={"table_name": "raw.hmda_loans"},
+        )
+        for index in range(8)
+    ]
+    references = [item.evidence_id for item in evidence]
+    output = _safe_output(material).model_copy(update={"evidence_used": ("ev-meta-7",)})
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content=output.model_dump_json(), attempt_count=1, latency_ms=1
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    result = service_module.review_null_spike(
+        incident=material.detection.incident.model_copy(
+            update={"evidence_refs": references}
+        ),
+        evidence=evidence,
+        draft=material.draft.model_copy(update={"evidence_refs": references}),
+        prompt_identity=contracts.PromptIdentity(),
+        project_revision="e09c54b",
+        settings=_settings(),
+        provider=provider,
+        evidence_store=store,
+        invocation_id_factory=lambda: "inv-omitted",
+    )
+
+    assert provider.calls == 1
+    assert result.status == "validation_failed"
+    assert result.failure_code == "deterministic_guard_failed"
+    assert result.output is None
+    record = store.delegate.load("inv-omitted")
+    assert record.validation is not None
+    assert record.validation.violations == (
+        contracts.ReviewViolationCode.FABRICATED_EVIDENCE,
+    )
+    assert record.evidence_refs == (
+        material.detection.evidence.evidence_id,
+        *(f"ev-meta-{index}" for index in range(7)),
+    )
+    selected = record.canonical_input["evidence"]
+    assert isinstance(selected, list)
+    assert len(selected) == 8
+    assert {item["evidence_id"] for item in selected} == set(record.evidence_refs)
 
 
 def test_records_evidence_when_review_outcome_is_created(
