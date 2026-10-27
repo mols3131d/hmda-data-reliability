@@ -151,3 +151,23 @@ def test_bootstrap_action_executes_expected_commands(
         assert step() == 0
 
     assert calls == expected_calls[action]
+
+
+@pytest.mark.unit
+def test_bootstrap_main_stops_on_the_first_failed_command(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[object, ...]] = []
+    namespace = _load_bootstrap(monkeypatch, calls)
+    main = cast(FunctionType, namespace["main"])
+    monkeypatch.setattr(namespace["shutil"], "which", lambda _name: "/usr/bin/uv")
+    monkeypatch.setattr(sys, "argv", [str(BOOTSTRAP_SCRIPT), "setup"])
+
+    def fail_dependencies(command: Sequence[str], *, cwd: Path) -> int:
+        calls.append(("run", tuple(command), cwd))
+        return 17
+
+    monkeypatch.setitem(main.__globals__, "run", fail_dependencies)
+
+    assert main() == 17
+    assert calls == [("run", ("uv", "sync", "--locked"), REPO_ROOT)]
