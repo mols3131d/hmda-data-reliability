@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from threading import Event, Lock, Thread
 
+import duckdb
 import pytest
 
 import hmda_reliability.hmda_data.ingestion.partition as partition_module
@@ -233,6 +234,92 @@ def test_partition_reload_preserves_values_after_source_columns_are_reordered(
         )
 
 
+def test_partition_insert_failure_rolls_back_deleted_rows(
+    hmda_csv_path: Path,
+    hmda_parquet_path: Path,
+) -> None:
+    """실제 INSERT 제약 실패 뒤 기존 값·provenance와 staging 정리를 확인한다."""
+
+    with DuckDBConnectionManager() as connection:
+        load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+        load_hmda_loans_partition(connection, [hmda_parquet_path], 2024)
+        connection.execute(
+            "CREATE UNIQUE INDEX unique_loan_amount ON raw.hmda_loans (loan_amount)"
+        )
+        before = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY source_year, loan_amount"
+        ).fetchall()
+        hmda_csv_path.write_text(
+            hmda_csv_path.read_text(encoding="utf-8").replace("420000", "350000"),
+            encoding="utf-8",
+        )
+
+        with pytest.raises(HMDADataLoadError, match="파티션 적재") as raised:
+            load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
+
+        assert isinstance(raised.value.__cause__, duckdb.ConstraintException)
+        after = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY source_year, loan_amount"
+        ).fetchall()
+        staging_tables = connection.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_name = '__hmda_loans_partition_stage'"
+        ).fetchall()
+
+    assert len(before) == 3
+    assert after == before
+    assert staging_tables == []
+
+
+def test_file_scoped_reload_preserves_same_year_sibling(
+    hmda_csv_path: Path,
+    tmp_path: Path,
+) -> None:
+    sibling_path = tmp_path / "sibling_2025.csv"
+    sibling_path.write_text(
+        hmda_csv_path.read_text(encoding="utf-8").replace("120,CA", "777,CA"),
+        encoding="utf-8",
+    )
+    with DuckDBConnectionManager() as connection:
+        assert (
+            load_hmda_loans_partition(connection, [hmda_csv_path, sibling_path], 2025)
+            == 4
+        )
+        sibling_before = connection.execute(
+            "SELECT * FROM raw.hmda_loans "
+            "WHERE source_file_name = ? ORDER BY loan_amount",
+            [sibling_path.name],
+        ).fetchall()
+        hmda_csv_path.write_text(
+            hmda_csv_path.read_text(encoding="utf-8").replace("120,CA", "121,CA"),
+            encoding="utf-8",
+        )
+
+        assert (
+            load_hmda_loans_partition(
+                connection,
+                [hmda_csv_path, sibling_path],
+                2025,
+                source_file=hmda_csv_path.name,
+            )
+            == 2
+        )
+        selected_rows = connection.execute(
+            "SELECT loan_amount, income FROM raw.hmda_loans "
+            "WHERE source_file_name = ? ORDER BY loan_amount",
+            [hmda_csv_path.name],
+        ).fetchall()
+        sibling_after = connection.execute(
+            "SELECT * FROM raw.hmda_loans "
+            "WHERE source_file_name = ? ORDER BY loan_amount",
+            [sibling_path.name],
+        ).fetchall()
+
+    assert selected_rows == [(350000, 121), (420000, 95)]
+    assert len(sibling_before) == 2
+    assert sibling_after == sibling_before
+
+
 def test_partition_content_identity_tracks_logical_row_multiset(
     hmda_csv_path: Path,
 ) -> None:
@@ -409,6 +496,9 @@ def test_partition_load_compares_expected_freshness_before_replacement(
             WHERE source_year = 2025
             """
         )
+        before = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY loan_amount"
+        ).fetchall()
 
         with pytest.raises(HMDAStalePartitionError, match="stale"):
             load_hmda_loans_partition(
@@ -420,8 +510,12 @@ def test_partition_load_compares_expected_freshness_before_replacement(
             )
 
         after = partition_max_ingested_at(connection, source_year=2025)
+        after_rows = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY loan_amount"
+        ).fetchall()
 
     assert after == datetime(2026, 8, 15, 0, 0, tzinfo=UTC)
+    assert after_rows == before
 
 
 def test_partition_load_preserves_approved_bronze_metadata(
@@ -444,6 +538,9 @@ def test_partition_load_preserves_approved_bronze_metadata(
         before = partition_content_identity(connection, source_year=2025)
         before_freshness = partition_max_ingested_at(connection, source_year=2025)
         assert before_freshness is not None
+        approved_rows = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY loan_amount"
+        ).fetchall()
 
         load_hmda_loans_partition(
             connection,
@@ -460,30 +557,46 @@ def test_partition_load_preserves_approved_bronze_metadata(
             WHERE source_year = 2025
             """
         ).fetchone()
+        actual_rows = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY loan_amount"
+        ).fetchall()
 
     assert metadata == (2025, hmda_csv_path.name, approved_at)
+    assert actual_rows == approved_rows
 
 
-def test_partition_load_rejects_missing_preserved_provenance_before_mutation(
+@pytest.mark.parametrize(
+    "candidate_projection",
+    [
+        "* EXCLUDE (ingested_at)",
+        "* REPLACE (CAST(loan_amount AS VARCHAR) AS loan_amount)",
+    ],
+    ids=["missing-provenance", "incompatible-schema"],
+)
+def test_partition_load_rejects_invalid_preserved_candidate_before_mutation(
     hmda_csv_path: Path,
     tmp_path: Path,
+    candidate_projection: str,
 ) -> None:
-    candidate_path = tmp_path / "candidate-without-ingested-at.parquet"
+    candidate_path = tmp_path / "invalid-candidate.parquet"
 
     with DuckDBConnectionManager() as connection:
         load_hmda_loans_partition(connection, [hmda_csv_path], 2025)
         before = partition_content_identity(connection, source_year=2025)
+        before_rows = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY loan_amount"
+        ).fetchall()
         connection.execute(
-            """
+            f"""
             COPY (
-                SELECT * EXCLUDE (ingested_at)
+                SELECT {candidate_projection}
                 FROM raw.hmda_loans
             ) TO ? (FORMAT PARQUET)
             """,
             [candidate_path.as_posix()],
         )
 
-        with pytest.raises(HMDADataLoadError, match="metadata|provenance"):
+        with pytest.raises(HMDADataLoadError, match="metadata|provenance|schema"):
             load_hmda_loans_partition(
                 connection,
                 [candidate_path],
@@ -492,8 +605,12 @@ def test_partition_load_rejects_missing_preserved_provenance_before_mutation(
                 preserve_source_metadata=True,
             )
         after = partition_content_identity(connection, source_year=2025)
+        after_rows = connection.execute(
+            "SELECT * FROM raw.hmda_loans ORDER BY loan_amount"
+        ).fetchall()
 
     assert after == before
+    assert after_rows == before_rows
 
 
 def test_partition_load_creates_custom_target_schema(hmda_csv_path: Path) -> None:
