@@ -6,17 +6,17 @@ description: Reliability의 하위 영역별 모든 테스트 설계를 새로 �
 
 # Reliability Test Design Audit and Adoption
 
-**State:** 전수 조사·test-only 회귀 보강·독립 리뷰 완료, 인간 검토 인계. **Initial base:** `81fe44b2`. 조사 baseline은 `b16ad5734b4a5a35c1db3d12fe03124438e71348` (main `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` 포함), 검증한 code revision은 `e772c53fb975232e776d240cb61ff9a13cb896d1`이다. [현재 검토](02-review-current/README.md)가 inventory·finding 판정·검증과 #277 후속 범위를 소유한다. Draft 유지, 인간 review·approval·merge는 미수행이다.
+**State:** 전수 조사·test-only 회귀 보강·독립 리뷰 완료. 2026-10-27 사용자가 검증 후 merge까지 위임했고 C11 후속 테스트를 수용했다. **Initial base:** `81fe44b2`. 조사 baseline은 `b16ad5734b4a5a35c1db3d12fe03124438e71348` (main `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686` 포함), 최신 검증 code는 `43321757d8fed9aeebcd0f2a56279acc253dbdfd`다. [현재 검토](02-review-current/README.md)가 inventory·finding·실행 근거와 owner별 후속 범위를 소유한다. 최종 전달 CI 확인 후 Ready 전환·squash merge하며 결과는 PR 상태로 확인한다.
 
 ## Continuation State
 
-- **Goal:** 8개 하위 영역의 현행 테스트 설계 전수 검토와 수용한 gap의 최소 회귀 보강을 마치고 Draft PR로 전달한다.
-- **Completed:** 28개 전체 body와 source/Spec 대조, 과거 6개 finding별 재판정, 5개 테스트 모듈의 최소 보강. Final domain 268 passed, 정적 검사 통과, 최초 리뷰의 sentinel 회귀 보정 후 독립 재검토 `clear`.
-- **Validation:** code revision의 CI Lite [40208484838](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40208484838)은 base `ea39a4fd` + head `e772c53f`의 prospective merge `4f0042d707fc0afcb9f92653933e0e691e5ea5dd`에서 Reliability 268 passed와 정적 검사를 실제 실행했다. 이후 delivery metadata만 갱신하며 최종 원격 head/check는 PR에서 재확인한다.
-- **Loop accounting:** intensity `standard`; Main Loop `2/30` (첫 리뷰 `changes_required`, fixture 보정 후 `clear`). Engineering acceptance는 충족됐고 남은 `current_required`는 없다. 최종 문서·PR 전달을 확인하고 종료하며 별도 인간 승인으로 해석하지 않는다.
+- **Goal:** 8개 하위 영역의 전수 검토와 수용한 gap의 최소 회귀 보강을 완료하고, 사용자가 위임한 조건에 따라 검증 후 PR을 merge한다.
+- **Completed:** 28개 전체 body와 source/Spec 대조, 과거 finding별 재판정, 5개 테스트 모듈 보강과 F1 sentinel 보정. 추가 C11 UPDATE/INSERT 2개와 negative control 검증 후 domain **270 passed**, Ruff/format/ty 통과, 최신 독립 quality/adversarial `clear`.
+- **Validation:** 최신 code의 [CI Lite 40501813006](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40501813006)은 base `15e2164697a8f086abbc20e05147a2b54b842fd4` + head `43321757`의 merge `7e8a003c`에서 Reliability **270 passed in 25.25s**와 Ruff/format/ty를 실제 실행했다. 이후 Inbox-only delivery의 exact head/check를 재확인한다.
+- **Loop accounting:** 기존 감사 Main Loop `2/30`에서 `clear`; 이번 C11 후속 delta도 별도 두 관점과 lead가 `clear`로 판정했다. Engineering acceptance를 충족했고 남은 `current_required`는 없다.
 - **Review synchronization:** 2026-10-27 head `3faa7ffba787a14e899a3ab9918c275a0695193e`까지 fast-forward. 이전 전달 이후 17개 commit은 [심층 리뷰](03-review-chatbot-deep.md) 한 파일만 변경했으며 GitHub review/comment/thread는 각각 0개다. [리뷰 대조표](02-review-current/README.md#review-reconciliation)에 현행 판정과 근거 범위를 정리했다.
-- **Next action:** 인간은 검토 결과와 PR diff를 검토한다. H3 통합 검증은 #277, H1/H2/C9의 계약은 Reliability·Spec owner, C11/C16은 Reliability test·reporter owner의 후속 판단이다. H4는 #270 F3와 중복 추적하며 실제 공용 수정 owner 배정이 필요하다. 이 lane에 새 필수 구현은 없다.
-- **Authority:** production·공유 설정·Spec·타 도메인 변경 권한을 handoff만으로 부여하지 않는다. #277의 현행 exclusive lane에 없는 공용 hook/Spec 수정은 별도 owner나 명시적 범위 개정이 필요하다. Draft 전환 해제·approval·merge는 별도 인간 결정이다.
+- **Next action:** 최종 문서·CI·feedback·병합 가능성을 확인한 뒤 Ready 전환·squash merge한다. H3 통합 검증은 #277, H1/H2/C9 계약은 Reliability·Spec owner, C16은 reporter owner의 후속 작업이다. H4는 #270 F3와 중복 추적하며 공용 수정 owner 배정이 필요하다.
+- **Authority:** 사용자가 이번 PR의 이상 없을 시 merge를 명시적으로 위임했다. Production·공유 설정·Spec·타 도메인 변경 권한으로 확대하지 않는다. #277의 현행 exclusive lane에 없는 공용 hook/Spec 수정은 별도 owner나 명시적 범위 개정이 필요하다.
 
 ## Scope
 
@@ -40,6 +40,8 @@ description: Reliability의 하위 영역별 모든 테스트 설계를 새로 �
 - [x] focused·관련 suite, 정적 검사, 이전/현재 evidence 구분과 독립 리뷰 완료 후 인간 검토용 Draft 전달
 
 마지막 항목은 인간 검토로의 인계 완료다. 인간의 review·approval·merge 완료를 뜻하지 않는다.
+
+이번 후속 작업의 merge 권한은 위 Acceptance나 agent assessment가 아닌 사용자의 별도 명시적 위임에서 나온다. 실제 merge 완료 여부는 GitHub의 PR 상태·merge SHA로 검증한다.
 
 ## Boundary
 

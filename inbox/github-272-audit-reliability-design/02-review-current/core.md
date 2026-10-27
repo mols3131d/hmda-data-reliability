@@ -6,10 +6,11 @@ description: Contracts, metadata, profiling, detection, impact, remediation 및 
 
 # Reliability Core Test Design Audit
 
-19개 파일 전체를 읽고 현재 source·Spec과 대조했다. 현재 구현이 정상인 네 가지 oracle gap을 최소 반례로 보강했다. Individual manifest node/edge shape 정책은 #277의 명세 판단으로 보류한다.
+19개 파일 전체를 읽고 현재 source·Spec과 대조했다. 현재 구현이 정상인 T1–T4와 후속 C11의 oracle gap을 최소 반례로 보강했다. Individual manifest node/edge shape 정책은 Reliability source·Spec owner의 결정으로 보류하며 #277은 합의된 접점 검증을 취합한다.
 
 - **Target:** contracts·metadata·profiling·detection/quality policy·impact·remediation와 공통 support.
 - **Revision:** `b16ad5734b4a5a35c1db3d12fe03124438e71348` + 아래 T1–T4 테스트 변경.
+- **Continuation:** `43321757d8fed9aeebcd0f2a56279acc253dbdfd`에서 C11 row-only UPDATE/INSERT의 schema hash 불변 테스트 2개 추가. [새 독립 검토](independent.md#third-assessment)는 `clear`다.
 - **Scope:** 계약 테스트 8개, 그 외 테스트 8개, fixture 1개, package marker 2개. 모든 body를 검토했으며 package marker는 수정에서 제외했다.
 
 ## Findings
@@ -20,13 +21,15 @@ description: Contracts, metadata, profiling, detection, impact, remediation 및 
 | T2 | Minor | 빈 partition 외의 측정 불가 freshness 반례가 없음 | nonempty all-NULL·미지정 column을 기존 unavailable 테스트에 추가 |
 | T3 | Minor | column 추가만으로는 이름·타입 각각의 hash 민감도를 구별하지 못함 | 동일 column 수의 rename/type 변경을 기존 schema 테스트에 추가 |
 | T4 | Minor | rejected gate와 거부자·시각의 개별 누락을 관측하지 않음 | 기존 gate에 rejected 추가, 잘못된 rejection metadata 3종 검사 |
+| C11 | Minor | schema 변경 민감도만으로 row 값·개수에 대한 불변성을 보장하지 못함 | 실제 UPDATE·INSERT의 행 변경과 hash 불변을 각각 검사 |
 
-T1–T4는 production 결함 주장이 아니다. 현재 정상 동작을 보호하는 테스트 gap이며 모두 이 PR의 test-only 수정으로 수용했다.
+T1–T4·C11은 production 결함 주장이 아니다. 현재 정상 동작을 보호하는 테스트 gap이며 모두 이 PR의 test-only 수정으로 수용했다.
 
 ## Contract Basis
 
 - T1: [Profile comparison compatibility](../../../openspec/specs/reliability-incident-detection/spec.md), [DetectionRequest](../../../src/hmda_reliability/reliability/detection/request.py)의 asset·partition 동등성.
 - T2/T3: [Freshness metric / Deterministic schema hash](../../../openspec/specs/reliability-profile-snapshots/spec.md), [profile builder](../../../src/hmda_reliability/reliability/profiling/profile_snapshot_builder.py)의 실제 SQL·schema metadata.
+- C11: 같은 deterministic schema hash 계약과 [schema hash 구현](../../../src/hmda_reliability/reliability/profiling/profile_snapshot_builder.py)의 schema-only 정의. 실제 행 변경과 hash 동등성을 별개 oracle로 확인한다.
 - T4: [Approval contract](../../../openspec/specs/reliability-data-contracts/spec.md)의 pending/rejected 실행 차단과 [Approval](../../../src/hmda_reliability/reliability/contracts/approval.py)의 기존 rejection metadata 검증. Status gate는 exact recovery proposal에 대한 mutation authority가 아니다.
 
 ## Full File Coverage
@@ -44,7 +47,7 @@ T1–T4는 production 결함 주장이 아니다. 현재 정상 동작을 보호
 | [conftest.py](../../../tests/reliability/conftest.py) | 고정 UTC·asset·partition·evidence ID를 공유하는 NamedTuple fixture | 매 호출 새 model/collection; pending approval이며 사람/live evidence가 아님 |
 | [test_fixtures.py](../../../tests/reliability/test_fixtures.py) | exact evidence/lineage links, pending gate, authored JSON enum/time, NaN profile 거부 | 전체 serialization compatibility golden은 아님 |
 | [test_table_metadata_evidence.py](../../../tests/reliability/test_table_metadata_evidence.py) | 실제 DuckDB column name/type/nullability·count 1·identity·고정 time, missing-table domain error | Hash prefix는 profiling의 schema-change oracle이 보완; adapter/규모 일반 보장 제외 |
-| [test_profile_snapshots.py](../../../tests/reliability/test_profile_snapshots.py) | 다른 날짜 sentinel을 둔 실제 SQL count 2·null 0.5·max timestamp·JSON, 반복 hash·empty/future freshness. T2/T3 반례 보강 | Recovery caller의 approved population 선택은 별도 책임 |
+| [test_profile_snapshots.py](../../../tests/reliability/test_profile_snapshots.py) | 다른 날짜 sentinel을 둔 실제 SQL count 2·null 0.5·max timestamp·JSON, 반복 hash·empty/future freshness. T2/T3 및 C11 row-only 반례 보강 | Recovery caller의 approved population 선택은 별도 책임 |
 | [test_table_state_identity.py](../../../tests/reliability/test_table_state_identity.py) | 실제 multi-year 정렬·count 합계·frozen field, duplicate/file scope·NULL year 거부, 누락 partition·equal-count changed digest 불일치 | Unit digest는 authored 값; 실제 content hashing의 모든 조합은 HMDA 검증과 구분 |
 | [test_basic_incident_detection.py](../../../tests/reliability/test_basic_incident_detection.py) | 정상·4 incident·exact payload/link, inclusive equality, zero threshold 양의 악화·zero baseline·독립 규칙/column. T1로 population 거부 양쪽 검사 | 실제 SQL profile 생성과 구분하는 unit 계약 |
 | [test_quality_gate.py](../../../tests/reliability/test_quality_gate.py) | authored baseline·5%p equality·null spike·empty·unsupported column, exact log/error field, non-blocking types | 대부분 실제 detector; non-blocking fake는 policy 분리 증거이며 E2E가 아님 |
@@ -66,7 +69,7 @@ R2 profile population 문제는 [Recovery disposition](recovery.md)으로 연결
 
 ## H1: Deferred Manifest Node And Edge Policy
 
-**Disposition:** `deferred` to #277; 현 단계의 확정 production defect나 #272 blocker로 승격하지 않는다.
+**Disposition:** `scope_decision` for Reliability source/Spec owner; 현 단계의 확정 production defect나 #272 blocker로 승격하지 않는다.
 
 [Lineage artifact validation](../../../openspec/specs/reliability-impact-analysis/spec.md)은 readable/valid artifact와 uninterpretable manifest의 실패를 요구하지만, individual node/adjacency shape와 누락 허용 정책을 정의하지 않는다. [현재 parser](../../../src/hmda_reliability/reliability/impact/manifest.py)는 non-object node와 non-object `depends_on`, non-list `depends_on.nodes`를 건너뛴다.
 
@@ -79,7 +82,7 @@ Baseline에서 별도 `TemporaryDirectory`의 manifest/run-results를 사용한 
 | model의 `depends_on=null` | 성공, 두 목록 `[]` |
 | `depends_on.nodes`를 source ID 문자열로 변경 | 성공, 두 목록 `[]` |
 
-영향은 손상된 개별 node/edge가 영향 없음과 구분되지 않을 수 있다는 점이다. #277은 이 shape의 거부/허용 정책을 먼저 결정하고, 거부가 계약이면 parser·normative Spec·failure regression을 함께 소유한다. 권장 oracle은 정상 graph의 exact downstream 목록을 유지하면서 invalid shape가 식별 가능한 impact failure로 종료하는지 검사하는 것이다. 과거 I1의 container-level 결함을 다시 열지 않는다.
+영향은 손상된 개별 node/edge가 영향 없음과 구분되지 않을 수 있다는 점이다. Reliability source·Spec owner가 shape의 거부/허용 정책을 먼저 결정하고, 거부가 계약이면 parser·normative Spec·failure regression의 수정 범위를 배정해야 한다. #277의 현재 exclusive lane에 이 source·Spec 쓰기 권한이 있다고 가정하지 않는다. 권장 oracle은 정상 graph의 exact downstream 목록을 유지하면서 invalid shape가 식별 가능한 impact failure로 종료하는지 검사하는 것이다. 과거 I1의 container-level 결함을 다시 열지 않는다.
 
 ## Validation
 
@@ -91,6 +94,7 @@ Baseline에서 별도 `TemporaryDirectory`의 manifest/run-results를 사용한 
 | ✅ Pass | H1 bounded probe | 정상 graph와 field 변경 3종, 위 actual result; repository 파일 변경 없음 |
 | ✅ Pass | T1–T4 검출력 | 6개 subprocess에서 기존 oracle PASS, 보강 oracle assertion FAIL. [통합 근거](README.md#negative-controls) |
 | ✅ Pass | 최종 domain | 독립 리뷰 후 sentinel 보정에서도 268 passed in 25.69s. [리뷰 기록](independent.md) |
+| ✅ Pass | C11 후속 검증 | Profile 11 passed in 0.56s, domain 270 passed in 26.82s. Row-count/content mutant는 기존 DDL 3개를 통과하지만 새 INSERT 또는 UPDATE/INSERT에서 assertion FAIL |
 
 ## Risks And Limits
 

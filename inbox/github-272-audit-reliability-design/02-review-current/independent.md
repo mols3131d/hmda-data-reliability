@@ -6,7 +6,7 @@ description: 독립 quality·adversarial 검토의 revision별 assessment와 필
 
 # Reliability Audit Independent Review
 
-최초 `a85cac28`의 필수 수정 1건을 처리한 `e772c53f`의 독립 재검토는 `clear`다. 남은 `current_required`나 review blocker는 없다.
+최초 `a85cac28`의 필수 수정 1건을 처리한 `e772c53f`와 C11을 보강한 `43321757`의 독립 재검토는 모두 `clear`다. 남은 `current_required`나 review blocker는 없다.
 
 - **Target:** 변경된 테스트 5개, plan과 현재 감사 근거, 28-file coverage 및 historical finding 판정.
 - **Revision:** 최초 `b16ad5734b4a5a35c1db3d12fe03124438e71348` → `a85cac28c38122d87dd4a324f0743d42ccfe94be`.
@@ -61,3 +61,11 @@ Lead는 baseline/target의 28개 목록과 보고서 19/4/5개 행의 일대일 
 | ✅ Pass | F1 반례 재검증 | Table-MAX fallback에서 empty/all-NULL assertion FAIL, 7개 PASS |
 | ✅ Pass | 수정 후 정적 검사 | Ruff check/format check 및 ty check tests/reliability 통과 |
 | ✅ Pass | 수정 snapshot의 독립 assessment | `e772c53f`에서 두 관점과 lead reconciliation 모두 clear |
+
+## Third Assessment
+
+- **Reviewed:** `43321757d8fed9aeebcd0f2a56279acc253dbdfd` vs `9d2ab6eb15efab03bba4813da299bbe04ffac018`. Profile 테스트 28행 추가이며 변경 없는 기존 전수 검토 범위는 재사용했다.
+- **Assessment:** `clear`. 별도 quality/adversarial specialist와 lead가 C11을 `accepted / fixed`로 판정했다. 새 `current_required`·blocker는 없다.
+- **Evidence:** 실제 UPDATE·INSERT로 행이 바뀐 것을 먼저 관찰하고 schema hash 불변을 검사한다. 정본의 schema-only 계약과 일치하며 기존 DDL 3개 및 F1 freshness sentinel을 보존한다. 정확한 HEAD·clean 상태·변경 경계·contract/oracle·diff check를 확인했다.
+- **Validation limits:** Reviewer는 보고된 profile 11/domain 270 GREEN과 두 negative control을 재실행하지 않았다. 별도 독립 정적 검토와 담당자의 실행 근거를 구분한다. 최종 Inbox 갱신·원격 CI·merge 상태 확인은 완료 담당자가 수행한다.
+- **Follow-up:** C9/H1/H2의 계약·Spec 결정, H3 통합, H4 공용 hook 문제는 현재 테스트 변경의 필수 수정이 아니다. C16은 기존 reporter의 표현 무결성 후속 과제이며 UI 표시 결과는 미확인이다. 과거의 “H1–H4 모두 #277” 배정은 [현재 소유권 정정](README.md#pr-277-handoff)으로 대체한다.
