@@ -65,8 +65,22 @@ def test_write_evidence_generates_consistent_json_and_markdown(tmp_path: Path) -
     assert json_data["repository_revision"] == "abc123"
     assert json_data["observed_at"] == "2026-08-06T00:00:00+00:00"
     assert json_data["evidence"]["row_count"] == 1000
+    assert json_data["evidence"]["duration_seconds"] == 1.23
+    assert json_data["evidence"]["source"] == {
+        "id": "year_2025.csv",
+        "scope": "full_file",
+        "csv_options": {},
+    }
 
     md_text = markdown_path.read_text(encoding="utf-8")
+    assert "Total Duration Seconds: 1.230" in md_text
+    for value in (
+        "year_2025.csv",
+        json_data["source_sha256"],
+        "abc123",
+        "2026-08-06T00:00:00+00:00",
+    ):
+        assert value in md_text
     assert "Total Row Count: 1,000" in md_text
     assert "Income Null Count: 50" in md_text
     assert "Mart Grain Distinct Group Count: 327" in md_text
@@ -138,10 +152,11 @@ def test_repository_revision_raises_on_dirty_tree(
         _repository_revision(tmp_path)
 
 
-def test_write_evidence_cleans_up_new_json_on_first_creation_second_replace_failure(
-    tmp_path: Path,
+@pytest.mark.parametrize("existing_pair", [False, True], ids=["create", "overwrite"])
+def test_write_evidence_restores_pair_on_second_replace_failure(
+    tmp_path: Path, existing_pair: bool
 ) -> None:
-    """최초 생성 시 replace 실패하면 신규 json_path가 삭제된다."""
+    """Markdown replace 실패 시 기존 pair를 보존하거나 최초 생성 pair를 제거한다."""
     json_path = tmp_path / "evidence.json"
     md_path = tmp_path / "evidence.md"
 
@@ -151,6 +166,17 @@ def test_write_evidence_cleans_up_new_json_on_first_creation_second_replace_fail
         "null_counts": {"income": 0},
         "grain": {"distinct_group_count": 10},
     }
+    metadata = {
+        "source_id": "test.csv",
+        "source_sha256": "dummy_hash",
+        "repository_revision": "head_sha",
+        "observed_at": "2026-08-07T00:00:00Z",
+    }
+    if existing_pair:
+        write_evidence(evidence, json_path=json_path, markdown_path=md_path, **metadata)
+    old_json = json_path.read_bytes() if existing_pair else None
+    old_markdown = md_path.read_bytes() if existing_pair else None
+    evidence["row_count"] = 200
 
     original_replace = os.replace
     call_count = 0
@@ -170,14 +196,18 @@ def test_write_evidence_cleans_up_new_json_on_first_creation_second_replace_fail
             evidence,
             json_path=json_path,
             markdown_path=md_path,
-            source_id="test.csv",
-            source_sha256="dummy_hash",
-            repository_revision="head_sha",
-            observed_at="2026-08-07T00:00:00Z",
+            **metadata,
         )
 
-    assert not json_path.exists()
-    assert not md_path.exists()
+    if existing_pair:
+        assert json_path.read_bytes() == old_json
+        assert md_path.read_bytes() == old_markdown
+    else:
+        assert not json_path.exists()
+        assert not md_path.exists()
+    assert not json_path.with_suffix(".json.tmp").exists()
+    assert not md_path.with_suffix(".md.tmp").exists()
+    assert not json_path.with_suffix(".json.bak").exists()
 
 
 def test_main_preserves_actual_source_analysis_and_provenance_contract(
