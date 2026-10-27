@@ -14,8 +14,9 @@ description: Reliability의 하위 영역별 모든 테스트 설계를 새로 �
 - **Completed:** 28개 전체 body와 source/Spec 대조, 과거 6개 finding별 재판정, 5개 테스트 모듈의 최소 보강. Final domain 268 passed, 정적 검사 통과, 최초 리뷰의 sentinel 회귀 보정 후 독립 재검토 `clear`.
 - **Validation:** code revision의 CI Lite [40208484838](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40208484838)은 base `ea39a4fd` + head `e772c53f`의 prospective merge `4f0042d707fc0afcb9f92653933e0e691e5ea5dd`에서 Reliability 268 passed와 정적 검사를 실제 실행했다. 이후 delivery metadata만 갱신하며 최종 원격 head/check는 PR에서 재확인한다.
 - **Loop accounting:** intensity `standard`; Main Loop `2/30` (첫 리뷰 `changes_required`, fixture 보정 후 `clear`). Engineering acceptance는 충족됐고 남은 `current_required`는 없다. 최종 문서·PR 전달을 확인하고 종료하며 별도 인간 승인으로 해석하지 않는다.
-- **Next action:** 인간은 [검토 결과](02-review-current/README.md)와 PR diff를 검토한다. 후속 agent는 code revision·원격 head/base/check를 다시 대조하고 H1–H4는 #277에서 처리한다. 이 lane에 남은 필수 구현은 없다.
-- **Authority:** production·공유 설정·타 도메인 변경은 #277로 인계한다. Draft 전환 해제·approval·merge는 별도 인간 결정이다.
+- **Review synchronization:** 2026-10-27 head `3faa7ffba787a14e899a3ab9918c275a0695193e`까지 fast-forward. 이전 전달 이후 17개 commit은 [심층 리뷰](03-review-chatbot-deep.md) 한 파일만 변경했으며 GitHub review/comment/thread는 각각 0개다. [리뷰 대조표](02-review-current/README.md#review-reconciliation)에 현행 판정과 근거 범위를 정리했다.
+- **Next action:** 인간은 검토 결과와 PR diff를 검토한다. H3 통합 검증은 #277, H1/H2/C9의 계약은 Reliability·Spec owner, C11/C16은 Reliability test·reporter owner의 후속 판단이다. H4는 #270 F3와 중복 추적하며 실제 공용 수정 owner 배정이 필요하다. 이 lane에 새 필수 구현은 없다.
+- **Authority:** production·공유 설정·Spec·타 도메인 변경 권한을 handoff만으로 부여하지 않는다. #277의 현행 exclusive lane에 없는 공용 hook/Spec 수정은 별도 owner나 명시적 범위 개정이 필요하다. Draft 전환 해제·approval·merge는 별도 인간 결정이다.
 
 ## Scope
 
@@ -35,7 +36,7 @@ description: Reliability의 하위 영역별 모든 테스트 설계를 새로 �
 - [x] 8개 subdomain의 최신 전체 tests/support/design inventory·계약/coverage/제외 사유 완성
 - [x] 주요 정상·경계·잘못된 입력·실패·복구·재검증 흐름의 test oracle/검출력 검토
 - [x] 기존 모든 finding별 수용/기각/보류/기해결 판정 및 해당 근거
-- [x] 수용한 유효 gap에 최소 테스트 추가, 기존 회귀 보존, 공유 후속 범위를 #277 소유자에게 전달
+- [x] 수용한 유효 gap에 최소 테스트 추가, 기존 회귀 보존, 공유 후속 범위의 실제 owner와 범위 결정 필요성을 구분해 전달
 - [x] focused·관련 suite, 정적 검사, 이전/현재 evidence 구분과 독립 리뷰 완료 후 인간 검토용 Draft 전달
 
 마지막 항목은 인간 검토로의 인계 완료다. 인간의 review·approval·merge 완료를 뜻하지 않는다.

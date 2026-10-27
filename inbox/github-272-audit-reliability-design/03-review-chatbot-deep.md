@@ -9,6 +9,8 @@ tags:
 
 # Reliability Chatbot Deep Review
 
+2026-10-27 원격 동기화 후 현재 판정·리뷰 출처·후속 owner는 [통합 대조표](02-review-current/README.md#review-reconciliation)에서 확인한다. 아래 R15와 R1–R13의 판정·실행 한계는 당시 revision의 기록으로 보존한다. 이번 정리는 새 독립 리뷰나 runtime 재현을 추가하지 않는다.
+
 > [!IMPORTANT]
 > **Current adjudication · R15 (2026-10-27 04 KST): 확인한 범위의 새 `current_required` 없음.** Normal-case 역명제는 정본 요구가 아니며, Markdown cell 오염은 **기존 reporter의 조건부 위험**으로 분리한다. 새 독립 specialist·원본 renderer 실행은 **Not Verified**; `clear`/Ready/approval/merge 판단이 아니다.
 
@@ -43,7 +45,6 @@ tags:
 ---
 
 ## Historical Review Evidence (R1–R13; superseded dispositions)
-
 
 > [!IMPORTANT]
 > **Blocked (independent review gate pending; R2 source/CI revalidated)** — 새 `current_required` 결함은 아직 확정하지 않았습니다. 이는 머지 불가 판정이 아니라 이번 챗봇 리뷰의 검토 범위와 독립 재검증이 아직 닫히지 않았다는 뜻입니다. 로컬 테스트를 직접 실행하지 않았으므로 기존 CI·독립 리뷰 기록을 본 검토의 재현 결과로 간주하지 않습니다.
@@ -126,7 +127,6 @@ tags:
 > [!NOTE]
 > **Research → Plan → Review:** Compared previous R2 head `2e1daa1dd6a144bb816dd82f86bc09ce209671b5` to authoritative head `07e0a26436ff4196b916f86ab3cd07e1619406fd` and main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`: only this Inbox review changed, so earlier code/Spec/test findings remain revision-applicable. No new PR conversation feedback. The plan was to challenge one unresolved inference against a separate source/test path, keep test-only PR ownership, and validate latest remote CI without claiming local execution. This is same-session multi-perspective analysis, **not** isolated independent review.
 
-
 ### R3 · Reliability · Missing-THEN Impact Reassessment
 
 - **C5 → 🔵 Note / follow_up (pre-existing Spec wording), not a current test defect:** [Canonical evaluation Spec](../../openspec/specs/reliability-evaluation-report/spec.md) still has `Scenario: Existing or aliased evaluation database` with GIVEN/WHEN and **no THEN** (lines 193–196). However [existing schema-drift integration tests](../../tests/reliability/test_schema_drift_evaluation.py), lines 40–126, already exercise all three existing DB paths with exact original database bytes and no callback/new entries, plus canonical path aliases with no workspace/callback. This directly refutes the stronger R2 implication that the missing THEN entails an unprotected current test/implementation path. The missing normative wording remains a Spec-owner documentation decision, outside this test-only PR; do not make #277 invent acceptance semantics or call this a new regression.
@@ -143,7 +143,6 @@ tags:
 | ⚪ Not Verified | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) integrated contract test | Still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2`; prerequisite domain PRs remain unmerged. |
 
 **Next:** Re-check exact head/base/CI before reuse. Follow the candidate-specific owner and counterexample above; run only the narrow relevant fault/alias/integration test in a disposable isolated environment if authorized. Preserve the difference between remote CI success, static inference and independent review. Do not modify shared code/Spec or approve/merge. This reviewed head is the **pre-Inbox-update** SHA; verify the resulting commit changed only this document.
-
 
 ## R4 · 2026-10-26 KST · Schema Replay Preflight and No-Write Countercheck
 
