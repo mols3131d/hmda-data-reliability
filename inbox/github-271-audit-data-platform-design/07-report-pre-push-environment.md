@@ -48,3 +48,11 @@ Push 후 local/remote head는 `37c53d04b0646bdbc0cb1341f54e0f87aafcd0ad`로 일�
 공유 hook이 pytest를 시작하는 child 경계에서 Git 로컬 환경을 제거하도록 수정하고, 합성 parent 저장소의 override를 상속받은 child fixture가 parent HEAD/index/refs를 바꾸지 않는 회귀 검증을 추가하는 것이 권장 조치입니다. Hook의 정상 repository 조회에 필요한 환경과 pytest child 환경을 구분해야 합니다. 실제 사용자 저장소를 오염시키는 재현은 사용하지 않습니다.
 
 영구 수정·공유 회귀 테스트와 admission 판단은 #277 소유입니다. 이 도메인 PR에서 해결했다고 닫지 않습니다. 안전한 retry와 remote CI의 최종 결과는 [통합 보고서](05-report-current-audit.md)가 소유합니다.
+
+## Current Delivery Addendum
+
+2026-10-27의 새 wrapper synthetic probe는 **1 passed / 0.12s**였다. Head `75efa994` 전달의 실제 hook은 `GIT_DIR`·`GIT_PREFIX`를 제거한 뒤 **1 passed, 2 deselected / 7.80s**였다. Parent HEAD/index와 test/design을 push 후 다시 확인했다. 현재 C6 수정·CI와 후속 소유권의 최신 기록은 [current review](11-review-merge-readiness.md)를 따른다.
+
+같은 날 공유 local Git config의 `user.name`·`user.email`이 `CI Test`·`ci-test@example.invalid`인 것을 확인했다. Global 값과 기존 정상 commit은 `mols`·`mols3131d@gmail.com`이다. Git fixture가 실제 repository의 config를 쓰는 누출 기전과 일치하지만 정확한 변경 시점은 입증하지 못했다. 공유 config는 수정하지 않았다. 이미 게시한 `dce28291`·`75efa994`가 이 identity를 상속했으며 공개 history도 재작성하지 않았다. 이후 commit에는 global identity를 명령 한 번의 override로 사용한다.
+
+영구 공유 격리 회귀의 관찰 대상에는 parent HEAD/index/refs 외 **Git config 불변성**도 포함해야 한다. 소유권·허용 경로의 결정과 기존 공유 config의 복구는 별도 공유 작업이다. 임시 wrapper가 이미 남은 config 값을 원상 복구했다고 주장하지 않는다.

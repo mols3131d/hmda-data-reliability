@@ -7,6 +7,9 @@ description: PR 271의 최종 테스트 변경을 별도 quality·adversarial �
 # Data Platform Independent Implementation Review
 
 > [!NOTE]
+> **Historical review.** 아래 implementation `8bf4e6b0`의 기록을 보존한다. C6의 도달성 미입증을 이유로 한 기각은 [원본 재현](09-report-chatbot-review-adoption.md) 이후 더 이상 현재 판정이 아니다. 보완 `dce28291`의 새 독립 리뷰는 [current review](11-review-merge-readiness.md)에 기록했다.
+
+> [!NOTE]
 > **Assessment: clear.** 별도 `review-lead`가 quality·adversarial specialist의 독립 검토를 취합했습니다. 현재 scope의 필수 수정이나 evidence·scope·coverage blocker는 없습니다. Draft 상태 변경·approval·merge 판정은 포함하지 않습니다.
 
 - **Target:** PR [#271](https://github.com/mols3131d/hmda-data-reliability/pull/271)의 Data Platform 테스트 보강.

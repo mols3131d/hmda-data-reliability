@@ -6,6 +6,9 @@ description: PR 271의 현행 전수 검토 범위, legacy finding 수용, 회�
 
 # Data Platform Current Test Audit and Handoff
 
+> [!NOTE]
+> **Historical snapshot.** 아래 결과는 원래 implementation `8bf4e6b0`와 그 delivery의 기록이다. 이후 C6의 실제 false green과 C11의 조건부 source 위험을 [수용 문서](09-report-chatbot-review-adoption.md)에서 확인했다. C6 보완 implementation `dce28291`의 새 독립 리뷰·검증과 현재 판단은 [merge preparation review](11-review-merge-readiness.md)를 따른다. 아래 과거 `clear`·ready를 새 finding 처리의 근거로 사용하지 않는다.
+
 **State:** 현행 테스트 5개 파일 전수 검토와 회귀 보강, 로컬 검증, 독립 리뷰(`clear`), 안전한 push와 prospective-merge CI 확인을 완료했습니다. 아래 exact base/head 기준 **review readiness: ready**입니다. PR은 Draft이며 인간 review·Ready 전환·approval·merge는 별도입니다.
 
 ## Revision And Scope

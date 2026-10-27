@@ -41,7 +41,6 @@ tags:
 
 ## Historical Review Evidence (R1–R13; superseded dispositions)
 
-
 > [!IMPORTANT]
 > **Blocked (independent review gate pending; R2 source/CI revalidated)** — 새 `current_required` 결함은 아직 확정하지 않았습니다. 이는 머지 불가 판정이 아니라 이번 챗봇 리뷰의 검토 범위와 독립 재검증이 아직 닫히지 않았다는 뜻입니다. 로컬 테스트를 직접 실행하지 않았으므로 기존 CI·독립 리뷰 기록을 본 검토의 재현 결과로 간주하지 않습니다.
 
@@ -122,11 +121,10 @@ tags:
 > [!NOTE]
 > **Research → Plan → Review:** Compared previous R2 head `f4d09358302a35f46ec85c1cfeb306889be930ed` to authoritative head `a06c6093f3ae2afda232d649755987a504cc05c0` and main/base `ea39a4fd6c8f483509cf00a1d1114feb4ef3b686`: only this Inbox review changed, so earlier code/Spec/test findings remain revision-applicable. No new PR conversation feedback. The plan was to challenge one unresolved inference against a separate source/test path, keep test-only PR ownership, and validate latest remote CI without claiming local execution. This is same-session multi-perspective analysis, **not** isolated independent review.
 
-
 ### R3 · Data Platform · Lock Oracle Countercheck
 
 - **Candidate C5 — 🔵 Note / Drop:** The conjecture that artifact lock tests use only a fake lock is refuted by [test_artifacts.py](../../tests/data_platform/test_artifacts.py), `test_projection_lock_enforces_shared_and_exclusive_access`: it calls the real [`fcntl.flock` implementation](../../src/hmda_reliability/data_platform/artifacts.py) and changes only the contender to `LOCK_NB` to observe reader/reader and conflicting writer combinations. The source also preserves body failure over unlock failure; separate tests exercise setup/release error translation. These are direct code/test inspections, **not a new local runtime reproduction**.
-- **C4 stays Open / follow_up:** Pair-byte identity and real primitive locking do not prove the #270 candidate-to-current promotion plus Reliability consumer sees one consistent integrated state. The existing [#277 interface plan](../github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md) owns that integration after upstream merges. The existing one-warning CI is a Python fork deprecation warning, not a failed test; no evidence here that it causes flakiness.
+- **C4 stays Open / follow_up:** Pair-byte identity and real primitive locking do not prove the #270 candidate-to-current promotion plus Reliability consumer sees one consistent integrated state. The existing [#277 interface plan](https://github.com/mols3131d/hmda-data-reliability/blob/74ac659d084fadd5e93900b132ef5b995ef8d919/inbox/github-277-audit-cross-domain-design/00-plan-cross-domain-tests.md) owns that integration after upstream merges. The existing one-warning CI is a Python fork deprecation warning, not a failed test; no evidence here that it causes flakiness.
 - **Disposition:** No new confirmed `current_required`; independent specialist gate still **blocked**. Do not promote the 43 scoped dbt/data-platform cases to a cross-domain acceptance claim.
 
 ### R3 Validation and Next Transition
@@ -139,7 +137,6 @@ tags:
 | ⚪ Not Verified | [#277](https://github.com/mols3131d/hmda-data-reliability/pull/277) integrated contract test | Still Draft at `74ac659d084fadd5e93900b132ef5b995ef8d919`, initial base `81fe44b2`; prerequisite domain PRs remain unmerged. |
 
 **Next:** Re-check exact head/base/CI before reuse. Follow the candidate-specific owner and counterexample above; run only the narrow relevant fault/alias/integration test in a disposable isolated environment if authorized. Preserve the difference between remote CI success, static inference and independent review. Do not modify shared code/Spec or approve/merge. This reviewed head is the **pre-Inbox-update** SHA; verify the resulting commit changed only this document.
-
 
 ## R4 · 2026-10-26 KST · Negative dbt-Result Oracle Challenge
 
