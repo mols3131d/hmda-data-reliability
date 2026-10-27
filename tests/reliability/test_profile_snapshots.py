@@ -107,6 +107,34 @@ def test_schema_hash_is_deterministic_and_changes_with_schema(
 
 
 @pytest.mark.parametrize(
+    "row_change",
+    [
+        "UPDATE raw.profile_test SET loan_amount = 42.0 WHERE loan_amount = 12.5",
+        "INSERT INTO raw.profile_test VALUES "
+        "(TIMESTAMP '2024-01-01 10:00:00', TIMESTAMP '2024-01-02 10:00:00', 25.0, 3)",
+    ],
+    ids=["updated-value", "inserted-row"],
+)
+def test_schema_hash_is_unchanged_by_row_changes(row_change: str) -> None:
+    with DuckDBConnectionManager() as connection:
+        _create_profile_table(connection)
+        rows_before = connection.execute(
+            "SELECT * FROM raw.profile_test ORDER BY partition_at"
+        ).fetchall()
+        hash_before = calculate_schema_hash(connection, "raw.profile_test")
+
+        connection.execute(row_change)
+
+        rows_after = connection.execute(
+            "SELECT * FROM raw.profile_test ORDER BY partition_at"
+        ).fetchall()
+        hash_after = calculate_schema_hash(connection, "raw.profile_test")
+
+    assert rows_after != rows_before
+    assert hash_after == hash_before
+
+
+@pytest.mark.parametrize(
     ("partition_day", "freshness_column", "expected_rows"),
     [(3, "loaded_at", 0), (1, "loaded_at", 2), (1, None, 2)],
     ids=["empty-partition", "all-null-timestamps", "unconfigured-column"],
