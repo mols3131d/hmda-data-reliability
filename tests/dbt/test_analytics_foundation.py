@@ -111,6 +111,12 @@ def test_dbt_quality_tests_detect_source_staging_and_mart_violations(
     target = tmp_path / "dbt-target"
     manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
     run_results = json.loads((target / "run_results.json").read_text(encoding="utf-8"))
+    unexpected_results = {
+        result["unique_id"]: result["status"]
+        for result in run_results["results"]
+        if result["status"] not in {"pass", "fail"}
+    }
+    assert not unexpected_results, f"Unexpected dbt test statuses: {unexpected_results}"
     failed_nodes = [
         manifest["nodes"][result["unique_id"]]
         for result in run_results["results"]

@@ -15,13 +15,15 @@
 | Outcome·rate·average | Action 1·2·4와 complete-key invalid numeric 행을 TX grain에 둔다. | Applications 3, approvals 2, denials 0, rate `0.666667`, averages `150000.0`·`75.0` | `test_dbt_build_creates_artifacts_lineage_and_idempotent_mart` |
 | Eligible population | State가 NULL인 행과 complete-key numeric NULL 행을 함께 둔다. | 전자는 mart에서 제외되고 후자는 TX의 application denominator에 포함 | `test_dbt_build_creates_artifacts_lineage_and_idempotent_mart` |
 | Deterministic rebuild | 같은 raw에서 두 차례 build한다. | 두 결과 모두 동일한 고정 tuple과 grain/row count | `test_dbt_build_creates_artifacts_lineage_and_idempotent_mart` |
-| Quality failure | 성공 build 뒤 source year NULL, mart key NULL·duplicate를 주입해 `dbt test`를 실행한다. | Exit 1과 source/staging `source_year` not-null, mart key not-null/unique의 정확한 네 실패 | `test_dbt_quality_tests_detect_source_staging_and_mart_violations` |
+| Quality failure | 성공 build 뒤 source year NULL, mart key NULL·duplicate를 주입해 `dbt test`를 실행한다. | Exit 1과 source/staging `source_year` not-null, mart key not-null/unique의 정확한 네 실패. 나머지 결과는 pass이며 error·예상 밖 status는 거부 | `test_dbt_quality_tests_detect_source_staging_and_mart_violations` |
 
 ## Fixed Fixture Arithmetic
 
 TX는 `100000/50`, `200000/100`, `invalid/Exempt`의 세 행이다. Actions `1`, `2`, `4` 중 처음 두 행이 승인되어 `2/3`을 여섯 자리로 반올림하면 `0.666667`이다. 마지막 행은 평균에서 제외되지만 application count에는 포함된다. 이 결과는 action 2 누락, 반올림 제거·절삭, NULL의 zero 대체와 invalid numeric 행 제거를 구별한다. CA·NY의 기존 action `3`, `7`은 denial 의미를, action `4`는 미승인·미거절 application을 고정한다.
 
 DB에서 읽은 metric은 값 변환 없이 고정 tuple과 비교한다. Count를 `int()`로 보정해 fractional 오집계를 숨기지 않는다.
+
+Negative quality scenario의 의도된 fail은 네 개다. `dbt test` exit 1과 이 네 fail이 함께 있어도 추가 error를 허용하지 않는다. 실제 반례로 test 직전 mart의 `application_count` column을 제거하면 네 fail 외 실행 error가 생기며, 이 경우 oracle이 추가 status를 이유로 거부해야 한다.
 
 ## Limits
 
