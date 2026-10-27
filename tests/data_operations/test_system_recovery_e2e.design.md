@@ -20,6 +20,8 @@ The deterministic system recovery E2E verification proves the complete integrati
 | S4-B: Pre-Approval Safety (Mismatched Identity) | Approval with mismatched before-identity raises `ApprovalGateError`, dirty target content identity remains strictly unchanged | `test_pre_approval_safety_mismatched_identity_zero_mutation` |
 | S4-C: Pre-Approval Safety (Mismatched Actions) | Approval with missing/altered actions raises `ApprovalGateError`, dirty target content identity remains strictly unchanged | `test_pre_approval_safety_mismatched_actions_zero_mutation` |
 
+정상 적재·승인된 복구·replay 이후 analytics의 oracle은 staging 10행과 mart 2행에 더해 `(year, state, purpose, applications, approvals, denials)`의 고정 결과 `[(2025, CA, 1, 5, 3, 2), (2025, NY, 31, 5, 2, 3)]`를 비교한다. 도메인 내부 집계 공식의 재구현 없이 원천 fixture의 서로 다른 결과가 통합 경로 끝까지 보존되는지 확인한다.
+
 ## Exclusions
 
 - Apache Airflow DAG scheduling, task-level retry, runtime request adaptation, and workflow orchestration boundaries are excluded from this direct Python API integration core.

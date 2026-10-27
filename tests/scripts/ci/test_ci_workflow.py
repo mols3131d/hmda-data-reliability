@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 from tests.scripts.ci.helpers import (
     CI_SCRIPTS,
@@ -16,6 +17,31 @@ from tests.scripts.ci.helpers import (
 )
 
 pytestmark = pytest.mark.component
+
+
+def test_main_pull_requests_always_create_the_required_workflow() -> None:
+    # BaseLoader preserves the GitHub Actions key `on` as a string.
+    workflow = yaml.load(
+        (REPO_ROOT / ".github/workflows/ci-lite.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    trigger = workflow["on"]["pull_request"]
+
+    assert trigger["branches"] == ["main"]
+    assert not {"paths", "paths-ignore", "branches-ignore"}.intersection(trigger)
+    assert "types" not in trigger or {"opened", "synchronize", "reopened"}.issubset(
+        trigger["types"]
+    )
+    assert "if" not in workflow["jobs"]["check"]
+
+
+def test_required_check_uses_the_prospective_merge_revision(
+    workflow_steps: dict[str, dict[str, object]],
+) -> None:
+    checkout = workflow_steps["Checkout prospective merge"]["with"]
+    assert isinstance(checkout, dict)
+    assert checkout.get("ref") in (None, "${{ github.ref }}", "${{ github.sha }}")
+    assert checkout["fetch-depth"] == 0 or checkout["fetch-depth"] >= 2
 
 
 def test_action_only_changes_prepare_isolated_zizmor(
