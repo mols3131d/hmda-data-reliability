@@ -6,7 +6,19 @@ description: 개별 도메인 테스트 검토가 반영된 뒤 도메인 경계
 
 # Cross-Domain Interface Test Design Audit and Adoption
 
-**State:** Preliminary current-main audit delivered; prerequisite integration remains not_ready. [현행 검토·검증·전달 근거](02-review-current.md). **Current base:** `be1dca8d044494e92a0d25c791471a41b5d11bcf`.
+**State:** Final integration verified; independent review clear; review readiness ready. [현행 검토·검증 근거](02-review-current.md). **Current integration base:** `66f6372cc58d34ad469acee56202eed040a9a5d7`.
+
+## Continuation Plan
+
+2026-10-27 원격 조회에서 #269–#276의 병합을 모두 확인했다. #277은 Draft이며 작업 시작 head는 `35e100a74ab4a44f408df5e2acc158fd6dad993a`다. 기존 exclusive lane과 source/tooling 후속의 범위를 유지한다.
+
+1. 최신 main을 additive merge하고 #273–#276의 accepted test delta와 cross-domain 계약을 대조한다.
+1. 기존 15개 target inventory와 새로 병합된 test/support/design의 영향을 재확인한다. 누락이 입증된 in-scope oracle만 최소 보강한다.
+1. 격리된 환경에서 전체 non-resource suite, 변경 Python의 정적 검사와 Inbox 검사를 수행한다. 외부 서비스·사람 평가·resource 검증은 별도로 구분한다.
+1. 별도 review-lead로 현재 통합 결과를 검토하고 수용 가능한 finding만 처리한다.
+1. 같은 branch에 commit/push한 뒤 exact base/head/prospective merge의 CI를 확인하고 보고서·PR 본문과 readiness를 갱신한다.
+
+**Run:** Main Loop Review 1/30 accepted. Finalize는 같은 Inbox 경로의 문서 전달과 최종 remote head/CI 확인에 한정한다.
 
 ## Prerequisites
 
@@ -34,12 +46,12 @@ description: 개별 도메인 테스트 검토가 반영된 뒤 도메인 경계
 
 ## Acceptance
 
-- [ ] 선행 도메인/공통 지원 PR #269–#276의 병합 및 변경된 계약 검토
-- [ ] 현재 main의 cross-domain tests/fixtures/workflows 전체 inventory와 coverage/제외 사유
-- [ ] 각 interface의 주요 정상·경계·실패/복구·안전 계약을 독립 oracle로 판정
-- [ ] 과거 finding과 새 evidence의 accept/reject/defer/obsolete 기록
-- [ ] 누락된 고가치 통합 회귀의 최소 테스트 보강 및 관련 suite 실행
-- [ ] 정확한 통합 revision 기준 CI·독립 리뷰·인간 review readiness 충족
+- [x] 선행 도메인/공통 지원 PR #269–#276의 병합 및 변경된 계약 검토
+- [x] 현재 main의 cross-domain tests/fixtures/workflows 전체 inventory와 coverage/제외 사유
+- [x] 각 interface의 주요 정상·경계·실패/복구·안전 계약을 독립 oracle로 판정
+- [x] 과거 finding과 새 evidence의 accept/reject/defer/obsolete 기록
+- [x] 누락된 고가치 통합 회귀의 최소 테스트 보강 및 관련 suite 실행
+- [x] 정확한 통합 revision 기준 CI·독립 리뷰·인간 review readiness 충족
 
 ## Boundary
 

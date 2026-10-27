@@ -1,60 +1,96 @@
 ---
 type: review
-title: Cross-Domain Current Audit and Integration Handoff
-description: 현행 main에서 예약 접점 테스트를 보강하고 선행 PR 통합 조건과 source 후속의 범위를 구분합니다.
+title: Cross-Domain Final Integration Audit
+description: 선행 PR 병합을 반영한 cross-domain 통합 revision의 계약 보존, 검증, 독립 리뷰와 전달 근거를 기록합니다.
 ---
 
-# Cross-Domain Current Audit and Integration Handoff
+# Cross-Domain Final Integration Audit
 
 > [!IMPORTANT]
-> **Review readiness: not_ready.** 현재 main 기준의 보강·전체 실행은 완료했지만 #273–#276은 아직 Draft/open이다. 이들의 병합을 요구하는 최종 통합 acceptance는 충족하지 않았다. 아래 실행을 선행 PR이 모두 반영된 최종 검증으로 해석하지 않는다.
+> **Review readiness: ready.** 선행 #269–#276을 반영한 최종 통합 실행, 독립 리뷰와 아래 exact base/head의 prospective merge CI를 확인했다. Inbox-only 전달은 검증한 실행 대상 blob을 보존하며, 최종 delivery head의 CI는 PR 본문에서 재확인한다. PR은 Draft이며 Ready 전환·approval·merge는 별도 인간 결정이다.
 
-- **Target:** [PR #277](https://github.com/mols3131d/hmda-data-reliability/pull/277)의 예약 integration tests, 새 cross-domain regression과 PR-owned Inbox.
-- **Revision:** base `be1dca8d044494e92a0d25c791471a41b5d11bcf`; implementation/test head `172a6993c8ad0f564f62c1e7674e410dda9834f0`.
-- **Scope:** 예약/신규 test·design 12파일과 read-only support 3파일. Domain 내부 테스트와 production/Spec/CI 설정은 수정하지 않았다.
+- **Target:** [PR #277](https://github.com/mols3131d/hmda-data-reliability/pull/277)의 exclusive integration test lane와 PR-owned Inbox.
+- **Base:** `66f6372cc58d34ad469acee56202eed040a9a5d7`.
+- **Execution/review head:** `2665ce7d45c4d74ada3105374123b12e2d2bde70`. 기존 head `35e100a74ab4a44f408df5e2acc158fd6dad993a`에 최신 main을 additive merge했다.
+- **Boundary:** 이번 continuation의 authored delta는 이 PR의 Inbox다. Production/Spec/shared CI·hook·domain-owned unit tests를 변경하지 않는다. 전달 head의 정확한 revision과 원격 CI는 PR 본문에서도 재조회한다.
 
-## Changes and Interface Evidence
+## Prerequisite Integration
 
-| Interface | Current oracle / change |
+2026-10-27 원격 조회와 main의 first-parent history에서 8개 PR의 병합을 확인했다.
+
+| PR | Merge commit |
 | --- | --- |
-| Source→Bronze→quality gate→dbt→promotion | 기존 실제 system E2E와 실제 DAGRun을 실행했다. 정상 적재와 승인된 복구 이후 mart 결과를 고정 `(year,state,purpose,applications,approvals,denials)` 두 tuple로 보강했다. |
-| Operations/Platform→Reliability→approved recovery | 실제 persisted dirty/clean identity, read-only lifecycle, exact proposal binding, rejected/mismatched approval의 zero mutation, revalidation과 replay를 보존했다. |
-| Reliability→Review AI→Runtime AI | 실제 detector/draft material에서 default harness/reviewer/adapter/SDK/store를 연결했다. HTTP만 통제하고 200/400/500의 CLI status/typed failure, 실제 HTTP 횟수와 record attempt_count, complete wire payload와 canonical replay/digest를 비교한다. |
-| Workflow admission→selection→validation | main PR entry, opened/synchronize/reopened event, path filter 부재와 prospective merge checkout을 고정한다. 실제 runner/classifier 및 기존 step wiring suite를 함께 실행했다. |
-| Pytest→telemetry/xdist | serial span assertions는 유지하고 xdist case의 설명을 실제 관측한 compatibility로 좁혔다. |
+| [#269](https://github.com/mols3131d/hmda-data-reliability/pull/269) | `d6e5e31fbadbe3d1c63b67810ccf3fc3fb2760dc` |
+| [#270](https://github.com/mols3131d/hmda-data-reliability/pull/270) | `ac3a2ab7f12036de69d21b1d9f6bf135c85a4075` |
+| [#271](https://github.com/mols3131d/hmda-data-reliability/pull/271) | `15e2164697a8f086abbc20e05147a2b54b842fd4` |
+| [#272](https://github.com/mols3131d/hmda-data-reliability/pull/272) | `be1dca8d044494e92a0d25c791471a41b5d11bcf` |
+| [#273](https://github.com/mols3131d/hmda-data-reliability/pull/273) | `22fca0e3e4c145f1af71512dbe18ff1e561c5d4c` |
+| [#274](https://github.com/mols3131d/hmda-data-reliability/pull/274) | `cdfedf054e92ae19d458ba9a960d8d7b4a53c0b2` |
+| [#275](https://github.com/mols3131d/hmda-data-reliability/pull/275) | `42bf2aa5db80b97694f01ee80acbe6cb3bde1e60` |
+| [#276](https://github.com/mols3131d/hmda-data-reliability/pull/276) | `66f6372cc58d34ad469acee56202eed040a9a5d7` |
 
-새 HTTP 테스트는 실제 provider 호출이나 사람 평가가 아니다. Fake approval은 오직 deterministic fixture의 exact proposal contract를 검사하며 사람 승인 증거를 만들지 않는다.
+`35e100a7..2665ce7d`의 executable delta는 선행 PR의 [service](../../tests/review_ai/test_service.py), [utility evaluation](../../tests/review_ai/evaluation/test_utility_evaluation.py), [SDK provider](../../tests/runtime_ai/test_provider.py), [bootstrap](../../tests/scripts/test_bootstrap.py), [Rule index](../../tests/scripts/test_generate_agent_routes.py) 테스트 5파일이다. 실제 provider 입력·저장 provenance 일치, 제외 evidence 인용 거부, criterion별 score 귀속, 명시 token·UTF-8 bytes, 첫 실패 중단과 enabled Rule의 고정값 oracle가 추가됐다. #275는 문서만 변경했다.
+
+이 구간의 `src/`, `openspec/`, `dbt/`, `scripts/`, workflow, dependency와 shared hook/config delta는 없다. 따라서 아래의 기존 source 후속을 해결했다고 해석하지 않는다.
+
+## Interface Evidence
+
+| Interface | Current oracle |
+| --- | --- |
+| Source→Bronze→quality gate→dbt→promotion | 실제 system recovery E2E와 Airflow DAGRun. 정상·승인된 복구 이후 mart의 고정 두 tuple을 확인한다. |
+| Operations/Platform→Reliability→approved recovery | Persisted dirty/clean identity, read-only lifecycle, exact proposal binding, rejected/mismatched approval의 zero mutation, revalidation과 replay. |
+| Reliability→Review AI→Runtime AI | 실제 detector/draft→harness/reviewer/adapter/SDK/store를 연결하고 HTTP만 통제한다. 200/400/500의 typed failure, wire payload, actual attempt count, canonical replay/digest와 secret 부재를 비교한다. |
+| Workflow admission→selection→validation | main PR entry·required events·무경로필터·prospective merge checkout과 실제 classifier/runner wiring. |
+| Pytest→telemetry/xdist | Serial span contract와 xdist compatibility smoke. Worker span export의 완전성은 주장하지 않는다. |
+
+새 HTTP 테스트는 외부 provider 호출이 아니다. Fake approval은 exact proposal 계약만 검사하며 사람 승인 증거가 아니다.
+
+### Reliability H3 Mapping
+
+[PR #272 H3](../github-272-audit-reliability-design/02-review-current/README.md#pr-277-handoff)의 reserved integration과 lower-level 회귀를 이번 전체 실행에 연결한다. 새 통합 test를 중복 작성하지 않는다.
+
+| Handoff contract | Owning regression / integration | Evidence boundary |
+| --- | --- | --- |
+| Results-only identity | [test_projection_identity_distinguishes_artifact_pairs](../../tests/data_platform/test_artifacts.py)의 `results-only` | Artifact pair의 results bytes만 바뀌어도 identity가 달라진다. Lifecycle caller의 projection 전달은 source 대조이며, lifecycle 결과의 results-only 변화에 대한 별도 E2E assertion으로 세지 않는다. |
+| Stale results-only promotion | [test_promotion_rejects_artifacts_changed_after_verification](../../tests/data_operations/test_dbt_runner.py)의 `run_results_path` | 실제 promotion API가 거부하고 기존 current pair bytes와 파일 상태를 보존한다. |
+| Partition replay no-write | [test_deterministic_system_recovery_e2e](../../tests/data_operations/test_system_recovery_e2e.py)의 S7, [test_recovery_resumes_verification_without_repeating_overwrite](../../tests/reliability/test_approval_backfill_validation.py) | 전체 경로에서는 ingested timestamp 불변·already_recovered·실제 identity를 확인한다. 소유 회귀의 replay result/action을 [executor의 overwrite 분기](../../src/hmda_reliability/reliability/recovery/executor.py)와 정적으로 대조했다. 소유 회귀만으로 mutation 진입점 미호출을 직접 계측했다고 주장하지 않는다. |
+| Partition cleanup failure | [test_backfill_preserves_committed_state_on_staging_cleanup_failure](../../tests/reliability/test_approval_backfill_validation.py), [test_backfill_unlock_failure_preserves_completed_result_and_can_replay](../../tests/reliability/test_approval_backfill_validation.py) | Before/after·profile failure 조합 및 freshness replay에서 fault를 resource 경계에만 주입한다. Typed error의 실제 committed identity·reconciliation과 다음 replay 성공을 검사한다. |
+| Schema cleanup failure | [test_schema_recovery_preserves_completed_state_on_cleanup_failure](../../tests/reliability/test_schema_recovery_executor.py) | Unlock/close/staging × before/after의 실제 DB 상태·typed metadata·replay를 검사한다. |
+
+위 owning node는 모두 `2665ce7d`의 전체 suite에 포함됐다. Cleanup API가 반환하는 typed failure는 [null-spike evaluator](../../src/hmda_reliability/reliability/evaluation/null_spike.py)의 `evaluate_null_spike_vertical_slice`와 [volume-drop evaluator](../../src/hmda_reliability/reliability/evaluation/volume_drop.py)의 `evaluate_volume_drop_vertical_slice`에서 `(ApprovalGateError, BackfillValidationError)`를 받아 `_failure_result`로 전달하는 source 경로와 대조했다. [Replay profile-failure 전달 회귀](../../tests/reliability/test_null_spike_evaluation.py)와 [완료 recovery evidence 보존 회귀](../../tests/reliability/test_evaluation_report.py)도 전체 실행에 포함됐다.
+
+이는 API cleanup fault 주입과 evaluator의 typed-error routing을 조합한 근거다. Evaluator별 cleanup fault 주입, 모든 context field의 end-to-end 보존, 실제 dbt/Airflow/evaluator 전체 경로의 동시 fault E2E까지 검증했다고 확대하지 않는다.
 
 ## Historical Adoption
 
-[Historical bundle](01-review-historical/README.md)의 94파일 inventory·954개 실행 수와 과거 mutant는 당시 revision의 자료다. 현재 coverage와 실행 결과는 새로 판정한다.
+[원래 historical bundle](01-review-historical/README.md)과 [이전 current audit](https://github.com/mols3131d/hmda-data-reliability/blob/35e100a74ab4a44f408df5e2acc158fd6dad993a/inbox/github-277-audit-cross-domain-design/02-review-current.md)은 각 revision의 기록이다. 과거 실행 수와 negative control을 이번 실행으로 재사용하지 않는다.
 
-| Historical item | Decision | Current evidence / owner |
+| Item | Decision | Evidence / owner |
 | --- | --- | --- |
-| G1/G2 source overlap, mixed source schema | obsolete as outstanding | 최신 main의 #252 수정과 #269의 [최종 검토](../github-269-audit-hmda-data-design/08-review-final-delivery.md)에 회귀·전달 근거가 있다. |
-| G3/G4/G5/G6 recovery cleanup/profile scope, lineage shape, failed evaluation | obsolete as original finding | #252와 #272의 [현행 검토](../github-272-audit-reliability-design/02-review-current/README.md)를 적용한다. 별도 후속 graph policy/Spec gap까지 해결됐다는 뜻은 아니다. |
-| G7 / Review AI AI1 | deferred / scope_decision | 유효 input의 개별 metadata facts 초과가 raw ValidationError라는 새 probe를 #273에서 확인했다. Provider/store 0회; Review AI source owner 필요. |
-| G8 / S1 / CI C1 | deferred / scope_decision | 세 uncertainty CLI probe에서 full_tests/full_type=true지만 openspec_bulk=false, Change targets 비어 있음. Tooling source owner가 fallback을 결정·수정해야 한다. |
-| Operations D1 results-only identity | obsolete as outstanding | 최신 main의 manifest/results 각각 단독 drift oracle가 이미 보호한다. #275에서 다시 확인했으며 중복 구현하지 않는다. |
-| Review AI AI2/AI3/AI4 | accepted in #273 | Service capture/replay, provided-but-omitted citation, heterogeneous criterion score oracle를 보강했다. 해당 PR 미병합이므로 위 전체 suite에는 아직 포함되지 않는다. |
-| Runtime token/UTF-8 gaps | accepted in #274 | Non-default token wire와 UTF-8 byte limit을 보강했다. #274 미병합이다. |
-| S2 / CI C2 | accepted / implemented | PR trigger/path-filter/prospective merge assertions를 추가했다. 임시 workflow의 paths-ignore·PR-head-ref·closed-only event 세 negative control을 새 witness가 모두 거부했다. Hosted event 실험은 아니다. |
-| S3 / S5 | accepted in #276 | Bootstrap public main failure와 enabled/disabled/root literal Rule oracle. #276 미병합이다. |
-| S4 empty YAML scalar | deferred / scope_decision | Reviewer가 public validator에서 comment-only null, 빈 quoted scalar 뒤 comment 세 사례의 errors=[]를 새로 확인했다. Tooling source owner 필요. |
-| S6 xdist claim | accepted / implemented | 실제 assertion에 맞게 설명을 compatibility smoke로 한정했다. |
+| G1/G2 source overlap·mixed schema | obsolete as outstanding | #252 수정과 병합된 #269의 [최종 검토](../github-269-audit-hmda-data-design/08-review-final-delivery.md). |
+| G3–G6 cleanup/profile scope·lineage container·failed evaluation | obsolete as original finding | #252와 병합된 #272의 [현행 검토](../github-272-audit-reliability-design/02-review-current/README.md). Individual graph policy·Spec·reporter 후속은 별개다. |
+| G7 / Review AI AI1 | deferred / scope_decision | 개별 evidence facts overflow의 typed rejection은 [#273 source 후속](../github-273-audit-review-ai-design/02-review-current.md). Source blob은 변하지 않았으며 이번에 probe를 재실행하지 않았다. |
+| G8 / S1 / CI C1 | deferred / scope_decision | Uncertain OpenSpec inventory의 fail-safe는 tooling owner. 이전 세 CLI probe와 해당 source가 보존됐다. |
+| Operations D1 results-only identity | obsolete as outstanding | [Dbt runner 회귀](../../tests/data_operations/test_dbt_runner.py)의 manifest/results 각각 단독 drift 거부·기존 bytes 보존을 현재 실행에 포함한다. |
+| Review AI AI2/AI3/AI4 | accepted / merged | #273의 provider capture/replay·omitted citation·criterion score oracle를 최종 통합했다. |
+| Runtime token/UTF-8 gaps | accepted / merged | #274의 explicit token wire·UTF-8 byte limit oracle를 최종 통합했다. |
+| S2 / CI C2 | accepted / implemented | #277의 workflow entry/events/path-filter/checkout oracle. 이전 negative control은 이전 revision의 근거로 보존한다. |
+| S3 / S5 | accepted / merged | #276의 bootstrap public main 실패 중단·enabled Rule literal oracle를 최종 통합했다. |
+| S4 empty YAML scalar | deferred / scope_decision | 실제 YAML nonempty 판정은 [#276 source 후속](../github-276-audit-common-support-design/02-review-current.md#source-follow-up). 이번 문서는 별도의 실제 YAML parser로 검사한다. |
+| S6 xdist claim | accepted / implemented | #277에서 관측 범위를 compatibility로 한정했다. |
 
-## Scope Decisions and Preserved Follow-ups
+## Preserved Source Follow-ups
 
-PR #272의 [최신 handoff](../github-272-audit-reliability-design/02-review-current/README.md#handoff)는 일반적인 “#277 인계” 문구가 exclusive write 목록을 확대하지 않는다고 정정했다. 현재 #277은 위 source 문제를 취합하며 source/Spec/lefthook을 수정할 권한을 새로 만들지 않는다. 다음은 아직 해결하지 않았다.
+일반적인 “#277 인계” 문구는 exclusive write 목록을 확대하지 않는다. 아래는 현재 test diff의 blocker와 구분한 미해결 후속이다.
 
-- **Review AI source owner:** AI1의 typed per-evidence rejection. 총 context overflow와 무관한 ValueError 전파는 보존해야 한다.
-- **Tooling owner:** C1의 uncertain inventory fail-safe와 S4의 actual YAML nonempty validation.
-- **Shared tooling owner:** #270 F3/#272 H4의 hook Git-local 환경 누수. 이번에는 외부 임시 `uv` wrapper로 child boundary에서 `git rev-parse --local-env-vars` 전체를 제거했다. Hostile Git-local environment를 넣은 private init/add/commit probe와 parent HEAD/index 불변을 확인했다. 영구 hook 수리는 아니다.
-- **Existing domain/source owners:** #269 H5/S1, #271 C11 lock symlink, #272 graph policy와 누락 THEN은 각각의 current handoff에 남긴다. 과거 또는 타 작업의 재현을 이번 실행으로 세지 않는다.
+- **Review AI source owner:** AI1의 typed per-evidence rejection. Context overflow와 무관한 ValueError 전파는 보존해야 한다.
+- **Tooling owner:** C1의 uncertain inventory fail-safe, S4의 YAML nonempty validation.
+- **Shared tooling owner pending:** #270 F3/#272 H4의 hook Git-local 환경 누수. 이번에도 외부 임시 wrapper로 child boundary에서 Git-local 변수를 전부 제거한다. 영구 hook 수정이 아니다.
+- **Existing source/Spec/report owners:** #269 H5/S1, #271 C11 lock symlink, #272 graph policy·누락 THEN·C16 reporter. 각각의 current handoff를 유지하며 이번 full-suite GREEN으로 해결됐다고 주장하지 않는다.
 
 ## File Coverage
 
-아래는 현행 target inventory다. 두 specialist가 각자 15/15파일을 reviewed로 확인했으며 제외·미검토 파일은 없다.
+기존 독립 검토 head `172a6993c8ad0f564f62c1e7674e410dda9834f0`와 통합 head `2665ce7d45c4d74ada3105374123b12e2d2bde70`의 아래 15/15 Git blob이 같다. 기존 전체 본문 검토를 재사용하며, 선행 PR의 변경 테스트 5파일과 최종 통합 증거는 이번 독립 리뷰에서 다시 대조한다.
 
 | File | Contract / oracle |
 | --- | --- |
@@ -78,27 +114,33 @@ PR #272의 [최신 handoff](../github-272-audit-reliability-design/02-review-cur
 
 | Result | Check | Evidence |
 | --- | --- | --- |
-| ✅ Pass | Current full non-resource suite | `uv run --no-sync pytest --testmon --testmon-forceselect -q -ra`: **1,162 passed, 3 skipped, 1 warning (251.39s)**. 새 private cache에서 전체 1,165개를 실행/skip했으며 main+#277의 `87c4ec31c91419401eca3291eb443d7581922e2a`에 한정한다. 이후 변경은 required event assertion 3행뿐이며 아래 focused 검증으로 확인했다. |
-| ✅ Pass | Final workflow delta | `172a6993c8ad0f564f62c1e7674e410dda9834f0`에서 workflow module **54 passed (3.67s)**. Closed-only negative control을 거부하고 default/explicit required event controls는 수용했다. |
-| ✅ Pass | Changed Python | 변경 4파일의 Ruff check/format check와 ty check 통과. pre-commit도 통과했다. |
-| ✅ Pass | Workflow negative controls | 임시 사본의 paths-ignore 추가, PR head checkout, closed-only event를 각각 신규 witness가 거부했다. 원본 workflow는 수정하지 않았다. |
-| ✅ Pass | Git environment isolation | Hostile parent env 아래 child의 Git-local 변수 0개, private init/add/commit 성공, parent HEAD/index bytes 불변. |
-| ❌ Fail | Existing C1 uncertainty contract probe | Missing inventory / symlinked Change / invalid related path 모두 exit0, openspec_bulk=false와 empty Change targets. 위 source scope decision으로 남긴다. |
-| ✅ Pass | Artifact mechanics | Native rumdl, Inbox validator, 실제 YAML parser의 필수값 검사, local links와 git diff check 통과. |
-| ⚪ Not Verified | Final merged prerequisites | #273–#276 미병합. 병합 후 최신 main에서 새 통합 revision의 전체 suite와 CI를 다시 확인해야 한다. |
-| ⚪ Not Verified | Environment-dependent tests | Optional Langfuse SDK 부재, cached zizmor actual audit, Windows npm/Node 세 항목 skip. Fork test의 multithreaded process DeprecationWarning 1개는 통과와 별도로 기록한다. |
+| ✅ Pass | Final full non-resource suite | `2665ce7d45c4d74ada3105374123b12e2d2bde70`에서 새 private `TESTMON_DATAFILE`로 `uv run --no-sync pytest --testmon --testmon-forceselect -q -ra -p no:sugar`: **1,167 passed, 3 skipped, 1 warning / 378.17s**. 총 1,170개를 실행/skip했으며 affected-test cache의 선택 생략 결과가 아니다. 실제 dbt system E2E·Airflow CLI 5경로와 H3 owning 회귀를 포함한다. |
+| ✅ Pass | Changed Python | 원 PR 변경 4 Python의 Ruff check/format check와 관련 scope ty check 통과. |
+| ✅ Pass | Project-wide type | Classifier의 `full_type=true`에 맞춰 `uv run --no-sync ty check` 전체 실행 통과. |
+| ✅ Pass | Git environment isolation | Hostile parent env에서 `git rev-parse --local-env-vars` 전체 제거, private init/add/commit 성공, parent HEAD/index 불변. |
+| ✅ Pass | Revision applicability | 기존 검토 target 15/15 blob 동일, source/Spec/shared execution delta 없음. Classifier `full_tests=true`, `full_type=true`. |
+| ✅ Pass | Artifact mechanics | rumdl 9파일, native Inbox 7문서, 실제 YAML 필수 nonempty 6문서, local link 목적지와 `git diff --check` 통과. 최종 전달 전 다시 확인한다. |
+| ✅ Pass | Current integration CI | [CI Lite 40516350418](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40516350418): **1,167 passed, 3 skipped / 166.38s**. Head `2665ce7d45c4d74ada3105374123b12e2d2bde70`, base `66f6372cc58d34ad469acee56202eed040a9a5d7`, prospective merge `99b7ef9cdd7c8ddffb13a9b00788342233903f3f`. Job log에서 checkout·`FULL_TESTS=true`·`FULL_TYPE=true`, Ruff/format 4파일·전체 ty의 성공을 확인했고 merge parents를 별도 API로 대조했다. |
 
-## Current Review
+### Skips And Limits
 
-**Assessment: clear.** Review-lead가 quality/adversarial 두 specialist의 독립 결과를 조정했다. 정확한 reviewed implementation head는 `172a6993c8ad0f564f62c1e7674e410dda9834f0`이며 base는 `be1dca8d044494e92a0d25c791471a41b5d11bcf`다. 예약/신규 test·design 12개와 support 3개를 각 관점에서 모두 full-body 검토했다. 87c4ec31의 전체 본문과 172a6993의 event assertion 3행을 구분해 확인했다.
+- Optional Langfuse SDK 부재: [test_langfuse_projection.py](../../tests/review_ai/evaluation/test_langfuse_projection.py)의 media API contract 1개.
+- Cached `zizmor@1.30.1` 부재: [test_ci_steps.py](../../tests/scripts/ci/test_ci_steps.py)의 actual audit 1개.
+- Windows runtime 부재: [test_commands.py](../../tests/scripts/test_commands.py)의 npm/Node 경로 1개.
+- [test_duckdb.py](../../tests/data_platform/test_duckdb.py)의 fork lock 회귀에서 multithreaded fork DeprecationWarning 1개. 통과와 구분해 기록한다.
 
-수용한 공백은 닫혔고 남은 `current_required` finding은 없다. Source/공유 tooling 후속은 `follow_up / scope_change`로 분리했다. Reviewer는 suite를 재실행하지 않았으며 위 실행 결과는 coordinator evidence다. Test delta clear와 별개로 선행 #273–#276 미병합에 따른 통합 readiness는 **not_ready**다.
+`memory`/`stress`, 운영 scheduler/distributed executor, 실제 외부 provider·외부 ingestion·사람 rubric 평가는 이 검증의 범위 밖이다. Fixture HTTP나 approval을 실제 서비스·사람의 성공으로 승격하지 않는다. Editor diagnostics 도구가 이 runtime에 없어 별도 editor 검증은 수행하지 않았으며 실행한 lint/type/native 문서 검사를 근거로 삼는다.
 
-최종 Inbox-only delivery는 이 head의 test/source/Spec blob을 보존한다. 전달 후 exact remote head, prospective merge CI와 review readiness는 [현재 PR 본문](https://github.com/mols3131d/hmda-data-reliability/pull/277)에서 확인한다. Draft/Ready/approval/merge를 자동 전환하지 않는다.
+## Current Review And Handoff
 
-## Next Action
+**Assessment: clear.** 별도 review-lead가 quality/adversarial의 독립 결과를 조정했다. Reviewed base는 `66f6372cc58d34ad469acee56202eed040a9a5d7`, head는 `2665ce7d45c4d74ada3105374123b12e2d2bde70`이며 현재 보고서의 H3 문구까지 대조했다. Confirmed `current_required`와 독립 리뷰 coverage blocker는 없다.
 
-1. #273–#276의 current test delta·CI·인간 검토를 각각 완료한다. 인간의 명시적 lifecycle 결정 후 main에 반영한다.
-1. 최신 main을 이 branch에 merge하고 관련 source/test blobs와 위 disposition을 재확인한다. 타 PR branch를 임의로 한데 합치지 않는다.
-1. 새 prospective merge에서 full non-resource suite·CI와 필요한 independent review를 확인하고 #277의 readiness를 다시 판정한다.
-1. Source/tooling 후속을 수정하려면 owner와 구체적 write scope를 먼저 정한다. 이번 임시 wrapper·green test suite를 영구 수리 증거로 사용하지 않는다.
+기존 15파일의 전체 본문 리뷰는 동일 blob을 확인해 재사용했다. 이번 adversarial coverage는 7파일 full-body·8파일 targeted이고, 선행 PR의 테스트 5파일은 changed hunk와 관련 fixture/caller를 대조했다. 이번에 15/15 또는 5모듈을 모두 새로 전수 검토했다고 주장하지 않는다. Lead는 전체 suite log와 revision/diff/caller를 직접 확인했고 suite를 재실행하지 않았다. Ruff/type와 문서 검사는 coordinator evidence다.
+
+H3의 accepted evidence는 primitive→caller→E2E와 API fault→evaluator 정적 경로를 구분한다. Lower replay의 action/result를 overwrite 미호출의 직접 계측으로 과장한 문구는 보정했다. 이 보정은 문서에 한정되며 source/test 변경은 없다. 기존 source 후속은 `follow_up / scope_change`로 유지한다.
+
+[Plan](00-plan-cross-domain-tests.md)의 마지막 통합 acceptance까지 충족했다. Integration head push의 기존 hook은 캐시상 changed files 0으로 test 0개를 선택했다. 이 hook 결과를 전체 실행 통과로 세지 않으며, parent HEAD/index/config 불변을 확인했다.
+
+최종 전달은 이 PR의 plan/report/README만 변경한다. `2665ce7d` 대비 실행 대상 전체 blob 동일성을 확인하고 commit/push 후 [PR 본문](https://github.com/mols3131d/hmda-data-reliability/pull/277)에서 exact delivery head·prospective merge CI와 review readiness를 다시 고정한다. 현재 통합 범위에 남은 필수 구현 작업은 없으며, 다음 인간 결정은 review/Ready/approval/merge다. Preserved source follow-up은 별도 owner·write scope를 먼저 정한 후 진행한다.
+
+**Run:** Main Loop Review 1/30 accepted. Finalize는 Inbox-only commit/push와 최종 원격 head/CI 확인에 한정한다.
