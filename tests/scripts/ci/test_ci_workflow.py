@@ -29,6 +29,9 @@ def test_main_pull_requests_always_create_the_required_workflow() -> None:
 
     assert trigger["branches"] == ["main"]
     assert not {"paths", "paths-ignore", "branches-ignore"}.intersection(trigger)
+    assert "types" not in trigger or {"opened", "synchronize", "reopened"}.issubset(
+        trigger["types"]
+    )
     assert "if" not in workflow["jobs"]["check"]
 
 
