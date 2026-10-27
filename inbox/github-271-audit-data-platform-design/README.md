@@ -1,7 +1,8 @@
 # Data Platform Test Audit
 
-PR #271의 현행 테스트 검토·보강 작업입니다. 현재 결과와 다음 판단은 [current review and merge preparation](11-review-merge-readiness.md)에서 시작합니다.
+PR #271의 현행 테스트 검토·보강 작업입니다. 현재 완료 판단은 [final delivery review](12-review-final-delivery.md)에서 시작합니다.
 
+- [이전 독립 리뷰와 merge 준비](11-review-merge-readiness.md)
 - [Merge readiness work plan](10-plan-merge-readiness.md)
 - [Chatbot review adoption decisions](09-report-chatbot-review-adoption.md)
 - [Original audit and handoff snapshot](05-report-current-audit.md)
