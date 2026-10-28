@@ -2,6 +2,8 @@
 
 프롬프트를 수정할 때는 해당 책임의 Markdown 모듈을 편집한다. 모듈별 책임·재사용 판단·최종 메시지 확인 절차는 [Prompt Composition](../../../../docs/development/review-ai-prompts.md)을 먼저 읽는다. 이 안내서는 모델에 전달되지 않는다.
 
+기본 live의 단계별 텍스트 경로는 [staged/](staged/)의 질문과 [output/prose.md](output/prose.md)를 사용한다. 단계 조합은 [staged/prompt.py](../staged/prompt.py)가 소유한다. 아래 version 조합은 명시적인 structured 비교·재현 경로다.
+
 ## Parts
 
 | Directory | Responsibility |

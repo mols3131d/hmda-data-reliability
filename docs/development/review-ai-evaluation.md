@@ -33,6 +33,33 @@ uv run pytest tests/review_ai tests/runtime_ai
 uv run --env-file .env python scripts/run_agentic_review_live.py
 ```
 
+### Staged Text Review
+
+모드를 생략하거나 `HMDA_AGENTIC_REVIEW_MODE=staged`로 설정하면 같은 합성 사례에 근거 검토 → 초안 비판 → 종합의 세 질문을 진행한다. 모델에는 한국어 일반 텍스트를 요청하고, 코드가 원입력의 식별자·수치와 `stages[{stage_id,text}]`를 JSON으로 만든다. 고정 identity는 `staged-v1`이며 기존 `HMDA_AGENTIC_REVIEW_PROMPT_VERSION`은 structured 모드에 적용된다.
+
+`status=completed`는 세 답변의 수집·저장 완료다. 기존 structured `accepted`, 문장 안의 사실성, 검토 가치 또는 사람 승인을 뜻하지 않는다. API는 [StagedReviewOutput](../../src/hmda_reliability/review_ai/staged/contracts.py)을 제공하며 콘솔은 원문 대신 다음 경로를 안내한다.
+
+| Result field | Content |
+| --- | --- |
+| `output_path` | `agentic-review/staged/<workflow_id>/output.json`: 원입력 facts와 단계별 원문을 코드가 직렬화한 결과 |
+| `workflow_path` | 같은 디렉터리의 `workflow.json`: 원입력, 설정·revision, 단계 기록·digest와 최종 output digest |
+| `stages[].response_path` | `agentic-review/responses/<workflow_id>-<stage_id>.txt`: Runtime이 반환한 exact 원문 |
+| `stages[].record_path` | 단계가 끝날 때 저장한 원문 없는 checkpoint |
+
+빈/공백 응답, 알려진 `length`·filter·tool 종료, provider 실패·입력 한도 초과·저장 실패는 후속 단계를 중단한다. 실패 전 완료된 단계와 반환된 실패 응답의 원문을 보존하며, 완성된 output은 세 단계가 끝난 뒤에만 생성한다. Runtime이 본문을 반환하기 전에 차단한 응답에는 원문 경로가 없다.
+
+누적 이력 전체에 매 호출의 `MAX_PROMPT_BYTES`를 검사한다. 각 Runtime 호출에는 timeout·retry·출력 한도가 적용되고 별도의 모델 수정 대화는 없다. 물리 호출 상한은 `3 * (MAX_RETRIES + 1)`이다. Byte 한도와 실제 모델의 token context는 별개이므로 실제 active context와 총 usage·시간도 확인한다.
+
+Staged collection은 기존 `AgenticReviewOutput`과 다른 계약이다. 기존 structured validator·`compare_review_value()`·Langfuse projection에 바로 넣지 않는다. 사람은 원문과 원입력을 대조해 품질을 평가하며 현재 staged 외부 projection은 `skipped_staged_mode`다. Revision 자동 선택은 clean tracked tree를 요구하므로 개발 중 실행에는 명시적인 로컬 revision 표식을 사용한다.
+
+### Structured Review
+
+기존 JSON 응답과 validator 동작을 비교·재현할 때는 모드를 명시한다.
+
+```bash
+HMDA_AGENTIC_REVIEW_MODE=structured uv run --env-file .env python scripts/run_agentic_review_live.py
+```
+
 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하며 tracked worktree가 깨끗해야 한다. 필요하면 비어 있지 않은 revision을 명시할 수 있다. 결과는 `accepted` 또는 typed failure다. Provider 호출이 시작되면 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
 
 Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/responses/<invocation_id>.txt`에 원문을 저장한다. 결과 JSON의 `response_path`로 파일을 열면 성공·출력 형식 오류·사실 검증 실패에 관계없이 모델이 실제로 생성한 내용을 읽을 수 있다. UTF-8 본문은 공백·개행을 포함해 그대로 보존하며 빈 응답은 0-byte 파일이다. 원문은 호출 기록 JSON, 콘솔 로그나 Langfuse에 추가하지 않는다.
@@ -41,7 +68,7 @@ Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS
 
 개발 중 tracked 파일을 수정한 상태에서는 `auto` 대신 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=local-response-retention-worktree`처럼 명시적인 작업 표식을 사용할 수 있다. 이 실행은 특정 clean commit의 품질 검증 증거로 취급하지 않는다.
 
-현재 개발 비교 단계에서 live harness는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`은 과거 동작 비교용이고, `v3`는 수치 단위와 evidence/draft 충실성을 비교하기 위한 선택 가능한 후보다. 세 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 현재 `v1`이며 caller는 비교할 version을 명시적으로 전달한다. v3 지원은 실제 출력 개선이나 채택을 의미하지 않는다.
+현재 개발 비교 단계의 structured 모드는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`은 과거 동작 비교용이고, `v3`는 수치 단위와 evidence/draft 충실성을 비교하기 위한 선택 가능한 후보다. 세 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 현재 `v1`이며 caller는 비교할 version을 명시적으로 전달한다. v3 지원은 실제 출력 개선이나 채택을 의미하지 않는다.
 
 프롬프트 편집과 재사용은 [Prompt Composition](review-ai-prompts.md)의 모듈 책임·조립·전달 경로를 따른다. 이 가이드의 로컬 예제로 모델 호출 없이 최종 system/user 메시지를 확인할 수 있다. 실제 호출에 주입한 데이터는 invocation record의 `canonical_input`에서 확인한다. 프롬프트 본문과 user JSON을 포함한 전체 메시지 배열이 prompt digest의 기준이다.
 
@@ -91,7 +118,7 @@ Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS
 
 ## Optional Langfuse Projection
 
-Synthetic live proof를 Langfuse에도 표시하려면 provider 설정과 별도로 projection을 켜야 한다. Provider opt-in만으로는 전송하지 않는다.
+Structured synthetic live proof를 Langfuse에도 표시하려면 provider 설정과 별도로 projection을 켜야 한다. Provider opt-in만으로는 전송하지 않는다. Staged collection에는 이 projection을 적용하지 않는다.
 
 ### Setup
 
@@ -101,7 +128,7 @@ Synthetic live proof를 Langfuse에도 표시하려면 provider 설정과 별도
 
 ```bash
 uv sync --extra langfuse
-uv run --extra langfuse --env-file .env python scripts/run_agentic_review_live.py
+HMDA_AGENTIC_REVIEW_MODE=structured uv run --extra langfuse --env-file .env python scripts/run_agentic_review_live.py
 ```
 
 ### Check the Projection

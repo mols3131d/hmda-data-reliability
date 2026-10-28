@@ -12,11 +12,29 @@ tags:
 
 # Review AI Prompt Composition
 
-**프롬프트는 역할이 분명한 Markdown 모듈로 관리하고, 선택한 조합을 system 메시지 하나로 조립해 전달한다. 사례 데이터는 별도 user 메시지에 넣는다.** `v1~v3`는 사용할 모듈과 순서를 정하는 완성된 조합의 식별자다. 같은 규칙을 버전마다 복사하지 않고 같은 파일을 참조해 수정과 재사용의 범위를 분명히 한다.
+**프롬프트는 역할이 분명한 Markdown 모듈로 관리하고 사례 데이터는 별도 user 메시지에 넣는다.** 기본 live 경로는 같은 사례의 세 단계에서 한국어 텍스트를 수집하고 코드가 결과 JSON을 만든다. 명시적 structured 경로의 `v1~v3`는 한 번의 JSON 응답을 요청하는 기존 조합이다.
 
 이 문서는 분할 이유와 편집·확인 절차를 설명한다. 불변 조건은 [Prompt Engineering Spec](../../openspec/specs/review-ai-prompt-engineering/spec.md)이, 실제 모듈 선택·순서는 [`_PROMPT_PARTS`](../../src/hmda_reliability/review_ai/prompt/__init__.py)가 소유한다. 모델 출력의 비교·채택 절차는 [Review AI Evaluation](review-ai-evaluation.md)을 따른다.
 
+## Staged Text Workflow
+
+[`review_null_spike_staged()`](../../src/hmda_reliability/review_ai/staged/service.py)는 같은 canonical input을 유지하며 근거 검토 → 초안 비판 → 종합 순서로 호출한다. 이전 단계의 고정 질문은 system 자료로, 이전 모델 답변은 assistant 자료로 유지하고 현재 질문을 마지막 system 메시지에 둔다. 매 호출 직전 누적 메시지 전체의 byte 한도와 digest를 확인한다.
+
+| Module | Role |
+| --- | --- |
+| [output/prose.md](../../src/hmda_reliability/review_ai/prompt/output/prose.md) | 한국어 일반 텍스트 출력과 식별자·수치 보존, 이전 답변의 취급 |
+| [staged/](../../src/hmda_reliability/review_ai/prompt/staged/) | 근거 검토·초안 비판·종합의 고정 질문 |
+| [staged/prompt.py](../../src/hmda_reliability/review_ai/staged/prompt.py) | 단계별 명시적 모듈 조합과 대화 이력 구성 |
+
+공유 작업·자문 정책과 호환되는 수치·근거 지침을 재사용한다. JSON 필드 전용 언어 정책과 전체 JSON 출력 설명·배열 지시는 이 조합에 넣지 않는다. 모델에게 JSON 생성을 요구하지 않고 Runtime의 text 모드를 명시한다.
+
+코드가 원입력의 식별자·수치와 `stages[{stage_id,text}]`를 [StagedReviewOutput](../../src/hmda_reliability/review_ai/staged/contracts.py)으로 직렬화한다. 답변의 공백·개행을 보존하고 prose에서 기존 structured finding·priority·근거 참조를 추출하지 않는다. `completed`는 세 답변의 수집·저장 완료이며 사실성 검증이나 사람의 승인을 뜻하지 않는다.
+
+세 단계 외의 자동 수정 대화는 없다. 각 호출에는 기존 Runtime의 timeout·retry·출력 상한을 적용하므로 물리 호출 상한은 `3 * (max_retries + 1)`이다. 빈 답변·알려진 잘림·provider 실패·누적 입력 초과·저장 실패는 후속 단계를 멈춘다. 반환된 원문과 이미 저장한 checkpoint는 유지한다. 실행 및 결과 경로는 [평가 가이드](review-ai-evaluation.md#staged-text-review)를 따른다.
+
 ## Module Responsibilities
+
+이하의 version별 설명과 최종 메시지 예제는 기존 structured 조합을 편집·비교할 때 사용한다.
 
 아래 경로는 [prompt/](../../src/hmda_reliability/review_ai/prompt/) 기준이다. 각 모듈은 지시문을 제공하며 사례별 값을 받거나 다른 모듈을 로드하지 않는다. 필드 이름과 전제는 module 작성·재사용 시 확인할 의존 관계다.
 

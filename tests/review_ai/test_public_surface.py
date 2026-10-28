@@ -20,10 +20,14 @@ def test_review_ai_exports_only_consumer_surface() -> None:
         "ReviewValueAssessment",
         "PromptIdentity",
         "RUBRIC_V1",
+        "StageAnswer",
+        "StagedReviewOutput",
+        "StagedReviewResult",
         "ReviewValueComparisonEvidence",
         "build_bounded_review_context",
         "compare_review_value",
         "review_null_spike",
+        "review_null_spike_staged",
     }
 
 

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 
-from openai import APIConnectionError, APIError, APIStatusError, OpenAI
+from openai import APIConnectionError, APIError, APIStatusError, OpenAI, omit
 from openai.types.chat import ChatCompletionMessageParam
+from openai.types.chat.completion_create_params import ResponseFormat
 
 from hmda_reliability.logger import get_logger
 from hmda_reliability.runtime_ai.contracts import (
@@ -129,10 +130,15 @@ class OpenAICompatibleAdapter:
             transport = _OpenAIChatCompletionTransport(client)
         self._transport = transport
 
-    def invoke(self, messages: tuple[ChatMessage, ...]) -> ProviderResponse:
+    def invoke(
+        self,
+        messages: tuple[ChatMessage, ...],
+        *,
+        output_format: Literal["json_object", "text"] = "json_object",
+    ) -> ProviderResponse:
         """지수 백오프 재시도를 적용하여 chat completion 전송을 호출한다.
 
-        설정된 모델, temperature=0, 토큰 제한 및 JSON 형식을 적용한다.
+        설정된 모델, temperature=0, 토큰 제한 및 선택한 응답 형식을 적용한다.
         전송 에러를 `ProviderUnavailableError`로 정제하고, 응답 바이트 크기를
         `max_output_bytes` 한도로 제한한다.
         """
@@ -141,7 +147,9 @@ class OpenAICompatibleAdapter:
             model=self._settings.model,
             temperature=self._settings.temperature,
             max_tokens=self._settings.max_output_tokens,
-            response_format={"type": "json_object"},
+            response_format={"type": "json_object"}
+            if output_format == "json_object"
+            else None,
             stream=False,
         )
         started = time.monotonic()
@@ -222,7 +230,9 @@ class _OpenAIChatCompletionTransport:
                 model=request.model,
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
-                response_format={"type": "json_object"},
+                response_format=cast(ResponseFormat, request.response_format)
+                if request.response_format is not None
+                else omit,
                 stream=False,
             )
         except APIConnectionError as error:

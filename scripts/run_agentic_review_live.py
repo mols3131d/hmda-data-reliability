@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import subprocess
 import sys
@@ -37,9 +38,14 @@ from hmda_reliability.review_ai.contracts import (
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
 from hmda_reliability.review_ai.prompt import (
     build_canonical_input,
+    canonical_json_bytes,
     render_canonical_input,
 )
 from hmda_reliability.review_ai.settings import ReviewAISettings
+from hmda_reliability.review_ai.staged.contracts import StagedReviewOutput
+from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
+from hmda_reliability.review_ai.staged.service import review_null_spike_staged
+from hmda_reliability.review_ai.staged.store import StagedReviewStore
 from hmda_reliability.runtime_ai import RuntimeAISettings
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -67,15 +73,30 @@ class Reviewer(Protocol):
     ) -> AgenticReviewResult: ...
 
 
+class StagedReviewer(Protocol):
+    def __call__(
+        self,
+        *,
+        incident: Incident,
+        evidence: Sequence[Evidence],
+        draft: RemediationDraft,
+        project_revision: str,
+        settings: RuntimeAISettings,
+        review_settings: ReviewAISettings,
+        artifact_root: Path,
+    ) -> StagedReviewResult: ...
+
+
 def main(
     *,
     env: Mapping[str, str] | None = None,
     reviewer: Reviewer = review_null_spike,
+    staged_reviewer: StagedReviewer | None = None,
 ) -> int:
     """환경에서 명시적으로 켜면 Review AI 검증을 실행하고 결과를 출력한다.
 
-    검토 결과 JSON은 표준 출력에, 선택적 Langfuse 투영 상태는 표준 오류에 쓴다.
-    투영 실패는 이미 확정된 검토 결과와 CLI 종료 코드를 바꾸지 않는다.
+    기본 staged 모드에서는 원문을 제외한 상태와 경로만 표준 출력에 쓴다.
+    structured 모드는 기존 검토 결과와 선택적 Langfuse 투영을 유지한다.
     """
 
     environment = os.environ if env is None else env
@@ -83,6 +104,11 @@ def main(
     if enabled not in _TRUE_VALUES:
         print("Agentic review live proof is disabled.")
         return 0
+
+    mode = environment.get("HMDA_AGENTIC_REVIEW_MODE", "staged").strip().lower()
+    if mode not in {"staged", "structured"}:
+        print("Invalid live agentic review mode.", file=sys.stderr)
+        return 2
 
     missing_env_vars = [
         name for name in _REQUIRED_ENVIRONMENT if not environment.get(name, "").strip()
@@ -136,16 +162,39 @@ def main(
                 65_536,
             )
         )
-        prompt_identity = PromptIdentity.model_validate(
-            {
-                "version": environment.get("HMDA_AGENTIC_REVIEW_PROMPT_VERSION", "v2"),
-            }
+        prompt_identity = (
+            PromptIdentity.model_validate(
+                {
+                    "version": environment.get(
+                        "HMDA_AGENTIC_REVIEW_PROMPT_VERSION", "v2"
+                    ),
+                }
+            )
+            if mode == "structured"
+            else None
         )
     except (KeyError, ValueError, ValidationError):
         print("Invalid live agentic review configuration.", file=sys.stderr)
         return 2
 
     incident, evidence, draft = _build_null_spike_material()
+    artifact_root = Path(
+        environment.get("HMDA_RELIABILITY_ARTIFACTS_DIR", ".local/artifacts")
+    )
+    if mode == "staged":
+        return _run_staged_live(
+            environment=environment,
+            reviewer=staged_reviewer or review_null_spike_staged,
+            incident=incident,
+            evidence=evidence,
+            draft=draft,
+            project_revision=project_revision,
+            settings=settings,
+            review_settings=review_settings,
+            artifact_root=artifact_root,
+        )
+
+    assert prompt_identity is not None
     result = reviewer(
         incident=incident,
         evidence=[evidence],
@@ -154,12 +203,7 @@ def main(
         project_revision=project_revision,
         settings=settings,
         review_settings=review_settings,
-        artifact_root=Path(
-            environment.get(
-                "HMDA_RELIABILITY_ARTIFACTS_DIR",
-                ".local/artifacts",
-            )
-        ),
+        artifact_root=artifact_root,
     )
     print(result.model_dump_json(indent=2))
     if not _verify_live_provenance(
@@ -183,6 +227,113 @@ def main(
         )
         print(f"Langfuse projection: {integration_status}", file=sys.stderr)
     return 0 if result.status == "accepted" else 1
+
+
+def _run_staged_live(
+    *,
+    environment: Mapping[str, str],
+    reviewer: StagedReviewer,
+    incident: Incident,
+    evidence: Evidence,
+    draft: RemediationDraft,
+    project_revision: str,
+    settings: RuntimeAISettings,
+    review_settings: ReviewAISettings,
+    artifact_root: Path,
+) -> int:
+    """모델 원문을 로컬 파일에 두고 수집 상태와 출처만 출력한다."""
+    result = reviewer(
+        incident=incident,
+        evidence=[evidence],
+        draft=draft,
+        project_revision=project_revision,
+        settings=settings,
+        review_settings=review_settings,
+        artifact_root=artifact_root,
+    )
+    print(result.model_dump_json(indent=2, exclude={"output"}))
+    if environment.get("HMDA_LANGFUSE_EXPORT", "").strip().lower() in _TRUE_VALUES:
+        print("Langfuse projection: skipped_staged_mode", file=sys.stderr)
+    if not _verify_staged_live_provenance(
+        result,
+        artifact_root=artifact_root,
+        settings=settings,
+        review_settings=review_settings,
+        project_revision=project_revision,
+        incident=incident,
+        evidence=evidence,
+        draft=draft,
+    ):
+        print("Live workflow provenance validation failed.", file=sys.stderr)
+        return 1
+    return 0 if result.status == "completed" else 1
+
+
+def _verify_staged_live_provenance(
+    result: StagedReviewResult,
+    *,
+    artifact_root: Path,
+    settings: RuntimeAISettings,
+    review_settings: ReviewAISettings,
+    project_revision: str,
+    incident: Incident,
+    evidence: Evidence,
+    draft: RemediationDraft,
+) -> bool:
+    """동일 사례의 manifest와 출력 내용을 재로드해 반환 결과와 대조한다."""
+    if result.workflow_path is None:
+        return result.status in {"input_rejected", "provenance_failed"}
+    if result.workflow_id is None:
+        return False
+    store = StagedReviewStore(artifact_root)
+    try:
+        expected_directory = store.directory(result.workflow_id)
+        if result.workflow_path != expected_directory / "workflow.json":
+            return False
+        record = store.load(result.workflow_id)
+        expected_input = build_canonical_input(
+            AgenticReviewInput(
+                incident=incident,
+                evidence=[evidence],
+                draft=draft,
+                prompt_identity=PromptIdentity(),
+                project_revision=project_revision,
+            )
+        )
+        if (
+            record.workflow_id != result.workflow_id
+            or record.status != result.status
+            or record.project_revision != project_revision
+            or record.configuration.model_dump()
+            != {
+                **settings.sanitized_configuration(),
+                **review_settings.sanitized_configuration(),
+            }
+            or canonical_json_bytes(record.canonical_input)
+            != canonical_json_bytes(expected_input)
+            or record.stages != result.stages
+            or record.output_path != result.output_path
+            or record.failure_code != result.failure_code
+        ):
+            return False
+        if result.status != "completed":
+            return result.output is None and record.output_digest is None
+        if result.output is None or result.output_path is None:
+            return False
+        if result.output_path != expected_directory / "output.json":
+            return False
+        output = StagedReviewOutput.model_validate_json(
+            result.output_path.read_text(encoding="utf-8")
+        )
+        output_digest = (
+            "sha256:"
+            + hashlib.sha256(
+                canonical_json_bytes(output.model_dump(mode="json"))
+            ).hexdigest()
+        )
+        return output == result.output and output_digest == record.output_digest
+    except (OSError, ValidationError, ValueError):
+        return False
 
 
 def _export_live_projection(

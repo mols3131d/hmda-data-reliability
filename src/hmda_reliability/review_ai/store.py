@@ -136,6 +136,20 @@ def _validate_invocation_id(invocation_id: str) -> None:
         raise ValueError(msg)
 
 
+def write_review_json(
+    path: Path,
+    payload: dict[str, object],
+    *,
+    max_record_bytes: int,
+) -> Path:
+    """Review AI의 별도 JSON artifact를 bounded create-only 파일로 보존한다."""
+    _validate_invocation_id(path.stem)
+    encoded = canonical_json_bytes(payload) + b"\n"
+    if len(encoded) > max_record_bytes:
+        raise InvocationEvidenceSizeError("review artifact exceeds max_record_bytes")
+    return _write_create_only(path, encoded, invocation_id=path.stem)
+
+
 def _reject_existing_path(path: Path) -> None:
     try:
         path.lstat()

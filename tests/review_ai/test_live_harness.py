@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
-from typing import cast
+from typing import Literal, cast
 
 import pytest
 
@@ -18,7 +19,10 @@ from hmda_reliability.review_ai import (
 )
 from hmda_reliability.review_ai.contracts import AgenticReviewValidation
 from hmda_reliability.review_ai.settings import ReviewAISettings
+from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
+from hmda_reliability.review_ai.staged.service import review_null_spike_staged
 from hmda_reliability.runtime_ai import RuntimeAISettings
+from hmda_reliability.runtime_ai.contracts import ChatMessage, ProviderResponse
 from scripts import run_agentic_review_live as live_module
 
 pytestmark = pytest.mark.unit
@@ -27,6 +31,7 @@ pytestmark = pytest.mark.unit
 def _live_environment(tmp_path: Path) -> dict[str, str]:
     return {
         "HMDA_AGENTIC_REVIEW_LIVE": "true",
+        "HMDA_AGENTIC_REVIEW_MODE": "structured",
         "HMDA_AGENTIC_REVIEW_BASE_URL": "http://localhost:11434/v1",
         "HMDA_AGENTIC_REVIEW_API_KEY": "live-test-secret",
         "HMDA_AGENTIC_REVIEW_MODEL": "local-model",
@@ -38,6 +43,250 @@ def _live_environment(tmp_path: Path) -> dict[str, str]:
         "HMDA_AGENTIC_REVIEW_MAX_OUTPUT_BYTES": "16384",
         "HMDA_RELIABILITY_ARTIFACTS_DIR": str(tmp_path / "artifacts"),
     }
+
+
+class StagedTextProvider:
+    def __init__(self) -> None:
+        self.text = (
+            "PRIVATE_STAGED_ANSWER: 원인은 제공된 근거만으로 확정할 수 없습니다.\n"
+        )
+        self.messages: list[tuple[ChatMessage, ...]] = []
+
+    def invoke(
+        self,
+        messages: tuple[ChatMessage, ...],
+        *,
+        output_format: Literal["json_object", "text"] = "json_object",
+    ) -> ProviderResponse:
+        assert output_format == "text"
+        self.messages.append(messages)
+        return ProviderResponse(content=self.text, attempt_count=1, latency_ms=1)
+
+
+def _run_staged_review(
+    kwargs: dict[str, object], provider: StagedTextProvider
+) -> StagedReviewResult:
+    return review_null_spike_staged(
+        incident=cast(Incident, kwargs["incident"]),
+        evidence=cast(Sequence[Evidence], kwargs["evidence"]),
+        draft=cast(RemediationDraft, kwargs["draft"]),
+        project_revision=cast(str, kwargs["project_revision"]),
+        settings=cast(RuntimeAISettings, kwargs["settings"]),
+        review_settings=cast(ReviewAISettings, kwargs["review_settings"]),
+        artifact_root=cast(Path, kwargs["artifact_root"]),
+        provider=provider,
+        workflow_id_factory=lambda: "workflow-cli-test",
+    )
+
+
+def test_default_live_mode_is_staged_and_ignores_structured_prompt_version(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment.pop("HMDA_AGENTIC_REVIEW_MODE")
+    environment["HMDA_AGENTIC_REVIEW_PROMPT_VERSION"] = "unsupported"
+    calls: list[dict[str, object]] = []
+
+    def staged_review(**kwargs: object) -> StagedReviewResult:
+        calls.append(kwargs)
+        return StagedReviewResult(
+            status="input_rejected", failure_code="test_preflight"
+        )
+
+    def unexpected_structured_review(**kwargs: object) -> AgenticReviewResult:
+        pytest.fail("mode omission must use the staged reviewer")
+
+    exit_code = live_module.main(
+        env=environment,
+        reviewer=unexpected_structured_review,
+        staged_reviewer=staged_review,
+    )
+
+    assert exit_code == 1
+    assert len(calls) == 1
+    assert "prompt_identity" not in calls[0]
+    assert calls[0]["project_revision"] == "revision-123"
+    assert calls[0]["artifact_root"] == tmp_path / "artifacts"
+    assert cast(RuntimeAISettings, calls[0]["settings"]).model == "local-model"
+    assert (
+        cast(ReviewAISettings, calls[0]["review_settings"]).max_prompt_bytes == 32_768
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "input_rejected"
+    assert "output" not in payload
+
+
+def test_disabled_staged_live_mode_never_calls_the_reviewer(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    def unexpected_review(**kwargs: object) -> StagedReviewResult:
+        pytest.fail("disabled live mode must not call the staged reviewer")
+
+    exit_code = live_module.main(env={}, staged_reviewer=unexpected_review)
+
+    assert exit_code == 0
+    assert "disabled" in capsys.readouterr().out.lower()
+
+
+def test_invalid_live_mode_is_rejected_before_review(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_MODE"] = "unsupported"
+
+    def unexpected_structured_review(**kwargs: object) -> AgenticReviewResult:
+        pytest.fail("invalid mode must not call the structured reviewer")
+
+    def unexpected_staged_review(**kwargs: object) -> StagedReviewResult:
+        pytest.fail("invalid mode must not call the staged reviewer")
+
+    exit_code = live_module.main(
+        env=environment,
+        reviewer=unexpected_structured_review,
+        staged_reviewer=unexpected_staged_review,
+    )
+
+    assert exit_code == 2
+    assert "mode" in capsys.readouterr().err.lower()
+
+
+def test_invalid_staged_configuration_never_calls_the_reviewer(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_MODE"] = "staged"
+    environment["HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS"] = "not-a-number"
+
+    def unexpected_review(**kwargs: object) -> StagedReviewResult:
+        pytest.fail("invalid settings must not call the staged reviewer")
+
+    exit_code = live_module.main(env=environment, staged_reviewer=unexpected_review)
+
+    assert exit_code == 2
+    assert "configuration" in capsys.readouterr().err.lower()
+
+
+@pytest.mark.parametrize("remove_manifest", [False, True])
+def test_staged_live_verifies_the_workflow_and_keeps_answers_off_the_console(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    remove_manifest: bool,
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_MODE"] = "staged"
+    provider = StagedTextProvider()
+
+    def staged_review(**kwargs: object) -> StagedReviewResult:
+        result = _run_staged_review(kwargs, provider)
+        assert result.workflow_path is not None
+        if remove_manifest:
+            result.workflow_path.unlink()
+        return result
+
+    exit_code = live_module.main(env=environment, staged_reviewer=staged_review)
+
+    captured = capsys.readouterr()
+    assert exit_code == (1 if remove_manifest else 0)
+    assert provider.text not in captured.out + captured.err
+    assert "PRIVATE_STAGED_ANSWER" not in captured.out + captured.err
+    assert "live-test-secret" not in captured.out + captured.err
+    payload = json.loads(captured.out)
+    assert "output" not in payload
+    assert len(provider.messages) == 3
+    assert any(message.role == "assistant" for message in provider.messages[-1])
+    output = json.loads(Path(payload["output_path"]).read_text(encoding="utf-8"))
+    assert [stage["text"] for stage in output["stages"]] == [provider.text] * 3
+    if remove_manifest:
+        assert "provenance validation failed" in captured.err.lower()
+    else:
+        assert payload["status"] == "completed"
+
+
+def test_staged_live_explicitly_skips_langfuse_projection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_MODE"] = "staged"
+    environment["HMDA_LANGFUSE_EXPORT"] = "true"
+
+    def staged_review(**kwargs: object) -> StagedReviewResult:
+        return StagedReviewResult(
+            status="input_rejected", failure_code="test_preflight"
+        )
+
+    def unexpected_export(*args: object, **kwargs: object) -> str:
+        pytest.fail("staged text must not use the structured projection")
+
+    monkeypatch.setattr(live_module, "_export_live_projection", unexpected_export)
+
+    exit_code = live_module.main(env=environment, staged_reviewer=staged_review)
+
+    assert exit_code == 1
+    assert "skipped_staged_mode" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "tamper",
+    [
+        "status",
+        "revision",
+        "configuration",
+        "input",
+        "input_scalar_type",
+        "output_path",
+        "output_digest",
+        "output",
+    ],
+)
+def test_staged_live_rejects_mismatched_manifest_or_output(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    tamper: str,
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_MODE"] = "staged"
+    provider = StagedTextProvider()
+
+    def staged_review(**kwargs: object) -> StagedReviewResult:
+        result = _run_staged_review(kwargs, provider)
+        assert result.workflow_path is not None
+        assert result.output_path is not None
+        manifest = json.loads(result.workflow_path.read_text(encoding="utf-8"))
+        if tamper == "status":
+            manifest["status"] = "unavailable"
+        elif tamper == "revision":
+            manifest["project_revision"] = "different-revision"
+        elif tamper == "configuration":
+            manifest["configuration"]["model"] = "different-model"
+        elif tamper == "input":
+            manifest["canonical_input"]["incident"]["incident_id"] = (
+                "different-incident"
+            )
+        elif tamper == "output_path":
+            manifest["output_path"] = str(tmp_path / "different-output.json")
+        elif tamper == "input_scalar_type":
+            draft = manifest["canonical_input"]["draft"]
+            draft["requires_approval"] = int(draft["requires_approval"])
+        elif tamper == "output_digest":
+            manifest["output_digest"] = "sha256:" + "0" * 64
+        else:
+            output = json.loads(result.output_path.read_text(encoding="utf-8"))
+            output["stages"][0]["text"] = "변조된 답변"
+            result.output_path.write_text(json.dumps(output), encoding="utf-8")
+        result.workflow_path.write_text(json.dumps(manifest), encoding="utf-8")
+        return result
+
+    exit_code = live_module.main(env=environment, staged_reviewer=staged_review)
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "provenance validation failed" in captured.err.lower()
+    assert "PRIVATE_STAGED_ANSWER" not in captured.out + captured.err
 
 
 def test_default_harness_is_disabled_and_never_calls_review(

@@ -41,6 +41,8 @@ Source dependency는 `review_ai -> reliability`와 `review_ai -> runtime_ai`만 
 
 ## Review Boundary
 
+기본 live 경로의 `review_null_spike_staged()`는 같은 사례의 근거 검토·초안 비판·종합 답변을 일반 텍스트로 수집한다. 코드가 원입력 facts와 세 원문을 별도 collection JSON으로 조립하고, 단계별 원문·checkpoint·workflow manifest를 보존한다. `completed`는 수집·저장 완료이며 기존 structured `accepted`나 의미적 검증을 뜻하지 않는다. 기존 structured API와 replay는 별도 경로로 유지한다.
+
 `review_null_spike()`는 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider에 전달되는 input에는 incident 판단에 직접 관련된 Evidence의 bounded projection과 `missing_evidence`/`unconfirmed_context` gap이 포함된다. Provider output은 canonical identity, numeric facts와 provided evidence reference의 structured facts에 대조된다. Validation result는 structured-fact policy identity를 사용하며, 기존 forbidden-action evidence는 historical provenance로 보존된다. 결과는 acceptance, preflight rejection, provider unavailability, validation failure와 provenance failure를 typed result로 구분하며 exact input/output, status/failure mapping과 validation contract는 canonical Spec이 소유한다.
 
 Provider가 실제로 호출된 logical review는 sanitized invocation evidence를 남긴다. Credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다. Durable provenance의 required behavior와 record contract는 canonical Spec이 소유하고, exact implementation은 source에서 확인하며 tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
@@ -65,6 +67,8 @@ Review AI의 offline suite, live provider proof, human rubric 평가와 Langfuse
 - `PromptIdentity`
 - `compare_review_value()`
 - `review_null_spike()`
+- `StageAnswer`, `StagedReviewOutput`, `StagedReviewResult`
+- `review_null_spike_staged()`
 
 Prompt rendering, deterministic validation, provenance contract/store와 storage error는 domain 내부 module surface다. 필요할 때 owning module을 직접 읽고, 두 번째 외부 consumer가 생기기 전에는 package root API를 넓히지 않는다.
 

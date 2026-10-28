@@ -182,6 +182,7 @@ def test_projection_rejects_boolean_integer_mismatch_with_recomputed_digest(
     env = {
         **_environment(),
         "HMDA_AGENTIC_REVIEW_LIVE": "true",
+        "HMDA_AGENTIC_REVIEW_MODE": "structured",
         "HMDA_AGENTIC_REVIEW_BASE_URL": "https://provider.invalid",
         "HMDA_AGENTIC_REVIEW_API_KEY": "provider-secret",
         "HMDA_AGENTIC_REVIEW_MODEL": "test-model",
@@ -476,6 +477,7 @@ def test_harness_export_failure_preserves_result_and_record(
     env = {
         **_environment(),
         "HMDA_AGENTIC_REVIEW_LIVE": "true",
+        "HMDA_AGENTIC_REVIEW_MODE": "structured",
         "HMDA_AGENTIC_REVIEW_BASE_URL": "https://provider.invalid",
         "HMDA_AGENTIC_REVIEW_API_KEY": "provider-secret",
         "HMDA_AGENTIC_REVIEW_MODEL": "test-model",

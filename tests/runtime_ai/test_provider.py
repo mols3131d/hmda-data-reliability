@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from functools import partial
+from typing import Literal
 
 import httpx
 import pytest
@@ -26,6 +27,17 @@ def _messages() -> tuple[runtime_contracts.ChatMessage, ...]:
             role="user",
             content='{"value":1}',
         ),
+    )
+
+
+def _conversation_messages() -> tuple[runtime_contracts.ChatMessage, ...]:
+    return (
+        runtime_contracts.ChatMessage(
+            role="system", content="제공된 근거를 바탕으로 한국어로 답하세요."
+        ),
+        runtime_contracts.ChatMessage(role="user", content='{"incident":"test"}'),
+        runtime_contracts.ChatMessage(role="assistant", content="근거가 부족합니다."),
+        runtime_contracts.ChatMessage(role="user", content="조치 초안을 검토하세요."),
     )
 
 
@@ -95,6 +107,37 @@ def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile() -> None:
     assert response.usage == transport_response.usage
 
 
+def test_text_mode_preserves_assistant_history_and_does_not_change_the_default() -> (
+    None
+):
+    messages = _conversation_messages()
+    content = "근거만으로는 원인을 확정할 수 없습니다.\n"
+    transport = RecordingTransport(
+        [
+            runtime_contracts.TransportResponse(content=content),
+            runtime_contracts.TransportResponse(content="{}"),
+        ]
+    )
+    adapter = provider_module.OpenAICompatibleAdapter(
+        _settings(), transport=transport, sleep=lambda _: None
+    )
+
+    response = adapter.invoke(messages, output_format="text")
+    adapter.invoke(_messages())
+
+    text_request, default_request = transport.requests
+    assert text_request.response_format is None
+    assert text_request.wire_payload() == {
+        "messages": [message.model_dump(mode="json") for message in messages],
+        "model": "test-model",
+        "temperature": 0,
+        "max_tokens": 1024,
+        "stream": False,
+    }
+    assert default_request.response_format == {"type": "json_object"}
+    assert response.content == content
+
+
 def test_default_sdk_transport_maps_request_and_normalizes_response(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -152,6 +195,55 @@ def test_default_sdk_transport_maps_request_and_normalizes_response(
     assert result.usage == runtime_contracts.ProviderUsage(
         prompt_tokens=10, completion_tokens=3, total_tokens=13
     )
+
+
+def test_sdk_text_mode_omits_response_format_and_preserves_assistant_history(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payloads: list[dict[str, object]] = []
+    messages = _conversation_messages()
+    content = "초안의 원천 점검을 먼저 확인해야 합니다.\n"
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        payloads.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            headers={"x-request-id": "sdk-text-request"},
+            json={
+                "id": "text-completion",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": content},
+                        "finish_reason": "stop",
+                    }
+                ],
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        result = provider_module.OpenAICompatibleAdapter(
+            _settings(max_output_tokens=17)
+        ).invoke(messages, output_format="text")
+
+    assert payloads == [
+        {
+            "messages": [message.model_dump(mode="json") for message in messages],
+            "model": "test-model",
+            "temperature": 0,
+            "max_tokens": 17,
+            "stream": False,
+        }
+    ]
+    assert result.content == content
+    assert result.trace_id == "sdk-text-request"
+    assert result.attempt_count == 1
 
 
 @pytest.mark.parametrize(
@@ -310,7 +402,10 @@ def test_default_sdk_transport_retries_transient_failure_then_succeeds(
     assert result.content == "{}"
 
 
-def test_adapter_owns_bounded_retry_for_retryable_transport_failures() -> None:
+@pytest.mark.parametrize("output_format", ["json_object", "text"])
+def test_adapter_owns_bounded_retry_for_retryable_transport_failures(
+    output_format: Literal["json_object", "text"],
+) -> None:
     """재시도 가능한 전송 오류(retryable=True) 시 한도까지 재시도하는지 검증한다."""
     transport = RecordingTransport(
         [
@@ -325,10 +420,16 @@ def test_adapter_owns_bounded_retry_for_retryable_transport_failures() -> None:
         _settings(max_retries=1), transport=transport, sleep=lambda _: None
     )
 
-    result = adapter.invoke(_messages())
+    result = adapter.invoke(_messages(), output_format=output_format)
 
     assert result.attempt_count == 2
     assert len(transport.requests) == 2
+    expected_format = (
+        {"type": "json_object"} if output_format == "json_object" else None
+    )
+    assert all(
+        request.response_format == expected_format for request in transport.requests
+    )
 
 
 def test_adapter_does_not_retry_non_retryable_transport_failures() -> None:
@@ -354,7 +455,11 @@ def test_adapter_does_not_retry_non_retryable_transport_failures() -> None:
 
 
 @pytest.mark.parametrize("content", ["x" * 33, "한" * 11])
-def test_adapter_rejects_oversized_response_without_retry(content: str) -> None:
+@pytest.mark.parametrize("output_format", ["json_object", "text"])
+def test_adapter_rejects_oversized_response_without_retry(
+    content: str,
+    output_format: Literal["json_object", "text"],
+) -> None:
     """응답 크기가 max_output_bytes 초과 시 ProviderResponseTooLargeError를 낸다."""
     transport = RecordingTransport(
         [runtime_contracts.TransportResponse(content=content)]
@@ -366,7 +471,7 @@ def test_adapter_rejects_oversized_response_without_retry(content: str) -> None:
     )
 
     with pytest.raises(provider_module.ProviderResponseTooLargeError):
-        adapter.invoke(_messages())
+        adapter.invoke(_messages(), output_format=output_format)
 
     assert len(transport.requests) == 1
 
