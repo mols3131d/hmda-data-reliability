@@ -1,12 +1,15 @@
 # GitHub Templates
 
-이 directory는 Pull Request와 Pull Request Review에 사용하는 project template을 관리한다. GitHub가 자동 해석하는 template 위치가 아니라 인간과 Agent가 공통 형식을 재사용하기 위한 source다.
+이 directory는 Issue, Pull Request와 Pull Request Review에 사용하는 project template을 관리한다. GitHub가 자동 해석하는 template 위치가 아니라 인간과 Agent가 공통 형식을 재사용하기 위한 source다.
 
 ## Metadata
 
-GitHub가 제공하지 않는 정보만 optional metadata로 보완한다. Metadata를 사용하면 본문의 마지막에 하나의 `yaml` code block으로 두며, Front Matter나 GitHub metadata로 취급하지 않는다. Footnote 정의가 있으면 metadata를 그 바로 앞에 두고, 본문에는 별도 `Metadata` heading을 만들지 않는다.
+GitHub가 제공하지 않는 정보만 optional metadata로 보완한다. Metadata field는 서로 독립적이며 필요한 field만 사용하고, 사용하지 않는 field는 제거한다.
 
-Metadata field는 서로 독립적이며 필요한 field만 사용한다.
+- **Issue:** 본문 처음에 optional YAML Front Matter를 둔다. `environment`는 문제에 영향을 주는 실행 환경·설정만 map으로 기록하며 비밀 값은 포함하지 않는다. `source_revision`은 문제가 관찰된 정확한 repository commit을 식별할 때만 full SHA로 기록한다. 불필요하면 Front Matter 전체를 제거한다.
+- **Pull Request / Review:** 본문 마지막에 하나의 `yaml` code block으로 기록한다. Footnote 정의가 있으면 그 바로 앞에 두고, 별도 `Metadata` heading은 만들지 않는다. 기존 PR의 `revision.base/head`는 비교 기준 commit pair이며 Issue의 `source_revision`과 다르다.
+
+Issue 본문의 Front Matter와 PR/review의 YAML block은 GitHub metadata로 자동 처리되지 않는다. GitHub의 공식 Issue Template은 `.github/ISSUE_TEMPLATE/`에서 별도로 관리한다.
 
 ### `author`
 
@@ -39,7 +42,7 @@ revision:
   head: <full-head-commit-sha>
 ```
 
-Template에서는 기본 읽기 흐름을 방해하지 않도록 metadata 예시를 HTML comment 안에 둔다. 실제 사용할 때는 comment를 제거하고 본문 마지막에 두며, footnote 정의가 있으면 그 바로 앞에 둔다.
+PR/review Template에서는 기본 읽기 흐름을 방해하지 않도록 metadata 예시를 HTML comment 안에 둔다. 실제 사용할 때는 comment를 제거하고 본문 마지막에 두며, footnote 정의가 있으면 그 바로 앞에 둔다.
 
 ## Writing Rules
 
@@ -58,5 +61,6 @@ Template에서는 기본 읽기 흐름을 방해하지 않도록 metadata 예시
 
 ## Templates
 
+- [`issue.md`](issue.md): Issue objective, acceptance와 optional context
 - [`pull-request.md`](pull-request.md): Pull Request description
 - [`pull-request-review.md`](pull-request-review.md): Pull Request review body
