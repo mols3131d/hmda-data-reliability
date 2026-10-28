@@ -24,6 +24,15 @@ Review AI의 **schema 통과와 실제 출력 품질을 구분**하고, 수치 �
 - Current baseline: `v2` prompt. 기존 [human rubric과 comparison](../../src/hmda_reliability/review_ai/evaluation/value.py), [평가 가이드](../../docs/development/review-ai-evaluation.md), [canonical Spec](../../openspec/specs/reliability-agentic-review/spec.md)을 재사용한다.
 - Active OpenSpec Change `review-ai-evaluation-subdomain-refactor` 및 `review-ai-langfuse-projection`과 ownership·진행 상태를 먼저 대조한다. Inbox는 요구사항 정본이 아니다.
 
+## Accepted Context Configuration
+
+2026-10-28 사용자 수용 결정: **RTX 3070 8GB에서 Qwen3.5 4B의 Ollama active context를 16K(`num_ctx=16384`)로 우선 운영·검증하고, 이후 32K(`num_ctx=32768`)를 추가 검증**한다. 32K 운영 확정이나 모든 환경에서의 성능·안정성 보장은 아니다.
+
+- **Evidence:** PR #278의 `qwen3.5:4b-8k-local`은 active context 8192 및 출력 제한 4096에서 schema·guard 검증을 통과했다. 기존 4K 실행에서는 `length` 종료와 빈 본문이 관찰됐다. RTX 3070의 16K/32K 실제 VRAM 사용량과 응답 품질은 아직 측정하지 않았다.
+- **Execution:** 기존 모델을 보존하고 동일 양자화의 16K 변형으로 시작한다. 16K에서 메모리·완료 여부·품질을 확인한 뒤 32K를 시험한다. `ollama ps`로 실제 `CONTEXT`와 GPU/CPU 적재 상태를, `nvidia-smi`로 GPU 메모리를 확인한다. 실패와 CPU offload도 숨기지 않는다.
+- **Controls:** 초기 출력 상한은 PR #278에서 검증한 4096토큰을 유지하고, `num_ctx`(전체 문맥)와 `max_output_tokens`(생성 상한)을 구별한다. Thinking 설정, prompt, 모델, 입력을 한꺼번에 바꾸지 않는다. Context별 비교와 prompt baseline/candidate 비교는 분리하며 후자의 active context는 동일하게 유지한다.
+- **Decision gate:** 16K의 실제 실행 결과로 초기 운용 가능 여부를 판단하고, 32K는 GPU 메모리 여유·GPU 적재·지연시간·schema 통과 및 의미적 품질을 확인한 경우에만 채택을 검토한다. 문서 기록만으로 Ollama·앱 설정을 변경하거나 검증 완료를 주장하지 않는다.
+
 ## Work Plan
 
 1. **Baseline 및 oracle 고정.** Representative input, deterministic facts, 기존 `RemediationDraft`, 기대할 수 있는 정확한 해석, 제공되지 않은 evidence를 사례별로 고정한다. 기존 provider output을 정답으로 사용하지 않는다.
