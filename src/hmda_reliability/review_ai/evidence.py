@@ -17,7 +17,11 @@ from hmda_reliability.review_ai.contracts import (
     PromptIdentity,
     ReviewValidationStatus,
 )
-from hmda_reliability.runtime_ai.contracts import ProviderUsage
+from hmda_reliability.review_ai.diagnostics import ReviewResponseDiagnostics
+from hmda_reliability.runtime_ai.contracts import (
+    ProviderResponseMetadata,
+    ProviderUsage,
+)
 
 
 class SanitizedAgenticReviewConfiguration(ReliabilityContract):
@@ -72,6 +76,8 @@ class AgenticInvocationEvidence(ReliabilityContract):
     attempt_count: int = Field(ge=1)
     usage: ProviderUsage | None = None
     trace_id: str | None = Field(default=None, max_length=512)
+    response_metadata: ProviderResponseMetadata | None = None
+    response_diagnostics: ReviewResponseDiagnostics | None = None
 
     @field_validator("recorded_at")
     @classmethod
@@ -114,6 +120,11 @@ class AgenticInvocationEvidence(ReliabilityContract):
 
     @model_validator(mode="after")
     def _validate_status_payload(self) -> AgenticInvocationEvidence:
+        if self.response_diagnostics is not None and (
+            self.status is not AgenticReviewStatus.VALIDATION_FAILED
+            or self.failure_code != "response_schema_invalid"
+        ):
+            raise ValueError("response diagnosis requires a schema-invalid failure")
         if self.status not in {
             AgenticReviewStatus.ACCEPTED,
             AgenticReviewStatus.VALIDATION_FAILED,

@@ -112,6 +112,7 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
     assert review_settings.max_prompt_bytes == 32_768
     assert settings.max_output_bytes == 16_384
     assert call["project_revision"] == "revision-123"
+    assert call["prompt_identity"] == PromptIdentity(version="v2")
     assert call["artifact_root"] == tmp_path / "artifacts"
     assert incident.incident_type == "null_spike"
     assert draft.incident_type == "null_spike"
@@ -120,6 +121,32 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
     output = capsys.readouterr().out
     assert '"status": "input_rejected"' in output
     assert "live-test-secret" not in output
+
+
+@pytest.mark.parametrize("version", ["v1", "v2", "v3"])
+def test_live_prompt_version_is_explicit_and_invalid_version_never_calls_provider(
+    tmp_path: Path,
+    version: str,
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_PROMPT_VERSION"] = version
+    calls: list[dict[str, object]] = []
+
+    def capture_review(**kwargs: object) -> AgenticReviewResult:
+        calls.append(kwargs)
+        return AgenticReviewResult(
+            status="input_rejected", failure_code="test_preflight"
+        )
+
+    exit_code = live_module.main(env=environment, reviewer=capture_review)
+
+    if version == "v3":
+        assert exit_code == 2 and calls == []
+    else:
+        assert exit_code == 1 and len(calls) == 1
+        assert calls[0]["prompt_identity"] == PromptIdentity.model_validate(
+            {"version": version}
+        )
 
 
 @pytest.mark.parametrize("configured_revision", [None, "", "auto"])

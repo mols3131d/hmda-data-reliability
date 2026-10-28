@@ -201,6 +201,55 @@ def test_oversized_prompt_is_rejected_before_any_provider_boundary(
         )
 
 
+@pytest.mark.unit
+def test_historical_v1_prompt_digest_is_unchanged() -> None:
+    rendered = prompt_module.render_canonical_input(
+        {},
+        contracts.PromptIdentity(version="v1"),
+        max_prompt_bytes=65_536,
+    )
+    # Captured before the PR 278 fix; a same-writer replay would miss template drift.
+    assert (
+        rendered.prompt_digest
+        == "sha256:7e8e3c8d66e4f813bda68a8be1bbec1b5407af38533b8aedb6041d1432f418c0"
+    )
+
+
+@pytest.mark.unit
+def test_v2_explains_array_types_and_conditional_priority_without_changing_v1(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    canonical = prompt_module.build_canonical_input(
+        _review_input(null_spike_review_material)
+    )
+    v1 = prompt_module.render_canonical_input(
+        canonical,
+        contracts.PromptIdentity(version="v1"),
+        max_prompt_bytes=65_536,
+    )
+    v2 = prompt_module.render_canonical_input(
+        canonical,
+        contracts.PromptIdentity(version="v2"),
+        max_prompt_bytes=65_536,
+    )
+    instruction = v2.messages[0].content
+    assert "uncertainties: array of strings" in instruction
+    assert "evidence_used: non-empty array of evidence ID strings" in instruction
+    assert "findings: array of objects" in instruction
+    assert "utility_contributions: array of objects" in instruction
+    assert "Only investigation_priority requires priority" in instruction
+    assert "all other kinds omit priority" in instruction
+    assert "baseline_null_rate, current_null_rate, delta, threshold" in instruction
+    assert v1.messages[1] == v2.messages[1]
+    assert v1.prompt_digest != v2.prompt_digest
+    replay = prompt_module.render_canonical_input(
+        canonical,
+        contracts.PromptIdentity(version="v2"),
+        max_prompt_bytes=65_536,
+    )
+    assert replay.prompt_digest == v2.prompt_digest
+
+
 @pytest.mark.integration
 def test_rendered_review_messages_cross_the_runtime_boundary(
     null_spike_review_material: NullSpikeReviewMaterial,

@@ -23,6 +23,20 @@ from .conftest import NullSpikeReviewMaterial
 pytestmark = pytest.mark.component
 
 
+def test_historical_evidence_without_response_diagnostics_remains_readable(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    payload = _record(null_spike_review_material).model_dump(mode="json")
+    payload.pop("response_metadata")
+    payload.pop("response_diagnostics")
+
+    historical = evidence_module.AgenticInvocationEvidence.model_validate(payload)
+
+    assert historical.prompt_identity.version == "v1"
+    assert historical.response_metadata is None
+    assert historical.response_diagnostics is None
+
+
 def _review_input(material: NullSpikeReviewMaterial) -> contracts.AgenticReviewInput:
     return contracts.AgenticReviewInput(
         incident=material.detection.incident,

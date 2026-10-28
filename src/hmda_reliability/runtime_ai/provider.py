@@ -14,6 +14,7 @@ from hmda_reliability.runtime_ai.contracts import (
     ChatCompletionRequest,
     ChatMessage,
     ProviderResponse,
+    ProviderResponseMetadata,
     ProviderUsage,
     TransportResponse,
 )
@@ -83,6 +84,7 @@ class ProviderResponseTooLargeError(Exception):
         max_bytes: int,
         usage: ProviderUsage | None,
         trace_id: str | None,
+        response_metadata: ProviderResponseMetadata | None = None,
     ) -> None:
         super().__init__("provider response exceeds max_output_bytes")
         self.attempt_count = attempt_count
@@ -91,6 +93,7 @@ class ProviderResponseTooLargeError(Exception):
         self.max_bytes = max_bytes
         self.usage = usage
         self.trace_id = trace_id
+        self.response_metadata = response_metadata
 
 
 class ChatCompletionTransport(Protocol):
@@ -186,6 +189,7 @@ class OpenAICompatibleAdapter:
                     max_bytes=self._settings.max_output_bytes,
                     usage=response.usage,
                     trace_id=response.trace_id,
+                    response_metadata=response.response_metadata,
                 )
             return ProviderResponse(
                 content=response.content,
@@ -193,6 +197,7 @@ class OpenAICompatibleAdapter:
                 latency_ms=latency_ms,
                 usage=response.usage,
                 trace_id=response.trace_id,
+                response_metadata=response.response_metadata,
             )
 
 
@@ -242,8 +247,23 @@ class _OpenAIChatCompletionTransport:
             ) from error
 
         content = ""
+        content_state = "choices_empty"
+        finish_reason = None
         if response.choices:
-            content = response.choices[0].message.content or ""
+            choice = response.choices[0]
+            content = choice.message.content or ""
+            content_state = (
+                "content_missing" if choice.message.content is None else "text"
+            )
+            finish_reason = choice.finish_reason
+            if finish_reason not in {
+                "stop",
+                "length",
+                "content_filter",
+                "tool_calls",
+                "function_call",
+            }:
+                finish_reason = "unknown"
         usage = None
         if response.usage is not None:
             usage = ProviderUsage(
@@ -255,6 +275,13 @@ class _OpenAIChatCompletionTransport:
             content=content,
             usage=usage,
             trace_id=response._request_id,
+            response_metadata=ProviderResponseMetadata.model_validate(
+                {
+                    "finish_reason": finish_reason,
+                    "content_state": content_state,
+                    "content_bytes": len(content.encode("utf-8")),
+                }
+            ),
         )
 
 

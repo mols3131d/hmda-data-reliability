@@ -71,7 +71,7 @@ class PromptIdentity(ReliabilityContract):
     template_id: Literal["reliability-agentic-review.null-spike"] = (
         "reliability-agentic-review.null-spike"
     )
-    version: Literal["v1"] = "v1"
+    version: Literal["v1", "v2"] = "v1"
 
 
 class NullSpikeFacts(ReliabilityContract):

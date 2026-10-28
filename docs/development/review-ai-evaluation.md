@@ -35,6 +35,21 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 
 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하며 tracked worktree가 깨끗해야 한다. 필요하면 비어 있지 않은 revision을 명시할 수 있다. 결과는 `accepted` 또는 typed failure다. Provider 호출이 시작되면 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
 
+Live harness는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. 과거 동작과 비교할 때만 `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`을 지정한다. 두 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 과거 caller와의 호환성을 위해 `v1`이며 새 instruction을 사용할 caller는 `PromptIdentity(version="v2")`를 전달한다.
+
+### Diagnose a Failed Response
+
+`response_schema_invalid`이면 결과의 `invocation_path`에 있는 정제된 record에서 다음 필드를 확인한다. Raw response와 Pydantic 입력값은 보존하지 않는다.
+
+| Evidence field | Meaning / next action |
+| --- | --- |
+| `response_diagnostics.kind=response_content_empty` | 본문이 비었다. `response_metadata.content_state`로 `content_missing`, `choices_empty`, 빈 text를 구분한다. |
+| `response_diagnostics.kind=json_syntax_invalid` | JSON으로 파싱할 수 없다. `finish_reason=length`이면 token cap과 provider의 실제 context 설정을 함께 확인한다. |
+| `response_diagnostics.kind=schema_validation_failed` | 유효 JSON이 출력 계약을 위반했다. 최대 8개의 allowlisted `field_path`와 `code`로 타입·누락·조건부 오류를 조사한다. |
+| `response_metadata` | SDK가 제공한 완료 이유, 본문 상태와 UTF-8 byte 수다. 알 수 없는 완료 이유는 `unknown`이며 과거 record나 custom transport에서는 metadata가 없을 수 있다. |
+
+`length`는 단독 거부 사유가 아니며 schema·guard·provenance 검증이 최종 결과를 결정한다. `max_output_tokens`는 실제 모델의 context window와 별개다. 모델 이름만으로 context 크기를 추정하거나 무조건 재시도하지 말고, provider 설정을 확인한 뒤 같은 synthetic 입력과 명시적 모델·prompt version으로 비교한다. 오류를 재현하는 작은 응답 fixture를 offline suite에 추가하고 현재의 깨끗한 revision에서 live 결과를 다시 확인한다. 진단 분류의 성공만으로 모델 실패나 utility 문제가 해결됐다고 판단하지 않는다.
+
 ## Optional Langfuse Projection
 
 Synthetic live proof를 Langfuse에도 표시하려면 provider 설정과 별도로 projection을 켜야 한다. Provider opt-in만으로는 전송하지 않는다.

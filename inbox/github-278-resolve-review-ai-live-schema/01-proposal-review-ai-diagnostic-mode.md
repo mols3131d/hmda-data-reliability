@@ -49,9 +49,9 @@ PR #278의 [기존 원인 조사](00-research-review-ai-live-schema-failure.md)�
 **1. 진단 목표를 실패 유형으로 고정한다.** 적어도 다음 네 가지 질문에 답할 수 있으면 1차 목적이 달성된다.
 
 1. 실제 응답은 빈 본문인가, JSON 문법이 깨졌는가, 아니면 유효한 JSON의 필드가 틀렸는가?
-2. 스키마 실패라면 어떤 **제한된 field path와 error category**에서 실패했는가? 실제 값과 자유형 예외 메시지는 포함하지 않아도 되는가?
-3. 모델의 종료 이유(`stop`/`length`/기타/미확인)와 실제 token 설정·사용량은 무엇인가?
-4. 요청의 `response_format`과 `max_tokens` 값은 설정→DTO→SDK→HTTP body에서 유지됐는가?
+1. 스키마 실패라면 어떤 **제한된 field path와 error category**에서 실패했는가? 실제 값과 자유형 예외 메시지는 포함하지 않아도 되는가?
+1. 모델의 종료 이유(`stop`/`length`/기타/미확인)와 실제 token 설정·사용량은 무엇인가?
+1. 요청의 `response_format`과 `max_tokens` 값은 설정→DTO→SDK→HTTP body에서 유지됐는가?
 
 **2. 가능한 한 먼저 오프라인 실험한다.**
 

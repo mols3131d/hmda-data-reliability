@@ -155,6 +155,63 @@ def test_default_sdk_transport_maps_request_and_normalizes_response(
 
 
 @pytest.mark.parametrize(
+    ("content", "finish_reason", "empty_choices", "expected_state", "expected_reason"),
+    [
+        ('{"ok":true}', "stop", False, "text", "stop"),
+        ('{"ok":true}', "length", False, "text", "length"),
+        (None, "length", False, "content_missing", "length"),
+        ("", "stop", False, "text", "stop"),
+        (None, "stop", True, "choices_empty", None),
+        ("{}", "PRIVATE_PROVIDER_REASON", False, "text", "unknown"),
+    ],
+)
+def test_sdk_retains_only_allowlisted_completion_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+    content: str | None,
+    finish_reason: str,
+    empty_choices: bool,
+    expected_state: str,
+    expected_reason: str | None,
+) -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "id": "metadata-completion",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": []
+                if empty_choices
+                else [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": content},
+                        "finish_reason": finish_reason,
+                    }
+                ],
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        result = provider_module.OpenAICompatibleAdapter(_settings()).invoke(
+            _messages()
+        )
+
+    assert result.attempt_count == 1
+    assert result.response_metadata is not None
+    assert result.response_metadata.content_state == expected_state
+    assert result.response_metadata.finish_reason == expected_reason
+    assert result.response_metadata.content_bytes == len(
+        (content or "").encode("utf-8")
+    )
+    assert "PRIVATE" not in result.response_metadata.model_dump_json()
+
+
+@pytest.mark.parametrize(
     ("status_code", "failure_code", "max_retries", "expected_attempts"),
     [
         (400, "provider_client_error", 0, 1),

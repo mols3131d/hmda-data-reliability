@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -25,6 +24,10 @@ from hmda_reliability.review_ai.contracts import (
     PromptIdentity,
     ReviewValidationStatus,
 )
+from hmda_reliability.review_ai.diagnostics import (
+    ReviewResponseDiagnostics,
+    parse_review_response,
+)
 from hmda_reliability.review_ai.evidence import (
     AgenticInvocationEvidence,
     SanitizedAgenticReviewConfiguration,
@@ -43,6 +46,7 @@ from hmda_reliability.review_ai.validator import validate_agentic_review
 from hmda_reliability.runtime_ai.contracts import (
     ChatMessage,
     ProviderResponse,
+    ProviderResponseMetadata,
     ProviderUsage,
 )
 from hmda_reliability.runtime_ai.provider import (
@@ -162,9 +166,10 @@ def review_null_spike(
             attempt_count=error.attempt_count,
             usage=error.usage,
             trace_id=error.trace_id,
+            response_metadata=error.response_metadata,
         )
 
-    parsed_output = _parse_output(provider_response.content)
+    parsed_output, diagnostics = parse_review_response(provider_response.content)
     if parsed_output is None:
         return session.record_and_persist(
             status=AgenticReviewStatus.VALIDATION_FAILED,
@@ -173,6 +178,8 @@ def review_null_spike(
             attempt_count=provider_response.attempt_count,
             usage=provider_response.usage,
             trace_id=provider_response.trace_id,
+            response_metadata=provider_response.response_metadata,
+            response_diagnostics=diagnostics,
         )
 
     # 결정론적 구조 및 사실 가드레일 검증
@@ -211,6 +218,7 @@ def review_null_spike(
         attempt_count=provider_response.attempt_count,
         usage=provider_response.usage,
         trace_id=provider_response.trace_id,
+        response_metadata=provider_response.response_metadata,
     )
 
 
@@ -237,6 +245,8 @@ class _ReviewSession:
         attempt_count: int = 1,
         usage: ProviderUsage | None = None,
         trace_id: str | None = None,
+        response_metadata: ProviderResponseMetadata | None = None,
+        response_diagnostics: ReviewResponseDiagnostics | None = None,
     ) -> AgenticReviewResult:
         record = self._build_record(
             status=status,
@@ -247,6 +257,8 @@ class _ReviewSession:
             attempt_count=attempt_count,
             usage=usage,
             trace_id=trace_id,
+            response_metadata=response_metadata,
+            response_diagnostics=response_diagnostics,
         )
         return _persist_result(
             record=record,
@@ -266,6 +278,8 @@ class _ReviewSession:
         attempt_count: int,
         usage: ProviderUsage | None,
         trace_id: str | None,
+        response_metadata: ProviderResponseMetadata | None,
+        response_diagnostics: ReviewResponseDiagnostics | None,
     ) -> AgenticInvocationEvidence:
         configuration = self.settings.sanitized_configuration()
         configuration.update(self.review_settings.sanitized_configuration())
@@ -295,20 +309,9 @@ class _ReviewSession:
             attempt_count=attempt_count,
             usage=usage,
             trace_id=trace_id,
+            response_metadata=response_metadata,
+            response_diagnostics=response_diagnostics,
         )
-
-
-def _parse_output(content: str) -> AgenticReviewOutput | None:
-    """Provider 응답 문자열을 AgenticReviewOutput 계약 모델로 파싱한다.
-
-    JSON 형식이 아니거나 스키마 검증에 실패하면 None을 반환한다.
-    호출자(caller)는 None 수신 시 response_schema_invalid 실패로 처리한다.
-    """
-    try:
-        payload = json.loads(content)
-        return AgenticReviewOutput.model_validate(payload)
-    except (ValueError, TypeError, RecursionError):
-        return None
 
 
 def _persist_result(

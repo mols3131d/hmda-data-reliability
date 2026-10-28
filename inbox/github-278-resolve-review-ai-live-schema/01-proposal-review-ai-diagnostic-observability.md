@@ -40,10 +40,10 @@ tags:
 ## Recommended Minimal Experiment
 
 1. **관찰값 정의:** 같은 synthetic `null_spike` 입력으로 정상 JSON, 유효 JSON이지만 `uncertainties` 타입 오류, 조건부 `priority` 위반, 잘린 JSON, `content=null`, `choices=[]`를 준비한다. 현재 테스트가 이미 보호하는 케이스는 중복 추가하지 않는다.
-2. **가장 작은 경계에서 분류:** JSON parse / Pydantic 검증 / deterministic guard를 분리한다. Pydantic `ValidationError.errors()`는 입력값·URL 등 원문을 포함할 수 있으므로 **무가공 직렬화하지 않는다**. 필요한 경우 안정적인 오류 code와 allowlisted field path만 추출한다.
-3. **SDK response 확인:** fake HTTP/실제 SDK로 `finish_reason=stop|length`, content 유무, 사용량을 확인한다. `length`를 단독 거부하는 새 정책을 테스트로 확정하지 않는다.
-4. **증거 부족할 때에만 opt-in 본문 확인:** 로컬 synthetic-only 실행의 메모리/터미널에서 크기 제한된 원문을 직접 관찰하는 방안을 검토한다. **터미널/CI 출력도 로그가 될 수 있으므로 기본 출력 금지**. 일반 실행·CI·Langfuse projection에서 노출하지 않는다. 출력 저장·복사·보존은 별도 결정 대상이다.
-5. **수정 판단:** 관찰된 오류의 직접 원인을 확인한 뒤에만 prompt, context, SDK transport 또는 validator 변경을 별도로 제안한다. 진단 기능 자체로 근본 원인이 해결되었다고 쓰지 않는다.
+1. **가장 작은 경계에서 분류:** JSON parse / Pydantic 검증 / deterministic guard를 분리한다. Pydantic `ValidationError.errors()`는 입력값·URL 등 원문을 포함할 수 있으므로 **무가공 직렬화하지 않는다**. 필요한 경우 안정적인 오류 code와 allowlisted field path만 추출한다.
+1. **SDK response 확인:** fake HTTP/실제 SDK로 `finish_reason=stop|length`, content 유무, 사용량을 확인한다. `length`를 단독 거부하는 새 정책을 테스트로 확정하지 않는다.
+1. **증거 부족할 때에만 opt-in 본문 확인:** 로컬 synthetic-only 실행의 메모리/터미널에서 크기 제한된 원문을 직접 관찰하는 방안을 검토한다. **터미널/CI 출력도 로그가 될 수 있으므로 기본 출력 금지**. 일반 실행·CI·Langfuse projection에서 노출하지 않는다. 출력 저장·복사·보존은 별도 결정 대상이다.
+1. **수정 판단:** 관찰된 오류의 직접 원인을 확인한 뒤에만 prompt, context, SDK transport 또는 validator 변경을 별도로 제안한다. 진단 기능 자체로 근본 원인이 해결되었다고 쓰지 않는다.
 
 실행 인터페이스(`--diagnose`, `--show-response` 등)는 **가칭 예시**다. 기존 `scripts/run_agentic_review_live.py`의 인자·환경변수 계약과 정본 Spec을 확인한 뒤 최소 방식으로 결정한다. 실제 구현된 CLI라고 소개하거나 사용법에 넣지 않는다.
 

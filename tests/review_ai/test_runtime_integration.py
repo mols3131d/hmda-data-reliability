@@ -26,11 +26,51 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.mark.parametrize(
-    ("http_status", "failure_code", "attempts"),
+    (
+        "http_status",
+        "failure_code",
+        "attempts",
+        "finish_reason",
+        "response_case",
+        "diagnostic_kind",
+    ),
     [
-        (200, None, 1),
-        (400, "provider_client_error", 1),
-        (500, "provider_server_error", 2),
+        (200, None, 1, "stop", "valid", None),
+        (200, None, 1, "length", "valid", None),
+        (
+            200,
+            "response_schema_invalid",
+            1,
+            "stop",
+            "array_type",
+            "schema_validation_failed",
+        ),
+        (
+            200,
+            "response_schema_invalid",
+            1,
+            "length",
+            "truncated",
+            "json_syntax_invalid",
+        ),
+        (
+            200,
+            "response_schema_invalid",
+            1,
+            "length",
+            "content_null",
+            "response_content_empty",
+        ),
+        (
+            200,
+            "response_schema_invalid",
+            1,
+            "stop",
+            "choices_empty",
+            "response_content_empty",
+        ),
+        (400, "provider_client_error", 1, "stop", "valid", None),
+        (500, "provider_server_error", 2, "stop", "valid", None),
     ],
 )
 def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
@@ -40,6 +80,9 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
     http_status: int,
     failure_code: str | None,
     attempts: int,
+    finish_reason: str,
+    response_case: str,
+    diagnostic_kind: str | None,
 ) -> None:
     """HTTP만 통제하고 실제 review·retry·store와 CLI 검증을 연결한다."""
     environment = _live_environment(tmp_path)
@@ -64,6 +107,13 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
         advisory_recommendation="needs_human_review",
     )
     payloads: list[dict[str, object]] = []
+    response_content = output.model_dump_json()
+    if response_case == "array_type":
+        invalid_output = output.model_dump(mode="json")
+        invalid_output["uncertainties"] = "PRIVATE_RESPONSE_VALUE"
+        response_content = json.dumps(invalid_output)
+    elif response_case == "truncated":
+        response_content = '{"review_summary":"PRIVATE_RESPONSE_VALUE'
 
     def respond(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/v1/chat/completions"
@@ -78,14 +128,18 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
                 "object": "chat.completion",
                 "created": 0,
                 "model": "local-model",
-                "choices": [
+                "choices": []
+                if response_case == "choices_empty"
+                else [
                     {
                         "index": 0,
                         "message": {
                             "role": "assistant",
-                            "content": output.model_dump_json(),
+                            "content": None
+                            if response_case == "content_null"
+                            else response_content,
                         },
-                        "finish_reason": "stop",
+                        "finish_reason": finish_reason,
                     }
                 ],
             },
@@ -99,8 +153,15 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
 
     captured = capsys.readouterr()
     result = AgenticReviewResult.model_validate_json(captured.out)
-    assert exit_code == (0 if http_status == 200 else 1), captured.err
-    assert result.status == ("accepted" if http_status == 200 else "unavailable")
+    expected_status = (
+        "unavailable"
+        if http_status != 200
+        else "validation_failed"
+        if failure_code
+        else "accepted"
+    )
+    assert exit_code == (0 if expected_status == "accepted" else 1), captured.err
+    assert result.status == expected_status
     assert result.failure_code == failure_code
     assert result.invocation_path is not None
     persisted = result.invocation_path.read_text(encoding="utf-8")
@@ -133,9 +194,20 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
         * attempts
     )
     assert [message.role for message in replay.messages] == ["system", "user"]
-    if http_status == 200:
+    if expected_status == "accepted":
         assert result.output == output == record.parsed_output
-        assert record.trace_id == "cross-domain-request"
     else:
         assert result.output is None and record.parsed_output is None
+    if http_status == 200:
+        assert record.trace_id == "cross-domain-request"
+        assert record.response_metadata is not None
+        assert record.response_metadata.finish_reason == (
+            None if response_case == "choices_empty" else finish_reason
+        )
+    if diagnostic_kind is None:
+        assert record.response_diagnostics is None
+    else:
+        assert record.response_diagnostics is not None
+        assert record.response_diagnostics.kind == diagnostic_kind
+    assert "PRIVATE_RESPONSE_VALUE" not in persisted + captured.out + captured.err
     assert "live-test-secret" not in persisted + captured.out + captured.err

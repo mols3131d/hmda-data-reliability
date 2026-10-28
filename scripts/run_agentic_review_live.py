@@ -136,6 +136,11 @@ def main(
                 65_536,
             )
         )
+        prompt_identity = PromptIdentity.model_validate(
+            {
+                "version": environment.get("HMDA_AGENTIC_REVIEW_PROMPT_VERSION", "v2"),
+            }
+        )
     except (KeyError, ValueError, ValidationError):
         print("Invalid live agentic review configuration.", file=sys.stderr)
         return 2
@@ -145,7 +150,7 @@ def main(
         incident=incident,
         evidence=[evidence],
         draft=draft,
-        prompt_identity=PromptIdentity(),
+        prompt_identity=prompt_identity,
         project_revision=project_revision,
         settings=settings,
         review_settings=review_settings,

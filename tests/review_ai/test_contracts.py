@@ -225,7 +225,7 @@ def test_input_rejects_wrong_prompt_identity_and_empty_revision(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
     with pytest.raises(ValidationError):
-        contracts_module.PromptIdentity.model_validate({"version": "v2"})
+        contracts_module.PromptIdentity.model_validate({"version": "v3"})
 
     material = null_spike_review_material
     with pytest.raises(ValidationError):

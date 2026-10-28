@@ -39,6 +39,19 @@ class ProviderUsage(RuntimeAIContract):
     total_tokens: int | None = Field(default=None, ge=0)
 
 
+class ProviderResponseMetadata(RuntimeAIContract):
+    """본문이나 provider 자유 문자열 없이 완료 상태를 설명하는 metadata."""
+
+    finish_reason: (
+        Literal[
+            "stop", "length", "content_filter", "tool_calls", "function_call", "unknown"
+        ]
+        | None
+    ) = None
+    content_state: Literal["text", "content_missing", "choices_empty"]
+    content_bytes: int = Field(ge=0)
+
+
 class TransportResponse(RuntimeAIContract):
     """전송(Transport) 계층에서 어댑터 계층으로 전달되는 1회 시도 응답 DTO.
 
@@ -49,6 +62,7 @@ class TransportResponse(RuntimeAIContract):
     content: str
     usage: ProviderUsage | None = None
     trace_id: str | None = None
+    response_metadata: ProviderResponseMetadata | None = None
 
 
 class ChatCompletionRequest(RuntimeAIContract):
@@ -90,3 +104,4 @@ class ProviderResponse(RuntimeAIContract):
     latency_ms: float = Field(ge=0)
     usage: ProviderUsage | None = None
     trace_id: str | None = None
+    response_metadata: ProviderResponseMetadata | None = None

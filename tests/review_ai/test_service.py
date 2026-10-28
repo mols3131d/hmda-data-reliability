@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from copy import deepcopy
 from datetime import UTC, datetime
@@ -119,6 +120,107 @@ class FailingStore:
         max_record_bytes: int,
     ) -> Path:
         raise store_module.InvocationEvidenceWriteError("simulated durable failure")
+
+
+@pytest.mark.parametrize(
+    ("case", "expected_kind", "expected_issue"),
+    [
+        ("empty", "response_content_empty", None),
+        ("truncated", "json_syntax_invalid", None),
+        (
+            "uncertainties_string",
+            "schema_validation_failed",
+            ("uncertainties", "type_invalid"),
+        ),
+        (
+            "unexpected_priority",
+            "schema_validation_failed",
+            ("utility_contributions.item", "conditional_invalid"),
+        ),
+        (
+            "missing_priority",
+            "schema_validation_failed",
+            ("utility_contributions.item", "conditional_invalid"),
+        ),
+        ("extra_field", "schema_validation_failed", ("unknown", "extra_field")),
+    ],
+)
+def test_schema_failures_retain_bounded_diagnosis_without_output_or_retry(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    caplog: pytest.LogCaptureFixture,
+    case: str,
+    expected_kind: str,
+    expected_issue: tuple[str, str] | None,
+) -> None:
+    material = null_spike_review_material
+    secret = "SENTINEL_PROVIDER_VALUE_DO_NOT_PERSIST"
+    payload = _safe_output(material).model_dump(mode="json")
+    if case == "uncertainties_string":
+        payload["uncertainties"] = secret
+    elif case in {"unexpected_priority", "missing_priority"}:
+        contribution = {"kind": "investigation_priority", "description": secret}
+        if case == "unexpected_priority":
+            contribution.update(kind="evidence_gap", priority="high")
+        payload["utility_contributions"] = [contribution]
+    elif case == "extra_field":
+        payload[secret] = secret
+    content = json.dumps(payload)
+    if case == "empty":
+        content = " \n "
+    elif case == "truncated":
+        content = '{"review_summary":"' + secret
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content=content,
+            attempt_count=1,
+            latency_ms=1,
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    result = _call(material, provider=provider, evidence_store=store)
+
+    assert result.status == "validation_failed"
+    assert result.failure_code == "response_schema_invalid"
+    assert result.output is None
+    assert provider.calls == 1
+    record = store.delegate.load("inv-fixed")
+    assert record.parsed_output is None and record.validation is None
+    diagnosis = record.response_diagnostics
+    assert diagnosis is not None and diagnosis.kind == expected_kind
+    if expected_issue is not None:
+        assert [(issue.field_path, issue.code) for issue in diagnosis.issues] == [
+            expected_issue
+        ]
+    else:
+        assert diagnosis.issues == ()
+    assert (
+        secret not in record.model_dump_json() + result.model_dump_json() + caplog.text
+    )
+
+
+def test_schema_diagnosis_bounds_attacker_controlled_error_fields(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    payload = _safe_output(null_spike_review_material).model_dump(mode="json")
+    payload.update({f"private-extra-{index}": "private-value" for index in range(30)})
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content=json.dumps(payload),
+            attempt_count=1,
+            latency_ms=1,
+        )
+    )
+    store = RecordingStore(tmp_path)
+
+    _call(null_spike_review_material, provider=provider, evidence_store=store)
+
+    diagnosis = store.records[0].response_diagnostics
+    assert diagnosis is not None and len(diagnosis.issues) == 8
+    assert all(issue.field_path == "unknown" for issue in diagnosis.issues)
+    assert "private" not in diagnosis.model_dump_json()
 
 
 def _call(
