@@ -256,7 +256,7 @@ class _OpenAIChatCompletionTransport:
                 "content_missing" if choice.message.content is None else "text"
             )
             finish_reason = choice.finish_reason
-            if finish_reason not in {
+            if not isinstance(finish_reason, str) or finish_reason not in {
                 "stop",
                 "length",
                 "content_filter",

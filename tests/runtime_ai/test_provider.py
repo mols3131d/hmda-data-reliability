@@ -163,12 +163,14 @@ def test_default_sdk_transport_maps_request_and_normalizes_response(
         ("", "stop", False, "text", "stop"),
         (None, "stop", True, "choices_empty", None),
         ("{}", "PRIVATE_PROVIDER_REASON", False, "text", "unknown"),
+        ("{}", [], False, "text", "unknown"),
+        ("{}", {}, False, "text", "unknown"),
     ],
 )
 def test_sdk_retains_only_allowlisted_completion_metadata(
     monkeypatch: pytest.MonkeyPatch,
     content: str | None,
-    finish_reason: str,
+    finish_reason: object,
     empty_choices: bool,
     expected_state: str,
     expected_reason: str | None,

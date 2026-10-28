@@ -41,10 +41,12 @@ tags:
 
 ## Run State
 
-- Phase: RPI Main Loop / Research
+- Phase: RPI Main Loop / Work
 - Readiness: READY
-- Loops: 0/30
+- Loops: 1/30
 - Acceptance: open
-- Next: baseline evidence, regression tests, bounded implementation
+- Next: enum instruction refinement, malformed metadata regression, final live and independent review
 
 문서 작성·검증에는 `mols-documentation`, `mols-markdown-maintenance`를 적용한다. 실험과 수정 후 이 문서 또는 후속 결과 문서에서 실제 실행 근거와 계획 변경을 기록한다.
+
+첫 구현의 실제 비교와 후속 범위 결정은 [결과 보고](03-report-review-ai-schema-resolution.md)에 기록한다. Qwen3.5 기본 context의 본문 미생성과 8k v1의 schema 위반을 구분했고, 8k v2는 schema·guard·provenance를 통과했다. Qwen2.5의 남은 kind 위반과 독립 review의 malformed completion metadata finding을 현재 범위에서 보완한다.

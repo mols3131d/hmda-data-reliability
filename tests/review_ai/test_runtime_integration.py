@@ -37,6 +37,8 @@ pytestmark = pytest.mark.integration
     [
         (200, None, 1, "stop", "valid", None),
         (200, None, 1, "length", "valid", None),
+        (200, None, 1, [], "valid", None),
+        (200, None, 1, {}, "valid", None),
         (
             200,
             "response_schema_invalid",
@@ -80,7 +82,7 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
     http_status: int,
     failure_code: str | None,
     attempts: int,
-    finish_reason: str,
+    finish_reason: object,
     response_case: str,
     diagnostic_kind: str | None,
 ) -> None:
@@ -202,7 +204,11 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
         assert record.trace_id == "cross-domain-request"
         assert record.response_metadata is not None
         assert record.response_metadata.finish_reason == (
-            None if response_case == "choices_empty" else finish_reason
+            None
+            if response_case == "choices_empty"
+            else finish_reason
+            if finish_reason in ("stop", "length")
+            else "unknown"
         )
     if diagnostic_kind is None:
         assert record.response_diagnostics is None

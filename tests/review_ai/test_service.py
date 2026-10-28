@@ -143,6 +143,11 @@ class FailingStore:
             ("utility_contributions.item", "conditional_invalid"),
         ),
         ("extra_field", "schema_validation_failed", ("unknown", "extra_field")),
+        (
+            "utility_kind",
+            "schema_validation_failed",
+            ("utility_contributions.item.kind", "value_invalid"),
+        ),
     ],
 )
 def test_schema_failures_retain_bounded_diagnosis_without_output_or_retry(
@@ -165,6 +170,10 @@ def test_schema_failures_retain_bounded_diagnosis_without_output_or_retry(
         payload["utility_contributions"] = [contribution]
     elif case == "extra_field":
         payload[secret] = secret
+    elif case == "utility_kind":
+        payload["utility_contributions"] = [
+            {"kind": "observation", "description": secret}
+        ]
     content = json.dumps(payload)
     if case == "empty":
         content = " \n "

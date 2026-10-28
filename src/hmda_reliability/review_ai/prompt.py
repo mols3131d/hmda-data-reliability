@@ -51,11 +51,27 @@ Return exactly one JSON object, no markdown, with only these fields and types:
   string; evidence_refs is an array of supplied evidence ID strings.
 - uncertainties: array of strings, even for one uncertainty; use [] if none.
 - utility_contributions: array of objects with kind, description, evidence_refs.
-  kind is evidence_gap, investigation_priority, remediation_critique, or
-  material_uncertainty. description is a non-empty string; evidence_refs is an
+  kind must be exactly "evidence_gap", "investigation_priority",
+  "remediation_critique", or "material_uncertainty". description is a non-empty
+  string; evidence_refs is an
   array of supplied evidence ID strings. Only investigation_priority requires priority
   ("high", "medium", or "low"); all other kinds omit priority. Use [] if none.
 - advisory_recommendation: "support", "needs_human_review", or "insufficient_evidence".
+Finding kinds and utility contribution kinds are different enums. Do not invent
+kinds or use a finding kind as a utility kind.
+Utility contribution examples:
+[
+  {"kind":"evidence_gap","description":"Validation results are missing.",
+   "evidence_refs":[]},
+  {"kind":"investigation_priority","description":"Check source completeness first.",
+   "evidence_refs":[],"priority":"high"},
+  {"kind":"remediation_critique","description":"Confirm the cause before backfill.",
+   "evidence_refs":[]},
+  {"kind":"material_uncertainty","description":"The cause is not established.",
+   "evidence_refs":[]}
+]
+These are shape examples. Write case-specific descriptions and cite supplied
+evidence IDs where relevant; do not copy the example descriptions.
 Cite only evidence IDs present in the supplied evidence. Keep descriptions concise.
 Arrays must remain JSON arrays; do not replace them with strings or objects."""
 

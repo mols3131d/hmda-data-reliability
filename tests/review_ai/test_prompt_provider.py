@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 
 import pytest
@@ -248,6 +249,29 @@ def test_v2_explains_array_types_and_conditional_priority_without_changing_v1(
         max_prompt_bytes=65_536,
     )
     assert replay.prompt_digest == v2.prompt_digest
+
+
+@pytest.mark.unit
+def test_v2_utility_examples_cover_the_contract_without_mixing_finding_kinds() -> None:
+    rendered = prompt_module.render_canonical_input(
+        {},
+        contracts.PromptIdentity(version="v2"),
+        max_prompt_bytes=65_536,
+    )
+    instruction = rendered.messages[0].content
+    example_text = instruction.split("Utility contribution examples:\n", 1)[1].split(
+        "\nThese are shape examples.",
+        1,
+    )[0]
+    examples = [
+        contracts.AgenticReviewUtilityContribution.model_validate(example)
+        for example in json.loads(example_text)
+    ]
+
+    assert {example.kind for example in examples} == set(
+        contracts.UtilityContributionKind
+    )
+    assert "Do not invent\nkinds or use a finding kind as a utility kind" in instruction
 
 
 @pytest.mark.integration
