@@ -66,4 +66,4 @@ Review AI의 **schema 통과와 실제 출력 품질을 구분**하고, 수치 �
 
 ## Next Action
 
-대표 사례/독립 oracle과 negative control, 선택 가능한 v3 prompt 후보를 준비했다. [평가 가이드](../../docs/development/review-ai-evaluation.md#baseline-and-candidate-comparison)에 따라 live 반복 예산과 실제 human 평가 담당자를 정하고, 깨끗한 같은 revision에서 v2/v3를 비교한다. 실제 출력 품질과 human utility가 확인되기 전에는 후보를 채택하지 않는다.
+대표 사례/독립 oracle과 negative control, 선택 가능한 v3 prompt 후보를 준비했다. 로컬 검증과 남은 일은 [결과 보고](01-report-output-quality-preparation.md)를 따른다. [평가 가이드](../../docs/development/review-ai-evaluation.md#baseline-and-candidate-comparison)에 따라 live 반복 예산과 실제 human 평가 담당자를 정하고, 깨끗한 같은 revision에서 v2/v3를 비교한다. 실제 출력 품질과 human utility가 확인되기 전에는 후보를 채택하지 않는다.
