@@ -15,7 +15,7 @@ tags:
 
 **Implemented and verified:** 코드 revision `babea53600c48d63049c2fa83c85ccfeb0a1c976`의 같은 synthetic case에서 `qwen2.5-coder:7b`와 8k context의 `qwen3.5:4b-8k-local`이 모두 schema·guard·durable provenance를 통과했다. 원인은 불충분한 출력 타입·조건 설명과 Qwen3.5의 부족한 active context로 분리했다. 원문 없는 실패 진단, 명시적 v2 instruction, 예시와 계약의 drift 검사 및 SDK 회귀를 구현했고 독립 review는 `clear`다.
 
-추가 구현 blocker는 없다. Draft PR의 correctness/merge 판단과 실제 output의 human utility 평가는 사람에게 남는다. Qwen3.5에서 확인한 조건은 context 8192, output cap 4096, timeout 180초이며 모든 모델이나 기본 4096 context의 성공을 뜻하지 않는다. 범위와 옵션별 채택·기각 이유는 [계획](02-plan-review-ai-schema-resolution.md)을 따른다.
+이 PR 범위의 추가 구현 blocker는 없다. 사용자는 #278 merge와 후속 PR 준비를 요청했다. 실제 output에서 남은 수치 설명 오류·예시 복사·human utility 검증은 [후속 계획](04-plan-review-ai-output-quality-follow-up.md)에 인계한다. Qwen3.5에서 확인한 조건은 context 8192, output cap 4096, timeout 180초이며 모든 모델이나 기본 4096 context의 성공을 뜻하지 않는다. 범위와 옵션별 채택·기각 이유는 [계획](02-plan-review-ai-schema-resolution.md)을 따른다.
 
 ## Revision and Validation
 
@@ -81,4 +81,4 @@ tags:
 
 원격 PR은 [#278](https://github.com/mols3131d/hmda-data-reliability/pull/278)이다. 현재 source와 full/live 검증 기준은 위의 `babea536`이며 delivery 문서 변경과 구분한다. 새 source 수정, 실제 provider/config 변경 또는 base 변경이 생기면 해당 검증과 review의 적용 가능성을 다시 판단한다. 재현·진단·prompt 선택 방법은 정본 [Evaluation Guide](../../docs/development/review-ai-evaluation.md#diagnose-a-failed-response)를 따른다.
 
-다음 구현 작업은 남아 있지 않다. 사람은 Draft diff와 두 모델의 조건부 live 근거를 확인해 correctness와 merge를 판단하면 된다. Human utility나 Langfuse 원격 수집 완료를 이 보고서가 증명하지는 않는다.
+PR #278의 구현 작업은 완료됐으며 사용자의 merge 요청에 따라 후속 계획 문서를 포함해 최종 검증 후 전달한다. 다음 PR의 재현 사례·수정안 비교·평가와 완료 기준은 [Output Quality Follow-up](04-plan-review-ai-output-quality-follow-up.md)을 따른다. Human utility나 Langfuse 원격 수집 완료를 이 보고서가 증명하지는 않는다.
