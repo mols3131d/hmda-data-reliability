@@ -43,7 +43,7 @@ Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS
 
 현재 개발 비교 단계에서 live harness는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`은 과거 동작 비교용이고, `v3`는 수치 단위와 evidence/draft 충실성을 비교하기 위한 선택 가능한 후보다. 세 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 현재 `v1`이며 caller는 비교할 version을 명시적으로 전달한다. v3 지원은 실제 출력 개선이나 채택을 의미하지 않는다.
 
-프롬프트의 [조각 안내와 조합 구조](../../src/hmda_reliability/review_ai/prompt/README.md)를 보고 역할·언어·자문 경계의 [공통 부분](../../src/hmda_reliability/review_ai/prompt/common/), [출력 계약](../../src/hmda_reliability/review_ai/prompt/output/)과 [검토 지침](../../src/hmda_reliability/review_ai/prompt/guidance/)을 편집한다. [`prompt/__init__.py`](../../src/hmda_reliability/review_ai/prompt/__init__.py)는 version별 고정 순서로 Markdown 조각을 이어 system 메시지를 만들고 canonical input JSON을 별도 user 메시지로 조립한다. 실제 호출에 주입한 데이터는 invocation record의 `canonical_input`에서 확인한다. 모델 응답은 JSON 객체 하나를 유지하며 조립한 지시문의 순서·구분자·Markdown 표기·공백·마지막 개행도 prompt digest에 포함된다.
+프롬프트 편집과 재사용은 [Prompt Composition](review-ai-prompts.md)의 모듈 책임·조립·전달 경로를 따른다. 이 가이드의 로컬 예제로 모델 호출 없이 최종 system/user 메시지를 확인할 수 있다. 실제 호출에 주입한 데이터는 invocation record의 `canonical_input`에서 확인한다. 프롬프트 본문과 user JSON을 포함한 전체 메시지 배열이 prompt digest의 기준이다.
 
 프롬프트 파일과 한국어 작성 기준은 [`review-ai-prompt-engineering`](../../openspec/specs/review-ai-prompt-engineering/spec.md) Spec을 따른다. 모든 지원 버전은 한국어 지시문으로 요약·발견 사항·불확실성·검토 기여의 설명을 한국어로 작성하도록 요청한다. JSON 필드명·열거값·입력 식별자와 수치는 원표기를 유지한다. Review AI가 만드는 context gap 설명도 한국어이며, 원본 Evidence와 Draft의 내용은 그대로 제공한다.
 
@@ -133,6 +133,7 @@ uv run --extra langfuse pytest tests/review_ai/evaluation/test_langfuse_projecti
 
 ## Related Guides
 
+- [Review AI Prompt Composition](review-ai-prompts.md): 프롬프트 모듈 설계, 수정·재사용과 최종 주입 메시지 확인
 - [Testing Guide](testing.md): 일반 pytest 실행, marker, PR CI와 test result 해석
 - [Review AI](../domains/review-ai.md): Review AI의 domain 책임, 공개 surface와 safety boundary
 - [Runtime AI](../domains/runtime-ai.md): provider-neutral runtime 설정과 transport boundary

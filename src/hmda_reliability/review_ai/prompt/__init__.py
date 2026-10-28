@@ -20,28 +20,28 @@ from hmda_reliability.runtime_ai.contracts import ChatMessage
 _PROMPT_PARTS: dict[str, tuple[str, ...]] = {
     "v1": (
         "titles/v1.md",
-        "common/role.md",
-        "common/language.md",
+        "tasks/null_spike.md",
+        "policies/language.md",
         "output/compact.md",
-        "common/advisory.md",
+        "policies/advisory.md",
     ),
     "v2": (
         "titles/v2.md",
-        "common/role.md",
-        "common/language.md",
+        "tasks/null_spike.md",
+        "policies/language.md",
         "output/structured.md",
-        "guidance/utility_examples.md",
-        "common/advisory.md",
+        "examples/utility_contributions.md",
+        "policies/advisory.md",
     ),
     "v3": (
         "titles/v3.md",
-        "common/role.md",
-        "common/language.md",
+        "tasks/null_spike.md",
+        "policies/language.md",
         "output/structured.md",
         "guidance/numeric_fidelity.md",
         "guidance/evidence_review.md",
         "guidance/review_value.md",
-        "common/advisory.md",
+        "policies/advisory.md",
     ),
 }
 

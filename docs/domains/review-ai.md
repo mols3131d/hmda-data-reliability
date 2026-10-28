@@ -86,7 +86,7 @@ Prompt rendering, deterministic validation, provenance contract/store와 storage
 
 1. Exact review requirement를 판단할 때는 canonical [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec을 확인한다.
 1. [`review_ai/__init__.py`](../../src/hmda_reliability/review_ai/__init__.py)에서 current public surface를 확인한다.
-1. [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py), [`context.py`](../../src/hmda_reliability/review_ai/context.py)와 [`prompt/`](../../src/hmda_reliability/review_ai/prompt/)에서 current review input, bounded context와 provider boundary 구현을 확인한다. 프롬프트는 [조각 안내](../../src/hmda_reliability/review_ai/prompt/README.md)에 따라 공통 규칙·출력 계약·검토 지침으로 나눠 조립한다.
+1. [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py), [`context.py`](../../src/hmda_reliability/review_ai/context.py)와 [`prompt/`](../../src/hmda_reliability/review_ai/prompt/)에서 current review input, bounded context와 provider boundary 구현을 확인한다. 모듈의 분할·재사용·조립과 실제 메시지 전달은 [Prompt Composition](../development/review-ai-prompts.md)이 안내한다.
 1. [`evaluation/value.py`](../../src/hmda_reliability/review_ai/evaluation/value.py)에서 human rubric과 baseline/candidate comparison contract를 확인한다.
 1. [`evaluation/langfuse.py`](../../src/hmda_reliability/review_ai/evaluation/langfuse.py)에서 optional projection과 수동 annotation helper를 확인한다.
 1. [`validator.py`](../../src/hmda_reliability/review_ai/validator.py)와 [`service.py`](../../src/hmda_reliability/review_ai/service.py)에서 current deterministic guard와 orchestration 구현을 확인한다.
