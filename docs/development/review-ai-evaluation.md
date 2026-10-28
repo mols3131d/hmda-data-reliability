@@ -35,7 +35,28 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 
 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하며 tracked worktree가 깨끗해야 한다. 필요하면 비어 있지 않은 revision을 명시할 수 있다. 결과는 `accepted` 또는 typed failure다. Provider 호출이 시작되면 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
 
-Live harness는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. 과거 동작과 비교할 때만 `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`을 지정한다. 두 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 과거 caller와의 호환성을 위해 `v1`이며 새 instruction을 사용할 caller는 `PromptIdentity(version="v2")`를 전달한다.
+Live harness는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`은 과거 동작 비교용이고, `v3`는 수치 단위와 evidence/draft 충실성을 비교하기 위한 선택 가능한 후보다. 세 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 과거 caller와의 호환성을 위해 `v1`이며 caller는 원하는 version을 명시적으로 전달한다. v3 지원은 실제 출력 개선이나 채택을 의미하지 않는다.
+
+### Output Quality Cases
+
+[`output_quality_v1.json`](../../tests/review_ai/evaluation/fixtures/output_quality_v1.json)은 provider 출력에서 정답을 추출하지 않은 합성 입력·독립 oracle·negative control이다. 다음 세 조건을 구별한다.
+
+| Case | Independent numeric oracle | Context / draft |
+| --- | --- | --- |
+| Existing regression | 1% → 21%, 20 percentage points 증가, threshold 10 percentage points, 상대 증가율 2000% | 추가 evidence 없음, backfill 없음 |
+| Zero baseline | 0% → 12%, 12 percentage points 증가, threshold 5 percentage points, 상대 증가율 정의 불가 | 추가 evidence 없음, backfill 없음 |
+| Supplied context | 1% → 21%, 20 percentage points 증가, threshold 10 percentage points | metadata/catalog/dbt evidence와 backfill 제안 있음; 원인 확정과 구별 |
+
+알려진 wrong-number, copied-example, restatement, unsupported-cause와 nonexistent-draft-action control도 identity/facts/references가 올바르면 현재 structured validator를 통과한다. 이 테스트는 탐지 경계를 드러낸다. Corpus의 문구와 질문은 검토 보조 자료이며 사람 점수나 실제 모델 품질의 증거가 아니다. Exact example match는 제한된 복사 신호이고 임의 prose의 의미적 정답 판정기가 아니다.
+
+### Baseline and Candidate Comparison
+
+1. 호출 전에 case/version, 모델·양자화, active context, Thinking 상태, output cap, timeout, retry, 반복 횟수 및 최대 총 호출 수를 정한다. Context/Thinking 실험은 prompt 비교와 분리하고 Ollama의 실제 적재 상태를 확인한다.
+1. Tracked tree가 깨끗한 하나의 candidate HEAD에서 각 case의 `review_input`을 `AgenticReviewInput.model_validate()`로 읽는다. Fixture의 `project_revision`은 live revision이 아니므로 실제 HEAD를 [`review_null_spike()`](../../src/hmda_reliability/review_ai/service.py)에 별도로 전달한다. 동일 incident/evidence/draft와 runtime 조건에서 `PromptIdentity(version="v2")` baseline과 `PromptIdentity(version="v3")` candidate를 실행한다. 기본 live script의 입력은 기존 한 사례이므로 나머지 사례는 이 API에 명시적으로 전달한다.
+1. 시작 전에 attempt 목록을 만들고 실패·exclusion도 남긴다. 각 attempt의 case/version/role/repeat, 실제 revision, invocation identity, status/failure, prompt/output digest, latency/usage와 provider context/Thinking 조건을 연결한다. 원문 response나 credential은 보존하지 않는다. Retry를 사용할 경우 물리 호출 수도 예산에 포함한다.
+1. Accepted output의 설명을 독립 oracle 및 실제 제공된 evidence/draft와 대조한다. 숫자·threshold 단위가 맞는지, baseline-zero의 상대 증가율을 만들지 않는지, 원인·완료된 검증을 지어내지 않는지, 실제 draft에 없는 action을 비판하지 않는지 확인한다. 무엇을 먼저 확인하고 결과별 사람 판단이 어떻게 달라지는지 기록한다.
+1. 사람이 다섯 criterion 각각에 0–2점과 rationale을 제공한 뒤 기존 `ReviewValueAssessment`와 `compare_review_value()`를 사용한다. `case_id/version`, role, 실제 revision, invocation, exact output digest를 연결하고 같은 case끼리 비교한다. API는 caller가 제공한 점수·decision을 검증하며 의미적 채점을 대신하지 않는다. 동일 role/repeat의 identity를 임의로 바꾸거나 좋은 출력만 고르지 않는다.
+1. 전체 시도의 실패·정확성·utility를 함께 보고 실제 사람이 `accept`, `reject` 또는 `no_change`와 이유를 결정한다. 조건이 다르면 `blocked`/`inconclusive`, 사람 평가가 없으면 미검증이다. 과거 호출이나 offline fixture 성공으로 후보를 기본값으로 전환하지 않는다.
 
 ### Diagnose a Failed Response
 

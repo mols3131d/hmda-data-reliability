@@ -6,7 +6,7 @@ tags:
   - review-ai
   - evaluation
   - output-quality
-status: proposed
+status: in-progress
 ---
 
 # Review AI Output Quality Follow-up
@@ -15,7 +15,7 @@ status: proposed
 
 Review AI의 **schema 통과와 실제 출력 품질을 구분**하고, 수치 정확성·입력 충실성·추가 검토 가치를 대표 사례에서 검증한다. 확인된 결함만 최소한으로 수정하며 개선이 입증되지 않으면 후보를 채택하지 않는다.
 
-이 문서는 착수 계획이다. 구현, 모델 비교 실행, 사람의 utility 평가는 아직 수행되지 않았다.
+이 문서는 착수 계획이다. 선택 가능한 v3 후보와 독립 품질 corpus의 로컬 구현은 [OpenSpec Change](../../openspec/changes/review-ai-ground-output-explanations/tasks.md)에서 추적한다. 모델 비교 실행과 사람의 utility 평가는 아직 수행되지 않았다.
 
 ## Starting Point
 
@@ -37,16 +37,16 @@ Review AI의 **schema 통과와 실제 출력 품질을 구분**하고, 수치 �
 ## Work Plan
 
 1. **Baseline 및 oracle 고정.** Representative input, deterministic facts, 기존 `RemediationDraft`, 기대할 수 있는 정확한 해석, 제공되지 않은 evidence를 사례별로 고정한다. 기존 provider output을 정답으로 사용하지 않는다.
-2. **최소 대표 사례와 negative control.** 다음 구별력을 가진 작은 fixture 집합을 만든다. 중복 fixture를 늘리기보다 서로 다른 실패를 식별하도록 설계한다.
+1. **최소 대표 사례와 negative control.** 다음 구별력을 가진 작은 fixture 집합을 만든다. 중복 fixture를 늘리기보다 서로 다른 실패를 식별하도록 설계한다.
    - `null_spike`: baseline `0.01`, current `0.21`, delta 약 `0.20`, threshold `0.1` → **1%에서 21%, 20 percentage points 증가, threshold 10 percentage points**. 상대 증가율을 사용한다면 2000%다.
    - Baseline `0` 및 다른 threshold: 상대 변화율이 정의되지 않는 상황과 threshold 단위를 구별한다.
    - Context sufficient / missing: 확인되지 않은 원인·검증 결과를 지어내지 않는지 판별한다.
    - Draft with / without backfill: 존재하지 않는 조치를 비판하는 오류를 탐지한다.
    - Known wrong-number, copied-example, restatement, unsupported-cause output을 negative control로 두어 평가·검증의 판별력을 먼저 확인한다.
-3. **최소 후보 설계.** Task-specific 문구가 없는 shape-only 예시, 명시적인 비율·단위·근거 사용 지침을 우선 비교한다. 숫자 표현을 결정적 코드로 제공하는 방안은 prompt-only 대안이 부족할 때에만 projection, byte bound와 Spec 영향까지 검토한다. 변경한 prompt는 새 version으로 식별하고 기존 `v1`/`v2` replay·digest를 보존한다.
-4. **반복 가능한 검증.** 관련 기존 fixture 및 테스트에 회귀를 연결하고, 단위 계산과 계약 검사를 수행한다. 예시 문구 exact match는 품질 신호로 기록할 수 있으나 정당한 공통 표현을 runtime에서 일괄 거부하지 않는다.
-5. **동일 조건의 live 비교.** 하나의 clean candidate revision에서 `v2` baseline과 candidate를 동일 case/version/facts, model, active context, runtime cap으로 실행한다. 호출 전 반복 횟수·비용 한도를 정하고 전 시도, 실패, exclusion, prompt/output digest, latency와 usage를 남긴다. 과거 #278의 호출은 동일 revision 비교의 baseline을 대체하지 않는다.
-6. **Human 평가와 채택 판단.** 사람이 `rubric_v1`의 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`에 각각 0–2점과 근거를 기록한다. 기존 `compare_review_value()`에 연결해 accept/reject/no_change를 결정하고 관련 focused checks·최종 CI·독립 검토를 수행한다.
+1. **최소 후보 설계.** Task-specific 문구가 없는 shape-only 예시, 명시적인 비율·단위·근거 사용 지침을 우선 비교한다. 숫자 표현을 결정적 코드로 제공하는 방안은 prompt-only 대안이 부족할 때에만 projection, byte bound와 Spec 영향까지 검토한다. 변경한 prompt는 새 version으로 식별하고 기존 `v1`/`v2` replay·digest를 보존한다.
+1. **반복 가능한 검증.** 관련 기존 fixture 및 테스트에 회귀를 연결하고, 단위 계산과 계약 검사를 수행한다. 예시 문구 exact match는 품질 신호로 기록할 수 있으나 정당한 공통 표현을 runtime에서 일괄 거부하지 않는다.
+1. **동일 조건의 live 비교.** 하나의 clean candidate revision에서 `v2` baseline과 candidate를 동일 case/version/facts, model, active context, runtime cap으로 실행한다. 호출 전 반복 횟수·비용 한도를 정하고 전 시도, 실패, exclusion, prompt/output digest, latency와 usage를 남긴다. 과거 #278의 호출은 동일 revision 비교의 baseline을 대체하지 않는다.
+1. **Human 평가와 채택 판단.** 사람이 `rubric_v1`의 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`에 각각 0–2점과 근거를 기록한다. 기존 `compare_review_value()`에 연결해 accept/reject/no_change를 결정하고 관련 focused checks·최종 CI·독립 검토를 수행한다.
 
 ## Acceptance
 
@@ -66,4 +66,4 @@ Review AI의 **schema 통과와 실제 출력 품질을 구분**하고, 수치 �
 
 ## Next Action
 
-첫 구현 작업은 대표 사례/독립 oracle과 negative control이 기존 평가를 통해 어떤 오류를 식별하는지 확인하는 것이다. 그 결과로 prompt-only 후보가 충분한지 결정한다. 완료 결과는 본 계획을 활동 로그로 부풀리기보다 같은 PR에서 평가·구현·검증 evidence에 연결한다.
+대표 사례/독립 oracle과 negative control, 선택 가능한 v3 prompt 후보를 준비했다. [평가 가이드](../../docs/development/review-ai-evaluation.md#baseline-and-candidate-comparison)에 따라 live 반복 예산과 실제 human 평가 담당자를 정하고, 깨끗한 같은 revision에서 v2/v3를 비교한다. 실제 출력 품질과 human utility가 확인되기 전에는 후보를 채택하지 않는다.

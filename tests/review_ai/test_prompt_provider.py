@@ -203,17 +203,88 @@ def test_oversized_prompt_is_rejected_before_any_provider_boundary(
 
 
 @pytest.mark.unit
-def test_historical_v1_prompt_digest_is_unchanged() -> None:
+@pytest.mark.parametrize(
+    ("version", "expected_digest"),
+    [
+        ("v1", "7e8e3c8d66e4f813bda68a8be1bbec1b5407af38533b8aedb6041d1432f418c0"),
+        ("v2", "259b852f8f6acb68619bf057413d4b99df6c9ef456925f1417857a74a3904946"),
+    ],
+)
+def test_historical_prompt_digests_are_unchanged(
+    version: str, expected_digest: str
+) -> None:
     rendered = prompt_module.render_canonical_input(
         {},
-        contracts.PromptIdentity(version="v1"),
+        contracts.PromptIdentity.model_validate({"version": version}),
         max_prompt_bytes=65_536,
     )
-    # Captured before the PR 278 fix; a same-writer replay would miss template drift.
-    assert (
-        rendered.prompt_digest
-        == "sha256:7e8e3c8d66e4f813bda68a8be1bbec1b5407af38533b8aedb6041d1432f418c0"
+    # Captured before v3; a same-writer replay would miss historical template drift.
+    assert rendered.prompt_digest == f"sha256:{expected_digest}"
+
+
+@pytest.mark.unit
+def test_v3_is_an_opt_in_bounded_candidate_with_the_same_input_projection(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    review_input = _review_input(null_spike_review_material)
+    baseline = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
+    candidate = prompt_module.render_review_prompt(
+        review_input.model_copy(
+            update={"prompt_identity": contracts.PromptIdentity(version="v3")}
+        ),
+        max_prompt_bytes=65_536,
     )
+
+    assert contracts.PromptIdentity().version == "v1"
+    assert candidate.canonical_input == baseline.canonical_input
+    assert candidate.messages[1] == baseline.messages[1]
+    assert candidate.prompt_digest != baseline.prompt_digest
+    assert candidate.prompt_bytes <= 65_536
+    replay = prompt_module.render_canonical_input(
+        candidate.canonical_input,
+        contracts.PromptIdentity(version="v3"),
+        max_prompt_bytes=65_536,
+    )
+    assert replay.prompt_digest == candidate.prompt_digest
+    with pytest.raises(prompt_module.PromptTooLargeError):
+        prompt_module.render_canonical_input(
+            candidate.canonical_input,
+            contracts.PromptIdentity(version="v3"),
+            max_prompt_bytes=candidate.prompt_bytes - 1,
+        )
+
+
+@pytest.mark.unit
+def test_v3_describes_units_and_evidence_without_task_content_examples() -> None:
+    instruction = (
+        prompt_module.render_canonical_input(
+            {}, contracts.PromptIdentity(version="v3"), max_prompt_bytes=65_536
+        )
+        .messages[0]
+        .content
+    )
+
+    for rule in (
+        "percentage points",
+        "baseline is zero",
+        "relative increase is undefined",
+        "threshold is a delta",
+        "do not round the structured facts",
+        "Do not claim a root cause or validation result",
+        "Do not critique an action absent from the draft",
+        "how each possible result changes the next human decision",
+        "Only investigation_priority requires priority",
+        "all other kinds omit priority",
+        "uncertainties: array of strings",
+    ):
+        assert rule in instruction
+    for example in (
+        "Validation results are missing.",
+        "Check source completeness first.",
+        "Confirm the cause before backfill.",
+        "The cause is not established.",
+    ):
+        assert example not in instruction
 
 
 @pytest.mark.unit

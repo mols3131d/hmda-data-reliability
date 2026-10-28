@@ -123,7 +123,7 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
     assert "live-test-secret" not in output
 
 
-@pytest.mark.parametrize("version", ["v1", "v2", "v3"])
+@pytest.mark.parametrize("version", ["v1", "v2", "v3", "unsupported"])
 def test_live_prompt_version_is_explicit_and_invalid_version_never_calls_provider(
     tmp_path: Path,
     version: str,
@@ -140,7 +140,7 @@ def test_live_prompt_version_is_explicit_and_invalid_version_never_calls_provide
 
     exit_code = live_module.main(env=environment, reviewer=capture_review)
 
-    if version == "v3":
+    if version == "unsupported":
         assert exit_code == 2 and calls == []
     else:
         assert exit_code == 1 and len(calls) == 1

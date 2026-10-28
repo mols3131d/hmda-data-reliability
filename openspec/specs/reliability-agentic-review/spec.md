@@ -17,7 +17,7 @@ Input은 다음 invariant를 모두 만족할 때만 provider review 대상으�
 - **Incident and draft identity:** `incident.incident_type`와 `draft.incident_type`는 정확히 `null_spike`이고, incident와 draft의 `incident_id`, `asset_name`과 `partition`이 일치한다.
 - **Evidence linkage:** 제공된 Evidence ID는 unique하고 `incident.evidence_refs` 및 `draft.evidence_refs`와 같은 set이어야 한다. 각 Evidence는 자신이 나타내는 asset과 partition identity를 보존해야 한다.
 - **Canonical target:** 정확히 하나의 canonical target Evidence가 있어야 하며, 그 asset과 partition은 incident와 일치해야 한다. 이 Evidence는 `source=profile`, `payload.rule=null_spike`, non-empty string `column`, finite numeric `baseline_null_rate`, `current_null_rate`, `delta`와 `threshold`를 가져야 한다. Target column과 numeric facts는 이 Evidence에서만 유도한다. 명시적으로 참조된 bounded contextual Evidence는 다른 asset 또는 partition을 나타낼 수 있다.
-- **Prompt metadata:** `PromptIdentity`는 `template_id=reliability-agentic-review.null-spike`, `version=v1|v2`이어야 하고, Evidence payload는 canonical JSON으로 표현 가능해야 한다. 기존 caller와 저장된 identity의 기본 version은 `v1`을 유지한다.
+- **Prompt metadata:** `PromptIdentity`는 `template_id=reliability-agentic-review.null-spike`, `version=v1|v2|v3`이어야 하고, Evidence payload는 canonical JSON으로 표현 가능해야 한다. 기존 caller와 저장된 identity의 기본 version은 `v1`을 유지한다.
 
 이 Capability의 review entry point는 `null_spike` 외 incident type을 지원해서는 안 된다(MUST NOT).
 
@@ -82,6 +82,24 @@ Rendered messages가 configured `max_prompt_bytes`를 넘으면 시스템은 pro
 
 - **WHEN** canonical input을 포함한 rendered messages가 configured `max_prompt_bytes`를 넘을 때
 - **THEN** 시스템은 `input_rejected` result를 반환하고 provider invocation 또는 invocation evidence 생성을 수행해서는 안 된다(MUST NOT).
+
+### Requirement: Opt-in grounded review instructions
+
+시스템은 `v3` prompt를 명시적으로 선택할 수 있어야 한다(SHALL). v3 instruction은 closed output의 field/type 및 conditional priority를 설명하면서 task-specific 내용 예시를 포함하지 않아야 한다(SHALL). Rate와 percentage-point 차이, delta threshold 및 baseline-zero에서 정의되지 않는 상대 변화율을 구별하도록 안내해야 한다(SHALL). Structured facts는 입력 값을 그대로 복사하고 설명에서만 읽기 쉬운 단위 표현을 사용하도록 안내해야 한다(SHALL).
+
+Instruction은 제공된 evidence와 실제 draft를 대조하고 미확인 원인·검증 결과를 확정하지 않으며 존재하지 않는 draft action을 비판하지 않도록 안내해야 한다(SHALL). Utility는 단순 재서술을 넘어 확인 우선순위와 결과에 따라 달라지는 사람의 다음 판단에 연결하도록 안내해야 한다(SHALL). 이는 prompt 계약이며 임의 free-text를 거부하는 새 deterministic acceptance 규칙이 아니다.
+
+기존 `v1`/`v2`의 같은 canonical input에 대한 instruction과 digest, Python identity 기본 `v1` 및 live harness 기본 `v2`는 보존해야 한다(SHALL). v3 지원만으로 human utility나 candidate 채택을 주장해서는 안 된다(MUST NOT).
+
+#### Scenario: Candidate version renders without content examples
+
+- **WHEN** caller가 `v3`를 명시적으로 선택하고 기존 valid input을 render할 때
+- **THEN** 동일 canonical projection과 advisory boundary를 사용하면서 위 수치·근거·draft 지침을 담은 별도 digest의 prompt를 생성해야 한다(SHALL).
+
+#### Scenario: Historical versions retain replay identity
+
+- **WHEN** 변경 전 canonical input을 `v1` 또는 `v2`로 다시 render할 때
+- **THEN** 변경 전 message digest와 같아야 하며(SHALL) version을 생략한 caller의 기본값을 변경해서는 안 된다(MUST NOT).
 
 ### Requirement: Structured advisory review output
 

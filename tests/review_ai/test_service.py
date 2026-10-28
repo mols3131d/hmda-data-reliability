@@ -240,12 +240,13 @@ def _call(
     settings: RuntimeAISettings | None = None,
     review_settings: ReviewAISettings | None = None,
     evidence: Sequence[Evidence] | None = None,
+    prompt_identity: contracts.PromptIdentity | None = None,
 ) -> contracts.AgenticReviewResult:
     return service_module.review_null_spike(
         incident=material.detection.incident,
         evidence=([material.detection.evidence] if evidence is None else evidence),
         draft=material.draft,
-        prompt_identity=contracts.PromptIdentity(),
+        prompt_identity=prompt_identity or contracts.PromptIdentity(),
         project_revision="e09c54b",
         settings=settings or _settings(),
         review_settings=review_settings,
@@ -256,9 +257,11 @@ def _call(
     )
 
 
+@pytest.mark.parametrize("version", ["v1", "v2", "v3"])
 def test_accepted_review_is_validated_then_persisted_and_returned(
     tmp_path: Path,
     null_spike_review_material: NullSpikeReviewMaterial,
+    version: str,
 ) -> None:
     material = null_spike_review_material
     events: list[str] = []
@@ -274,7 +277,10 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
     )
     store = RecordingStore(tmp_path, events)
 
-    result = _call(material, provider=provider, evidence_store=store)
+    identity = contracts.PromptIdentity.model_validate({"version": version})
+    result = _call(
+        material, provider=provider, evidence_store=store, prompt_identity=identity
+    )
 
     assert result.status == "accepted"
     assert result.output == _safe_output(material)
@@ -289,6 +295,11 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
     assert record.canonical_input == store.records[0].canonical_input
     assert record.configuration.max_prompt_bytes == 65_536
     assert record.trace_id == "req-1"
+    assert record.prompt_identity == identity
+    replay = render_canonical_input(
+        record.canonical_input, record.prompt_identity, max_prompt_bytes=65_536
+    )
+    assert replay.prompt_digest == record.prompt_digest
 
 
 def test_invocation_provenance_uses_the_same_bounded_projection_as_provider_input(
