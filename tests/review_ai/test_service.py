@@ -150,7 +150,7 @@ class FailingStore:
         ),
     ],
 )
-def test_schema_failures_retain_bounded_diagnosis_without_output_or_retry(
+def test_schema_failures_retain_diagnosis_and_local_response_without_output_or_retry(
     tmp_path: Path,
     null_spike_review_material: NullSpikeReviewMaterial,
     caplog: pytest.LogCaptureFixture,
@@ -159,7 +159,7 @@ def test_schema_failures_retain_bounded_diagnosis_without_output_or_retry(
     expected_issue: tuple[str, str] | None,
 ) -> None:
     material = null_spike_review_material
-    secret = "SENTINEL_PROVIDER_VALUE_DO_NOT_PERSIST"
+    secret = "SENTINEL_LOCAL_RESPONSE_VALUE"
     payload = _safe_output(material).model_dump(mode="json")
     if case == "uncertainties_string":
         payload["uncertainties"] = secret
@@ -188,11 +188,18 @@ def test_schema_failures_retain_bounded_diagnosis_without_output_or_retry(
     )
     store = RecordingStore(tmp_path)
 
-    result = _call(material, provider=provider, evidence_store=store)
+    result = _call(
+        material, provider=provider, evidence_store=store, artifact_root=tmp_path
+    )
 
     assert result.status == "validation_failed"
     assert result.failure_code == "response_schema_invalid"
     assert result.output is None
+    assert result.response_path is not None
+    assert result.response_path == (
+        tmp_path / "agentic-review" / "responses" / "inv-fixed.txt"
+    )
+    assert result.response_path.read_bytes() == content.encode("utf-8")
     assert provider.calls == 1
     record = store.delegate.load("inv-fixed")
     assert record.parsed_output is None and record.validation is None
@@ -224,7 +231,12 @@ def test_schema_diagnosis_bounds_attacker_controlled_error_fields(
     )
     store = RecordingStore(tmp_path)
 
-    _call(null_spike_review_material, provider=provider, evidence_store=store)
+    _call(
+        null_spike_review_material,
+        provider=provider,
+        evidence_store=store,
+        artifact_root=tmp_path,
+    )
 
     diagnosis = store.records[0].response_diagnostics
     assert diagnosis is not None and len(diagnosis.issues) == 8
@@ -237,6 +249,7 @@ def _call(
     *,
     provider: service_module.ReviewProvider,
     evidence_store: service_module.InvocationEvidenceWriter,
+    artifact_root: Path,
     settings: RuntimeAISettings | None = None,
     review_settings: ReviewAISettings | None = None,
     evidence: Sequence[Evidence] | None = None,
@@ -252,6 +265,7 @@ def _call(
         review_settings=review_settings,
         provider=provider,
         evidence_store=evidence_store,
+        artifact_root=artifact_root,
         invocation_id_factory=lambda: "inv-fixed",
         clock=lambda: datetime(2026, 8, 27, 2, 0, tzinfo=UTC),
     )
@@ -279,7 +293,11 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
 
     identity = contracts.PromptIdentity.model_validate({"version": version})
     result = _call(
-        material, provider=provider, evidence_store=store, prompt_identity=identity
+        material,
+        provider=provider,
+        evidence_store=store,
+        artifact_root=tmp_path,
+        prompt_identity=identity,
     )
 
     assert result.status == "accepted"
@@ -289,6 +307,10 @@ def test_accepted_review_is_validated_then_persisted_and_returned(
     assert result.invocation_id == "inv-fixed"
     assert result.invocation_path is not None
     assert result.invocation_path.exists()
+    assert result.response_path is not None
+    assert result.response_path.read_bytes() == (
+        _safe_output(material).model_dump_json().encode("utf-8")
+    )
     assert events == ["provider", "store"]
     record = store.delegate.load("inv-fixed")
     assert record.status == "accepted"
@@ -334,6 +356,7 @@ def test_invocation_provenance_uses_the_same_bounded_projection_as_provider_inpu
         settings=_settings(),
         provider=provider,
         evidence_store=store,
+        artifact_root=tmp_path,
         invocation_id_factory=lambda: "inv-bounded",
     )
 
@@ -393,6 +416,7 @@ def test_rejects_citation_of_provided_evidence_omitted_from_the_prompt(
         settings=_settings(),
         provider=provider,
         evidence_store=store,
+        artifact_root=tmp_path,
         invocation_id_factory=lambda: "inv-omitted",
     )
 
@@ -450,6 +474,7 @@ def test_records_evidence_when_review_outcome_is_created(
         settings=_settings(),
         provider=provider,
         evidence_store=store,
+        artifact_root=tmp_path,
         invocation_id_factory=lambda: "inv-timestamp",
         clock=lambda: current_time["value"],
     )
@@ -482,6 +507,7 @@ def test_preflight_rejection_never_calls_provider_or_evidence_store(
         null_spike_review_material,
         provider=provider,
         evidence_store=store,
+        artifact_root=tmp_path,
         review_settings=_review_settings(max_prompt_bytes=max_prompt_bytes),
         evidence=evidence,
     )
@@ -489,6 +515,7 @@ def test_preflight_rejection_never_calls_provider_or_evidence_store(
     assert result.status == "input_rejected"
     assert result.failure_code == failure_code
     assert result.invocation_id is None
+    assert result.response_path is None
     assert provider.calls == 0
     assert store.records == []
     assert not tmp_path.joinpath("agentic-review").exists()
@@ -543,6 +570,7 @@ def test_context_overflow_is_typed_preflight_rejection(
         settings=_settings(),
         provider=provider,
         evidence_store=store,
+        artifact_root=tmp_path,
     )
 
     assert result.status == "input_rejected"
@@ -576,6 +604,7 @@ def test_unrelated_prompt_value_error_is_not_mapped_to_input_rejection(
             null_spike_review_material,
             provider=provider,
             evidence_store=store,
+            artifact_root=tmp_path,
         )
 
     assert provider.calls == 0
@@ -616,6 +645,7 @@ def test_schema_and_guard_failures_are_persisted_without_exposing_output(
                 )
             ),
             evidence_store=store,
+            artifact_root=root,
             invocation_id_factory=lambda index=index: f"inv-{index}",
             clock=lambda: datetime(2026, 8, 27, 2, 0, tzinfo=UTC),
         )
@@ -623,6 +653,8 @@ def test_schema_and_guard_failures_are_persisted_without_exposing_output(
         assert result.status == "validation_failed"
         assert result.output is None
         assert result.failure_code == failure_code
+        assert result.response_path is not None
+        assert result.response_path.read_bytes() == content.encode("utf-8")
         record = store.delegate.load(f"inv-{index}")
         assert record.status == "validation_failed"
         if violation is None:
@@ -662,6 +694,7 @@ def test_json_parser_limits_are_typed_and_persisted(
         null_spike_review_material,
         provider=provider,
         evidence_store=store,
+        artifact_root=tmp_path,
         settings=settings,
     )
 
@@ -677,6 +710,8 @@ def test_json_parser_limits_are_typed_and_persisted(
     assert record.parsed_output is None
     assert record.validation is None
     assert content not in result.invocation_path.read_text(encoding="utf-8")
+    assert result.response_path is not None
+    assert result.response_path.read_bytes() == content.encode("utf-8")
 
 
 def test_unavailable_provider_is_typed_and_persisted(
@@ -696,11 +731,14 @@ def test_unavailable_provider_is_typed_and_persisted(
         null_spike_review_material,
         provider=provider,
         evidence_store=store,
+        artifact_root=tmp_path,
     )
 
     assert result.status == "unavailable"
     assert result.output is None
     assert result.failure_code == "provider_connection_error"
+    assert result.response_path is None
+    assert not (tmp_path / "agentic-review" / "responses").exists()
     record = store.delegate.load("inv-fixed")
     assert record.status == "unavailable"
     assert record.attempt_count == 2
@@ -708,6 +746,7 @@ def test_unavailable_provider_is_typed_and_persisted(
 
 
 def test_persistence_failure_blocks_an_otherwise_accepted_result(
+    tmp_path: Path,
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
     provider = FakeProvider(
@@ -722,6 +761,7 @@ def test_persistence_failure_blocks_an_otherwise_accepted_result(
         null_spike_review_material,
         provider=provider,
         evidence_store=FailingStore(),
+        artifact_root=tmp_path,
     )
 
     assert result.status == "provenance_failed"
@@ -729,6 +769,80 @@ def test_persistence_failure_blocks_an_otherwise_accepted_result(
     assert result.invocation_id == "inv-fixed"
     assert result.invocation_path is None
     assert result.failure_code == "invocation_evidence_write_failed"
+    assert result.response_path is not None
+    assert result.response_path.read_bytes() == (
+        _safe_output(null_spike_review_material).model_dump_json().encode("utf-8")
+    )
+
+
+def test_response_is_stored_before_schema_validation(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    content = '{"응답":"검증 전에 보존한다"'
+    response_path = tmp_path / "agentic-review" / "responses" / "inv-fixed.txt"
+    parse_response = service_module.parse_review_response
+
+    def parse_after_capture(
+        response_content: str,
+    ) -> tuple[
+        contracts.AgenticReviewOutput | None,
+        service_module.ReviewResponseDiagnostics | None,
+    ]:
+        assert response_path.read_bytes() == content.encode("utf-8")
+        return parse_response(response_content)
+
+    monkeypatch.setattr(service_module, "parse_review_response", parse_after_capture)
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content=content, attempt_count=1, latency_ms=1
+        )
+    )
+
+    result = _call(
+        null_spike_review_material,
+        provider=provider,
+        evidence_store=RecordingStore(tmp_path),
+        artifact_root=tmp_path,
+    )
+
+    assert result.status == "validation_failed"
+    assert result.response_path == response_path
+
+
+def test_response_capture_failure_stops_before_validation_or_record_write(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    blocked_root = tmp_path / "blocked"
+    blocked_root.write_text("not-a-directory", encoding="utf-8")
+    store = RecordingStore(tmp_path / "records")
+
+    def unexpected_parse(content: str) -> None:
+        pytest.fail("response capture must complete before schema validation")
+
+    monkeypatch.setattr(service_module, "parse_review_response", unexpected_parse)
+    provider = FakeProvider(
+        runtime_contracts.ProviderResponse(
+            content="not-json", attempt_count=1, latency_ms=1
+        )
+    )
+
+    result = _call(
+        null_spike_review_material,
+        provider=provider,
+        evidence_store=store,
+        artifact_root=blocked_root,
+    )
+
+    assert result.status == "provenance_failed"
+    assert result.failure_code == "invocation_response_write_failed"
+    assert result.output is None
+    assert result.response_path is None
+    assert result.invocation_path is None
+    assert store.records == []
 
 
 def test_review_preserves_reliability_objects_and_target_state(
@@ -755,6 +869,7 @@ def test_review_preserves_reliability_objects_and_target_state(
         material,
         provider=provider,
         evidence_store=RecordingStore(tmp_path / "artifacts"),
+        artifact_root=tmp_path / "artifacts",
     )
 
     assert result.status == "accepted"
@@ -798,7 +913,9 @@ def test_action_like_free_text_is_accepted_with_current_provenance(
     )
     store = RecordingStore(tmp_path / "artifacts")
 
-    result = _call(material, provider=provider, evidence_store=store)
+    result = _call(
+        material, provider=provider, evidence_store=store, artifact_root=tmp_path
+    )
 
     assert result.status == "accepted"
     assert result.output == action_output
@@ -848,7 +965,7 @@ def test_service_returns_provenance_failed_on_real_store_directory_error(
 
     assert result.status == "provenance_failed"
     assert result.output is None
-    assert result.failure_code == "invocation_evidence_write_failed"
+    assert result.failure_code == "invocation_response_write_failed"
 
 
 def test_service_leaves_no_accepted_record_when_directory_fsync_fails(
@@ -882,7 +999,7 @@ def test_service_leaves_no_accepted_record_when_directory_fsync_fails(
 
     assert result.status == "provenance_failed"
     assert result.output is None
-    assert result.failure_code == "invocation_evidence_write_failed"
+    assert result.failure_code == "invocation_response_write_failed"
 
     store = store_module.InvocationEvidenceStore(tmp_path)
     assert result.invocation_id is not None

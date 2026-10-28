@@ -312,6 +312,7 @@ class AgenticReviewResult(ReliabilityContract):
     - `INPUT_REJECTED`: provider 호출 전 거부이므로 invocation 출처 메타데이터 금지.
     - `PROVENANCE_FAILED`: invocation_id는 존재하나 디스크 쓰기 실패로
       invocation_path는 None.
+    - `response_path`: 검증과 별개로 보존한 로컬 응답 파일. 이전 결과에는 없다.
     """
 
     status: AgenticReviewStatus
@@ -319,6 +320,7 @@ class AgenticReviewResult(ReliabilityContract):
     validation: AgenticReviewValidation | None = None
     invocation_id: str | None = None
     invocation_path: Path | None = None
+    response_path: Path | None = None
     failure_code: str | None = None
 
     @field_validator("invocation_id", "failure_code")
@@ -330,6 +332,17 @@ class AgenticReviewResult(ReliabilityContract):
 
     @model_validator(mode="after")
     def _validate_result_boundary(self) -> AgenticReviewResult:
+        if self.response_path is not None and (
+            self.invocation_id is None
+            or self.status
+            not in {
+                AgenticReviewStatus.ACCEPTED,
+                AgenticReviewStatus.VALIDATION_FAILED,
+                AgenticReviewStatus.PROVENANCE_FAILED,
+            }
+        ):
+            msg = "response path requires a provider response and invocation identity"
+            raise ValueError(msg)
         if self.status is AgenticReviewStatus.ACCEPTED:
             if (
                 self.output is None

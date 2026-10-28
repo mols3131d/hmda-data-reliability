@@ -345,6 +345,7 @@ def test_typed_result_enforces_status_specific_output_and_provenance(
         invocation_path=Path("agentic-review/invocations/inv-1.json"),
     )
     assert accepted.output == output
+    assert accepted.response_path is None
 
     for status in (
         "validation_failed",
@@ -367,6 +368,23 @@ def test_typed_result_enforces_status_specific_output_and_provenance(
 
         with pytest.raises(ValidationError):
             contracts_module.AgenticReviewResult.model_validate(values)
+
+
+@pytest.mark.parametrize("status", ["input_rejected", "unavailable"])
+def test_result_without_provider_body_cannot_expose_response_path(status: str) -> None:
+    values: dict[str, object] = {
+        "status": status,
+        "failure_code": "expected_failure",
+        "response_path": Path("agentic-review/responses/inv-1.txt"),
+    }
+    if status == "unavailable":
+        values.update(
+            invocation_id="inv-1",
+            invocation_path=Path("agentic-review/invocations/inv-1.json"),
+        )
+
+    with pytest.raises(ValidationError):
+        contracts_module.AgenticReviewResult.model_validate(values)
 
 
 def test_input_models_are_frozen(

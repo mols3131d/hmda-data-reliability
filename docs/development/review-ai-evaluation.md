@@ -35,7 +35,19 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 
 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하며 tracked worktree가 깨끗해야 한다. 필요하면 비어 있지 않은 revision을 명시할 수 있다. 결과는 `accepted` 또는 typed failure다. Provider 호출이 시작되면 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
 
-Live harness는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`은 과거 동작 비교용이고, `v3`는 수치 단위와 evidence/draft 충실성을 비교하기 위한 선택 가능한 후보다. 세 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 과거 caller와의 호환성을 위해 `v1`이며 caller는 원하는 version을 명시적으로 전달한다. v3 지원은 실제 출력 개선이나 채택을 의미하지 않는다.
+Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/responses/<invocation_id>.txt`에 원문을 저장한다. 결과 JSON의 `response_path`로 파일을 열면 성공·출력 형식 오류·사실 검증 실패에 관계없이 모델이 실제로 생성한 내용을 읽을 수 있다. UTF-8 본문은 공백·개행을 포함해 그대로 보존하며 빈 응답은 0-byte 파일이다. 원문은 호출 기록 JSON, 콘솔 로그나 Langfuse에 추가하지 않는다.
+
+응답 파일 저장이 실패하면 `provenance_failed / invocation_response_write_failed`다. 호출 기록 저장만 실패한 경우에도 이미 저장한 `response_path`는 반환한다. 입력 거부·네트워크 실패 및 Runtime이 본문을 반환하기 전에 차단한 크기 초과 응답에는 이 파일이 없다. 이전 실행에서 저장하지 않은 본문은 복원되지 않는다.
+
+개발 중 tracked 파일을 수정한 상태에서는 `auto` 대신 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=local-response-retention-worktree`처럼 명시적인 작업 표식을 사용할 수 있다. 이 실행은 특정 clean commit의 품질 검증 증거로 취급하지 않는다.
+
+현재 개발 비교 단계에서 live harness는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`은 과거 동작 비교용이고, `v3`는 수치 단위와 evidence/draft 충실성을 비교하기 위한 선택 가능한 후보다. 세 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 현재 `v1`이며 caller는 비교할 version을 명시적으로 전달한다. v3 지원은 실제 출력 개선이나 채택을 의미하지 않는다.
+
+프롬프트의 [조각 안내와 조합 구조](../../src/hmda_reliability/review_ai/prompt/README.md)를 보고 역할·언어·자문 경계의 [공통 부분](../../src/hmda_reliability/review_ai/prompt/common/), [출력 계약](../../src/hmda_reliability/review_ai/prompt/output/)과 [검토 지침](../../src/hmda_reliability/review_ai/prompt/guidance/)을 편집한다. [`prompt/__init__.py`](../../src/hmda_reliability/review_ai/prompt/__init__.py)는 version별 고정 순서로 Markdown 조각을 이어 system 메시지를 만들고 canonical input JSON을 별도 user 메시지로 조립한다. 실제 호출에 주입한 데이터는 invocation record의 `canonical_input`에서 확인한다. 모델 응답은 JSON 객체 하나를 유지하며 조립한 지시문의 순서·구분자·Markdown 표기·공백·마지막 개행도 prompt digest에 포함된다.
+
+프롬프트 파일과 한국어 작성 기준은 [`review-ai-prompt-engineering`](../../openspec/specs/review-ai-prompt-engineering/spec.md) Spec을 따른다. 모든 지원 버전은 한국어 지시문으로 요약·발견 사항·불확실성·검토 기여의 설명을 한국어로 작성하도록 요청한다. JSON 필드명·열거값·입력 식별자와 수치는 원표기를 유지한다. Review AI가 만드는 context gap 설명도 한국어이며, 원본 Evidence와 Draft의 내용은 그대로 제공한다.
+
+지시문의 번역이나 Markdown 구조 변경으로 현재 메시지와 digest는 과거 revision과 달라질 수 있다. 과거 invocation은 저장된 `project_revision`의 renderer와 텍스트 리소스로 재생한다. 같은 version 이름이라도 다른 revision의 digest를 동일하다고 가정하지 않는다. 실제 모델의 한국어 준수는 `response_path`의 본문을 읽어 확인하며, offline 테스트의 통과만으로 준수를 주장하지 않는다.
 
 ### Output Quality Cases
 
@@ -53,14 +65,20 @@ Live harness는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt�
 
 1. 호출 전에 case/version, 모델·양자화, active context, Thinking 상태, output cap, timeout, retry, 반복 횟수 및 최대 총 호출 수를 정한다. Context/Thinking 실험은 prompt 비교와 분리하고 Ollama의 실제 적재 상태를 확인한다.
 1. Tracked tree가 깨끗한 하나의 candidate HEAD에서 각 case의 `review_input`을 `AgenticReviewInput.model_validate()`로 읽는다. Fixture의 `project_revision`은 live revision이 아니므로 실제 HEAD를 [`review_null_spike()`](../../src/hmda_reliability/review_ai/service.py)에 별도로 전달한다. 동일 incident/evidence/draft와 runtime 조건에서 `PromptIdentity(version="v2")` baseline과 `PromptIdentity(version="v3")` candidate를 실행한다. 기본 live script의 입력은 기존 한 사례이므로 나머지 사례는 이 API에 명시적으로 전달한다.
-1. 시작 전에 attempt 목록을 만들고 실패·exclusion도 남긴다. 각 attempt의 case/version/role/repeat, 실제 revision, invocation identity, status/failure, prompt/output digest, latency/usage와 provider context/Thinking 조건을 연결한다. 원문 response나 credential은 보존하지 않는다. Retry를 사용할 경우 물리 호출 수도 예산에 포함한다.
+1. 시작 전에 attempt 목록을 만들고 실패·exclusion도 남긴다. 각 attempt의 case/version/role/repeat, 실제 revision, invocation identity, status/failure, prompt/output digest, latency/usage와 provider context/Thinking 조건을 연결한다. 응답 본문은 로컬 response 파일에서 확인하고 credential이나 raw exception은 보존하지 않는다. Retry를 사용할 경우 물리 호출 수도 예산에 포함한다.
 1. Accepted output의 설명을 독립 oracle 및 실제 제공된 evidence/draft와 대조한다. 숫자·threshold 단위가 맞는지, baseline-zero의 상대 증가율을 만들지 않는지, 원인·완료된 검증을 지어내지 않는지, 실제 draft에 없는 action을 비판하지 않는지 확인한다. 무엇을 먼저 확인하고 결과별 사람 판단이 어떻게 달라지는지 기록한다.
 1. 사람이 다섯 criterion 각각에 0–2점과 rationale을 제공한 뒤 기존 `ReviewValueAssessment`와 `compare_review_value()`를 사용한다. `case_id/version`, role, 실제 revision, invocation, exact output digest를 연결하고 같은 case끼리 비교한다. API는 caller가 제공한 점수·decision을 검증하며 의미적 채점을 대신하지 않는다. 동일 role/repeat의 identity를 임의로 바꾸거나 좋은 출력만 고르지 않는다.
 1. 전체 시도의 실패·정확성·utility를 함께 보고 실제 사람이 `accept`, `reject` 또는 `no_change`와 이유를 결정한다. 조건이 다르면 `blocked`/`inconclusive`, 사람 평가가 없으면 미검증이다. 과거 호출이나 offline fixture 성공으로 후보를 기본값으로 전환하지 않는다.
 
+### Adoption and Active Default
+
+다중 version은 개발 중 비교·검증을 위한 단계다. 검증과 사람의 판단으로 프롬프트를 채택한 뒤에는 Python API와 live harness의 기본 경로를 하나의 active version으로 통일해야 한다. 채택 변경은 두 진입점이 하나의 공통 기본 선택 정의를 사용하도록 함께 전환해야 하며, 서로 다른 암묵적 기본값을 남기지 않는다.
+
+채택 전에는 위의 현재 기본값을 유지한다. 채택 후 이전 version은 명시적 비교·과거 실행 재현용으로 관리하며 기록된 version·revision·digest는 바꾸지 않는다. 이 방침의 정본은 [Prompt lifecycle and active default](../../openspec/specs/review-ai-prompt-engineering/spec.md#requirement-prompt-lifecycle-and-active-default)다.
+
 ### Diagnose a Failed Response
 
-`response_schema_invalid`이면 결과의 `invocation_path`에 있는 정제된 record에서 다음 필드를 확인한다. Raw response와 Pydantic 입력값은 보존하지 않는다.
+`response_schema_invalid`이면 결과의 `response_path`에 있는 원문을 먼저 읽고, `invocation_path`에 있는 정제된 record의 다음 필드와 대조한다. Pydantic 입력값이나 exception message는 진단에 보존하지 않는다. 과거 record처럼 `response_path`가 없는 실행은 보존된 진단만 확인할 수 있다.
 
 | Evidence field | Meaning / next action |
 | --- | --- |

@@ -5,10 +5,10 @@
   "human_evaluation": "not_performed",
   "oracle_basis": "수치는 고정된 profile pair의 십진 비율로 독립 계산한다. 품질 label과 질문은 합성 검토 보조 자료이며 모델 출력, 자동 semantic 판정 또는 실제 human rubric 점수가 아니다.",
   "v2_example_descriptions": [
-    "Validation results are missing.",
-    "Check source completeness first.",
-    "Confirm the cause before backfill.",
-    "The cause is not established."
+    "검증 결과가 없습니다.",
+    "원천 데이터의 완전성을 먼저 확인하세요.",
+    "백필 전에 원인을 확인하세요.",
+    "원인은 확인되지 않았습니다."
   ],
   "cases": [
     {
@@ -206,23 +206,23 @@
             "utility_contributions": [
               {
                 "kind": "evidence_gap",
-                "description": "Validation results are missing.",
+                "description": "검증 결과가 없습니다.",
                 "evidence_refs": []
               },
               {
                 "kind": "investigation_priority",
-                "description": "Check source completeness first.",
+                "description": "원천 데이터의 완전성을 먼저 확인하세요.",
                 "evidence_refs": [],
                 "priority": "high"
               },
               {
                 "kind": "remediation_critique",
-                "description": "Confirm the cause before backfill.",
+                "description": "백필 전에 원인을 확인하세요.",
                 "evidence_refs": []
               },
               {
                 "kind": "material_uncertainty",
-                "description": "The cause is not established.",
+                "description": "원인은 확인되지 않았습니다.",
                 "evidence_refs": []
               }
             ]

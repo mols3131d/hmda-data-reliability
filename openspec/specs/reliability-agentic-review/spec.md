@@ -17,7 +17,7 @@ Input은 다음 invariant를 모두 만족할 때만 provider review 대상으�
 - **Incident and draft identity:** `incident.incident_type`와 `draft.incident_type`는 정확히 `null_spike`이고, incident와 draft의 `incident_id`, `asset_name`과 `partition`이 일치한다.
 - **Evidence linkage:** 제공된 Evidence ID는 unique하고 `incident.evidence_refs` 및 `draft.evidence_refs`와 같은 set이어야 한다. 각 Evidence는 자신이 나타내는 asset과 partition identity를 보존해야 한다.
 - **Canonical target:** 정확히 하나의 canonical target Evidence가 있어야 하며, 그 asset과 partition은 incident와 일치해야 한다. 이 Evidence는 `source=profile`, `payload.rule=null_spike`, non-empty string `column`, finite numeric `baseline_null_rate`, `current_null_rate`, `delta`와 `threshold`를 가져야 한다. Target column과 numeric facts는 이 Evidence에서만 유도한다. 명시적으로 참조된 bounded contextual Evidence는 다른 asset 또는 partition을 나타낼 수 있다.
-- **Prompt metadata:** `PromptIdentity`는 `template_id=reliability-agentic-review.null-spike`, `version=v1|v2|v3`이어야 하고, Evidence payload는 canonical JSON으로 표현 가능해야 한다. 기존 caller와 저장된 identity의 기본 version은 `v1`을 유지한다.
+- **Prompt metadata:** `PromptIdentity`는 `template_id=reliability-agentic-review.null-spike`, `version=v1|v2|v3`이어야 하고, Evidence payload는 canonical JSON으로 표현 가능해야 한다. 현재 개발 비교 단계의 version 생략 기본값은 `v1`이며, 향후 채택·단일 기본값 전환은 [review-ai-prompt-engineering](../review-ai-prompt-engineering/spec.md)의 lifecycle 계약을 따른다.
 
 이 Capability의 review entry point는 `null_spike` 외 incident type을 지원해서는 안 된다(MUST NOT).
 
@@ -60,6 +60,8 @@ Input은 다음 invariant를 모두 만족할 때만 provider review 대상으�
 
 `canonical_input`은 같은 snapshot에서 같은 canonical JSON byte sequence를 생성해야 한다(SHALL). System instruction과 user data는 분리해야 하며(SHALL), `canonical_input` 안의 Evidence summary/payload와 draft text는 instruction이 아니라 untrusted data로 취급해야 한다(SHALL).
 
+프롬프트 리소스, 한국어 지시문·설명문과 revision별 변경 추적은 [review-ai-prompt-engineering](../review-ai-prompt-engineering/spec.md) 계약을 따라야 한다(SHALL).
+
 Rendered messages가 configured `max_prompt_bytes`를 넘으면 시스템은 provider call 전에 `input_rejected`를 반환하고 invocation evidence를 만들지 않아야 한다(MUST NOT).
 
 #### Scenario: Canonical projection is deterministic and bounded
@@ -76,7 +78,7 @@ Rendered messages가 configured `max_prompt_bytes`를 넘으면 시스템은 pro
 
 - **WHEN** `v2` prompt를 render할 때
 - **THEN** system instruction은 `evidence_used`, `findings`, `uncertainties`, `utility_contributions`와 nested `evidence_refs`의 배열 타입, 문자열·object element 구분, canonical facts 복사 및 `investigation_priority`만의 필수 `priority` 조건을 명시해야 한다(SHALL).
-- **AND** 같은 canonical input의 `v1` instruction과 digest는 기존 구현과 같아야 하며(SHALL), 저장된 version으로 각 prompt를 재생할 수 있어야 한다.
+- **AND** 과거 prompt는 저장된 version과 canonical input을 기록된 `project_revision`의 renderer와 리소스에 제공해 재생할 수 있어야 하며(SHALL), 그 revision의 message digest와 일치해야 한다(SHALL).
 
 #### Scenario: Oversized prompt is rejected before provider invocation
 
@@ -89,7 +91,7 @@ Rendered messages가 configured `max_prompt_bytes`를 넘으면 시스템은 pro
 
 Instruction은 제공된 evidence와 실제 draft를 대조하고 미확인 원인·검증 결과를 확정하지 않으며 존재하지 않는 draft action을 비판하지 않도록 안내해야 한다(SHALL). Utility는 단순 재서술을 넘어 확인 우선순위와 결과에 따라 달라지는 사람의 다음 판단에 연결하도록 안내해야 한다(SHALL). 이는 prompt 계약이며 임의 free-text를 거부하는 새 deterministic acceptance 규칙이 아니다.
 
-기존 `v1`/`v2`의 같은 canonical input에 대한 instruction과 digest, Python identity 기본 `v1` 및 live harness 기본 `v2`는 보존해야 한다(SHALL). v3 지원만으로 human utility나 candidate 채택을 주장해서는 안 된다(MUST NOT).
+현재 개발 비교 단계는 Python identity 기본 `v1`과 live harness 기본 `v2`를 사용한다. 채택 판단 이후에는 [review-ai-prompt-engineering](../review-ai-prompt-engineering/spec.md)의 lifecycle 계약에 따라 하나의 active 기본값으로 함께 전환해야 한다(SHALL). 과거 `v1`/`v2` 실행은 기록된 `project_revision`의 renderer와 리소스를 사용할 때 저장된 instruction과 digest를 재생할 수 있어야 한다(SHALL). 언어 변경으로 현재 revision의 digest가 달라져도 과거 invocation의 기록을 재작성해서는 안 된다(MUST NOT). v3 지원만으로 human utility나 candidate 채택을 주장해서는 안 된다(MUST NOT).
 
 #### Scenario: Candidate version renders without content examples
 
@@ -98,8 +100,8 @@ Instruction은 제공된 evidence와 실제 draft를 대조하고 미확인 원�
 
 #### Scenario: Historical versions retain replay identity
 
-- **WHEN** 변경 전 canonical input을 `v1` 또는 `v2`로 다시 render할 때
-- **THEN** 변경 전 message digest와 같아야 하며(SHALL) version을 생략한 caller의 기본값을 변경해서는 안 된다(MUST NOT).
+- **WHEN** 과거 canonical input과 `v1`, `v2` 또는 `v3` version을 기록된 `project_revision`의 renderer와 리소스로 다시 render할 때
+- **THEN** 과거 invocation의 message digest와 같아야 하며(SHALL) 현재 active 기본값의 변경으로 저장된 version이나 과거 기록의 해석을 바꿔서는 안 된다(MUST NOT).
 
 ### Requirement: Structured advisory review output
 
@@ -440,6 +442,39 @@ Runtime SDK는 완료 응답의 `finish_reason`, `content_state`와 UTF-8 `conte
 - **WHEN** provider 오류 입력값·extra field 이름·알 수 없는 완료 이유에 임의 문자열이 포함될 때
 - **THEN** 진단은 고정 field/code와 `unknown`으로 제한되어야 하며(SHALL), 해당 문자열은 schema-invalid evidence, result, CLI 또는 logger에 나타나서는 안 된다(MUST NOT).
 
+### Requirement: Local provider response retention
+
+Review AI는 Runtime이 반환한 bounded 응답 본문을 JSON 파싱 및 출력 검증 전에 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/responses/<invocation_id>.txt`에 저장해야 한다(SHALL). 저장 내용은 응답 문자열의 UTF-8 바이트와 정확히 같아야 하며(SHALL), 개행 추가·공백 제거·JSON 재직렬화를 해서는 안 된다(MUST NOT). 빈 본문도 0-byte 파일로 남겨야 한다(SHALL).
+
+응답 파일은 invocation별 create-only로 저장하고, 기존 response 또는 invocation identity를 덮어써서는 안 된다(MUST NOT). 결과는 저장한 파일의 `response_path`를 제공해야 한다(SHALL). 응답 저장 실패는 `provenance_failed / invocation_response_write_failed`로 종료하고 accepted output을 반환해서는 안 된다(MUST NOT). 응답 저장 후 invocation record 쓰기가 실패해도 회수 가능한 `response_path`는 유지해야 한다(SHALL).
+
+로컬 응답은 검증을 통과한 review가 아니다. Schema/guard 실패의 status와 typed failure는 유지해야 한다(SHALL). 원문은 sanitized invocation JSON, 진단, 콘솔, logger 또는 Langfuse projection에 추가해서는 안 된다(MUST NOT). Provider가 본문을 반환하지 않은 실패와 input preflight에는 응답 경로를 생성해서는 안 된다(MUST NOT). 이전 응답 파일이 없는 record도 계속 읽을 수 있어야 한다(SHALL).
+
+#### Scenario: Schema-invalid response remains inspectable
+
+- **WHEN** Runtime이 잘린 JSON 또는 출력 계약을 위반한 유효 JSON을 반환할 때
+- **THEN** 검증 전 응답 파일을 저장하고 validation_failed 결과의 response_path에서 원래 UTF-8 본문을 읽을 수 있어야 한다(SHALL).
+
+#### Scenario: Accepted and guard-failed responses are retained
+
+- **WHEN** Runtime 응답이 schema를 통과하고 사실 검증이 성공하거나 실패할 때
+- **THEN** 각 status를 유지하면서 같은 방식의 원문 응답 파일 경로를 제공해야 한다(SHALL).
+
+#### Scenario: Capture is bounded and create-only
+
+- **WHEN** 응답이 설정된 UTF-8 byte 한도를 넘거나 identity가 이미 존재하거나 쓰기가 실패할 때
+- **THEN** 기존 파일을 보존하고 accepted 결과를 차단하며 정제된 provenance failure를 반환해야 한다(SHALL).
+
+#### Scenario: Invocation persistence fails after response capture
+
+- **WHEN** 응답 파일 저장은 성공했지만 sanitized invocation record 쓰기가 I/O 오류로 실패할 때
+- **THEN** provenance_failed 결과가 이미 저장된 response_path를 제공해야 한다(SHALL).
+
+#### Scenario: Unavailable calls have no response file
+
+- **WHEN** input preflight가 거부되거나 Runtime이 본문 없이 unavailable/oversized failure를 반환할 때
+- **THEN** response_path는 null이어야 한다(SHALL).
+
 ### Requirement: Durable invocation evidence
 
 Provider call이 실제로 시작된 각 logical `review_null_spike()` invocation은 하나의 immutable-by-identity `AgenticInvocationEvidence` record를 `HMDA_RELIABILITY_ARTIFACTS_DIR` 아래 `agentic-review/invocations/<invocation_id>.json`에 create-only로 저장해야 한다(SHALL). Network retry는 별도 record가 아니라 `attempt_count`로 기록해야 한다(SHALL). Input preflight에서 `input_rejected`로 종료된 call에는 provider invocation evidence를 만들지 않아야 한다. Directory 생성, 임시 파일 생성/쓰기/링크, fsync를 포함한 persistence 필수 과정의 filesystem failure는 raw exception을 탈출시키지 않고 `provenance_failed` result로 정규화해야 한다(SHALL). 성공적으로 기록된 후의 임시 파일 cleanup 실패는 accepted 결과에 영향을 주지 않는 best-effort hygiene으로 처리한다.
@@ -451,7 +486,7 @@ Record 계약은 다음과 같다.
 | Identity and context | `invocation_id`, sanitized model/configuration, prompt identity/digest, caller-provided `project_revision`, incident/evidence references, provider user data의 source인 bounded `canonical_input` |
 | Result | status, parsed structured output(가능한 경우), validation result 또는 typed failure code |
 | Runtime | latency, attempt count, available token/usage/cost, available bounded response metadata and parse diagnosis |
-| Safety | API key, credential, raw system/user prompt, raw log와 raw provider exception/response는 기록하지 않음 |
+| Safety | Sanitized JSON record에는 API key, credential, raw system/user prompt, raw log와 raw provider exception/response를 기록하지 않음. 응답 본문은 별도 로컬 response 파일에 보존 |
 
 Stored `canonical_input`은 prompt renderer가 provider user data block을 만들 때 사용한 allowlisted structured projection과 같아야 한다(SHALL). Recorded `project_revision`에 해당하는 prompt implementation을 사용할 수 있을 때 `PromptIdentity`와 stored `canonical_input`으로 messages를 다시 render하면 stored `prompt_digest`와 일치해야 한다(SHALL). Raw rendered prompt를 replay 목적으로 저장해서는 안 된다(MUST NOT).
 
@@ -484,14 +519,14 @@ Sanitized record, stored `canonical_input`과 stored output은 configured size l
 
 ### Requirement: Advisory and read-only boundary
 
-> **Read-only guarantee:** Review가 반환할 수 있는 유일한 filesystem mutation은 invocation evidence의 create-only write다.
+> **Read-only guarantee:** Review가 수행할 수 있는 filesystem mutation은 로컬 invocation evidence와 응답 파일의 create-only write다.
 
 시스템은 `accepted`, `validation_failed`, `unavailable`, `input_rejected` 또는 `provenance_failed` Agentic review 어느 경우에도 `Incident` truth, `Evidence`, `RemediationDraft`, `RecoveryProposal`, `Approval`, recovery state 또는 data/database state를 변경해서는 안 된다(MUST NOT). Review 결과와 free-text wording은 사람의 판단을 돕는 advisory output이며 model output만으로 approval, recovery 또는 mutation을 유발해서는 안 된다(MUST NOT).
 
 #### Scenario: Accepted review does not mutate reliability state
 
 - **WHEN** valid `null_spike` review가 accepted되고 invocation evidence가 저장될 때
-- **THEN** `Incident`, `Evidence`, `RemediationDraft`와 recovery/approval state 및 target data는 호출 전과 같아야 하고 invocation evidence 저장 외의 mutation이 없어야 한다.
+- **THEN** `Incident`, `Evidence`, `RemediationDraft`와 recovery/approval state 및 target data는 호출 전과 같아야 하고 invocation evidence와 응답 파일 저장 외의 mutation이 없어야 한다.
 
 #### Scenario: Action-like advisory remains non-executable
 

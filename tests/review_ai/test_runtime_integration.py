@@ -16,6 +16,7 @@ from hmda_reliability.review_ai import (
     AgenticReviewResult,
     PromptIdentity,
 )
+from hmda_reliability.review_ai.evaluation import langfuse as projection
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
 from hmda_reliability.review_ai.prompt import render_canonical_input
 from hmda_reliability.runtime_ai import provider as provider_module
@@ -116,6 +117,15 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
         response_content = json.dumps(invalid_output)
     elif response_case == "truncated":
         response_content = '{"review_summary":"PRIVATE_RESPONSE_VALUE'
+    projected: list[dict[str, object]] = []
+    if response_case in {"array_type", "truncated"}:
+        environment["HMDA_LANGFUSE_EXPORT"] = "true"
+
+        def capture_projection(payload: dict[str, object], **kwargs: object) -> str:
+            projected.append(payload)
+            return "submitted_unverified"
+
+        monkeypatch.setattr(projection, "export_projection", capture_projection)
 
     def respond(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/v1/chat/completions"
@@ -166,6 +176,24 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
     assert result.status == expected_status
     assert result.failure_code == failure_code
     assert result.invocation_path is not None
+    if http_status == 200:
+        assert result.response_path is not None
+        assert result.response_path == (
+            tmp_path
+            / "artifacts"
+            / "agentic-review"
+            / "responses"
+            / f"{result.invocation_id}.txt"
+        )
+        expected_body = (
+            ""
+            if response_case in {"content_null", "choices_empty"}
+            else response_content
+        )
+        assert result.response_path.read_bytes() == expected_body.encode("utf-8")
+    else:
+        assert result.response_path is None
+        assert not (tmp_path / "artifacts" / "agentic-review" / "responses").exists()
     persisted = result.invocation_path.read_text(encoding="utf-8")
     record = AgenticInvocationEvidence.model_validate_json(persisted)
     assert record.status == result.status
@@ -217,3 +245,9 @@ def test_harness_connects_reliability_review_sdk_and_persisted_provenance(
         assert record.response_diagnostics.kind == diagnostic_kind
     assert "PRIVATE_RESPONSE_VALUE" not in persisted + captured.out + captured.err
     assert "live-test-secret" not in persisted + captured.out + captured.err
+    if response_case in {"array_type", "truncated"}:
+        assert len(projected) == 1
+        assert set(projected[0]) == {"metadata"}
+        encoded_projection = json.dumps(projected[0])
+        assert "PRIVATE_RESPONSE_VALUE" not in encoded_projection
+        assert "response_path" not in encoded_projection

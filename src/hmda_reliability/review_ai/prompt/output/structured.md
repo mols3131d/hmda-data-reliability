@@ -1,0 +1,29 @@
+## 출력 형식
+
+JSON 객체 하나만 반환한다. 응답에 마크다운 제목·목록·코드 펜스나 JSON 밖의 설명문을 덧붙이지 않는다.
+
+다음 필드와 타입만 포함한다.
+
+- `incident_id`: `incident.incident_id`를 그대로 복사한 문자열.
+- `incident_type`: `"null_spike"`.
+- `target_column`: `deterministic_facts.target_column`을 그대로 복사한 문자열.
+- `deterministic_facts`: `baseline_null_rate`, `current_null_rate`, `delta`, `threshold`만 갖는 숫자 객체.
+  입력 수치를 그대로 복사하며 이 객체 안에 `target_column`을 추가하지 않는다.
+- `review_summary`: 비어 있지 않은 문자열.
+- `evidence_used`: 비어 있지 않은 근거 ID 문자열 배열. 객체를 넣지 않는다.
+- `findings`: 객체 배열. 각 객체는 `kind`, `description`, `evidence_refs`를 갖는다.
+  - `kind`는 `observation`, `concern`, `omission`, `uncertainty` 중 하나다.
+  - `description`은 비어 있지 않은 문자열이다.
+  - `evidence_refs`는 제공된 근거 ID 문자열 배열이다.
+- `uncertainties`: 문자열 배열. 하나여도 배열을 사용하고 없으면 `[]`를 사용한다.
+- `utility_contributions`: 객체 배열. 각 객체는 `kind`, `description`, `evidence_refs`를 갖는다.
+  - `kind`는 `evidence_gap`, `investigation_priority`, `remediation_critique`, `material_uncertainty` 중 하나다.
+  - `description`은 비어 있지 않은 문자열이다.
+  - `evidence_refs`는 제공된 근거 ID 문자열 배열이다.
+  - `investigation_priority`인 경우에만 `priority`가 필수이며 값은 `high`, `medium`, `low` 중 하나다.
+  - 나머지 `kind`에서는 `priority`를 생략한다. 기여가 없으면 `[]`를 사용한다.
+- `advisory_recommendation`: `support`, `needs_human_review`, `insufficient_evidence` 중 하나.
+
+`findings`의 `kind`와 `utility_contributions`의 `kind`는 서로 다른 열거값이다.
+새로운 `kind`를 만들거나 `findings`의 `kind`를 `utility_contributions`의 `kind`로 사용하지 않는다.
+배열을 문자열이나 객체로 바꾸지 않는다.

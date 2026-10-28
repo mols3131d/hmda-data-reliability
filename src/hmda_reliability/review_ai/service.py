@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
@@ -39,8 +39,10 @@ from hmda_reliability.review_ai.prompt import (
 )
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.review_ai.store import (
+    InvocationEvidenceExistsError,
     InvocationEvidenceStore,
     InvocationEvidenceStoreError,
+    InvocationResponseStore,
 )
 from hmda_reliability.review_ai.validator import validate_agentic_review
 from hmda_reliability.runtime_ai.contracts import (
@@ -93,7 +95,7 @@ def review_null_spike(
     1. `review_input`의 유효성을 검증하고 불변 스냅샷을 생성한다.
     2. `max_prompt_bytes` 제한 아래에서 표준(canonical) 프롬프트를 렌더링한다.
     3. 재시도 및 타임아웃 경계가 적용된 `runtime_ai` 어댑터를 통해 provider를 호출한다.
-    4. JSON 응답을 파싱하고 구조화된 사실을 결정론적으로 검증한다.
+    4. 응답 본문을 로컬에 보존한 뒤 JSON과 구조화된 사실을 검증한다.
     5. 감사 및 재현(replay)을 위해 정제된 호출 evidence를 디스크에 영속화한다.
 
     성공 시 `ACCEPTED` 상태의 `AgenticReviewResult`를 반환하며, 실패 시
@@ -169,6 +171,20 @@ def review_null_spike(
             response_metadata=error.response_metadata,
         )
 
+    try:
+        response_path = InvocationResponseStore(artifact_root).write(
+            invocation_id,
+            provider_response.content,
+            max_response_bytes=settings.max_output_bytes,
+        )
+    except InvocationEvidenceStoreError:
+        return AgenticReviewResult(
+            status=AgenticReviewStatus.PROVENANCE_FAILED,
+            invocation_id=invocation_id,
+            failure_code="invocation_response_write_failed",
+        )
+    session = replace(session, response_path=response_path)
+
     parsed_output, diagnostics = parse_review_response(provider_response.content)
     if parsed_output is None:
         return session.record_and_persist(
@@ -233,6 +249,7 @@ class _ReviewSession:
     review_input: AgenticReviewInput
     rendered: RenderedReviewPrompt
     writer: InvocationEvidenceWriter
+    response_path: Path | None = None
 
     def record_and_persist(
         self,
@@ -265,6 +282,7 @@ class _ReviewSession:
             settings=self.settings,
             review_settings=self.review_settings,
             writer=self.writer,
+            response_path=self.response_path,
         )
 
     def _build_record(
@@ -320,6 +338,7 @@ def _persist_result(
     settings: RuntimeAISettings,
     review_settings: ReviewAISettings,
     writer: InvocationEvidenceWriter,
+    response_path: Path | None = None,
 ) -> AgenticReviewResult:
     """호출 증적 레코드를 디스크에 영속화하고 최종 AgenticReviewResult를 조립한다.
 
@@ -333,7 +352,18 @@ def _persist_result(
     )
     try:
         path = writer.write(record, max_record_bytes=max_record_bytes)
-    except InvocationEvidenceStoreError:
+    except InvocationEvidenceStoreError as error:
+        if (
+            isinstance(error, InvocationEvidenceExistsError)
+            and response_path is not None
+        ):
+            # 새 응답을 기존의 다른 invocation과 연결하지 않는다.
+            try:
+                response_path.unlink()
+            except OSError:
+                pass
+            else:
+                response_path = None
         _LOGGER.error(
             "호출 evidence 영속화 실패",
             extra={
@@ -344,6 +374,7 @@ def _persist_result(
         return AgenticReviewResult(
             status=AgenticReviewStatus.PROVENANCE_FAILED,
             invocation_id=record.invocation_id,
+            response_path=response_path,
             failure_code="invocation_evidence_write_failed",
         )
 
@@ -363,12 +394,14 @@ def _persist_result(
             validation=record.validation,
             invocation_id=record.invocation_id,
             invocation_path=path,
+            response_path=response_path,
         )
     return AgenticReviewResult(
         status=record.status,
         validation=record.validation,
         invocation_id=record.invocation_id,
         invocation_path=path,
+        response_path=response_path,
         failure_code=record.failure_code,
     )
 

@@ -317,3 +317,93 @@ def test_store_write_rolls_back_final_link_on_directory_fsync_failure(
 
     final_path = store.path_for(record.invocation_id)
     assert not final_path.exists()
+
+
+@pytest.mark.parametrize("content", ["", " \n ", '{"응답":"잘린 JSON 😀"'])
+def test_response_store_preserves_exact_utf8_body_separately(
+    tmp_path: Path, content: str
+) -> None:
+    store = store_module.InvocationResponseStore(tmp_path)
+
+    path = store.write("inv-response", content, max_response_bytes=1024)
+
+    assert path == tmp_path / "agentic-review" / "responses" / "inv-response.txt"
+    assert path == store.path_for("inv-response")
+    assert path.read_bytes() == content.encode("utf-8")
+    assert path.stat().st_mode & 0o077 == 0
+    assert not (tmp_path / "agentic-review" / "invocations").exists()
+
+
+def test_response_store_rejects_duplicate_identity_without_replacing_body(
+    tmp_path: Path,
+) -> None:
+    store = store_module.InvocationResponseStore(tmp_path)
+    path = store.write("inv-response", "first response", max_response_bytes=1024)
+
+    with pytest.raises(store_module.InvocationEvidenceExistsError):
+        store.write("inv-response", "replacement response", max_response_bytes=1024)
+
+    assert path.read_text(encoding="utf-8") == "first response"
+
+
+def test_response_store_does_not_attach_body_to_an_existing_invocation(
+    tmp_path: Path,
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    evidence_store = store_module.InvocationEvidenceStore(tmp_path)
+    record = _record(null_spike_review_material)
+    evidence_path = evidence_store.write(record, max_record_bytes=131_072)
+    before = evidence_path.read_bytes()
+    response_store = store_module.InvocationResponseStore(tmp_path)
+
+    with pytest.raises(store_module.InvocationEvidenceExistsError):
+        response_store.write(
+            record.invocation_id, "unrelated response", max_response_bytes=1024
+        )
+
+    assert evidence_path.read_bytes() == before
+    assert not response_store.path_for(record.invocation_id).exists()
+
+
+def test_response_store_counts_utf8_bytes_and_accepts_exact_limit(
+    tmp_path: Path,
+) -> None:
+    store = store_module.InvocationResponseStore(tmp_path)
+    content = "한😀"
+
+    path = store.write("inv-exact", content, max_response_bytes=7)
+    with pytest.raises(store_module.InvocationEvidenceSizeError):
+        store.write("inv-oversized", content, max_response_bytes=6)
+
+    assert path.read_bytes() == b"\xed\x95\x9c\xf0\x9f\x98\x80"
+    assert not store.path_for("inv-oversized").exists()
+
+
+@pytest.mark.parametrize("invocation_id", ["../escape", "/absolute", "inv/response"])
+def test_response_store_rejects_unsafe_identity(
+    tmp_path: Path, invocation_id: str
+) -> None:
+    store = store_module.InvocationResponseStore(tmp_path)
+
+    with pytest.raises(ValueError, match="unsafe invocation identity"):
+        store.write(invocation_id, "body", max_response_bytes=1024)
+
+    assert not (tmp_path / "agentic-review").exists()
+
+
+def test_response_store_rolls_back_body_when_directory_fsync_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = store_module.InvocationResponseStore(tmp_path)
+
+    def failing_fsync_directory(directory: Path) -> None:
+        raise OSError("simulated directory fsync failure")
+
+    monkeypatch.setattr(store_module, "_fsync_directory", failing_fsync_directory)
+
+    with pytest.raises(store_module.InvocationEvidenceWriteError):
+        store.write("inv-response", "body", max_response_bytes=1024)
+
+    assert not store.path_for("inv-response").exists()
+    assert list(store.path_for("inv-response").parent.iterdir()) == []

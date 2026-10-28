@@ -1,4 +1,4 @@
-"""생성 전용(Create-only) 로컬 JSON 호출 evidence 저장소 모듈."""
+"""생성 전용 로컬 호출 evidence 및 원문 응답 저장소 모듈."""
 
 from __future__ import annotations
 
@@ -42,9 +42,7 @@ class InvocationEvidenceStore:
         호출 ID가 안전하지 않은 문자를 포함하거나 허용 패턴에 맞지 않으면
         `ValueError`를 발생시킨다.
         """
-        if _SAFE_INVOCATION_ID.fullmatch(invocation_id) is None:
-            msg = "unsafe invocation identity"
-            raise ValueError(msg)
+        _validate_invocation_id(invocation_id)
         return (
             self._artifact_root
             / "agentic-review"
@@ -75,54 +73,129 @@ class InvocationEvidenceStore:
                 "invocation evidence exceeds max_record_bytes"
             )
 
-        path = self.path_for(record.invocation_id)
-        descriptor = -1
-        temporary_path: Path | None = None
-        try:
-            path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-            descriptor, raw_temporary_path = tempfile.mkstemp(
-                prefix=f".{record.invocation_id}.",
-                suffix=".tmp",
-                dir=path.parent,
-            )
-            temporary_path = Path(raw_temporary_path)
-            with os.fdopen(descriptor, "wb") as handle:
-                descriptor = -1
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
-            try:
-                os.link(temporary_path, path)
-            except FileExistsError as error:
-                raise InvocationEvidenceExistsError(
-                    "invocation evidence identity already exists"
-                ) from error
-            try:
-                _fsync_directory(path.parent)
-            except OSError:
-                with contextlib.suppress(OSError):
-                    path.unlink(missing_ok=True)
-                raise
-        except InvocationEvidenceExistsError:
-            raise
-        except OSError as error:
-            raise InvocationEvidenceWriteError(
-                "invocation evidence create-only write failed"
-            ) from error
-        finally:
-            if descriptor >= 0:
-                with contextlib.suppress(OSError):
-                    os.close(descriptor)
-            if temporary_path is not None:
-                with contextlib.suppress(OSError):
-                    temporary_path.unlink(missing_ok=True)
-        return path
+        return _write_create_only(
+            self.path_for(record.invocation_id),
+            payload,
+            invocation_id=record.invocation_id,
+        )
 
     def load(self, invocation_id: str) -> AgenticInvocationEvidence:
         path = self.path_for(invocation_id)
         return AgenticInvocationEvidence.model_validate_json(
             path.read_text(encoding="utf-8")
         )
+
+
+class InvocationResponseStore:
+    """검증 전 provider 응답을 invocation evidence와 분리해 로컬에 보존한다."""
+
+    def __init__(self, artifact_root: Path) -> None:
+        self._artifact_root = Path(artifact_root)
+
+    def path_for(self, invocation_id: str) -> Path:
+        _validate_invocation_id(invocation_id)
+        return (
+            self._artifact_root
+            / "agentic-review"
+            / "responses"
+            / f"{invocation_id}.txt"
+        )
+
+    def write(
+        self,
+        invocation_id: str,
+        content: str,
+        *,
+        max_response_bytes: int,
+    ) -> Path:
+        """UTF-8 원문을 변형 없이 저장하고 기존 invocation과의 충돌을 거부한다."""
+        try:
+            payload = content.encode("utf-8")
+        except UnicodeEncodeError:
+            raise InvocationEvidenceWriteError(
+                "invocation response cannot be encoded as UTF-8"
+            ) from None
+        if len(payload) > max_response_bytes:
+            raise InvocationEvidenceSizeError(
+                "invocation response exceeds max_response_bytes"
+            )
+
+        return _write_create_only(
+            self.path_for(invocation_id),
+            payload,
+            invocation_id=invocation_id,
+            conflicting_path=InvocationEvidenceStore(self._artifact_root).path_for(
+                invocation_id
+            ),
+        )
+
+
+def _validate_invocation_id(invocation_id: str) -> None:
+    if _SAFE_INVOCATION_ID.fullmatch(invocation_id) is None:
+        msg = "unsafe invocation identity"
+        raise ValueError(msg)
+
+
+def _reject_existing_path(path: Path) -> None:
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return
+    raise InvocationEvidenceExistsError("invocation evidence identity already exists")
+
+
+def _write_create_only(
+    path: Path,
+    payload: bytes,
+    *,
+    invocation_id: str,
+    conflicting_path: Path | None = None,
+) -> Path:
+    descriptor = -1
+    temporary_path: Path | None = None
+    try:
+        if conflicting_path is not None:
+            _reject_existing_path(conflicting_path)
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        descriptor, raw_temporary_path = tempfile.mkstemp(
+            prefix=f".{invocation_id}.",
+            suffix=".tmp",
+            dir=path.parent,
+        )
+        temporary_path = Path(raw_temporary_path)
+        with os.fdopen(descriptor, "wb") as handle:
+            descriptor = -1
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        if conflicting_path is not None:
+            _reject_existing_path(conflicting_path)
+        try:
+            os.link(temporary_path, path)
+        except FileExistsError as error:
+            raise InvocationEvidenceExistsError(
+                "invocation evidence identity already exists"
+            ) from error
+        try:
+            _fsync_directory(path.parent)
+        except OSError:
+            with contextlib.suppress(OSError):
+                path.unlink(missing_ok=True)
+            raise
+    except InvocationEvidenceExistsError:
+        raise
+    except OSError as error:
+        raise InvocationEvidenceWriteError(
+            "invocation evidence create-only write failed"
+        ) from error
+    finally:
+        if descriptor >= 0:
+            with contextlib.suppress(OSError):
+                os.close(descriptor)
+        if temporary_path is not None:
+            with contextlib.suppress(OSError):
+                temporary_path.unlink(missing_ok=True)
+    return path
 
 
 def _fsync_directory(directory: Path) -> None:

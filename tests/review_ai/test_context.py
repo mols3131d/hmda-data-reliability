@@ -63,10 +63,24 @@ def _surrounding_evidence(material: NullSpikeReviewMaterial) -> list[Evidence]:
     ]
 
 
+@pytest.mark.parametrize(
+    ("summary", "expected_summary"),
+    [
+        pytest.param(
+            "Partition schema metadata", "Partition schema metadata", id="provided"
+        ),
+        pytest.param("", "근거 요약이 제공되지 않았습니다.", id="empty"),
+        pytest.param(" \t\n ", "근거 요약이 제공되지 않았습니다.", id="whitespace"),
+    ],
+)
 def test_context_selects_related_evidence_and_preserves_provenance(
     null_spike_review_material: NullSpikeReviewMaterial,
+    summary: str,
+    expected_summary: str,
 ) -> None:
     evidence = _surrounding_evidence(null_spike_review_material)
+    evidence[1] = evidence[1].model_copy(update={"summary": summary})
+    before = evidence[1].model_dump(mode="json")
     review_input = _review_input(null_spike_review_material, evidence)
 
     context = build_bounded_review_context(
@@ -80,6 +94,7 @@ def test_context_selects_related_evidence_and_preserves_provenance(
         "ev-dbt",
     ]
     table = context.selected_evidence[1]
+    assert table.summary == expected_summary
     assert table.provenance.source is EvidenceSource.TABLE_METADATA
     assert table.provenance.partition == "2025"
     assert table.facts == {
@@ -88,6 +103,8 @@ def test_context_selects_related_evidence_and_preserves_provenance(
         "table_name": "raw.hmda_loans",
     }
     assert "raw_log" not in table.facts
+    assert evidence[1].model_dump(mode="json") == before
+    assert review_input.evidence[1].summary == summary
 
 
 def test_context_distinguishes_missing_evidence_from_unconfirmed_context(
@@ -133,6 +150,44 @@ def test_context_is_bounded_and_replayable(
     assert first.digest.startswith("sha256:")
     assert len(first.model_dump_json().encode("utf-8")) <= 4_096
     assert any(gap.topic == "bounded_selection" for gap in first.gaps)
+
+
+def test_generated_gap_descriptions_are_korean_without_translating_supplied_evidence(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    evidence = _surrounding_evidence(null_spike_review_material)
+    review_input = _review_input(null_spike_review_material, evidence)
+    before = review_input.model_dump(mode="json")
+
+    context = build_bounded_review_context(
+        review_input,
+        required_sources=(EvidenceSource.CATALOG,),
+        max_evidence=2,
+    )
+
+    assert [(gap.kind.value, gap.topic, gap.description) for gap in context.gaps] == [
+        (
+            "missing_evidence",
+            "catalog",
+            "이번 검토에는 catalog 근거가 제공되지 않았습니다.",
+        ),
+        (
+            "unconfirmed_context",
+            "bounded_selection",
+            "제공된 근거 1개가 개수 제한으로 제외되었습니다.",
+        ),
+        (
+            "unconfirmed_context",
+            "root_cause",
+            "제공된 근거만으로는 근본 원인을 확정할 수 없습니다.",
+        ),
+    ]
+    assert [item.evidence_id for item in context.selected_evidence] == [
+        evidence[0].evidence_id,
+        "ev-table",
+    ]
+    assert context.selected_evidence[1].summary == "Partition schema metadata"
+    assert review_input.model_dump(mode="json") == before
 
 
 def test_context_always_includes_canonical_target_within_bound(

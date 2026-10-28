@@ -33,7 +33,7 @@ status: in-progress
 
 합성 control의 결함 label은 agent가 작성한 검토 보조 자료다. 수치 계산·계약 검증과 달리 의미적 label이나 positive output을 실제 사람의 평가 결과로 취급하지 않는다. Exact example match도 제한된 복사 신호다.
 
-선택 가능한 [`v3` instruction](../../src/hmda_reliability/review_ai/prompt.py)은 내용 예시를 제거하고 단위·zero baseline·실제 evidence/draft·결과에 따른 다음 판단을 안내한다. `v1`/`v2` instruction과 digest, Python 기본 `v1`, live 기본 `v2`, canonical projection, structured validator 및 evaluation serialization을 보존했다. v3의 실제 준수율·정확성·utility 개선은 입증하지 않았다.
+선택 가능한 [`v3` instruction](../../src/hmda_reliability/review_ai/prompt/README.md#composition)은 내용 예시를 제거하고 단위·zero baseline·실제 evidence/draft·결과에 따른 다음 판단을 안내한다. `v1`/`v2` instruction과 digest, Python 기본 `v1`, live 기본 `v2`, canonical projection, structured validator 및 evaluation serialization을 보존했다. v3의 실제 준수율·정확성·utility 개선은 입증하지 않았다.
 
 ## Validation
 
