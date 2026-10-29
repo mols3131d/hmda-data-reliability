@@ -43,10 +43,9 @@ description: 버전별 레거시 지원을 제거하고 현재 한국어 단계 
 
 ## Run The Current Checkout
 
-사용자가 이전에 실행한 main `1794d3dc`는 변경 전 코드다. 현재 구현은 PR 작업 폴더에서 실행한다.
+사용자가 이전에 실행한 main `1794d3dc`는 변경 전 코드다. 현재 구현은 이 PR의 브랜치를 체크아웃한 저장소 최상위 디렉터리에서 실행한다.
 
 ```bash
-cd /home/mols3131d/workspaces/hmda-data-reliability/.local/worktrees/pr280-output-quality
 uv run --env-file .env python scripts/run_agentic_review_live.py
 ```
 

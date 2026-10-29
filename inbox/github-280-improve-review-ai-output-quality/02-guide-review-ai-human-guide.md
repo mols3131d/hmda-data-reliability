@@ -25,7 +25,7 @@ tags:
 
 ## Start With One Run
 
-PR 작업 폴더에서 기존 [환경 파일 예제](../../.env.example)를 참고해 로컬 설정을 확인한다. 사용 중인 `.env`를 예제로 덮어쓰지 않는다.
+이 PR의 브랜치를 체크아웃한 저장소 최상위 디렉터리에서 [환경 파일 예제](../../.env.example)를 참고해 로컬 설정을 확인한다. 사용 중인 `.env`를 예제로 덮어쓰지 않는다.
 
 - `HMDA_AGENTIC_REVIEW_LIVE=true`로 설정한다.
 - 예시 모델은 `qwen3.5:4b-8k-local`이다. 호출할 서버에 설치된 태그·base URL·API key가 맞는지 확인한다. 실제 context·Thinking 설정은 모델 태그에서 추정하지 말고 실행 조건으로 기록한다.
@@ -33,7 +33,6 @@ PR 작업 폴더에서 기존 [환경 파일 예제](../../.env.example)를 참�
 - `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 추적 파일이 깨끗해야 한다. 미커밋 실행을 하면 로컬 표식과 변경 내용을 기록하고 clean commit 증거와 구분한다.
 
 ```bash
-cd /home/mols3131d/workspaces/hmda-data-reliability/.local/worktrees/pr280-output-quality
 git status --short
 git rev-parse HEAD
 uv run --env-file .env python scripts/run_agentic_review_live.py
