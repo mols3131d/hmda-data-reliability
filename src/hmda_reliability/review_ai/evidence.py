@@ -30,6 +30,8 @@ class SanitizedAgenticReviewConfiguration(ReliabilityContract):
     base_url: str = Field(min_length=1, max_length=2048)
     model: str = Field(min_length=1, max_length=512)
     timeout_seconds: float = Field(gt=0, le=300)
+    connect_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
+    read_timeout_seconds: float | None = Field(default=None, gt=0, le=3600)
     max_retries: int = Field(ge=0, le=5)
     temperature: Literal[0]
     max_output_tokens: int = Field(gt=0, le=32_768)

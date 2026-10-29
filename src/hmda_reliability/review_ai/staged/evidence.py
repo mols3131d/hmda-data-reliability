@@ -14,6 +14,7 @@ from hmda_reliability.review_ai.staged.contracts import (
     StagedReviewOutput,
     StageId,
 )
+from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.runtime_ai.contracts import (
     ProviderResponseMetadata,
     ProviderUsage,
@@ -41,6 +42,8 @@ class StageRecord(ReliabilityContract):
     failure_code: str | None = None
     attempt_count: int = Field(default=0, ge=0)
     latency_ms: float = Field(default=0, ge=0)
+    budget_seconds: float | None = Field(default=None, ge=0)
+    elapsed_ms: float | None = Field(default=None, ge=0)
     usage: ProviderUsage | None = None
     response_metadata: ProviderResponseMetadata | None = None
 
@@ -53,6 +56,8 @@ class StagedReviewManifest(ReliabilityContract):
     project_revision: str = Field(min_length=1, max_length=256)
     status: StagedReviewStatus
     configuration: SanitizedAgenticReviewConfiguration
+    execution_settings: StagedExecutionSettings | None = None
+    elapsed_ms: float | None = Field(default=None, ge=0)
     canonical_input: dict[str, object]
     stages: tuple[StageRecord, ...]
     physical_attempts: int = Field(ge=0)

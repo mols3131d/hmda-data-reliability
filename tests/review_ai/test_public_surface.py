@@ -21,6 +21,7 @@ def test_review_ai_exports_only_consumer_surface() -> None:
         "PromptIdentity",
         "RUBRIC_V1",
         "StageAnswer",
+        "StagedExecutionSettings",
         "StagedReviewOutput",
         "StagedReviewResult",
         "ReviewValueComparisonEvidence",

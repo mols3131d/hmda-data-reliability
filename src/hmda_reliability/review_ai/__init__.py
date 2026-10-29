@@ -25,6 +25,7 @@ from hmda_reliability.review_ai.evaluation import (
 from hmda_reliability.review_ai.service import review_null_spike
 from hmda_reliability.review_ai.staged import (
     StageAnswer,
+    StagedExecutionSettings,
     StagedReviewOutput,
     StagedReviewResult,
     review_null_spike_staged,
@@ -41,6 +42,7 @@ __all__ = [
     "PromptIdentity",
     "RUBRIC_V1",
     "StageAnswer",
+    "StagedExecutionSettings",
     "StagedReviewOutput",
     "StagedReviewResult",
     "ReviewValueComparisonEvidence",

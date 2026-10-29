@@ -179,6 +179,7 @@ def test_projection_rejects_boolean_integer_mismatch_with_recomputed_digest(
         invocation_id=persisted.invocation_id,
         invocation_path=path,
     )
+    # 출처 검증이 설정 전체를 대조하므로 fixture에 기록된 호출 조건을 명시한다.
     env = {
         **_environment(),
         "HMDA_AGENTIC_REVIEW_LIVE": "true",
@@ -186,6 +187,8 @@ def test_projection_rejects_boolean_integer_mismatch_with_recomputed_digest(
         "HMDA_AGENTIC_REVIEW_BASE_URL": "https://provider.invalid",
         "HMDA_AGENTIC_REVIEW_API_KEY": "provider-secret",
         "HMDA_AGENTIC_REVIEW_MODEL": "test-model",
+        "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS": "5",
+        "HMDA_AGENTIC_REVIEW_MAX_RETRIES": "0",
         "HMDA_AGENTIC_REVIEW_PROJECT_REVISION": "revision-123",
     }
 
@@ -474,6 +477,7 @@ def test_harness_export_failure_preserves_result_and_record(
         invocation_id=record.invocation_id,
         invocation_path=path,
     )
+    # 외부 투영 실패를 검증하려면 CLI 설정부터 fixture 호출 기록과 일치해야 한다.
     env = {
         **_environment(),
         "HMDA_AGENTIC_REVIEW_LIVE": "true",
@@ -481,6 +485,8 @@ def test_harness_export_failure_preserves_result_and_record(
         "HMDA_AGENTIC_REVIEW_BASE_URL": "https://provider.invalid",
         "HMDA_AGENTIC_REVIEW_API_KEY": "provider-secret",
         "HMDA_AGENTIC_REVIEW_MODEL": "test-model",
+        "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS": "5",
+        "HMDA_AGENTIC_REVIEW_MAX_RETRIES": "0",
         "HMDA_AGENTIC_REVIEW_PROJECT_REVISION": "revision-123",
     }
 

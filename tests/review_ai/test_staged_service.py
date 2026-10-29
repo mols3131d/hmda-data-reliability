@@ -53,9 +53,14 @@ class TextProvider:
         self.calls: list[tuple[ChatMessage, ...]] = []
 
     def invoke(
-        self, messages: tuple[ChatMessage, ...], *, output_format: str = "json_object"
+        self,
+        messages: tuple[ChatMessage, ...],
+        *,
+        output_format: str = "json_object",
+        budget_seconds: float | None = None,
     ) -> ProviderResponse:
         assert output_format == "text"
+        assert budget_seconds is not None and budget_seconds > 0
         self.calls.append(messages)
         item = self.responses[len(self.calls) - 1]
         if isinstance(item, Exception):

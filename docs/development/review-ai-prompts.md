@@ -32,6 +32,31 @@ tags:
 
 세 단계 외의 자동 수정 대화는 없다. 각 호출에는 기존 Runtime의 timeout·retry·출력 상한을 적용하므로 물리 호출 상한은 `3 * (max_retries + 1)`이다. 빈 답변·알려진 잘림·provider 실패·누적 입력 초과·저장 실패는 후속 단계를 멈춘다. 반환된 원문과 이미 저장한 checkpoint는 유지한다. 실행 및 결과 경로는 [평가 가이드](review-ai-evaluation.md#staged-text-review)를 따른다.
 
+## Timeouts And Execution Budgets
+
+HTTP timeout과 실행 예산은 다른 제한이다. Connect/read/write/pool timeout은 각 네트워크 작업의 비활동 대기를 제한한다. 특히 read timeout은 읽기 대기 한도이며 응답 전체의 생성 시간이나 workflow 전체 시간의 상한이 아니다. 기존 `TIMEOUT_SECONDS`는 세부값을 지정하지 않은 HTTP phase의 fallback으로 유지한다.
+
+단계 예산은 한 단계의 호출·retry·backoff에, workflow 예산은 세 단계 전체에 적용한다. Monotonic clock으로 다음 단계·시도·backoff의 시작 가능 여부와 반환된 응답의 채택 여부를 확인한다. 이 예산은 진행 중인 HTTP 요청이나 파일 저장을 강제로 취소하는 hard deadline이 아니다. 예산이 지난 뒤 반환된 원문도 먼저 저장하고 실패 기록을 남기며, 후속 단계를 진행하거나 `completed`로 채택하지 않는다. Runtime이 본문을 반환하기 전에 timeout이 발생하면 해당 단계의 원문 파일은 없다. 이미 완료한 단계의 원문과 checkpoint는 유지한다.
+
+Live CLI는 환경 변수를 해석해 [Runtime 설정](../../src/hmda_reliability/runtime_ai/settings.py)과 [단계 실행 설정](../../src/hmda_reliability/review_ai/staged/settings.py)에 명시적으로 전달한다. Python API의 설정 객체는 환경 변수를 직접 읽지 않는다.
+
+| Environment | CLI 선택 규칙 |
+| --- | --- |
+| `HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS` | 기존 HTTP fallback. 미지정 시 30초 |
+| `HMDA_AGENTIC_REVIEW_CONNECT_TIMEOUT_SECONDS` | 명시값 우선. 미지정 시 staged 10초 / structured는 기존 HTTP fallback |
+| `HMDA_AGENTIC_REVIEW_READ_TIMEOUT_SECONDS` | 명시값 우선. 미지정 시 staged는 명시한 기존 `TIMEOUT_SECONDS` → 300초, structured는 기존 HTTP fallback |
+| `HMDA_AGENTIC_REVIEW_MAX_RETRIES` | 명시값 우선. 미지정 시 staged 0 / structured 1 |
+| `HMDA_AGENTIC_REVIEW_STAGE_BUDGET_SECONDS` | staged 전용. 기본 360초 |
+| `HMDA_AGENTIC_REVIEW_WORKFLOW_BUDGET_SECONDS` | staged 전용. 기본 1,200초 |
+
+[`.env.example`](../../.env.example)은 connect 10초·read 300초·단계 360초·workflow 1,200초·retry 0의 로컬 운영 예제다. 현재 모델에서 검증한 최적값이나 세 단계 완료 보장은 아니다. 파일의 명시값은 모드를 structured로 바꿔도 유지되므로 모드 기본값을 사용하려면 해당 값을 제거한다. SDK의 숨겨진 retry는 0으로 유지하고 Runtime만 retry를 소유한다. 세 단계의 최대 물리 호출 수는 `3 * (max_retries + 1)`이며, 시간 예산이 먼저 끝나면 실제 호출 수는 더 적다.
+
+Structured 모드에서 세부 timeout을 명시하지 않으면 설정의 세부 필드는 `None`으로 두고 기존 `timeout_seconds`를 그대로 적용한다. 이 fallback은 명시한 `TIMEOUT_SECONDS`, 없으면 30초다. 따라서 과거 structured 호출의 설정 의미를 바꾸지 않는다.
+
+출처 기록에는 자격 증명을 제외한 설정, 실제 시도 횟수와 지연시간을 남긴다. 과거 기록에 없는 세부 timeout이나 실행 예산은 미기록으로 취급하며 현재 기본값으로 보충하지 않는다. 네트워크 timeout, 연결 실패와 실행 예산 소진을 구분해 조사하고, 제한을 늘린 것만으로 모델 응답이나 검토 품질이 검증됐다고 판단하지 않는다.
+
+단계의 `elapsed_ms`는 렌더링·호출·반환된 원문 보존까지 측정하며, 해당 단계의 checkpoint를 쓰기 전에 확정한다. Workflow의 `elapsed_ms`는 최종 manifest를 쓰기 직전까지 측정한다. 최종 진단 metadata의 저장·flush를 강제로 종료하지 않으므로 기록된 시간은 CLI process 종료까지의 전체 소요 시간과 다를 수 있다.
+
 ## Module Responsibilities
 
 이하의 version별 설명과 최종 메시지 예제는 기존 structured 조합을 편집·비교할 때 사용한다.

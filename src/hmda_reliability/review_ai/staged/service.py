@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+import time
 import uuid
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, Protocol
@@ -38,6 +40,7 @@ from hmda_reliability.review_ai.staged.evidence import (
     StageRecord,
 )
 from hmda_reliability.review_ai.staged.prompt import render_stage_prompt
+from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.review_ai.staged.store import StagedReviewStore
 from hmda_reliability.review_ai.store import (
     InvocationEvidenceStoreError,
@@ -58,7 +61,31 @@ class StagedReviewProvider(Protocol):
         messages: tuple[ChatMessage, ...],
         *,
         output_format: Literal["json_object", "text"] = "json_object",
+        budget_seconds: float | None = None,
     ) -> ProviderResponse: ...
+
+
+@dataclass(frozen=True)
+class _ExecutionBudget:
+    settings: StagedExecutionSettings
+    clock: Callable[[], float]
+    started: float
+
+    @property
+    def deadline(self) -> float:
+        return self.started + self.settings.workflow_budget_seconds
+
+    @property
+    def elapsed_ms(self) -> float:
+        return max(0.0, (self.clock() - self.started) * 1000)
+
+    def failure(self, stage_deadline: float | None = None) -> str | None:
+        now = self.clock()
+        if now >= self.deadline:
+            return "workflow_budget_exhausted"
+        if stage_deadline is not None and now >= stage_deadline:
+            return "stage_budget_exhausted"
+        return None
 
 
 def review_null_spike_staged(
@@ -69,15 +96,20 @@ def review_null_spike_staged(
     project_revision: str,
     settings: RuntimeAISettings,
     review_settings: ReviewAISettings | None = None,
+    execution_settings: StagedExecutionSettings | None = None,
     provider: StagedReviewProvider | None = None,
     artifact_root: Path = Path(".local/artifacts"),
     workflow_id_factory: Callable[[], str] | None = None,
+    clock: Callable[[], float] = time.monotonic,
 ) -> StagedReviewResult:
     """같은 immutable 사례의 세 답변을 원문 그대로 수집한다.
 
     completed는 수집·저장 완료다. 자연어의 사실성이나 사람의 승인 여부를
     판정하지 않는다. 각 Runtime 호출의 retry 외에 단계 재생성은 하지 않는다.
     """
+    budget = _ExecutionBudget(
+        execution_settings or StagedExecutionSettings(), clock, clock()
+    )
     limits = review_settings or ReviewAISettings()
     try:
         review_input = AgenticReviewInput(
@@ -118,10 +150,14 @@ def review_null_spike_staged(
     configuration = SanitizedAgenticReviewConfiguration.model_validate(
         {**settings.sanitized_configuration(), **limits.sanitized_configuration()}
     )
-    active_provider = provider or OpenAICompatibleAdapter(settings)
+    active_provider = provider or OpenAICompatibleAdapter(settings, clock=clock)
     records: list[StageRecord] = []
     answers: list[StageAnswer] = []
     for stage_id in STAGE_IDS:
+        stage_started = clock()
+        stage_deadline = min(
+            stage_started + budget.settings.stage_budget_seconds, budget.deadline
+        )
         record, answer = _run_stage(
             canonical_input,
             stage_id,
@@ -131,6 +167,14 @@ def review_null_spike_staged(
             artifact_root=artifact_root,
             limits=limits,
             settings=settings,
+            budget=budget,
+            stage_deadline=stage_deadline,
+        )
+        record = record.model_copy(
+            update={
+                "budget_seconds": max(0.0, stage_deadline - stage_started),
+                "elapsed_ms": max(0.0, (clock() - stage_started) * 1000),
+            }
         )
         try:
             saved_record = record.model_copy(
@@ -154,11 +198,24 @@ def review_null_spike_staged(
                 configuration,
                 canonical_input,
                 tuple(records),
+                budget,
                 status=record.status,
                 failure_code=record.failure_code,
             )
         answers.append(answer)
 
+    if failure := budget.failure():
+        return _finish(
+            store,
+            workflow_id,
+            project_revision,
+            configuration,
+            canonical_input,
+            tuple(records),
+            budget,
+            status="unavailable",
+            failure_code=failure,
+        )
     output = assemble_staged_output(review_input, tuple(answers))
     try:
         output_path = store.write_output(
@@ -174,9 +231,11 @@ def review_null_spike_staged(
             configuration,
             canonical_input,
             tuple(records),
+            budget,
             status="provenance_failed",
             failure_code="staged_output_write_failed",
         )
+    failure = budget.failure()
     return _finish(
         store,
         workflow_id,
@@ -184,7 +243,9 @@ def review_null_spike_staged(
         configuration,
         canonical_input,
         tuple(records),
-        status="completed",
+        budget,
+        status="unavailable" if failure else "completed",
+        failure_code=failure,
         output=output,
         output_path=output_path,
     )
@@ -200,7 +261,13 @@ def _run_stage(
     artifact_root: Path,
     limits: ReviewAISettings,
     settings: RuntimeAISettings,
+    budget: _ExecutionBudget,
+    stage_deadline: float,
 ) -> tuple[StageRecord, StageAnswer | None]:
+    if failure := budget.failure(stage_deadline):
+        return StageRecord(
+            stage_id=stage_id, status="unavailable", failure_code=failure
+        ), None
     try:
         rendered = render_stage_prompt(
             canonical_input, stage_id, answers, max_prompt_bytes=limits.max_prompt_bytes
@@ -215,13 +282,28 @@ def _run_stage(
         prompt_digest=rendered.prompt_digest,
         prompt_bytes=rendered.prompt_bytes,
     )
+    if failure := budget.failure(stage_deadline):
+        return base.model_copy(
+            update={"status": "unavailable", "failure_code": failure}
+        ), None
     try:
-        response = provider.invoke(rendered.messages, output_format="text")
+        response = provider.invoke(
+            rendered.messages,
+            output_format="text",
+            budget_seconds=max(0.0, stage_deadline - budget.clock()),
+        )
     except ProviderUnavailableError as error:
+        failure = error.failure_code
+        if failure == "provider_budget_exhausted":
+            failure = (
+                "workflow_budget_exhausted"
+                if stage_deadline == budget.deadline
+                else "stage_budget_exhausted"
+            )
         return base.model_copy(
             update={
                 "status": "unavailable",
-                "failure_code": error.failure_code,
+                "failure_code": failure,
                 "attempt_count": error.attempt_count,
                 "latency_ms": error.latency_ms,
             }
@@ -265,6 +347,10 @@ def _run_stage(
             + hashlib.sha256(response.content.encode("utf-8")).hexdigest(),
         }
     )
+    if failure := budget.failure(stage_deadline):
+        return record.model_copy(
+            update={"status": "unavailable", "failure_code": failure}
+        ), None
     reason = (
         response.response_metadata.finish_reason if response.response_metadata else None
     )
@@ -289,6 +375,7 @@ def _finish(
     configuration: SanitizedAgenticReviewConfiguration,
     canonical_input: dict[str, object],
     records: tuple[StageRecord, ...],
+    budget: _ExecutionBudget,
     *,
     status: StagedReviewStatus,
     failure_code: str | None = None,
@@ -299,6 +386,8 @@ def _finish(
         workflow_id=workflow_id,
         project_revision=project_revision,
         configuration=configuration,
+        execution_settings=budget.settings,
+        elapsed_ms=budget.elapsed_ms,
         canonical_input=canonical_input,
         status=status,
         stages=records,

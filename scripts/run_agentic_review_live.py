@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
-from pydantic import ValidationError
+from pydantic import AnyHttpUrl, ValidationError
 
 from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability import (
@@ -35,7 +35,10 @@ from hmda_reliability.review_ai.contracts import (
     AgenticReviewStatus,
     ReviewValidationStatus,
 )
-from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
+from hmda_reliability.review_ai.evidence import (
+    AgenticInvocationEvidence,
+    SanitizedAgenticReviewConfiguration,
+)
 from hmda_reliability.review_ai.prompt import (
     build_canonical_input,
     canonical_json_bytes,
@@ -45,6 +48,7 @@ from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.review_ai.staged.contracts import StagedReviewOutput
 from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
 from hmda_reliability.review_ai.staged.service import review_null_spike_staged
+from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.review_ai.staged.store import StagedReviewStore
 from hmda_reliability.runtime_ai import RuntimeAISettings
 
@@ -83,6 +87,7 @@ class StagedReviewer(Protocol):
         project_revision: str,
         settings: RuntimeAISettings,
         review_settings: ReviewAISettings,
+        execution_settings: StagedExecutionSettings,
         artifact_root: Path,
     ) -> StagedReviewResult: ...
 
@@ -130,6 +135,19 @@ def main(
         return 2
 
     try:
+        connect_timeout = _optional_float_value(
+            environment, "HMDA_AGENTIC_REVIEW_CONNECT_TIMEOUT_SECONDS"
+        )
+        read_timeout = _optional_float_value(
+            environment, "HMDA_AGENTIC_REVIEW_READ_TIMEOUT_SECONDS"
+        )
+        if mode == "staged":
+            if connect_timeout is None:
+                connect_timeout = 10.0
+            if read_timeout is None:
+                read_timeout = _float_value(
+                    environment, "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS", 300.0
+                )
         settings = RuntimeAISettings(
             base_url=environment["HMDA_AGENTIC_REVIEW_BASE_URL"],
             api_key=environment["HMDA_AGENTIC_REVIEW_API_KEY"],
@@ -139,10 +157,12 @@ def main(
                 "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS",
                 30.0,
             ),
+            connect_timeout_seconds=connect_timeout,
+            read_timeout_seconds=read_timeout,
             max_retries=_int_value(
                 environment,
                 "HMDA_AGENTIC_REVIEW_MAX_RETRIES",
-                1,
+                0 if mode == "staged" else 1,
             ),
             max_output_tokens=_int_value(
                 environment,
@@ -161,6 +181,22 @@ def main(
                 "HMDA_AGENTIC_REVIEW_MAX_PROMPT_BYTES",
                 65_536,
             )
+        )
+        execution_settings = (
+            StagedExecutionSettings(
+                stage_budget_seconds=_float_value(
+                    environment,
+                    "HMDA_AGENTIC_REVIEW_STAGE_BUDGET_SECONDS",
+                    360.0,
+                ),
+                workflow_budget_seconds=_float_value(
+                    environment,
+                    "HMDA_AGENTIC_REVIEW_WORKFLOW_BUDGET_SECONDS",
+                    1200.0,
+                ),
+            )
+            if mode == "staged"
+            else None
         )
         prompt_identity = (
             PromptIdentity.model_validate(
@@ -182,6 +218,7 @@ def main(
         environment.get("HMDA_RELIABILITY_ARTIFACTS_DIR", ".local/artifacts")
     )
     if mode == "staged":
+        assert execution_settings is not None
         return _run_staged_live(
             environment=environment,
             reviewer=staged_reviewer or review_null_spike_staged,
@@ -191,6 +228,7 @@ def main(
             project_revision=project_revision,
             settings=settings,
             review_settings=review_settings,
+            execution_settings=execution_settings,
             artifact_root=artifact_root,
         )
 
@@ -239,6 +277,7 @@ def _run_staged_live(
     project_revision: str,
     settings: RuntimeAISettings,
     review_settings: ReviewAISettings,
+    execution_settings: StagedExecutionSettings,
     artifact_root: Path,
 ) -> int:
     """모델 원문을 로컬 파일에 두고 수집 상태와 출처만 출력한다."""
@@ -249,6 +288,7 @@ def _run_staged_live(
         project_revision=project_revision,
         settings=settings,
         review_settings=review_settings,
+        execution_settings=execution_settings,
         artifact_root=artifact_root,
     )
     print(result.model_dump_json(indent=2, exclude={"output"}))
@@ -259,6 +299,7 @@ def _run_staged_live(
         artifact_root=artifact_root,
         settings=settings,
         review_settings=review_settings,
+        execution_settings=execution_settings,
         project_revision=project_revision,
         incident=incident,
         evidence=evidence,
@@ -275,6 +316,7 @@ def _verify_staged_live_provenance(
     artifact_root: Path,
     settings: RuntimeAISettings,
     review_settings: ReviewAISettings,
+    execution_settings: StagedExecutionSettings,
     project_revision: str,
     incident: Incident,
     evidence: Evidence,
@@ -304,11 +346,10 @@ def _verify_staged_live_provenance(
             record.workflow_id != result.workflow_id
             or record.status != result.status
             or record.project_revision != project_revision
-            or record.configuration.model_dump()
-            != {
-                **settings.sanitized_configuration(),
-                **review_settings.sanitized_configuration(),
-            }
+            or not _configuration_matches(
+                record.configuration, settings=settings, review_settings=review_settings
+            )
+            or record.execution_settings != execution_settings
             or canonical_json_bytes(record.canonical_input)
             != canonical_json_bytes(expected_input)
             or record.stages != result.stages
@@ -316,9 +357,11 @@ def _verify_staged_live_provenance(
             or record.failure_code != result.failure_code
         ):
             return False
-        if result.status != "completed":
-            return result.output is None and record.output_digest is None
-        if result.output is None or result.output_path is None:
+        if result.status != "completed" and result.output is not None:
+            return False
+        if result.output_path is None:
+            return result.status != "completed" and record.output_digest is None
+        if result.status == "completed" and result.output is None:
             return False
         if result.output_path != expected_directory / "output.json":
             return False
@@ -331,7 +374,9 @@ def _verify_staged_live_provenance(
                 canonical_json_bytes(output.model_dump(mode="json"))
             ).hexdigest()
         )
-        return output == result.output and output_digest == record.output_digest
+        return output_digest == record.output_digest and (
+            result.output is None or output == result.output
+        )
     except (OSError, ValidationError, ValueError):
         return False
 
@@ -489,7 +534,7 @@ def _verify_live_provenance(
 ) -> bool:
     """검토 결과와 호출 기록의 식별 정보 및 출처를 대조한다.
 
-    호출 ID, 상태, 모델, prompt 크기 설정, 프로젝트 리비전, prompt 해시를
+    호출 ID·상태, 자격 증명을 제외한 설정 전체, 프로젝트 리비전과 prompt 해시를
     확인한다. `ACCEPTED`이면 `parsed_output`과 `validation`을, 그 외 상태면
     `failure_code`를 추가로 대조한다. `record`가 없으면 결과 경로에서 읽는다.
     `INPUT_REJECTED`와 `PROVENANCE_FAILED`는 기록 없이도 유효한 결과로 처리한다.
@@ -518,8 +563,9 @@ def _verify_live_provenance(
     common_matches = (
         record.invocation_id == result.invocation_id
         and record.status is result.status
-        and record.configuration.model == settings.model
-        and record.configuration.max_prompt_bytes == review_settings.max_prompt_bytes
+        and _configuration_matches(
+            record.configuration, settings=settings, review_settings=review_settings
+        )
         and record.project_revision == project_revision.strip()
         and replay.prompt_digest == record.prompt_digest
     )
@@ -535,6 +581,28 @@ def _verify_live_provenance(
     return record.failure_code == result.failure_code
 
 
+def _configuration_matches(
+    recorded: SanitizedAgenticReviewConfiguration,
+    *,
+    settings: RuntimeAISettings,
+    review_settings: ReviewAISettings,
+) -> bool:
+    expected = SanitizedAgenticReviewConfiguration.model_validate(
+        {
+            **settings.sanitized_configuration(),
+            **review_settings.sanitized_configuration(),
+        }
+    )
+    recorded_values = recorded.model_dump(exclude_none=True)
+    expected_values = expected.model_dump(exclude_none=True)
+    try:
+        recorded_values["base_url"] = str(AnyHttpUrl(recorded.base_url))
+        expected_values["base_url"] = str(AnyHttpUrl(expected.base_url))
+    except ValueError:
+        return False
+    return recorded_values == expected_values
+
+
 def _float_value(
     environment: Mapping[str, str],
     name: str,
@@ -542,6 +610,11 @@ def _float_value(
 ) -> float:
     raw_value = environment.get(name)
     return default if raw_value is None or not raw_value.strip() else float(raw_value)
+
+
+def _optional_float_value(environment: Mapping[str, str], name: str) -> float | None:
+    raw_value = environment.get(name)
+    return None if raw_value is None or not raw_value.strip() else float(raw_value)
 
 
 def _int_value(

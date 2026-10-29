@@ -74,6 +74,223 @@ class RecordingTransport:
         return outcome
 
 
+class FakeClock:
+    def __init__(self) -> None:
+        self.now = 0.0
+        self.sleeps: list[float] = []
+
+    def __call__(self) -> float:
+        return self.now
+
+    def sleep(self, delay: float) -> None:
+        self.sleeps.append(delay)
+        self.now += delay
+
+
+class TimedTransport(RecordingTransport):
+    def __init__(
+        self,
+        outcomes: list[
+            runtime_contracts.TransportResponse | provider_module.ProviderTransportError
+        ],
+        *,
+        clock: FakeClock,
+        elapsed_per_call: float,
+    ) -> None:
+        super().__init__(outcomes)
+        self.clock = clock
+        self.elapsed_per_call = elapsed_per_call
+
+    def create(
+        self, request: runtime_contracts.ChatCompletionRequest
+    ) -> runtime_contracts.TransportResponse:
+        self.clock.now += self.elapsed_per_call
+        return super().create(request)
+
+
+def test_exhausted_budget_does_not_start_a_transport_attempt() -> None:
+    clock = FakeClock()
+    transport = RecordingTransport([runtime_contracts.TransportResponse(content="{}")])
+    adapter = provider_module.OpenAICompatibleAdapter(
+        _settings(), transport=transport, clock=clock, sleep=clock.sleep
+    )
+
+    with pytest.raises(provider_module.ProviderUnavailableError) as error:
+        adapter.invoke(_messages(), budget_seconds=0)
+
+    assert error.value.failure_code == "provider_budget_exhausted"
+    assert error.value.attempt_count == 0
+    assert error.value.latency_ms == 0
+    assert transport.requests == []
+    assert clock.sleeps == []
+
+
+@pytest.mark.parametrize("budget_seconds", [-1.0, float("nan"), float("inf")])
+def test_invalid_budget_is_rejected_without_a_transport_attempt(
+    budget_seconds: float,
+) -> None:
+    transport = RecordingTransport([runtime_contracts.TransportResponse(content="{}")])
+    adapter = provider_module.OpenAICompatibleAdapter(_settings(), transport=transport)
+
+    with pytest.raises(ValueError, match="budget_seconds"):
+        adapter.invoke(_messages(), budget_seconds=budget_seconds)
+
+    assert transport.requests == []
+
+
+@pytest.mark.parametrize("elapsed_per_call", [1.0, 0.8], ids=["attempt", "backoff"])
+def test_budget_exhaustion_stops_retry_and_bounds_backoff(
+    elapsed_per_call: float,
+) -> None:
+    clock = FakeClock()
+    transport = TimedTransport(
+        [
+            provider_module.ProviderTransportError(
+                failure_code="provider_connection_error", retryable=True
+            ),
+            runtime_contracts.TransportResponse(content="{}"),
+        ],
+        clock=clock,
+        elapsed_per_call=elapsed_per_call,
+    )
+    adapter = provider_module.OpenAICompatibleAdapter(
+        _settings(max_retries=5), transport=transport, clock=clock, sleep=clock.sleep
+    )
+
+    with pytest.raises(provider_module.ProviderUnavailableError) as error:
+        adapter.invoke(_messages(), budget_seconds=1)
+
+    assert error.value.failure_code == "provider_budget_exhausted"
+    assert error.value.attempt_count == 1
+    assert error.value.latency_ms == pytest.approx(1000)
+    assert len(transport.requests) == 1
+    assert clock.sleeps == ([] if elapsed_per_call == 1 else [pytest.approx(0.2)])
+
+
+def test_each_retry_receives_the_remaining_budget_as_its_phase_cap() -> None:
+    clock = FakeClock()
+    transport = TimedTransport(
+        [
+            provider_module.ProviderTransportError(
+                failure_code="provider_connection_error", retryable=True
+            ),
+            runtime_contracts.TransportResponse(content="{}"),
+        ],
+        clock=clock,
+        elapsed_per_call=0.1,
+    )
+    adapter = provider_module.OpenAICompatibleAdapter(
+        _settings(), transport=transport, clock=clock, sleep=clock.sleep
+    )
+
+    result = adapter.invoke(_messages(), budget_seconds=1)
+
+    assert result.attempt_count == 2
+    assert clock.sleeps == [0.25]
+    for request, expected in zip(transport.requests, [1.0, 0.65], strict=True):
+        assert request.timeout is not None
+        assert request.timeout.model_dump() == {
+            phase: pytest.approx(expected)
+            for phase in ("connect", "read", "write", "pool")
+        }
+        assert "timeout" not in request.wire_payload()
+
+
+def test_complete_response_after_budget_is_returned_for_local_preservation() -> None:
+    clock = FakeClock()
+    content = "  늦게 도착한 완성 응답\n"
+    transport = TimedTransport(
+        [runtime_contracts.TransportResponse(content=content)],
+        clock=clock,
+        elapsed_per_call=2,
+    )
+    adapter = provider_module.OpenAICompatibleAdapter(
+        _settings(), transport=transport, clock=clock, sleep=clock.sleep
+    )
+
+    result = adapter.invoke(_messages(), output_format="text", budget_seconds=1)
+
+    assert result.content == content
+    assert result.attempt_count == 1
+    assert result.latency_ms == 2000
+    assert len(transport.requests) == 1
+
+
+@pytest.mark.parametrize("budget_seconds", [None, 12.0])
+def test_sdk_applies_phase_overrides_and_budget_without_adding_wire_fields(
+    monkeypatch: pytest.MonkeyPatch,
+    budget_seconds: float | None,
+) -> None:
+    observed: list[tuple[dict[str, float | None], dict[str, object]]] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        observed.append((request.extensions["timeout"], json.loads(request.content)))
+        return httpx.Response(
+            200,
+            json={
+                "id": "timeout-completion",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "{}"},
+                        "finish_reason": "stop",
+                    }
+                ],
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        provider_module.OpenAICompatibleAdapter(
+            _settings(connect_timeout_seconds=5, read_timeout_seconds=180),
+            clock=FakeClock(),
+        ).invoke(_messages(), budget_seconds=budget_seconds)
+
+    timeout, payload = observed[0]
+    assert timeout == {
+        "connect": 5.0,
+        "read": 180.0 if budget_seconds is None else 12.0,
+        "write": 30.0 if budget_seconds is None else 12.0,
+        "pool": 30.0 if budget_seconds is None else 12.0,
+    }
+    assert "timeout" not in payload
+    assert "connect_timeout_seconds" not in payload
+    assert "read_timeout_seconds" not in payload
+
+
+@pytest.mark.parametrize("timeout_type", [httpx.ConnectTimeout, httpx.ReadTimeout])
+def test_sdk_timeout_has_a_separate_failure_code_and_no_hidden_retries(
+    monkeypatch: pytest.MonkeyPatch,
+    timeout_type: type[httpx.TimeoutException],
+) -> None:
+    calls = 0
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        raise timeout_type("PRIVATE_TIMEOUT_DETAIL", request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        adapter = provider_module.OpenAICompatibleAdapter(
+            _settings(max_retries=1), sleep=lambda _: None
+        )
+        with pytest.raises(provider_module.ProviderUnavailableError) as error:
+            adapter.invoke(_messages())
+
+    assert calls == 2
+    assert error.value.attempt_count == 2
+    assert error.value.failure_code == "provider_timeout"
+    assert "PRIVATE_TIMEOUT_DETAIL" not in str(error.value)
+
+
 def test_adapter_uses_the_common_non_streaming_no_tools_wire_profile() -> None:
     """어댑터가 스트리밍/도구를 끄고 json_object 단일 요청을 보내는지 검증한다."""
     messages = _messages()

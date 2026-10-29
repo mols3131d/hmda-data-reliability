@@ -10,6 +10,7 @@
 | [Tooling](docs/development/tooling/README.md) | repository 개발·검증·유지보수 도구의 project-specific usage와 entrypoint |
 | [Testing Guide](docs/development/testing.md) | pytest 실행 command, marker, report, coverage, tracing |
 | [Test Design](docs/development/test-design.md) | test design, observable contract, scenario, oracle, validation 기준 |
+| [Review AI Prompts](docs/development/review-ai-prompts.md) | 프롬프트 조립, 단계별 실행과 HTTP timeout·실행 예산·환경 설정 |
 | [Version Control and GitHub](docs/development/vcs-git/README.md) | branch, commit, Pull Request와 review workflow |
 
 ## Quick Commands

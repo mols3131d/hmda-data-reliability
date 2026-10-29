@@ -65,6 +65,15 @@ class TransportResponse(RuntimeAIContract):
     response_metadata: ProviderResponseMetadata | None = None
 
 
+class TransportTimeouts(RuntimeAIContract):
+    """HTTP 전송의 각 대기 구간에 적용하며 wire 본문에는 넣지 않는 제한."""
+
+    connect: float = Field(gt=0)
+    read: float = Field(gt=0)
+    write: float = Field(gt=0)
+    pool: float = Field(gt=0)
+
+
 class ChatCompletionRequest(RuntimeAIContract):
     """OpenAI 호환 wire 규격에 맞춘 단일 Chat Completion 요청 페이로드 계약.
 
@@ -78,6 +87,7 @@ class ChatCompletionRequest(RuntimeAIContract):
     max_tokens: int = Field(gt=0)
     response_format: dict[str, str] | None
     stream: bool
+    timeout: TransportTimeouts | None = None
 
     def wire_payload(self) -> dict[str, object]:
         """OpenAI SDK completions 또는 HTTP wire 호환 dict를 생성한다."""
