@@ -1,5 +1,7 @@
 {
-  "baseline_revision": "6e64cc70a5dca8ff8cd423a9f2240848f4b2e7dd",
+  "evidence_kind": "synthetic_test_fixture",
+  "human_evaluation": "not_performed",
+  "oracle_basis": "현재 collection의 고정 텍스트·facts·평가 metadata와 독립 SHA-256 계산을 작성 시점에 저장한다. 테스트나 운영 writer가 이 파일을 생성하지 않는다.",
   "compared": {
     "comparison_id": "comparison-1",
     "case_id": "null-spike-case",
@@ -8,14 +10,15 @@
     "rubric_id": "rubric_v1",
     "baseline_evaluation_id": "evaluation-baseline",
     "baseline_output_kind": "baseline",
-    "baseline_invocation_id": "invocation-baseline",
+    "baseline_workflow_id": "workflow-baseline",
     "baseline_output_fixture_id": "fixture-baseline",
-    "baseline_output_digest": "sha256:ec197c419184c9a82869f0736f709cb5e76ca0b74c7a5e12fd59fd1e237329b5",
+    "baseline_output_digest": "sha256:2a688a882071d1bb8a5af176009e5ccaa723f9b1a416c3c34f304af363860c3e",
     "candidate_evaluation_id": "evaluation-candidate",
-    "candidate_invocation_id": "invocation-candidate",
+    "candidate_workflow_id": "workflow-candidate",
     "candidate_output_fixture_id": "fixture-candidate",
-    "candidate_output_digest": "sha256:9d9bda299b782cc2bcd8df56ea194b30c09e344562deed6c69d9bd479d8766bc",
+    "candidate_output_digest": "sha256:f36ad436d5ffc1f91affb67ac1e5c6ccf111b200096045de405dbefec46df828",
     "baseline_output": {
+      "workflow_version": "staged-v1",
       "incident_id": "incident-1",
       "incident_type": "null_spike",
       "target_column": "income",
@@ -25,14 +28,23 @@
         "delta": 0.2,
         "threshold": 0.1
       },
-      "review_summary": "The output restates the deterministic facts.",
-      "evidence_used": ["ev-1"],
-      "findings": [],
-      "uncertainties": ["Root cause remains unconfirmed."],
-      "advisory_recommendation": "needs_human_review",
-      "utility_contributions": []
+      "stages": [
+        {
+          "stage_id": "evidence_review",
+          "text": "결측률은 1%에서 21%로 증가했다."
+        },
+        {
+          "stage_id": "draft_critique",
+          "text": "초안은 원천 점검을 권고한다."
+        },
+        {
+          "stage_id": "synthesis",
+          "text": "원인은 아직 확인되지 않았다."
+        }
+      ]
     },
     "candidate_output": {
+      "workflow_version": "staged-v1",
       "incident_id": "incident-1",
       "incident_type": "null_spike",
       "target_column": "income",
@@ -42,17 +54,18 @@
         "delta": 0.2,
         "threshold": 0.1
       },
-      "review_summary": "The output adds an evidence gap.",
-      "evidence_used": ["ev-1"],
-      "findings": [],
-      "uncertainties": ["Root cause remains unconfirmed."],
-      "advisory_recommendation": "needs_human_review",
-      "utility_contributions": [
+      "stages": [
         {
-          "kind": "evidence_gap",
-          "description": "Lineage evidence remains unconfirmed.",
-          "evidence_refs": ["ev-1"],
-          "priority": null
+          "stage_id": "evidence_review",
+          "text": "계보 근거가 없어 원인을 확정할 수 없다."
+        },
+        {
+          "stage_id": "draft_critique",
+          "text": "초안의 원천 점검으로 결측 증가 위치를 먼저 확인한다."
+        },
+        {
+          "stage_id": "synthesis",
+          "text": "원천에도 증가했다면 수집 경로를, 아니라면 변환 경로를 우선 조사한다."
         }
       ]
     },
@@ -106,14 +119,15 @@
     "rubric_id": "rubric_v1",
     "baseline_evaluation_id": "evaluation-baseline",
     "baseline_output_kind": "baseline",
-    "baseline_invocation_id": "invocation-baseline",
+    "baseline_workflow_id": "workflow-baseline",
     "baseline_output_fixture_id": "fixture-baseline",
-    "baseline_output_digest": "sha256:ec197c419184c9a82869f0736f709cb5e76ca0b74c7a5e12fd59fd1e237329b5",
+    "baseline_output_digest": "sha256:2a688a882071d1bb8a5af176009e5ccaa723f9b1a416c3c34f304af363860c3e",
     "candidate_evaluation_id": "evaluation-candidate",
-    "candidate_invocation_id": "invocation-candidate",
+    "candidate_workflow_id": "workflow-candidate",
     "candidate_output_fixture_id": "fixture-candidate",
-    "candidate_output_digest": "sha256:9d9bda299b782cc2bcd8df56ea194b30c09e344562deed6c69d9bd479d8766bc",
+    "candidate_output_digest": "sha256:f36ad436d5ffc1f91affb67ac1e5c6ccf111b200096045de405dbefec46df828",
     "baseline_output": {
+      "workflow_version": "staged-v1",
       "incident_id": "incident-1",
       "incident_type": "null_spike",
       "target_column": "income",
@@ -123,14 +137,23 @@
         "delta": 0.2,
         "threshold": 0.1
       },
-      "review_summary": "The output restates the deterministic facts.",
-      "evidence_used": ["ev-1"],
-      "findings": [],
-      "uncertainties": ["Root cause remains unconfirmed."],
-      "advisory_recommendation": "needs_human_review",
-      "utility_contributions": []
+      "stages": [
+        {
+          "stage_id": "evidence_review",
+          "text": "결측률은 1%에서 21%로 증가했다."
+        },
+        {
+          "stage_id": "draft_critique",
+          "text": "초안은 원천 점검을 권고한다."
+        },
+        {
+          "stage_id": "synthesis",
+          "text": "원인은 아직 확인되지 않았다."
+        }
+      ]
     },
     "candidate_output": {
+      "workflow_version": "staged-v1",
       "incident_id": "incident-1",
       "incident_type": "null_spike",
       "target_column": "income",
@@ -140,17 +163,18 @@
         "delta": 0.2,
         "threshold": 0.1
       },
-      "review_summary": "The output adds an evidence gap.",
-      "evidence_used": ["ev-1"],
-      "findings": [],
-      "uncertainties": ["Root cause remains unconfirmed."],
-      "advisory_recommendation": "needs_human_review",
-      "utility_contributions": [
+      "stages": [
         {
-          "kind": "evidence_gap",
-          "description": "Lineage evidence remains unconfirmed.",
-          "evidence_refs": ["ev-1"],
-          "priority": null
+          "stage_id": "evidence_review",
+          "text": "계보 근거가 없어 원인을 확정할 수 없다."
+        },
+        {
+          "stage_id": "draft_critique",
+          "text": "초안의 원천 점검으로 결측 증가 위치를 먼저 확인한다."
+        },
+        {
+          "stage_id": "synthesis",
+          "text": "원천에도 증가했다면 수집 경로를, 아니라면 변환 경로를 우선 조사한다."
         }
       ]
     },

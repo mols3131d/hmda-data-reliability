@@ -1,4 +1,4 @@
-"""현재 검토와 legacy 재생이 공유하는 canonical 입력과 프롬프트 계약."""
+"""현재 검토의 canonical 입력과 프롬프트 계약."""
 
 from __future__ import annotations
 

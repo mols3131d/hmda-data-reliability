@@ -9,11 +9,6 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from hmda_reliability.review_ai.contracts import (
-    AgenticReviewOutput,
-    AgenticReviewUtilityContribution,
-    UtilityContributionKind,
-)
 from hmda_reliability.review_ai.evaluation import (
     RUBRIC_V1,
     HumanDecision,
@@ -25,6 +20,11 @@ from hmda_reliability.review_ai.evaluation import (
     compare_review_value,
     render_review_value_comparison_markdown,
     review_output_digest,
+)
+from hmda_reliability.review_ai.staged.contracts import (
+    STAGE_IDS,
+    StageAnswer,
+    StagedReviewOutput,
 )
 
 pytestmark = pytest.mark.unit
@@ -41,19 +41,21 @@ def _scores(value: int) -> tuple[RubricScore, ...]:
     )
 
 
-def _output(*, utility: bool = False) -> AgenticReviewOutput:
-    contributions = (
+def _output(*, utility: bool = False) -> StagedReviewOutput:
+    texts = (
         (
-            AgenticReviewUtilityContribution(
-                kind=UtilityContributionKind.EVIDENCE_GAP,
-                description="Lineage evidence remains unconfirmed.",
-                evidence_refs=("ev-1",),
-            ),
+            "계보 근거가 없어 원인을 확정할 수 없다.",
+            "초안의 원천 점검으로 결측 증가 위치를 먼저 확인한다.",
+            "원천에도 증가했다면 수집 경로를, 아니라면 변환 경로를 우선 조사한다.",
         )
         if utility
-        else ()
+        else (
+            "결측률은 1%에서 21%로 증가했다.",
+            "초안은 원천 점검을 권고한다.",
+            "원인은 아직 확인되지 않았다.",
+        )
     )
-    return AgenticReviewOutput(
+    return StagedReviewOutput(
         incident_id="incident-1",
         incident_type="null_spike",
         target_column="income",
@@ -63,36 +65,30 @@ def _output(*, utility: bool = False) -> AgenticReviewOutput:
             "delta": 0.2,
             "threshold": 0.1,
         },
-        review_summary=(
-            "The output adds an evidence gap."
-            if utility
-            else "The output restates the deterministic facts."
+        stages=tuple(
+            StageAnswer(stage_id=stage_id, text=text)
+            for stage_id, text in zip(STAGE_IDS, texts, strict=True)
         ),
-        evidence_used=("ev-1",),
-        findings=(),
-        uncertainties=("Root cause remains unconfirmed.",),
-        advisory_recommendation="needs_human_review",
-        utility_contributions=contributions,
     )
 
 
 def _evaluation(
     *,
     evaluation_id: str,
-    invocation_id: str,
+    workflow_id: str,
     output_kind: str,
     score: int,
     case_id: str = "null-spike-case",
     case_version: str = "v1",
     project_revision: str = "revision-1",
-    output: AgenticReviewOutput | None = None,
+    output: StagedReviewOutput | None = None,
 ) -> ReviewValueAssessment:
     output = output or _output(utility=output_kind == "candidate")
     return ReviewValueAssessment(
         evaluation_id=evaluation_id,
         case_id=case_id,
         case_version=case_version,
-        invocation_id=invocation_id,
+        workflow_id=workflow_id,
         project_revision=project_revision,
         rubric_id=RUBRIC_V1.rubric_id,
         output_kind=output_kind,
@@ -114,14 +110,14 @@ def _compare(
         baseline=baseline
         or _evaluation(
             evaluation_id="evaluation-baseline",
-            invocation_id="invocation-baseline",
+            workflow_id="workflow-baseline",
             output_kind="baseline",
             score=0,
         ),
         candidate=candidate
         or _evaluation(
             evaluation_id="evaluation-candidate",
-            invocation_id="invocation-candidate",
+            workflow_id="workflow-candidate",
             output_kind="candidate",
             score=2,
         ),
@@ -166,18 +162,18 @@ def test_review_value_api_exposes_only_intended_names() -> None:
         ("accept", "v2", "blocked"),
     ],
 )
-def test_comparison_json_matches_pre_refactor_golden(
+def test_comparison_json_matches_independent_current_golden(
     decision: str, case_version: str, golden_key: str
 ) -> None:
-    """Compare complete JSON to the captured 6e64cc7 API, including nested types."""
-    fixture = Path(__file__).with_name("fixtures") / "utility_comparison_6e64cc7.json"
+    """운영 serializer로 생성하지 않은 정적 current JSON과 전체 shape를 대조한다."""
+    fixture = Path(__file__).with_name("fixtures") / "utility_comparison_staged_v1.json"
     expected = json.loads(fixture.read_text(encoding="utf-8"))[golden_key]
     if golden_key == "compared":
         expected["decision"] = decision
 
     candidate = _evaluation(
         evaluation_id="evaluation-candidate",
-        invocation_id="invocation-candidate",
+        workflow_id="workflow-candidate",
         output_kind="candidate",
         score=2,
         case_version=case_version,
@@ -193,7 +189,7 @@ def test_comparison_json_matches_pre_refactor_golden(
 def test_rubric_and_evaluation_require_all_five_human_scores() -> None:
     evaluation = _evaluation(
         evaluation_id="evaluation-complete",
-        invocation_id="invocation-complete",
+        workflow_id="workflow-complete",
         output_kind="candidate",
         score=1,
     )
@@ -211,7 +207,7 @@ def test_rubric_and_evaluation_require_all_five_human_scores() -> None:
 def test_evaluation_digest_is_bound_to_exact_review_output() -> None:
     evaluation = _evaluation(
         evaluation_id="evaluation-digest",
-        invocation_id="invocation-digest",
+        workflow_id="workflow-digest",
         output_kind="candidate",
         score=1,
     )
@@ -220,6 +216,44 @@ def test_evaluation_digest_is_bound_to_exact_review_output() -> None:
 
     with pytest.raises(ValidationError, match="output digest"):
         ReviewValueAssessment.model_validate(payload)
+
+
+@pytest.mark.parametrize("suffix", [" ", "\n", "추가 설명😀"])
+def test_evaluation_rejects_stage_text_mutation_without_a_new_digest(
+    suffix: str,
+) -> None:
+    payload = _evaluation(
+        evaluation_id="evaluation-exact-text",
+        workflow_id="workflow-exact-text",
+        output_kind="candidate",
+        score=1,
+    ).model_dump(mode="json")
+    payload["output"]["stages"][1]["text"] += suffix
+
+    with pytest.raises(ValidationError, match="output digest"):
+        ReviewValueAssessment.model_validate(payload)
+
+
+def test_current_evaluation_rejects_removed_invocation_alias() -> None:
+    payload = _evaluation(
+        evaluation_id="evaluation-workflow",
+        workflow_id="workflow-current",
+        output_kind="candidate",
+        score=1,
+    ).model_dump(mode="json")
+    payload["invocation_id"] = payload.pop("workflow_id")
+
+    with pytest.raises(ValidationError):
+        ReviewValueAssessment.model_validate(payload)
+
+
+def test_output_digest_covers_stage_order_without_normalizing_text() -> None:
+    output = _output(utility=True)
+    reversed_output = output.model_copy(
+        update={"stages": tuple(reversed(output.stages))}
+    )
+
+    assert review_output_digest(output) != review_output_digest(reversed_output)
 
 
 def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() -> None:
@@ -240,18 +274,21 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
 
     positive_output = _output(utility=True)
     restatement_output = _output(utility=False)
-    hedging_output = AgenticReviewOutput.model_validate(
+    hedging_output = StagedReviewOutput.model_validate(
         {
             **restatement_output.model_dump(mode="python"),
-            "review_summary": "More evidence may be needed before any next step.",
-            "utility_contributions": [],
+            "stages": [
+                {"stage_id": "evidence_review", "text": "근거가 더 필요할 수 있다."},
+                {"stage_id": "draft_critique", "text": "초안을 더 검토할 수 있다."},
+                {"stage_id": "synthesis", "text": "결정 전에 확인이 필요할 수 있다."},
+            ],
         }
     )
     positive = ReviewValueAssessment(
         evaluation_id="fixture-positive",
         case_id="null-spike-case",
         case_version="v1",
-        invocation_id="invocation-positive",
+        workflow_id="workflow-positive",
         project_revision="fixture-revision",
         rubric_id=RUBRIC_V1.rubric_id,
         output_kind="candidate",
@@ -264,7 +301,7 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
         evaluation_id="fixture-restatement",
         case_id="null-spike-case",
         case_version="v1",
-        invocation_id="invocation-restatement",
+        workflow_id="workflow-restatement",
         project_revision="fixture-revision",
         rubric_id=RUBRIC_V1.rubric_id,
         output_kind="baseline",
@@ -296,7 +333,7 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
         evaluation_id="fixture-hedging",
         case_id="null-spike-case",
         case_version="v1",
-        invocation_id="invocation-hedging",
+        workflow_id="workflow-hedging",
         project_revision="fixture-revision",
         rubric_id=RUBRIC_V1.rubric_id,
         output_kind="baseline",
@@ -306,9 +343,9 @@ def test_rubric_fixtures_distinguish_added_value_from_restatement_and_hedging() 
         scores=hedging_scores,
     )
 
-    assert positive.output.utility_contributions
-    assert not restatement.output.utility_contributions
-    assert not hedging.output.utility_contributions
+    assert positive.output.stages[2].text.startswith("원천에도 증가했다면")
+    assert restatement.output.stages[2].text == "원인은 아직 확인되지 않았다."
+    assert hedging.output.stages[2].text == "결정 전에 확인이 필요할 수 있다."
     assert positive.total_score > restatement.total_score
     assert positive.scores[1].score > hedging.scores[1].score
     assert positive.scores[4].score > hedging.scores[4].score
@@ -319,7 +356,7 @@ def test_comparison_records_human_deltas_and_round_trips() -> None:
 
     assert comparison.status is ReviewValueComparisonStatus.COMPARED
     assert comparison.baseline_evaluation_id == "evaluation-baseline"
-    assert comparison.candidate_invocation_id == "invocation-candidate"
+    assert comparison.candidate_workflow_id == "workflow-candidate"
     assert comparison.total_delta == 10
     assert [delta.delta for delta in comparison.criterion_deltas] == [2] * 5
     assert comparison.decision is HumanDecision.ACCEPT
@@ -352,7 +389,7 @@ def test_comparison_attributes_heterogeneous_scores_to_each_criterion() -> None:
     ):
         payload = _evaluation(
             evaluation_id=f"evaluation-{role}",
-            invocation_id=f"invocation-{role}",
+            workflow_id=f"workflow-{role}",
             output_kind=role,
             score=0,
         ).model_dump(mode="python")
@@ -393,13 +430,13 @@ def test_comparison_blocks_evaluations_with_wrong_roles(
     comparison = _compare(
         baseline=_evaluation(
             evaluation_id="evaluation-baseline-role",
-            invocation_id="invocation-baseline-role",
+            workflow_id="workflow-baseline-role",
             output_kind=baseline_kind,
             score=0,
         ),
         candidate=_evaluation(
             evaluation_id="evaluation-candidate-role",
-            invocation_id="invocation-candidate-role",
+            workflow_id="workflow-candidate-role",
             output_kind=candidate_kind,
             score=2,
         ),
@@ -413,7 +450,7 @@ def test_comparison_blocks_evaluations_with_wrong_roles(
 def test_comparison_rejects_output_digest_tampering_even_when_blocked() -> None:
     candidate = _evaluation(
         evaluation_id="evaluation-candidate-tampered",
-        invocation_id="invocation-candidate-tampered",
+        workflow_id="workflow-candidate-tampered",
         output_kind="candidate",
         score=2,
     ).model_copy(update={"output_digest": "sha256:" + "0" * 64})
@@ -443,7 +480,7 @@ def test_comparison_blocks_mismatched_attribution(
 ) -> None:
     candidate = _evaluation(
         evaluation_id="evaluation-candidate-mismatch",
-        invocation_id="invocation-candidate-mismatch",
+        workflow_id="workflow-candidate-mismatch",
         output_kind="candidate",
         score=2,
         case_id=case_id,
@@ -465,7 +502,7 @@ def test_comparison_blocks_different_deterministic_facts() -> None:
     )
     candidate = _evaluation(
         evaluation_id="evaluation-candidate-facts",
-        invocation_id="invocation-candidate-facts",
+        workflow_id="workflow-candidate-facts",
         output_kind="candidate",
         score=2,
         output=candidate_output.model_copy(
@@ -477,6 +514,35 @@ def test_comparison_blocks_different_deterministic_facts() -> None:
 
     assert comparison.status is ReviewValueComparisonStatus.BLOCKED
     assert comparison.blocker_code == "same_case_fact_mismatch"
+
+
+def test_comparison_blocks_conflicting_outputs_for_one_workflow() -> None:
+    baseline = _evaluation(
+        evaluation_id="evaluation-baseline-workflow-conflict",
+        workflow_id="workflow-shared",
+        output_kind="baseline",
+        score=0,
+    )
+    candidate = _evaluation(
+        evaluation_id="evaluation-candidate-workflow-conflict",
+        workflow_id="workflow-shared",
+        output_kind="candidate",
+        score=2,
+    )
+
+    comparison = _compare(baseline=baseline, candidate=candidate)
+
+    assert comparison.status is ReviewValueComparisonStatus.BLOCKED
+    assert comparison.blocker_code == "workflow_output_conflict"
+    assert comparison.decision is None
+
+
+def test_compared_contract_rejects_conflicting_outputs_for_one_workflow() -> None:
+    payload = _compare().model_dump(mode="json")
+    payload["candidate_workflow_id"] = payload["baseline_workflow_id"]
+
+    with pytest.raises(ValidationError, match="one workflow"):
+        ReviewValueComparisonEvidence.model_validate(payload)
 
 
 @pytest.mark.parametrize("tampering", ["duplicate_criterion", "wrong_total"])

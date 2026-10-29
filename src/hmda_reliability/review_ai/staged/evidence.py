@@ -56,8 +56,8 @@ class StagedReviewManifest(ReliabilityContract):
     project_revision: str = Field(min_length=1, max_length=256)
     status: StagedReviewStatus
     configuration: SanitizedAgenticReviewConfiguration
-    execution_settings: StagedExecutionSettings | None = None
-    elapsed_ms: float | None = Field(default=None, ge=0)
+    execution_settings: StagedExecutionSettings
+    elapsed_ms: float = Field(ge=0)
     canonical_input: dict[str, object]
     stages: tuple[StageRecord, ...]
     physical_attempts: int = Field(ge=0)
@@ -91,7 +91,7 @@ class StagedReviewManifest(ReliabilityContract):
 
 
 class StagedReviewResult(ReliabilityContract):
-    """수집 완료와 legacy accepted를 구별하는 결과."""
+    """수집 완료와 사람의 품질 판정을 구별하는 결과."""
 
     status: StagedReviewStatus
     workflow_id: str | None = None

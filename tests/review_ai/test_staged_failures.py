@@ -13,17 +13,15 @@ from .test_staged_service import TEXTS, TextProvider, response, run_review
 
 
 @pytest.mark.component
-@pytest.mark.parametrize("collision", ["legacy_record", "dangling_response"])
+@pytest.mark.parametrize("collision", ["response", "dangling_response"])
 def test_existing_stage_identity_is_rejected_before_any_provider_call(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
     collision: str,
 ) -> None:
-    directory = "invocations" if collision == "legacy_record" else "responses"
-    suffix = ".json" if collision == "legacy_record" else ".txt"
-    path = tmp_path / "agentic-review" / directory / f"sr-unit-synthesis{suffix}"
+    path = tmp_path / "agentic-review" / "responses" / "sr-unit-synthesis.txt"
     path.parent.mkdir(parents=True)
-    if collision == "legacy_record":
+    if collision == "response":
         path.write_text("{}", encoding="utf-8")
     else:
         path.symlink_to(tmp_path / "missing-response-target")
@@ -37,7 +35,7 @@ def test_existing_stage_identity_is_rejected_before_any_provider_call(
     assert result.failure_code == "workflow_reservation_failed"
     assert result.stages == ()
     assert not (tmp_path / "agentic-review" / "staged" / "sr-unit").exists()
-    if collision == "legacy_record":
+    if collision == "response":
         assert path.read_text(encoding="utf-8") == "{}"
     else:
         assert path.is_symlink()

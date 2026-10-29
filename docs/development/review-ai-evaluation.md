@@ -1,11 +1,10 @@
 ---
 title: "Review AI Evaluation"
-description: "Review AI의 deterministic suite, live provider proof, human rubric 평가와 optional Langfuse projection을 실행하고 evidence를 해석할 때 사용하는 개발 가이드입니다."
+description: "현재 단계별 검토의 offline 검사, 실제 실행, 실패 조사와 사람 평가 절차를 안내합니다."
 categories:
   - software-engineering
 tags:
   - evaluation
-  - langfuse
   - llmops
   - review-ai
   - testing
@@ -13,164 +12,89 @@ tags:
 
 # Review AI Evaluation
 
-Review AI의 품질과 integration evidence를 검증할 때 사용한다. 이 문서는 deterministic test, live provider proof, human rubric 평가와 optional Langfuse projection의 실행 절차와 evidence boundary를 안내한다. 일반 pytest 선택과 CI 동작은 [Testing Guide](testing.md)를, Review AI의 책임과 safety boundary는 [Review AI](../domains/review-ai.md)를, normative behavior는 [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec을 따른다.
+Review AI의 실행 기록과 실제 답변을 확인하고 사람이 검토 가치를 평가할 때 사용한다. 일반 검증 명령은 [Testing Guide](testing.md), 책임과 권한 경계는 [Review AI](../domains/review-ai.md), 정본 요구사항은 [reliability-agentic-review](../../openspec/specs/reliability-agentic-review/spec.md)를 따른다.
 
 ## Offline Suite
 
-Review AI의 기본 suite는 fake transport와 temporary artifact root만 사용하며 network provider를 호출하지 않는다. Runtime AI의 settings와 provider-neutral contract도 함께 검증한다.
+기본 suite는 fake transport와 temporary artifact root를 사용하며 실제 provider를 호출하지 않는다.
 
 ```bash
 uv run pytest tests/review_ai tests/runtime_ai
 ```
 
-`tests/review_ai`는 다섯 human rubric criterion, test-only positive/restatement/hedging fixtures, evaluation identity와 baseline/candidate comparison도 검증한다. 이 deterministic suite는 실제 provider 실행이나 사람의 utility assessment를 대신하지 않는다.
+프롬프트 전달·입력 경계·원문 보존·코드 JSON 조립·예산·실패 기록과 다섯 human rubric 항목을 검증한다. 합성 출력과 점수 fixture는 계약 검사용이며 실제 모델 품질이나 사람 평가를 대신하지 않는다.
 
 ## Live Provider Proof
 
-실제 Ollama proof는 기본 suite와 분리해 명시적으로 실행한다. [`.env.example`](../../.env.example)의 `HMDA_AGENTIC_REVIEW_*` 값을 로컬 `.env`에 설정한다. `HMDA_AGENTIC_REVIEW_LIVE=true`와 비어 있지 않은 base URL, API key, model이 필요하다. API key는 OpenAI-compatible client에 전달하지만 invocation evidence에는 저장하지 않는다.
+PR을 시험할 때는 해당 PR checkout의 repository root에서 실행한다. 이전 revision의 별도 `main` checkout에서 같은 환경 파일로 실행해도 PR 구현을 사용하지 않는다.
 
-PR의 구현을 시험할 때는 해당 PR checkout의 repository root에서 실행한다. 이전 revision의 `main`에서 같은 `.env`로 실행해도 PR의 프롬프트나 실행 경로를 사용하지 않는다. 이번 변경은 별도 `main` checkout을 수정하지 않는다.
+[`.env.example`](../../.env.example)을 참고해 로컬 환경에 `HMDA_AGENTIC_REVIEW_LIVE=true`와 비어 있지 않은 base URL·API key·model을 설정한다. 자격 증명은 기록이나 로그에 복사하지 않는다. 현재 프롬프트 하나만 실행하며 모드나 version을 선택하지 않는다.
 
 ```bash
 uv run --env-file .env python scripts/run_agentic_review_live.py
 ```
+
+`HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하고 clean tracked tree를 요구한다. 개발 중에는 명시적인 로컬 revision 표식을 사용할 수 있지만 clean commit의 품질 증거로 취급하지 않는다. 현재 CLI는 reviewer 호출 직전에 stderr에 `Review AI workflow: current (staged-v1).`를 표시한다.
 
 ### Staged Text Review
 
-일반 API [`review_null_spike()`](../../src/hmda_reliability/review_ai/service.py)와 live는 같은 현재 staged 프롬프트를 사용한다. 모드를 생략하거나 `HMDA_AGENTIC_REVIEW_MODE=staged`로 설정하면 같은 합성 사례에 근거 검토 → 초안 비판 → 종합의 세 질문을 진행한다. 모델에는 한국어 일반 텍스트를 요청하고, 코드가 원입력의 식별자·수치와 `stages[{stage_id,text}]`를 JSON으로 만든다. 고정 identity는 `staged-v1`이며 일반 실행에는 v1/v2/v3 선택이 없다.
+일반 API [review_null_spike()](../../src/hmda_reliability/review_ai/service.py)와 CLI는 같은 사례에 근거 검토 → 초안 비판 → 종합을 요청한다. 모델은 한국어 일반 텍스트로 답하도록 지시받고, 코드가 원입력 식별자·수치와 세 원문을 [StagedReviewOutput](../../src/hmda_reliability/review_ai/staged/contracts.py) JSON으로 조립한다.
 
-현재 실행은 유효한 환경 설정을 읽은 뒤 stderr에 `Review AI workflow: current (staged-v1).`를 표시한다. 남아 있는 `HMDA_AGENTIC_REVIEW_PROMPT_VERSION`은 값을 출력하지 않고 무시한다고 안내한다. `HMDA_AGENTIC_REVIEW_MODE=structured`는 모델을 호출하지 않고 legacy 설정으로의 이동을 안내한다.
-
-`status=completed`는 세 답변의 수집·저장 완료다. 기존 structured `accepted`, 문장 안의 사실성, 검토 가치 또는 사람 승인을 뜻하지 않는다. API는 [StagedReviewOutput](../../src/hmda_reliability/review_ai/staged/contracts.py)을 제공하며 콘솔은 원문 대신 다음 경로를 안내한다.
+`status=completed`는 수집·저장 완료이며 문장의 사실성·검토 가치·사람 승인이 아니다. 콘솔에는 원문 대신 상태와 다음 경로를 출력한다.
 
 | Result field | Content |
 | --- | --- |
-| `output_path` | `agentic-review/staged/<workflow_id>/output.json`: 원입력 facts와 단계별 원문을 코드가 직렬화한 결과 |
-| `workflow_path` | 같은 디렉터리의 `workflow.json`: 원입력, 설정·revision, 단계 기록·digest와 최종 output digest |
+| `output_path` | `agentic-review/staged/<workflow_id>/output.json`: 코드가 직렬화한 facts와 단계별 원문 |
+| `workflow_path` | 같은 디렉터리의 `workflow.json`: 원입력·설정·revision·단계 기록과 최종 digest |
 | `stages[].response_path` | `agentic-review/responses/<workflow_id>-<stage_id>.txt`: Runtime이 반환한 exact 원문 |
-| `stages[].record_path` | 단계가 끝날 때 저장한 원문 없는 checkpoint |
+| `stages[].record_path` | 단계별 원문 없는 checkpoint |
 
-빈/공백 응답, 알려진 `length`·filter·tool 종료, provider 실패·입력 한도 초과·저장 실패는 후속 단계를 중단한다. 실패 전 완료된 단계와 반환된 실패 응답의 원문을 보존하며, 완성된 output은 세 단계가 끝난 뒤에만 생성한다. Runtime이 본문을 반환하기 전에 차단한 응답에는 원문 경로가 없다.
+원문 파일은 UTF-8 공백·개행을 그대로 보존한다. Raw는 모델이 반환한 단계 텍스트이고 collection은 코드 생성 JSON이다. 전체 HTTP 응답이나 내부 추론 내용을 보존한다는 뜻이 아니다. Runtime이 본문을 반환하기 전에 차단한 실패에는 원문 파일이 없다.
 
-누적 이력 전체에 매 호출의 `MAX_PROMPT_BYTES`를 검사한다. 각 Runtime 호출에는 timeout·retry·출력 한도가 적용되고 별도의 모델 수정 대화는 없다. 물리 호출 상한은 `3 * (MAX_RETRIES + 1)`이다. Byte 한도와 실제 모델의 token context는 별개이므로 실제 active context와 총 usage·시간도 확인한다.
+각 호출에는 원래 canonical input과 완료된 이전 답변을 유지하고 누적 메시지 전체의 byte 한도를 검사한다. 물리 호출 상한은 `3 * (MAX_RETRIES + 1)`이며 모델 수정 대화는 추가하지 않는다. Token context와 byte cap은 다른 한도다. Timeout·단계·전체 예산과 측정 범위는 [운영 안내](review-ai-prompts.md#timeouts-and-execution-budgets)를 따른다.
 
-Staged collection은 기존 `AgenticReviewOutput`과 다른 계약이다. 기존 structured validator·`compare_review_value()`·Langfuse projection에 바로 넣지 않는다. 사람은 원문과 원입력을 대조해 품질을 평가하며 현재 staged 외부 projection은 `skipped_staged_mode`다. Revision 자동 선택은 clean tracked tree를 요구하므로 개발 중 실행에는 명시적인 로컬 revision 표식을 사용한다.
+### Diagnose A Failed Stage
 
-### Legacy Structured Review
+실패하면 workflow의 `failure_code`, 단계 상태·시도 횟수·종료 이유·원문 경로를 함께 확인한다. 실패 전에 완료된 단계와 반환된 실패 응답은 보존하고 이후 단계는 호출하지 않는다.
 
-기존 JSON 응답과 validator 동작을 비교·재현할 때만 legacy 모드와 과거 version을 함께 명시한다. Python 호출은 [`review_ai.legacy.review_null_spike()`](../../src/hmda_reliability/review_ai/legacy/service.py)를 사용한다. 일반 API는 이제 단계별 collection을 반환하므로 옛 structured 호출자는 legacy import로 이동해야 한다.
+| Evidence | Meaning / next action |
+| --- | --- |
+| `provider_timeout` / `provider_connection_error` | 읽기·연결 설정과 서버 상태를 구분해 확인한다. 본문이 반환되지 않으면 raw가 없다. |
+| `stage_budget_exhausted` / `workflow_budget_exhausted` | 후속 실행 또는 응답 채택 예산이 소진됐다. 늦게 반환된 bounded raw는 보존한다. |
+| `stage_response_empty` / `stage_response_incomplete` | 빈/공백 응답 또는 알려진 length·filter·tool 종료다. 저장된 본문과 종료 이유를 확인한다. |
+| `response_too_large` / `prompt_too_large` | 응답 또는 누적 입력 상한 초과다. Byte 한도와 실제 모델 context를 따로 확인한다. |
+| `provenance_failed` | 원문·checkpoint·collection·manifest 중 어떤 저장이 실패했는지 코드와 남은 경로를 확인한다. |
 
-```bash
-HMDA_AGENTIC_REVIEW_MODE=legacy \
-HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION=v2 \
-uv run --env-file .env python scripts/run_agentic_review_live.py
-```
-
-`HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하며 tracked worktree가 깨끗해야 한다. 필요하면 비어 있지 않은 revision을 명시할 수 있다. 결과는 `accepted` 또는 typed failure다. Provider 호출이 시작되면 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
-
-Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/responses/<invocation_id>.txt`에 원문을 저장한다. 결과 JSON의 `response_path`로 파일을 열면 성공·출력 형식 오류·사실 검증 실패에 관계없이 모델이 실제로 생성한 내용을 읽을 수 있다. UTF-8 본문은 공백·개행을 포함해 그대로 보존하며 빈 응답은 0-byte 파일이다. 원문은 호출 기록 JSON, 콘솔 로그나 Langfuse에 추가하지 않는다.
-
-응답 파일 저장이 실패하면 `provenance_failed / invocation_response_write_failed`다. 호출 기록 저장만 실패한 경우에도 이미 저장한 `response_path`는 반환한다. 입력 거부·네트워크 실패 및 Runtime이 본문을 반환하기 전에 차단한 크기 초과 응답에는 이 파일이 없다. 이전 실행에서 저장하지 않은 본문은 복원되지 않는다.
-
-개발 중 tracked 파일을 수정한 상태에서는 `auto` 대신 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=local-response-retention-worktree`처럼 명시적인 작업 표식을 사용할 수 있다. 이 실행은 특정 clean commit의 품질 검증 증거로 취급하지 않는다.
-
-Legacy CLI에는 기본 version이 없다. `HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION`에 `v1`, `v2`, `v3` 중 하나를 명시해야 하며 옛 `HMDA_AGENTIC_REVIEW_PROMPT_VERSION`으로 fallback하지 않는다. 세 version의 본문은 [동결 snapshot](../../src/hmda_reliability/review_ai/prompt/legacy/)으로 보존하며 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. `PromptIdentity()`의 v1 기본값은 역사 데이터와의 호환을 위한 계약이며 일반 API의 실행 선택이 아니다. Legacy API 호출자는 비교할 version을 명시적으로 전달한다. 이 재현 기능은 v3의 실제 출력 개선이나 품질 채택을 의미하지 않는다.
-
-프롬프트 편집과 재사용은 [Prompt Composition](review-ai-prompts.md)의 모듈 책임·조립·전달 경로를 따른다. 이 가이드의 로컬 예제로 모델 호출 없이 최종 system/user 메시지를 확인할 수 있다. 실제 호출에 주입한 데이터는 invocation record의 `canonical_input`에서 확인한다. 프롬프트 본문과 user JSON을 포함한 전체 메시지 배열이 prompt digest의 기준이다.
-
-프롬프트 파일과 한국어 작성 기준은 [`review-ai-prompt-engineering`](../../openspec/specs/review-ai-prompt-engineering/spec.md) Spec을 따른다. 모든 지원 버전은 한국어 지시문으로 요약·발견 사항·불확실성·검토 기여의 설명을 한국어로 작성하도록 요청한다. JSON 필드명·열거값·입력 식별자와 수치는 원표기를 유지한다. Review AI가 만드는 context gap 설명도 한국어이며, 원본 Evidence와 Draft의 내용은 그대로 제공한다.
-
-지시문의 번역이나 Markdown 구조 변경으로 현재 메시지와 digest는 과거 revision과 달라질 수 있다. 과거 invocation은 저장된 `project_revision`의 renderer와 텍스트 리소스로 재생한다. 같은 version 이름이라도 다른 revision의 digest를 동일하다고 가정하지 않는다. 실제 모델의 한국어 준수는 `response_path`의 본문을 읽어 확인하며, offline 테스트의 통과만으로 준수를 주장하지 않는다.
+최종 collection 저장 중 예산이 끝나면 이미 생성한 output 경로·digest는 진단용으로 남지만 `completed`로 채택하지 않는다. 저장된 경로가 있다는 사실만으로 성공을 판단하지 않는다. 예산은 진행 중 호출의 강제 종료 보장이 아니며 제한을 늘린 것만으로 품질 문제가 해결됐다고 판단하지 않는다.
 
 ### Output Quality Cases
 
-[`output_quality_v1.json`](../../tests/review_ai/evaluation/fixtures/output_quality_v1.json)은 provider 출력에서 정답을 추출하지 않은 합성 입력·독립 oracle·negative control이다. 다음 세 조건을 구별한다.
+[output_quality_staged_v1.json](../../tests/review_ai/evaluation/fixtures/output_quality_staged_v1.json)은 합성 입력·독립 oracle·합성 단계 답변을 담는다. Oracle와 controls는 모델에게 주는 정답이나 실제 모델 응답이 아니다.
 
 | Case | Independent numeric oracle | Context / draft |
 | --- | --- | --- |
-| Existing regression | 1% → 21%, 20 percentage points 증가, threshold 10 percentage points, 상대 증가율 2000% | 추가 evidence 없음, backfill 없음 |
-| Zero baseline | 0% → 12%, 12 percentage points 증가, threshold 5 percentage points, 상대 증가율 정의 불가 | 추가 evidence 없음, backfill 없음 |
-| Supplied context | 1% → 21%, 20 percentage points 증가, threshold 10 percentage points | metadata/catalog/dbt evidence와 backfill 제안 있음; 원인 확정과 구별 |
+| 정보 부족 | 1% → 21%, 증가 20%p, 기준 10%p, 상대 증가율 2000% | Profile만 제공, backfill 없음 |
+| 기준값 0 | 0% → 12%, 증가 12%p, 기준 5%p, 상대 증가율 정의 불가 | Profile만 제공, backfill 없음 |
+| 정보 추가 | 1% → 21%, 증가 20%p, 기준 10%p | metadata/catalog/dbt 근거와 조건부 backfill 제안; 원인은 미확정 |
 
-알려진 wrong-number, copied-example, restatement, unsupported-cause와 nonexistent-draft-action control도 identity/facts/references가 올바르면 현재 structured validator를 통과한다. 이 테스트는 탐지 경계를 드러낸다. Corpus의 문구와 질문은 검토 보조 자료이며 사람 점수나 실제 모델 품질의 증거가 아니다. Exact example match는 제한된 복사 신호이고 임의 prose의 의미적 정답 판정기가 아니다.
+잘못된 수치·근거 없는 원인·초안 반복 같은 합성 출력도 collection 구조에는 맞을 수 있다. 코드가 prose를 의미적으로 판정하거나 수치를 교정하지 않는다. 사람이 실제 제공 근거와 비교해 판단한다.
 
 ### Baseline and Candidate Comparison
 
-이 절은 과거 structured version을 비교하는 legacy 평가 절차다. 현재 staged collection을 이 typed-output 평가에 직접 넣지 않는다.
+현재 [사람 평가 계약](../../src/hmda_reliability/review_ai/evaluation/value.py)은 `StagedReviewOutput`을 대상으로 한다. 점수와 decision은 사람이 제공하며 helper는 연결·형식·일관성만 검증한다.
 
-1. 호출 전에 case/version, 모델·양자화, active context, Thinking 상태, output cap, timeout, retry, 반복 횟수 및 최대 총 호출 수를 정한다. Context/Thinking 실험은 prompt 비교와 분리하고 Ollama의 실제 적재 상태를 확인한다.
-1. Tracked tree가 깨끗한 하나의 candidate HEAD에서 각 case의 `review_input`을 `AgenticReviewInput.model_validate()`로 읽는다. Fixture의 `project_revision`은 live revision이 아니므로 실제 HEAD를 [`legacy.review_null_spike()`](../../src/hmda_reliability/review_ai/legacy/service.py)에 별도로 전달한다. 동일 incident/evidence/draft와 runtime 조건에서 `PromptIdentity(version="v2")` baseline과 `PromptIdentity(version="v3")` candidate를 실행한다. 기본 live script의 입력은 기존 한 사례이므로 나머지 사례는 이 legacy API에 명시적으로 전달한다.
-1. 시작 전에 attempt 목록을 만들고 실패·exclusion도 남긴다. 각 attempt의 case/version/role/repeat, 실제 revision, invocation identity, status/failure, prompt/output digest, latency/usage와 provider context/Thinking 조건을 연결한다. 응답 본문은 로컬 response 파일에서 확인하고 credential이나 raw exception은 보존하지 않는다. Retry를 사용할 경우 물리 호출 수도 예산에 포함한다.
-1. Accepted output의 설명을 독립 oracle 및 실제 제공된 evidence/draft와 대조한다. 숫자·threshold 단위가 맞는지, baseline-zero의 상대 증가율을 만들지 않는지, 원인·완료된 검증을 지어내지 않는지, 실제 draft에 없는 action을 비판하지 않는지 확인한다. 무엇을 먼저 확인하고 결과별 사람 판단이 어떻게 달라지는지 기록한다.
-1. 사람이 다섯 criterion 각각에 0–2점과 rationale을 제공한 뒤 기존 `ReviewValueAssessment`와 `compare_review_value()`를 사용한다. `case_id/version`, role, 실제 revision, invocation, exact output digest를 연결하고 같은 case끼리 비교한다. API는 caller가 제공한 점수·decision을 검증하며 의미적 채점을 대신하지 않는다. 동일 role/repeat의 identity를 임의로 바꾸거나 좋은 출력만 고르지 않는다.
-1. 전체 시도의 실패·정확성·utility를 함께 보고 실제 사람이 `accept`, `reject` 또는 `no_change`와 이유를 결정한다. 조건이 다르면 `blocked`/`inconclusive`, 사람 평가가 없으면 미검증이다. 과거 호출이나 offline fixture 성공으로 후보를 기본값으로 전환하지 않는다.
+1. 호출 전에 사례, 실제 revision, 모델·양자화, active context·Thinking, 출력 상한·timeout·retry·전체 예산과 반복 횟수를 정한다. 모든 시도와 실패·exclusion을 기록한다.
+1. 각 실행의 workflow ID, 실제 revision, 상태·failure, prompt/output digest, 실제 호출 수·usage·시간을 연결한다. 원문과 원입력은 로컬 artifact에서 확인한다. 성공한 단계만 골라 전체 성공으로 집계하지 않는다.
+1. 세 원문을 독립 oracle와 실제 evidence/draft에 대조한다. 비율·단위·기준값 0, 원인·검증 완료의 근거, 실제 초안에 없는 조치 비판, 앞선 답변의 오류 반복을 확인한다.
+1. 사람이 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization` 순서로 각각 0–2점과 rationale을 작성한다. `ReviewValueAssessment`에는 case/rubric/revision/workflow와 exact output digest를 연결한다.
+1. `compare_review_value()`에는 같은 사례·평가 기준·revision·facts의 baseline과 candidate 및 사람의 `accept`, `reject`, `no_change` 결정을 제공한다. 조건이 다르면 `blocked`이며 실제 조건을 맞추려고 식별자를 임의 변경하지 않는다.
+1. 실패율·정확성·utility와 전체 비용을 함께 보고한다. 사람 평가가 없으면 미검증이고 offline tests·collection 완료만으로 개선을 주장하지 않는다.
 
-### Adoption and Active Default
-
-일반 Python API와 live harness는 현재 staged 프롬프트 하나를 사용한다. 같은 공개 실행 함수를 사용하며 옛 v1/v2/v3 선택은 명시적인 legacy 경로에 한정한다. 현재 실행 경로를 통일한 것은 실제 모델의 사실성·검토 가치나 사람의 품질 평가를 통과했다는 뜻이 아니다.
-
-이후 현재 프롬프트를 변경할 때도 두 일반 진입점을 함께 유지하며, 과거 실행의 version·revision·digest는 바꾸지 않는다. 동결 snapshot과 현재 지시문을 분리하는 방침의 정본은 [Prompt lifecycle and active default](../../openspec/specs/review-ai-prompt-engineering/spec.md#requirement-prompt-lifecycle-and-active-default)다.
-
-### Diagnose a Failed Response
-
-Legacy 실행에서 `response_schema_invalid`이면 결과의 `response_path`에 있는 원문을 먼저 읽고, `invocation_path`에 있는 정제된 record의 다음 필드와 대조한다. Pydantic 입력값이나 exception message는 진단에 보존하지 않는다. 과거 record처럼 `response_path`가 없는 실행은 보존된 진단만 확인할 수 있다.
-
-| Evidence field | Meaning / next action |
-| --- | --- |
-| `response_diagnostics.kind=response_content_empty` | 본문이 비었다. `response_metadata.content_state`로 `content_missing`, `choices_empty`, 빈 text를 구분한다. |
-| `response_diagnostics.kind=json_syntax_invalid` | JSON으로 파싱할 수 없다. `finish_reason=length`이면 token cap과 provider의 실제 context 설정을 함께 확인한다. |
-| `response_diagnostics.kind=schema_validation_failed` | 유효 JSON이 출력 계약을 위반했다. 최대 8개의 allowlisted `field_path`와 `code`로 타입·누락·조건부 오류를 조사한다. |
-| `response_metadata` | SDK가 제공한 완료 이유, 본문 상태와 UTF-8 byte 수다. 알 수 없는 완료 이유는 `unknown`이며 과거 record나 custom transport에서는 metadata가 없을 수 있다. |
-
-Legacy 경로에서는 `length`가 단독 거부 사유가 아니며 schema·guard·provenance 검증이 최종 결과를 결정한다. 현재 staged 경로는 알려진 잘림을 원문 보존 후 실패로 처리한다. `max_output_tokens`는 실제 모델의 context window와 별개다. 모델 이름만으로 context 크기를 추정하거나 무조건 재시도하지 말고, provider 설정을 확인한 뒤 같은 synthetic 입력과 명시적 실행 조건으로 비교한다. 오류를 재현하는 작은 응답 fixture를 offline suite에 추가하고 현재의 깨끗한 revision에서 live 결과를 다시 확인한다. 진단 분류의 성공만으로 모델 실패나 utility 문제가 해결됐다고 판단하지 않는다.
-
-## Optional Langfuse Projection
-
-Legacy structured synthetic live proof를 Langfuse에도 표시하려면 provider 설정과 별도로 projection을 켜야 한다. Provider opt-in만으로는 전송하지 않는다. 현재 staged collection에는 이 projection을 적용하지 않는다.
-
-### Setup
-
-로컬 `.env`에서 `HMDA_LANGFUSE_EXPORT=true`로 설정하고, 전송을 허용한 프로젝트의 `LANGFUSE_BASE_URL`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`를 채운다. Key는 commit하거나 log에 복사하지 않는다. `HMDA_LANGFUSE_TIMEOUT_SECONDS`는 전체 연동 대기 시간이며 기본 5초, 최대 60초다. 위의 `HMDA_AGENTIC_REVIEW_*` 설정도 필요하다.
-
-선택 dependency를 설치한 뒤 live script를 실행한다.
-
-```bash
-uv sync --extra langfuse
-HMDA_AGENTIC_REVIEW_MODE=legacy \
-HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION=v2 \
-uv run --extra langfuse --env-file .env python scripts/run_agentic_review_live.py
-```
-
-### Check the Projection
-
-Script는 projection 상태를 stderr에 출력한다. `invalid_config`, `timeout`, `export_failed`, `projection_failed`, `skipped_*`는 전송 또는 전송 대상 준비가 완료되지 않았음을 나타낸다. 이 상태가 발생해도 확정된 Review AI 결과와 종료 코드는 바뀌지 않는다. Script 종료 코드 0만으로 export 성공을 판단하지 않는다.
-
-`submitted_unverified`는 SDK child가 오류 없이 끝났다는 뜻일 뿐 원격 저장의 증거는 아니다. Langfuse 프로젝트에서 `review-ai-post-hoc-projection` observation을 찾고 invocation, revision, output digest와 input/output을 대조한다. Span duration은 projection 시간이고 model 실행 시간은 `recorded_latency_ms`다. 동일 payload를 다시 보내면 같은 trace에 observation이 추가될 수 있으므로 채점할 observation 하나를 정확히 고른다.
-
-Harness는 local provenance를 검증한 뒤 현재 합성 사례와 일치하는 record만 전송한다. Provider URL/trace ID, rendered prompt, raw error와 전체 환경 변수는 전송하지 않는다. Accepted input/output도 허용된 필드만 보내며 크기 상한을 넘으면 자르지 않고 생략한다. SDK는 단기 child에서만 초기화하고 [`LANGFUSE_MEDIA_UPLOAD_ENABLED`](https://github.com/langfuse/langfuse-python/blob/v4.15.6/langfuse/_client/environment_variables.py)를 `false`로 고정한다. 이는 SDK가 base64 data URI를 media로 바꾸고 별도 업로드를 시도하지 않게 해 structured output과 digest가 같은 문자열을 가리키도록 한다.
-
-### Human Annotation
-
-원격 observation을 확인한 다음 사람의 평가가 필요하면 다음 순서로 진행한다.
-
-1. `rubric_v1`의 다섯 criterion(`added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`)마다 score config를 만든다. Categorical option은 0/1/2만 사용하고 이름·설명에 rubric과 criterion을 식별한다.
-1. Accepted observation의 input, draft, evidence/context gaps와 output을 읽고 다섯 score 각각에 근거 comment를 남긴다. 실패 observation은 채점하지 않는다.
-1. `invocation_id + output_digest + rubric_v1`이 일치하는지 확인한다. 항목 누락·중복, 0/1/2 밖의 값 또는 빈 comment는 incomplete다. UI의 완료 표시는 repository completeness를 보장하지 않는다.
-1. 필요하면 `review_ai.evaluation.langfuse.annotation_complete()`에 수동 score snapshot을 넘겨 accepted structured output의 canonical JSON 값/타입, metadata digest, `rubric_v1` target과 score shape의 일치를 검사한다. 각 score는 `criterion`, integer `score`, `rationale`다. 이 helper는 human authorship나 판단 품질을 증명하지 않으며 evaluation을 저장하거나 import하지 않는다.
-
-### SDK-Only Test
-
-Langfuse project 없이 data URI media 변환 차단만 확인하려면 다음 network-free test를 실행한다.
-
-```bash
-uv run --extra langfuse pytest tests/review_ai/evaluation/test_langfuse_projection.py::test_pinned_langfuse_media_processor_keeps_data_uri_when_disabled
-```
-
-점수 판단은 사람이 수행한다. Annotation queue는 수동 setup으로 충분하며 importer, automatic judge, prompt 관리와 candidate/recovery 승인은 포함하지 않는다. Offline tests와 SDK smoke는 실제 ingestion, 배포 UI와 사람의 utility 판단을 증명하지 않는다. 실제 proof가 필요하면 동일 implementation revision에서 원격 observation 확인과 다섯 항목 채점을 수행하고 별도 evidence로 기록한다.
+동일 입력·설정·실행 조건에서 현재 프롬프트의 변경 영향을 평가한다. 과거 기록은 당시 revision의 자료로 구분하며 현재 성공으로 재해석하거나 원문·digest를 다시 쓰지 않는다. 외부 전송과 자동 의미 채점은 이 실행 절차에 포함하지 않는다.
 
 ## Related Guides
 
-- [Review AI Prompt Composition](review-ai-prompts.md): 프롬프트 모듈 설계, 수정·재사용과 최종 주입 메시지 확인
-- [Testing Guide](testing.md): 일반 pytest 실행, marker, PR CI와 test result 해석
-- [Review AI](../domains/review-ai.md): Review AI의 domain 책임, 공개 surface와 safety boundary
-- [Runtime AI](../domains/runtime-ai.md): provider-neutral runtime 설정과 transport boundary
+- [Prompt Composition](review-ai-prompts.md): 현재 모듈·조립·대화 이력·시간 예산
+- [Testing Guide](testing.md): 일반 pytest 선택과 검사 결과 해석
+- [Review AI](../domains/review-ai.md): 도메인 책임과 권한 경계
+- [Runtime AI](../domains/runtime-ai.md): provider 설정과 전송 경계

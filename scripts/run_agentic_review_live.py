@@ -13,7 +13,6 @@ from typing import Protocol
 
 from pydantic import AnyHttpUrl, ValidationError
 
-from hmda_reliability.logger import get_logger
 from hmda_reliability.reliability import (
     DetectionRequest,
     Evidence,
@@ -26,15 +25,8 @@ from hmda_reliability.reliability import (
     detect_basic_incidents,
 )
 from hmda_reliability.review_ai import review_null_spike
-from hmda_reliability.review_ai.contracts import (
-    AgenticReviewInput,
-    AgenticReviewResult,
-    AgenticReviewStatus,
-    PromptIdentity,
-    ReviewValidationStatus,
-)
+from hmda_reliability.review_ai.contracts import AgenticReviewInput
 from hmda_reliability.review_ai.evidence import (
-    AgenticInvocationEvidence,
     SanitizedAgenticReviewConfiguration,
 )
 from hmda_reliability.review_ai.prompt import (
@@ -55,22 +47,6 @@ _REQUIRED_ENVIRONMENT = (
     "HMDA_AGENTIC_REVIEW_MODEL",
 )
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-_LOGGER = get_logger(__name__)
-
-
-class LegacyReviewer(Protocol):
-    def __call__(
-        self,
-        *,
-        incident: Incident,
-        evidence: Sequence[Evidence],
-        draft: RemediationDraft,
-        prompt_identity: PromptIdentity,
-        project_revision: str,
-        settings: RuntimeAISettings,
-        review_settings: ReviewAISettings,
-        artifact_root: Path,
-    ) -> AgenticReviewResult: ...
 
 
 class Reviewer(Protocol):
@@ -92,12 +68,10 @@ def main(
     *,
     env: Mapping[str, str] | None = None,
     reviewer: Reviewer = review_null_spike,
-    legacy_reviewer: LegacyReviewer | None = None,
 ) -> int:
     """환경에서 명시적으로 켜면 Review AI 검증을 실행하고 결과를 출력한다.
 
-    기본 staged 모드에서는 원문을 제외한 상태와 경로만 표준 출력에 쓴다.
-    legacy 모드는 명시한 과거 version의 검토 결과와 Langfuse 투영을 유지한다.
+    원문을 제외한 현재 단계별 실행의 상태와 경로만 표준 출력에 쓴다.
     """
 
     environment = os.environ if env is None else env
@@ -105,44 +79,6 @@ def main(
     if enabled not in _TRUE_VALUES:
         print("Agentic review live proof is disabled.")
         return 0
-
-    mode = environment.get("HMDA_AGENTIC_REVIEW_MODE", "staged").strip().lower()
-    if mode == "structured":
-        print(
-            "structured 모드는 legacy로 이동했습니다. 현재 실행은 "
-            "HMDA_AGENTIC_REVIEW_MODE=staged, 과거 재현은 "
-            "HMDA_AGENTIC_REVIEW_MODE=legacy와 "
-            "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION=v1|v2|v3를 사용하세요.",
-            file=sys.stderr,
-        )
-        return 2
-    if mode not in {"staged", "legacy"}:
-        print("Invalid live agentic review mode.", file=sys.stderr)
-        return 2
-    prompt_identity = None
-    if mode == "legacy":
-        try:
-            prompt_identity = PromptIdentity.model_validate(
-                {
-                    "version": environment.get(
-                        "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION", ""
-                    ).strip()
-                }
-            )
-        except ValidationError:
-            print(
-                "Legacy 실행에는 "
-                "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION=v1|v2|v3를 "
-                "명시해야 합니다.",
-                file=sys.stderr,
-            )
-            return 2
-    elif "HMDA_AGENTIC_REVIEW_PROMPT_VERSION" in environment:
-        print(
-            "HMDA_AGENTIC_REVIEW_PROMPT_VERSION은 현재 실행에서 무시합니다. "
-            "현재 staged 프롬프트를 사용합니다.",
-            file=sys.stderr,
-        )
 
     missing_env_vars = [
         name for name in _REQUIRED_ENVIRONMENT if not environment.get(name, "").strip()
@@ -170,13 +106,12 @@ def main(
         read_timeout = _optional_float_value(
             environment, "HMDA_AGENTIC_REVIEW_READ_TIMEOUT_SECONDS"
         )
-        if mode == "staged":
-            if connect_timeout is None:
-                connect_timeout = 10.0
-            if read_timeout is None:
-                read_timeout = _float_value(
-                    environment, "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS", 300.0
-                )
+        if connect_timeout is None:
+            connect_timeout = 10.0
+        if read_timeout is None:
+            read_timeout = _float_value(
+                environment, "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS", 300.0
+            )
         settings = RuntimeAISettings(
             base_url=environment["HMDA_AGENTIC_REVIEW_BASE_URL"],
             api_key=environment["HMDA_AGENTIC_REVIEW_API_KEY"],
@@ -191,7 +126,7 @@ def main(
             max_retries=_int_value(
                 environment,
                 "HMDA_AGENTIC_REVIEW_MAX_RETRIES",
-                0 if mode == "staged" else 1,
+                0,
             ),
             max_output_tokens=_int_value(
                 environment,
@@ -211,21 +146,13 @@ def main(
                 65_536,
             )
         )
-        execution_settings = (
-            StagedExecutionSettings(
-                stage_budget_seconds=_float_value(
-                    environment,
-                    "HMDA_AGENTIC_REVIEW_STAGE_BUDGET_SECONDS",
-                    360.0,
-                ),
-                workflow_budget_seconds=_float_value(
-                    environment,
-                    "HMDA_AGENTIC_REVIEW_WORKFLOW_BUDGET_SECONDS",
-                    1200.0,
-                ),
-            )
-            if mode == "staged"
-            else None
+        execution_settings = StagedExecutionSettings(
+            stage_budget_seconds=_float_value(
+                environment, "HMDA_AGENTIC_REVIEW_STAGE_BUDGET_SECONDS", 360.0
+            ),
+            workflow_budget_seconds=_float_value(
+                environment, "HMDA_AGENTIC_REVIEW_WORKFLOW_BUDGET_SECONDS", 1200.0
+            ),
         )
     except (KeyError, ValueError, ValidationError):
         print("Invalid live agentic review configuration.", file=sys.stderr)
@@ -235,65 +162,21 @@ def main(
     artifact_root = Path(
         environment.get("HMDA_RELIABILITY_ARTIFACTS_DIR", ".local/artifacts")
     )
-    if mode == "staged":
-        assert execution_settings is not None
-        return _run_staged_live(
-            environment=environment,
-            reviewer=reviewer,
-            incident=incident,
-            evidence=evidence,
-            draft=draft,
-            project_revision=project_revision,
-            settings=settings,
-            review_settings=review_settings,
-            execution_settings=execution_settings,
-            artifact_root=artifact_root,
-        )
-
-    assert prompt_identity is not None
-    if legacy_reviewer is None:
-        from hmda_reliability.review_ai.legacy import (
-            review_null_spike as review_legacy_null_spike,
-        )
-
-        legacy_reviewer = review_legacy_null_spike
-    result = legacy_reviewer(
+    return _run_staged_live(
+        reviewer=reviewer,
         incident=incident,
-        evidence=[evidence],
+        evidence=evidence,
         draft=draft,
-        prompt_identity=prompt_identity,
         project_revision=project_revision,
         settings=settings,
         review_settings=review_settings,
+        execution_settings=execution_settings,
         artifact_root=artifact_root,
     )
-    print(result.model_dump_json(indent=2))
-    if not _verify_live_provenance(
-        result,
-        settings=settings,
-        review_settings=review_settings,
-        project_revision=project_revision,
-    ):
-        print("Live invocation provenance validation failed.", file=sys.stderr)
-        return 3
-    if environment.get("HMDA_LANGFUSE_EXPORT", "").strip().lower() in _TRUE_VALUES:
-        integration_status = _export_live_projection(
-            result,
-            environment=environment,
-            settings=settings,
-            review_settings=review_settings,
-            project_revision=project_revision,
-            incident=incident,
-            evidence=evidence,
-            draft=draft,
-        )
-        print(f"Langfuse projection: {integration_status}", file=sys.stderr)
-    return 0 if result.status == "accepted" else 1
 
 
 def _run_staged_live(
     *,
-    environment: Mapping[str, str],
     reviewer: Reviewer,
     incident: Incident,
     evidence: Evidence,
@@ -317,8 +200,6 @@ def _run_staged_live(
         artifact_root=artifact_root,
     )
     print(result.model_dump_json(indent=2, exclude={"output"}))
-    if environment.get("HMDA_LANGFUSE_EXPORT", "").strip().lower() in _TRUE_VALUES:
-        print("Langfuse projection: skipped_staged_mode", file=sys.stderr)
     if not _verify_staged_live_provenance(
         result,
         artifact_root=artifact_root,
@@ -363,7 +244,6 @@ def _verify_staged_live_provenance(
                 incident=incident,
                 evidence=[evidence],
                 draft=draft,
-                prompt_identity=PromptIdentity(),
                 project_revision=project_revision,
             )
         )
@@ -404,64 +284,6 @@ def _verify_staged_live_provenance(
         )
     except (OSError, ValidationError, ValueError):
         return False
-
-
-def _export_live_projection(
-    result: AgenticReviewResult,
-    *,
-    environment: Mapping[str, str],
-    settings: RuntimeAISettings,
-    review_settings: ReviewAISettings,
-    project_revision: str,
-    incident: Incident,
-    evidence: Evidence,
-    draft: RemediationDraft,
-) -> str:
-    """검증된 호출 기록만 선택적 Langfuse 전송 자료로 변환한다.
-
-    입력 거부나 기록 누락은 `skipped_no_record`, 기록 검증 실패는
-    `skipped_invalid_record`를 반환한다. 예상 밖 오류는 `projection_failed`로
-    줄여 반환하고 이미 나온 검토 결과는 유지한다.
-    """
-    if result.status in {
-        AgenticReviewStatus.INPUT_REJECTED,
-        AgenticReviewStatus.PROVENANCE_FAILED,
-    }:
-        return "skipped_no_record"
-    # 선택적 투영이 실패해도 이미 검증된 검토 결과를 보존한다.
-    try:
-        from hmda_reliability.review_ai.evaluation.langfuse import (
-            export_projection,
-            project_invocation,
-        )
-
-        if result.invocation_path is None:
-            return "skipped_no_record"
-        record = AgenticInvocationEvidence.model_validate_json(
-            result.invocation_path.read_text(encoding="utf-8")
-        )
-        if not _verify_live_provenance(
-            result,
-            settings=settings,
-            review_settings=review_settings,
-            project_revision=project_revision,
-            record=record,
-        ):
-            return "skipped_invalid_record"
-        expected_input = build_canonical_input(
-            AgenticReviewInput(
-                incident=incident,
-                evidence=[evidence],
-                draft=draft,
-                prompt_identity=PromptIdentity(),
-                project_revision=project_revision,
-            )
-        )
-        payload = project_invocation(record, expected_input=expected_input)
-        return export_projection(payload, env=environment)
-    except Exception as error:
-        _LOGGER.debug("선택적 Langfuse 투영 처리 실패: %s", type(error).__name__)
-        return "projection_failed"
 
 
 def _project_revision(environment: Mapping[str, str]) -> str:
@@ -547,65 +369,6 @@ def _build_null_spike_material() -> tuple[Incident, Evidence, RemediationDraft]:
         )
     )
     return detection.incident, detection.evidence, draft
-
-
-def _verify_live_provenance(
-    result: AgenticReviewResult,
-    *,
-    settings: RuntimeAISettings,
-    review_settings: ReviewAISettings,
-    project_revision: str,
-    record: AgenticInvocationEvidence | None = None,
-) -> bool:
-    """검토 결과와 호출 기록의 식별 정보 및 출처를 대조한다.
-
-    호출 ID·상태, 자격 증명을 제외한 설정 전체, 프로젝트 리비전과 prompt 해시를
-    확인한다. `ACCEPTED`이면 `parsed_output`과 `validation`을, 그 외 상태면
-    `failure_code`를 추가로 대조한다. `record`가 없으면 결과 경로에서 읽는다.
-    `INPUT_REJECTED`와 `PROVENANCE_FAILED`는 기록 없이도 유효한 결과로 처리한다.
-    """
-    if result.status in {
-        AgenticReviewStatus.INPUT_REJECTED,
-        AgenticReviewStatus.PROVENANCE_FAILED,
-    }:
-        return True
-    if result.invocation_id is None or result.invocation_path is None:
-        return False
-
-    try:
-        from hmda_reliability.review_ai.prompt.legacy import render_canonical_input
-
-        if record is None:
-            record = AgenticInvocationEvidence.model_validate_json(
-                result.invocation_path.read_text(encoding="utf-8")
-            )
-        replay = render_canonical_input(
-            record.canonical_input,
-            record.prompt_identity,
-            max_prompt_bytes=review_settings.max_prompt_bytes,
-        )
-    except (OSError, ValidationError, ValueError):
-        return False
-
-    common_matches = (
-        record.invocation_id == result.invocation_id
-        and record.status is result.status
-        and _configuration_matches(
-            record.configuration, settings=settings, review_settings=review_settings
-        )
-        and record.project_revision == project_revision.strip()
-        and replay.prompt_digest == record.prompt_digest
-    )
-    if not common_matches:
-        return False
-    if result.status is AgenticReviewStatus.ACCEPTED:
-        return (
-            record.parsed_output == result.output
-            and record.validation == result.validation
-            and record.validation is not None
-            and record.validation.status is ReviewValidationStatus.ACCEPTED
-        )
-    return record.failure_code == result.failure_code
 
 
 def _configuration_matches(

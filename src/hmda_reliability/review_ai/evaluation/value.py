@@ -14,7 +14,7 @@ from enum import StrEnum
 from pydantic import Field, model_validator
 
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
-from hmda_reliability.review_ai.contracts import AgenticReviewOutput
+from hmda_reliability.review_ai.staged.contracts import StagedReviewOutput
 
 
 class RubricCriterion(StrEnum):
@@ -85,13 +85,13 @@ class ReviewValueAssessment(ReliabilityContract):
     evaluation_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
     case_id: str = Field(min_length=1, max_length=256)
     case_version: str = Field(min_length=1, max_length=64)
-    invocation_id: str = Field(min_length=1, max_length=256)
+    workflow_id: str = Field(min_length=1, max_length=256)
     project_revision: str = Field(min_length=1, max_length=256)
     rubric_id: str = Field(pattern=r"^rubric_v1$")
     output_kind: str = Field(pattern=r"^(baseline|candidate)$")
     output_fixture_id: str = Field(min_length=1, max_length=256)
     output_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    output: AgenticReviewOutput
+    output: StagedReviewOutput
     scores: tuple[RubricScore, ...] = Field(min_length=5, max_length=5)
 
     @model_validator(mode="after")
@@ -140,15 +140,15 @@ class ReviewValueComparisonEvidence(ReliabilityContract):
     rubric_id: str = Field(pattern=r"^rubric_v1$")
     baseline_evaluation_id: str = Field(min_length=1, max_length=128)
     baseline_output_kind: str = Field(pattern=r"^(baseline|candidate)$")
-    baseline_invocation_id: str = Field(min_length=1, max_length=256)
+    baseline_workflow_id: str = Field(min_length=1, max_length=256)
     baseline_output_fixture_id: str = Field(min_length=1, max_length=256)
     baseline_output_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     candidate_evaluation_id: str = Field(min_length=1, max_length=128)
-    candidate_invocation_id: str = Field(min_length=1, max_length=256)
+    candidate_workflow_id: str = Field(min_length=1, max_length=256)
     candidate_output_fixture_id: str = Field(min_length=1, max_length=256)
     candidate_output_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
-    baseline_output: AgenticReviewOutput
-    candidate_output: AgenticReviewOutput
+    baseline_output: StagedReviewOutput
+    candidate_output: StagedReviewOutput
     candidate_output_kind: str = Field(pattern=r"^(baseline|candidate)$")
     change_under_test: str = Field(min_length=1, max_length=1_024)
     status: ReviewValueComparisonStatus
@@ -208,6 +208,12 @@ class ReviewValueComparisonEvidence(ReliabilityContract):
             ):
                 msg = "compared outputs must share deterministic incident facts"
                 raise ValueError(msg)
+            if (
+                self.baseline_workflow_id == self.candidate_workflow_id
+                and self.baseline_output_digest != self.candidate_output_digest
+            ):
+                msg = "compared outputs cannot conflict for one workflow"
+                raise ValueError(msg)
         elif self.decision is not None or self.blocker_code is None:
             msg = "blocked evidence cannot accept or promote a candidate"
             raise ValueError(msg)
@@ -249,6 +255,11 @@ def compare_review_value(
         or baseline.output.deterministic_facts != candidate.output.deterministic_facts
     ):
         blocker = "same_case_fact_mismatch"
+    elif (
+        baseline.workflow_id == candidate.workflow_id
+        and baseline.output_digest != candidate.output_digest
+    ):
+        blocker = "workflow_output_conflict"
 
     baseline_scores = {score.criterion: score.score for score in baseline.scores}
     candidate_scores = {score.criterion: score.score for score in candidate.scores}
@@ -269,11 +280,11 @@ def compare_review_value(
         rubric_id=baseline.rubric_id,
         baseline_evaluation_id=baseline.evaluation_id,
         baseline_output_kind=baseline.output_kind,
-        baseline_invocation_id=baseline.invocation_id,
+        baseline_workflow_id=baseline.workflow_id,
         baseline_output_fixture_id=baseline.output_fixture_id,
         baseline_output_digest=baseline.output_digest,
         candidate_evaluation_id=candidate.evaluation_id,
-        candidate_invocation_id=candidate.invocation_id,
+        candidate_workflow_id=candidate.workflow_id,
         candidate_output_fixture_id=candidate.output_fixture_id,
         candidate_output_digest=candidate.output_digest,
         baseline_output=baseline.output,
@@ -341,8 +352,8 @@ def _canonical_json_bytes(value: object) -> bytes:
     ).encode("utf-8")
 
 
-def review_output_digest(output: AgenticReviewOutput) -> str:
-    """구조화된 결과를 정규 JSON으로 바꾼 뒤 SHA-256 해시를 반환한다.
+def review_output_digest(output: StagedReviewOutput) -> str:
+    """단계 순서와 원문을 포함한 collection의 정규 JSON SHA-256을 반환한다.
 
     해시는 결과가 같은지 확인할 뿐, 평가 품질이나 결과의 출처를 증명하지 않는다.
     """

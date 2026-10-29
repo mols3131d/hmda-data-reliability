@@ -18,7 +18,7 @@ from hmda_reliability.review_ai.context import (
     ReviewContextTooLargeError,
     build_bounded_review_context,
 )
-from hmda_reliability.review_ai.contracts import AgenticReviewInput, PromptIdentity
+from hmda_reliability.review_ai.contracts import AgenticReviewInput
 from hmda_reliability.review_ai.evidence import SanitizedAgenticReviewConfiguration
 from hmda_reliability.review_ai.prompt import (
     PromptTooLargeError,
@@ -117,7 +117,6 @@ def review_null_spike_staged(
             evidence=tuple(evidence),
             draft=draft,
             project_revision=project_revision,
-            prompt_identity=PromptIdentity(),
         )
         context = build_bounded_review_context(review_input)
         canonical_input = build_canonical_input(review_input, context=context)

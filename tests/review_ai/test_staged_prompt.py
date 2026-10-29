@@ -13,12 +13,11 @@ from typing import cast
 import pytest
 from pydantic import ValidationError
 
-from hmda_reliability.review_ai.contracts import AgenticReviewInput, PromptIdentity
+from hmda_reliability.review_ai.contracts import AgenticReviewInput
 from hmda_reliability.review_ai.prompt import (
     PromptTooLargeError,
     build_canonical_input,
 )
-from hmda_reliability.review_ai.prompt.legacy import render_canonical_input
 from hmda_reliability.review_ai.staged.contracts import (
     STAGE_IDS,
     StageAnswer,
@@ -35,7 +34,6 @@ def _review_input(material: NullSpikeReviewMaterial) -> AgenticReviewInput:
         incident=material.detection.incident,
         evidence=[material.detection.evidence],
         draft=material.draft,
-        prompt_identity=PromptIdentity(version="v3"),
         project_revision="staged-prompt-test",
     )
 
@@ -246,22 +244,3 @@ def test_stage_request_digest_and_byte_limit_include_the_entire_utf8_history(
         )
     assert error.value.actual_bytes == len(expected_bytes)
     assert error.value.max_bytes == len(expected_bytes) - 1
-
-
-@pytest.mark.unit
-@pytest.mark.parametrize(
-    ("version", "digest"),
-    [
-        ("v1", "a7dcf7b88a7b283d293a21392b2c7f9c5abc5e96b9d653e7b498df534bd9adb3"),
-        ("v2", "5df847ec00346bf158fa944548fd773b717f75905e269f90c67e7860c381b3df"),
-        ("v3", "02dd4098f82cb3d1f25fa8deb0c8109eb689991db7aa6720e6f7c596d5d6b23b"),
-    ],
-)
-def test_staged_modules_preserve_legacy_structured_prompt_bytes(
-    version: str, digest: str
-) -> None:
-    rendered = render_canonical_input(
-        {}, PromptIdentity.model_validate({"version": version}), max_prompt_bytes=65_536
-    )
-
-    assert rendered.prompt_digest == f"sha256:{digest}"

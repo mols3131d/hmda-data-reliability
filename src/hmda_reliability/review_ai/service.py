@@ -1,7 +1,6 @@
 """현재 한국어 단계별 텍스트 검토의 일반 진입점.
 
-모델이 텍스트를 반환하고 코드가 JSON을 취합한다. 과거 version을 선택한
-JSON 검토는 review_ai.legacy.review_null_spike에서만 제공한다.
+모델은 한국어 텍스트로 답하고 결과 JSON은 코드가 조립한다.
 """
 
 from hmda_reliability.review_ai.staged.service import (

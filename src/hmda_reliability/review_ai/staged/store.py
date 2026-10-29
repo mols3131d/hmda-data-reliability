@@ -9,7 +9,6 @@ from hmda_reliability.review_ai.staged.contracts import StagedReviewOutput, Stag
 from hmda_reliability.review_ai.staged.evidence import StagedReviewManifest, StageRecord
 from hmda_reliability.review_ai.store import (
     InvocationEvidenceExistsError,
-    InvocationEvidenceStore,
     InvocationEvidenceWriteError,
     InvocationResponseStore,
     write_review_json,
@@ -35,24 +34,20 @@ class StagedReviewStore:
 
         directory = self.directory(workflow_id)
         response_store = InvocationResponseStore(self.artifact_root)
-        evidence_store = InvocationEvidenceStore(self.artifact_root)
         for stage in STAGE_IDS:
             invocation_id = f"{workflow_id}-{stage}"
-            for path in (
-                response_store.path_for(invocation_id),
-                evidence_store.path_for(invocation_id),
-            ):
-                try:
-                    path.lstat()
-                except FileNotFoundError:
-                    continue
-                except OSError:
-                    raise InvocationEvidenceWriteError(
-                        "staged response identity could not be inspected"
-                    ) from None
-                raise InvocationEvidenceExistsError(
-                    "staged response identity already exists"
-                )
+            path = response_store.path_for(invocation_id)
+            try:
+                path.lstat()
+            except FileNotFoundError:
+                continue
+            except OSError:
+                raise InvocationEvidenceWriteError(
+                    "staged response identity could not be inspected"
+                ) from None
+            raise InvocationEvidenceExistsError(
+                "staged response identity already exists"
+            )
         try:
             directory.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             directory.mkdir(mode=0o700)

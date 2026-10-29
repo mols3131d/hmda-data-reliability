@@ -198,7 +198,7 @@ def test_provider_failure_records_attempts_and_preserves_prior_raw(
 def test_later_history_limit_is_checked_before_provider_call(
     null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
 ) -> None:
-    from hmda_reliability.review_ai.contracts import AgenticReviewInput, PromptIdentity
+    from hmda_reliability.review_ai.contracts import AgenticReviewInput
     from hmda_reliability.review_ai.prompt import build_canonical_input
     from hmda_reliability.review_ai.staged.prompt import render_stage_prompt
 
@@ -207,7 +207,6 @@ def test_later_history_limit_is_checked_before_provider_call(
         incident=material.detection.incident,
         evidence=[material.detection.evidence],
         draft=material.draft,
-        prompt_identity=PromptIdentity(),
         project_revision="revision-under-test",
     )
     first = render_stage_prompt(

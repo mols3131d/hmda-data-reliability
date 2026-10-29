@@ -25,7 +25,6 @@ def test_staged_live_runs_real_sdk_history_and_mechanically_collects_text(
     second_finish: str,
 ) -> None:
     environment = _live_environment(tmp_path)
-    environment.pop("HMDA_AGENTIC_REVIEW_MODE")
     environment["HMDA_AGENTIC_REVIEW_MAX_RETRIES"] = "0"
     texts = (
         '  근거 검토: "관측"을 확인한다.\n',

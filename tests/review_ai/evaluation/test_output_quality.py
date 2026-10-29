@@ -1,4 +1,4 @@
-"""독립 수치 oracle과 합성 prose 결함은 structured acceptance와 구별한다.
+"""독립 수치 oracle과 합성 prose 결함은 수집 완료 및 사람 평가와 구별한다.
 
 이 corpus는 live 출력이나 human rubric 평가가 아니다. 의미 품질 label은
 검토자가 참고할 고정 annotation이며 자동 semantic classifier로 사용하지 않는다.
@@ -23,24 +23,21 @@ from hmda_reliability.reliability import (
 )
 from hmda_reliability.reliability.detection.thresholds import DetectionThresholds
 from hmda_reliability.review_ai.context import build_bounded_review_context
-from hmda_reliability.review_ai.contracts import (
-    AgenticReviewInput,
-    AgenticReviewOutput,
-    PromptIdentity,
+from hmda_reliability.review_ai.contracts import AgenticReviewInput
+from hmda_reliability.review_ai.staged.contracts import (
+    StageAnswer,
+    assemble_staged_output,
 )
-from hmda_reliability.review_ai.prompt.legacy import render_review_prompt
-from hmda_reliability.review_ai.validator import validate_agentic_review
 
 pytestmark = pytest.mark.unit
 
-_CORPUS_PATH = Path(__file__).with_name("fixtures") / "output_quality_v1.json"
+_CORPUS_PATH = Path(__file__).with_name("fixtures") / "output_quality_staged_v1.json"
 _CORPUS = json.loads(_CORPUS_PATH.read_text(encoding="utf-8"))
 _CASES = _CORPUS["cases"]
-_ACCEPTED_CONTROLS = [
+_CONTROLS = [
     pytest.param(case, control, id=f"{case['case_id']}/{control['control_id']}")
     for case in _CASES
     for control in case["controls"]
-    if control["expected_structured_validation"] == "accepted"
 ]
 _BACKFILL = (
     "원인 확인과 사람의 승인 후 2025 partition backfill의 필요성 및 범위를 검토한다."
@@ -99,7 +96,6 @@ def test_portable_input_replays_real_detection_and_draft_contracts(
         incident=incident_payload,
         evidence=evidence,
         draft=draft_payload,
-        prompt_identity=PromptIdentity(version="v2"),
         project_revision="fixture-output-quality-v1",
     )
 
@@ -183,57 +179,55 @@ def test_supplied_sources_and_backfill_case_are_distinct_from_missing_cases() ->
     ]
 
 
-@pytest.mark.parametrize(("case", "control"), _ACCEPTED_CONTROLS)
-def test_known_prose_failures_and_good_controls_all_pass_current_structured_guard(
+@pytest.mark.parametrize(("case", "control"), _CONTROLS)
+def test_current_collection_keeps_prose_exact_and_copies_only_the_input_facts(
     case: dict[str, Any], control: dict[str, Any]
 ) -> None:
-    """잘못된 prose의 accepted는 guard 한계이며 품질 합격 증거가 아니다."""
+    """틀린 prose도 진단 자료이며 수집이나 facts 복사가 품질 판정은 아니다."""
     review_input = _input(case)
-    output = AgenticReviewOutput.model_validate(control["output"])
+    before = review_input.model_dump(mode="json")
+    answers = tuple(StageAnswer.model_validate(item) for item in control["answers"])
+
+    output = assemble_staged_output(review_input, answers)
 
     assert output.incident_id == review_input.incident.incident_id
     assert output.target_column == review_input.target_column
     assert output.deterministic_facts == review_input.deterministic_facts
-    validation = validate_agentic_review(review_input, output)
+    assert output.stages == answers
+    assert [item.model_dump(mode="json") for item in output.stages] == control[
+        "answers"
+    ]
+    assert review_input.model_dump(mode="json") == before
 
-    assert validation.status == "accepted"
-    assert validation.violations == ()
-    assert validation.policy_id == "structured-fact-validation-v1"
 
-
-def test_structured_fact_mismatch_is_rejected_as_contrast_to_prose_failures() -> None:
+def test_incorrect_numeric_prose_does_not_replace_the_collected_input_facts() -> None:
     case = _CASES[0]
     control = next(
-        item
-        for item in case["controls"]
-        if item["control_id"] == "structured-fact-mismatch"
+        item for item in case["controls"] if item["control_id"] == "wrong-number"
     )
     review_input = _input(case)
-    output = AgenticReviewOutput.model_validate(control["output"])
-
-    validation = validate_agentic_review(review_input, output)
-
-    assert output.deterministic_facts.current_null_rate == 0.31
-    assert validation.status == "rejected"
-    assert validation.violations == ("deterministic_contradiction",)
-
-
-def test_v2_example_copy_exact_match_is_only_a_test_signal() -> None:
-    case = _CASES[0]
-    copied = next(
-        item for item in case["controls"] if item["control_id"] == "copied-example"
-    )
-    good = next(item for item in case["controls"] if item["control_id"] == "good")
-    descriptions = set(_CORPUS["v2_example_descriptions"])
-    system_prompt = (
-        render_review_prompt(_input(case), max_prompt_bytes=65_536).messages[0].content
+    output = assemble_staged_output(
+        review_input,
+        tuple(StageAnswer.model_validate(item) for item in control["answers"]),
     )
 
-    assert len(descriptions) == 4
-    assert all(description in system_prompt for description in descriptions)
+    assert "threshold는 0.1%다." in output.stages[0].text
+    assert output.deterministic_facts.current_null_rate == 0.21
+    assert output.deterministic_facts.threshold == 0.1
+
+
+def test_quality_annotations_are_synthetic_and_do_not_claim_human_scores() -> None:
+    assert _CORPUS["evidence_kind"] == "synthetic_test_fixture"
+    assert _CORPUS["human_evaluation"] == "not_performed"
     assert {
-        item["description"] for item in copied["output"]["utility_contributions"]
-    } == descriptions
-    assert not descriptions.intersection(
-        item["description"] for item in good["output"]["utility_contributions"]
-    )
+        issue
+        for case in _CASES
+        for control in case["controls"]
+        for issue in control["quality_issues"]
+    } == {
+        "numeric_error",
+        "no_added_utility",
+        "unsupported_cause",
+        "nonexistent_draft_action",
+        "undefined_relative_increase",
+    }

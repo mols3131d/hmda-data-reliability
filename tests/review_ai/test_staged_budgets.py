@@ -186,20 +186,3 @@ def test_invalid_execution_budgets_are_rejected(value: float) -> None:
         StagedExecutionSettings(stage_budget_seconds=value)
     with pytest.raises(ValidationError):
         StagedExecutionSettings(workflow_budget_seconds=value)
-
-
-@pytest.mark.unit
-def test_static_historical_manifest_has_unknown_execution_settings() -> None:
-    historical = b"""{
-      "workflow_id":"sr-history", "project_revision":"historic", "status":"unavailable",
-      "configuration":{"base_url":"http://localhost:11434/v1","model":"historic-model",
-      "timeout_seconds":30,"max_retries":0,"temperature":0,"max_output_tokens":1024,
-      "max_prompt_bytes":65536,"max_output_bytes":32768},
-      "canonical_input":{},"stages":[{"stage_id":"evidence_review","status":"unavailable",
-      "attempt_count":1,"failure_code":"provider_connection_error","latency_ms":30000}],
-      "physical_attempts":1,"max_physical_attempts":3,"failure_code":"provider_connection_error"
-    }"""
-    manifest = StagedReviewManifest.model_validate_json(historical)
-    assert manifest.execution_settings is None and manifest.elapsed_ms is None
-    assert manifest.stages[0].budget_seconds is None
-    assert manifest.stages[0].elapsed_ms is None

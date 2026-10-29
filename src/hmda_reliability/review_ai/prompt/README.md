@@ -14,12 +14,6 @@
 
 현재 조합은 [staged/prompt.py](../staged/prompt.py)가 소유한다. 고정된 모듈의 system 지시문과 별도 user 사례 입력, 이전 assistant 답변을 함께 전달한다. 전체 메시지 배열에 byte cap과 digest를 적용하며 사례 데이터가 모듈을 선택하지 않는다. 모듈은 import 시 로드하므로 편집 뒤에는 새 process에서 확인한다.
 
-## Legacy Snapshots
-
-과거 v1/v2/v3 JSON 지시문은 [legacy/](legacy/)의 고정된 완성 Markdown snapshot이다. [명시적 legacy renderer](legacy/__init__.py)만 이 리소스를 읽는다. 현재 공유 모듈을 수정해도 legacy 본문·digest는 바뀌지 않는다. 일반 API import와 현재 프롬프트 조립은 legacy를 로드하지 않는다.
-
-과거 JSON 검토의 실행은 [review_ai.legacy](../legacy/__init__.py)에서 version을 명시한다. 더 오래된 invocation은 기록된 project_revision의 renderer와 리소스로 재현하며 저장된 identity·digest를 다시 쓰지 않는다.
-
 ## Lifecycle
 
-현재 실행 경로의 workflow identity `staged-v1`은 출처 기록용이며 retired v1/v2/v3 중 하나를 선택하는 설정이 아니다. 일반 진입점의 선택 원칙은 [Prompt lifecycle and active default](../../../../openspec/specs/review-ai-prompt-engineering/spec.md#requirement-prompt-lifecycle-and-active-default)가 소유한다. 실행 경로의 통일은 실제 모델 품질이 검증됐다는 의미가 아니다.
+현재 실행 경로의 workflow identity `staged-v1`은 출처 기록용이며 현재 프롬프트를 선택하는 환경 설정은 없다. 일반 진입점의 선택 원칙은 [Prompt lifecycle and active default](../../../../openspec/specs/review-ai-prompt-engineering/spec.md#requirement-prompt-lifecycle-and-active-default)가 소유한다. 실행 경로의 통일은 실제 모델 품질이 검증됐다는 의미가 아니다.

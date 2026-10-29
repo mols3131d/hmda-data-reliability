@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib.util import find_spec
 from pathlib import Path
 
 import pytest
@@ -19,13 +20,9 @@ pytestmark = pytest.mark.unit
 def test_review_ai_exports_only_consumer_surface() -> None:
     assert set(review_ai.__all__) == {
         "AgenticReviewInput",
-        "AgenticReviewOutput",
-        "AgenticReviewResult",
-        "AgenticReviewUtilityContribution",
         "BoundedReviewContext",
         "HumanDecision",
         "ReviewValueAssessment",
-        "PromptIdentity",
         "RUBRIC_V1",
         "StageAnswer",
         "StagedExecutionSettings",
@@ -37,6 +34,14 @@ def test_review_ai_exports_only_consumer_surface() -> None:
         "review_null_spike",
         "review_null_spike_staged",
     }
+
+
+@pytest.mark.parametrize(
+    "module",
+    ["legacy", "prompt.legacy", "diagnostics", "validator", "evaluation.langfuse"],
+)
+def test_removed_review_implementations_are_not_available(module: str) -> None:
+    assert find_spec(f"hmda_reliability.review_ai.{module}") is None
 
 
 def test_runtime_ai_exports_only_explicit_settings() -> None:

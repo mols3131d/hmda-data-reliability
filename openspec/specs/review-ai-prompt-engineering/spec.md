@@ -2,143 +2,139 @@
 
 ## Purpose
 
-Review AI의 현재 프롬프트를 책임별 모듈로 관리하고 retired version을 legacy로 보존하며, 한국어 설명과 변경 근거를 일관되게 유지한다. 입력·출력 shape, deterministic validation과 실행 권한은 [reliability-agentic-review](../reliability-agentic-review/spec.md)가 소유한다.
-
-기존 v1/v2/v3 리소스와 JSON 응답 요구사항은 명시적 legacy structured 경로에만 적용한다. 단계별 텍스트 조합은 별도 `staged-v1` identity와 [Staged text prompt modules](#requirement-staged-text-prompt-modules) 계약을 따른다.
+현재 한국어 검토 프롬프트를 책임별 Markdown 모듈로 관리하고 고정 순서로 조립한다. 모듈은 관리·재사용·가독성을 위한 경계이며 실행에서 선택하는 과거 버전 모음이 아니다. 입력·collection·시간 예산·원문 보존·실행 권한은 [reliability-agentic-review](../reliability-agentic-review/spec.md)가 소유한다.
 
 ## Requirements
 
 ### Requirement: Staged text prompt modules
 
-시스템은 단계별 검토 질문과 prose 출력 방식을 한국어 Markdown 모듈로 관리해야 한다(SHALL). 단계별 조합은 적용 가능한 기존 작업·검토 지침·자문 경계를 재사용하고, 현재 단계의 신뢰된 system 질문과 별도 canonical input 및 assistant 자료를 결합해야 한다(SHALL). 단계별 출력 지시는 JSON 객체·키·타입 생성을 모델에 요구해서는 안 된다(MUST NOT).
-
-기존 버전별 JSON 지시문 요구사항은 structured 경로에 적용하고 staged text 조합은 별도 identity로 구분해야 한다(SHALL). 기존 v1/v2/v3 프롬프트와 과거 실행 기록을 staged 내용으로 바꿔서는 안 된다(MUST NOT).
+시스템은 근거 검토·초안 비판·종합의 세 단계 질문과 일반 텍스트 출력을 한국어 Markdown 모듈로 관리해야 한다(SHALL). 각 조합은 적용 가능한 공통 작업·언어·수치·근거·검토 가치·자문 지침과 현재 단계의 신뢰된 system 질문을 결합해야 한다(SHALL). Canonical input과 이전 assistant 답변은 별도 자료로 전달하고 모델에 JSON 객체·키·타입 생성을 요구해서는 안 된다(MUST NOT).
 
 #### Scenario: Each stage requests prose for one review concern
 
-- **WHEN** 근거 검토, 초안 비판 또는 종합 단계의 프롬프트를 조립할 때
-- **THEN** 현재 단계의 질문·한국어 일반 텍스트 출력·자문 경계가 system에 포함되고 기존 전체 JSON 출력 설명은 포함되지 않아야 한다(SHALL).
+- **WHEN** 현재 단계의 프롬프트를 조립할 때
+- **THEN** 해당 질문·한국어 일반 텍스트 출력·자문 경계를 포함하고 전체 JSON 생성 지시를 포함해서는 안 된다(MUST NOT).
 
-#### Scenario: Replaying old structured invocations
+#### Scenario: Later stages retain prior text as context
 
-- **WHEN** 기존 identity·revision으로 과거 structured invocation을 재현할 때
-- **THEN** staged 조합 선택이 기존 메시지·digest 또는 출력 계약을 바꾸어서는 안 된다(MUST NOT).
+- **WHEN** 초안 비판이나 종합 단계를 조립할 때
+- **THEN** 같은 canonical input과 이전 원문을 대화 자료로 유지하고 현재 질문은 신뢰된 모듈에서 선택해야 한다(SHALL).
 
-### Requirement: Inspectable versioned prompt resources
+### Requirement: Inspectable modular prompt resources
 
-현재 프롬프트는 작업·언어·출력·검토 지침·자문 정책·단계 질문의 책임별 UTF-8 Markdown 모듈로 관리하고 고정 순서로 조립해야 한다(SHALL). 같은 의미와 전제의 현재 모듈은 공유하고 사례 데이터가 모듈 선택이나 system 본문을 바꾸어서는 안 된다(MUST NOT). 조립기는 정해진 구분자 외의 공백·개행을 임의로 변경해서는 안 된다(MUST NOT).
+현재 프롬프트는 작업·언어·출력·검토 지침·자문 정책·단계 질문의 책임별 UTF-8 Markdown 파일로 관리하고 repository가 정한 고정 순서로 조립해야 한다(SHALL). 같은 의미·전제의 규칙은 하나의 모듈을 공유하고 재사용 전 작업·입력·출력 전제의 호환성을 확인해야 한다(SHALL). 조립기는 정해진 구분자 외에 원문 공백·개행을 임의로 변경해서는 안 된다(MUST NOT).
 
-Retired v1/v2/v3는 legacy 디렉터리의 고정된 완성 본문 snapshot으로 보존해야 한다(SHALL). 과거 snapshot의 내용은 현재 공유 모듈의 수정과 독립적이어야 하며 기존 메시지·digest를 유지해야 한다(SHALL). 이 역사 보존용 복제는 현재 모듈의 공통 규칙 중복 관리로 취급하지 않는다. 일반 실행을 import하거나 현재 프롬프트를 조립할 때 legacy version 맵이나 snapshot을 로드해서는 안 된다(MUST NOT).
-
-현재 조합과 명시적으로 선택한 legacy 조합 모두 전체 메시지의 byte cap·digest를 적용하고 checkout 밖의 배포 wheel에서 같은 메시지를 제공해야 한다(SHALL). 모델 JSON 생성 지시는 legacy 조합에만 적용해야 한다(SHALL).
-
-#### Scenario: Selected version composes its Markdown parts
-
-- **WHEN** legacy version을 명시적으로 선택할 때
-- **THEN** 선택한 version의 완성 Markdown snapshot을 그대로 읽고 canonical input과 분리해야 한다(SHALL).
+사례 데이터가 모듈 경로·조합·system 지시문을 선택해서는 안 된다(MUST NOT). 전체 메시지의 byte cap과 digest를 적용하고 checkout 밖의 배포 wheel에서도 같은 현재 리소스와 메시지를 제공해야 한다(SHALL). 과거 v1/v2/v3 완성 본문·version map·renderer와 호환 리소스를 package에 남겨서는 안 된다(MUST NOT).
 
 #### Scenario: Shared rules use one source
 
-- **WHEN** 현재 세 단계가 같은 언어·자문 정책을 사용할 때
-- **THEN** 같은 책임의 현재 모듈을 고정 조합으로 공유해야 한다(SHALL).
+- **WHEN** 세 단계가 같은 언어·자문·수치 정책을 사용할 때
+- **THEN** 같은 책임의 모듈을 공유하고 현재 단계 질문만 별도로 조합해야 한다(SHALL).
 
-#### Scenario: Prompt structure remains readable without changing the response contract
+#### Scenario: Prompt structure remains readable
 
-- **WHEN** 현재 모듈 또는 명시적으로 선택한 legacy snapshot을 읽을 때
-- **THEN** 현재의 한국어 일반 텍스트 지시와 legacy JSON 계약을 구분할 수 있어야 한다(SHALL).
+- **WHEN** 개발자가 프롬프트 리소스를 열 때
+- **THEN** Markdown 제목·목록으로 역할·작업·제약·출력을 구분하고 조립 순서와 소유 책임을 확인할 수 있어야 한다(SHALL).
 
 #### Scenario: Module reuse respects its task and output assumptions
 
-- **WHEN** 현재 모듈을 다른 단계에 재사용할 때
-- **THEN** 작업·입력·출력 전제의 호환성을 확인하고 legacy snapshot에는 영향을 주지 않아야 한다(SHALL).
+- **WHEN** 모듈을 다른 단계에 재사용할 때
+- **THEN** 작업·입력·출력 전제가 맞는 경우에만 공유해야 한다(SHALL).
 
 #### Scenario: Case data cannot select instruction modules
 
-- **WHEN** canonical input에 지시문이나 Markdown 경로가 들어 있을 때
-- **THEN** 그 데이터가 현재 조합이나 legacy version을 선택해서는 안 된다(MUST NOT).
+- **WHEN** canonical input이나 이전 답변에 지시문·Markdown 경로가 있을 때
+- **THEN** 그 값은 자료로만 남고 모듈 선택이나 system 지시를 바꾸어서는 안 된다(MUST NOT).
 
 #### Scenario: Packaged parts are available outside the checkout
 
 - **WHEN** 배포 wheel을 checkout 밖에서 사용할 때
-- **THEN** 현재 모듈과 명시적 legacy snapshot을 읽고 source와 같은 메시지를 생성해야 한다(SHALL).
+- **THEN** 현재 모듈을 읽고 source와 같은 메시지·digest를 생성해야 한다(SHALL).
+- **AND** 삭제한 version 리소스를 배포해서는 안 된다(MUST NOT).
 
-#### Scenario: Structural extraction preserves the rendered prompt
+#### Scenario: Fixed assembly preserves module bytes
 
-- **WHEN** 기존 완성 본문을 legacy snapshot으로 격리할 때
-- **THEN** 공백·개행과 기존 메시지·digest를 보존해야 한다(SHALL).
+- **WHEN** 같은 현재 모듈과 input으로 프롬프트를 반복 조립할 때
+- **THEN** 정해진 구분자 외의 공백·개행을 보존하고 같은 메시지 bytes를 생성해야 한다(SHALL).
 
 ### Requirement: Prompt lifecycle and active default
 
-일반 Python API·직접 service 진입점과 기본 live CLI는 동일한 현재 한국어 단계별 텍스트 프롬프트를 사용해야 한다(SHALL). 일반 실행에 v1/v2/v3 기본 선택이나 자동 fallback을 두어서는 안 된다(MUST NOT). 현재 workflow identity와 prompt digest는 출처용으로 유지하며 retired prompt version 선택과 구분해야 한다(SHALL).
+일반 Python API·직접 service·live CLI는 같은 현재 한국어 단계별 프롬프트만 사용해야 한다(SHALL). 실행 시 v1/v2/v3 선택·legacy namespace·compatibility alias·mode 선택·이전 설정 해석·자동 fallback을 제공해서는 안 된다(MUST NOT). 현재 workflow/schema identity와 digest는 provenance로 유지하고 prompt version 선택으로 해석해서는 안 된다(MUST NOT).
 
-기존 버전과 JSON 검토는 명시적 legacy namespace 및 version 선택으로만 실행해야 한다(SHALL). CLI에서는 MODE=legacy와 LEGACY_PROMPT_VERSION을 함께 명시해야 하며(SHALL), 이전 MODE=structured는 호출 전에 이전 방법을 안내하고 거부해야 한다(SHALL). 일반 환경에 남은 PROMPT_VERSION은 현재 프롬프트를 바꾸어서는 안 되며(MUST NOT), 안내에 그 값이나 자격 증명을 포함해서는 안 된다(MUST NOT).
-
-이 전환은 사용자가 요청한 실행 경로의 변경이며 모델 품질 개선이나 legacy v3의 품질 채택 근거로 해석해서는 안 된다(MUST NOT). 과거 identity·revision·digest와 결과를 현재 실행에 맞춰 재작성해서는 안 된다(MUST NOT).
+이 전환은 사용자가 요청한 실행 계약의 변경이며 모델 품질 개선의 증거가 아니다. 과거 artifact·문서·Git 기록의 identity·revision·digest·결과를 삭제하거나 현재 결과에 맞춰 재작성해서는 안 된다(MUST NOT). 과거 실행을 위한 호환 구현을 현재 package에 유지할 의무는 없다.
 
 #### Scenario: General entrypoints use current prompts
 
-- **WHEN** 일반 API 또는 live CLI를 version 없이 실행할 때
-- **THEN** 같은 현재 세 단계의 한국어 텍스트를 요청하고 결과 JSON을 코드로 취합해야 한다(SHALL).
+- **WHEN** 일반 API 또는 live CLI를 실행할 때
+- **THEN** version이나 mode 선택 없이 같은 현재 세 단계 텍스트를 요청하고 JSON은 코드로 취합해야 한다(SHALL).
 
-#### Scenario: Stale version variables cannot choose a retired prompt
+#### Scenario: Current imports exclude retired prompt selection
 
-- **WHEN** 일반 환경에 기존 PROMPT_VERSION 값이 남아 있을 때
-- **THEN** 현재 실행을 유지하고 안내에는 키 이름만 표시해야 한다(SHALL).
+- **WHEN** 현재 공개 API와 배포 리소스를 검사할 때
+- **THEN** 과거 version map·snapshot·renderer·선택 인자 또는 환경 분기를 제공해서는 안 된다(MUST NOT).
 
-#### Scenario: Legacy selection requires an explicit version
+### Requirement: Evidence-grounded prose instructions
 
-- **WHEN** MODE=legacy이지만 LEGACY_PROMPT_VERSION이 없거나 유효하지 않을 때
-- **THEN** 기존 version 기본값이나 옛 환경 변수로 fallback하지 않고 provider 호출 전에 거부해야 한다(SHALL).
+지시문은 rate·percentage-point 차이·delta threshold와 baseline-zero에서 정의되지 않는 상대 변화율을 구별하도록 안내해야 한다(SHALL). 코드는 structured facts를 입력에서 그대로 가져오며 모델은 설명에서만 읽기 쉬운 단위를 사용하도록 안내해야 한다(SHALL).
 
-#### Scenario: Removed structured mode cannot silently run legacy
+제공된 Evidence와 실제 draft를 대조하고 미확인 원인·검증 결과를 확정하거나 존재하지 않는 draft action을 비판하지 않도록 안내해야 한다(SHALL). 검토 가치는 단순 재서술을 넘어 확인 우선순위와 결과에 따라 달라지는 사람의 다음 판단에 연결해야 한다(SHALL). 이런 지시문을 임의 자연어를 거부하는 deterministic classifier로 바꾸어서는 안 된다(MUST NOT).
 
-- **WHEN** MODE=structured가 남아 있을 때
-- **THEN** 현재 또는 legacy provider를 호출하지 않고 명시적 이전 방법을 안내해야 한다(SHALL).
+#### Scenario: Numeric units remain distinct
+
+- **WHEN** baseline 0.01·current 0.21·delta 0.20인 사례를 검토할 때
+- **THEN** 1%에서 21%로 20 percentage points 증가한 것과 baseline 대비 2000% 증가를 구별하도록 안내해야 한다(SHALL).
+- **AND** baseline이 0이면 상대 변화율을 계산할 수 없음을 안내해야 한다(SHALL).
+
+#### Scenario: Evidence gaps lead to bounded next decisions
+
+- **WHEN** 원인이나 검증 결과가 제공되지 않았을 때
+- **THEN** gap과 불확실성을 밝히고 실제 근거·draft에 연결된 다음 확인을 제안하도록 안내해야 한다(SHALL).
 
 ### Requirement: Korean instructions and narrative output
 
-지원하는 모든 version의 역할·작업·제약·설명 지시문 및 내용 예시의 자연어는 한국어로 작성해야 한다(SHALL). 지시문은 `review_summary`, `findings[].description`, `uncertainties`의 각 항목과 `utility_contributions[].description`을 한국어로 작성하도록 모델에 요청해야 한다(SHALL). Review AI가 자체 생성하는 `review_context.gaps[].description`과 빈 근거 요약의 대체 문구도 한국어로 작성해야 한다(SHALL). JSON 필드명, 열거값, 입력 식별자·근거 ID와 구조화된 수치는 원표기를 유지하도록 요청해야 한다(SHALL). 원본 입력 데이터는 번역을 위해 재작성해서는 안 된다(MUST NOT).
+현재 모든 역할·작업·제약·설명 지시문의 자연어는 한국어여야 하며 단계별 답변도 한국어로 요청해야 한다(SHALL). 자체 생성한 `review_context.gaps[].description`과 빈 근거 요약의 대체 문구도 한국어로 작성해야 한다(SHALL). 입력 식별자·근거 ID·원본 수치·선언된 API 및 schema 식별자는 원표기를 보존하고 원본 자료를 번역 목적으로 재작성해서는 안 된다(MUST NOT).
 
-#### Scenario: Every supported version requests Korean prose
+#### Scenario: Every stage requests Korean prose
 
-- **WHEN** v1, v2 또는 v3 프롬프트를 선택할 때
-- **THEN** system 지시문은 한국어이며 네 종류의 설명 필드에 한국어 작성을 명시해야 한다(SHALL).
-- **AND** `null_spike`, `investigation_priority`, `high` 같은 계약 값은 번역하지 않도록 안내해야 한다(SHALL).
+- **WHEN** 세 단계 중 하나를 조립할 때
+- **THEN** system은 한국어 검토와 원표기의 입력 식별자·수치 보존을 명시해야 한다(SHALL).
 
-#### Scenario: Korean output preserves the structured contract
+#### Scenario: Korean output preserves the collection contract
 
-- **WHEN** 모델이 한국어 설명문과 원표기의 필드명·열거값·식별자·수치를 반환할 때
-- **THEN** 기존 출력 schema와 structured-fact validator를 그대로 적용해야 한다(SHALL).
+- **WHEN** 모델이 한국어 일반 텍스트를 반환할 때
+- **THEN** 코드는 원문을 유지하고 input identity·facts와 고정 단계 ID로 collection을 만들어야 한다(SHALL).
 
 #### Scenario: Generated context gaps use Korean descriptions
 
-- **WHEN** Review AI가 누락된 근거, 개수 제한으로 제외된 근거 또는 미확정 원인의 context gap을 생성할 때
-- **THEN** 설명문은 한국어로 작성하고 gap의 kind, topic과 원본 Evidence 내용은 보존해야 한다(SHALL).
+- **WHEN** 누락·제외된 근거 또는 미확정 원인의 gap을 생성할 때
+- **THEN** 설명은 한국어로 작성하고 kind·topic과 원본 Evidence는 보존해야 한다(SHALL).
 
 #### Scenario: Missing evidence summary uses a Korean fallback
 
-- **WHEN** 제공된 Evidence의 summary가 비어 있거나 공백뿐일 때
-- **THEN** bounded context에는 한국어 대체 문구를 사용하고 원본 Evidence는 변경하지 않아야 한다(SHALL).
+- **WHEN** Evidence summary가 비어 있거나 공백뿐일 때
+- **THEN** bounded context에 한국어 대체 문구를 사용하고 원본 Evidence를 바꾸지 않아야 한다(SHALL).
 
 ### Requirement: Revision-bound prompt change evidence
 
-지시문의 언어·내용·공백이 바뀌면 현재 메시지 바이트와 digest의 변경을 검증하고 기록해야 한다(SHALL). 현재 revision 안에서 동일 version과 canonical input의 렌더링은 결정적이어야 한다(SHALL). 과거 invocation의 identity, revision과 digest는 재작성해서는 안 되며(MUST NOT), 과거 프롬프트는 기록된 `project_revision`의 renderer와 리소스로 재생해야 한다(SHALL). version 이름이 같다는 이유만으로 서로 다른 revision의 digest가 같다고 간주해서는 안 된다(MUST NOT).
+현재 모듈의 언어·내용·공백이 바뀌면 메시지 bytes와 digest 변경을 검증하고 기록해야 한다(SHALL). 같은 revision·canonical input·완료 단계 원문으로 조립한 메시지는 결정적이어야 한다(SHALL). 기록한 revision과 digest를 현재 실행의 기본값으로 소급 변경해서는 안 된다(MUST NOT).
 
-#### Scenario: Translation changes the current digest
+과거 구현이 필요하면 기록된 Git revision을 확인한다. 현재 package가 과거 prompt version·기록 shape를 읽거나 실행하는 호환 API를 제공해서는 안 된다(MUST NOT).
 
-- **WHEN** 지원하는 프롬프트의 영어 지시문을 한국어로 바꿀 때
-- **THEN** 현재 한국어 메시지의 digest를 별도로 고정하고 과거 영어 invocation의 기록은 보존해야 한다(SHALL).
+#### Scenario: Prompt edits change the current digest
 
-#### Scenario: Historical invocation replay uses its revision
+- **WHEN** 현재 지시문의 언어·내용·공백을 바꿀 때
+- **THEN** 현재 메시지의 새 digest를 검증하고 과거 artifact의 digest를 유지해야 한다(SHALL).
 
-- **WHEN** 저장된 version과 canonical input을 기록된 application revision의 renderer와 리소스에 제공할 때
-- **THEN** 과거 invocation에 기록된 메시지 digest와 일치해야 한다(SHALL).
+#### Scenario: Current rendering is revision-bound
+
+- **WHEN** 같은 revision의 모듈과 같은 사례·완료 답변으로 조립할 때
+- **THEN** 같은 누적 메시지 digest를 생성해야 한다(SHALL).
 
 ### Requirement: Language compliance remains an evaluation concern
 
-한국어 작성 지시의 존재와 실제 모델의 언어·정확성·검토 가치를 구분해야 한다(SHALL). 프롬프트 번역이나 offline fixture 통과만으로 실제 출력의 한국어 준수 또는 품질 개선을 주장해서는 안 된다(MUST NOT). 실제 출력의 언어 준수는 보존된 모델 응답을 읽어 확인할 수 있어야 하며(SHALL), 언어 판별만으로 새 deterministic rejection을 추가해서는 안 된다(MUST NOT).
+한국어 지시문의 존재와 실제 출력의 언어·정확성·검토 가치를 구분해야 한다(SHALL). 모듈 변경·offline 통과·completed만으로 실제 모델의 한국어 준수나 품질 개선을 주장해서는 안 된다(MUST NOT). 보존된 원문으로 언어 준수를 사람이 확인할 수 있어야 하며 언어 판별만으로 새 deterministic rejection을 추가해서는 안 된다(MUST NOT).
 
 #### Scenario: A language mismatch remains inspectable
 
-- **WHEN** 응답이 구조화된 계약은 만족하지만 일부 설명문을 영어로 작성할 때
-- **THEN** 기존 validation 결과를 유지하고 보존된 응답에서 언어 미준수를 검토할 수 있어야 한다(SHALL).
+- **WHEN** 수집 가능한 모델 답변이 일부 영어로 작성될 때
+- **THEN** 수집 status를 언어만으로 바꾸지 않고 보존된 원문에서 지시 위반을 평가할 수 있어야 한다(SHALL).

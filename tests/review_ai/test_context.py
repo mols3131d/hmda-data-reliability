@@ -28,7 +28,6 @@ def _review_input(
         incident=incident,
         evidence=evidence,
         draft=draft,
-        prompt_identity=contracts.PromptIdentity(),
         project_revision="utility-test-revision",
     )
 
