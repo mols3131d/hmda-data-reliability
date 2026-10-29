@@ -34,6 +34,8 @@ tags:
 
 일반 API [review_null_spike()](../../src/hmda_reliability/review_ai/service.py)와 CLI는 [같은 단계 실행](../../src/hmda_reliability/review_ai/staged/service.py)을 사용한다. 모드나 프롬프트 version을 선택하지 않는다. 같은 canonical input에서 근거 검토 → 초안 비판 → 종합을 진행하며, 완료된 이전 답변은 assistant 자료로만 다음 요청에 포함한다.
 
+실제 제공자 통합 검증은 도메인 소유의 [evaluation.live](../../src/hmda_reliability/review_ai/evaluation/live.py) 패키지 진입점에서 수행한다. 진행 상태는 stderr, 원문을 제외한 결과 JSON은 stdout, 답변 원문은 로컬 artifact로 분리한다. 대기 로그는 로컬 경과시간이며 모델 진행률이나 품질 판정이 아니다. 실행과 로그 해석은 [Evaluation Guide](../development/review-ai-evaluation.md#progress-output)를 따른다.
+
 [AgenticReviewInput](../../src/hmda_reliability/review_ai/contracts.py)은 Incident·Evidence·Draft를 깊게 복사하고 식별자·근거 참조·canonical target과 수치의 입력 일관성을 확인한다. [Bounded context](../../src/hmda_reliability/review_ai/context.py)는 관련 근거의 제한된 projection과 missing/unconfirmed gap을 제공한다. 사례 데이터와 이전 답변이 system 지시나 단계를 선택하지 않는다.
 
 모델에는 한국어 일반 텍스트를 요청한다. 코드가 원입력 식별자·수치와 고정 순서의 세 원문을 [StagedReviewOutput](../../src/hmda_reliability/review_ai/staged/contracts.py)으로 직렬화한다. Prose에서 finding·priority·근거 참조를 추측하거나 설명문의 잘못된 수치를 자동 교정하지 않는다. `completed`는 수집·저장 완료이며 사실성·검토 가치·사람 승인을 의미하지 않는다.

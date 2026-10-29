@@ -17,9 +17,9 @@ tags:
 ## Review Basis
 
 - Target: [PR #280](https://github.com/mols3131d/hmda-data-reliability/pull/280), `agent/feat/improve-review-ai-output-quality`.
-- Code revision: `3507558c9460e0579cd4a4ee78bd65ceadfd7a79`. 작성 시 원격 main은 `3944358491c4491482167dff1236c27c4a480cc7`이다. 실행할 때 실제 HEAD를 다시 기록한다.
-- Automated evidence: 관련 로컬 테스트 261개 통과. [CI](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40830024998)는 통합 commit `efd70eb163fd7e68c7da6e1757726c9638cd08cc`에서 1,222개 통과·2개 생략이다. 자동 검증은 준비된 응답과 모의 전송으로 코드 동작을 확인한다.
-- Human evidence: 위 코드 revision의 실제 세 단계 완료와 사람의 품질 점수는 미검증이다. 이 문서는 평가 절차이며 실제 평가 결과를 기입하지 않았다.
+- Execution source: 이 PR의 현재 checkout을 사용하고 실행할 때 실제 HEAD를 기록한다. 새 실행 모듈과 진행 표시는 [후속 검증 보고서](09-report-review-ai-live-progress.md)를 참고한다.
+- Historical automated evidence: `3507558c9460e0579cd4a4ee78bd65ceadfd7a79`에서 관련 로컬 테스트 261개 통과. [CI](https://github.com/mols3131d/hmda-data-reliability/actions/runs/40830024998)는 통합 commit `efd70eb163fd7e68c7da6e1757726c9638cd08cc`에서 1,222개 통과·2개 생략이다. 새 실행 모듈을 검증한 CI 기록은 아니다.
+- Human evidence: 현재 프롬프트의 실제 세 단계 완료와 사람의 품질 점수는 미검증이다. 이 문서는 평가 절차이며 실제 평가 결과를 기입하지 않았다.
 
 이 문서는 같은 번호의 이전 안내서를 현재 실행에 맞춰 갱신한 것이다. 삭제한 버전 선택·옛 JSON 검증 경로를 사용하지 않는다. 상세 실행 계약은 [현재 평가 가이드](../../docs/development/review-ai-evaluation.md), 프롬프트 조립은 [Prompt Composition](../../docs/development/review-ai-prompts.md)을 따른다.
 
@@ -35,10 +35,12 @@ tags:
 ```bash
 git status --short
 git rev-parse HEAD
-uv run --env-file .env python scripts/run_agentic_review_live.py
+uv run --env-file .env python -m hmda_reliability.review_ai.evaluation.live
 ```
 
 **이 CLI는 정보가 부족한 합성 시나리오 한 건만 실행한다.** 아래 corpus 세 건을 순회하지 않으며 corpus의 첫 입력과 식별자까지 같은 자료도 아니다. CLI 실행은 연결과 전체 흐름을 먼저 확인하는 용도다. 세 사례의 품질 검토에는 마지막의 선택 실행 예제를 사용한다.
+
+표준 오류에는 단계 시작·수집 및 저장 결과, provider 호출 중에는 기본 5초마다 응답 대기와 단계·전체 경과시간이 표시된다. 이 시간에는 내부 retry·backoff가 포함될 수 있으며 모델의 생성률을 뜻하지 않는다. 표준 출력은 최종 JSON을 유지하므로 `> result.json`으로 저장하면서 진행 로그를 터미널에서 볼 수 있다. 원문은 진행 로그 대신 로컬 파일로 확인한다.
 
 ## Open These Artifacts
 
@@ -125,7 +127,7 @@ Required correction / next action:
 
 아래 명령은 **실제로 모델을 호출**한다. 세 사례를 각 한 번, 성공 시 총 아홉 단계 호출하며 retry를 설정하면 더 늘어날 수 있다. Workflow 예산 1,200초는 사례별 예산이다. CLI 연결을 확인한 뒤 반복 횟수·실행 조건을 정하고 사용한다. 이 문서를 작성하면서 이 명령의 실제 모델 실행은 수행하지 않았다.
 
-Repository root에서 실행한다. `.env`의 provider·한도·예산을 읽고 깨끗한 실제 HEAD를 revision으로 사용한다. Fixture의 revision 표식과 환경의 수동 revision 표식은 사용하지 않는다. Console에는 사례·상태·경로만 출력하며 원문은 로컬 artifact에서 읽는다.
+Repository root에서 실행한다. `.env`의 provider·한도·예산을 읽고 깨끗한 실제 HEAD를 revision으로 사용한다. Fixture의 revision 표식과 환경의 수동 revision 표식은 사용하지 않는다. Stdout에는 사례·상태·경로만, stderr에는 단계·대기 진행을 출력하며 원문은 로컬 artifact에서 읽는다.
 
 ```bash
 uv run --env-file .env python - <<'PY'
@@ -136,6 +138,7 @@ from pathlib import Path
 
 from hmda_reliability.review_ai import review_null_spike
 from hmda_reliability.review_ai.contracts import AgenticReviewInput
+from hmda_reliability.review_ai.evaluation.progress import LiveProgressReporter
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.runtime_ai import RuntimeAISettings
@@ -143,11 +146,14 @@ from hmda_reliability.runtime_ai import RuntimeAISettings
 prefix = "HMDA_AGENTIC_REVIEW_"
 if os.environ.get(prefix + "LIVE", "").strip().lower() not in {"1", "true", "yes", "on"}:
     raise SystemExit("HMDA_AGENTIC_REVIEW_LIVE=true로 명시한 뒤 실행하세요.")
+git_env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
 if subprocess.check_output(
-    ["git", "status", "--porcelain", "--untracked-files=no"], text=True
+    ["git", "status", "--porcelain", "--untracked-files=no"], text=True, env=git_env
 ).strip():
     raise SystemExit("추적 파일을 먼저 커밋하고 깨끗한 HEAD에서 실행하세요.")
-revision = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+revision = subprocess.check_output(
+    ["git", "rev-parse", "HEAD"], text=True, env=git_env
+).strip()
 
 try:
     settings = RuntimeAISettings(
@@ -182,11 +188,12 @@ for case in corpus["cases"]:
     material = AgenticReviewInput.model_validate(
         case["review_input"] | {"project_revision": revision}
     )
-    result = review_null_spike(
-        incident=material.incident, evidence=material.evidence, draft=material.draft,
-        project_revision=revision, settings=settings, review_settings=limits,
-        execution_settings=budgets, artifact_root=root,
-    )
+    with LiveProgressReporter() as progress:
+        result = review_null_spike(
+            incident=material.incident, evidence=material.evidence, draft=material.draft,
+            project_revision=revision, settings=settings, review_settings=limits,
+            execution_settings=budgets, artifact_root=root, on_progress=progress,
+        )
     print(json.dumps({
         "case_id": case["case_id"], "case_version": case["case_version"],
         "result": result.model_dump(mode="json", exclude={"output"}),

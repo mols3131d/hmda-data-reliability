@@ -31,10 +31,18 @@ PR을 시험할 때는 해당 PR checkout의 repository root에서 실행한다.
 [`.env.example`](../../.env.example)을 참고해 로컬 환경에 `HMDA_AGENTIC_REVIEW_LIVE=true`와 비어 있지 않은 base URL·API key·model을 설정한다. 자격 증명은 기록이나 로그에 복사하지 않는다. 현재 프롬프트 하나만 실행하며 모드나 version을 선택하지 않는다.
 
 ```bash
-uv run --env-file .env python scripts/run_agentic_review_live.py
+uv run --env-file .env python -m hmda_reliability.review_ai.evaluation.live
 ```
 
-`HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하고 clean tracked tree를 요구한다. 개발 중에는 명시적인 로컬 revision 표식을 사용할 수 있지만 clean commit의 품질 증거로 취급하지 않는다. 현재 CLI는 reviewer 호출 직전에 stderr에 `Review AI workflow: current (staged-v1).`를 표시한다.
+이 [패키지 진입점](../../src/hmda_reliability/review_ai/evaluation/live.py)은 실제 제공자 호출부터 원문 저장·collection 조립·출처 재검증까지 확인하는 통합 검증 도구다. 고정된 합성 사례 한 건을 실행하며 아래 품질 corpus 세 건을 순회하지 않는다. 실제 답변을 사람이 평가할 자료를 만들지만 품질 점수나 승인 판단은 생성하지 않는다.
+
+`HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하고 clean tracked tree를 요구한다. 개발 중에는 명시적인 로컬 revision 표식을 사용할 수 있지만 clean commit의 품질 증거로 취급하지 않는다.
+
+### Progress Output
+
+stderr에는 workflow와 단계의 시작·종료를 표시하고, provider 호출을 기다리는 동안 5초 간격으로 대기 로그를 표시한다. 현재 실행은 `가상 사례로 실제 모델 통합 검증 시작 (staged-v1)`로 식별한다. stdout에는 원문을 제외한 결과 JSON을 출력하므로 진행 로그와 분리해 수집할 수 있다.
+
+대기 로그의 단계·전체 경과시간은 로컬 실행 시계를 기준으로 측정한 값이다. Provider 내부 retry·backoff도 대기에 포함될 수 있다. 모델의 토큰 생성량·진행률이나 서버 내부 상태를 관측한 값이 아니다. 로그가 계속 출력돼도 모델 응답이나 완료를 보장하지 않으며 timeout·실행 예산을 연장하지 않는다. 원문·credential·제공자 예외 본문은 진행 로그에 넣지 않는다.
 
 ### Staged Text Review
 

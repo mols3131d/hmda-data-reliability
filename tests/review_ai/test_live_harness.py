@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
 import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -12,18 +14,19 @@ from typing import Literal, cast
 import pytest
 
 from hmda_reliability.reliability import Evidence, Incident, RemediationDraft
+from hmda_reliability.review_ai.evaluation import live as live_module
 from hmda_reliability.review_ai.evidence import (
     SanitizedAgenticReviewConfiguration,
 )
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.review_ai.staged import service as staged_service
 from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
+from hmda_reliability.review_ai.staged.progress import ProgressCallback
 from hmda_reliability.review_ai.staged.service import review_null_spike_staged
 from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.runtime_ai import RuntimeAISettings
 from hmda_reliability.runtime_ai.contracts import ChatMessage, ProviderResponse
 from hmda_reliability.runtime_ai.provider import ProviderUnavailableError
-from scripts import run_agentic_review_live as live_module
 
 pytestmark = pytest.mark.unit
 
@@ -81,6 +84,7 @@ def _run_staged_review(
         provider=provider,
         workflow_id_factory=lambda: "workflow-cli-test",
         clock=clock,
+        on_progress=cast(ProgressCallback | None, kwargs.get("on_progress")),
     )
 
 
@@ -95,7 +99,9 @@ def test_default_entrypoint_executes_the_current_api(
     captured = capsys.readouterr()
     assert json.loads(captured.out)["status"] == "completed"
     assert len(provider.messages) == 3
-    assert "Review AI workflow: current (staged-v1)." in captured.err
+    assert "가상 사례로 실제 모델 통합 검증 시작" in captured.err
+    assert "단계 1/3 근거 검토 시작" in captured.err
+    assert "단계 3/3 종합 검토 수집·저장 완료" in captured.err
     assert provider.text not in captured.out + captured.err
 
 
@@ -119,7 +125,7 @@ def test_unrelated_environment_cannot_select_another_workflow(
     assert live_module.main(env=environment, reviewer=review) == 0
     captured = capsys.readouterr()
     assert len(provider.messages) == 3
-    assert "Review AI workflow: current (staged-v1)." in captured.err
+    assert "가상 사례로 실제 모델 통합 검증 시작" in captured.err
     assert "PRIVATE_UNUSED" not in captured.out + captured.err
     assert "Langfuse" not in captured.out + captured.err
 
@@ -589,13 +595,17 @@ def test_auto_project_revision_uses_clean_git_head(
             subprocess.CompletedProcess([], 0, stdout="", stderr=""),
         ]
     )
-    monkeypatch.setattr(
-        live_module.subprocess,
-        "run",
-        lambda *args, **kwargs: next(results),
-    )
+    calls: list[list[str]] = []
+
+    def git_from_source(command: list[str], **kwargs: object):
+        calls.append(command)
+        return next(results)
+
+    monkeypatch.setattr(live_module.subprocess, "run", git_from_source)
+    monkeypatch.chdir(Path(live_module.__file__).parent)
 
     assert live_module._current_git_revision() == "git-head-123"
+    assert all(command[2] == str(live_module._REPOSITORY_ROOT) for command in calls)
 
 
 def test_auto_project_revision_rejects_dirty_tracked_worktree(
@@ -620,6 +630,91 @@ def test_auto_project_revision_rejects_dirty_tracked_worktree(
 
     with pytest.raises(ValueError, match="clean tracked worktree"):
         live_module._current_git_revision()
+
+
+def test_auto_revision_rejects_a_checkout_that_did_not_supply_the_loaded_module(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "pyproject.toml").touch()
+    (tmp_path / ".git").touch()
+    monkeypatch.setattr(live_module, "_REPOSITORY_ROOT", tmp_path)
+
+    def unexpected_git(*args: object, **kwargs: object) -> None:
+        pytest.fail("an unrelated checkout cannot supply revision proof")
+
+    monkeypatch.setattr(live_module.subprocess, "run", unexpected_git)
+    with pytest.raises(ValueError, match="loaded source checkout"):
+        live_module._current_git_revision()
+
+
+@pytest.mark.component
+def test_auto_revision_ignores_inherited_git_repository_overrides(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    git_environment = {
+        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+    }
+
+    def git(directory: Path, *args: str) -> str:
+        result = subprocess.run(
+            ["git", "-C", str(directory), *args],
+            env=git_environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+
+    source = tmp_path / "source"
+    other = tmp_path / "other"
+    source_file = source / "src/hmda_reliability/review_ai/evaluation/live.py"
+    source_file.parent.mkdir(parents=True)
+    source_file.touch()
+    (source / "pyproject.toml").touch()
+    other.mkdir()
+    for directory in (source, other):
+        git(directory, "init", "--quiet")
+        git(directory, "add", ".")
+        git(
+            directory,
+            "-c",
+            "user.name=Review Test",
+            "-c",
+            "user.email=review-test@example.invalid",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "--quiet",
+            "--allow-empty",
+            "-m",
+            directory.name,
+        )
+    expected = git(source, "rev-parse", "HEAD")
+    assert expected != git(other, "rev-parse", "HEAD")
+    monkeypatch.setattr(live_module, "__file__", str(source_file))
+    monkeypatch.setattr(live_module, "_REPOSITORY_ROOT", source)
+    monkeypatch.setenv("GIT_DIR", str(other / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(other))
+    monkeypatch.setenv("GIT_INDEX_FILE", str(other / ".git/index"))
+
+    assert live_module._current_git_revision() == expected
+
+
+def test_module_entrypoint_stays_opt_in_from_another_working_directory(
+    tmp_path: Path,
+) -> None:
+    environment = dict(os.environ, HMDA_AGENTIC_REVIEW_LIVE="false")
+    result = subprocess.run(
+        [sys.executable, "-m", "hmda_reliability.review_ai.evaluation.live"],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "disabled" in result.stdout
+    assert result.stderr == ""
 
 
 def test_auto_project_revision_failure_stops_before_review(

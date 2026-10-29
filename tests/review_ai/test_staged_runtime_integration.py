@@ -10,9 +10,9 @@ import httpx
 import pytest
 from openai import OpenAI
 
+from hmda_reliability.review_ai.evaluation import live as live_module
 from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
 from hmda_reliability.runtime_ai import provider as provider_module
-from scripts import run_agentic_review_live as live_module
 from tests.review_ai.test_live_harness import _live_environment
 
 
@@ -69,14 +69,19 @@ def test_staged_live_runs_real_sdk_history_and_mechanically_collects_text(
 
     captured = capsys.readouterr()
     result = StagedReviewResult.model_validate_json(captured.out)
+    assert "단계 1/3 근거 검토 시작" in captured.err
+    assert "단계 1/3 근거 검토 수집·저장 완료" in captured.err
     assert all(text not in captured.out for text in texts)
     assert result.workflow_path is not None
     manifest = json.loads(result.workflow_path.read_text(encoding="utf-8"))
     if second_finish == "length":
+        assert "단계 2/3 초안 검토 실패 (validation_failed)" in captured.err
+        assert "단계 3/3" not in captured.err
         assert exit_code == 1 and result.status == "validation_failed"
         assert len(payloads) == 2 and result.output_path is None
         assert manifest["failure_code"] == "stage_response_incomplete"
     else:
+        assert "단계 3/3 종합 검토 수집·저장 완료" in captured.err
         assert exit_code == 0 and result.status == "completed"
         assert len(payloads) == 3 and result.output_path is not None
         output = json.loads(result.output_path.read_text(encoding="utf-8"))

@@ -1,4 +1,8 @@
-"""명시적으로 켜면 Ollama 호환 제공자로 검토를 실행하는 CLI."""
+"""가상 사례를 실제 provider로 실행하는 opt-in 통합 검증 진입점.
+
+python -m hmda_reliability.review_ai.evaluation.live로 실행한다.
+실행·저장 성공을 검사하며 사람의 답변 품질 평가는 별도로 수행한다.
+"""
 
 from __future__ import annotations
 
@@ -26,6 +30,7 @@ from hmda_reliability.reliability import (
 )
 from hmda_reliability.review_ai import review_null_spike
 from hmda_reliability.review_ai.contracts import AgenticReviewInput
+from hmda_reliability.review_ai.evaluation.progress import LiveProgressReporter
 from hmda_reliability.review_ai.evidence import (
     SanitizedAgenticReviewConfiguration,
 )
@@ -36,6 +41,7 @@ from hmda_reliability.review_ai.prompt import (
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.review_ai.staged.contracts import StagedReviewOutput
 from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
+from hmda_reliability.review_ai.staged.progress import ProgressCallback
 from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.review_ai.staged.store import StagedReviewStore
 from hmda_reliability.runtime_ai import RuntimeAISettings
@@ -46,7 +52,7 @@ _REQUIRED_ENVIRONMENT = (
     "HMDA_AGENTIC_REVIEW_API_KEY",
     "HMDA_AGENTIC_REVIEW_MODEL",
 )
-_REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 
 
 class Reviewer(Protocol):
@@ -61,6 +67,7 @@ class Reviewer(Protocol):
         review_settings: ReviewAISettings,
         execution_settings: StagedExecutionSettings,
         artifact_root: Path,
+        on_progress: ProgressCallback | None = None,
     ) -> StagedReviewResult: ...
 
 
@@ -188,17 +195,22 @@ def _run_staged_live(
     artifact_root: Path,
 ) -> int:
     """모델 원문을 로컬 파일에 두고 수집 상태와 출처만 출력한다."""
-    print("Review AI workflow: current (staged-v1).", file=sys.stderr)
-    result = reviewer(
-        incident=incident,
-        evidence=[evidence],
-        draft=draft,
-        project_revision=project_revision,
-        settings=settings,
-        review_settings=review_settings,
-        execution_settings=execution_settings,
-        artifact_root=artifact_root,
+    print(
+        "가상 사례로 실제 모델 통합 검증 시작 (staged-v1)", file=sys.stderr, flush=True
     )
+    with LiveProgressReporter() as progress:
+        result = reviewer(
+            incident=incident,
+            evidence=[evidence],
+            draft=draft,
+            project_revision=project_revision,
+            settings=settings,
+            review_settings=review_settings,
+            execution_settings=execution_settings,
+            artifact_root=artifact_root,
+            on_progress=progress,
+        )
+    print("최종 실행 기록과 출력 출처 검증", file=sys.stderr, flush=True)
     print(result.model_dump_json(indent=2, exclude={"output"}))
     if not _verify_staged_live_provenance(
         result,
@@ -213,6 +225,7 @@ def _run_staged_live(
     ):
         print("Live workflow provenance validation failed.", file=sys.stderr)
         return 1
+    print(f"통합 검증 종료 · status={result.status}", file=sys.stderr, flush=True)
     return 0 if result.status == "completed" else 1
 
 
@@ -299,12 +312,24 @@ def _project_revision(environment: Mapping[str, str]) -> str:
 
 def _current_git_revision() -> str:
     """추적 중인 파일에 수정이 없을 때만 현재 Git HEAD를 출처용 리비전으로 쓴다."""
+    source_file = _REPOSITORY_ROOT / "src/hmda_reliability/review_ai/evaluation/live.py"
+    if (
+        source_file.resolve() != Path(__file__).resolve()
+        or not (_REPOSITORY_ROOT / "pyproject.toml").is_file()
+        or not (_REPOSITORY_ROOT / ".git").exists()
+    ):
+        raise ValueError("auto project revision requires the loaded source checkout")
+    # Hook·다른 checkout의 GIT_DIR/INDEX 설정으로 출처가 바뀌지 않게 한다.
+    git_environment = {
+        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+    }
     try:
         revision_result = subprocess.run(
             ["git", "-C", str(_REPOSITORY_ROOT), "rev-parse", "HEAD"],
             check=True,
             capture_output=True,
             text=True,
+            env=git_environment,
         )
         status_result = subprocess.run(
             [
@@ -318,6 +343,7 @@ def _current_git_revision() -> str:
             check=True,
             capture_output=True,
             text=True,
+            env=git_environment,
         )
     except (OSError, subprocess.CalledProcessError) as error:
         raise ValueError("project revision could not be resolved from Git") from error

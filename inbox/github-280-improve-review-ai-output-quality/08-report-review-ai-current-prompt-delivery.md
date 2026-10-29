@@ -8,6 +8,8 @@ description: 버전별 레거시 지원을 제거하고 현재 한국어 단계 
 
 기준 commit `24b5f26833121de853ce0787c0bb67c3ad25673d`에서 사용자의 후속 지시를 반영했다. 레거시를 별도 경로로 지원하던 구현을 삭제하고 현재 한국어 프롬프트로만 실행한다. 이전 전환 보고서를 이 최종 동작에 맞춰 갱신했다.
 
+아래 검증 수치는 현재 프롬프트 통일 당시의 기록이다. 후속 실행 모듈 이동과 진행 표시는 [Live Validation Progress](09-report-review-ai-live-progress.md)에 기록했다.
+
 ## Current Execution
 
 | Entry | Behavior |
@@ -15,7 +17,7 @@ description: 버전별 레거시 지원을 제거하고 현재 한국어 단계 
 | `review_ai.review_null_spike` | 근거 검토·초안 비판·종합의 한국어 텍스트 수집 후 코드로 JSON 생성 |
 | `review_ai.service.review_null_spike` | 같은 현재 실행 |
 | `review_ai.review_null_spike_staged` | 같은 실행의 명시적인 단계 수집 이름 |
-| Live CLI | 별도 모드·버전 선택 없이 같은 현재 실행. 시작 시 `Review AI workflow: current (staged-v1).` 표시 |
+| Live CLI | 별도 모드·버전 선택 없이 같은 현재 실행. 평가 모듈이 한국어 단계·대기 로그를 표시 |
 
 모델은 JSON을 작성하지 않는다. 원본 사례·이전 assistant 답변을 다음 호출에 함께 전달하고, 코드는 입력의 식별자·수치와 고정 단계 ID·순서·반환된 텍스트만 JSON으로 결합한다. `completed`는 수집·저장 완료이며 자연어의 정확성이나 사람 승인을 뜻하지 않는다.
 
@@ -46,7 +48,7 @@ description: 버전별 레거시 지원을 제거하고 현재 한국어 단계 
 사용자가 이전에 실행한 main `1794d3dc`는 변경 전 코드다. 현재 구현은 이 PR의 브랜치를 체크아웃한 저장소 최상위 디렉터리에서 실행한다.
 
 ```bash
-uv run --env-file .env python scripts/run_agentic_review_live.py
+uv run --env-file .env python -m hmda_reliability.review_ai.evaluation.live
 ```
 
 이 작업 폴더의 `.env`에서는 불필요한 모드·버전·projection 선택 키를 제거했다. 모델·credential·시간 예산은 유지했다. 첨부된 read-only snapshot은 수정하지 않았다.

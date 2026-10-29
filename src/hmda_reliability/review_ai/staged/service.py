@@ -6,6 +6,7 @@ import hashlib
 import time
 import uuid
 from collections.abc import Callable, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -39,6 +40,7 @@ from hmda_reliability.review_ai.staged.evidence import (
     StagedReviewStatus,
     StageRecord,
 )
+from hmda_reliability.review_ai.staged.progress import ProgressCallback, StageProgress
 from hmda_reliability.review_ai.staged.prompt import render_stage_prompt
 from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.review_ai.staged.store import StagedReviewStore
@@ -101,11 +103,13 @@ def review_null_spike_staged(
     artifact_root: Path = Path(".local/artifacts"),
     workflow_id_factory: Callable[[], str] | None = None,
     clock: Callable[[], float] = time.monotonic,
+    on_progress: ProgressCallback | None = None,
 ) -> StagedReviewResult:
     """같은 immutable 사례의 세 답변을 원문 그대로 수집한다.
 
     completed는 수집·저장 완료다. 자연어의 사실성이나 사람의 승인 여부를
     판정하지 않는다. 각 Runtime 호출의 retry 외에 단계 재생성은 하지 않는다.
+    선택적 진행 관측의 예외는 원문 보존과 실행 결과로 전파하지 않는다.
     """
     budget = _ExecutionBudget(
         execution_settings or StagedExecutionSettings(), clock, clock()
@@ -157,6 +161,9 @@ def review_null_spike_staged(
         stage_deadline = min(
             stage_started + budget.settings.stage_budget_seconds, budget.deadline
         )
+        _notify_progress(
+            on_progress, StageProgress(stage_id=stage_id, phase="stage_started")
+        )
         record, answer = _run_stage(
             canonical_input,
             stage_id,
@@ -168,6 +175,7 @@ def review_null_spike_staged(
             settings=settings,
             budget=budget,
             stage_deadline=stage_deadline,
+            on_progress=on_progress,
         )
         record = record.model_copy(
             update={
@@ -188,6 +196,15 @@ def review_null_spike_staged(
                     "failure_code": "stage_record_write_failed",
                 }
             )
+        _notify_progress(
+            on_progress,
+            StageProgress(
+                stage_id=stage_id,
+                phase="stage_finished",
+                status=record.status,
+                attempt_count=record.attempt_count,
+            ),
+        )
         records.append(record)
         if record.status != "completed" or answer is None:
             return _finish(
@@ -262,6 +279,7 @@ def _run_stage(
     settings: RuntimeAISettings,
     budget: _ExecutionBudget,
     stage_deadline: float,
+    on_progress: ProgressCallback | None,
 ) -> tuple[StageRecord, StageAnswer | None]:
     if failure := budget.failure(stage_deadline):
         return StageRecord(
@@ -285,13 +303,19 @@ def _run_stage(
         return base.model_copy(
             update={"status": "unavailable", "failure_code": failure}
         ), None
+    attempt_count = 0
+    _notify_progress(
+        on_progress, StageProgress(stage_id=stage_id, phase="provider_started")
+    )
     try:
         response = provider.invoke(
             rendered.messages,
             output_format="text",
             budget_seconds=max(0.0, stage_deadline - budget.clock()),
         )
+        attempt_count = response.attempt_count
     except ProviderUnavailableError as error:
+        attempt_count = error.attempt_count
         failure = error.failure_code
         if failure == "provider_budget_exhausted":
             failure = (
@@ -308,6 +332,7 @@ def _run_stage(
             }
         ), None
     except ProviderResponseTooLargeError as error:
+        attempt_count = error.attempt_count
         return base.model_copy(
             update={
                 "status": "validation_failed",
@@ -318,6 +343,15 @@ def _run_stage(
                 "response_metadata": error.response_metadata,
             }
         ), None
+    finally:
+        _notify_progress(
+            on_progress,
+            StageProgress(
+                stage_id=stage_id,
+                phase="provider_finished",
+                attempt_count=attempt_count,
+            ),
+        )
     record = base.model_copy(
         update={
             "attempt_count": response.attempt_count,
@@ -365,6 +399,14 @@ def _run_stage(
             update={"status": "validation_failed", "failure_code": failure}
         ), None
     return record, StageAnswer(stage_id=stage_id, text=response.content)
+
+
+def _notify_progress(callback: ProgressCallback | None, event: StageProgress) -> None:
+    if callback is None:
+        return
+    # 관측 실패나 예외 문구를 실행 결과와 보존 근거에 섞지 않는다.
+    with suppress(Exception):
+        callback(event)
 
 
 def _finish(
