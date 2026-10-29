@@ -2,6 +2,18 @@
 
 GitHub가 인식하는 Issue와 Pull Request 템플릿은 각각 [`ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md), [`pull_request_template.md`](../pull_request_template.md)에 둔다. 이 directory는 공통 작성 규칙과 GitHub가 자동 제공하지 않는 Pull Request Review 템플릿을 관리한다. GitHub 템플릿은 default branch에 반영된 뒤 적용된다.
 
+## Issue Composition
+
+Issue는 인간의 초기 의도를 전달하는 출발점이며, 모든 실행 정보를 제출 시점에 채워야 하는 양식이 아니다. Bug, improvement, research에 하나의 Markdown 템플릿을 유연하게 사용한다.
+
+- **Objective:** 해결할 문제·원하는 변화·조사할 질문을 먼저 명시한다.
+- **Acceptance:** 알려진 기대 결과와 검증 기준을 기록한다. 처음에 불명확하면 추측으로 확정하지 않고 조사 후 구체화한다. 실제 구현·완료 판단 전에는 필요한 기준을 확인한다.
+- **Context:** 작성자가 알고 있는 증상, 배경, 제약, 문서와 링크를 자유롭게 제공한다. 없으면 생략한다.
+- **Evidence / Environment:** 재현, 로그, 데이터, 모델·runtime·설정 등의 정보가 판단에 중요할 때만 구분한다. 간단하면 Context에 함께 작성하고, 같은 정보를 YAML metadata와 중복하지 않는다.
+- **Boundaries / Open Decisions:** 명시적 범위 제한이나 인간의 권한·우선순위·방향 결정이 필요할 때만 사용한다. 일반적인 기술 조사 항목을 인간의 결정으로 떠넘기지 않는다.
+
+사람은 알고 있는 의도와 접근할 수 없는 맥락만 제공해도 된다. 에이전트는 **접근할 수 있는 저장소·실행 환경·증거를 직접 확인**하고, 확인된 사실·추론·미확인을 구별한다. 접근할 수 없는 사용자 환경을 확인한 것처럼 기록하지 않는다. 작업을 막는 결정이나 정보가 남았을 때만 필요한 질문을 한다. 이슈 갱신은 권한이 있을 때 수행하고, 실행 과정의 상세 증거와 검증 결과는 소유하는 PR 또는 관련 artifact에 남긴다.
+
 ## Metadata
 
 GitHub가 제공하지 않는 정보만 optional YAML metadata로 보완한다. Metadata field는 서로 독립적이며 필요한 field만 사용한다.
@@ -27,7 +39,7 @@ author:
 
 ### `environment`
 
-`environment`는 Issue의 증상이나 결과에 영향을 주는 환경 정보만 담는 optional map이다. 관련 runtime/version 또는 비밀이 아닌 configuration을 기록한다. 저장소에서 확인 가능한 정보는 불필요하게 중복하지 않는다.
+`environment`는 Issue의 증상이나 결과에 영향을 주는 확인된 조건만 담는 optional map이다. 필요에 따라 runtime, model, hardware, data, configuration 등 관련 key만 기록한다. 비밀 값이나 확인하지 못한 추정은 넣지 않으며, 본문 Environment와 중복하지 않는다.
 
 ```yaml
 environment:
