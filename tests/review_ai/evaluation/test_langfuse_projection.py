@@ -27,8 +27,8 @@ from hmda_reliability.review_ai.evidence import (
     AgenticInvocationEvidence,
     SanitizedAgenticReviewConfiguration,
 )
-from hmda_reliability.review_ai.prompt import (
-    build_canonical_input,
+from hmda_reliability.review_ai.prompt import build_canonical_input
+from hmda_reliability.review_ai.prompt.legacy import (
     render_canonical_input,
     render_review_prompt,
 )
@@ -183,7 +183,8 @@ def test_projection_rejects_boolean_integer_mismatch_with_recomputed_digest(
     env = {
         **_environment(),
         "HMDA_AGENTIC_REVIEW_LIVE": "true",
-        "HMDA_AGENTIC_REVIEW_MODE": "structured",
+        "HMDA_AGENTIC_REVIEW_MODE": "legacy",
+        "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION": "v1",
         "HMDA_AGENTIC_REVIEW_BASE_URL": "https://provider.invalid",
         "HMDA_AGENTIC_REVIEW_API_KEY": "provider-secret",
         "HMDA_AGENTIC_REVIEW_MODEL": "test-model",
@@ -196,7 +197,7 @@ def test_projection_rejects_boolean_integer_mismatch_with_recomputed_digest(
         pytest.fail("mismatched synthetic input must not be exported")
 
     monkeypatch.setattr(projection, "export_projection", forbidden)
-    assert harness.main(env=env, reviewer=lambda **kwargs: result) == 0
+    assert harness.main(env=env, legacy_reviewer=lambda **kwargs: result) == 0
     assert path.read_bytes() == before
     captured = capsys.readouterr()
     assert "Langfuse projection: projection_failed" in captured.err
@@ -481,7 +482,8 @@ def test_harness_export_failure_preserves_result_and_record(
     env = {
         **_environment(),
         "HMDA_AGENTIC_REVIEW_LIVE": "true",
-        "HMDA_AGENTIC_REVIEW_MODE": "structured",
+        "HMDA_AGENTIC_REVIEW_MODE": "legacy",
+        "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION": "v1",
         "HMDA_AGENTIC_REVIEW_BASE_URL": "https://provider.invalid",
         "HMDA_AGENTIC_REVIEW_API_KEY": "provider-secret",
         "HMDA_AGENTIC_REVIEW_MODEL": "test-model",
@@ -496,7 +498,7 @@ def test_harness_export_failure_preserves_result_and_record(
         return export_status
 
     monkeypatch.setattr(projection, "export_projection", export)
-    assert harness.main(env=env, reviewer=lambda **kwargs: result) == 0
+    assert harness.main(env=env, legacy_reviewer=lambda **kwargs: result) == 0
     assert path.read_bytes() == before
     expected = "projection_failed" if export_status == "raise" else export_status
     captured = capsys.readouterr()

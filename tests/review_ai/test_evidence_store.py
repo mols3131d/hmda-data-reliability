@@ -12,8 +12,8 @@ from pydantic import ValidationError
 
 from hmda_reliability.review_ai import contracts
 from hmda_reliability.review_ai import evidence as evidence_module
-from hmda_reliability.review_ai import prompt as prompt_module
 from hmda_reliability.review_ai import store as store_module
+from hmda_reliability.review_ai.prompt import legacy as prompt_module
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings

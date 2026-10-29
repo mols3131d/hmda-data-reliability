@@ -6,7 +6,7 @@
 
 이 Capability는 deterministic `Incident`, 실제 `Evidence`와 `RemediationDraft`를 LLM이 검토하더라도 결과가 canonical facts와 제공된 근거에 묶이고 advisory 경계를 넘지 않도록 한다. 각 provider 결과와 실패는 replay 가능한 evidence로 남긴다.
 
-기존 `PromptIdentity`, `AgenticReviewOutput`과 `accepted` 검증·version 기본값은 structured 경로의 계약이다. 기본 live는 아래 staged collection 계약을 사용하며, 세 텍스트의 수집·저장 완료를 `completed`로 구분한다.
+기존 `PromptIdentity`, `AgenticReviewOutput`과 `accepted` 검증·version 기본값은 과거 record 해석을 위한 legacy 계약이다. 일반 API와 직접 service도 현재 단계 실행을 사용한다. 기본 live는 아래 staged collection 계약을 사용하며, 세 텍스트의 수집·저장 완료를 `completed`로 구분한다.
 
 ## Requirements
 
@@ -52,7 +52,7 @@
 
 ### Requirement: Staged prose review collection
 
-시스템은 같은 immutable 사례의 근거 검토·초안 비판·종합을 고정 순서로 실행하고 모델에 JSON 생성 대신 한국어 텍스트를 요청해야 한다(SHALL). 호출마다 원래 canonical input과 완료된 이전 assistant 응답을 유지하고 전체 요청의 byte cap과 digest를 계산해야 한다(SHALL). 사례 데이터나 이전 모델 답변이 단계·system 지시를 선택해서는 안 된다(MUST NOT).
+일반 review_null_spike API와 직접 service 및 기본 live CLI는 동일한 현재 실행을 사용해야 한다(SHALL). 시스템은 같은 immutable 사례의 근거 검토·초안 비판·종합을 고정 순서로 실행하고 모델에 JSON 생성 대신 한국어 텍스트를 요청해야 한다(SHALL). 호출마다 원래 canonical input과 완료된 이전 assistant 응답을 유지하고 전체 요청의 byte cap과 digest를 계산해야 한다(SHALL). 사례 데이터나 이전 모델 답변이 단계·system 지시를 선택해서는 안 된다(MUST NOT).
 
 시스템은 원입력 식별자·대상·수치와 단계 ID·순서·반환된 텍스트를 코드로 결합해 별도 JSON collection을 생성해야 한다(SHALL). 답변의 공백·개행을 보존하며(SHALL), prose에서 기존 structured output의 분류·근거 참조·권고 enum을 추측해 생성해서는 안 된다(MUST NOT). 완료 상태는 수집·저장 완료로 한정하며 기존 accepted나 사람의 품질 평가를 의미해서는 안 된다(MUST NOT).
 
@@ -75,7 +75,7 @@
 
 #### Scenario: Existing structured review remains explicit
 
-- **WHEN** 기존 structured API 또는 명시적 structured live 모드를 사용할 때
+- **WHEN** 명시적 legacy API 또는 MODE=legacy와 LEGACY_PROMPT_VERSION으로 선택한 live 모드를 사용할 때
 - **THEN** 기존 JSON 출력·검증·invocation 계약을 유지해야 한다(SHALL).
 - **AND** live 모드가 생략되면 단계별 텍스트 경로를 사용해야 한다(SHALL).
 
@@ -110,7 +110,7 @@ Input은 다음 invariant를 모두 만족할 때만 provider review 대상으�
 - **Incident and draft identity:** `incident.incident_type`와 `draft.incident_type`는 정확히 `null_spike`이고, incident와 draft의 `incident_id`, `asset_name`과 `partition`이 일치한다.
 - **Evidence linkage:** 제공된 Evidence ID는 unique하고 `incident.evidence_refs` 및 `draft.evidence_refs`와 같은 set이어야 한다. 각 Evidence는 자신이 나타내는 asset과 partition identity를 보존해야 한다.
 - **Canonical target:** 정확히 하나의 canonical target Evidence가 있어야 하며, 그 asset과 partition은 incident와 일치해야 한다. 이 Evidence는 `source=profile`, `payload.rule=null_spike`, non-empty string `column`, finite numeric `baseline_null_rate`, `current_null_rate`, `delta`와 `threshold`를 가져야 한다. Target column과 numeric facts는 이 Evidence에서만 유도한다. 명시적으로 참조된 bounded contextual Evidence는 다른 asset 또는 partition을 나타낼 수 있다.
-- **Prompt metadata:** `PromptIdentity`는 `template_id=reliability-agentic-review.null-spike`, `version=v1|v2|v3`이어야 하고, Evidence payload는 canonical JSON으로 표현 가능해야 한다. 현재 개발 비교 단계의 version 생략 기본값은 `v1`이며, 향후 채택·단일 기본값 전환은 [review-ai-prompt-engineering](../review-ai-prompt-engineering/spec.md)의 lifecycle 계약을 따른다.
+- **Prompt metadata:** 기존 PromptIdentity의 template_id와 v1/v2/v3는 legacy 실행 및 과거 snapshot 해석을 위해 보존한다. 내부 canonical projection에서 이 계약을 재사용하더라도 일반 실행의 현재 프롬프트 선택에 version을 사용해서는 안 된다(MUST NOT). Legacy API 호출자는 identity를 명시하고 CLI는 LEGACY_PROMPT_VERSION을 명시해야 한다(SHALL).
 
 이 Capability의 review entry point는 `null_spike` 외 incident type을 지원해서는 안 된다(MUST NOT).
 
@@ -184,7 +184,7 @@ Rendered messages가 configured `max_prompt_bytes`를 넘으면 시스템은 pro
 
 Instruction은 제공된 evidence와 실제 draft를 대조하고 미확인 원인·검증 결과를 확정하지 않으며 존재하지 않는 draft action을 비판하지 않도록 안내해야 한다(SHALL). Utility는 단순 재서술을 넘어 확인 우선순위와 결과에 따라 달라지는 사람의 다음 판단에 연결하도록 안내해야 한다(SHALL). 이는 prompt 계약이며 임의 free-text를 거부하는 새 deterministic acceptance 규칙이 아니다.
 
-현재 개발 비교 단계는 Python identity 기본 `v1`과 live harness 기본 `v2`를 사용한다. 채택 판단 이후에는 [review-ai-prompt-engineering](../review-ai-prompt-engineering/spec.md)의 lifecycle 계약에 따라 하나의 active 기본값으로 함께 전환해야 한다(SHALL). 과거 `v1`/`v2` 실행은 기록된 `project_revision`의 renderer와 리소스를 사용할 때 저장된 instruction과 digest를 재생할 수 있어야 한다(SHALL). 언어 변경으로 현재 revision의 digest가 달라져도 과거 invocation의 기록을 재작성해서는 안 된다(MUST NOT). v3 지원만으로 human utility나 candidate 채택을 주장해서는 안 된다(MUST NOT).
+과거 Python identity 기본 v1과 live harness 기본 v2는 legacy 기록 해석에만 해당한다. 일반 API와 live 기본은 현재 한국어 단계별 텍스트 실행을 사용해야 하며(SHALL), legacy 실행은 version을 명시해야 한다(SHALL). 과거 v1/v2/v3 실행은 기록된 project_revision의 renderer와 리소스로 재현하고 저장된 identity·digest를 재작성해서는 안 된다(MUST NOT). v3 지원이나 현재 실행 경로의 전환만으로 human utility 또는 모델 품질 채택을 주장해서는 안 된다(MUST NOT).
 
 #### Scenario: Candidate version renders without content examples
 

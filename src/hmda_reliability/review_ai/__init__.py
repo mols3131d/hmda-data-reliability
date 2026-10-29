@@ -1,7 +1,8 @@
-"""근거 범위를 제한하는 Review AI 보조 검토의 공개 API.
+"""현재 한국어 단계별 텍스트 검토의 공개 API.
 
 평가 계약은 하위 `evaluation` 모듈에서 공개한다. 이 패키지를 가져와도 선택적
-Langfuse SDK 어댑터는 자동으로 불러오지 않는다.
+Langfuse SDK 어댑터는 자동으로 불러오지 않는다. 기존 JSON 계약 타입은
+과거 기록을 읽는 호출자를 위해 유지하며 실행은 legacy에서 명시한다.
 """
 
 from hmda_reliability.review_ai.context import (

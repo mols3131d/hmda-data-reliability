@@ -12,10 +12,10 @@ import pytest
 
 from hmda_reliability.reliability.contracts import Evidence
 from hmda_reliability.review_ai import contracts
-from hmda_reliability.review_ai import service as service_module
 from hmda_reliability.review_ai import store as store_module
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
-from hmda_reliability.review_ai.prompt import render_canonical_input
+from hmda_reliability.review_ai.legacy import service as service_module
+from hmda_reliability.review_ai.prompt.legacy import render_canonical_input
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
 from hmda_reliability.runtime_ai import provider as provider_module

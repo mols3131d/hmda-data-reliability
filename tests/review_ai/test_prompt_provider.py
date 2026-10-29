@@ -10,7 +10,7 @@ import pytest
 
 from hmda_reliability.reliability.contracts import Evidence, EvidenceSource
 from hmda_reliability.review_ai import contracts
-from hmda_reliability.review_ai import prompt as prompt_module
+from hmda_reliability.review_ai.prompt import legacy as prompt_module
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
 from hmda_reliability.runtime_ai import provider as provider_module
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
@@ -219,72 +219,26 @@ def test_oversized_prompt_is_rejected_before_any_provider_boundary(
         ("v3", "02dd4098f82cb3d1f25fa8deb0c8109eb689991db7aa6720e6f7c596d5d6b23b"),
     ],
 )
-def test_korean_prompt_digests_are_pinned_to_current_revision(
-    version: str, expected_digest: str
-) -> None:
+def test_legacy_prompt_digests_are_frozen(version: str, expected_digest: str) -> None:
     rendered = prompt_module.render_canonical_input(
         {},
         contracts.PromptIdentity.model_validate({"version": version}),
         max_prompt_bytes=65_536,
     )
-    # 현재 revision의 한국어 Markdown resource 바이트를 고정한다.
-    # 과거 prompt의 replay는 기록된 project_revision의 resource로 수행한다.
+    # legacy로 격리하기 직전의 조립된 system/user 바이트를 고정한다.
     assert rendered.prompt_digest == f"sha256:{expected_digest}"
 
 
-@pytest.mark.parametrize(
-    ("version", "part_names"),
-    [
-        (
-            "v1",
-            (
-                "titles/v1.md",
-                "tasks/null_spike.md",
-                "policies/language.md",
-                "output/compact.md",
-                "policies/advisory.md",
-            ),
-        ),
-        (
-            "v2",
-            (
-                "titles/v2.md",
-                "tasks/null_spike.md",
-                "policies/language.md",
-                "output/structured.md",
-                "examples/utility_contributions.md",
-                "policies/advisory.md",
-            ),
-        ),
-        (
-            "v3",
-            (
-                "titles/v3.md",
-                "tasks/null_spike.md",
-                "policies/language.md",
-                "output/structured.md",
-                "guidance/numeric_fidelity.md",
-                "guidance/evidence_review.md",
-                "guidance/review_value.md",
-                "policies/advisory.md",
-            ),
-        ),
-    ],
-)
+@pytest.mark.parametrize("version", ["v1", "v2", "v3"])
 @pytest.mark.component
-def test_markdown_parts_are_composed_once_in_order_as_the_system_message(
-    version: str, part_names: tuple[str, ...]
+def test_legacy_system_message_comes_from_its_frozen_markdown_snapshot(
+    version: str,
 ) -> None:
     resources = files("hmda_reliability.review_ai.prompt")
-    parts: list[str] = []
-    for part_name in part_names:
-        resource = resources.joinpath(part_name)
-        assert resource.is_file(), part_name
-        part = resource.read_text(encoding="utf-8")
-        assert part.endswith("\n") and not part.endswith("\n\n"), part_name
-        parts.append(part)
+    snapshot = resources.joinpath("legacy", f"{version}.md").read_bytes()
     assert not resources.joinpath(f"{version}.md").is_file()
     assert not resources.joinpath(f"{version}.txt").is_file()
+    assert not resources.joinpath("titles", f"{version}.md").is_file()
 
     rendered = prompt_module.render_canonical_input(
         {},
@@ -293,9 +247,7 @@ def test_markdown_parts_are_composed_once_in_order_as_the_system_message(
     )
 
     assert rendered.messages[0].role == "system"
-    instruction = rendered.messages[0].content
-    assert instruction == "\n".join(parts)
-    assert all(part and instruction.count(part) == 1 for part in parts)
+    assert rendered.messages[0].content.encode("utf-8") == snapshot
 
 
 @pytest.mark.unit

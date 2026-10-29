@@ -41,19 +41,21 @@ Source dependency는 `review_ai -> reliability`와 `review_ai -> runtime_ai`만 
 
 ## Review Boundary
 
-기본 live 경로의 `review_null_spike_staged()`는 같은 사례의 근거 검토·초안 비판·종합 답변을 일반 텍스트로 수집한다. 코드가 원입력 facts와 세 원문을 별도 collection JSON으로 조립하고, 단계별 원문·checkpoint·workflow manifest를 보존한다. `completed`는 수집·저장 완료이며 기존 structured `accepted`나 의미적 검증을 뜻하지 않는다. 기존 structured API와 replay는 별도 경로로 유지한다.
+일반 API [`review_null_spike()`](../../src/hmda_reliability/review_ai/service.py)와 기본 live 경로는 같은 현재 staged 프롬프트를 사용한다. 같은 사례의 근거 검토·초안 비판·종합에 한국어 일반 텍스트를 요청한다. 코드가 원입력 facts와 세 원문을 별도 collection JSON으로 조립하고, 단계별 원문·checkpoint·workflow manifest를 보존한다. `completed`는 수집·저장 완료이며 기존 structured `accepted`나 의미적 검증을 뜻하지 않는다. 일반 실행에는 과거 v1/v2/v3 선택 인자가 없다.
 
-`review_null_spike()`는 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider에 전달되는 input에는 incident 판단에 직접 관련된 Evidence의 bounded projection과 `missing_evidence`/`unconfirmed_context` gap이 포함된다. Provider output은 canonical identity, numeric facts와 provided evidence reference의 structured facts에 대조된다. Validation result는 structured-fact policy identity를 사용하며, 기존 forbidden-action evidence는 historical provenance로 보존된다. 결과는 acceptance, preflight rejection, provider unavailability, validation failure와 provenance failure를 typed result로 구분하며 exact input/output, status/failure mapping과 validation contract는 canonical Spec이 소유한다.
+기존 JSON 응답·검증은 [`legacy.review_null_spike()`](../../src/hmda_reliability/review_ai/legacy/service.py)에서만 명시적으로 비교·재현한다. 기존 structured 호출자는 이 import 경로로 이동해야 한다. Legacy CLI도 `HMDA_AGENTIC_REVIEW_MODE=legacy`와 `HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION`을 모두 요구하며 version 기본값이 없다. `MODE=structured`는 호출 전에 거부하고 이동을 안내한다. 남아 있는 옛 `PROMPT_VERSION`은 일반 실행에서 무시한다.
 
-Provider가 실제로 호출된 logical review는 sanitized invocation evidence를 남긴다. Credential, raw rendered prompt, raw log와 raw provider error는 저장하지 않는다. Durable provenance의 required behavior와 record contract는 canonical Spec이 소유하고, exact implementation은 source에서 확인하며 tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
+Legacy 실행은 deterministic `null_spike` `Incident`, 실제 `Evidence`와 `RemediationDraft`를 immutable review input으로 고정한다. Provider에 전달되는 input에는 incident 판단에 직접 관련된 Evidence의 bounded projection과 `missing_evidence`/`unconfirmed_context` gap이 포함된다. Legacy provider output은 canonical identity, numeric facts와 provided evidence reference의 structured facts에 대조된다. Validation result는 structured-fact policy identity를 사용하며, 기존 forbidden-action evidence는 historical provenance로 보존된다. Legacy 결과는 acceptance, preflight rejection, provider unavailability, validation failure와 provenance failure를 typed result로 구분한다. 현재와 legacy의 exact input/output, status/failure mapping과 validation contract는 canonical Spec이 소유한다.
 
-Runtime이 반환한 응답 본문은 검증 전에 별도 로컬 파일에 보존하고 결과의 `response_path`로 제공한다. 따라서 출력 계약에 실패해도 실제 모델 답변을 조사할 수 있다. 이 파일의 보존은 review acceptance와 별개이며 sanitized record나 외부 projection에 원문을 추가하지 않는다.
+현재 실행은 workflow·단계 checkpoint를, legacy 실행은 sanitized invocation evidence를 남긴다. 이 metadata에는 credential, raw rendered prompt, raw log와 raw provider error를 넣지 않는다. Durable provenance의 required behavior와 record contract는 canonical Spec이 소유하고, exact implementation은 source에서 확인하며 tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
-Review utility는 `rubric_v1` human rubric으로 평가한다. `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`을 사람이 점수와 rationale로 판정하고, 같은 case/version/rubric/revision의 baseline/candidate 평가를 invocation identity, change-under-test와 human decision에 연결해 비교한다. Positive, restatement-negative와 hedging-negative 사례는 판별력을 확인하는 test fixture로만 사용한다. 이 계약은 전용 evaluation store나 고정 점수 proof runner를 제공하지 않고, 자동 LLM judge도 사용하지 않는다.
+Runtime이 반환한 응답 본문은 검증 전에 별도 로컬 파일에 보존한다. 현재 결과의 `stages[].response_path`, legacy 결과의 `response_path`로 확인한다. 따라서 출력 계약에 실패해도 실제 모델 답변을 조사할 수 있다. 이 파일의 보존은 review acceptance와 별개이며 sanitized record나 외부 projection에 원문을 추가하지 않는다.
+
+Legacy typed output의 utility는 `rubric_v1` human rubric으로 평가한다. `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`을 사람이 점수와 rationale로 판정하고, 같은 case/version/rubric/revision의 baseline/candidate 평가를 invocation identity, change-under-test와 human decision에 연결해 비교한다. 현재 staged collection은 이 typed-output 평가에 자동 변환하지 않고 원입력과 원문을 사람이 대조한다. Positive, restatement-negative와 hedging-negative 사례는 판별력을 확인하는 test fixture로만 사용한다. 이 계약은 전용 evaluation store나 고정 점수 proof runner를 제공하지 않고, 자동 LLM judge도 사용하지 않는다.
 
 ## Optional External Observation
 
-명시적으로 활성화한 synthetic live harness는 local provenance를 검증한 뒤 허용된 invocation record를 Langfuse에 사후 projection할 수 있다. Projection은 Review AI의 public API, `runtime_ai` transport, local record 또는 acceptance authority를 변경하지 않는다. SDK는 optional이며 별도 process에서 실행되고, 실패는 core review 결과와 분리된다. 정확한 output digest를 유지하기 위해 SDK media detection/upload를 끈다. SDK 반환만으로 원격 ingestion이나 human evaluation 완료를 주장하지 않는다.
+명시적으로 활성화한 legacy synthetic live harness는 local provenance를 검증한 뒤 허용된 invocation record를 Langfuse에 사후 projection할 수 있다. 현재 staged collection은 이 projection을 생략한다. Projection은 Review AI의 public API, `runtime_ai` transport, local record 또는 acceptance authority를 변경하지 않는다. SDK는 optional이며 별도 process에서 실행되고, 실패는 core review 결과와 분리된다. 정확한 output digest를 유지하기 위해 SDK media detection/upload를 끈다. SDK 반환만으로 원격 ingestion이나 human evaluation 완료를 주장하지 않는다.
 
 Review AI의 offline suite, live provider proof, human rubric 평가와 Langfuse local setup·projection·annotation 절차는 [Review AI Evaluation](../development/review-ai-evaluation.md)이 안내한다. Remote annotation을 repository evaluation으로 자동 import하지 않으며, 실제 utility 판단은 사람이 소유한다.
 
@@ -61,13 +63,15 @@ Review AI의 offline suite, live provider proof, human rubric 평가와 Langfuse
 
 `hmda_reliability.review_ai` package root는 review consumer가 직접 사용하는 최소 surface만 노출한다.
 
+일반 실행 함수는 `review_null_spike()`이며 `StagedReviewResult`를 반환한다. `review_null_spike_staged()`는 같은 실행의 기존 명시 이름이다. 아래의 `AgenticReview*`·`PromptIdentity` 계약은 역사 데이터와의 호환을 위해 재수출하며 일반 실행의 version 선택을 제공하지 않는다. 과거 실행 함수는 별도 `hmda_reliability.review_ai.legacy` namespace에서 사용한다.
+
 - `AgenticReviewInput`, `AgenticReviewOutput`, `AgenticReviewResult`
 - `BoundedReviewContext`, `AgenticReviewUtilityContribution`
 - `RUBRIC_V1`, `ReviewValueAssessment`, `ReviewValueComparisonEvidence`
 - `PromptIdentity`
 - `compare_review_value()`
 - `review_null_spike()`
-- `StageAnswer`, `StagedReviewOutput`, `StagedReviewResult`
+- `StageAnswer`, `StagedExecutionSettings`, `StagedReviewOutput`, `StagedReviewResult`
 - `review_null_spike_staged()`
 
 Prompt rendering, deterministic validation, provenance contract/store와 storage error는 domain 내부 module surface다. 필요할 때 owning module을 직접 읽고, 두 번째 외부 consumer가 생기기 전에는 package root API를 넓히지 않는다.
@@ -77,7 +81,7 @@ Prompt rendering, deterministic validation, provenance contract/store와 storage
 - Model output은 approval 또는 recovery authority가 아니다.
 - Prompt에 전달되는 incident, evidence와 draft는 untrusted data로 취급한다.
 - Provider output은 deterministic validation을 통과해도 Reliability truth를 수정하지 않는다.
-- Provider 호출 전 거부된 input은 invocation provenance를 만들지 않는다.
+- 최초 입력 사전 검사에서 거부된 실행은 provider를 호출하지 않는다. Workflow 시작 후 후속 단계가 거부되면 앞선 원문과 checkpoint를 보존한다.
 - Review-specific provenance store는 두 번째 독립 consumer가 생기기 전까지 이 domain이 소유한다.
 
 ## Contracts And Evidence
@@ -93,5 +97,5 @@ Prompt rendering, deterministic validation, provenance contract/store와 storage
 1. [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py), [`context.py`](../../src/hmda_reliability/review_ai/context.py)와 [`prompt/`](../../src/hmda_reliability/review_ai/prompt/)에서 current review input, bounded context와 provider boundary 구현을 확인한다. 모듈의 분할·재사용·조립과 실제 메시지 전달은 [Prompt Composition](../development/review-ai-prompts.md)이 안내한다.
 1. [`evaluation/value.py`](../../src/hmda_reliability/review_ai/evaluation/value.py)에서 human rubric과 baseline/candidate comparison contract를 확인한다.
 1. [`evaluation/langfuse.py`](../../src/hmda_reliability/review_ai/evaluation/langfuse.py)에서 optional projection과 수동 annotation helper를 확인한다.
-1. [`validator.py`](../../src/hmda_reliability/review_ai/validator.py)와 [`service.py`](../../src/hmda_reliability/review_ai/service.py)에서 current deterministic guard와 orchestration 구현을 확인한다.
+1. [`service.py`](../../src/hmda_reliability/review_ai/service.py)와 [`staged/service.py`](../../src/hmda_reliability/review_ai/staged/service.py)에서 현재 실행 경로를 확인한다. 과거 structured guard와 orchestration은 [`validator.py`](../../src/hmda_reliability/review_ai/validator.py)와 [`legacy/service.py`](../../src/hmda_reliability/review_ai/legacy/service.py)를 따른다.
 1. Provider mechanics가 필요하면 [Runtime AI](runtime-ai.md)로 이동한다.

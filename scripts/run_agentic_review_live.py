@@ -25,14 +25,12 @@ from hmda_reliability.reliability import (
     create_remediation_draft,
     detect_basic_incidents,
 )
-from hmda_reliability.review_ai import (
+from hmda_reliability.review_ai import review_null_spike
+from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewResult,
-    PromptIdentity,
-    review_null_spike,
-)
-from hmda_reliability.review_ai.contracts import (
     AgenticReviewStatus,
+    PromptIdentity,
     ReviewValidationStatus,
 )
 from hmda_reliability.review_ai.evidence import (
@@ -42,12 +40,10 @@ from hmda_reliability.review_ai.evidence import (
 from hmda_reliability.review_ai.prompt import (
     build_canonical_input,
     canonical_json_bytes,
-    render_canonical_input,
 )
 from hmda_reliability.review_ai.settings import ReviewAISettings
 from hmda_reliability.review_ai.staged.contracts import StagedReviewOutput
 from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
-from hmda_reliability.review_ai.staged.service import review_null_spike_staged
 from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.review_ai.staged.store import StagedReviewStore
 from hmda_reliability.runtime_ai import RuntimeAISettings
@@ -62,7 +58,7 @@ _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 _LOGGER = get_logger(__name__)
 
 
-class Reviewer(Protocol):
+class LegacyReviewer(Protocol):
     def __call__(
         self,
         *,
@@ -77,7 +73,7 @@ class Reviewer(Protocol):
     ) -> AgenticReviewResult: ...
 
 
-class StagedReviewer(Protocol):
+class Reviewer(Protocol):
     def __call__(
         self,
         *,
@@ -96,12 +92,12 @@ def main(
     *,
     env: Mapping[str, str] | None = None,
     reviewer: Reviewer = review_null_spike,
-    staged_reviewer: StagedReviewer | None = None,
+    legacy_reviewer: LegacyReviewer | None = None,
 ) -> int:
     """환경에서 명시적으로 켜면 Review AI 검증을 실행하고 결과를 출력한다.
 
     기본 staged 모드에서는 원문을 제외한 상태와 경로만 표준 출력에 쓴다.
-    structured 모드는 기존 검토 결과와 선택적 Langfuse 투영을 유지한다.
+    legacy 모드는 명시한 과거 version의 검토 결과와 Langfuse 투영을 유지한다.
     """
 
     environment = os.environ if env is None else env
@@ -111,9 +107,42 @@ def main(
         return 0
 
     mode = environment.get("HMDA_AGENTIC_REVIEW_MODE", "staged").strip().lower()
-    if mode not in {"staged", "structured"}:
+    if mode == "structured":
+        print(
+            "structured 모드는 legacy로 이동했습니다. 현재 실행은 "
+            "HMDA_AGENTIC_REVIEW_MODE=staged, 과거 재현은 "
+            "HMDA_AGENTIC_REVIEW_MODE=legacy와 "
+            "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION=v1|v2|v3를 사용하세요.",
+            file=sys.stderr,
+        )
+        return 2
+    if mode not in {"staged", "legacy"}:
         print("Invalid live agentic review mode.", file=sys.stderr)
         return 2
+    prompt_identity = None
+    if mode == "legacy":
+        try:
+            prompt_identity = PromptIdentity.model_validate(
+                {
+                    "version": environment.get(
+                        "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION", ""
+                    ).strip()
+                }
+            )
+        except ValidationError:
+            print(
+                "Legacy 실행에는 "
+                "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION=v1|v2|v3를 "
+                "명시해야 합니다.",
+                file=sys.stderr,
+            )
+            return 2
+    elif "HMDA_AGENTIC_REVIEW_PROMPT_VERSION" in environment:
+        print(
+            "HMDA_AGENTIC_REVIEW_PROMPT_VERSION은 현재 실행에서 무시합니다. "
+            "현재 staged 프롬프트를 사용합니다.",
+            file=sys.stderr,
+        )
 
     missing_env_vars = [
         name for name in _REQUIRED_ENVIRONMENT if not environment.get(name, "").strip()
@@ -198,17 +227,6 @@ def main(
             if mode == "staged"
             else None
         )
-        prompt_identity = (
-            PromptIdentity.model_validate(
-                {
-                    "version": environment.get(
-                        "HMDA_AGENTIC_REVIEW_PROMPT_VERSION", "v2"
-                    ),
-                }
-            )
-            if mode == "structured"
-            else None
-        )
     except (KeyError, ValueError, ValidationError):
         print("Invalid live agentic review configuration.", file=sys.stderr)
         return 2
@@ -221,7 +239,7 @@ def main(
         assert execution_settings is not None
         return _run_staged_live(
             environment=environment,
-            reviewer=staged_reviewer or review_null_spike_staged,
+            reviewer=reviewer,
             incident=incident,
             evidence=evidence,
             draft=draft,
@@ -233,7 +251,13 @@ def main(
         )
 
     assert prompt_identity is not None
-    result = reviewer(
+    if legacy_reviewer is None:
+        from hmda_reliability.review_ai.legacy import (
+            review_null_spike as review_legacy_null_spike,
+        )
+
+        legacy_reviewer = review_legacy_null_spike
+    result = legacy_reviewer(
         incident=incident,
         evidence=[evidence],
         draft=draft,
@@ -270,7 +294,7 @@ def main(
 def _run_staged_live(
     *,
     environment: Mapping[str, str],
-    reviewer: StagedReviewer,
+    reviewer: Reviewer,
     incident: Incident,
     evidence: Evidence,
     draft: RemediationDraft,
@@ -281,6 +305,7 @@ def _run_staged_live(
     artifact_root: Path,
 ) -> int:
     """모델 원문을 로컬 파일에 두고 수집 상태와 출처만 출력한다."""
+    print("Review AI workflow: current (staged-v1).", file=sys.stderr)
     result = reviewer(
         incident=incident,
         evidence=[evidence],
@@ -548,6 +573,8 @@ def _verify_live_provenance(
         return False
 
     try:
+        from hmda_reliability.review_ai.prompt.legacy import render_canonical_input
+
         if record is None:
             record = AgenticInvocationEvidence.model_validate_json(
                 result.invocation_path.read_text(encoding="utf-8")

@@ -18,6 +18,7 @@ from hmda_reliability.runtime_ai.contracts import ChatMessage
 _STAGE_PARTS: dict[StageId, tuple[str, ...]] = {
     "evidence_review": (
         "tasks/null_spike.md",
+        "policies/language.md",
         "output/prose.md",
         "guidance/numeric_fidelity.md",
         "guidance/evidence_review.md",
@@ -25,12 +26,14 @@ _STAGE_PARTS: dict[StageId, tuple[str, ...]] = {
     ),
     "draft_critique": (
         "tasks/null_spike.md",
+        "policies/language.md",
         "output/prose.md",
         "guidance/evidence_review.md",
         "policies/advisory.md",
     ),
     "synthesis": (
         "tasks/null_spike.md",
+        "policies/language.md",
         "output/prose.md",
         "guidance/numeric_fidelity.md",
         "guidance/evidence_review.md",

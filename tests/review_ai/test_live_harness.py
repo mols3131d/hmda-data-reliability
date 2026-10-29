@@ -12,14 +12,13 @@ from typing import Literal, cast
 import pytest
 
 from hmda_reliability.reliability import Evidence, Incident, RemediationDraft
-from hmda_reliability.review_ai import (
+from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
     AgenticReviewOutput,
     AgenticReviewResult,
+    AgenticReviewValidation,
     PromptIdentity,
-    review_null_spike,
 )
-from hmda_reliability.review_ai.contracts import AgenticReviewValidation
 from hmda_reliability.review_ai.evidence import (
     AgenticInvocationEvidence,
     SanitizedAgenticReviewConfiguration,
@@ -39,7 +38,8 @@ pytestmark = pytest.mark.unit
 def _live_environment(tmp_path: Path) -> dict[str, str]:
     return {
         "HMDA_AGENTIC_REVIEW_LIVE": "true",
-        "HMDA_AGENTIC_REVIEW_MODE": "structured",
+        "HMDA_AGENTIC_REVIEW_MODE": "legacy",
+        "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION": "v2",
         "HMDA_AGENTIC_REVIEW_BASE_URL": "http://localhost:11434/v1",
         "HMDA_AGENTIC_REVIEW_API_KEY": "live-test-secret",
         "HMDA_AGENTIC_REVIEW_MODEL": "local-model",
@@ -93,13 +93,13 @@ def _run_staged_review(
     )
 
 
-def test_default_live_mode_is_staged_and_ignores_structured_prompt_version(
+def test_default_live_mode_ignores_old_prompt_version_without_echoing_its_value(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     environment = _live_environment(tmp_path)
     environment.pop("HMDA_AGENTIC_REVIEW_MODE")
-    environment["HMDA_AGENTIC_REVIEW_PROMPT_VERSION"] = "unsupported"
+    environment["HMDA_AGENTIC_REVIEW_PROMPT_VERSION"] = "PRIVATE_STALE_VERSION"
     calls: list[dict[str, object]] = []
 
     def staged_review(**kwargs: object) -> StagedReviewResult:
@@ -113,8 +113,8 @@ def test_default_live_mode_is_staged_and_ignores_structured_prompt_version(
 
     exit_code = live_module.main(
         env=environment,
-        reviewer=unexpected_structured_review,
-        staged_reviewer=staged_review,
+        legacy_reviewer=unexpected_structured_review,
+        reviewer=staged_review,
     )
 
     assert exit_code == 1
@@ -126,9 +126,13 @@ def test_default_live_mode_is_staged_and_ignores_structured_prompt_version(
     assert (
         cast(ReviewAISettings, calls[0]["review_settings"]).max_prompt_bytes == 32_768
     )
-    payload = json.loads(capsys.readouterr().out)
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
     assert payload["status"] == "input_rejected"
     assert "output" not in payload
+    assert "HMDA_AGENTIC_REVIEW_PROMPT_VERSION" in captured.err
+    assert "Review AI workflow: current (staged-v1)." in captured.err
+    assert "PRIVATE_STALE_VERSION" not in captured.out + captured.err
 
 
 def test_disabled_staged_live_mode_never_calls_the_reviewer(
@@ -137,7 +141,7 @@ def test_disabled_staged_live_mode_never_calls_the_reviewer(
     def unexpected_review(**kwargs: object) -> StagedReviewResult:
         pytest.fail("disabled live mode must not call the staged reviewer")
 
-    exit_code = live_module.main(env={}, staged_reviewer=unexpected_review)
+    exit_code = live_module.main(env={}, reviewer=unexpected_review)
 
     assert exit_code == 0
     assert "disabled" in capsys.readouterr().out.lower()
@@ -158,12 +162,58 @@ def test_invalid_live_mode_is_rejected_before_review(
 
     exit_code = live_module.main(
         env=environment,
-        reviewer=unexpected_structured_review,
-        staged_reviewer=unexpected_staged_review,
+        legacy_reviewer=unexpected_structured_review,
+        reviewer=unexpected_staged_review,
     )
 
     assert exit_code == 2
     assert "mode" in capsys.readouterr().err.lower()
+
+
+def test_structured_mode_requires_explicit_legacy_migration_before_any_call(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_MODE"] = "structured"
+
+    def unexpected_review(**kwargs: object) -> StagedReviewResult:
+        pytest.fail("removed structured mode must not start the current workflow")
+
+    def unexpected_legacy_review(**kwargs: object) -> AgenticReviewResult:
+        pytest.fail("removed structured mode must not start a legacy invocation")
+
+    assert (
+        live_module.main(
+            env=environment,
+            reviewer=unexpected_review,
+            legacy_reviewer=unexpected_legacy_review,
+        )
+        == 2
+    )
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "HMDA_AGENTIC_REVIEW_MODE=legacy" in captured.err
+    assert "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION" in captured.err
+
+
+@pytest.mark.parametrize("version", [None, "", " "])
+def test_legacy_mode_never_falls_back_to_the_old_prompt_version(
+    tmp_path: Path, version: str | None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    environment = _live_environment(tmp_path)
+    environment["HMDA_AGENTIC_REVIEW_PROMPT_VERSION"] = "v3"
+    if version is None:
+        environment.pop("HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION")
+    else:
+        environment["HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION"] = version
+
+    def unexpected_legacy_review(**kwargs: object) -> AgenticReviewResult:
+        pytest.fail("legacy mode must require its own explicit version")
+
+    assert (
+        live_module.main(env=environment, legacy_reviewer=unexpected_legacy_review) == 2
+    )
+    assert "HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION" in capsys.readouterr().err
 
 
 def test_invalid_staged_configuration_never_calls_the_reviewer(
@@ -177,7 +227,7 @@ def test_invalid_staged_configuration_never_calls_the_reviewer(
     def unexpected_review(**kwargs: object) -> StagedReviewResult:
         pytest.fail("invalid settings must not call the staged reviewer")
 
-    exit_code = live_module.main(env=environment, staged_reviewer=unexpected_review)
+    exit_code = live_module.main(env=environment, reviewer=unexpected_review)
 
     assert exit_code == 2
     assert "configuration" in capsys.readouterr().err.lower()
@@ -187,10 +237,10 @@ def test_invalid_staged_configuration_never_calls_the_reviewer(
     ("mode", "overrides", "expected"),
     [
         ("staged", {}, (30, 10, 300, 0)),
-        ("structured", {}, (30, None, None, 1)),
+        ("legacy", {}, (30, None, None, 1)),
         ("staged", {"TIMEOUT_SECONDS": "17"}, (17, 10, 17, 0)),
         (
-            "structured",
+            "legacy",
             {
                 "TIMEOUT_SECONDS": "17",
                 "READ_TIMEOUT_SECONDS": "23",
@@ -236,7 +286,7 @@ def test_live_timing_environment_precedence_and_mode_defaults(
         return StagedReviewResult(status="input_rejected", failure_code="test_only")
 
     exit_code = live_module.main(
-        env=environment, reviewer=structured_review, staged_reviewer=staged_review
+        env=environment, legacy_reviewer=structured_review, reviewer=staged_review
     )
 
     assert exit_code == 1 and len(calls) == 1
@@ -285,11 +335,11 @@ def test_invalid_live_timing_environment_is_rejected_before_review(
     def unexpected_review(**kwargs: object) -> StagedReviewResult:
         pytest.fail("invalid timing configuration must not start a workflow")
 
-    assert live_module.main(env=environment, staged_reviewer=unexpected_review) == 2
+    assert live_module.main(env=environment, reviewer=unexpected_review) == 2
     assert "configuration" in capsys.readouterr().err.lower()
 
 
-def test_structured_mode_does_not_read_staged_execution_budgets(tmp_path: Path) -> None:
+def test_legacy_mode_does_not_read_staged_execution_budgets(tmp_path: Path) -> None:
     environment = _live_environment(tmp_path)
     environment["HMDA_AGENTIC_REVIEW_STAGE_BUDGET_SECONDS"] = "invalid"
     environment["HMDA_AGENTIC_REVIEW_WORKFLOW_BUDGET_SECONDS"] = "invalid"
@@ -299,7 +349,7 @@ def test_structured_mode_does_not_read_staged_execution_budgets(tmp_path: Path) 
         calls.append(kwargs)
         return AgenticReviewResult(status="input_rejected", failure_code="test_only")
 
-    assert live_module.main(env=environment, reviewer=structured_review) == 1
+    assert live_module.main(env=environment, legacy_reviewer=structured_review) == 1
     assert len(calls) == 1
     assert "execution_settings" not in calls[0]
 
@@ -385,7 +435,7 @@ def test_configuration_comparison_normalizes_root_urls_without_changing_the_reco
 
 
 @pytest.mark.parametrize("tamper", [False, True])
-def test_structured_live_verifies_the_effective_timeout_configuration(
+def test_legacy_live_verifies_the_effective_timeout_configuration(
     tmp_path: Path, tamper: bool, capsys: pytest.CaptureFixture[str]
 ) -> None:
     class UnavailableProvider:
@@ -395,6 +445,8 @@ def test_structured_live_verifies_the_effective_timeout_configuration(
             )
 
     def structured_review(**kwargs: object) -> AgenticReviewResult:
+        from hmda_reliability.review_ai.legacy import review_null_spike
+
         result = review_null_spike(
             incident=cast(Incident, kwargs["incident"]),
             evidence=cast(Sequence[Evidence], kwargs["evidence"]),
@@ -415,7 +467,7 @@ def test_structured_live_verifies_the_effective_timeout_configuration(
         return result
 
     exit_code = live_module.main(
-        env=_live_environment(tmp_path), reviewer=structured_review
+        env=_live_environment(tmp_path), legacy_reviewer=structured_review
     )
 
     assert exit_code == (3 if tamper else 1)
@@ -439,7 +491,7 @@ def test_staged_live_verifies_the_workflow_and_keeps_answers_off_the_console(
             result.workflow_path.unlink()
         return result
 
-    exit_code = live_module.main(env=environment, staged_reviewer=staged_review)
+    exit_code = live_module.main(env=environment, reviewer=staged_review)
 
     captured = capsys.readouterr()
     assert exit_code == (1 if remove_manifest else 0)
@@ -477,7 +529,7 @@ def test_staged_live_explicitly_skips_langfuse_projection(
 
     monkeypatch.setattr(live_module, "_export_live_projection", unexpected_export)
 
-    exit_code = live_module.main(env=environment, staged_reviewer=staged_review)
+    exit_code = live_module.main(env=environment, reviewer=staged_review)
 
     assert exit_code == 1
     assert "skipped_staged_mode" in capsys.readouterr().err
@@ -512,7 +564,7 @@ def test_staged_live_verifies_a_collection_persisted_after_budget_exhaustion(
         assert result.output_path is not None and result.output_path.is_file()
         return result
 
-    exit_code = live_module.main(env=environment, staged_reviewer=staged_review)
+    exit_code = live_module.main(env=environment, reviewer=staged_review)
 
     captured = capsys.readouterr()
     assert exit_code == 1
@@ -583,7 +635,7 @@ def test_staged_live_rejects_mismatched_manifest_or_output(
         result.workflow_path.write_text(json.dumps(manifest), encoding="utf-8")
         return result
 
-    exit_code = live_module.main(env=environment, staged_reviewer=staged_review)
+    exit_code = live_module.main(env=environment, reviewer=staged_review)
 
     captured = capsys.readouterr()
     assert exit_code == 1
@@ -600,7 +652,7 @@ def test_default_harness_is_disabled_and_never_calls_review(
         calls.append(kwargs)
         raise AssertionError("live review must remain disabled")
 
-    exit_code = live_module.main(env={}, reviewer=fail_if_called)
+    exit_code = live_module.main(env={}, legacy_reviewer=fail_if_called)
 
     assert exit_code == 0
     assert calls == []
@@ -618,7 +670,7 @@ def test_opt_in_requires_provider_identity_values(
 
     exit_code = live_module.main(
         env={"HMDA_AGENTIC_REVIEW_LIVE": "true"},
-        reviewer=fail_if_called,
+        legacy_reviewer=fail_if_called,
     )
 
     captured = capsys.readouterr()
@@ -643,7 +695,7 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
 
     exit_code = live_module.main(
         env=_live_environment(tmp_path),
-        reviewer=capture_review,
+        legacy_reviewer=capture_review,
     )
 
     assert exit_code == 1
@@ -675,12 +727,12 @@ def test_live_harness_passes_explicit_settings_and_deterministic_material(
 
 
 @pytest.mark.parametrize("version", ["v1", "v2", "v3", "unsupported"])
-def test_live_prompt_version_is_explicit_and_invalid_version_never_calls_provider(
+def test_legacy_live_prompt_version_is_explicit_and_invalid_never_calls_provider(
     tmp_path: Path,
     version: str,
 ) -> None:
     environment = _live_environment(tmp_path)
-    environment["HMDA_AGENTIC_REVIEW_PROMPT_VERSION"] = version
+    environment["HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION"] = version
     calls: list[dict[str, object]] = []
 
     def capture_review(**kwargs: object) -> AgenticReviewResult:
@@ -689,7 +741,7 @@ def test_live_prompt_version_is_explicit_and_invalid_version_never_calls_provide
             status="input_rejected", failure_code="test_preflight"
         )
 
-    exit_code = live_module.main(env=environment, reviewer=capture_review)
+    exit_code = live_module.main(env=environment, legacy_reviewer=capture_review)
 
     if version == "unsupported":
         assert exit_code == 2 and calls == []
@@ -722,7 +774,7 @@ def test_live_harness_auto_resolves_project_revision(
             failure_code="simulated_typed_result",
         )
 
-    exit_code = live_module.main(env=environment, reviewer=capture_review)
+    exit_code = live_module.main(env=environment, legacy_reviewer=capture_review)
 
     assert exit_code == 1
     assert len(calls) == 1
@@ -789,7 +841,7 @@ def test_auto_project_revision_failure_stops_before_review(
 
     monkeypatch.setattr(live_module, "_current_git_revision", fail_revision)
 
-    exit_code = live_module.main(env=environment, reviewer=fail_if_called)
+    exit_code = live_module.main(env=environment, legacy_reviewer=fail_if_called)
 
     assert exit_code == 2
     assert calls == []
@@ -808,7 +860,7 @@ def test_invalid_numeric_live_configuration_fails_before_review(
         calls.append(kwargs)
         raise AssertionError("invalid configuration must not call provider")
 
-    exit_code = live_module.main(env=environment, reviewer=fail_if_called)
+    exit_code = live_module.main(env=environment, legacy_reviewer=fail_if_called)
 
     assert exit_code == 2
     assert calls == []
@@ -851,7 +903,7 @@ def test_accepted_live_result_requires_verified_invocation_evidence(
 
     exit_code = live_module.main(
         env=_live_environment(tmp_path),
-        reviewer=accepted_without_evidence,
+        legacy_reviewer=accepted_without_evidence,
     )
 
     captured = capsys.readouterr()

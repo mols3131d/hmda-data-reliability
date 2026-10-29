@@ -68,6 +68,12 @@ class AgenticReviewStatus(StrEnum):
 
 
 class PromptIdentity(ReliabilityContract):
+    """Legacy JSON 프롬프트 및 과거 기록 해석을 위한 identity.
+
+    기존 v1 기본값은 과거 데이터 로딩을 위해 유지한다. 일반 실행의 현재
+    프롬프트는 이 version으로 선택하지 않는다.
+    """
+
     template_id: Literal["reliability-agentic-review.null-spike"] = (
         "reliability-agentic-review.null-spike"
     )

@@ -1,28 +1,25 @@
 # Review AI Prompt Parts
 
-프롬프트를 수정할 때는 해당 책임의 Markdown 모듈을 편집한다. 모듈별 책임·재사용 판단·최종 메시지 확인 절차는 [Prompt Composition](../../../../docs/development/review-ai-prompts.md)을 먼저 읽는다. 이 안내서는 모델에 전달되지 않는다.
+일반 API와 live CLI는 현재 한국어 단계별 프롬프트를 사용한다. 프롬프트 version을 고르지 않으며 모델이 텍스트로 답하면 코드가 결과 JSON을 취합한다. 편집·재사용 절차는 [Prompt Composition](../../../../docs/development/review-ai-prompts.md)을 따른다. 이 README는 모델에 전달하지 않는다.
 
-기본 live의 단계별 텍스트 경로는 [staged/](staged/)의 질문과 [output/prose.md](output/prose.md)를 사용한다. 단계 조합은 [staged/prompt.py](../staged/prompt.py)가 소유한다. 아래 version 조합은 명시적인 structured 비교·재현 경로다.
-
-## Parts
+## Current Parts
 
 | Directory | Responsibility |
 | --- | --- |
-| [tasks/](tasks/) | 사고 유형에 결합된 검토 역할·범위와 입력 취급 |
-| [policies/](policies/) | Review AI 조합 사이에 공유하는 한국어·원문 보존과 자문 정책 |
-| [output/](output/) | v1의 [간략 출력 계약](output/compact.md), v2/v3의 [상세 출력 계약](output/structured.md) |
-| [guidance/](guidance/) | 수치 보존, 근거·초안 충실성과 검토 가치의 판단 지침 |
-| [examples/](examples/) | 출력 계약에 맞춘 형식 예시 |
-| [titles/](titles/) | version별 조합 표시 제목 |
+| [tasks/](tasks/) | 사고 유형에 결합된 검토 역할·입력 취급 |
+| [policies/](policies/) | 한국어·식별자 보존과 자문 정책 |
+| [output/prose.md](output/prose.md) | 일반 텍스트 응답과 이전 답변의 취급 |
+| [guidance/](guidance/) | 수치·근거·초안 검토 지침 |
+| [staged/](staged/) | 근거 검토·초안 비판·종합의 고정 질문 |
 
-## Composition
+현재 조합은 [staged/prompt.py](../staged/prompt.py)가 소유한다. 고정된 모듈의 system 지시문과 별도 user 사례 입력, 이전 assistant 답변을 함께 전달한다. 전체 메시지 배열에 byte cap과 digest를 적용하며 사례 데이터가 모듈을 선택하지 않는다. 모듈은 import 시 로드하므로 편집 뒤에는 새 process에서 확인한다.
 
-Version은 사용할 모듈과 순서를 정하는 조합이다. 정확한 파일 목록은 [__init__.py](__init__.py)의 `_PROMPT_PARTS`가 소유한다. 제목 → 작업 → 언어 정책 → 출력 설명 → 선택한 지침·예시 → 자문 정책 순서로 조립한다.
+## Legacy Snapshots
 
-각 모듈은 마지막 LF 하나를 포함한다. 로더는 원문 사이에 LF 하나를 넣어 섹션 사이의 빈 줄을 만든다. 공백을 제거하거나 Markdown을 변환하지 않는다. 공통 모듈 수정은 모든 참조 조합에 영향을 준다. import 시 로드하므로 편집 후 새 process에서 확인한다.
+과거 v1/v2/v3 JSON 지시문은 [legacy/](legacy/)의 고정된 완성 Markdown snapshot이다. [명시적 legacy renderer](legacy/__init__.py)만 이 리소스를 읽는다. 현재 공유 모듈을 수정해도 legacy 본문·digest는 바뀌지 않는다. 일반 API import와 현재 프롬프트 조립은 legacy를 로드하지 않는다.
 
-조립한 본문은 system 메시지 하나가 되고 canonical input JSON은 별도 user 메시지에 넣는다. 전체 메시지 배열의 canonical UTF-8 바이트에 크기 제한과 digest를 적용한 뒤 provider에 전달한다. 모델 응답은 기존 JSON 객체 하나다.
+과거 JSON 검토의 실행은 [review_ai.legacy](../legacy/__init__.py)에서 version을 명시한다. 더 오래된 invocation은 기록된 project_revision의 renderer와 리소스로 재현하며 저장된 identity·digest를 다시 쓰지 않는다.
 
 ## Lifecycle
 
-현재 다중 version은 개발 비교용이며 검증·채택 후 일반 실행의 기본 조합은 하나로 통일한다. 채택·과거 재현의 정본은 [Prompt lifecycle and active default](../../../../openspec/specs/review-ai-prompt-engineering/spec.md#requirement-prompt-lifecycle-and-active-default), 현재 기본값과 평가 절차는 [Review AI Evaluation](../../../../docs/development/review-ai-evaluation.md)을 따른다.
+현재 실행 경로의 workflow identity `staged-v1`은 출처 기록용이며 retired v1/v2/v3 중 하나를 선택하는 설정이 아니다. 일반 진입점의 선택 원칙은 [Prompt lifecycle and active default](../../../../openspec/specs/review-ai-prompt-engineering/spec.md#requirement-prompt-lifecycle-and-active-default)가 소유한다. 실행 경로의 통일은 실제 모델 품질이 검증됐다는 의미가 아니다.

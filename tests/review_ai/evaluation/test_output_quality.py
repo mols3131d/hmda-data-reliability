@@ -28,7 +28,7 @@ from hmda_reliability.review_ai.contracts import (
     AgenticReviewOutput,
     PromptIdentity,
 )
-from hmda_reliability.review_ai.prompt import render_review_prompt
+from hmda_reliability.review_ai.prompt.legacy import render_review_prompt
 from hmda_reliability.review_ai.validator import validate_agentic_review
 
 pytestmark = pytest.mark.unit

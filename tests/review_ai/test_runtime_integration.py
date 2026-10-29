@@ -18,7 +18,7 @@ from hmda_reliability.review_ai import (
 )
 from hmda_reliability.review_ai.evaluation import langfuse as projection
 from hmda_reliability.review_ai.evidence import AgenticInvocationEvidence
-from hmda_reliability.review_ai.prompt import render_canonical_input
+from hmda_reliability.review_ai.prompt.legacy import render_canonical_input
 from hmda_reliability.runtime_ai import provider as provider_module
 from scripts import run_agentic_review_live as live_module
 from tests.review_ai.test_live_harness import _live_environment

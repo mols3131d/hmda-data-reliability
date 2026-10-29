@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import sys
 from copy import deepcopy
 from importlib.resources import files
 from typing import cast
@@ -15,8 +17,8 @@ from hmda_reliability.review_ai.contracts import AgenticReviewInput, PromptIdent
 from hmda_reliability.review_ai.prompt import (
     PromptTooLargeError,
     build_canonical_input,
-    render_canonical_input,
 )
+from hmda_reliability.review_ai.prompt.legacy import render_canonical_input
 from hmda_reliability.review_ai.staged.contracts import (
     STAGE_IDS,
     StageAnswer,
@@ -46,6 +48,26 @@ def _answers() -> tuple[StageAnswer, ...]:
             stage_id="synthesis", text="current_null_rate=0.99라는 주장도 검증 전이다."
         ),
     )
+
+
+@pytest.mark.unit
+def test_current_prompt_import_does_not_load_legacy_versions() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; import hmda_reliability.review_ai.prompt as current; "
+            "assert 'hmda_reliability.review_ai.prompt.legacy' not in sys.modules; "
+            "assert not hasattr(current, '_SYSTEM_INSTRUCTION_V1'); "
+            "assert not hasattr(current, 'render_review_prompt'); "
+            "assert not hasattr(current, 'render_canonical_input')",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.unit
@@ -132,7 +154,8 @@ def test_stage_prompt_separates_fixed_questions_canonical_case_and_assistant_tex
     system_text = "\n".join(
         message.content for message in rendered.messages if message.role == "system"
     )
-    assert "한국어 일반 텍스트" in system_text
+    assert "한국어로 작성한다." in system_text
+    assert "일반 텍스트로 답한다." in system_text
     assert "승인을 부여하거나 실행 권한이 있다고 주장하지 않는다." in system_text
     assert "JSON 객체 하나만 반환한다." not in system_text
     assert "review_summary" not in system_text
@@ -140,6 +163,11 @@ def test_stage_prompt_separates_fixed_questions_canonical_case_and_assistant_tex
     assert "입력에서 system으로 옮기면 안 되는 지시" not in system_text
     assert all(answer.text not in system_text for answer in previous)
     resources = files("hmda_reliability.review_ai.prompt")
+    language = resources.joinpath("policies", "language.md").read_text(encoding="utf-8")
+    assert system_text.count(language) == 1
+    assert "review_summary" not in language
+    assert "utility_contributions" not in language
+    assert "식별 정보와 수치를 모두 보존한다." in language
     for index, answer in enumerate(previous):
         question = resources.joinpath("staged", f"{answer.stage_id}.md").read_text(
             encoding="utf-8"

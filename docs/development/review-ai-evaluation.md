@@ -29,13 +29,17 @@ uv run pytest tests/review_ai tests/runtime_ai
 
 실제 Ollama proof는 기본 suite와 분리해 명시적으로 실행한다. [`.env.example`](../../.env.example)의 `HMDA_AGENTIC_REVIEW_*` 값을 로컬 `.env`에 설정한다. `HMDA_AGENTIC_REVIEW_LIVE=true`와 비어 있지 않은 base URL, API key, model이 필요하다. API key는 OpenAI-compatible client에 전달하지만 invocation evidence에는 저장하지 않는다.
 
+PR의 구현을 시험할 때는 해당 PR checkout의 repository root에서 실행한다. 이전 revision의 `main`에서 같은 `.env`로 실행해도 PR의 프롬프트나 실행 경로를 사용하지 않는다. 이번 변경은 별도 `main` checkout을 수정하지 않는다.
+
 ```bash
 uv run --env-file .env python scripts/run_agentic_review_live.py
 ```
 
 ### Staged Text Review
 
-모드를 생략하거나 `HMDA_AGENTIC_REVIEW_MODE=staged`로 설정하면 같은 합성 사례에 근거 검토 → 초안 비판 → 종합의 세 질문을 진행한다. 모델에는 한국어 일반 텍스트를 요청하고, 코드가 원입력의 식별자·수치와 `stages[{stage_id,text}]`를 JSON으로 만든다. 고정 identity는 `staged-v1`이며 기존 `HMDA_AGENTIC_REVIEW_PROMPT_VERSION`은 structured 모드에 적용된다.
+일반 API [`review_null_spike()`](../../src/hmda_reliability/review_ai/service.py)와 live는 같은 현재 staged 프롬프트를 사용한다. 모드를 생략하거나 `HMDA_AGENTIC_REVIEW_MODE=staged`로 설정하면 같은 합성 사례에 근거 검토 → 초안 비판 → 종합의 세 질문을 진행한다. 모델에는 한국어 일반 텍스트를 요청하고, 코드가 원입력의 식별자·수치와 `stages[{stage_id,text}]`를 JSON으로 만든다. 고정 identity는 `staged-v1`이며 일반 실행에는 v1/v2/v3 선택이 없다.
+
+현재 실행은 유효한 환경 설정을 읽은 뒤 stderr에 `Review AI workflow: current (staged-v1).`를 표시한다. 남아 있는 `HMDA_AGENTIC_REVIEW_PROMPT_VERSION`은 값을 출력하지 않고 무시한다고 안내한다. `HMDA_AGENTIC_REVIEW_MODE=structured`는 모델을 호출하지 않고 legacy 설정으로의 이동을 안내한다.
 
 `status=completed`는 세 답변의 수집·저장 완료다. 기존 structured `accepted`, 문장 안의 사실성, 검토 가치 또는 사람 승인을 뜻하지 않는다. API는 [StagedReviewOutput](../../src/hmda_reliability/review_ai/staged/contracts.py)을 제공하며 콘솔은 원문 대신 다음 경로를 안내한다.
 
@@ -52,12 +56,14 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 
 Staged collection은 기존 `AgenticReviewOutput`과 다른 계약이다. 기존 structured validator·`compare_review_value()`·Langfuse projection에 바로 넣지 않는다. 사람은 원문과 원입력을 대조해 품질을 평가하며 현재 staged 외부 projection은 `skipped_staged_mode`다. Revision 자동 선택은 clean tracked tree를 요구하므로 개발 중 실행에는 명시적인 로컬 revision 표식을 사용한다.
 
-### Structured Review
+### Legacy Structured Review
 
-기존 JSON 응답과 validator 동작을 비교·재현할 때는 모드를 명시한다.
+기존 JSON 응답과 validator 동작을 비교·재현할 때만 legacy 모드와 과거 version을 함께 명시한다. Python 호출은 [`review_ai.legacy.review_null_spike()`](../../src/hmda_reliability/review_ai/legacy/service.py)를 사용한다. 일반 API는 이제 단계별 collection을 반환하므로 옛 structured 호출자는 legacy import로 이동해야 한다.
 
 ```bash
-HMDA_AGENTIC_REVIEW_MODE=structured uv run --env-file .env python scripts/run_agentic_review_live.py
+HMDA_AGENTIC_REVIEW_MODE=legacy \
+HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION=v2 \
+uv run --env-file .env python scripts/run_agentic_review_live.py
 ```
 
 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=auto`는 현재 Git HEAD를 사용하며 tracked worktree가 깨끗해야 한다. 필요하면 비어 있지 않은 revision을 명시할 수 있다. 결과는 `accepted` 또는 typed failure다. Provider 호출이 시작되면 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/invocations/`에 sanitized evidence를 남긴다. Live proof는 approval, recovery 또는 data mutation을 수행하지 않는다.
@@ -68,7 +74,7 @@ Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS
 
 개발 중 tracked 파일을 수정한 상태에서는 `auto` 대신 `HMDA_AGENTIC_REVIEW_PROJECT_REVISION=local-response-retention-worktree`처럼 명시적인 작업 표식을 사용할 수 있다. 이 실행은 특정 clean commit의 품질 검증 증거로 취급하지 않는다.
 
-현재 개발 비교 단계의 structured 모드는 출력의 타입과 `priority` 조건을 명시한 `v2` prompt를 기본으로 사용한다. `HMDA_AGENTIC_REVIEW_PROMPT_VERSION=v1`은 과거 동작 비교용이고, `v3`는 수치 단위와 evidence/draft 충실성을 비교하기 위한 선택 가능한 후보다. 세 version 모두 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. Python API의 `PromptIdentity()` 기본은 현재 `v1`이며 caller는 비교할 version을 명시적으로 전달한다. v3 지원은 실제 출력 개선이나 채택을 의미하지 않는다.
+Legacy CLI에는 기본 version이 없다. `HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION`에 `v1`, `v2`, `v3` 중 하나를 명시해야 하며 옛 `HMDA_AGENTIC_REVIEW_PROMPT_VERSION`으로 fallback하지 않는다. 세 version의 본문은 [동결 snapshot](../../src/hmda_reliability/review_ai/prompt/legacy/)으로 보존하며 저장된 `prompt_identity`와 canonical input으로 재생할 수 있다. `PromptIdentity()`의 v1 기본값은 역사 데이터와의 호환을 위한 계약이며 일반 API의 실행 선택이 아니다. Legacy API 호출자는 비교할 version을 명시적으로 전달한다. 이 재현 기능은 v3의 실제 출력 개선이나 품질 채택을 의미하지 않는다.
 
 프롬프트 편집과 재사용은 [Prompt Composition](review-ai-prompts.md)의 모듈 책임·조립·전달 경로를 따른다. 이 가이드의 로컬 예제로 모델 호출 없이 최종 system/user 메시지를 확인할 수 있다. 실제 호출에 주입한 데이터는 invocation record의 `canonical_input`에서 확인한다. 프롬프트 본문과 user JSON을 포함한 전체 메시지 배열이 prompt digest의 기준이다.
 
@@ -90,8 +96,10 @@ Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS
 
 ### Baseline and Candidate Comparison
 
+이 절은 과거 structured version을 비교하는 legacy 평가 절차다. 현재 staged collection을 이 typed-output 평가에 직접 넣지 않는다.
+
 1. 호출 전에 case/version, 모델·양자화, active context, Thinking 상태, output cap, timeout, retry, 반복 횟수 및 최대 총 호출 수를 정한다. Context/Thinking 실험은 prompt 비교와 분리하고 Ollama의 실제 적재 상태를 확인한다.
-1. Tracked tree가 깨끗한 하나의 candidate HEAD에서 각 case의 `review_input`을 `AgenticReviewInput.model_validate()`로 읽는다. Fixture의 `project_revision`은 live revision이 아니므로 실제 HEAD를 [`review_null_spike()`](../../src/hmda_reliability/review_ai/service.py)에 별도로 전달한다. 동일 incident/evidence/draft와 runtime 조건에서 `PromptIdentity(version="v2")` baseline과 `PromptIdentity(version="v3")` candidate를 실행한다. 기본 live script의 입력은 기존 한 사례이므로 나머지 사례는 이 API에 명시적으로 전달한다.
+1. Tracked tree가 깨끗한 하나의 candidate HEAD에서 각 case의 `review_input`을 `AgenticReviewInput.model_validate()`로 읽는다. Fixture의 `project_revision`은 live revision이 아니므로 실제 HEAD를 [`legacy.review_null_spike()`](../../src/hmda_reliability/review_ai/legacy/service.py)에 별도로 전달한다. 동일 incident/evidence/draft와 runtime 조건에서 `PromptIdentity(version="v2")` baseline과 `PromptIdentity(version="v3")` candidate를 실행한다. 기본 live script의 입력은 기존 한 사례이므로 나머지 사례는 이 legacy API에 명시적으로 전달한다.
 1. 시작 전에 attempt 목록을 만들고 실패·exclusion도 남긴다. 각 attempt의 case/version/role/repeat, 실제 revision, invocation identity, status/failure, prompt/output digest, latency/usage와 provider context/Thinking 조건을 연결한다. 응답 본문은 로컬 response 파일에서 확인하고 credential이나 raw exception은 보존하지 않는다. Retry를 사용할 경우 물리 호출 수도 예산에 포함한다.
 1. Accepted output의 설명을 독립 oracle 및 실제 제공된 evidence/draft와 대조한다. 숫자·threshold 단위가 맞는지, baseline-zero의 상대 증가율을 만들지 않는지, 원인·완료된 검증을 지어내지 않는지, 실제 draft에 없는 action을 비판하지 않는지 확인한다. 무엇을 먼저 확인하고 결과별 사람 판단이 어떻게 달라지는지 기록한다.
 1. 사람이 다섯 criterion 각각에 0–2점과 rationale을 제공한 뒤 기존 `ReviewValueAssessment`와 `compare_review_value()`를 사용한다. `case_id/version`, role, 실제 revision, invocation, exact output digest를 연결하고 같은 case끼리 비교한다. API는 caller가 제공한 점수·decision을 검증하며 의미적 채점을 대신하지 않는다. 동일 role/repeat의 identity를 임의로 바꾸거나 좋은 출력만 고르지 않는다.
@@ -99,13 +107,13 @@ Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS
 
 ### Adoption and Active Default
 
-다중 version은 개발 중 비교·검증을 위한 단계다. 검증과 사람의 판단으로 프롬프트를 채택한 뒤에는 Python API와 live harness의 기본 경로를 하나의 active version으로 통일해야 한다. 채택 변경은 두 진입점이 하나의 공통 기본 선택 정의를 사용하도록 함께 전환해야 하며, 서로 다른 암묵적 기본값을 남기지 않는다.
+일반 Python API와 live harness는 현재 staged 프롬프트 하나를 사용한다. 같은 공개 실행 함수를 사용하며 옛 v1/v2/v3 선택은 명시적인 legacy 경로에 한정한다. 현재 실행 경로를 통일한 것은 실제 모델의 사실성·검토 가치나 사람의 품질 평가를 통과했다는 뜻이 아니다.
 
-채택 전에는 위의 현재 기본값을 유지한다. 채택 후 이전 version은 명시적 비교·과거 실행 재현용으로 관리하며 기록된 version·revision·digest는 바꾸지 않는다. 이 방침의 정본은 [Prompt lifecycle and active default](../../openspec/specs/review-ai-prompt-engineering/spec.md#requirement-prompt-lifecycle-and-active-default)다.
+이후 현재 프롬프트를 변경할 때도 두 일반 진입점을 함께 유지하며, 과거 실행의 version·revision·digest는 바꾸지 않는다. 동결 snapshot과 현재 지시문을 분리하는 방침의 정본은 [Prompt lifecycle and active default](../../openspec/specs/review-ai-prompt-engineering/spec.md#requirement-prompt-lifecycle-and-active-default)다.
 
 ### Diagnose a Failed Response
 
-`response_schema_invalid`이면 결과의 `response_path`에 있는 원문을 먼저 읽고, `invocation_path`에 있는 정제된 record의 다음 필드와 대조한다. Pydantic 입력값이나 exception message는 진단에 보존하지 않는다. 과거 record처럼 `response_path`가 없는 실행은 보존된 진단만 확인할 수 있다.
+Legacy 실행에서 `response_schema_invalid`이면 결과의 `response_path`에 있는 원문을 먼저 읽고, `invocation_path`에 있는 정제된 record의 다음 필드와 대조한다. Pydantic 입력값이나 exception message는 진단에 보존하지 않는다. 과거 record처럼 `response_path`가 없는 실행은 보존된 진단만 확인할 수 있다.
 
 | Evidence field | Meaning / next action |
 | --- | --- |
@@ -114,11 +122,11 @@ Runtime이 본문을 반환하면 JSON 파싱 전에 `HMDA_RELIABILITY_ARTIFACTS
 | `response_diagnostics.kind=schema_validation_failed` | 유효 JSON이 출력 계약을 위반했다. 최대 8개의 allowlisted `field_path`와 `code`로 타입·누락·조건부 오류를 조사한다. |
 | `response_metadata` | SDK가 제공한 완료 이유, 본문 상태와 UTF-8 byte 수다. 알 수 없는 완료 이유는 `unknown`이며 과거 record나 custom transport에서는 metadata가 없을 수 있다. |
 
-`length`는 단독 거부 사유가 아니며 schema·guard·provenance 검증이 최종 결과를 결정한다. `max_output_tokens`는 실제 모델의 context window와 별개다. 모델 이름만으로 context 크기를 추정하거나 무조건 재시도하지 말고, provider 설정을 확인한 뒤 같은 synthetic 입력과 명시적 모델·prompt version으로 비교한다. 오류를 재현하는 작은 응답 fixture를 offline suite에 추가하고 현재의 깨끗한 revision에서 live 결과를 다시 확인한다. 진단 분류의 성공만으로 모델 실패나 utility 문제가 해결됐다고 판단하지 않는다.
+Legacy 경로에서는 `length`가 단독 거부 사유가 아니며 schema·guard·provenance 검증이 최종 결과를 결정한다. 현재 staged 경로는 알려진 잘림을 원문 보존 후 실패로 처리한다. `max_output_tokens`는 실제 모델의 context window와 별개다. 모델 이름만으로 context 크기를 추정하거나 무조건 재시도하지 말고, provider 설정을 확인한 뒤 같은 synthetic 입력과 명시적 실행 조건으로 비교한다. 오류를 재현하는 작은 응답 fixture를 offline suite에 추가하고 현재의 깨끗한 revision에서 live 결과를 다시 확인한다. 진단 분류의 성공만으로 모델 실패나 utility 문제가 해결됐다고 판단하지 않는다.
 
 ## Optional Langfuse Projection
 
-Structured synthetic live proof를 Langfuse에도 표시하려면 provider 설정과 별도로 projection을 켜야 한다. Provider opt-in만으로는 전송하지 않는다. Staged collection에는 이 projection을 적용하지 않는다.
+Legacy structured synthetic live proof를 Langfuse에도 표시하려면 provider 설정과 별도로 projection을 켜야 한다. Provider opt-in만으로는 전송하지 않는다. 현재 staged collection에는 이 projection을 적용하지 않는다.
 
 ### Setup
 
@@ -128,7 +136,9 @@ Structured synthetic live proof를 Langfuse에도 표시하려면 provider 설�
 
 ```bash
 uv sync --extra langfuse
-HMDA_AGENTIC_REVIEW_MODE=structured uv run --extra langfuse --env-file .env python scripts/run_agentic_review_live.py
+HMDA_AGENTIC_REVIEW_MODE=legacy \
+HMDA_AGENTIC_REVIEW_LEGACY_PROMPT_VERSION=v2 \
+uv run --extra langfuse --env-file .env python scripts/run_agentic_review_live.py
 ```
 
 ### Check the Projection

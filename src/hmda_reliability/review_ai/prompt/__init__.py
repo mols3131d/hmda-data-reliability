@@ -1,11 +1,9 @@
-"""표준 입력 투영(projection) 및 프롬프트 렌더링 모듈."""
+"""현재 검토와 legacy 재생이 공유하는 canonical 입력과 프롬프트 계약."""
 
 from __future__ import annotations
 
-import hashlib
 import json
 from copy import deepcopy
-from importlib.resources import files
 
 from pydantic import Field
 
@@ -14,48 +12,8 @@ from hmda_reliability.review_ai.context import (
     BoundedReviewContext,
     build_bounded_review_context,
 )
-from hmda_reliability.review_ai.contracts import AgenticReviewInput, PromptIdentity
+from hmda_reliability.review_ai.contracts import AgenticReviewInput
 from hmda_reliability.runtime_ai.contracts import ChatMessage
-
-_PROMPT_PARTS: dict[str, tuple[str, ...]] = {
-    "v1": (
-        "titles/v1.md",
-        "tasks/null_spike.md",
-        "policies/language.md",
-        "output/compact.md",
-        "policies/advisory.md",
-    ),
-    "v2": (
-        "titles/v2.md",
-        "tasks/null_spike.md",
-        "policies/language.md",
-        "output/structured.md",
-        "examples/utility_contributions.md",
-        "policies/advisory.md",
-    ),
-    "v3": (
-        "titles/v3.md",
-        "tasks/null_spike.md",
-        "policies/language.md",
-        "output/structured.md",
-        "guidance/numeric_fidelity.md",
-        "guidance/evidence_review.md",
-        "guidance/review_value.md",
-        "policies/advisory.md",
-    ),
-}
-
-
-def _load_system_instruction(parts: tuple[str, ...]) -> str:
-    resources = files(__package__)
-    return "\n".join(
-        resources.joinpath(path).read_text(encoding="utf-8") for path in parts
-    )
-
-
-_SYSTEM_INSTRUCTION_V1 = _load_system_instruction(_PROMPT_PARTS["v1"])
-_SYSTEM_INSTRUCTION_V2 = _load_system_instruction(_PROMPT_PARTS["v2"])
-_SYSTEM_INSTRUCTION_V3 = _load_system_instruction(_PROMPT_PARTS["v3"])
 
 
 class RenderedReviewPrompt(ReliabilityContract):
@@ -64,7 +22,7 @@ class RenderedReviewPrompt(ReliabilityContract):
     Attributes:
         canonical_input: 스펙의 allowlist에 따라 정제된 구조화된 입력 딕셔너리.
         canonical_json: 재생 가능한 정렬/압축 규칙이 적용된 표준 JSON 문자열.
-        messages: Provider에 전달될 (system, user) 대화 메시지 튜플.
+        messages: Provider에 전달할 system/user/assistant 대화 메시지 튜플.
         prompt_digest: 렌더링된 메시지 바이트의 SHA-256 해시 (`sha256:...`).
         prompt_bytes: UTF-8 표준 직렬화된 메시지 목록의 총 바이트 수.
     """
@@ -84,27 +42,6 @@ class PromptTooLargeError(ValueError):
         super().__init__("rendered prompt exceeds max_prompt_bytes")
         self.actual_bytes = actual_bytes
         self.max_bytes = max_bytes
-
-
-def render_review_prompt(
-    review_input: AgenticReviewInput,
-    *,
-    max_prompt_bytes: int,
-) -> RenderedReviewPrompt:
-    """불변의 review 입력을 메시지 튜플 및 SHA-256 프롬프트 다이제스트로 투영한다.
-
-    표준 입력 allowlist를 구성하고 system/user 대화 메시지를 포맷팅한다.
-    렌더링된 프롬프트 바이트가 `max_prompt_bytes`를 초과하면
-    `PromptTooLargeError`를 발생시킨다.
-    """
-
-    context = build_bounded_review_context(review_input)
-    return render_canonical_input(
-        build_canonical_input(review_input, context=context),
-        review_input.prompt_identity,
-        context=context,
-        max_prompt_bytes=max_prompt_bytes,
-    )
 
 
 def build_canonical_input(
@@ -169,52 +106,6 @@ def build_canonical_input(
     }
 
 
-def render_canonical_input(
-    canonical_input: dict[str, object],
-    prompt_identity: PromptIdentity,
-    *,
-    max_prompt_bytes: int,
-    context: BoundedReviewContext | None = None,
-) -> RenderedReviewPrompt:
-    """저장된 표준 입력을 버전이 지정된 프롬프트 템플릿으로 렌더링한다.
-
-    신뢰할 수 없는 JSON 형태의 user 메시지와 고정된 system 지침을 구성하고,
-    렌더링된 JSON 바이트에 대해 결정론적 `sha256` 다이제스트를 계산한다.
-
-    렌더링된 메시지가 `max_prompt_bytes`를 초과하면 `PromptTooLargeError`를 발생시킨다.
-    """
-
-    instruction = {
-        "v1": _SYSTEM_INSTRUCTION_V1,
-        "v2": _SYSTEM_INSTRUCTION_V2,
-        "v3": _SYSTEM_INSTRUCTION_V3,
-    }[prompt_identity.version]
-    canonical_snapshot = deepcopy(canonical_input)
-    canonical_json = canonical_json_bytes(canonical_snapshot).decode("utf-8")
-    messages = (
-        ChatMessage(role="system", content=instruction),
-        ChatMessage(
-            role="user",
-            content=(f"UNTRUSTED_CANONICAL_INPUT_JSON\n{canonical_json}"),
-        ),
-    )
-    message_payload = [message.model_dump(mode="json") for message in messages]
-    rendered_bytes = canonical_json_bytes(message_payload)
-    if len(rendered_bytes) > max_prompt_bytes:
-        raise PromptTooLargeError(
-            actual_bytes=len(rendered_bytes),
-            max_bytes=max_prompt_bytes,
-        )
-    return RenderedReviewPrompt(
-        canonical_input=canonical_snapshot,
-        canonical_json=canonical_json,
-        messages=messages,
-        prompt_digest=f"sha256:{hashlib.sha256(rendered_bytes).hexdigest()}",
-        prompt_bytes=len(rendered_bytes),
-        context=context or _context_from_canonical_input(canonical_snapshot),
-    )
-
-
 def canonical_json_bytes(value: object) -> bytes:
     """결정론적 재생(replay)을 위해 JSON 값을 표준 바이트로 직렬화한다.
 
@@ -232,15 +123,3 @@ def canonical_json_bytes(value: object) -> bytes:
 
 def _pick(payload: dict[str, object], *fields: str) -> dict[str, object]:
     return {field: deepcopy(payload[field]) for field in fields}
-
-
-def _context_from_canonical_input(
-    canonical_input: dict[str, object],
-) -> BoundedReviewContext | None:
-    value = canonical_input.get("review_context")
-    if value is None:
-        return None
-    if not isinstance(value, dict):
-        msg = "review_context must be an object"
-        raise ValueError(msg)
-    return BoundedReviewContext.model_validate(value)
