@@ -4,6 +4,7 @@ import json
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from datetime import UTC, datetime
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 
@@ -60,9 +61,9 @@ def _missing(error: Exception) -> bool:
 
 
 def make_client(settings: Mapping[str, Any]) -> Any:
-    from langfuse import Langfuse
     from opentelemetry.sdk.trace import TracerProvider
 
+    Langfuse = import_module("langfuse").Langfuse
     return Langfuse(
         public_key=settings["public_key"],
         secret_key=settings["secret_key"],

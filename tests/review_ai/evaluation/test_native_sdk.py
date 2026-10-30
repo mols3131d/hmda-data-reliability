@@ -248,11 +248,10 @@ def test_pinned_sdk_really_runs_a_task_without_remote_io():
 
 
 def test_pinned_sdk_score_config_wire_accepts_the_native_categories():
-    pytest.importorskip("langfuse")
+    sdk = pytest.importorskip("langfuse.api")
     from typing import Any
 
     import httpx
-    from langfuse.api import LangfuseAPI
 
     categories = [{"label": str(v), "value": v} for v in range(3)]
     requests = []
@@ -273,7 +272,7 @@ def test_pinned_sdk_score_config_wire_accepts_the_native_categories():
         )
 
     with httpx.Client(transport=httpx.MockTransport(respond)) as transport:
-        api: Any = LangfuseAPI(
+        api: Any = sdk.LangfuseAPI(
             base_url="https://unused.invalid", httpx_client=transport
         )
         config = api.score_configs.create(

@@ -143,9 +143,8 @@ def test_different_rubric_config_cannot_be_used_as_a_baseline(native_review, tmp
 
 
 def test_pinned_sdk_annotation_wire_maps_to_completeness(native_review, tmp_path):
-    pytest.importorskip("langfuse")
+    sdk = pytest.importorskip("langfuse.api")
     import httpx
-    from langfuse.api import LangfuseAPI
 
     client, receipt, _ = native_review
     rows = [
@@ -179,7 +178,7 @@ def test_pinned_sdk_annotation_wire_maps_to_completeness(native_review, tmp_path
             )
         )
     ) as transport:
-        api = LangfuseAPI(base_url="https://unused.invalid", httpx_client=transport)
+        api = sdk.LangfuseAPI(base_url="https://unused.invalid", httpx_client=transport)
         client.api.scores = api.scores
         result = native_sdk.read_annotations(
             client, receipt, "human", artifact_root=tmp_path
