@@ -26,7 +26,7 @@ List depth는 2단계를 권장하고 최대 3단계까지만 사용한다.
 <finding 결과>
 
 <!--
-### <importance> — F1 · <finding title>
+### `<importance>` — F1 · <finding title>
 
 - **Location**
   - <path 또는 symbol 1>
@@ -52,7 +52,7 @@ diff, contract, test, command 등 실제 확인 결과만 기록한다.
 상태: ✅ Pass / ❌ Fail / ⚪ Not Verified
 -->
 
-- <status> — `<check>`: <result 또는 evidence>
+- `<status>` — `<check>`: <result 또는 evidence>
 
 <!--
 Optional — 판단 비용을 줄일 때만 해당 section을 추가한다.
