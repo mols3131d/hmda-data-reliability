@@ -85,6 +85,7 @@ Template에서는 기본 읽기 흐름을 방해하지 않도록 optional metada
 - optional section과 metadata는 판단 비용을 줄일 때만 사용하고 빈 placeholder는 제거한다.
 - PR/review에서 `revision`을 기록했다면 본문의 validation, finding과 상태 설명이 해당 base/head 기준과 일치해야 한다.
 - 상태는 `✅ Pass`, `❌ Fail`, `⚪ Not Verified`처럼 marker와 text label을 함께 적는다.
+- HTML tag로 해석될 수 있는 placeholder는 inline code나 escape로 표시한다.
 - Template의 `<status>`와 다른 placeholder는 실제 내용으로 교체하고 남겨두지 않는다.
 - repository 내부 path와 artifact는 repository-relative reference를 사용한다.
 - 요구사항이나 결정의 source가 따로 있으면 내용을 다시 쓰기보다 해당 artifact를 연결한다.
