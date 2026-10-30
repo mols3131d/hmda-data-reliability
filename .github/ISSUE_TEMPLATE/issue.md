@@ -1,52 +1,51 @@
 ---
 name: General Issue
-about: Propose a change, report a problem, or request an investigation
+about: Report a problem, propose an improvement, or request an investigation
 ---
 
 ## Objective
 
-<!-- 해결할 문제, 원하는 변화 또는 조사할 질문을 적는다. 원인을 추측으로 확정하지 않는다. -->
+<!-- 어떤 문제를 해결하거나 무엇을 바꾸거나 조사하려는가? -->
 
-<문제, 목표 또는 조사할 질문>
+<문제, 제안 또는 조사 목표>
 
 ## Acceptance
 
-<!-- 알고 있는 기대 결과를 적는다. 아직 불명확하면 조사 후 구체화할 기준이나 질문을 남긴다. -->
+<!-- 완료를 판단할 결과·조건·산출물을 적는다. 미정인 항목은 구분한다. -->
 
-- <확인 가능한 결과 또는 구체화할 완료 기준>
+- <완료 조건 또는 기대 산출물>
 
 ## Context
 
-<!-- Optional — 알고 있는 증상, 배경, 참조만 제공한다. 에이전트가 접근 가능한 정보는 대신 수집할 수 있다. 불필요하면 이 section을 제거한다. -->
+<!-- Optional — 관련 배경·문서·이슈·참고 정보를 적는다. 불필요하면 제거한다. -->
 
-<관련 정보 또는 참고 자료>
+<배경 및 참고 자료>
 
 <!--
-Optional sections — 정보량과 이슈 성격에 따라 필요한 것만 추가한다.
-간단한 내용은 Context에 함께 적고, 별도 구분이 유용할 때만 section을 분리한다.
+Optional — 필요한 section만 추가한다. 간단한 내용은 Context에 함께 적어도 된다.
 
 ## Evidence
 
-- <직접 확인한 현상, 재현 절차, 로그 또는 근거 링크>
+- <관찰 결과, 재현 방법, 로그 또는 관련 근거>
 
 ## Environment
 
-- <결과에 영향을 주는 확인된 실행 조건; 확인하지 못한 값은 구분>
+- <관련 실행 환경, 버전, 설정, 데이터 등>
 
 ## Boundaries
 
-- **Out of Scope:** <제외할 범위>
-- **Constraints:** <지켜야 할 제약>
+- **Out of Scope:** <제외 범위>
+- **Constraints:** <제약 사항>
 
 ## Open Decisions
 
-- <인간의 권한·우선순위·범위 판단이 필요한 사항>
+- <결정이 필요한 사항 또는 미확정 질문>
 -->
 
 <!--
-Optional metadata — GitHub Front Matter는 템플릿 선택 설정으로만 쓰인다.
-실제 Issue에 보존할 구조화 정보가 필요할 때 아래 YAML block을 본문 끝에 추가한다.
-필요한 field만 사용하고 중복·비밀 값은 제외한다. 규칙은 .github/templates/README.md 참조.
+Optional metadata — 구조화된 정보가 필요할 때만 본문 마지막에 추가한다.
+필요한 field만 사용하고 중복·비밀 값은 제외한다.
+자세한 규칙: .github/templates/README.md
 
 ```yaml
 author:
