@@ -3,6 +3,8 @@ name: General Issue
 about: Report a problem, propose an improvement, or request an investigation
 ---
 
+<!-- 관련 문서·이슈·PR·코드 등 기존 컨텍스트를 참고한다. -->
+
 ## Objective
 
 <!-- 어떤 문제를 해결하거나 무엇을 바꾸거나 조사하려는가? -->
