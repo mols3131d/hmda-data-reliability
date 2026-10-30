@@ -17,7 +17,7 @@ tags:
 
 - PR: [#280](https://github.com/mols3131d/hmda-data-reliability/pull/280), Draft 유지.
 - 시작 revision: `33e1a45366ca35596fe09be64d38d78c19a1e971`.
-- 구현 revision: `6d699e113aaa5e92c87cae208d04d24651e2d4e0`. 이 보고서의 후속 커밋은 검증 기록만 갱신한다. 아래 로컬 증거와 원격·사람 평가의 미검증 범위를 구분한다.
+- 구현 revision: `b77766aa6313afe306d31dd8a6be31e878548259`. 이 보고서의 후속 커밋은 검증 기록만 갱신한다. 아래 로컬 증거와 원격·사람 평가의 미검증 범위를 구분한다.
 - 확인한 원격 main: `017e6c2ca30c9a439dc8c72fb34a7aba9dc39d0b`. 이 기준의 prospective merge/CI 성공은 확인하지 않았다.
 - 계획: [Langfuse Evaluation Plan](11-plan-review-ai-langfuse-evaluation.md). 요구사항·설계·로컬 완료 조건은 [OpenSpec Change](../../openspec/changes/review-ai-native-langfuse-evaluation/)에 반영했다.
 
@@ -42,18 +42,21 @@ tags:
 | 검사 | 결과와 한계 |
 | --- | --- |
 | Review AI / Runtime AI | `pytest tests/review_ai tests/runtime_ai`: **301개 통과**. 준비된 응답과 모의 전송을 사용하는 회귀; 실제 모델 품질 증거 아님 |
+| SDK 없는 기본 suite | 같은 관련 suite에서 **298개 통과·SDK 계약 검사 3개 생략**. 별도 환경에서 SDK 부재를 직접 확인하고 실행 |
 | 실제 SDK 계약 | Pin 4.15.6의 task 실행·메모리 span·categorical 생성 및 조회 응답 wire 검증; 실제 서버·UI는 미검증 |
 | 워커 경로 | 실제 워커에서 세 사례와 세 단계를 모두 실행하고 로컬 manifest 3개 보존; SDK와 provider는 준비된 응답 사용 |
 | 대상·사람 점수 | 원문 변조·원격 대상 바꿔치기·pagination·자동 점수·시각 누락·중복·Config/범주/사유 불일치 검사 |
 | 실패 분리 | SDK hang·막힌 stdin·core 시간 분리·외부 timeout 뒤 완료 결과 보존·예외 본문 유출 차단 검사 |
 | 1차 pre-push | `edf90cde434c908e82449015323e47909355adfe`에서 전체 회귀 1,263개 통과·2개 생략. SDK 조회 응답 변환 보완 전의 역사 증거이며 현재 결과로 승격하지 않음 |
-| 정적 검사 | Ruff·format·ty·Tach 확인 |
+| 정적 검사 | Ruff·format·Tach 통과. SDK 설치·미설치 양쪽 ty 통과 |
 | 정본·문서 | 전체 OpenSpec strict 32/32·Markdown·Inbox 계약·diff 검사 통과 |
 | 배포 | Wheel의 현재 프롬프트·사례 포함과 삭제한 모델 부재, SDK 없는 기본 import·비활성 실행 확인 |
 
 실제 측정한 provider latency·usage는 원래 checkpoint의 값으로 연결한다. Native 관측은 결과를 보존한 뒤 내보낸 것이므로 생성 시각을 provider 실행 시각으로 해석하지 않는다. 합성 응답·사람 점수 fixture는 실제 사람 평가로 기록하지 않았다.
 
 관련 회귀 명령은 `.venv/bin/python -m pytest -q -p no:tach -p no:sugar tests/review_ai tests/runtime_ai`다. 실제 SDK 조회 응답이 camelCase를 유지하는 것을 독립 mock HTTP 계약으로 확인하고 내부 완비 검사의 필드로 명시 변환한다. 준비된 응답이나 fake 점수만으로 실제 SDK 응답 계약을 검증했다고 기록하지 않는다.
+
+`d562ef41b5f3ff36f12a8ab0b67b4f18e49b44c0`의 [CI Lite](https://github.com/mols3131d/hmda-data-reliability/actions/runs/41042360352)에서 optional SDK의 정적 import 오류 3개를 확인했다. SDK만 제외한 임시 환경에서 재현하고, 실행 경계의 지연 로딩과 선택 테스트 import를 고친 뒤 타입·기본 suite를 통과했다. 후속 원격 CI 결과는 현재 PR 상태와 대조해야 한다.
 
 최신 main과 구현 커밋의 `git merge-tree --write-tree`는 충돌 없이 끝났다. 이는 병합 충돌 검사이며 해당 prospective merge의 테스트·CI 성공 증거는 아니다. Git hook의 pytest는 외부 임시 wrapper에서 모든 Git-local 환경 변수를 제거해 실행했다. 합성 Git init/add/commit probe와 자식의 잔여 변수 0개를 확인하고 실제 HEAD·index를 다시 확인했다.
 
