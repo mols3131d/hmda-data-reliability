@@ -26,7 +26,7 @@ List depth는 2단계를 권장하고 최대 3단계까지만 사용한다.
 <finding 결과>
 
 <!--
-### `<importance>` — F1 · <finding title>
+### `<importance>` — F1 · `<finding title>`
 
 - **Location**
   - <path 또는 symbol 1>
@@ -66,7 +66,7 @@ Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 tab
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| <check> | <status> | <evidence> |
+| `<check>` | `<status>` | `<evidence>` |
 -->
 
 <!--
