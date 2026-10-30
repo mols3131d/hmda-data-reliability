@@ -21,7 +21,7 @@ Review AI의 **schema 통과와 실제 출력 품질을 구분**하고, 수치 �
 
 - Base: PR [#278](https://github.com/mols3131d/hmda-data-reliability/pull/278)이 병합된 `main`; 작업 시작 시 head를 다시 확인한다.
 - 근거와 재현 입력: [PR #278 후속 계획](../github-278-resolve-review-ai-live-schema/04-plan-review-ai-output-quality-follow-up.md). 기존 출력의 숫자·예시 복사 오류는 관찰됐으나 반복 성공률이나 일반화된 모델 품질 결론은 아니다.
-- Current baseline: `v2` prompt. 기존 [human rubric과 comparison](../../src/hmda_reliability/review_ai/evaluation/value.py), [평가 가이드](../../docs/development/review-ai-evaluation.md), [canonical Spec](../../openspec/specs/reliability-agentic-review/spec.md)을 재사용한다.
+- Current baseline: `v2` prompt. 기존 [human rubric과 comparison](https://github.com/mols3131d/hmda-data-reliability/blob/1d03c5397bd75422cfd94b6d2ce7d67d682e7565/src/hmda_reliability/review_ai/evaluation/value.py), [평가 가이드](../../docs/development/review-ai-evaluation.md), [canonical Spec](../../openspec/specs/reliability-agentic-review/spec.md)을 재사용한다.
 - Active OpenSpec Change `review-ai-evaluation-subdomain-refactor` 및 `review-ai-langfuse-projection`과 ownership·진행 상태를 먼저 대조한다. Inbox는 요구사항 정본이 아니다.
 
 ## Accepted Context Configuration

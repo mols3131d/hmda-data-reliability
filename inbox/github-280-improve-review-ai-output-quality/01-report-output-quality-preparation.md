@@ -22,7 +22,7 @@ status: in-progress
 
 ## Result and Evidence Boundary
 
-[`output_quality_v1.json`](../../tests/review_ai/evaluation/fixtures/output_quality_v1.json)에 portable 입력 3개, 독립 수치 oracle과 합성 출력 10개를 고정했다. 기존 사례, baseline-zero/다른 threshold, 추가 evidence/backfill 유무를 구별한다. 기존 static comparison golden은 보존했다.
+[`output_quality_v1.json`](https://github.com/mols3131d/hmda-data-reliability/blob/24b5f26833121de853ce0787c0bb67c3ad25673d/tests/review_ai/evaluation/fixtures/output_quality_v1.json)에 portable 입력 3개, 독립 수치 oracle과 합성 출력 10개를 고정했다. 기존 사례, baseline-zero/다른 threshold, 추가 evidence/backfill 유무를 구별한다. 기존 static comparison golden은 보존했다.
 
 | Check | Observed result |
 | --- | --- |

@@ -89,3 +89,7 @@ Langfuse의 `comment`는 선택 항목이다. Numeric Score Config의 최솟값�
 - 다섯 점수와 사유의 완비, 재평가 시 중복 score 선택을 실제 API와 UI에서 어떻게 확인할 것인가?
 - 합성 입력·답변의 원격 표시를 허용할 필드와 실패한 단계의 표시 범위를 어디까지로 정할 것인가?
 - 코드 revision 자체를 비교 변수로 삼을 때 같은 사례·rubric·입력 조건을 어떻게 고정할 것인가? 현재의 동일 revision 요구를 맞추려고 실제 SHA를 다시 쓰면 안 된다.
+
+## Follow-Up Verification
+
+2026-10-30 후속 구현에서 SDK 4.15.6을 설치하고 native task 실행·메모리 exporter·categorical 요청 wire를 검증했다. 근거는 [4.15.6 client source](https://github.com/langfuse/langfuse-python/blob/v4.15.6/langfuse/_client/client.py)와 설치된 해당 SDK 계약이다. 실제 서버·UI·사람 평가는 아직 미검증이다. 구현 결과와 검증 범위는 [Native Evaluation Delivery](12-report-review-ai-native-langfuse-delivery.md)를 따른다.

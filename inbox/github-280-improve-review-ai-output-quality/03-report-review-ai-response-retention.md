@@ -26,7 +26,7 @@ uv run --env-file .env python scripts/run_agentic_review_live.py
 - Review AI와 Runtime AI 전체 회귀: **275 passed, 1 skipped**. Skip은 optional Langfuse SDK smoke이며 실제 provider를 호출한 결과가 아니다.
 - 원문과 sanitized record·콘솔·Langfuse projection 분리, 파일 권한·byte bound·identity 충돌 및 저장 실패 경로를 검증했다.
 - Ruff check·format, Review AI source/tests의 ty 검사와 전체 Tach 검사, 전체 OpenSpec strict **24 passed**를 확인했다. 읽기 전용 후속 검토에서 확정된 추가 결함은 없었다.
-- 구현 계약과 변경은 [응답 보존 Change](../../openspec/changes/review-ai-retain-provider-responses/tasks.md), 실행 절차는 [평가 가이드](../../docs/development/review-ai-evaluation.md#live-provider-proof)를 따른다.
+- 구현 계약과 변경은 [응답 보존 Change](../../openspec/changes/archive/2026-10-29-review-ai-retain-provider-responses/tasks.md), 실행 절차는 [평가 가이드](../../docs/development/review-ai-evaluation.md#live-provider-proof)를 따른다.
 
 ## Limits
 

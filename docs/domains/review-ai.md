@@ -22,7 +22,7 @@ tags:
 | 불변 입력, bounded context와 현재 프롬프트 | incident detection·recovery 정책 |
 | 고정된 세 단계의 텍스트 수집과 코드 JSON 취합 | provider SDK·credential 관리 |
 | 입력·collection 구조 검증과 로컬 provenance | approval·mutation authority |
-| 사람이 제공한 utility 평가와 비교 계약 | 자동 의미 채점·외부 관측 전송 |
+| Native 사람 평가의 대상 연결·완비 검사와 선택적 합성 IO 연결 | 자동 의미 채점·사람 판단 생성 |
 
 실행 요구사항은 [reliability-agentic-review](../../openspec/specs/reliability-agentic-review/spec.md), 프롬프트 작성·변경은 [review-ai-prompt-engineering](../../openspec/specs/review-ai-prompt-engineering/spec.md) Spec이 소유한다. Source는 구현을, tests는 실행 가능한 기대를 제공한다. Passing evidence는 실제로 검사한 revision과 command에 연결한다.
 
@@ -52,9 +52,9 @@ tags:
 
 ## Human Evaluation
 
-[rubric_v1](../../src/hmda_reliability/review_ai/evaluation/value.py)은 현재 `StagedReviewOutput`과 exact output digest·workflow·revision·case를 연결한다. 사람이 added_value·actionability·evidence_awareness·uncertainty_handling·prioritization에 각각 점수와 rationale을 제공하고 비교 결정도 직접 내린다.
+사람의 다섯 기준 점수·사유, 대기열과 실행 비교는 Langfuse native Dataset·Score Config·Annotation Queue를 사용한다. 선택적 [실험 연결](../../src/hmda_reliability/review_ai/evaluation/native_sdk.py)은 현재 검토 함수와 검증된 합성 원문을 연결한다. 프로젝트의 [완비 검사](../../src/hmda_reliability/review_ai/evaluation/annotations.py)는 실제 대상·작성자·범주·사유와 연결을 검사한다. 점수 합계·비교 저장 모델이나 사람 판단은 생성하지 않는다.
 
-평가 helper는 형식·대상·합계·비교 조건을 검증하며 판단을 대신하지 않는다. 합성 positive/negative 출력과 점수는 계약 테스트용이다. 수집 완료·offline 검사 통과는 사람 평가나 실제 효용을 증명하지 않는다. 실행과 원문 확인·평가 절차는 [Evaluation Guide](../development/review-ai-evaluation.md)를 따른다.
+합성 positive/negative 출력과 점수는 계약 테스트용이다. 수집 완료·offline 검사·SDK 제출은 사람 평가나 실제 효용을 증명하지 않는다. opt-in·실행·원문 확인·사람 평가 절차는 [Evaluation Guide](../development/review-ai-evaluation.md)를 따른다.
 
 ## Package Root API
 
@@ -63,7 +63,6 @@ tags:
 - `AgenticReviewInput`, `BoundedReviewContext`, `build_bounded_review_context()`
 - `review_null_spike()`와 같은 실행의 명시 이름 `review_null_spike_staged()`
 - `StageAnswer`, `StagedExecutionSettings`, `StagedReviewOutput`, `StagedReviewResult`
-- `RUBRIC_V1`, `HumanDecision`, `ReviewValueAssessment`, `ReviewValueComparisonEvidence`, `compare_review_value()`
 
 프롬프트 렌더링, provenance 저장소와 오류 계약은 owning module에서 확인한다. 두 번째 실제 consumer의 요구 없이 package root를 넓히지 않는다.
 
@@ -86,5 +85,5 @@ tags:
 1. 정본 Spec에서 요구사항을 확인한다.
 1. [공개 진입점](../../src/hmda_reliability/review_ai/__init__.py), [입력 계약](../../src/hmda_reliability/review_ai/contracts.py), [context](../../src/hmda_reliability/review_ai/context.py)를 읽는다.
 1. [현재 프롬프트 조립](../../src/hmda_reliability/review_ai/staged/prompt.py)과 [단계 실행](../../src/hmda_reliability/review_ai/staged/service.py), [저장소](../../src/hmda_reliability/review_ai/staged/store.py)를 확인한다.
-1. [사람 평가 계약](../../src/hmda_reliability/review_ai/evaluation/value.py)을 확인한다.
+1. [사람 평가 연결 검사](../../src/hmda_reliability/review_ai/evaluation/annotations.py)을 확인한다.
 1. Provider mechanics는 [Runtime AI](runtime-ai.md)를 따른다.

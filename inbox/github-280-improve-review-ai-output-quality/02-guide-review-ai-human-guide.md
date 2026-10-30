@@ -78,7 +78,7 @@ uv run --env-file .env python -m hmda_reliability.review_ai.evaluation.live
 
 ## Score And Decide
 
-[rubric_v1](../../src/hmda_reliability/review_ai/evaluation/value.py)은 다음 다섯 항목을 **정해진 순서로 각각 0–2점과 근거**로 기록한다. 아래 설명은 검토를 돕는 채점 안내다. 합계나 테스트 통과가 사람의 결정을 자동으로 만들지 않는다.
+[native rubric 설정](../../src/hmda_reliability/review_ai/evaluation/native_sdk.py)은 다음 다섯 항목을 **정해진 순서로 각각 0–2점과 근거**로 기록한다. 아래 설명은 검토를 돕는 채점 안내다. 합계나 테스트 통과가 사람의 결정을 자동으로 만들지 않는다.
 
 | Criterion | 0 | 1 | 2 |
 | --- | --- | --- | --- |
@@ -90,7 +90,7 @@ uv run --env-file .env python -m hmda_reliability.review_ai.evaluation.live
 
 숫자·근거 오류를 발견하면 해당 단계·문장과 올바른 근거를 함께 기록한다. 높은 총점으로 사실 오류를 숨기지 않는다. 출력 실패나 평가 자료 누락이면 품질 판단을 보류한다.
 
-비교 가능한 baseline/candidate가 있으면 [비교 함수](../../src/hmda_reliability/review_ai/evaluation/value.py)에 같은 case/version·revision·facts와 정확한 workflow·output digest를 연결하고 사람이 `accept`·`reject`·`no_change`를 결정한다. 비교 조건이 맞지 않으면 blocked로 남긴다. Baseline이 없으면 단일 출력의 평가만 기록하고 개선·비교 채택을 주장하지 않는다. 과거 버전을 복원하거나 revision·ID를 임의 변경해 비교 조건을 맞추지 않는다.
+비교할 baseline/candidate가 있으면 Langfuse native compare 화면에서 같은 case/version·사례 payload·rubric의 실제 답변을 대조한다. 양쪽 실제 SHA·workflow·run·output digest를 보존하고 사람이 별도 `review_decision`과 사유를 입력한다. 의도한 코드 변경의 SHA 차이는 허용하며, 사례·설정이 다르면 직접 개선 비교를 보류한다. Baseline이 없으면 단일 출력만 평가한다. 자세한 실행·조회는 [평가 가이드](../../docs/development/review-ai-evaluation.md#native-langfuse-experiments)를 따른다.
 
 ## Review Record
 
@@ -122,88 +122,12 @@ Required correction / next action:
 
 ## Run All Three Cases
 
-<details>
-<summary>선택 실행 예제: 합성 입력 3건을 현재 모델에 전달</summary>
-
-아래 명령은 **실제로 모델을 호출**한다. 세 사례를 각 한 번, 성공 시 총 아홉 단계 호출하며 retry를 설정하면 더 늘어날 수 있다. Workflow 예산 1,200초는 사례별 예산이다. CLI 연결을 확인한 뒤 반복 횟수·실행 조건을 정하고 사용한다. 이 문서를 작성하면서 이 명령의 실제 모델 실행은 수행하지 않았다.
-
-Repository root에서 실행한다. `.env`의 provider·한도·예산을 읽고 깨끗한 실제 HEAD를 revision으로 사용한다. Fixture의 revision 표식과 환경의 수동 revision 표식은 사용하지 않는다. Stdout에는 사례·상태·경로만, stderr에는 단계·대기 진행을 출력하며 원문은 로컬 artifact에서 읽는다.
+세 합성 사례를 실제 모델에 전달하고 Langfuse에서 비교·평가하려면 [환경 예시](../../.env.example)의 제공자·Langfuse 설정과 두 opt-in을 확인한다. 성공 시 총 아홉 단계이며 retry가 있으면 호출이 늘 수 있다. 사례별 기존 예산을 유지하고 실제 HEAD를 기록한다.
 
 ```bash
-uv run --env-file .env python - <<'PY'
-import json
-import os
-import subprocess
-from pathlib import Path
-
-from hmda_reliability.review_ai import review_null_spike
-from hmda_reliability.review_ai.contracts import AgenticReviewInput
-from hmda_reliability.review_ai.evaluation.progress import LiveProgressReporter
-from hmda_reliability.review_ai.settings import ReviewAISettings
-from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
-from hmda_reliability.runtime_ai import RuntimeAISettings
-
-prefix = "HMDA_AGENTIC_REVIEW_"
-if os.environ.get(prefix + "LIVE", "").strip().lower() not in {"1", "true", "yes", "on"}:
-    raise SystemExit("HMDA_AGENTIC_REVIEW_LIVE=true로 명시한 뒤 실행하세요.")
-git_env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
-if subprocess.check_output(
-    ["git", "status", "--porcelain", "--untracked-files=no"], text=True, env=git_env
-).strip():
-    raise SystemExit("추적 파일을 먼저 커밋하고 깨끗한 HEAD에서 실행하세요.")
-revision = subprocess.check_output(
-    ["git", "rev-parse", "HEAD"], text=True, env=git_env
-).strip()
-
-try:
-    settings = RuntimeAISettings(
-        base_url=os.environ[prefix + "BASE_URL"],
-        api_key=os.environ[prefix + "API_KEY"],
-        model=os.environ[prefix + "MODEL"],
-        timeout_seconds=float(os.environ.get(prefix + "TIMEOUT_SECONDS", "30")),
-        connect_timeout_seconds=float(os.environ.get(prefix + "CONNECT_TIMEOUT_SECONDS", "10")),
-        read_timeout_seconds=float(os.environ.get(
-            prefix + "READ_TIMEOUT_SECONDS", os.environ.get(prefix + "TIMEOUT_SECONDS", "300")
-        )),
-        max_retries=int(os.environ.get(prefix + "MAX_RETRIES", "0")),
-        max_output_tokens=int(os.environ.get(prefix + "MAX_OUTPUT_TOKENS", "1024")),
-        max_output_bytes=int(os.environ.get(prefix + "MAX_OUTPUT_BYTES", "32768")),
-    )
-    limits = ReviewAISettings(
-        max_prompt_bytes=int(os.environ.get(prefix + "MAX_PROMPT_BYTES", "65536"))
-    )
-    budgets = StagedExecutionSettings(
-        stage_budget_seconds=float(os.environ.get(prefix + "STAGE_BUDGET_SECONDS", "360")),
-        workflow_budget_seconds=float(os.environ.get(prefix + "WORKFLOW_BUDGET_SECONDS", "1200")),
-    )
-except (KeyError, ValueError):
-    raise SystemExit("모델 연결 정보와 숫자 설정을 확인하세요.") from None
-root = Path(os.environ.get("HMDA_RELIABILITY_ARTIFACTS_DIR", ".local/artifacts"))
-corpus = json.loads(Path(
-    "tests/review_ai/evaluation/fixtures/output_quality_staged_v1.json"
-).read_text(encoding="utf-8"))
-
-failed = False
-for case in corpus["cases"]:
-    material = AgenticReviewInput.model_validate(
-        case["review_input"] | {"project_revision": revision}
-    )
-    with LiveProgressReporter() as progress:
-        result = review_null_spike(
-            incident=material.incident, evidence=material.evidence, draft=material.draft,
-            project_revision=revision, settings=settings, review_settings=limits,
-            execution_settings=budgets, artifact_root=root, on_progress=progress,
-        )
-    print(json.dumps({
-        "case_id": case["case_id"], "case_version": case["case_version"],
-        "result": result.model_dump(mode="json", exclude={"output"}),
-    }, ensure_ascii=False))
-    failed |= result.status != "completed"
-
-raise SystemExit(int(failed))
-PY
+uv run --extra langfuse --env-file .env python -m hmda_reliability.review_ai.evaluation.experiment
 ```
 
-각 사례는 별도 workflow다. 한 사례가 typed failure를 반환해도 다른 사례를 계속 기록하고, 하나라도 수집에 실패하면 종료 코드 1을 반환한다. 각 `result.status`, 실패 코드와 경로를 확인한다. 모델에 전달되는 사례는 `review_input`의 bounded projection이며 oracle·합성 control·이 안내서는 주입하지 않는다.
+stdout의 receipt와 로컬 workflow를 보존한다. `submitted_unverified`는 SDK 반환이며 UI 적재나 사람 점수의 확인이 아니다. Langfuse의 실험·compare·Annotation Queue에서 입력과 답변을 읽고 기준별 comment를 작성한다. `--check <receipt> --reviewer-id <authorUserId>`로 실제 annotation의 연결·완비를 조회한다. 비교 baseline이 있으면 candidate 실행과 조회 양쪽에 `--baseline <baseline-receipt>`를 제공한다.
 
-</details>
+상세 명령·점수와 사유·비교 의견·실패 상태는 [현재 평가 가이드](../../docs/development/review-ai-evaluation.md#native-langfuse-experiments)를 따른다. 실제 원격/UI·사람 평가 증거는 아직 미검증이다.

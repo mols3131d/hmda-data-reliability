@@ -39,7 +39,7 @@ tags:
 - `incident_id`, `incident_type`, `target_column`과 `deterministic_facts`는 처음 고정한 입력에서 복사한다.
 - 단계별 구조·열거값·근거 ID와 상한을 검증한 후 해당 단계의 소유 필드에 대입한다. 같은 필드의 임의 merge와 마지막 응답 우선 규칙을 두지 않는다.
 - 최종 `evidence_used`는 근거 단계의 선언과 모든 finding·기여의 실제 참조를 허용 ID 안에서 합쳐 안정적으로 정렬한다. 입력에 있다는 이유로 모든 근거를 사용했다고 채우지 않는다.
-- 세 단계를 모두 성공한 경우에만 최종 output을 구성하고 기존 [structured-fact validator](../../src/hmda_reliability/review_ai/validator.py)를 적용한다.
+- 세 단계를 모두 성공한 경우에만 최종 output을 구성하고 기존 [structured-fact validator](https://github.com/mols3131d/hmda-data-reliability/blob/24b5f26833121de853ce0787c0bb67c3ad25673d/src/hmda_reliability/review_ai/validator.py)를 적용한다.
 - 필수 단계가 실패하면 성공한 단계의 내용은 진단 자료로 보존하고 완성된 accepted output으로 취급하지 않는다.
 
 원본 수치를 코드로 넣으면 모델의 구조화된 수치 복사 오류를 줄일 수 있다. 설명문 안의 잘못된 비율·단위·원인까지 교정되는 것은 아니므로 그 품질은 계속 평가해야 한다.
@@ -72,7 +72,7 @@ Runtime이 반환한 본문은 각 단계 검증 전에 성공·실패 모두 �
 
 프롬프트 파일의 모듈 분할과 모델 호출의 단계 분할은 독립적인 선택이다. 구조가 모듈화됐다는 이유로 다단계 호출의 품질이 보장되지는 않는다.
 
-동일 합성 사례, 모델·양자화, 실제 active context와 Thinking 설정을 고정하고 아래 후보를 비교한다. 기존 [합성 품질 corpus](../../tests/review_ai/evaluation/fixtures/output_quality_v1.json)와 [사람 평가 절차](../../docs/development/review-ai-evaluation.md#baseline-and-candidate-comparison)를 재사용한다.
+동일 합성 사례, 모델·양자화, 실제 active context와 Thinking 설정을 고정하고 아래 후보를 비교한다. 기존 [합성 품질 corpus](https://github.com/mols3131d/hmda-data-reliability/blob/24b5f26833121de853ce0787c0bb67c3ad25673d/tests/review_ai/evaluation/fixtures/output_quality_v1.json)와 [사람 평가 절차](../../docs/development/review-ai-evaluation.md#baseline-and-candidate-comparison)를 재사용한다.
 
 | Candidate | Purpose |
 | --- | --- |

@@ -17,7 +17,7 @@ tags:
 
 - Planning baseline: `1d03c5397bd75422cfd94b6d2ce7d67d682e7565`.
 - 조사 근거: [Langfuse Evaluation Research](10-research-review-ai-langfuse-evaluation.md). 정본은 현재 [Review AI Spec](../../openspec/specs/reliability-agentic-review/spec.md)이며 이 계획이 대신하지 않는다.
-- 현재 dependency 선언은 `langfuse==4.15.6`이다. 작업 환경에는 optional SDK가 설치되지 않아 실제 함수 계약은 확인하지 못했다.
+- 현재 dependency 선언은 `langfuse==4.15.6`이다. 계획 작성 당시 optional SDK는 미설치였다. 후속 구현에서 4.15.6을 설치해 native task·wire 계약을 모의 I/O로 확인했다. 실제 대상 서버 계약은 미확인이다.
 - 최신 [SDK experiment 문서](https://langfuse.com/docs/evaluation/experiments/experiments-via-sdk)는 Python v4→v5 변경을 안내한다. 예제 API를 현재 pin에 그대로 적용하지 않는다.
 - 대상 서버의 버전·기능·권한, 실제 compare UI·Annotation Queues 동작, 원격 적재와 사람 점수는 모두 미확인이다.
 
@@ -63,7 +63,7 @@ Compare UI의 기준별 평균·분포는 기존 합계·`total_delta`와 같은
 ## Identity And Comparison
 
 - dataset/item/version과 case/version, rubric/Score Config snapshot을 연결한다. 비교용 사례 payload는 `incident`·`evidence`·`draft` 등 고정된 필드로 정의하고 실행 출처를 제외해 별도 digest를 산출한다.
-- 사례 payload digest는 양쪽에서 같아야 한다. 각 실행의 canonical input digest는 실제 `project_revision`을 포함한 본문 그대로 따로 산출·보존하며 동일 값을 강요하지 않는다. 코드 SHA가 변경 변수이면 허용한 차이가 실제 revision 차이인지 검증한다.
+- 사례 payload digest는 양쪽에서 같아야 한다. 각 실행의 canonical input digest는 실제 bounded projection 본문 그대로 산출·보존한다. 현재 projection에는 `project_revision`이 없으며 실제 SHA는 별도 provenance다. 같은 사례의 digest가 같을 수 있고 코드 SHA 차이를 만들려고 본문에 필드를 추가하지 않는다.
 - DatasetItem ID는 upsert 대상이므로 입력 변경을 같은 사례로 숨기지 않는다. Dataset version을 고정하고, 한 experiment의 같은 item 결과를 덮어쓰지 않도록 반복마다 별도 run identity를 사용한다. [Experiment data model](https://langfuse.com/docs/evaluation/experiments/data-model)
 - 각 실행에는 실제 application SHA, 프롬프트 식별·digest, 모델·context·Thinking·예산·retry·반복 조건과 workflow/trace/observation/output digest를 기록한다.
 - 같은 workflow identity가 서로 다른 output digest를 가리키면 연결 충돌로 차단한다. 이 무결성 검사는 로컬 평가 모델 제거 후에도 얇은 검사와 회귀로 유지한다.
@@ -73,7 +73,7 @@ Compare UI의 기준별 평균·분포는 기존 합계·`total_delta`와 같은
 
 ## Policy Changes Before Transmission
 
-현재 Spec은 로컬 평가 모델과 raw 외부 전송 금지를 요구한다. 실제 원문을 Langfuse에서 읽으려면 아래 변경을 먼저 OpenSpec으로 명문화해야 한다. **이 계획만으로 현재 전송 금지가 해제되지 않는다.**
+계획 작성 당시 Spec은 로컬 평가 모델과 raw 외부 전송 금지를 요구했다. 후속 구현은 아래 변경을 OpenSpec Change와 정본에 반영했다. 전송 허용 범위는 이 계획이 아닌 해당 정본을 따른다.
 
 | Current owner | 계획할 변경 |
 | --- | --- |
@@ -96,12 +96,14 @@ Current review surface의 금지는 옛 JSON 전용 Langfuse projection에 대�
 
 ## Implementation Sequence
 
+후속 구현·검증 상태는 [Native Evaluation Delivery](12-report-review-ai-native-langfuse-delivery.md)를 따른다. 아래 계획의 실제 원격/UI·사람 증거는 별도 미완료로 유지한다.
+
 - [ ] 대상 서버·권한과 SDK 버전을 선택한다. 실제 환경 설치 후 experiment task·trace/step·score·queue 계약을 검증하고 pin 유지 또는 변경 근거를 남긴다.
-- [ ] 위 전송·평가 소유권 변경을 OpenSpec에 반영하고, 허용 필드·명시적 opt-in·실패 분리를 결정한다. 새 실행 API·명령은 이 단계 전 임의로 가정하지 않는다.
-- [ ] Dataset 연결과 SDK task·단계 adapter를 추가한다. 입력 경계·직렬 실행·기존 예산·raw 보존을 회귀 검증한다.
-- [ ] 다섯 Score Config와 Annotation Queue, compare 흐름을 연결하고 얇은 평가 완비 검사를 만든다.
-- [ ] [value.py](../../src/hmda_reliability/review_ai/evaluation/value.py)의 거대 평가·비교 모델, 합계/delta·Markdown 보고서와 전용 재수출·serialization golden을 제거한다. 독립 oracle·품질 corpus와 실제 무결성 회귀는 유지하고 같은 기능의 호환 wrapper는 남기지 않는다.
-- [ ] 도메인·평가·환경·인간 검토 안내를 native 흐름으로 갱신한다. 과거 실행 파일은 역사 자료로 보존하고 현재 성공으로 재작성하지 않는다.
+- [x] 위 전송·평가 소유권 변경을 OpenSpec에 반영하고, 허용 필드·명시적 opt-in·실패 분리를 결정한다. 새 실행 API·명령은 이 단계 전 임의로 가정하지 않는다.
+- [x] Dataset 연결과 SDK task·단계 adapter를 추가한다. 입력 경계·직렬 실행·기존 예산·raw 보존을 회귀 검증한다.
+- [x] 다섯 Score Config와 Annotation Queue, compare 흐름을 연결하고 얇은 평가 완비 검사를 만든다.
+- [x] `evaluation/value.py`의 거대 평가·비교 모델, 합계/delta·Markdown 보고서와 전용 재수출·serialization golden을 제거한다. 독립 oracle·품질 corpus와 실제 무결성 회귀는 유지하고 같은 기능의 호환 wrapper는 남기지 않는다.
+- [x] 도메인·평가·환경·인간 검토 안내를 native 흐름으로 갱신한다. 과거 실행 파일은 역사 자료로 보존하고 현재 성공으로 재작성하지 않는다.
 - [ ] 통제된 실제 실행과 사람 평가를 별도 수행해 아래 acceptance 증거를 남긴다. Draft·Ready·승인·병합은 기존 사람 gate로 유지한다.
 
 ## Acceptance Evidence

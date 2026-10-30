@@ -22,7 +22,7 @@ Review AI의 실행 기록과 실제 답변을 확인하고 사람이 검토 가
 uv run pytest tests/review_ai tests/runtime_ai
 ```
 
-프롬프트 전달·입력 경계·원문 보존·코드 JSON 조립·예산·실패 기록과 다섯 human rubric 항목을 검증한다. 합성 출력과 점수 fixture는 계약 검사용이며 실제 모델 품질이나 사람 평가를 대신하지 않는다.
+프롬프트 전달·입력 경계·원문 보존·코드 JSON 조립·예산·실패 기록과 native 사람 annotation의 연결·완비 검사를 검증한다. 합성 출력과 점수 fixture는 계약 검사용이며 실제 모델 품질이나 사람 평가를 대신하지 않는다.
 
 ## Live Provider Proof
 
@@ -87,18 +87,63 @@ stderr에는 workflow와 단계의 시작·종료를 표시하고, provider 호�
 
 잘못된 수치·근거 없는 원인·초안 반복 같은 합성 출력도 collection 구조에는 맞을 수 있다. 코드가 prose를 의미적으로 판정하거나 수치를 교정하지 않는다. 사람이 실제 제공 근거와 비교해 판단한다.
 
-### Baseline and Candidate Comparison
+## Native Langfuse Experiments
 
-현재 [사람 평가 계약](../../src/hmda_reliability/review_ai/evaluation/value.py)은 `StagedReviewOutput`을 대상으로 한다. 점수와 decision은 사람이 제공하며 helper는 연결·형식·일관성만 검증한다.
+선택적 [실험 진입점](../../src/hmda_reliability/review_ai/evaluation/experiment.py)은 패키지에 포함된 합성 사례 3건을 기존 검토 함수로 직렬 실행한다. 성공 시 총 아홉 단계이며 retry 설정에 따라 실제 호출 수가 늘 수 있다. Dataset의 기대값·독립 oracle은 검토자 자료이며 모델 입력이나 history에 포함하지 않는다. 실제 HMDA 적재·dbt 실행은 하지 않는다.
 
-1. 호출 전에 사례, 실제 revision, 모델·양자화, active context·Thinking, 출력 상한·timeout·retry·전체 예산과 반복 횟수를 정한다. 모든 시도와 실패·exclusion을 기록한다.
-1. 각 실행의 workflow ID, 실제 revision, 상태·failure, prompt/output digest, 실제 호출 수·usage·시간을 연결한다. 원문과 원입력은 로컬 artifact에서 확인한다. 성공한 단계만 골라 전체 성공으로 집계하지 않는다.
-1. 세 원문을 독립 oracle와 실제 evidence/draft에 대조한다. 비율·단위·기준값 0, 원인·검증 완료의 근거, 실제 초안에 없는 조치 비판, 앞선 답변의 오류 반복을 확인한다.
-1. 사람이 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization` 순서로 각각 0–2점과 rationale을 작성한다. `ReviewValueAssessment`에는 case/rubric/revision/workflow와 exact output digest를 연결한다.
-1. `compare_review_value()`에는 같은 사례·평가 기준·revision·facts의 baseline과 candidate 및 사람의 `accept`, `reject`, `no_change` 결정을 제공한다. 조건이 다르면 `blocked`이며 실제 조건을 맞추려고 식별자를 임의 변경하지 않는다.
-1. 실패율·정확성·utility와 전체 비용을 함께 보고한다. 사람 평가가 없으면 미검증이고 offline tests·collection 완료만으로 개선을 주장하지 않는다.
+```bash
+uv sync --extra langfuse
+uv run --extra langfuse --env-file .env python -m hmda_reliability.review_ai.evaluation.experiment
+```
 
-동일 입력·설정·실행 조건에서 현재 프롬프트의 변경 영향을 평가한다. 과거 기록은 당시 revision의 자료로 구분하며 현재 성공으로 재해석하거나 원문·digest를 다시 쓰지 않는다. 외부 전송과 자동 의미 채점은 이 실행 절차에 포함하지 않는다.
+[환경 예시](../../.env.example)에서 `HMDA_LANGFUSE_ENABLED=true`, `HMDA_AGENTIC_REVIEW_LIVE=true`와 Langfuse base URL·public/secret key를 설정한다. 기존 제공자·모델·예산 설정을 함께 사용한다. SDK 4.15.6을 사용하며 최신 SDK 문서의 v5 예제를 그대로 적용하지 않는다.
+
+Dataset item은 case/version·사례 payload digest로 고정하고 snapshot version을 선택한다. 기존 item·점수 Config·Queue가 기대 계약과 다르면 자동 덮어쓰지 않는다. 반복할 때마다 새 run을 만든다. `project_revision=auto`의 실제 HEAD 조건은 단일 실행과 같다.
+
+검증된 로컬 manifest·checkpoint·원문·collection만 native 사례 관측과 세 단계 generation 관측의 input/output으로 보낸다. System prompt는 digest로만 연결한다. Metadata는 식별자·상태·digest·시도 횟수·기록된 latency/usage로 제한한다. 관측은 보존된 결과를 내보낸 기록이므로 관측 생성 시각을 실제 provider 실행 시각으로 해석하지 않는다.
+
+stderr는 단계·대기 상태를, stdout은 core 결과와 외부 제출 상태·receipt 경로를 출력한다. Receipt는 `agentic-review/experiments/<run_name>/receipt.json`에 저장된다. credential·원문·개인 절대 경로·provider 예외를 콘솔이나 원격 metadata에 넣지 않는다.
+
+### Independent External IO Budget
+
+`HMDA_LANGFUSE_IO_TIMEOUT_SECONDS`는 기본 30초, 허용 범위 1–300초다. SDK 시작·등록·사례 사이·최종 flush 구간마다 적용한다. 실제 검토 함수 실행 구간은 기존 provider timeout·단계·workflow 예산을 사용한다. SDK는 별도 프로세스에서 실행해 무한 flush도 종료할 수 있다.
+
+외부 I/O가 실패해도 이미 완료된 core workflow와 로컬 원문은 남는다. `core_results`와 외부 `failure_code`를 구분해 읽는다. 외부 실패를 복구하기 위해 모델을 자동 재호출하지 않는다. 재실행하면 새 모델 실행과 새 run이 만들어진다.
+
+대기열은 native task 종료와 flush 반환 뒤 연결한다. `queue_attachment_failed`이면 원격 반영 지연·권한·대상을 먼저 확인하고 기존 receipt의 관측을 UI에서 평가할 수 있다. 이 오류를 고치려고 모델을 다시 호출하지 않는다. 원격 반영은 SDK 반환만으로 보장되지 않는다.
+
+| State | 확인한 범위 |
+| --- | --- |
+| Core `completed` | 세 단계 수집·로컬 보존 완료 |
+| `submitted_unverified` | SDK 실험 함수 반환; 실제 원격 적재·UI·사람 평가 미확인 |
+| `unavailable` | 외부 실행 실패·timeout; 로컬 결과는 별도 확인 |
+| Check `complete` | 실제 조회한 대상 관측과 특정 검토자의 다섯 annotation이 로컬 원문에 연결되고 완비됨 |
+
+### Baseline And Candidate Comparison
+
+Langfuse Dataset의 experiment와 compare 화면에서 실제 입력·세 원문을 읽는다. Annotation Queue `<dataset>-rubric-v1`은 다섯 기준을 제공한다. 지정 검토자는 각 항목에 categorical `0`·`1`·`2`와 공백이 아닌 comment를 입력한다. Queue 완료 표시만으로 평가가 완비되지는 않는다.
+
+- `added_value`: 초안 재서술을 넘어 판단에 필요한 정보를 더했는가.
+- `actionability`: 다음 확인의 대상·순서·조건이 구체적인가.
+- `evidence_awareness`: 실제 제공 근거와 빈틈을 구별했는가.
+- `uncertainty_handling`: 모르는 원인을 단정하지 않고 확인 조건을 제시했는가.
+- `prioritization`: 중요한 위험과 조사 순서를 구별했는가.
+
+점수의 의미는 사람이 판단한다. 숫자 합계나 자동 judge로 채택 결정을 만들지 않는다. 아래 명령의 경로는 stdout에 나온 실제 receipt로 바꾼다. 검토자 ID는 서버가 기록한 `authorUserId`다. 조회에는 Langfuse opt-in과 자격 증명·로컬 artifact가 필요하며 AI 제공자 자격 증명은 필요하지 않다.
+
+```bash
+uv run --extra langfuse --env-file .env python -m hmda_reliability.review_ai.evaluation.experiment \
+  --check .local/artifacts/agentic-review/experiments/<run_name>/receipt.json \
+  --reviewer-id <authorUserId>
+```
+
+조회는 원격 관측 metadata와 로컬 실제 workflow·원문·output digest, Config schema, annotation source·작성자·시각·사유를 검사한다. 다섯 항목이 각각 정확히 한 번이어야 한다. 누락·중복·잘못된 범주·연결은 `incomplete` 또는 조회 실패로 남긴다. API/자동 evaluator 점수는 사람 점수를 채우지 못한다. SDK/API 조회가 된 것과 UI에서 읽고 평가한 것은 별도 증거다.
+
+비교할 baseline이 있으면 candidate 실행 때 `--baseline <baseline-receipt>`를 지정한다. 같은 사례 payload와 Config snapshot을 사용하고 양쪽 실제 SHA·run·workflow·canonical/output digest를 보존한다. 현재 canonical input에는 revision이 포함되지 않는다. 실제 SHA는 별도 provenance다. 의도한 코드 변경의 SHA 차이를 허용하며 값이 같아 보이도록 재작성하지 않는다. 모델·context·Thinking·예산 등 비교 조건은 실행 전에 정하고 양쪽 workflow 설정과 함께 확인한다.
+
+사람은 candidate 관측에서 별도 `review_decision` Config의 `accept`·`reject`·`no_change`와 사유를 입력한다. 이 의견은 candidate 관측의 양쪽 run/output digest에 연결된다. 조회할 때도 `--baseline <baseline-receipt>`를 함께 제공한다. Baseline의 로컬 기록과 원격 관측도 확인한다. Baseline 없이 실행하면 단일 결과 평가만 가능하며 과거 결과에 비교 연결을 소급 합성하지 않는다.
+
+실패·누락·미평가 사례를 전체 평가에서 제외해 개선을 주장하지 않는다. 사실성·효용 판단과 GitHub의 Ready·승인·병합은 각각 사람이 결정한다. 실제 원격/UI·사람 평가가 없으면 품질은 미검증이다.
 
 ## Related Guides
 

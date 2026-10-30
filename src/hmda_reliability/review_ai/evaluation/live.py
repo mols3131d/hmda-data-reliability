@@ -11,6 +11,7 @@ import os
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
@@ -71,6 +72,81 @@ class Reviewer(Protocol):
     ) -> StagedReviewResult: ...
 
 
+@dataclass(frozen=True)
+class LiveReviewConfiguration:
+    project_revision: str
+    settings: RuntimeAISettings
+    review_settings: ReviewAISettings
+    execution_settings: StagedExecutionSettings
+    artifact_root: Path
+
+
+def load_live_configuration(environment: Mapping[str, str]) -> LiveReviewConfiguration:
+    """단일 실행과 native 실험이 같은 provider·예산 설정을 사용한다."""
+    project_revision = _project_revision(environment)
+    connect_timeout = _optional_float_value(
+        environment, "HMDA_AGENTIC_REVIEW_CONNECT_TIMEOUT_SECONDS"
+    )
+    read_timeout = _optional_float_value(
+        environment, "HMDA_AGENTIC_REVIEW_READ_TIMEOUT_SECONDS"
+    )
+    if connect_timeout is None:
+        connect_timeout = 10.0
+    if read_timeout is None:
+        read_timeout = _float_value(
+            environment, "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS", 300.0
+        )
+    settings = RuntimeAISettings(
+        base_url=environment["HMDA_AGENTIC_REVIEW_BASE_URL"],
+        api_key=environment["HMDA_AGENTIC_REVIEW_API_KEY"],
+        model=environment["HMDA_AGENTIC_REVIEW_MODEL"],
+        timeout_seconds=_float_value(
+            environment,
+            "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS",
+            30.0,
+        ),
+        connect_timeout_seconds=connect_timeout,
+        read_timeout_seconds=read_timeout,
+        max_retries=_int_value(
+            environment,
+            "HMDA_AGENTIC_REVIEW_MAX_RETRIES",
+            0,
+        ),
+        max_output_tokens=_int_value(
+            environment,
+            "HMDA_AGENTIC_REVIEW_MAX_OUTPUT_TOKENS",
+            1024,
+        ),
+        max_output_bytes=_int_value(
+            environment,
+            "HMDA_AGENTIC_REVIEW_MAX_OUTPUT_BYTES",
+            32_768,
+        ),
+    )
+    review_settings = ReviewAISettings(
+        max_prompt_bytes=_int_value(
+            environment,
+            "HMDA_AGENTIC_REVIEW_MAX_PROMPT_BYTES",
+            65_536,
+        )
+    )
+    execution_settings = StagedExecutionSettings(
+        stage_budget_seconds=_float_value(
+            environment, "HMDA_AGENTIC_REVIEW_STAGE_BUDGET_SECONDS", 360.0
+        ),
+        workflow_budget_seconds=_float_value(
+            environment, "HMDA_AGENTIC_REVIEW_WORKFLOW_BUDGET_SECONDS", 1200.0
+        ),
+    )
+    return LiveReviewConfiguration(
+        project_revision,
+        settings,
+        review_settings,
+        execution_settings,
+        Path(environment.get("HMDA_RELIABILITY_ARTIFACTS_DIR", ".local/artifacts")),
+    )
+
+
 def main(
     *,
     env: Mapping[str, str] | None = None,
@@ -98,87 +174,21 @@ def main(
         return 2
 
     try:
-        project_revision = _project_revision(environment)
-    except ValueError as error:
-        print(
-            f"Invalid live agentic review configuration: project revision: {error}",
-            file=sys.stderr,
-        )
-        return 2
-
-    try:
-        connect_timeout = _optional_float_value(
-            environment, "HMDA_AGENTIC_REVIEW_CONNECT_TIMEOUT_SECONDS"
-        )
-        read_timeout = _optional_float_value(
-            environment, "HMDA_AGENTIC_REVIEW_READ_TIMEOUT_SECONDS"
-        )
-        if connect_timeout is None:
-            connect_timeout = 10.0
-        if read_timeout is None:
-            read_timeout = _float_value(
-                environment, "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS", 300.0
-            )
-        settings = RuntimeAISettings(
-            base_url=environment["HMDA_AGENTIC_REVIEW_BASE_URL"],
-            api_key=environment["HMDA_AGENTIC_REVIEW_API_KEY"],
-            model=environment["HMDA_AGENTIC_REVIEW_MODEL"],
-            timeout_seconds=_float_value(
-                environment,
-                "HMDA_AGENTIC_REVIEW_TIMEOUT_SECONDS",
-                30.0,
-            ),
-            connect_timeout_seconds=connect_timeout,
-            read_timeout_seconds=read_timeout,
-            max_retries=_int_value(
-                environment,
-                "HMDA_AGENTIC_REVIEW_MAX_RETRIES",
-                0,
-            ),
-            max_output_tokens=_int_value(
-                environment,
-                "HMDA_AGENTIC_REVIEW_MAX_OUTPUT_TOKENS",
-                1024,
-            ),
-            max_output_bytes=_int_value(
-                environment,
-                "HMDA_AGENTIC_REVIEW_MAX_OUTPUT_BYTES",
-                32_768,
-            ),
-        )
-        review_settings = ReviewAISettings(
-            max_prompt_bytes=_int_value(
-                environment,
-                "HMDA_AGENTIC_REVIEW_MAX_PROMPT_BYTES",
-                65_536,
-            )
-        )
-        execution_settings = StagedExecutionSettings(
-            stage_budget_seconds=_float_value(
-                environment, "HMDA_AGENTIC_REVIEW_STAGE_BUDGET_SECONDS", 360.0
-            ),
-            workflow_budget_seconds=_float_value(
-                environment, "HMDA_AGENTIC_REVIEW_WORKFLOW_BUDGET_SECONDS", 1200.0
-            ),
-        )
+        config = load_live_configuration(environment)
     except (KeyError, ValueError, ValidationError):
         print("Invalid live agentic review configuration.", file=sys.stderr)
         return 2
-
     incident, evidence, draft = _build_null_spike_material()
-    artifact_root = Path(
-        environment.get("HMDA_RELIABILITY_ARTIFACTS_DIR", ".local/artifacts")
-    )
     return _run_staged_live(
         reviewer=reviewer,
         incident=incident,
         evidence=evidence,
         draft=draft,
-        project_revision=project_revision,
-        settings=settings,
-        review_settings=review_settings,
-        execution_settings=execution_settings,
-        artifact_root=artifact_root,
+        project_revision=config.project_revision,
+        settings=config.settings,
+        review_settings=config.review_settings,
+        execution_settings=config.execution_settings,
+        artifact_root=config.artifact_root,
     )
 
 
