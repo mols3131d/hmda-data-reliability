@@ -25,7 +25,7 @@
 상태: ✅ Pass / ❌ Fail / ⚪ Not Verified
 -->
 
-- <status> — `<check>`: <result 또는 evidence>
+- `<status>` — `<check>`: <result 또는 evidence>
 
 <!--
 Optional — 판단 비용을 줄일 때만 해당 section을 추가한다.
