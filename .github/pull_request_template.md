@@ -1,4 +1,8 @@
-<!-- 관련 문서·이슈·PR·코드 등 기존 컨텍스트를 참고한다. -->
+<!--
+관련 문서와 적용되는 에이전트 지침·Skill·Rule을 확인한다.
+프로젝트 하네스: `CHATBOT.md`, `AGENTS.md`, `.agents/route/ROUTE.md` (연결된 `.agents/route/` 인덱스와 `.rulesync/` 포함).
+사용자·로컬 환경의 별도 하네스도 있는지 확인하고, 적용되는 지침을 참고한다.
+-->
 
 ## Summary
 
