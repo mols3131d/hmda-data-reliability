@@ -212,22 +212,17 @@ Monotonic 시간으로 남은 예산을 확인하고 그 범위를 넘는 후속
 
 Runtime이 반환한 bounded 응답은 수집 실패 여부를 판정하기 전에 `HMDA_RELIABILITY_ARTIFACTS_DIR/agentic-review/responses/<workflow_id>-<stage_id>.txt`에 저장해야 한다(SHALL). UTF-8 bytes가 정확히 같아야 하며 개행 추가·공백 제거·JSON 재직렬화를 해서는 안 된다(MUST NOT). 빈 본문도 0-byte 파일로 남겨야 한다(SHALL).
 
-파일은 bounded·private·atomic·create-only로 저장하고 기존 원문이나 workflow identity를 덮어써서는 안 된다(MUST NOT). 원문 저장 실패는 `provenance_failed / stage_response_write_failed`로 종료해야 한다(SHALL). 이후 저장이 실패해도 이미 회수 가능한 response 경로를 유지해야 한다(SHALL). 원문은 stage metadata·진단·자동 콘솔 로그·logger·외부 projection에 넣어서는 안 된다(MUST NOT).
+파일은 bounded·private·atomic·create-only로 저장하고 기존 원문이나 workflow identity를 덮어써서는 안 된다(MUST NOT). 원문 저장 실패는 `provenance_failed / stage_response_write_failed`로 종료해야 한다(SHALL). 이후 저장이 실패해도 이미 회수 가능한 response 경로를 유지해야 한다(SHALL). 원문은 stage metadata·진단·자동 콘솔 로그·logger에 넣어서는 안 된다(MUST NOT). Native 합성 평가의 실제 compiled prompt·사례·단계 텍스트·collection만 명시적인 원격 input/output에 보낼 수 있다. Metadata에는 본문을 복제하거나 credential·개인 절대 경로·provider 예외·전체 설정 object를 전송해서는 안 된다(MUST NOT).
 
 #### Scenario: Invalid stage text remains inspectable
 
 - **WHEN** 빈 본문 또는 알려진 미완료 응답이 반환될 때
 - **THEN** 판정 전에 파일을 저장하고 stage의 `response_path`에서 원래 bytes를 읽을 수 있어야 한다(SHALL).
 
-#### Scenario: Capture is bounded and create-only
+#### Scenario: Retained raw precedes remote output
 
-- **WHEN** 본문이 UTF-8 byte cap을 넘거나 identity 충돌 또는 쓰기 실패가 발생할 때
-- **THEN** 기존 파일을 보존하고 정제된 failure를 반환해야 한다(SHALL).
-
-#### Scenario: Later persistence fails after response capture
-
-- **WHEN** 원문 저장 뒤 stage record·output·manifest 저장이 실패할 때
-- **THEN** 이미 저장된 원문과 이전 checkpoint 경로를 가능한 범위에서 제공해야 한다(SHALL).
+- **WHEN** Runtime이 bounded 본문을 반환할 때
+- **THEN** 원격 output 갱신 전에 로컬 원문을 저장하고 전송 장애가 이를 삭제하거나 모델 재호출을 일으켜서는 안 된다(MUST NOT).
 
 #### Scenario: Unavailable calls have no response file
 
@@ -258,38 +253,25 @@ Workflow directory를 provider 호출 전에 독점 reservation하고 stage reco
 
 ### Requirement: Versioned human utility evaluation
 
-시스템은 `StagedReviewOutput`의 검토 가치를 immutable `rubric_v1`과 `ReviewValueAssessment`로 평가해야 한다(SHALL). `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization`의 다섯 criterion마다 0–2 human score와 non-empty rationale이 있어야 한다(SHALL). 자동 LLM judge나 외부 평가 플랫폼이 품질 평가 권한을 대신해서는 안 된다(MUST NOT). `workflow_id`·case·revision과 원문을 포함한 output digest로 대상 결과를 식별해야 한다(SHALL).
+사람의 `added_value`, `actionability`, `evidence_awareness`, `uncertainty_handling`, `prioritization` 평가와 명시적 채택 의견은 Langfuse native Score Config·annotation·Annotation Queue·비교 UI에서 관리해야 한다(SHALL). 로컬 ReviewValue 평가·합계·비교 저장 모델·Markdown 평가 renderer·점수 조회와 별도 완비 판정기를 제공해서는 안 된다(MUST NOT).
 
-#### Scenario: Rubric scores all utility dimensions
+사람이 다섯 기준의 0·1·2 의미와 실제 출력에 근거해 판단하도록 안내해야 한다(SHALL). SDK/API·자동 evaluator 점수·Queue 완료를 사람의 독립 평가나 채택 의견으로 취급해서는 안 된다(MUST NOT). 서버에서 확인하지 않은 사람·평가·원격 상태를 합성해 완료로 기록해서는 안 된다(MUST NOT).
 
-- **WHEN** 사람이 현재 세 단계 output을 평가할 때
-- **THEN** 다섯 점수와 근거 및 정확한 평가 대상을 기록해야 한다(SHALL).
+#### Scenario: Human evaluation uses the native UI
 
-#### Scenario: Rubric fixtures distinguish utility from restatement and hedging
-
-- **WHEN** positive·단순 재서술·실행 가능한 다음 판단이 없는 hedging control을 비교할 때
-- **THEN** 추가 가치와 행동 가능성의 차이를 구분하고 fixture 점수를 실제 human 품질 증거로 취급해서는 안 된다(MUST NOT).
+- **WHEN** 사람이 실제 experiment output을 평가할 때
+- **THEN** UI의 Config·annotation·Queue를 사용하고 프로젝트 CLI가 점수·작성자·comment를 다시 읽어 별도 완료 판정을 만들지 않아야 한다(SHALL).
 
 ### Requirement: Baseline and candidate utility comparison evidence
 
-시스템은 같은 retained case/version·rubric·project revision·deterministic facts에서 평가한 baseline/candidate `StagedReviewOutput`을 immutable `ReviewValueComparisonEvidence`로 비교할 수 있어야 한다(SHALL). 각 `workflow_id`, output digest, change-under-test, 다섯 criterion delta, total과 human `accept`·`reject`·`no_change` 및 rationale을 연결해야 한다(SHALL). Digest는 canonical JSON의 단계 순서·원문 공백·개행까지 식별하고 manifest의 output digest와 같은 결과를 가리켜야 한다(SHALL).
+Baseline/candidate는 Langfuse native experiment 비교 화면에서 동일 Dataset version·사례·평가 기준과 의도한 변경 변수를 확인해 대조해야 한다(SHALL). 실제 prompt name/version·model·project revision·workflow·실제 메시지와 output digest를 보존해야 한다(SHALL). 코드 변경이 비교 변수이면 서로 다른 실제 revision을 허용하고 같은 값으로 보이도록 출처를 재작성해서는 안 된다(MUST NOT).
 
-비교 조건과 attribution이 맞지 않으면 `blocked` 또는 `inconclusive`로 기록하고 candidate를 accept하거나 baseline으로 승격해서는 안 된다(MUST NOT). 동일한 immutable `workflow_id`가 서로 다른 output digest를 가리키면 `workflow_output_conflict`로 차단해야 하며(SHALL), 같은 workflow와 같은 digest의 비교는 human `no_change` 판단을 기록할 수 있다. 과거 invocation 기반 serialized shape를 읽거나 현재 workflow 결과로 자동 변환하는 호환 loader를 제공해서는 안 된다(MUST NOT).
+별도 비교 저장 모델·점수 delta·합계·호환 loader·자동 채택 판정기를 제공해서는 안 된다(MUST NOT). 실패·누락·미평가 사례를 숨기거나 점수·Queue 완료로 GitHub 승인·병합·recovery 권한을 생성해서는 안 된다(MUST NOT).
 
-#### Scenario: Same case and rubric are compared
+#### Scenario: Native comparison retains real execution conditions
 
-- **WHEN** 양쪽 평가가 같은 case/version·rubric·facts·revision을 만족할 때
-- **THEN** workflow identity·원문 digest·score delta·human decision을 복원할 수 있어야 한다(SHALL).
-
-#### Scenario: Mismatched or incomplete comparison is blocked
-
-- **WHEN** role·case·rubric·score·facts·revision이 맞지 않을 때
-- **THEN** invalid 또는 blocked/inconclusive로 남고 acceptance를 허용해서는 안 된다(MUST NOT).
-
-#### Scenario: Current comparison retains exact staged text
-
-- **WHEN** 현재 comparison을 serialize한 뒤 다시 읽을 때
-- **THEN** workflow identity·rubric·단계 원문·순서·output digest를 그대로 보존해야 한다(SHALL).
+- **WHEN** 사람이 같은 Dataset의 두 experiment run을 비교할 때
+- **THEN** 양쪽 실제 revision·prompt version·model과 실패 사례를 확인할 수 있어야 하고 도구가 채택 판단을 대신 생성해서는 안 된다(MUST NOT).
 
 ### Requirement: Advisory and read-only boundary
 
@@ -314,7 +296,7 @@ Review의 filesystem mutation은 로컬 workflow·stage·원문·collection 파�
 
 Offline suite는 provider network 없이 input snapshot·canonical projection·context bounds·단계 순서와 history·코드 조립 facts·typed failure·예산·원문·provenance·권한 분리를 반복 검증해야 한다(SHALL). JSON 응답 파싱이나 자연어 의미를 현재 acceptance oracle로 사용해서는 안 된다(MUST NOT). 수치 설명과 검토 가치의 oracle은 기존 모델 답변을 정답으로 취급하지 않고 독립적인 사례 기대값과 human rubric으로 다뤄야 한다(SHALL).
 
-실제 모델 생성은 별도 opt-in live 경로로 확인하고 offline 통과나 completed만으로 현재 revision의 한국어 준수·정확성·검토 가치를 주장해서는 안 된다(MUST NOT).
+실제 모델 생성은 명시적인 native experiment 실행으로 확인하고 offline 통과나 completed만으로 현재 revision의 한국어 준수·정확성·검토 가치를 주장해서는 안 된다(MUST NOT).
 
 #### Scenario: Offline staged collection evaluation
 
@@ -331,9 +313,9 @@ Offline suite는 provider network 없이 input snapshot·canonical projection·c
 - **WHEN** input 또는 이전 답변에 prompt-injection-like 문장이 있을 때
 - **THEN** 단계 선택·system 지시·실행 권한을 바꾸지 않고 untrusted data로 유지해야 한다(SHALL).
 
-#### Scenario: Ollama live proof
+#### Scenario: Ollama experiment proof
 
-- **WHEN** 명시적으로 활성화한 live 경로에 합성 사례와 접근 가능한 endpoint를 제공할 때
+- **WHEN** 명시적으로 실행한 native experiment에 합성 사례와 접근 가능한 endpoint를 제공할 때
 - **THEN** 현재 세 단계 결과 또는 typed failure와 revision·설정·입력·digest·원문·attempt·latency를 보존해야 한다(SHALL).
 
 ## ADDED Requirements

@@ -2,28 +2,28 @@
 type: openspec-spec-driven-tdd-tasks
 category: tasks
 title: Native Langfuse Review Evaluation
-description: Native SDK 실험·사람 평가와 기존 실행의 최소 무결성 검사를 연결합니다.
+description: 원격 프롬프트와 SDK 실험을 기본 경로로 사용하고 중복 구현을 제거합니다.
 tasks_completed: 5
 tasks_total: 5
 ---
 
 ## Tasks
 
-- [x] SDK-free 사례·출력 연결과 native annotation 완비 검사를 구현하고 중복 평가 모델을 제거한다.
-  - **Test first:** 정확한 원문 digest·사례/실행 출처 구분·workflow 충돌·다섯 사람 점수와 사유·독립 채택 의견을 RED로 고정한다.
-  - **Done when:** 점수 합계·비교 보고서 없이 불일치·누락·자동 점수를 차단하고 독립 품질 corpus를 유지한다.
-- [x] SDK 4.15.6의 Dataset·Score Config·Queue·실험 task와 검증된 단계 IO를 연결한다.
-  - **Test first:** 실제 SDK 계약·bootstrap 재사용/충돌·원문 변조·부분 실패·oracle 미주입을 모의 외부 전송으로 고정한다.
-  - **Done when:** Native 실험이 현재 세 단계 함수를 호출하고 허용된 IO와 출처만 전달하며 자동 judge를 실행하지 않는다.
-- [x] 두 opt-in과 독립 외부 I/O 예산을 가진 실행 진입점을 구현한다.
-  - **Test first:** 비활성·누락 설정·외부 hang·core 실행 구간·정제 protocol과 예외 유출 차단을 검증한다.
-  - **Done when:** SDK의 무제한 flush를 종료할 수 있고 이미 저장된 core 결과를 보존한다.
-- [x] Native 사람 annotation 조회와 평가 완비 확인을 실행 가능한 경로로 제공한다.
-  - **Test first:** Pagination·source/작성자·Config·trace/관측·사유·pair digest 불일치를 거부한다.
-  - **Done when:** API 제출과 실제 사람 평가를 구분하며 확인된 원격 자료만 완비로 보고한다.
-- [x] 환경·개발·인간 검토 안내와 정본을 현재 native 경계에 맞춘다.
-  - **Done when:** 관련 회귀·정적 검사·문서·OpenSpec과 배포 검증이 통과하며 실제 원격/UI·사람 평가의 미검증 한계를 기록한다.
+- [x] Langfuse native Prompt Management를 모든 검토의 단일 프롬프트 경로로 연결한다.
+  - **Test first:** 세 prompt의 선조회·실행 중 version 고정·native compile의 history·공통 config와 원격 조회 실패를 검증한다.
+  - **Done when:** 한국어 모듈은 seed로 남고 실행은 remote prompt만 사용하며 실패 시 fallback 없이 모델 호출 전에 종료한다.
+- [x] 최초 등록과 SDK Dataset 실험을 작은 별도 진입점으로 제공한다.
+  - **Test first:** setup에서만 쓰기가 발생하고 반복 실험은 기존 Dataset·task·SDK format을 사용하며 oracle을 provider에 주입하지 않는지 검증한다.
+  - **Done when:** 선택적 Dataset version·prompt label을 사용할 수 있고 worker·별도 live CLI·native bootstrap·점수 조회 계층이 없다.
+- [x] 실제 모델 호출 구간에 native generation을 연결한다.
+  - **Test first:** 호출 범위·prompt/model/usage·전체 허용 메시지·raw 우선 저장·부분 실패와 관측 장애 시 core 결과 보존을 검증한다.
+  - **Done when:** 사후 빈 관측과 전 artifact 재검증 없이 실제 호출·원문·collection을 연결한다.
+- [x] SDK 기본 의존성과 표준 환경 설정으로 현재 실행을 통일한다.
+  - **Test first:** SDK 설치 계약·기본 import·표준 제공자 환경·삭제된 설정/모듈 미제공을 검증한다.
+  - **Done when:** SDK pin과 Runtime 예산은 유지하고 과거 opt-in·전용 외부 deadline·호환 설정을 제거한다.
+- [x] 정본·개발·환경·인간 검토 안내를 native 책임 분담에 맞춘다.
+  - **Done when:** 관련 테스트·정적 검사·문서·OpenSpec·배포 검증이 통과하고 실제 서버/UI·모델·사람 평가의 미검증 한계를 명시한다.
 
 ## Validation Boundary
 
-로컬 구현 작업은 위 task로 추적한다. 실제 대상 서버의 원격 조회·UI와 사람이 입력한 점수는 아직 미검증이며, fixture·SDK 설치·flush 반환으로 완료 처리하지 않는다.
+실제 대상 서버의 등록·실험·UI와 모델 출력·사람 점수는 별도 증거다. 로컬 SDK 계약·fake transport·flush 반환을 실제 원격 적재나 품질 검증으로 기록하지 않는다.

@@ -5,13 +5,15 @@ from __future__ import annotations
 import hashlib
 import time
 import uuid
-from collections.abc import Callable, Sequence
-from contextlib import suppress
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, Protocol
 
+from langfuse import Langfuse, LangfuseGeneration, get_client
+from langfuse.model import ChatPromptClient
 from pydantic import ValidationError
 
 from hmda_reliability.reliability import Evidence, Incident, RemediationDraft
@@ -41,7 +43,10 @@ from hmda_reliability.review_ai.staged.evidence import (
     StageRecord,
 )
 from hmda_reliability.review_ai.staged.progress import ProgressCallback, StageProgress
-from hmda_reliability.review_ai.staged.prompt import render_stage_prompt
+from hmda_reliability.review_ai.staged.prompt import (
+    load_stage_prompts,
+    render_stage_prompt,
+)
 from hmda_reliability.review_ai.staged.settings import StagedExecutionSettings
 from hmda_reliability.review_ai.staged.store import StagedReviewStore
 from hmda_reliability.review_ai.store import (
@@ -104,6 +109,8 @@ def review_null_spike_staged(
     workflow_id_factory: Callable[[], str] | None = None,
     clock: Callable[[], float] = time.monotonic,
     on_progress: ProgressCallback | None = None,
+    prompts: Mapping[StageId, ChatPromptClient] | None = None,
+    langfuse_client: Langfuse | None = None,
 ) -> StagedReviewResult:
     """같은 immutable 사례의 세 답변을 원문 그대로 수집한다.
 
@@ -124,9 +131,6 @@ def review_null_spike_staged(
         )
         context = build_bounded_review_context(review_input)
         canonical_input = build_canonical_input(review_input, context=context)
-        render_stage_prompt(
-            canonical_input, STAGE_IDS[0], (), max_prompt_bytes=limits.max_prompt_bytes
-        )
     except ValidationError:
         return StagedReviewResult(
             status="input_rejected", failure_code="invalid_review_input"
@@ -138,6 +142,32 @@ def review_null_spike_staged(
     except ReviewContextTooLargeError:
         return StagedReviewResult(
             status="input_rejected", failure_code="context_too_large"
+        )
+
+    try:
+        client = langfuse_client if langfuse_client is not None else get_client()
+        active_prompts = (
+            load_stage_prompts(client=client) if prompts is None else prompts
+        )
+    except Exception:
+        return StagedReviewResult(
+            status="unavailable", failure_code="prompt_unavailable"
+        )
+    try:
+        render_stage_prompt(
+            canonical_input,
+            STAGE_IDS[0],
+            (),
+            max_prompt_bytes=limits.max_prompt_bytes,
+            prompts=active_prompts,
+        )
+    except PromptTooLargeError:
+        return StagedReviewResult(
+            status="input_rejected", failure_code="prompt_too_large"
+        )
+    except (ValueError, KeyError):
+        return StagedReviewResult(
+            status="input_rejected", failure_code="prompt_invalid"
         )
 
     workflow_id = (workflow_id_factory or _new_workflow_id)()
@@ -164,18 +194,31 @@ def review_null_spike_staged(
         _notify_progress(
             on_progress, StageProgress(stage_id=stage_id, phase="stage_started")
         )
-        record, answer = _run_stage(
-            canonical_input,
-            stage_id,
-            tuple(answers),
-            provider=active_provider,
-            workflow_id=workflow_id,
-            artifact_root=artifact_root,
-            limits=limits,
-            settings=settings,
-            budget=budget,
-            stage_deadline=stage_deadline,
-            on_progress=on_progress,
+        prompt = active_prompts[stage_id]
+        with _generation(client, prompt, settings.model, stage_id) as generation:
+            record, answer = _run_stage(
+                canonical_input,
+                stage_id,
+                tuple(answers),
+                provider=active_provider,
+                workflow_id=workflow_id,
+                artifact_root=artifact_root,
+                limits=limits,
+                settings=settings,
+                budget=budget,
+                stage_deadline=stage_deadline,
+                on_progress=on_progress,
+                prompts=active_prompts,
+                generation=generation,
+            )
+            if generation is not None:
+                with suppress(Exception):
+                    generation.update(
+                        level="DEFAULT" if record.status == "completed" else "ERROR",
+                        status_message=record.failure_code,
+                    )
+        record = record.model_copy(
+            update={"prompt_name": prompt.name, "prompt_version": prompt.version}
         )
         record = record.model_copy(
             update={
@@ -280,6 +323,8 @@ def _run_stage(
     budget: _ExecutionBudget,
     stage_deadline: float,
     on_progress: ProgressCallback | None,
+    prompts: Mapping[StageId, ChatPromptClient],
+    generation: LangfuseGeneration | None,
 ) -> tuple[StageRecord, StageAnswer | None]:
     if failure := budget.failure(stage_deadline):
         return StageRecord(
@@ -287,11 +332,19 @@ def _run_stage(
         ), None
     try:
         rendered = render_stage_prompt(
-            canonical_input, stage_id, answers, max_prompt_bytes=limits.max_prompt_bytes
+            canonical_input,
+            stage_id,
+            answers,
+            max_prompt_bytes=limits.max_prompt_bytes,
+            prompts=prompts,
         )
     except PromptTooLargeError:
         return StageRecord(
             stage_id=stage_id, status="input_rejected", failure_code="prompt_too_large"
+        ), None
+    except (ValueError, KeyError):
+        return StageRecord(
+            stage_id=stage_id, status="input_rejected", failure_code="prompt_invalid"
         ), None
     base = StageRecord(
         stage_id=stage_id,
@@ -307,6 +360,12 @@ def _run_stage(
     _notify_progress(
         on_progress, StageProgress(stage_id=stage_id, phase="provider_started")
     )
+    if generation is not None:
+        with suppress(Exception):
+            generation.update(
+                input=[message.model_dump(mode="json") for message in rendered.messages]
+            )
+    usage = None
     try:
         response = provider.invoke(
             rendered.messages,
@@ -314,6 +373,7 @@ def _run_stage(
             budget_seconds=max(0.0, stage_deadline - budget.clock()),
         )
         attempt_count = response.attempt_count
+        usage = response.usage
     except ProviderUnavailableError as error:
         attempt_count = error.attempt_count
         failure = error.failure_code
@@ -333,6 +393,7 @@ def _run_stage(
         ), None
     except ProviderResponseTooLargeError as error:
         attempt_count = error.attempt_count
+        usage = error.usage
         return base.model_copy(
             update={
                 "status": "validation_failed",
@@ -344,6 +405,19 @@ def _run_stage(
             }
         ), None
     finally:
+        if generation is not None and usage is not None:
+            with suppress(Exception):
+                generation.update(
+                    usage_details={
+                        key: value
+                        for key, value in {
+                            "input": usage.prompt_tokens,
+                            "output": usage.completion_tokens,
+                            "total": usage.total_tokens,
+                        }.items()
+                        if value is not None
+                    }
+                )
         _notify_progress(
             on_progress,
             StageProgress(
@@ -380,6 +454,9 @@ def _run_stage(
             + hashlib.sha256(response.content.encode("utf-8")).hexdigest(),
         }
     )
+    if generation is not None:
+        with suppress(Exception):
+            generation.update(output=response.content)
     if failure := budget.failure(stage_deadline):
         return record.model_copy(
             update={"status": "unavailable", "failure_code": failure}
@@ -399,6 +476,32 @@ def _run_stage(
             update={"status": "validation_failed", "failure_code": failure}
         ), None
     return record, StageAnswer(stage_id=stage_id, text=response.content)
+
+
+@contextmanager
+def _generation(
+    client: Langfuse,
+    prompt: ChatPromptClient,
+    model: str,
+    stage_id: StageId,
+) -> Iterator[LangfuseGeneration | None]:
+    # Exporter 장애를 core 실행과 분리한다. Yield 밖에서 provider를 재시도하지 않는다.
+    stack = ExitStack()
+    generation = None
+    try:
+        with suppress(Exception):
+            generation = stack.enter_context(
+                client.start_as_current_observation(
+                    as_type="generation",
+                    name=stage_id,
+                    model=model,
+                    prompt=prompt,
+                )
+            )
+        yield generation
+    finally:
+        with suppress(Exception):
+            stack.close()
 
 
 def _notify_progress(callback: ProgressCallback | None, event: StageProgress) -> None:

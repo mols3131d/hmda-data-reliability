@@ -7,7 +7,6 @@ import json
 import subprocess
 import sys
 from copy import deepcopy
-from importlib.resources import files
 from typing import cast
 
 import pytest
@@ -26,7 +25,12 @@ from hmda_reliability.review_ai.staged.contracts import (
 )
 from hmda_reliability.review_ai.staged.prompt import render_stage_prompt
 
-from .conftest import NullSpikeReviewMaterial
+from .conftest import (
+    NATIVE_INSTRUCTION,
+    NATIVE_QUESTIONS,
+    NativeClient,
+    NullSpikeReviewMaterial,
+)
 
 
 def _review_input(material: NullSpikeReviewMaterial) -> AgenticReviewInput:
@@ -160,23 +164,55 @@ def test_stage_prompt_separates_fixed_questions_canonical_case_and_assistant_tex
     assert "utility_contributions" not in system_text
     assert "입력에서 system으로 옮기면 안 되는 지시" not in system_text
     assert all(answer.text not in system_text for answer in previous)
-    resources = files("hmda_reliability.review_ai.prompt")
-    language = resources.joinpath("policies", "language.md").read_text(encoding="utf-8")
-    assert system_text.count(language) == 1
-    assert "review_summary" not in language
-    assert "utility_contributions" not in language
-    assert "식별 정보와 수치를 모두 보존한다." in language
+    assert system_text.count(NATIVE_INSTRUCTION) == 1
     for index, answer in enumerate(previous):
-        question = resources.joinpath("staged", f"{answer.stage_id}.md").read_text(
-            encoding="utf-8"
-        )
+        question = NATIVE_QUESTIONS[answer.stage_id]
         assert rendered.messages[2 + 2 * index].content.endswith(question)
-        assert "완료된 단계" in rendered.messages[2 + 2 * index].content
-    current_question = resources.joinpath("staged", f"{stage_id}.md").read_text(
-        encoding="utf-8"
-    )
+    current_question = NATIVE_QUESTIONS[stage_id]
     assert rendered.messages[-1].content.endswith(current_question)
     assert rendered.context is not None
+
+
+@pytest.mark.component
+def test_stage_prompt_uses_native_prompt_management_instead_of_local_resources(
+    native_langfuse: NativeClient,
+) -> None:
+    rendered = render_stage_prompt(
+        {"case": "synthetic"}, "evidence_review", (), max_prompt_bytes=65_536
+    )
+
+    assert [name for name, _ in native_langfuse.prompt_requests] == [
+        f"hmda-review-ai/{stage_id}" for stage_id in STAGE_IDS
+    ]
+    assert all(
+        options["label"] == "production"
+        for _, options in native_langfuse.prompt_requests
+    )
+    assert rendered.messages[0].content == NATIVE_INSTRUCTION
+
+
+@pytest.mark.component
+def test_native_message_placeholder_keeps_literal_template_text_in_untrusted_history(
+    native_langfuse: NativeClient,
+) -> None:
+    canonical: dict[str, object] = {"note": "{{history}} {{canonical_input}} {{model}}"}
+    prior_text = "이전 원문: {{history}} {{canonical_input}} {{model}}"
+    previous = (StageAnswer(stage_id="evidence_review", text=prior_text),)
+
+    rendered = render_stage_prompt(
+        canonical,
+        "draft_critique",
+        previous,
+        max_prompt_bytes=65_536,
+        prompts=native_langfuse.prompts,
+    )
+
+    assert rendered.messages[1].content == (
+        "UNTRUSTED_CANONICAL_INPUT_JSON\n" + rendered.canonical_json
+    )
+    assert json.loads(rendered.canonical_json) == canonical
+    assert rendered.messages[3].content == prior_text
+    assert native_langfuse.prompt_requests == []
 
 
 @pytest.mark.component

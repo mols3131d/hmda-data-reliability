@@ -22,7 +22,7 @@ tags:
 | 불변 입력, bounded context와 현재 프롬프트 | incident detection·recovery 정책 |
 | 고정된 세 단계의 텍스트 수집과 코드 JSON 취합 | provider SDK·credential 관리 |
 | 입력·collection 구조 검증과 로컬 provenance | approval·mutation authority |
-| Native 사람 평가의 대상 연결·완비 검사와 선택적 합성 IO 연결 | 자동 의미 채점·사람 판단 생성 |
+| Native Prompt·실험·호출 관측과 사람 평가 연결 | 자동 의미 채점·사람 판단 생성 |
 
 실행 요구사항은 [reliability-agentic-review](../../openspec/specs/reliability-agentic-review/spec.md), 프롬프트 작성·변경은 [review-ai-prompt-engineering](../../openspec/specs/review-ai-prompt-engineering/spec.md) Spec이 소유한다. Source는 구현을, tests는 실행 가능한 기대를 제공한다. Passing evidence는 실제로 검사한 revision과 command에 연결한다.
 
@@ -32,9 +32,9 @@ tags:
 
 ## Review Boundary
 
-일반 API [review_null_spike()](../../src/hmda_reliability/review_ai/service.py)와 CLI는 [같은 단계 실행](../../src/hmda_reliability/review_ai/staged/service.py)을 사용한다. 모드나 프롬프트 version을 선택하지 않는다. 같은 canonical input에서 근거 검토 → 초안 비판 → 종합을 진행하며, 완료된 이전 답변은 assistant 자료로만 다음 요청에 포함한다.
+일반 API [review_null_spike()](../../src/hmda_reliability/review_ai/service.py)와 CLI는 [같은 단계 실행](../../src/hmda_reliability/review_ai/staged/service.py)을 사용한다. 같은 native prompt 경로를 사용하며 과거 실행 모드를 선택하지 않는다. 같은 canonical input에서 근거 검토 → 초안 비판 → 종합을 진행하며, 완료된 이전 답변은 assistant 자료로만 다음 요청에 포함한다.
 
-실제 제공자 통합 검증은 도메인 소유의 [evaluation.live](../../src/hmda_reliability/review_ai/evaluation/live.py) 패키지 진입점에서 수행한다. 진행 상태는 stderr, 원문을 제외한 결과 JSON은 stdout, 답변 원문은 로컬 artifact로 분리한다. 대기 로그는 로컬 경과시간이며 모델 진행률이나 품질 판정이 아니다. 실행과 로그 해석은 [Evaluation Guide](../development/review-ai-evaluation.md#progress-output)를 따른다.
+실제 합성 실행은 [evaluation.experiment](../../src/hmda_reliability/review_ai/evaluation/experiment.py)의 작은 native Dataset task로 수행한다. 최초 [setup](../../src/hmda_reliability/review_ai/evaluation/setup.py)과 반복 실행을 분리한다. 단계 시작·종료는 stderr에 표시하며 SDK가 실험 결과를 제공한다. Prompt Management가 실행 프롬프트를 소유하고 workflow 시작에 읽은 name/version을 고정한다. 실행과 로그 해석은 [Evaluation Guide](../development/review-ai-evaluation.md)를 따른다.
 
 [AgenticReviewInput](../../src/hmda_reliability/review_ai/contracts.py)은 Incident·Evidence·Draft를 깊게 복사하고 식별자·근거 참조·canonical target과 수치의 입력 일관성을 확인한다. [Bounded context](../../src/hmda_reliability/review_ai/context.py)는 관련 근거의 제한된 projection과 missing/unconfirmed gap을 제공한다. 사례 데이터와 이전 답변이 system 지시나 단계를 선택하지 않는다.
 
@@ -52,9 +52,9 @@ tags:
 
 ## Human Evaluation
 
-사람의 다섯 기준 점수·사유, 대기열과 실행 비교는 Langfuse native Dataset·Score Config·Annotation Queue를 사용한다. 선택적 [실험 연결](../../src/hmda_reliability/review_ai/evaluation/native_sdk.py)은 현재 검토 함수와 검증된 합성 원문을 연결한다. 프로젝트의 [완비 검사](../../src/hmda_reliability/review_ai/evaluation/annotations.py)는 실제 대상·작성자·범주·사유와 연결을 검사한다. 점수 합계·비교 저장 모델이나 사람 판단은 생성하지 않는다.
+사람의 다섯 기준 점수·사유, 대기열과 실행 비교는 Langfuse native Dataset·Score Config·Annotation Queue·compare UI를 사용한다. 별도 점수 조회·완비 판정기·합계·비교 저장 모델은 제공하지 않는다. 실제 모델 호출 구간에 generation을 만들고 적용한 prompt·model·입력·원문·usage를 연결한다. 합성 실행에서 compiled system·history를 명시적인 input으로 보내며 metadata에는 credential·본문·개인 경로를 넣지 않는다.
 
-합성 positive/negative 출력과 점수는 계약 테스트용이다. 수집 완료·offline 검사·SDK 제출은 사람 평가나 실제 효용을 증명하지 않는다. opt-in·실행·원문 확인·사람 평가 절차는 [Evaluation Guide](../development/review-ai-evaluation.md)를 따른다.
+수집 완료·offline 검사·SDK 제출은 실제 원격 적재나 사람의 효용 평가를 입증하지 않는다. 시작에 remote prompt를 못 읽으면 모델 호출 전 실패하며 로컬 fallback이 없다. 관측 전송 장애는 저장된 core 결과를 바꾸거나 모델 재호출을 일으키지 않는다. 별도 worker·watchdog가 없으므로 HTTP timeout이 SDK flush와 프로세스 종료 상한을 보장하지 않는다. 자세한 절차는 [Evaluation Guide](../development/review-ai-evaluation.md)를 따른다.
 
 ## Package Root API
 
@@ -85,5 +85,5 @@ tags:
 1. 정본 Spec에서 요구사항을 확인한다.
 1. [공개 진입점](../../src/hmda_reliability/review_ai/__init__.py), [입력 계약](../../src/hmda_reliability/review_ai/contracts.py), [context](../../src/hmda_reliability/review_ai/context.py)를 읽는다.
 1. [현재 프롬프트 조립](../../src/hmda_reliability/review_ai/staged/prompt.py)과 [단계 실행](../../src/hmda_reliability/review_ai/staged/service.py), [저장소](../../src/hmda_reliability/review_ai/staged/store.py)를 확인한다.
-1. [사람 평가 연결 검사](../../src/hmda_reliability/review_ai/evaluation/annotations.py)을 확인한다.
+1. [최초 등록](../../src/hmda_reliability/review_ai/evaluation/setup.py)과 [native 실험](../../src/hmda_reliability/review_ai/evaluation/experiment.py)을 확인한다.
 1. Provider mechanics는 [Runtime AI](runtime-ai.md)를 따른다.

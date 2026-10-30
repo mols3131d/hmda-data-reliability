@@ -1,173 +1,143 @@
-import sys
-import time
+"""Native Dataset 실행에 task만 연결하고 운영 계층을 다시 구현하지 않는다."""
+
+from datetime import datetime
+from types import SimpleNamespace
 
 import pytest
 
-from hmda_reliability.review_ai.evaluation.experiment import main, run_isolated
+from hmda_reliability.review_ai.contracts import AgenticReviewInput
+from hmda_reliability.review_ai.evaluation import experiment
+from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
+from tests.review_ai.conftest import NativeClient
 
 pytestmark = pytest.mark.component
 
 
-def test_disabled_experiment_never_requires_sdk_or_credentials(capsys):
-    assert main(env={}, argv=[]) == 0
-    assert "disabled" in capsys.readouterr().out
+@pytest.fixture
+def configured_runner(monkeypatch, null_spike_review_material, native_langfuse):
+    material = null_spike_review_material
+    payload = AgenticReviewInput(
+        incident=material.detection.incident,
+        evidence=[material.detection.evidence],
+        draft=material.draft,
+        project_revision="fixture-only",
+    ).model_dump(mode="json", exclude={"project_revision"})
+    requests = []
+    outputs = []
+    native_calls = []
 
-
-def test_missing_credentials_are_rejected_without_printing_values(capsys):
-    assert (
-        main(
-            env={
-                "HMDA_LANGFUSE_ENABLED": "true",
-                "LANGFUSE_PUBLIC_KEY": "PRIVATE_SECRET",
-            },
-            argv=[],
+    def run_experiment(**kwargs):
+        native_calls.append(kwargs)
+        output = kwargs["task"](
+            item=SimpleNamespace(
+                input=payload,
+                expected_output={"oracle": "reviewer-only-secret"},
+                metadata={"private_case_note": "excluded"},
+            )
         )
-        == 2
-    )
-    assert "PRIVATE_SECRET" not in capsys.readouterr().err
+        outputs.append(output)
+        return SimpleNamespace(
+            item_results=[SimpleNamespace(output=output, task_error=None)],
+            format=lambda: "Native Dataset result: test-run",
+        )
 
+    def get_dataset(name, **kwargs):
+        requests.append((name, kwargs))
+        return SimpleNamespace(run_experiment=run_experiment)
 
-def test_hanging_external_sdk_is_killed_within_io_budget():
-    started = time.monotonic()
-    result = run_isolated(
-        {"langfuse": {"io_timeout_seconds": 0.2}},
-        {},
-        command=[sys.executable, "-c", "import time; time.sleep(30)"],
-    )
-    assert result["failure_code"] == "external_io_timeout"
-    assert time.monotonic() - started < 3
-
-
-def test_core_time_is_not_charged_to_the_external_io_budget():
-    script = """import json,time
-print(json.dumps({'kind':'phase','phase':'core'}),flush=True)
-time.sleep(.4)
-print(json.dumps({'kind':'core_result','result':{'status':'completed','workflow_id':'retained'}}),flush=True)
-print(json.dumps({'kind':'phase','phase':'remote'}),flush=True)
-print(json.dumps({'kind':'receipt','receipt':{'status':'submitted_unverified'}}),flush=True)
-"""
-    result = run_isolated(
-        {"langfuse": {"io_timeout_seconds": 0.2}},
-        {},
-        command=[sys.executable, "-c", script],
-    )
-    assert result["status"] == "submitted_unverified"
-    assert result["core_results"] == [
-        {"status": "completed", "workflow_id": "retained"}
-    ]
-
-
-def test_external_timeout_keeps_already_reported_core_result():
-    script = """import json,time
-print(json.dumps({'kind':'core_result','result':{'status':'completed','workflow_id':'kept'}}),flush=True)
-time.sleep(30)
-"""
-    result = run_isolated(
-        {"langfuse": {"io_timeout_seconds": 0.2}},
-        {},
-        command=[sys.executable, "-c", script],
-    )
-    assert result["failure_code"] == "external_io_timeout"
-    assert result["core_results"][0]["workflow_id"] == "kept"
-
-
-def test_stalled_worker_stdin_is_also_bounded_by_io_budget():
-    started = time.monotonic()
-    result = run_isolated(
-        {"langfuse": {"io_timeout_seconds": 0.1}, "padding": "x" * 500_000},
-        {},
-        command=[sys.executable, "-c", "import time; time.sleep(2)"],
-    )
-    assert result["failure_code"] == "external_io_timeout"
-    assert time.monotonic() - started < 1
-
-
-def test_real_worker_runs_all_three_cases_without_provider_network(tmp_path):
-    import json
-    from pathlib import Path
-
-    from hmda_reliability.review_ai.evaluation import experiment
-    from tests.review_ai.test_live_harness import _live_environment
-
-    script = """import os
-from tests.review_ai.evaluation.test_native_sdk import FakeClient
-from tests.review_ai.test_live_harness import StagedTextProvider
-from hmda_reliability.review_ai.staged import service
-from hmda_reliability.review_ai.evaluation import native_sdk
-from hmda_reliability.review_ai.evaluation.experiment_worker import worker
-provider=StagedTextProvider()
-service.OpenAICompatibleAdapter=lambda *a,**k: provider
-native_sdk.make_client=lambda settings: FakeClient()
-os._exit(worker())
-"""
-    environment = _live_environment(tmp_path)
-    cases = json.loads(Path(experiment.__file__).with_name("cases.json").read_text())
-    request = dict(
-        action="run",
-        cases=cases,
-        run_name="test-native-three",
-        langfuse=dict(
-            base_url="http://unused.invalid",
-            public_key="pk",
-            secret_key="PRIVATE_SECRET",
-            io_timeout_seconds=5,
-            dataset_name="test",
-        ),
-    )
-    result = run_isolated(request, environment, command=[sys.executable, "-c", script])
-    assert result["status"] == "submitted_unverified"
-    assert len(result["bindings"]) == len(result["core_results"]) == 3
-    assert all(case["status"] == "completed" for case in result["core_results"])
-    assert "PRIVATE_SECRET" not in json.dumps(result)
-    workflows = list(
-        (tmp_path / "artifacts" / "agentic-review" / "staged").glob("*/workflow.json")
-    )
-    assert len(workflows) == 3
-
-
-def test_worker_exception_body_cannot_escape_to_receipt():
-    import json
-
-    script = """import os
-from hmda_reliability.review_ai.evaluation import native_sdk
-from hmda_reliability.review_ai.evaluation.experiment_worker import worker
-def fail(_settings):
-    raise RuntimeError('PRIVATE_SECRET /home/private-user/work/private-project')
-native_sdk.make_client=fail
-os._exit(worker())
-"""
-    result = run_isolated(
-        dict(action="check", langfuse=dict(io_timeout_seconds=5)),
-        {},
-        command=[sys.executable, "-c", script],
-    )
-    assert result["failure_code"] == "native_experiment_failed"
-    assert "PRIVATE_SECRET" not in json.dumps(result)
-    assert "/home/private-user" not in json.dumps(result)
-
-
-def test_check_needs_no_ai_provider_configuration(tmp_path, monkeypatch, capsys):
-    import json
-
-    from hmda_reliability.review_ai.evaluation import experiment
-
-    receipt = tmp_path / "receipt.json"
-    receipt.write_text(json.dumps(dict(bindings=[{}])))
+    native_langfuse.get_dataset = get_dataset
+    native_langfuse.flush = lambda: None
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "PRIVATE_PROVIDER_KEY")
+    monkeypatch.setattr(experiment, "get_client", lambda: native_langfuse)
     monkeypatch.setattr(
-        experiment,
-        "run_isolated",
-        lambda *a: dict(status="checked", annotations=[dict(status="complete")]),
+        experiment.subprocess,
+        "check_output",
+        lambda args, **kw: "" if args[1] == "diff" else "revision-test\n",
     )
+    return requests, native_calls, outputs
+
+
+def test_native_dataset_owns_the_loop_without_bootstrap_or_annotation_api_calls(
+    configured_runner, monkeypatch, capsys, tmp_path
+):
+    requests, calls, outputs = configured_runner
+    seen = []
+
+    def review(**kwargs):
+        seen.append(kwargs)
+        return StagedReviewResult(
+            status="completed", workflow_id="sr-native", workflow_path=tmp_path
+        )
+
+    monkeypatch.setattr(experiment, "review_null_spike", review)
     assert (
-        main(
-            env=dict(
-                HMDA_LANGFUSE_ENABLED="true",
-                LANGFUSE_BASE_URL="http://unused.invalid",
-                LANGFUSE_PUBLIC_KEY="pk",
-                LANGFUSE_SECRET_KEY="sk",
-            ),
-            argv=["--check", str(receipt), "--reviewer-id", "human"],
+        experiment.main(
+            argv=[
+                "--dataset",
+                "managed-dataset",
+                "--name",
+                "test-run",
+                "--dataset-version",
+                "2026-10-30T00:00:00Z",
+                "--prompt-label",
+                "candidate",
+            ]
         )
         == 0
     )
-    assert "checked" in capsys.readouterr().out
+
+    assert requests == [
+        (
+            "managed-dataset",
+            {"version": datetime.fromisoformat("2026-10-30T00:00:00Z")},
+        )
+    ]
+    assert calls[0]["name"] == "test-run" and calls[0]["max_concurrency"] == 1
+    assert len(seen) == 1
+    assert seen[0]["project_revision"] == "revision-test"
+    assert seen[0]["settings"].model == "test-model"
+    assert seen[0]["settings"].max_output_tokens == 2048
+    assert "expected_output" not in seen[0] and "metadata" not in seen[0]
+    assert outputs == [
+        {
+            "status": "completed",
+            "failure_code": None,
+            "workflow_id": "sr-native",
+            "output": None,
+        }
+    ]
+    console = capsys.readouterr()
+    assert "Native Dataset result: test-run" in console.out
+    assert "PRIVATE_PROVIDER_KEY" not in console.out + console.err
+    assert str(tmp_path) not in str(outputs)
+
+
+def test_native_dataset_keeps_typed_core_failure_and_returns_nonzero(
+    configured_runner, monkeypatch
+):
+    _, _, outputs = configured_runner
+    monkeypatch.setattr(
+        experiment,
+        "review_null_spike",
+        lambda **kw: StagedReviewResult(
+            status="validation_failed", failure_code="stage_response_incomplete"
+        ),
+    )
+
+    assert experiment.main(argv=["--name", "failed-run"]) == 1
+    assert outputs[0]["status"] == "validation_failed"
+    assert outputs[0]["failure_code"] == "stage_response_incomplete"
+
+
+def test_missing_native_prompt_stops_before_dataset_execution(
+    monkeypatch, native_langfuse: NativeClient
+):
+    def unavailable(*_args, **_kwargs):
+        raise RuntimeError("PRIVATE_REMOTE_FAILURE")
+
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "PRIVATE_PROVIDER_KEY")
+    monkeypatch.setattr(native_langfuse, "get_prompt", unavailable)
+    monkeypatch.setattr(experiment, "get_client", lambda: native_langfuse)
+    assert experiment.main(argv=[]) != 0

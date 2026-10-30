@@ -1295,6 +1295,7 @@ dependencies = [
     { name = "dbt-core" },
     { name = "dbt-duckdb" },
     { name = "duckdb" },
+    { name = "langfuse" },
     { name = "langgraph" },
     { name = "openai" },
     { name = "polars" },
@@ -1306,11 +1307,6 @@ dependencies = [
     { name = "pyyaml" },
     { name = "sqlalchemy" },
     { name = "sqlglot" },
-]
-
-[package.optional-dependencies]
-langfuse = [
-    { name = "langfuse" },
 ]
 
 [package.dev-dependencies]
@@ -1343,7 +1339,7 @@ requires-dist = [
     { name = "dbt-core", specifier = ">=1.12.0" },
     { name = "dbt-duckdb", specifier = ">=1.10.1" },
     { name = "duckdb", specifier = ">=1.5.5" },
-    { name = "langfuse", marker = "extra == 'langfuse'", specifier = "==4.15.6" },
+    { name = "langfuse", specifier = "==4.15.6" },
     { name = "langgraph", specifier = ">=1.2.10" },
     { name = "openai", specifier = ">=3.3.1" },
     { name = "polars", specifier = ">=1.43.2" },
@@ -1356,7 +1352,6 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0.51" },
     { name = "sqlglot", specifier = ">=30.14.0" },
 ]
-provides-extras = ["langfuse"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -10,22 +10,21 @@ import httpx
 import pytest
 from openai import OpenAI
 
-from hmda_reliability.review_ai.evaluation import live as live_module
-from hmda_reliability.review_ai.staged.evidence import StagedReviewResult
+from hmda_reliability.review_ai.staged import service as staged_service
+from hmda_reliability.runtime_ai import RuntimeAISettings
 from hmda_reliability.runtime_ai import provider as provider_module
-from tests.review_ai.test_live_harness import _live_environment
+
+from .conftest import NullSpikeReviewMaterial
 
 
 @pytest.mark.integration
 @pytest.mark.parametrize("second_finish", ["stop", "length"])
-def test_staged_live_runs_real_sdk_history_and_mechanically_collects_text(
+def test_staged_review_runs_real_sdk_history_and_mechanically_collects_text(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
+    null_spike_review_material: NullSpikeReviewMaterial,
     second_finish: str,
 ) -> None:
-    environment = _live_environment(tmp_path)
-    environment["HMDA_AGENTIC_REVIEW_MAX_RETRIES"] = "0"
     texts = (
         '  근거 검토: "관측"을 확인한다.\n',
         '초안 비판: {"kind": "이 문자열도 그대로 보존"}\n',
@@ -65,24 +64,29 @@ def test_staged_live_runs_real_sdk_history_and_mechanically_collects_text(
         monkeypatch.setattr(
             provider_module, "OpenAI", partial(OpenAI, http_client=client)
         )
-        exit_code = live_module.main(env=environment)
+        material = null_spike_review_material
+        result = staged_service.review_null_spike_staged(
+            incident=material.detection.incident,
+            evidence=[material.detection.evidence],
+            draft=material.draft,
+            project_revision="native-sdk-wire-test",
+            settings=RuntimeAISettings(
+                base_url="http://localhost:11434/v1",
+                api_key="test-key",
+                model="test-model",
+                max_retries=0,
+            ),
+            artifact_root=tmp_path,
+        )
 
-    captured = capsys.readouterr()
-    result = StagedReviewResult.model_validate_json(captured.out)
-    assert "단계 1/3 근거 검토 시작" in captured.err
-    assert "단계 1/3 근거 검토 수집·저장 완료" in captured.err
-    assert all(text not in captured.out for text in texts)
     assert result.workflow_path is not None
     manifest = json.loads(result.workflow_path.read_text(encoding="utf-8"))
     if second_finish == "length":
-        assert "단계 2/3 초안 검토 실패 (validation_failed)" in captured.err
-        assert "단계 3/3" not in captured.err
-        assert exit_code == 1 and result.status == "validation_failed"
+        assert result.status == "validation_failed"
         assert len(payloads) == 2 and result.output_path is None
         assert manifest["failure_code"] == "stage_response_incomplete"
     else:
-        assert "단계 3/3 종합 검토 수집·저장 완료" in captured.err
-        assert exit_code == 0 and result.status == "completed"
+        assert result.status == "completed"
         assert len(payloads) == 3 and result.output_path is not None
         output = json.loads(result.output_path.read_text(encoding="utf-8"))
         assert [stage["text"] for stage in output["stages"]] == list(texts)

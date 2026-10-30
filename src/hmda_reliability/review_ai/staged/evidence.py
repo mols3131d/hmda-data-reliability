@@ -34,6 +34,8 @@ class StageRecord(ReliabilityContract):
 
     stage_id: StageId
     status: StagedReviewStatus
+    prompt_name: str | None = None
+    prompt_version: int | None = Field(default=None, ge=1)
     prompt_digest: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
     prompt_bytes: int = Field(default=0, ge=0)
     response_digest: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")

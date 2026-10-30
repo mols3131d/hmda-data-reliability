@@ -2,27 +2,27 @@
 type: openspec-spec-driven-tdd-proposal
 category: proposal
 title: Native Langfuse Review Evaluation
-description: 현재 세 단계 검토를 Langfuse native 실험·사람 평가에 연결하고 중복된 로컬 평가 모델을 제거합니다.
+description: 프롬프트·실험·관측·사람 평가를 Langfuse에 맡기고 프로젝트의 중복 운영 계층을 제거합니다.
 ---
 
 ## Why
 
-현재 로컬 평가 코드는 점수·합계·비교 결과와 보고서를 직접 보관하지만 실제 모델 출력이나 사람 평가가 완료됐음을 증명하지 않는다. 사용자가 [전환 계획](../../../inbox/github-280-improve-review-ai-output-quality/11-plan-review-ai-langfuse-evaluation.md)의 다음 작업을 승인했다. Langfuse가 제공하는 Dataset·SDK experiment·Score Config·Annotation Queue·compare를 사용하고 프로젝트는 현재 검토 실행과 대상 무결성·평가 완비만 책임진다.
+현재 구현은 native API를 사용하지만 Dataset·점수·대기열 초기화, 별도 프로세스, 사후 관측 재구성과 사람 평가 완비 검사를 직접 운영한다. 사용자가 [조사 결과](../../../inbox/github-280-improve-review-ai-output-quality/13-research-review-ai-langfuse-reduce-custom-code.md)를 바탕으로 Langfuse의 기본 기능과 공식 튜토리얼 관행을 최대한 사용하고 직접 구현을 최소화하도록 승인했다.
 
 ## What Changes
 
-- 합성 corpus를 명시적 opt-in Dataset·SDK experiment에 연결하고 기존 한국어 세 단계·로컬 원문·시간 예산을 재사용한다.
-- 합성 사례와 단계 답변·collection을 허용된 원격 input/output에 연결한다. Metadata에는 고정 식별자·digest·상태와 정제된 설정만 남긴다.
-- 다섯 기준의 0·1·2 categorical 점수와 사람의 사유, Annotation Queue·native compare를 사용한다.
-- 거대한 ReviewValue 평가·합계·비교 모델과 재수출·전용 직렬화·Markdown 보고서를 제거한다. 사례 payload·실제 canonical input·workflow/output 연결과 사람 annotation의 완비 검사는 남긴다.
-- 의도한 코드 변경 비교에는 서로 다른 실제 revision을 허용하되 사례·rubric·비교 조건을 고정하고 실제 SHA를 보존한다.
-- 로컬 검토 결과와 외부 전송·원격 조회·사람 평가의 증거를 구분한다.
+- 실행 프롬프트의 정본을 Langfuse Prompt Management로 옮긴다. 한국어 Markdown 모듈은 최초 등록용 자료로 유지하며 실행은 native composition·message placeholder·label/version을 사용한다.
+- 최초 Prompt·합성 Dataset 등록과 반복 실험을 분리한다. 반복 실행은 이미 존재하는 Dataset을 SDK experiment task로 실행한다.
+- 실제 모델 호출 구간을 native generation으로 관측하고 적용한 prompt·model·usage·실제 입력과 반환 원문을 연결한다.
+- 사람의 점수·사유·대기열·비교는 native UI에 맡기고 별도 완비 검사·점수 조회·합계·비교 저장 모델을 제공하지 않는다.
+- 별도 worker·watchdog·중복 live CLI·독자 환경 설정을 제거한다. SDK 기본 lifecycle을 사용하며 HTTP timeout을 프로세스 강제 종료 보장으로 표현하지 않는다.
+- 세 단계와 대화 이력, Runtime의 한도와 예산, 원문 우선 로컬 보존·checkpoint·기계적 JSON 조립은 유지한다.
 
 ## Boundaries
 
-- **In Scope:** 합성 corpus·SDK Dataset task·사례/단계 관측·native 점수와 검토 대기열·얇은 연결 및 완비 검사·기존 평가 모델 제거·현재 안내.
-- **Out of Scope:** 실제 HMDA 적재·외부 운영 데이터 수집·Prompt Management 이전·모델 JSON 출력 복원·옛 projection과 호환 wrapper 부활·자동 LLM judge·점수로 GitHub 승인/병합 또는 recovery 권한 생성.
-- 실제 원격 조회와 사람이 작성한 평가가 없으면 그 증거를 완료로 기록하지 않는다. Fake SDK·합성 점수·flush 반환으로 대체하지 않는다.
+- **In Scope:** native Prompt Management·합성 Dataset setup·작은 SDK task·호출 시점 관측·native UI 평가·중복 코드 제거·관련 계약과 안내.
+- **Out of Scope:** 실제 HMDA 적재·운영 데이터 수집·모델 JSON 출력 복원·과거 실행이나 환경 설정 호환·자동 LLM judge·점수로 GitHub 승인/병합 또는 recovery 권한 생성.
+- 실제 서버·모델 호출과 원격 쓰기는 이 구현 검증에서 수행하지 않는다. 로컬 fake와 SDK 계약 검사는 실제 원격 적재·사람 평가를 대신하지 않는다.
 
 ## Capabilities
 
@@ -30,10 +30,13 @@ description: 현재 세 단계 검토를 Langfuse native 실험·사람 평가�
 
 #### `reliability-agentic-review`
 
-- 현재 검토와 provenance를 Langfuse native 평가로 연결하고 원문 전송·평가 기록 소유권·비교 조건과 실패 경계를 조정한다.
+- native 실험·호출 관측·로컬 보존·외부 실패와 사람 평가의 소유 경계를 조정한다.
+
+#### `review-ai-prompt-engineering`
+
+- 한국어 모듈의 최초 등록 자료와 Langfuse 실행 정본, native 조합·버전 고정·원격 시작 실패를 정의한다.
 
 ## Impact
 
-- 적용 기준은 `33e1a453`이다. [조사](../../../inbox/github-280-improve-review-ai-output-quality/10-research-review-ai-langfuse-evaluation.md)는 이전 구현과 공식 기능의 근거로 사용한다.
-- SDK pin은 `langfuse==4.15.6`을 유지한다. 최신 v5 문서의 API를 현재 지원 계약으로 간주하지 않는다.
+- SDK는 `langfuse==4.15.6`을 기본 의존성으로 유지한다. 대상 서버 호환성을 확인하지 않은 v5 전환은 포함하지 않는다.
 - 과거 실행 파일·Inbox·Git 기록은 보존하며 현재 결과로 변환하지 않는다.

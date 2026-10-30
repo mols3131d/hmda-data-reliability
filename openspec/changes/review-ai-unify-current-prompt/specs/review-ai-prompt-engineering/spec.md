@@ -28,56 +28,35 @@ description: 현재 한국어 단계 실행만 제공하고 과거 버전·출�
 
 ### Requirement: Inspectable modular prompt resources
 
-현재 프롬프트는 작업·언어·출력·검토 지침·자문 정책·단계 질문의 책임별 UTF-8 Markdown 파일로 관리하고 repository가 정한 고정 순서로 조립해야 한다(SHALL). 같은 의미·전제의 규칙은 하나의 모듈을 공유하고 재사용 전 작업·입력·출력 전제의 호환성을 확인해야 한다(SHALL). 조립기는 정해진 구분자 외에 원문 공백·개행을 임의로 변경해서는 안 된다(MUST NOT).
+한국어 지시문은 작업·출력·검토 지침·자문 정책·단계 질문의 UTF-8 Markdown 모듈로 관리하고 최초 등록 자료로 배포해야 한다(SHALL). 각 모듈을 Langfuse text prompt로 등록하고 세 chat prompt는 native composition reference·history message placeholder를 사용해야 한다(SHALL). Langfuse Prompt Management가 실행 정본이며 일반 실행은 repository 모듈을 직접 조립하거나 별도 include·cache·version registry를 제공해서는 안 된다(MUST NOT).
 
-사례 데이터가 모듈 경로·조합·system 지시문을 선택해서는 안 된다(MUST NOT). 전체 메시지의 byte cap과 digest를 적용하고 checkout 밖의 배포 wheel에서도 같은 현재 리소스와 메시지를 제공해야 한다(SHALL). 과거 v1/v2/v3 완성 본문·version map·renderer와 호환 리소스를 package에 남겨서는 안 된다(MUST NOT).
+사례 데이터가 prompt 이름·조합·system 지시문을 선택해서는 안 된다(MUST NOT). 실제 native compile 결과 전체에 byte cap과 digest를 적용해야 한다(SHALL). 과거 v1/v2/v3 완성 snapshot·renderer·호환 리소스를 package에 남겨서는 안 된다(MUST NOT).
 
-#### Scenario: Shared rules use one source
+#### Scenario: Native composition shares common instructions
 
-- **WHEN** 세 단계가 같은 언어·자문·수치 정책을 사용할 때
-- **THEN** 같은 책임의 모듈을 공유하고 현재 단계 질문만 별도로 조합해야 한다(SHALL).
+- **WHEN** 최초 등록한 세 단계 chat prompt를 조회할 때
+- **THEN** 같은 의미의 공통 지시문은 native text prompt reference로 공유하고 단계 질문과 history 위치를 확인할 수 있어야 한다(SHALL).
 
-#### Scenario: Prompt structure remains readable
+#### Scenario: Packaged modules are setup material
 
-- **WHEN** 개발자가 프롬프트 리소스를 열 때
-- **THEN** Markdown 제목·목록으로 역할·작업·제약·출력을 구분하고 조립 순서와 소유 책임을 확인할 수 있어야 한다(SHALL).
-
-#### Scenario: Module reuse respects its task and output assumptions
-
-- **WHEN** 모듈을 다른 단계에 재사용할 때
-- **THEN** 작업·입력·출력 전제가 맞는 경우에만 공유해야 한다(SHALL).
-
-#### Scenario: Case data cannot select instruction modules
-
-- **WHEN** canonical input이나 이전 답변에 지시문·Markdown 경로가 있을 때
-- **THEN** 그 값은 자료로만 남고 모듈 선택이나 system 지시를 바꾸어서는 안 된다(MUST NOT).
-
-#### Scenario: Packaged parts are available outside the checkout
-
-- **WHEN** 배포 wheel을 checkout 밖에서 사용할 때
-- **THEN** 현재 모듈을 읽고 source와 같은 메시지·digest를 생성해야 한다(SHALL).
-- **AND** 삭제한 version 리소스를 배포해서는 안 된다(MUST NOT).
-
-#### Scenario: Fixed assembly preserves module bytes
-
-- **WHEN** 같은 현재 모듈과 input으로 프롬프트를 반복 조립할 때
-- **THEN** 정해진 구분자 외의 공백·개행을 보존하고 같은 메시지 bytes를 생성해야 한다(SHALL).
+- **WHEN** 배포 wheel에서 명시적으로 setup을 실행할 때
+- **THEN** 한국어 Markdown 자료를 읽어 native Prompt를 등록할 수 있어야 하고 일반 검토가 이를 fallback으로 사용해서는 안 된다(MUST NOT).
 
 ### Requirement: Prompt lifecycle and active default
 
-일반 Python API·직접 service·live CLI는 같은 현재 한국어 단계별 프롬프트만 사용해야 한다(SHALL). 실행 시 v1/v2/v3 선택·legacy namespace·compatibility alias·mode 선택·이전 설정 해석·자동 fallback을 제공해서는 안 된다(MUST NOT). 현재 workflow/schema identity와 digest는 provenance로 유지하고 prompt version 선택으로 해석해서는 안 된다(MUST NOT).
+일반 Python API·직접 service·실험 CLI는 같은 native prompt 경로를 사용해야 한다(SHALL). 기본 label은 `production`이며 workflow 시작 시 세 chat prompt를 모두 읽고 같은 workflow에서는 해당 객체와 실제 name/version을 고정해야 한다(SHALL). 실행 도중 label 이동으로 후속 단계를 재조회해서는 안 된다(MUST NOT). 원격 prompt를 읽지 못하면 모델 호출 전에 `prompt_unavailable`로 끝내고 로컬 fallback을 제공해서는 안 된다(MUST NOT).
 
-이 전환은 사용자가 요청한 실행 계약의 변경이며 모델 품질 개선의 증거가 아니다. 과거 artifact·문서·Git 기록의 identity·revision·digest·결과를 삭제하거나 현재 결과에 맞춰 재작성해서는 안 된다(MUST NOT). 과거 실행을 위한 호환 구현을 현재 package에 유지할 의무는 없다.
+SDK의 native version·label은 변경 식별에 사용한다. 과거 v1/v2/v3 실행 모드·compatibility alias·옛 환경 설정 해석을 제공해서는 안 된다(MUST NOT). Prompt 변경이 모델 품질 개선을 입증하지 않으며 과거 실행의 revision·digest·결과를 다시 써서는 안 된다(MUST NOT).
 
-#### Scenario: General entrypoints use current prompts
+#### Scenario: One workflow pins the loaded prompts
 
-- **WHEN** 일반 API 또는 live CLI를 실행할 때
-- **THEN** version이나 mode 선택 없이 같은 현재 세 단계 텍스트를 요청하고 JSON은 코드로 취합해야 한다(SHALL).
+- **WHEN** 실행 도중 서버의 production label이 이동할 때
+- **THEN** 이미 시작한 workflow는 처음 읽은 세 prompt 객체를 계속 사용하고 실제 version을 기록해야 한다(SHALL).
 
-#### Scenario: Current imports exclude retired prompt selection
+#### Scenario: Unavailable prompts have no local fallback
 
-- **WHEN** 현재 공개 API와 배포 리소스를 검사할 때
-- **THEN** 과거 version map·snapshot·renderer·선택 인자 또는 환경 분기를 제공해서는 안 된다(MUST NOT).
+- **WHEN** 시작에 필요한 prompt 조회가 실패할 때
+- **THEN** typed failure를 반환하고 모델 호출이나 repository 프롬프트 실행을 시작해서는 안 된다(MUST NOT).
 
 ### Requirement: Korean instructions and narrative output
 
@@ -105,19 +84,19 @@ description: 현재 한국어 단계 실행만 제공하고 과거 버전·출�
 
 ### Requirement: Revision-bound prompt change evidence
 
-현재 모듈의 언어·내용·공백이 바뀌면 메시지 bytes와 digest 변경을 검증하고 기록해야 한다(SHALL). 같은 revision·canonical input·완료 단계 원문으로 조립한 메시지는 결정적이어야 한다(SHALL). 기록한 revision과 digest를 현재 실행의 기본값으로 소급 변경해서는 안 된다(MUST NOT).
+각 실행은 실제 native prompt name/version과 전체 compiled message digest·project revision을 함께 보존해야 한다(SHALL). 같은 로드된 prompt 객체·canonical input·완료 원문으로 compile한 메시지는 결정적이어야 한다(SHALL). Repository revision만으로 실행 프롬프트가 같다고 가정해서는 안 된다(MUST NOT).
 
-과거 구현이 필요하면 기록된 Git revision을 확인한다. 현재 package가 과거 prompt version·기록 shape를 읽거나 실행하는 호환 API를 제공해서는 안 된다(MUST NOT).
+과거 실행의 자료를 현재 prompt version으로 소급 변경하거나 과거 local renderer를 호환 실행 경로로 제공해서는 안 된다(MUST NOT).
 
-#### Scenario: Prompt edits change the current digest
+#### Scenario: Native versions identify prompt changes
 
-- **WHEN** 현재 지시문의 언어·내용·공백을 바꿀 때
-- **THEN** 현재 메시지의 새 digest를 검증하고 과거 artifact의 digest를 유지해야 한다(SHALL).
+- **WHEN** 같은 코드 revision에서 remote prompt를 수정해 실행할 때
+- **THEN** 실제 prompt version과 compiled digest로 변경을 식별하고 과거 기록을 보존해야 한다(SHALL).
 
-#### Scenario: Current rendering is revision-bound
+#### Scenario: Fixed native compilation is repeatable
 
-- **WHEN** 같은 revision의 모듈과 같은 사례·완료 답변으로 조립할 때
-- **THEN** 같은 누적 메시지 digest를 생성해야 한다(SHALL).
+- **WHEN** 같은 native prompt 객체·canonical input·history를 반복 compile할 때
+- **THEN** 같은 메시지 bytes와 digest를 생성해야 한다(SHALL).
 
 ### Requirement: Language compliance remains an evaluation concern
 

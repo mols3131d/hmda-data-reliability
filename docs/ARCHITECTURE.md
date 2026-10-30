@@ -42,7 +42,7 @@ flowchart TB
     end
 
     subgraph ai_plane ["Bounded AI Delegation"]
-        live_harness["Opt-in evaluation.live"] -->|staged review| review["Review AI"]
+        live_harness["Native Dataset Experiment"] -->|staged review| review["Review AI"]
         review -->|provider invocation| runtime["Runtime AI"]
         runtime --> provider["OpenAI-compatible Provider"]
         review -->|raw / collection / provenance| local_review["Local Review Artifacts"]
@@ -67,7 +67,7 @@ flowchart TB
 
 `RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Review AI output도 approval 또는 Reliability truth가 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다.
 
-Review AI의 실제 제공자 통합 검증은 도메인 소유의 `hmda_reliability.review_ai.evaluation.live` 진입점에서 명시적으로 실행한다. 단계별 모델 원문과 코드 생성 collection·provenance를 로컬 artifact로 보존한다. stderr의 단계·대기 로그는 로컬 실행 상태이며 모델 진행률이나 품질 판정이 아니다. 선택적 `evaluation.experiment`는 합성 사례를 Langfuse native Dataset 실험으로 실행하고 검증된 단계 원문을 연결한다. 점수·대기열·비교 화면은 Langfuse가, 실행·로컬 보존·연결/완비 검사는 Review AI가 소유한다. 외부 SDK의 대기와 실패는 별도 프로세스에서 제한한다. 세 단계의 수집 완료·SDK 제출과 사람의 사실성·검토 가치 평가를 구분하며, 실행과 평가 절차는 [Review AI Evaluation](development/review-ai-evaluation.md)을 따른다.
+Review AI의 합성 실행은 도메인 소유의 `hmda_reliability.review_ai.evaluation.experiment`에서 Langfuse native Dataset task로 수행한다. Prompt Management·실험·관측·점수·대기열·비교 UI는 Langfuse가 소유하고 프로젝트는 작은 세 단계 대화 task와 Runtime 한도·원문 우선 로컬 보존·checkpoint·코드 JSON 취합을 소유한다. Native generation은 실제 모델 호출 구간에 생성한다. 최초 등록은 `evaluation.setup`으로 분리하며 반복 실험에서 원격 bootstrap이나 별도 사람 점수 완비 검사를 하지 않는다. 원격 prompt가 없으면 시작하지 않고 관측 전송 장애는 저장된 core 결과를 바꾸지 않는다. 별도 worker·watchdog가 없으며 SDK flush의 프로세스 종료 상한을 보장하지 않는다. 세 단계 수집 완료·SDK 제출·실제 원격 확인·사람의 품질 평가는 각각 구분한다. 실행과 평가 절차는 [Review AI Evaluation](development/review-ai-evaluation.md)을 따른다.
 
 Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
 
