@@ -23,7 +23,7 @@ Pull Request는 branch의 변경을 검토하고 repository에 반영할지 결�
 
 ## Description
 
-본문에는 **현재 변경을 판단하는 데 필요한 정보만** 남긴다. Section 구성, optional section과 validation 표시 형식은 [Pull Request Template](../../../.github/templates/pull-request.md)을 따른다.
+본문에는 **현재 변경을 판단하는 데 필요한 정보만** 남긴다. Section 구성, optional section과 validation 표시 형식은 [Pull Request Template](../../../.github/pull_request_template.md)을 따른다.
 
 - `Summary`는 변경 이유와 기대 결과를 먼저 설명한다.
 - `Changes`는 시행착오나 파일 목록이 아니라 최종 동작, 계약 또는 구조의 변화를 기록한다.
@@ -96,5 +96,5 @@ flowchart TB
 - [Branches](branch.md): Pull Request가 소유하는 변경 목적과 branch 기준
 - [Commits](commit.md): Pull Request history를 구성하는 commit 기준
 - [Pull Request Reviews](pull-request-review.md): Pull Request review 기준과 기록 방식
-- [Pull Request Template](../../../.github/templates/pull-request.md): PR body의 section 구성과 작성 형식
+- [Pull Request Template](../../../.github/pull_request_template.md): PR body의 section 구성과 작성 형식
 - [GitHub Templates](../../../.github/templates/README.md): 공통 metadata 규칙

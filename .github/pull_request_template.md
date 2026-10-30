@@ -1,3 +1,9 @@
+<!--
+관련 문서 및 적용되는 지침·Skill을 확인한다.
+프로젝트: `AGENTS.md`, `docs/development/vcs-git/README.md`, `.rulesync/skills/prj-vcs-git-github/SKILL.md`.
+사용자·로컬 환경의 별도 하네스도 확인하고 적용되는 지침을 따른다.
+-->
+
 ## Summary
 
 <!--
@@ -25,7 +31,7 @@
 상태: ✅ Pass / ❌ Fail / ⚪ Not Verified
 -->
 
-- <status> — `<check>`: <result 또는 evidence>
+- `<status>` — `<check>`: <result 또는 evidence>
 
 <!--
 Optional — 판단 비용을 줄일 때만 해당 section을 추가한다.
@@ -43,7 +49,7 @@ Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 tab
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| <check> | <status> | <evidence> |
+| `<check>` | `<status>` | `<evidence>` |
 -->
 
 <!--
