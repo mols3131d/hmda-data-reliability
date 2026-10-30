@@ -43,7 +43,7 @@ Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 tab
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| <check> | <status> | <evidence> |
+| `<check>` | `<status>` | `<evidence>` |
 -->
 
 <!--
