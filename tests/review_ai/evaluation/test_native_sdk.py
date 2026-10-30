@@ -280,6 +280,7 @@ def test_pinned_sdk_score_config_wire_accepts_the_native_categories():
             name="added_value", data_type="CATEGORICAL", categories=categories
         )
     assert requests[0]["categories"] == categories
+    assert config.data_type == "CATEGORICAL" and config.is_archived is False
     assert [(c.label, c.value) for c in config.categories] == [
         ("0", 0),
         ("1", 1),

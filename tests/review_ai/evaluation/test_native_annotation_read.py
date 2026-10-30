@@ -59,13 +59,25 @@ def native_review(tmp_path):
         )
         for s in scores()
     ]
+    wire_names = {
+        "trace_id": "traceId",
+        "observation_id": "observationId",
+        "author_user_id": "authorUserId",
+        "config_id": "configId",
+        "data_type": "dataType",
+        "string_value": "stringValue",
+    }
+    records = [
+        {wire_names.get(key, key): value for key, value in row.items()}
+        for row in records
+    ]
     queries = []
 
     def query(**kwargs):
         queries.append(kwargs)
         # 앞 페이지의 다른 검토자 점수로 완비를 만들 수 없다.
         return NS(
-            data=[dict(records[0], author_user_id="another")] * 100
+            data=[dict(records[0], authorUserId="another")] * 100
             if kwargs["page"] == 1
             else records
         )
@@ -128,3 +140,48 @@ def test_different_rubric_config_cannot_be_used_as_a_baseline(native_review, tmp
             artifact_root=tmp_path,
             baseline=dict(receipt, config_ids={}),
         )
+
+
+def test_pinned_sdk_annotation_wire_maps_to_completeness(native_review, tmp_path):
+    pytest.importorskip("langfuse")
+    import httpx
+    from langfuse.api import LangfuseAPI
+
+    client, receipt, _ = native_review
+    rows = [
+        dict(
+            id=s["name"],
+            name=s["name"],
+            traceId="trace",
+            observationId="observation",
+            configId=receipt["config_ids"][s["name"]],
+            dataType="CATEGORICAL",
+            source="ANNOTATION",
+            authorUserId="human",
+            value=1,
+            stringValue="1",
+            comment="실제 사람이 남긴 사유",
+            timestamp="2026-10-30T00:00:00Z",
+            createdAt="2026-10-30T00:00:00Z",
+            updatedAt="2026-10-30T00:00:00Z",
+            metadata={},
+            environment="default",
+        )
+        for s in scores()
+    ]
+    with httpx.Client(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                json=dict(
+                    data=rows, meta=dict(page=1, limit=100, totalItems=5, totalPages=1)
+                ),
+            )
+        )
+    ) as transport:
+        api = LangfuseAPI(base_url="https://unused.invalid", httpx_client=transport)
+        client.api.scores = api.scores
+        result = native_sdk.read_annotations(
+            client, receipt, "human", artifact_root=tmp_path
+        )
+    assert result[0]["status"] == "complete"

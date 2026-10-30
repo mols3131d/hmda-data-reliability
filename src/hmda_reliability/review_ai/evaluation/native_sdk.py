@@ -26,6 +26,24 @@ def _json(value: Any) -> Any:
     return value.model_dump(mode="json") if hasattr(value, "model_dump") else value
 
 
+def _annotation_row(value: Any) -> dict[str, Any]:
+    # SDK 4.15.6의 discriminated score 모델은 wire의 camelCase 필드를 유지한다.
+    names = {
+        "traceId": "trace_id",
+        "observationId": "observation_id",
+        "authorUserId": "author_user_id",
+        "configId": "config_id",
+        "dataType": "data_type",
+        "stringValue": "string_value",
+    }
+    allowed = {"id", "name", "source", "value", "comment", "timestamp", "metadata"}
+    return {
+        names.get(key, key): field
+        for key, field in _json(value).items()
+        if key in names or key in allowed
+    }
+
+
 def _pages(call: Callable[..., Any], **kwargs: Any) -> list[Any]:
     rows = []
     for page in range(1, 101):
@@ -419,7 +437,7 @@ def read_annotations(
         _verify_target(target, artifact_root)
         metadata = _observation_metadata(client, target)
         scores = [
-            _json(s)
+            _annotation_row(s)
             for s in _pages(
                 client.api.scores.get_many,
                 trace_id=target.trace_id,
