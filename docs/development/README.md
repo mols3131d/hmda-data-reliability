@@ -22,6 +22,7 @@ tags:
 | Document | Role | Use when |
 | --- | --- | --- |
 | [Development Dashboard](dashboard.md) | human-only development status snapshot | 사람이 개발 진행 상태와 gap을 빠르게 확인할 때 |
+| [Environment Variables](environment-variables.md) | `.env` 설정, 표기 규칙, 도메인별 환경변수 소유권과 확장 원칙 | 로컬 환경변수를 설정하거나 새 환경변수를 추가·검토할 때 |
 | [AI Agent](ai-agent/README.md) | instruction surface 선택과 agent asset 관리 정책 | Agent instruction 또는 asset의 owner와 관리 경로를 결정할 때 |
 | [Tooling](tooling/README.md) | repository workflow를 지원하는 개발 도구의 project-specific usage | bootstrap, OpenSpec, Rulesync, Git hook 또는 formatter 사용 경로를 확인할 때 |
 | [Continuous Integration](ci/README.md) | CI의 목적·원칙·패턴과 책임별 운영 계약의 진입점 | CI scope, change-impact routing 또는 merge gate를 설계·변경할 때 |
