@@ -1,7 +1,7 @@
-"""근거 범위를 제한하는 Review AI 보조 검토의 공개 API.
+"""현재 한국어 단계별 텍스트 검토의 공개 API.
 
 평가 계약은 하위 `evaluation` 모듈에서 공개한다. 이 패키지를 가져와도 선택적
-Langfuse SDK 어댑터는 자동으로 불러오지 않는다.
+외부 관측 SDK는 자동으로 불러오지 않는다.
 """
 
 from hmda_reliability.review_ai.context import (
@@ -10,32 +10,24 @@ from hmda_reliability.review_ai.context import (
 )
 from hmda_reliability.review_ai.contracts import (
     AgenticReviewInput,
-    AgenticReviewOutput,
-    AgenticReviewResult,
-    AgenticReviewUtilityContribution,
-    PromptIdentity,
-)
-from hmda_reliability.review_ai.evaluation import (
-    RUBRIC_V1,
-    HumanDecision,
-    ReviewValueAssessment,
-    ReviewValueComparisonEvidence,
-    compare_review_value,
 )
 from hmda_reliability.review_ai.service import review_null_spike
+from hmda_reliability.review_ai.staged import (
+    StageAnswer,
+    StagedExecutionSettings,
+    StagedReviewOutput,
+    StagedReviewResult,
+    review_null_spike_staged,
+)
 
 __all__ = [
     "AgenticReviewInput",
-    "AgenticReviewOutput",
-    "AgenticReviewResult",
-    "AgenticReviewUtilityContribution",
     "BoundedReviewContext",
-    "HumanDecision",
-    "ReviewValueAssessment",
-    "PromptIdentity",
-    "RUBRIC_V1",
-    "ReviewValueComparisonEvidence",
+    "StageAnswer",
+    "StagedExecutionSettings",
+    "StagedReviewOutput",
+    "StagedReviewResult",
     "build_bounded_review_context",
-    "compare_review_value",
     "review_null_spike",
+    "review_null_spike_staged",
 ]

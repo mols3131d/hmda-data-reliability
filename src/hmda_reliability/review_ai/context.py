@@ -156,16 +156,14 @@ def build_bounded_review_context(
             ReviewContextGap(
                 kind=ReviewContextGapKind.UNCONFIRMED_CONTEXT,
                 topic="bounded_selection",
-                description=(
-                    f"{omitted} provided Evidence item(s) were omitted by the bound"
-                ),
+                description=f"제공된 근거 {omitted}개가 개수 제한으로 제외되었습니다.",
             )
         )
     gaps.append(
         ReviewContextGap(
             kind=ReviewContextGapKind.UNCONFIRMED_CONTEXT,
             topic="root_cause",
-            description="Provided Evidence does not establish the root cause by itself",
+            description="제공된 근거만으로는 근본 원인을 확정할 수 없습니다.",
         )
     )
 
@@ -199,7 +197,7 @@ def _project_evidence(evidence: Evidence) -> BoundedReviewEvidence:
     return BoundedReviewEvidence(
         evidence_id=evidence.evidence_id,
         source=evidence.source,
-        summary=(evidence.summary.strip() or "Evidence summary unavailable")[:1024],
+        summary=(evidence.summary.strip() or "근거 요약이 제공되지 않았습니다.")[:1024],
         facts=facts,
         provenance=ReviewContextProvenance(
             evidence_id=evidence.evidence_id,
@@ -220,7 +218,7 @@ def _missing_source_gaps(
         ReviewContextGap(
             kind=ReviewContextGapKind.MISSING_EVIDENCE,
             topic=source.value,
-            description=f"No {source.value} Evidence was provided for this review",
+            description=f"이번 검토에는 {source.value} 근거가 제공되지 않았습니다.",
         )
         for source in dict.fromkeys(required_sources)
         if source not in available

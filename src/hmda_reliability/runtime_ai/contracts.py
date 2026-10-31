@@ -24,7 +24,7 @@ class ChatMessage(RuntimeAIContract):
     LLM 제공자에게 전달되는 역할(`role`)과 비어있지 않은 내용(`content`)을 소유한다.
     """
 
-    role: Literal["system", "user"]
+    role: Literal["system", "user", "assistant"]
     content: str = Field(min_length=1)
 
 
@@ -65,30 +65,42 @@ class TransportResponse(RuntimeAIContract):
     response_metadata: ProviderResponseMetadata | None = None
 
 
+class TransportTimeouts(RuntimeAIContract):
+    """HTTP 전송의 각 대기 구간에 적용하며 wire 본문에는 넣지 않는 제한."""
+
+    connect: float = Field(gt=0)
+    read: float = Field(gt=0)
+    write: float = Field(gt=0)
+    pool: float = Field(gt=0)
+
+
 class ChatCompletionRequest(RuntimeAIContract):
     """OpenAI 호환 wire 규격에 맞춘 단일 Chat Completion 요청 페이로드 계약.
 
-    스트리밍과 도구 호출(function call/tools)을 비활성화하고 결정론적 응답을
-    강제하기 위한 프로파일(temperature=0, response_format json_object)을 유지한다.
+    스트리밍과 도구 호출(function call/tools)을 비활성화한다. 기본 JSON 응답은
+    `response_format`으로 요청하고 일반 텍스트 응답에서는 이 설정을 생략한다.
     """
 
     messages: tuple[ChatMessage, ...]
     model: str
     temperature: int
     max_tokens: int = Field(gt=0)
-    response_format: dict[str, str]
+    response_format: dict[str, str] | None
     stream: bool
+    timeout: TransportTimeouts | None = None
 
     def wire_payload(self) -> dict[str, object]:
         """OpenAI SDK completions 또는 HTTP wire 호환 dict를 생성한다."""
-        return {
+        payload: dict[str, object] = {
             "messages": [message.model_dump(mode="json") for message in self.messages],
             "model": self.model,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "response_format": dict(self.response_format),
-            "stream": self.stream,
         }
+        if self.response_format is not None:
+            payload["response_format"] = dict(self.response_format)
+        payload["stream"] = self.stream
+        return payload
 
 
 class ProviderResponse(RuntimeAIContract):

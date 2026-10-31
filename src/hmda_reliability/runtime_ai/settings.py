@@ -32,6 +32,8 @@ class RuntimeAISettings(RuntimeAIContract):
     api_key: SecretStr
     model: str
     timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    connect_timeout_seconds: float | None = Field(default=None, gt=0, le=300)
+    read_timeout_seconds: float | None = Field(default=None, gt=0, le=3600)
     max_retries: int = Field(default=1, ge=0, le=5)
     temperature: Literal[0] = 0
     max_output_tokens: int = Field(default=1024, gt=0, le=32_768)
@@ -74,7 +76,7 @@ class RuntimeAISettings(RuntimeAIContract):
         로깅, 감사, 메트릭에 안전하게 포함할 수 있도록 `api_key`를 제외하고
         정규화된 `base_url`과 숫자 제약만을 담은 사전 객체를 반환한다.
         """
-        return {
+        configuration: dict[str, str | float | int] = {
             "base_url": _sanitize_base_url(str(self.base_url)),
             "model": self.model,
             "timeout_seconds": self.timeout_seconds,
@@ -83,3 +85,8 @@ class RuntimeAISettings(RuntimeAIContract):
             "max_output_tokens": self.max_output_tokens,
             "max_output_bytes": self.max_output_bytes,
         }
+        if self.connect_timeout_seconds is not None:
+            configuration["connect_timeout_seconds"] = self.connect_timeout_seconds
+        if self.read_timeout_seconds is not None:
+            configuration["read_timeout_seconds"] = self.read_timeout_seconds
+        return configuration

@@ -7,6 +7,9 @@ ci/admission.md	main 대상 PR의 필수 검증, prospective merge와 required w
 ci/change-impact.md	변경에 필요한 검증을 선택하거나 영향이 불확실한 경로와 CI 자체 변경을 처리할 때 사용하는 검증 선택 계약입니다.
 ci/markdown-validation.md	변경 Markdown의 비차단 formatting, docs 전용 차단 lint, Inbox CI 제외와 branch write-back 경계를 판단할 때 사용하는 계약입니다.
 dashboard.md	현재 development snapshot에서 domain별 구현·검증 진행률, 남은 gap과 blocker를 한눈에 정리한 human-readable dashboard입니다.
+environment-variables.md	로컬 `.env` 주입 경로, `.env.example` 표기 규칙, 도메인별 환경변수 소유 경계와 확장 원칙을 안내합니다.
+review-ai-evaluation.md	Langfuse native 등록·실험·관측과 실제 모델 출력의 사람 평가 절차를 안내합니다.
+review-ai-prompts.md	한국어 Markdown seed, native composition과 실행별 prompt 고정·설정·대화 전달을 설명합니다.
 test-design.md	Requirement와 observable behavior를 pytest test로 변환하는 scenario, oracle, test level과 구현 원칙을 설명합니다.
 testing.md	Local pytest 실행 범위, marker, Git hook, PR CI와 추가 test evidence 수집 방법을 설명합니다.
 tooling/	Repository 개발·검증·유지보수 workflow를 지원하는 도구의 project-specific usage, owning source와 managed state를 연결하는 entrypoint입니다.

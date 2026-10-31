@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 
 import pytest
 
 from hmda_reliability.reliability.contracts import Evidence, EvidenceSource
 from hmda_reliability.review_ai import contracts
-from hmda_reliability.review_ai import prompt as prompt_module
+from hmda_reliability.review_ai.prompt import PromptTooLargeError, build_canonical_input
+from hmda_reliability.review_ai.staged.prompt import render_stage_prompt
 from hmda_reliability.runtime_ai import contracts as runtime_contracts
 from hmda_reliability.runtime_ai import provider as provider_module
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
@@ -22,8 +22,16 @@ def _review_input(material: NullSpikeReviewMaterial) -> contracts.AgenticReviewI
         incident=material.detection.incident,
         evidence=[material.detection.evidence],
         draft=material.draft,
-        prompt_identity=contracts.PromptIdentity(),
         project_revision="e09c54b",
+    )
+
+
+def _render(review_input: contracts.AgenticReviewInput, *, max_prompt_bytes: int):
+    return render_stage_prompt(
+        build_canonical_input(review_input),
+        "evidence_review",
+        (),
+        max_prompt_bytes=max_prompt_bytes,
     )
 
 
@@ -44,7 +52,7 @@ def test_canonical_projection_uses_only_the_spec_allowlist(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
     review_input = _review_input(null_spike_review_material)
-    rendered = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
+    rendered = _render(review_input, max_prompt_bytes=65_536)
 
     assert set(rendered.canonical_input) == {
         "incident",
@@ -96,11 +104,10 @@ def test_provider_projection_uses_bounded_facts_instead_of_raw_payload(
         incident=null_spike_review_material.detection.incident,
         evidence=[evidence],
         draft=null_spike_review_material.draft,
-        prompt_identity=contracts.PromptIdentity(),
         project_revision="e09c54b",
     )
 
-    rendered = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
+    rendered = _render(review_input, max_prompt_bytes=65_536)
     canonical_evidence = rendered.canonical_input["evidence"]
 
     assert isinstance(canonical_evidence, list)
@@ -143,11 +150,10 @@ def test_draft_citable_evidence_is_limited_to_prompt_selected_evidence(
         ),
         evidence=evidence,
         draft=material.draft.model_copy(update={"evidence_refs": evidence_refs}),
-        prompt_identity=contracts.PromptIdentity(),
         project_revision="e09c54b",
     )
 
-    rendered = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
+    rendered = _render(review_input, max_prompt_bytes=65_536)
 
     prompt_evidence = rendered.canonical_input["evidence"]
     draft = rendered.canonical_input["draft"]
@@ -169,16 +175,13 @@ def test_prompt_is_deterministic_replayable_and_separates_untrusted_data(
         incident=material.detection.incident,
         evidence=[evidence],
         draft=material.draft,
-        prompt_identity=contracts.PromptIdentity(),
         project_revision="e09c54b",
     )
 
-    first = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
-    second = prompt_module.render_review_prompt(review_input, max_prompt_bytes=65_536)
-    replay = prompt_module.render_canonical_input(
-        first.canonical_input,
-        review_input.prompt_identity,
-        max_prompt_bytes=65_536,
+    first = _render(review_input, max_prompt_bytes=65_536)
+    second = _render(review_input, max_prompt_bytes=65_536)
+    replay = render_stage_prompt(
+        first.canonical_input, "evidence_review", (), max_prompt_bytes=65_536
     )
 
     assert first == second
@@ -195,90 +198,18 @@ def test_prompt_is_deterministic_replayable_and_separates_untrusted_data(
 def test_oversized_prompt_is_rejected_before_any_provider_boundary(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
-    with pytest.raises(prompt_module.PromptTooLargeError):
-        prompt_module.render_review_prompt(
+    with pytest.raises(PromptTooLargeError):
+        _render(
             _review_input(null_spike_review_material),
             max_prompt_bytes=64,
         )
-
-
-@pytest.mark.unit
-def test_historical_v1_prompt_digest_is_unchanged() -> None:
-    rendered = prompt_module.render_canonical_input(
-        {},
-        contracts.PromptIdentity(version="v1"),
-        max_prompt_bytes=65_536,
-    )
-    # Captured before the PR 278 fix; a same-writer replay would miss template drift.
-    assert (
-        rendered.prompt_digest
-        == "sha256:7e8e3c8d66e4f813bda68a8be1bbec1b5407af38533b8aedb6041d1432f418c0"
-    )
-
-
-@pytest.mark.unit
-def test_v2_explains_array_types_and_conditional_priority_without_changing_v1(
-    null_spike_review_material: NullSpikeReviewMaterial,
-) -> None:
-    canonical = prompt_module.build_canonical_input(
-        _review_input(null_spike_review_material)
-    )
-    v1 = prompt_module.render_canonical_input(
-        canonical,
-        contracts.PromptIdentity(version="v1"),
-        max_prompt_bytes=65_536,
-    )
-    v2 = prompt_module.render_canonical_input(
-        canonical,
-        contracts.PromptIdentity(version="v2"),
-        max_prompt_bytes=65_536,
-    )
-    instruction = v2.messages[0].content
-    assert "uncertainties: array of strings" in instruction
-    assert "evidence_used: non-empty array of evidence ID strings" in instruction
-    assert "findings: array of objects" in instruction
-    assert "utility_contributions: array of objects" in instruction
-    assert "Only investigation_priority requires priority" in instruction
-    assert "all other kinds omit priority" in instruction
-    assert "baseline_null_rate, current_null_rate, delta, threshold" in instruction
-    assert v1.messages[1] == v2.messages[1]
-    assert v1.prompt_digest != v2.prompt_digest
-    replay = prompt_module.render_canonical_input(
-        canonical,
-        contracts.PromptIdentity(version="v2"),
-        max_prompt_bytes=65_536,
-    )
-    assert replay.prompt_digest == v2.prompt_digest
-
-
-@pytest.mark.unit
-def test_v2_utility_examples_cover_the_contract_without_mixing_finding_kinds() -> None:
-    rendered = prompt_module.render_canonical_input(
-        {},
-        contracts.PromptIdentity(version="v2"),
-        max_prompt_bytes=65_536,
-    )
-    instruction = rendered.messages[0].content
-    example_text = instruction.split("Utility contribution examples:\n", 1)[1].split(
-        "\nThese are shape examples.",
-        1,
-    )[0]
-    examples = [
-        contracts.AgenticReviewUtilityContribution.model_validate(example)
-        for example in json.loads(example_text)
-    ]
-
-    assert {example.kind for example in examples} == set(
-        contracts.UtilityContributionKind
-    )
-    assert "Do not invent\nkinds or use a finding kind as a utility kind" in instruction
 
 
 @pytest.mark.integration
 def test_rendered_review_messages_cross_the_runtime_boundary(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
-    rendered = prompt_module.render_review_prompt(
+    rendered = _render(
         _review_input(null_spike_review_material),
         max_prompt_bytes=65_536,
     )
@@ -293,8 +224,9 @@ def test_rendered_review_messages_cross_the_runtime_boundary(
         sleep=lambda _: None,
     )
 
-    response = adapter.invoke(rendered.messages)
+    response = adapter.invoke(rendered.messages, output_format="text")
 
     assert transport.request is not None
     assert transport.request.messages == rendered.messages
+    assert "response_format" not in transport.request.wire_payload()
     assert response.content == "{}"

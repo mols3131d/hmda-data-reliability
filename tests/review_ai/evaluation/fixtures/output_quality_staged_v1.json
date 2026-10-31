@@ -1,0 +1,551 @@
+{
+  "corpus_id": "review-ai-staged-output-quality",
+  "corpus_version": "v1",
+  "evidence_kind": "synthetic_test_fixture",
+  "human_evaluation": "not_performed",
+  "oracle_basis": "수치는 고정된 profile pair의 십진 비율로 독립 계산한다. 단계 답변과 품질 label은 합성 검토 보조 자료이며 실제 모델 출력, 자동 의미 판정 또는 실제 사람 평가 점수가 아니다.",
+  "cases": [
+    {
+      "case_id": "null-spike-missing-context",
+      "case_version": "v1",
+      "profile_pair": {
+        "baseline_null_rate": "0.01",
+        "current_null_rate": "0.21",
+        "threshold": "0.10"
+      },
+      "review_input": {
+        "incident": {
+          "incident_id": "inc_null_spike_raw_hmda_loans_2025_income",
+          "asset_name": "raw.hmda_loans",
+          "partition": "2025",
+          "incident_type": "null_spike",
+          "severity": "medium",
+          "status": "detected",
+          "owner": "data-platform",
+          "evidence_refs": ["ev_null_spike_raw_hmda_loans_2025_income"],
+          "affected_assets": [],
+          "recommended_actions": ["inspect_source_columns", "add_dbt_not_null_test"],
+          "human_review_status": "pending"
+        },
+        "evidence": [
+          {
+            "evidence_id": "ev_null_spike_raw_hmda_loans_2025_income",
+            "source": "profile",
+            "asset_name": "raw.hmda_loans",
+            "partition": "2025",
+            "observed_at": "2026-08-27T00:00:00Z",
+            "summary": "income null rate가 baseline 대비 급증했다.",
+            "payload": {
+              "rule": "null_spike",
+              "snapshot_id": "profile-current-2025",
+              "column": "income",
+              "baseline_null_rate": 0.01,
+              "current_null_rate": 0.21,
+              "delta": 0.19999999999999998,
+              "threshold": 0.1
+            }
+          }
+        ],
+        "draft": {
+          "incident_id": "inc_null_spike_raw_hmda_loans_2025_income",
+          "incident_type": "null_spike",
+          "asset_name": "raw.hmda_loans",
+          "partition": "2025",
+          "rca_summary": "핵심 컬럼 null rate가 baseline 대비 증가했다. column=income",
+          "evidence_refs": ["ev_null_spike_raw_hmda_loans_2025_income"],
+          "affected_assets": [],
+          "recommended_actions": [
+            "inspect_source_columns",
+            "add_dbt_not_null_test",
+            "validate_source_partition"
+          ],
+          "dbt_test_suggestions": ["add_not_null_test_for_spiking_column"],
+          "backfill_actions": [],
+          "validation_actions": [
+            "rerun_profile_snapshot",
+            "rerun_dbt_build",
+            "validate_null_rate"
+          ],
+          "requires_approval": false
+        },
+        "project_revision": "fixture-output-quality-v1"
+      },
+      "oracle": {
+        "numeric": {
+          "baseline_percent": "1",
+          "current_percent": "21",
+          "delta_percentage_points": "20",
+          "threshold_percentage_points": "10",
+          "relative_increase_percent": "2000"
+        },
+        "expected_context_evidence": [
+          {
+            "evidence_id": "ev_null_spike_raw_hmda_loans_2025_income",
+            "source": "profile",
+            "facts": {
+              "rule": "null_spike",
+              "column": "income",
+              "baseline_null_rate": 0.01,
+              "current_null_rate": 0.21,
+              "delta": 0.19999999999999998,
+              "threshold": 0.1
+            }
+          }
+        ],
+        "missing_context_sources": ["table_metadata", "catalog", "dbt_artifact"],
+        "unconfirmed_context": ["root_cause"],
+        "human_review_questions": [
+          "원천 2025 partition의 income 결측 증가도 같은가? 같으면 원천 입력 경로를, 다르면 변환 경로를 우선 조사한다.",
+          "table_metadata, catalog, dbt_artifact를 확보하면 컬럼 계약, upstream 관계와 기존 검증 결과가 이 결측 증가를 설명하는가?",
+          "초안에는 backfill_actions가 없다. 새 backfill이 필요하다는 근거와 사람의 승인이 따로 필요한가?"
+        ],
+        "draft_backfill_actions": [],
+        "draft_requires_approval": false
+      },
+      "controls": [
+        {
+          "control_id": "good",
+          "quality_issues": [],
+          "answers": [
+            {
+              "stage_id": "evidence_review",
+              "text": "income 결측률은 1%에서 21%로 20 percentage points 증가했고 threshold는 10 percentage points다. 상대 증가율은 2000%다."
+            },
+            {
+              "stage_id": "draft_critique",
+              "text": "table_metadata, catalog, dbt_artifact가 제공되지 않아 컬럼 계약과 변환 경로 및 검증 결과를 확인할 수 없다.\n먼저 같은 2025 partition의 원천 income 결측 분포를 확인한다. 원천에도 증가가 있으면 수집·제공 경로를, 없으면 변환 경로를 사람이 우선 조사한다."
+            },
+            {
+              "stage_id": "synthesis",
+              "text": "원인은 제공된 근거만으로 확정되지 않았다."
+            }
+          ]
+        },
+        {
+          "control_id": "wrong-number",
+          "quality_issues": ["numeric_error"],
+          "answers": [
+            {
+              "stage_id": "evidence_review",
+              "text": "income 결측률은 1%에서 21%로 20% 증가했고 threshold는 0.1%다."
+            },
+            {
+              "stage_id": "draft_critique",
+              "text": "table_metadata, catalog, dbt_artifact가 제공되지 않아 컬럼 계약과 변환 경로 및 검증 결과를 확인할 수 없다.\n먼저 같은 2025 partition의 원천 income 결측 분포를 확인한다. 원천에도 증가가 있으면 수집·제공 경로를, 없으면 변환 경로를 사람이 우선 조사한다."
+            },
+            {
+              "stage_id": "synthesis",
+              "text": "원인은 제공된 근거만으로 확정되지 않았다."
+            }
+          ]
+        },
+        {
+          "control_id": "restatement",
+          "quality_issues": ["no_added_utility"],
+          "answers": [
+            {
+              "stage_id": "evidence_review",
+              "text": "income 결측률은 1%에서 21%로 20 percentage points 증가했고 threshold는 10 percentage points다."
+            },
+            {
+              "stage_id": "draft_critique",
+              "text": "초안은 제공된 근거의 확인과 재검증을 권고한다."
+            },
+            {
+              "stage_id": "synthesis",
+              "text": "원인은 제공된 근거만으로 확정되지 않았다."
+            }
+          ]
+        },
+        {
+          "control_id": "unsupported-cause",
+          "quality_issues": ["unsupported_cause"],
+          "answers": [
+            {
+              "stage_id": "evidence_review",
+              "text": "원천 수집기의 형변환 결함이 income 결측 급증의 확정 원인이다."
+            },
+            {
+              "stage_id": "draft_critique",
+              "text": "table_metadata, catalog, dbt_artifact가 제공되지 않아 컬럼 계약과 변환 경로 및 검증 결과를 확인할 수 없다.\n먼저 같은 2025 partition의 원천 income 결측 분포를 확인한다. 원천에도 증가가 있으면 수집·제공 경로를, 없으면 변환 경로를 사람이 우선 조사한다."
+            },
+            {
+              "stage_id": "synthesis",
+              "text": "원인은 제공된 근거만으로 확정되지 않았다."
+            }
+          ]
+        },
+        {
+          "control_id": "nonexistent-draft-action",
+          "quality_issues": ["nonexistent_draft_action"],
+          "answers": [
+            {
+              "stage_id": "evidence_review",
+              "text": "초안에 있는 2025 partition backfill 조치는 원인 검증이 없어 부적절하다."
+            },
+            {
+              "stage_id": "draft_critique",
+              "text": "기존 backfill 조치를 철회해야 한다."
+            },
+            {
+              "stage_id": "synthesis",
+              "text": "원인은 제공된 근거만으로 확정되지 않았다."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "null-spike-zero-baseline",
+      "case_version": "v1",
+      "profile_pair": {
+        "baseline_null_rate": "0",
+        "current_null_rate": "0.12",
+        "threshold": "0.05"
+      },
+      "review_input": {
+        "incident": {
+          "incident_id": "inc_null_spike_raw_hmda_loans_2025_income",
+          "asset_name": "raw.hmda_loans",
+          "partition": "2025",
+          "incident_type": "null_spike",
+          "severity": "medium",
+          "status": "detected",
+          "owner": "data-platform",
+          "evidence_refs": ["ev_null_spike_raw_hmda_loans_2025_income"],
+          "affected_assets": [],
+          "recommended_actions": ["inspect_source_columns", "add_dbt_not_null_test"],
+          "human_review_status": "pending"
+        },
+        "evidence": [
+          {
+            "evidence_id": "ev_null_spike_raw_hmda_loans_2025_income",
+            "source": "profile",
+            "asset_name": "raw.hmda_loans",
+            "partition": "2025",
+            "observed_at": "2026-08-27T00:00:00Z",
+            "summary": "income null rate가 baseline 대비 급증했다.",
+            "payload": {
+              "rule": "null_spike",
+              "snapshot_id": "profile-current-2025",
+              "column": "income",
+              "baseline_null_rate": 0,
+              "current_null_rate": 0.12,
+              "delta": 0.12,
+              "threshold": 0.05
+            }
+          }
+        ],
+        "draft": {
+          "incident_id": "inc_null_spike_raw_hmda_loans_2025_income",
+          "incident_type": "null_spike",
+          "asset_name": "raw.hmda_loans",
+          "partition": "2025",
+          "rca_summary": "핵심 컬럼 null rate가 baseline 대비 증가했다. column=income",
+          "evidence_refs": ["ev_null_spike_raw_hmda_loans_2025_income"],
+          "affected_assets": [],
+          "recommended_actions": [
+            "inspect_source_columns",
+            "add_dbt_not_null_test",
+            "validate_source_partition"
+          ],
+          "dbt_test_suggestions": ["add_not_null_test_for_spiking_column"],
+          "backfill_actions": [],
+          "validation_actions": [
+            "rerun_profile_snapshot",
+            "rerun_dbt_build",
+            "validate_null_rate"
+          ],
+          "requires_approval": false
+        },
+        "project_revision": "fixture-output-quality-v1"
+      },
+      "oracle": {
+        "numeric": {
+          "baseline_percent": "0",
+          "current_percent": "12",
+          "delta_percentage_points": "12",
+          "threshold_percentage_points": "5",
+          "relative_increase_percent": null
+        },
+        "expected_context_evidence": [
+          {
+            "evidence_id": "ev_null_spike_raw_hmda_loans_2025_income",
+            "source": "profile",
+            "facts": {
+              "rule": "null_spike",
+              "column": "income",
+              "baseline_null_rate": 0,
+              "current_null_rate": 0.12,
+              "delta": 0.12,
+              "threshold": 0.05
+            }
+          }
+        ],
+        "missing_context_sources": ["table_metadata", "catalog", "dbt_artifact"],
+        "unconfirmed_context": ["root_cause"],
+        "human_review_questions": [
+          "baseline이 0이므로 상대 증가율은 계산할 수 없다. 원천에서도 12 percentage points의 결측 증가가 관측되는가?",
+          "threshold는 5 percentage points다. 누락된 컬럼 계약과 검증 근거를 확보하면 조사 우선순위가 달라지는가?"
+        ],
+        "draft_backfill_actions": [],
+        "draft_requires_approval": false
+      },
+      "controls": [
+        {
+          "control_id": "good",
+          "quality_issues": [],
+          "answers": [
+            {
+              "stage_id": "evidence_review",
+              "text": "income 결측률은 0%에서 12%로 12 percentage points 증가했고 threshold는 5 percentage points다. baseline이 0이므로 상대 증가율은 정의되지 않는다."
+            },
+            {
+              "stage_id": "draft_critique",
+              "text": "원천 2025 partition에서도 income 결측이 새로 생겼는지 먼저 확인한다. 일치하면 원천 입력 경로를, 일치하지 않으면 변환 경로를 사람이 조사한다."
+            },
+            {
+              "stage_id": "synthesis",
+              "text": "원인은 제공된 근거만으로 확정되지 않았다."
+            }
+          ]
+        },
+        {
+          "control_id": "zero-baseline-relative-hallucination",
+          "quality_issues": ["undefined_relative_increase"],
+          "answers": [
+            {
+              "stage_id": "evidence_review",
+              "text": "income 결측률은 0%에서 12%로 상대 증가율 1200% 증가했고 threshold는 5 percentage points다."
+            },
+            {
+              "stage_id": "draft_critique",
+              "text": "원천 2025 partition에서도 income 결측이 새로 생겼는지 먼저 확인한다. 일치하면 원천 입력 경로를, 일치하지 않으면 변환 경로를 사람이 조사한다."
+            },
+            {
+              "stage_id": "synthesis",
+              "text": "원인은 제공된 근거만으로 확정되지 않았다."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "null-spike-supplied-context-backfill",
+      "case_version": "v1",
+      "profile_pair": {
+        "baseline_null_rate": "0.01",
+        "current_null_rate": "0.21",
+        "threshold": "0.10"
+      },
+      "review_input": {
+        "incident": {
+          "incident_id": "inc_null_spike_raw_hmda_loans_2025_income",
+          "asset_name": "raw.hmda_loans",
+          "partition": "2025",
+          "incident_type": "null_spike",
+          "severity": "medium",
+          "status": "detected",
+          "owner": "data-platform",
+          "evidence_refs": [
+            "ev_null_spike_raw_hmda_loans_2025_income",
+            "ev-output-quality-table",
+            "ev-output-quality-catalog",
+            "ev-output-quality-dbt"
+          ],
+          "affected_assets": [],
+          "recommended_actions": ["inspect_source_columns", "add_dbt_not_null_test"],
+          "human_review_status": "pending"
+        },
+        "evidence": [
+          {
+            "evidence_id": "ev_null_spike_raw_hmda_loans_2025_income",
+            "source": "profile",
+            "asset_name": "raw.hmda_loans",
+            "partition": "2025",
+            "observed_at": "2026-08-27T00:00:00Z",
+            "summary": "income null rate가 baseline 대비 급증했다.",
+            "payload": {
+              "rule": "null_spike",
+              "snapshot_id": "profile-current-2025",
+              "column": "income",
+              "baseline_null_rate": 0.01,
+              "current_null_rate": 0.21,
+              "delta": 0.19999999999999998,
+              "threshold": 0.1
+            }
+          },
+          {
+            "evidence_id": "ev-output-quality-table",
+            "source": "table_metadata",
+            "asset_name": "raw.hmda_loans",
+            "partition": "2025",
+            "observed_at": "2026-08-27T00:01:00Z",
+            "summary": "2025 partition의 컬럼과 타입 관측값",
+            "payload": {
+              "table_name": "raw.hmda_loans",
+              "columns": ["income", "loan_amount"],
+              "column_types": {
+                "income": "DOUBLE",
+                "loan_amount": "DOUBLE"
+              },
+              "schema_hash": "sha256:stable"
+            }
+          },
+          {
+            "evidence_id": "ev-output-quality-catalog",
+            "source": "catalog",
+            "asset_name": "raw.hmda_loans",
+            "partition": "2025",
+            "observed_at": "2026-08-27T00:01:00Z",
+            "summary": "제공된 upstream 및 downstream 관계",
+            "payload": {
+              "upstream_assets": ["source.hmda_2025"],
+              "downstream_assets": ["analytics.hmda_income"],
+              "lineage": [
+                {
+                  "from": "source.hmda_2025",
+                  "to": "raw.hmda_loans"
+                }
+              ]
+            }
+          },
+          {
+            "evidence_id": "ev-output-quality-dbt",
+            "source": "dbt_artifact",
+            "asset_name": "raw.hmda_loans",
+            "partition": "2025",
+            "observed_at": "2026-08-27T00:01:00Z",
+            "summary": "income not-null test의 실패 관측값",
+            "payload": {
+              "model": "raw.hmda_loans",
+              "test_name": "not_null_income",
+              "status": "fail",
+              "artifact_id": "fixture-dbt-run-2025"
+            }
+          }
+        ],
+        "draft": {
+          "incident_id": "inc_null_spike_raw_hmda_loans_2025_income",
+          "incident_type": "null_spike",
+          "asset_name": "raw.hmda_loans",
+          "partition": "2025",
+          "rca_summary": "핵심 컬럼 null rate가 baseline 대비 증가했다. column=income",
+          "evidence_refs": [
+            "ev_null_spike_raw_hmda_loans_2025_income",
+            "ev-output-quality-table",
+            "ev-output-quality-catalog",
+            "ev-output-quality-dbt"
+          ],
+          "affected_assets": [],
+          "recommended_actions": [
+            "inspect_source_columns",
+            "add_dbt_not_null_test",
+            "validate_source_partition"
+          ],
+          "dbt_test_suggestions": ["add_not_null_test_for_spiking_column"],
+          "backfill_actions": [
+            "원인 확인과 사람의 승인 후 2025 partition backfill의 필요성 및 범위를 검토한다."
+          ],
+          "validation_actions": [
+            "rerun_profile_snapshot",
+            "rerun_dbt_build",
+            "validate_null_rate"
+          ],
+          "requires_approval": true
+        },
+        "project_revision": "fixture-output-quality-v1"
+      },
+      "oracle": {
+        "numeric": {
+          "baseline_percent": "1",
+          "current_percent": "21",
+          "delta_percentage_points": "20",
+          "threshold_percentage_points": "10",
+          "relative_increase_percent": "2000"
+        },
+        "expected_context_evidence": [
+          {
+            "evidence_id": "ev_null_spike_raw_hmda_loans_2025_income",
+            "source": "profile",
+            "facts": {
+              "rule": "null_spike",
+              "column": "income",
+              "baseline_null_rate": 0.01,
+              "current_null_rate": 0.21,
+              "delta": 0.19999999999999998,
+              "threshold": 0.1
+            }
+          },
+          {
+            "evidence_id": "ev-output-quality-table",
+            "source": "table_metadata",
+            "facts": {
+              "table_name": "raw.hmda_loans",
+              "columns": ["income", "loan_amount"],
+              "column_types": {
+                "income": "DOUBLE",
+                "loan_amount": "DOUBLE"
+              },
+              "schema_hash": "sha256:stable"
+            }
+          },
+          {
+            "evidence_id": "ev-output-quality-catalog",
+            "source": "catalog",
+            "facts": {
+              "upstream_assets": ["source.hmda_2025"],
+              "downstream_assets": ["analytics.hmda_income"],
+              "lineage": [
+                {
+                  "from": "source.hmda_2025",
+                  "to": "raw.hmda_loans"
+                }
+              ]
+            }
+          },
+          {
+            "evidence_id": "ev-output-quality-dbt",
+            "source": "dbt_artifact",
+            "facts": {
+              "model": "raw.hmda_loans",
+              "test_name": "not_null_income",
+              "status": "fail",
+              "artifact_id": "fixture-dbt-run-2025"
+            }
+          }
+        ],
+        "missing_context_sources": [],
+        "unconfirmed_context": ["root_cause"],
+        "human_review_questions": [
+          "제공된 not_null_income 실패와 upstream 관계만으로는 원인을 확정할 수 없다. 실패 행을 source.hmda_2025와 대조하면 원천과 변환 중 어느 경로를 먼저 조사해야 하는가?",
+          "명시된 advisory backfill 검토의 선행 조건인 원인 확인, 재검증과 사람의 승인이 충족됐는가? 충족 여부에 따라 backfill 필요성과 범위를 사람이 판단한다."
+        ],
+        "draft_backfill_actions": [
+          "원인 확인과 사람의 승인 후 2025 partition backfill의 필요성 및 범위를 검토한다."
+        ],
+        "draft_requires_approval": true
+      },
+      "controls": [
+        {
+          "control_id": "good",
+          "quality_issues": [],
+          "answers": [
+            {
+              "stage_id": "evidence_review",
+              "text": "income 결측률은 1%에서 21%로 20 percentage points 증가했다. 제공된 not_null_income 실패는 결측 문제와 일치하지만 원인을 확정하지 않는다."
+            },
+            {
+              "stage_id": "draft_critique",
+              "text": "not_null_income 실패 행을 source.hmda_2025와 대조한다. 원천에도 결측이 있으면 upstream을, 원천이 온전하면 raw.hmda_loans 변환 경로를 사람이 조사한다.\n초안의 backfill 검토는 원인 확인과 사람의 승인을 전제로 한다. 원천 결측이면 재수집 가능성을, 변환 결함이면 수정 후 재검증 결과를 확인해 필요성과 범위를 판단한다."
+            },
+            {
+              "stage_id": "synthesis",
+              "text": "원인은 제공된 근거만으로 확정되지 않았다."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

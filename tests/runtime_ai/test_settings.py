@@ -53,6 +53,10 @@ def test_settings_require_explicit_identity_and_use_bounded_defaults() -> None:
         ("api_key", "   "),
         ("model", "   "),
         ("timeout_seconds", 0),
+        ("connect_timeout_seconds", 0),
+        ("connect_timeout_seconds", 301),
+        ("read_timeout_seconds", 0),
+        ("read_timeout_seconds", 3601),
         ("max_retries", -1),
         ("max_retries", 6),
         ("temperature", 0.1),
@@ -101,6 +105,25 @@ def test_sanitized_configuration_preserves_ipv6_authority() -> None:
     sanitized = settings.sanitized_configuration()
 
     assert sanitized["base_url"] == "http://[::1]:11434/v1"
+
+
+def test_optional_phase_timeouts_are_recorded_only_when_configured() -> None:
+    legacy = settings_module.RuntimeAISettings.model_validate(_valid_values())
+    configured = settings_module.RuntimeAISettings.model_validate(
+        _valid_values() | {"connect_timeout_seconds": 5, "read_timeout_seconds": 180}
+    )
+    connect_only = settings_module.RuntimeAISettings.model_validate(
+        _valid_values() | {"connect_timeout_seconds": 5}
+    )
+
+    assert legacy.connect_timeout_seconds is None
+    assert legacy.read_timeout_seconds is None
+    assert configured.sanitized_configuration() == legacy.sanitized_configuration() | {
+        "connect_timeout_seconds": 5.0,
+        "read_timeout_seconds": 180.0,
+    }
+    assert connect_only.sanitized_configuration()["connect_timeout_seconds"] == 5.0
+    assert "read_timeout_seconds" not in connect_only.sanitized_configuration()
 
 
 def test_public_settings_do_not_read_provider_environment(

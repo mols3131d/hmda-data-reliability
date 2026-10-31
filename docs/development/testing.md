@@ -202,7 +202,9 @@ uv run python scripts/run_actual_source.py
 
 ## Review AI Evaluation
 
-Review AI의 deterministic suite, live provider proof, human rubric 평가와 optional Langfuse projection은 [Review AI Evaluation](review-ai-evaluation.md)을 따른다. 이 문서는 일반 pytest 선택, CI behavior와 공통 test result 해석을 소유한다.
+Review AI의 deterministic suite·실제 합성 실험·사람 평가는 [Review AI Evaluation](review-ai-evaluation.md)을 따른다. 기본 pytest는 fake SDK·transport와 native SDK의 모의 HTTP·메모리 exporter를 사용하며 실제 서버·모델을 호출하지 않는다. SDK 4.15.6은 기본 의존성이다. 최초 Prompt·Dataset 등록은 `hmda_reliability.review_ai.evaluation.setup`, 반복 모델 실행은 `hmda_reliability.review_ai.evaluation.experiment`에서 명시적으로 수행한다. Offline 통과·수집 완료·SDK 반환은 실제 원격 적재·모델 품질·사람 평가를 입증하지 않는다.
+
+이 문서는 일반 pytest 선택, CI behavior와 공통 test result 해석을 소유한다.
 
 ## Interpret Results
 
