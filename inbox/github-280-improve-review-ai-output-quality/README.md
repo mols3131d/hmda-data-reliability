@@ -4,6 +4,8 @@
 
 ## Current Entrypoints
 
+- [Langfuse 네이티브 활용 최적화 작업 에이전트 인계안](18-plan-review-ai-maximize-langfuse-native.md)
+
 - [세션 인계 및 최종 상태 요약](17-brief-review-ai-session-handoff.md)
 - [실제 Langfuse Cloud + 로컬 Ollama 실험 검증 보고서](15-report-review-ai-live-execution-validation.md)
 - [환경변수 감사 및 최적화 보고서](16-report-environment-variable-optimization.md)
