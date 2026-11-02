@@ -42,7 +42,7 @@ RTX 3070에서 Qwen3.5를 재시도하는 과정에서 확인한 모델 간 `res
 
 ### Current code can contribute to the failure
 
-- [`prompt.py`](../../src/hmda_reliability/review_ai/prompt.py)는 `uncertainties`의 배열 형태를 명시하지 않고 `priority when applicable`이라고만 적는다. 반면 [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py)의 출력 계약은 `uncertainties`를 문자열 배열로 제한하고 `priority`를 `investigation_priority`에만 허용한다. **프롬프트와 계약 사이의 설명 부족은 코드 원인 후보**이며, 모델 준수 실패와 구분해야 한다.
+- [`output/compact.md`](../../src/hmda_reliability/review_ai/prompt/output/compact.md)는 `uncertainties`의 배열 형태를 명시하지 않고 `priority when applicable`이라고만 적는다. 반면 [`contracts.py`](../../src/hmda_reliability/review_ai/contracts.py)의 출력 계약은 `uncertainties`를 문자열 배열로 제한하고 `priority`를 `investigation_priority`에만 허용한다. **프롬프트와 계약 사이의 설명 부족은 코드 원인 후보**이며, 모델 준수 실패와 구분해야 한다.
 - [`provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)는 `response_format={"type":"json_object"}`를 보내고 SDK 응답의 `finish_reason`은 내부 응답으로 전달하지 않는다. JSON 객체 요청은 도메인 필드 타입과 조건부 `priority`를 검증하지 않는다. 완료 길이 초과 여부도 현재 증적에서 직접 판별할 수 없다. Provider-specific schema 강제가 필요한지는 호환성과 기존 계약을 함께 검토해야 한다.
 - [`service.py`](../../src/hmda_reliability/review_ai/service.py)의 `_parse_output`은 JSON 문법 오류와 Pydantic 스키마 오류를 모두 `None`으로 돌려주어 동일한 `response_schema_invalid`로 기록한다. 실패를 안전하게 거부하지만, 원인 위치를 알아내기 어렵다. 상세 진단을 추가한다면 raw response나 민감 정보 없이 제한된 오류 분류만 남겨야 한다.
 - [`settings.py`](../../src/hmda_reliability/runtime_ai/settings.py)의 토큰 한도와 [`review_ai/settings.py`](../../src/hmda_reliability/review_ai/settings.py)의 프롬프트 바이트 한도는 모델 context window의 토큰 예산과 별개다. 현재 설정·사전 검사가 모델별 context 부족을 미리 식별하는지는 확인되지 않았다.

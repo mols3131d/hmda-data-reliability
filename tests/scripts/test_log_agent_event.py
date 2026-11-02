@@ -46,7 +46,7 @@ def test_hook_config_uses_supported_vscode_events() -> None:
 def test_env_example_defines_common_artifact_root() -> None:
     env_example = (REPOSITORY_ROOT / ".env.example").read_text(encoding="utf-8")
 
-    assert "HMDA_RELIABILITY_ARTIFACTS_DIR=./.local/artifacts" in env_example
+    assert 'HMDA_RELIABILITY_ARTIFACTS_DIR="./.local/artifacts"' in env_example
 
 
 def test_artifact_log_path_uses_default_root() -> None:

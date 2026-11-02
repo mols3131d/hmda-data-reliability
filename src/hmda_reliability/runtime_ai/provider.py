@@ -2,12 +2,23 @@
 
 from __future__ import annotations
 
+import math
 import time
 from collections.abc import Callable
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 
-from openai import APIConnectionError, APIError, APIStatusError, OpenAI
+from openai import (
+    APIConnectionError,
+    APIError,
+    APIStatusError,
+    APITimeoutError,
+    OpenAI,
+    Timeout,
+    not_given,
+    omit,
+)
 from openai.types.chat import ChatCompletionMessageParam
+from openai.types.chat.completion_create_params import ResponseFormat
 
 from hmda_reliability.logger import get_logger
 from hmda_reliability.runtime_ai.contracts import (
@@ -17,6 +28,7 @@ from hmda_reliability.runtime_ai.contracts import (
     ProviderResponseMetadata,
     ProviderUsage,
     TransportResponse,
+    TransportTimeouts,
 )
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
@@ -53,7 +65,8 @@ class ProviderUnavailableError(Exception):
     """제한된 재시도 횟수 내에 응답을 받지 못했을 때 발생하는 예외.
 
     네트워크 단절, 서버 5xx 에러 또는 재시도 불가능한 클라이언트 4xx 에러 등으로 인해
-    최종적으로 provider 호출이 불가능할 때 발생한다.
+    최종적으로 provider 호출이 불가능할 때 발생한다. 호출 시작 전에 예산이
+    소진되면 `attempt_count`는 0이다.
     """
 
     def __init__(
@@ -115,9 +128,11 @@ class OpenAICompatibleAdapter:
         *,
         transport: ChatCompletionTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._settings = settings
         self._sleep = sleep
+        self._clock = clock
         if transport is None:
             # SDK 레벨의 내부 재시도를 끄고 어댑터가 재시도 불변식을 통제한다.
             client = OpenAI(
@@ -129,24 +144,44 @@ class OpenAICompatibleAdapter:
             transport = _OpenAIChatCompletionTransport(client)
         self._transport = transport
 
-    def invoke(self, messages: tuple[ChatMessage, ...]) -> ProviderResponse:
+    def invoke(
+        self,
+        messages: tuple[ChatMessage, ...],
+        *,
+        output_format: Literal["json_object", "text"] = "json_object",
+        budget_seconds: float | None = None,
+    ) -> ProviderResponse:
         """지수 백오프 재시도를 적용하여 chat completion 전송을 호출한다.
 
-        설정된 모델, temperature=0, 토큰 제한 및 JSON 형식을 적용한다.
+        설정된 모델, temperature=0, 토큰 제한 및 선택한 응답 형식을 적용한다.
         전송 에러를 `ProviderUnavailableError`로 정제하고, 응답 바이트 크기를
-        `max_output_bytes` 한도로 제한한다.
+        `max_output_bytes` 한도로 제한한다. 예산은 시도와 백오프 시작을 통제하고
+        HTTP 대기 제한을 줄이지만 진행 중인 동기 호출의 강제 중단을 보장하지
+        않는다. 늦게 완성된 bounded 응답도 호출자가 보존할 수 있도록 반환한다.
         """
+        if budget_seconds is not None and (
+            not math.isfinite(budget_seconds) or budget_seconds < 0
+        ):
+            msg = "budget_seconds must be finite and non-negative"
+            raise ValueError(msg)
         request = ChatCompletionRequest(
             messages=messages,
             model=self._settings.model,
             temperature=self._settings.temperature,
             max_tokens=self._settings.max_output_tokens,
-            response_format={"type": "json_object"},
+            response_format={"type": "json_object"}
+            if output_format == "json_object"
+            else None,
             stream=False,
         )
-        started = time.monotonic()
+        started = self._clock()
+        deadline = None if budget_seconds is None else started + budget_seconds
         attempt_count = 0
         while True:
+            remaining = self._remaining_budget(deadline, started, attempt_count)
+            attempt_request = request.model_copy(
+                update={"timeout": _phase_timeouts(self._settings, remaining)}
+            )
             attempt_count += 1
             try:
                 _LOGGER.debug(
@@ -157,8 +192,9 @@ class OpenAICompatibleAdapter:
                         "message_count": len(messages),
                     },
                 )
-                response = self._transport.create(request)
+                response = self._transport.create(attempt_request)
             except ProviderTransportError as error:
+                remaining = self._remaining_budget(deadline, started, attempt_count)
                 can_retry = (
                     error.retryable and attempt_count <= self._settings.max_retries
                 )
@@ -171,15 +207,23 @@ class OpenAICompatibleAdapter:
                             "max_retries": self._settings.max_retries,
                         },
                     )
-                    self._sleep(_calculate_backoff_delay(attempt_count))
+                    delay = _calculate_backoff_delay(attempt_count)
+                    if remaining is not None and delay >= remaining:
+                        self._sleep(remaining)
+                        raise ProviderUnavailableError(
+                            failure_code="provider_budget_exhausted",
+                            attempt_count=attempt_count,
+                            latency_ms=_elapsed_ms(started, self._clock),
+                        ) from None
+                    self._sleep(delay)
                     continue
                 raise ProviderUnavailableError(
                     failure_code=error.failure_code,
                     attempt_count=attempt_count,
-                    latency_ms=_elapsed_ms(started),
+                    latency_ms=_elapsed_ms(started, self._clock),
                 ) from None
 
-            latency_ms = _elapsed_ms(started)
+            latency_ms = _elapsed_ms(started, self._clock)
             output_bytes = len(response.content.encode("utf-8"))
             if output_bytes > self._settings.max_output_bytes:
                 raise ProviderResponseTooLargeError(
@@ -199,6 +243,43 @@ class OpenAICompatibleAdapter:
                 trace_id=response.trace_id,
                 response_metadata=response.response_metadata,
             )
+
+    def _remaining_budget(
+        self, deadline: float | None, started: float, attempt_count: int
+    ) -> float | None:
+        if deadline is None:
+            return None
+        remaining = deadline - self._clock()
+        if remaining <= 0:
+            raise ProviderUnavailableError(
+                failure_code="provider_budget_exhausted",
+                attempt_count=attempt_count,
+                latency_ms=_elapsed_ms(started, self._clock),
+            )
+        return remaining
+
+
+def _phase_timeouts(
+    settings: RuntimeAISettings, remaining: float | None
+) -> TransportTimeouts | None:
+    if (
+        remaining is None
+        and settings.connect_timeout_seconds is None
+        and settings.read_timeout_seconds is None
+    ):
+        return None
+    phases = {
+        "connect": settings.connect_timeout_seconds or settings.timeout_seconds,
+        "read": settings.read_timeout_seconds or settings.timeout_seconds,
+        "write": settings.timeout_seconds,
+        "pool": settings.timeout_seconds,
+    }
+    return TransportTimeouts.model_validate(
+        {
+            phase: value if remaining is None else min(value, remaining)
+            for phase, value in phases.items()
+        }
+    )
 
 
 class _OpenAIChatCompletionTransport:
@@ -222,9 +303,19 @@ class _OpenAIChatCompletionTransport:
                 model=request.model,
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
-                response_format={"type": "json_object"},
+                response_format=cast(ResponseFormat, request.response_format)
+                if request.response_format is not None
+                else omit,
                 stream=False,
+                timeout=Timeout(**request.timeout.model_dump())
+                if request.timeout is not None
+                else not_given,
             )
+        except APITimeoutError as error:
+            raise ProviderTransportError(
+                failure_code="provider_timeout",
+                retryable=True,
+            ) from error
         except APIConnectionError as error:
             raise ProviderTransportError(
                 failure_code="provider_connection_error",
@@ -285,6 +376,6 @@ class _OpenAIChatCompletionTransport:
         )
 
 
-def _elapsed_ms(started: float) -> float:
+def _elapsed_ms(started: float, clock: Callable[[], float] = time.monotonic) -> float:
     """단조 증가 타이머 기준 시작 시점 대비 경과 시간(밀리초)을 반환한다."""
-    return max(0.0, (time.monotonic() - started) * 1000)
+    return max(0.0, (clock() - started) * 1000)

@@ -5,5 +5,5 @@ data-platform.md	DuckDB 공통 primitive, dbt Bronze-to-Gold 구조와 dbt artif
 hmda-data.md	HMDA 원천의 발견·검증, DuckDB Bronze 적재, descriptive EDA와 deterministic synthetic defect 입력을 소유하는 HMDA Data domain을 설명합니다.
 orchestration.md	Bronze 적재, read-only quality gate와 dbt 분석을 연결하는 Apache Airflow data plane의 scope, task graph, runtime configuration과 경계를 설명합니다.
 reliability.md	Deterministic evidence 기반 incident 판단, read-only lifecycle, approval-bound recovery와 replay/evaluation 경계를 설명합니다.
-review-ai.md	Reliability evidence를 입력으로 제한된 AI advisory review를 만들고 deterministic validation과 invocation provenance를 보존하는 Review AI domain의 책임을 설명합니다.
+review-ai.md	근거 범위 안의 단계별 텍스트 검토, 코드 JSON 취합과 사람 평가를 소유하는 도메인입니다.
 runtime-ai.md	Review semantics와 분리된 provider-neutral AI message, settings, response contract와 OpenAI-compatible invocation adapter를 소유하는 Runtime AI domain을 설명합니다.

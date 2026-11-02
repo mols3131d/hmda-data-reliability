@@ -53,7 +53,7 @@ Qwen2.5의 finding에는 `increased by 199.99999999999998%`와 `threshold of 100
 
 ### Example Copying and Utility Gap
 
-Qwen2.5의 네 utility description은 v2 [instruction](../../src/hmda_reliability/review_ai/prompt.py)의 예시와 모두 같았다. 예를 들어 `Check source completeness first.`와 `Confirm the cause before backfill.`을 그대로 사용했다. 이 사례의 draft에는 backfill action이 없었다. 복사 금지 문구만으로 예시의 내용 유입을 막지 못했다는 관찰이다.
+Qwen2.5의 네 utility description은 v2 [instruction](../../src/hmda_reliability/review_ai/prompt/guidance/utility_examples.md)의 예시와 모두 같았다. 예를 들어 `Check source completeness first.`와 `Confirm the cause before backfill.`을 그대로 사용했다. 이 사례의 draft에는 backfill action이 없었다. 복사 금지 문구만으로 예시의 내용 유입을 막지 못했다는 관찰이다.
 
 Qwen3.5는 제공된 context gap을 반영했지만 source completeness 확인과 원인 확인 등 일반적인 제안이 중심이었다. Existing draft보다 어떤 판단을 더 돕는지는 입증하지 못했다. Backfill/schema change에 대한 비판도 실제 draft의 어느 제안과 연결되는지 검토해야 한다. 이는 후속 평가 대상이며 formal human rubric 점수나 전체 모델의 품질 결론은 아니다.
 

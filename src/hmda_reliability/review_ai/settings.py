@@ -24,7 +24,7 @@ class ReviewAISettings(ReliabilityContract):
     def sanitized_configuration(self) -> dict[str, int]:
         """호출 evidence 기록을 위한 정제된 review 설정을 반환한다.
 
-        `AgenticInvocationEvidence`에 포함되어 감사 및 재생에 활용된다.
+        Workflow manifest에 포함되어 감사 및 재생에 활용된다.
         """
 
         return {"max_prompt_bytes": self.max_prompt_bytes}

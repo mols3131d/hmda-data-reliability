@@ -18,7 +18,7 @@ Invocation `ar-20261002-975b6bdd2b7a`의 `response_schema_invalid`는 무엇을 
 
 ## Scope
 
-- [기존 실행 보고서](17-59-report-review-ai-live-run-failure.md), [로컬 invocation evidence](../../.local/artifacts/agentic-review/invocations/ar-20261002-975b6bdd2b7a.json), Review AI 파서·계약·프롬프트, Runtime AI 요청 형식을 조사했다.
+- [기존 실행 보고서](17-59-report-review-ai-live-run-failure.md), 로컬 invocation evidence(`.local/artifacts/agentic-review/invocations/ar-20261002-975b6bdd2b7a.json`), Review AI 파서·계약·프롬프트, Runtime AI 요청 형식을 조사했다.
 - 실행 기록의 리비전 `2c3b61cd021267649f1cbc76f1c149abf93598f9`의 파서와 provider 요청 코드도 대조했다.
 - 외부 호출 없는 로컬 파서 확인만 실행했다. 모델 재호출, 키 조회, Langfuse 전송, 애플리케이션·테스트·설정 수정은 하지 않았다.
 - 키 교체 완료는 2026-10-02 사용자 확인에 따른 사실이다. 새 키 인증이나 Cloud ingestion 성공을 뜻하지 않는다.
@@ -55,7 +55,7 @@ Invocation `ar-20261002-975b6bdd2b7a`의 `response_schema_invalid`는 무엇을 
 
 [provider.py](../../src/hmda_reliability/runtime_ai/provider.py)의 `_OpenAIChatCompletionTransport.create`는 `response_format={"type": "json_object"}`, `temperature=0`, `max_tokens=1024`로 요청한다. 실행 리비전에서도 JSON object 설정을 확인했다. 요청에는 `AgenticReviewOutput`의 JSON Schema가 전달되지 않는다.
 
-[prompt.py](../../src/hmda_reliability/review_ai/prompt.py)는 응답 필드와 enum을 자연어로 지시하고, [contracts.py](../../src/hmda_reliability/review_ai/contracts.py)는 필수 필드·문자열·배열 한도와 `investigation_priority`의 priority 조건 등을 검증한다. JSON object를 요청했다는 사실만으로 이 계약 준수를 증명할 수 없다.
+[prompt/](../../src/hmda_reliability/review_ai/prompt/)는 응답 필드와 enum을 자연어로 지시하고, [contracts.py](../../src/hmda_reliability/review_ai/contracts.py)는 필수 필드·문자열·배열 한도와 `investigation_priority`의 priority 조건 등을 검증한다. JSON object를 요청했다는 사실만으로 이 계약 준수를 증명할 수 없다.
 
 저장된 `canonical_input`과 prompt identity를 현재 렌더러에 넣어 재계산한 `prompt_digest`는 원본과 일치했다. 현재 프롬프트로 실행 입력을 재구성할 근거는 있지만, 동일 모델을 다시 호출해 동일 응답이 나온다고 보장하지는 않는다. 토큰 부족, 코드 fence, 필드 누락, enum 오류 등은 가능한 가설일 뿐 관찰된 원인이 아니다. Transport는 `finish_reason`도 보존하지 않아 종료 사유를 사후 확인할 수 없다.
 
