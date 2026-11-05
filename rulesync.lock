@@ -1,11 +1,28 @@
 {
   "lockfileVersion": 1,
   "sources": {
+    "dietrichgebert/ponytail": {
+      "requestedRef": "main",
+      "resolvedRef": "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846",
+      "resolvedAt": "2026-11-05T11:42:03.040Z",
+      "skills": {
+        "ponytail": {
+          "integrity": "sha256-b40d655883ea462755ae12373b59833fce20ba256bc06b0bc4e08dc59ba2ca5d"
+        }
+      },
+      "skillSelection": [
+        "ponytail"
+      ],
+      "skillsPath": "skills"
+    },
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
       "resolvedRef": "0390e4dc714b762fb7e173bcbc3ec71db436453f",
-      "resolvedAt": "2026-11-05T11:42:03.015Z",
+      "resolvedAt": "2026-11-05T13:39:33.598Z",
       "skills": {
+        "code-flow-map": {
+          "integrity": "sha256-59c77862c519134b1d35275b82ae3afe447aba5210a2831911a32d64bab0fc2f"
+        },
         "mols-agent-asset-find": {
           "integrity": "sha256-4c409ebc900adf04d6db6c053b14256e3f8427cd631ab73f4333bc17e1abe1a2"
         },
@@ -30,6 +47,9 @@
         "mols-coding-context": {
           "integrity": "sha256-af62134c63221d4f34da41d3ead4f2fe7559887e7615b7a3bec92831731cfa5d"
         },
+        "mols-dev-env-bootstrap-design": {
+          "integrity": "sha256-9eeacfa3e79ac9f5002177d910734e82c66f458bf8d2f54bae6fc050d4ea291d"
+        },
         "mols-documentation": {
           "integrity": "sha256-f111a389bc9273a95416c05318698560b29f216281d972eab654d8c511b7cca7"
         },
@@ -51,6 +71,9 @@
         "mols-openspec-customize": {
           "integrity": "sha256-4debe7ef0e25d69f38dca4a4617989d5cd5b9312c26625e2b493abcdaac07429"
         },
+        "mols-project-task-command-design": {
+          "integrity": "sha256-6b30c7c1f22fbfcac45454415d4fee4cbaadb082a337a533f55f572b2b9458dc"
+        },
         "mols-tach": {
           "integrity": "sha256-a06758fe15a529b44554ca2a2c325bcb711aa303c1f796481e703d3ed18c8a80"
         },
@@ -59,6 +82,7 @@
         }
       },
       "skillSelection": [
+        "code-flow-map",
         "mols-agent-asset",
         "mols-agent-asset-find",
         "mols-ci-design",
@@ -67,6 +91,7 @@
         "mols-code-comprehension-refactor",
         "mols-coding-context",
         "mols-coding-context-python",
+        "mols-dev-env-bootstrap-design",
         "mols-documentation",
         "mols-loops",
         "mols-markdown-dashboard",
@@ -74,24 +99,11 @@
         "mols-mermaid-chart",
         "mols-mermaid-diagram",
         "mols-openspec-customize",
+        "mols-project-task-command-design",
         "mols-tach",
         "mols-text-optimizer"
       ],
       "skillsPath": "src/rulesync/.rulesync/skills"
-    },
-    "dietrichgebert/ponytail": {
-      "requestedRef": "main",
-      "resolvedRef": "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846",
-      "resolvedAt": "2026-11-05T11:42:03.040Z",
-      "skills": {
-        "ponytail": {
-          "integrity": "sha256-b40d655883ea462755ae12373b59833fce20ba256bc06b0bc4e08dc59ba2ca5d"
-        }
-      },
-      "skillSelection": [
-        "ponytail"
-      ],
-      "skillsPath": "skills"
     }
   }
 }

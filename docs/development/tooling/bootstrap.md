@@ -40,7 +40,7 @@ uv run --no-sync python scripts/bootstrap.py update
 
 `update`는 session restore가 아니라 **external source와 tooling state를 새 revision으로 전진시키는 작업**이다. `rulesync.lock`, `skills-lock.json`이 존재하는 경우의 Skills CLI lock, generated Agent Asset projection 또는 OpenSpec integration file처럼 tracked state가 바뀔 수 있으므로 실행 후 repository diff와 관련 validation을 확인한다.
 
-Bootstrap action은 여러 tool step을 순서대로 실행하며 전체를 하나의 transaction으로 rollback하지 않는다. 중간 step이 실패하면 앞에서 성공한 step의 변경이 남을 수 있으므로 diff와 현재 state를 확인한 뒤 원인을 해결하고 다시 실행한다.
+Bootstrap action은 여러 tool step을 순서대로 실행하며 전체를 하나의 transaction으로 rollback하지 않는다. 실패하면 action·step과 하위 명령의 종료 코드를 stderr에 표시하고 뒤 단계는 실행하지 않는다. 실행 파일 누락 등 step을 시작할 수 없는 오류는 해당 단계와 함께 표시하고 exit 2로 종료한다. 앞에서 성공한 step의 변경은 남을 수 있으므로 diff와 현재 state를 확인한 뒤 원인을 해결하고 같은 action을 다시 실행한다.
 
 Routine 작업 시작에는 `session`을 사용하고, 단순히 환경을 복구하려는 이유로 `update`를 실행하지 않는다.
 

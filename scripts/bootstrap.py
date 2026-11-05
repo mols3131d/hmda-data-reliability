@@ -134,9 +134,18 @@ def main() -> int:
 
     try:
         for label, step in _steps(args.action):
-            print(f"==> {label}")
-            returncode = step()
+            print(f"==> {label}", flush=True)
+            try:
+                returncode = step()
+            except (OSError, RuntimeError) as error:
+                print(f"error: {args.action}: {label}: {error}", file=sys.stderr)
+                return 2
             if returncode != 0:
+                print(
+                    f"error: {args.action}: {label} failed (exit {returncode}); "
+                    "remaining steps were not run. Earlier changes are preserved.",
+                    file=sys.stderr,
+                )
                 return returncode
     except RuntimeError as error:
         print(f"error: {error}", file=sys.stderr)
