@@ -1,18 +1,45 @@
 {
   "$schema": "https://github.com/dyoshikawa/rulesync/releases/latest/download/config-schema.json",
   "targets": {
-    "claudecode": ["rules", "skills", "subagents"],
-    "codexcli": ["rules", "skills", "subagents"],
-    "copilot": ["rules", "skills", "subagents"],
-    "copilotcli": ["rules", "skills", "subagents"],
-    "antigravity-ide": ["rules", "skills", "subagents"],
-    "antigravity-cli": ["rules", "skills", "subagents"]
+    "claudecode": [
+      "rules",
+      "skills",
+      "subagents"
+    ],
+    "codexcli": [
+      "rules",
+      "skills",
+      "subagents"
+    ],
+    "copilot": [
+      "rules",
+      "skills",
+      "subagents"
+    ],
+    "copilotcli": [
+      "rules",
+      "skills",
+      "subagents"
+    ],
+    "antigravity-ide": [
+      "rules",
+      "skills",
+      "subagents"
+    ],
+    "antigravity-cli": [
+      "rules",
+      "skills",
+      "subagents"
+    ]
   },
-  "outputRoots": ["."],
+  "outputRoots": [
+    "."
+  ],
   "sources": [
     {
       "source": "mols3131d/mols-agent-assets",
       "skills": [
+        "code-flow-map",
         "mols-agent-asset",
         "mols-agent-asset-find",
         "mols-ci-design",
@@ -21,6 +48,7 @@
         "mols-code-comprehension-refactor",
         "mols-coding-context",
         "mols-coding-context-python",
+        "mols-dev-env-bootstrap-design",
         "mols-documentation",
         "mols-loops",
         "mols-markdown-dashboard",
@@ -28,6 +56,7 @@
         "mols-mermaid-chart",
         "mols-mermaid-diagram",
         "mols-openspec-customize",
+        "mols-project-task-command-design",
         "mols-tach",
         "mols-text-optimizer"
       ],
@@ -37,7 +66,9 @@
     },
     {
       "source": "dietrichgebert/ponytail",
-      "skills": ["ponytail"],
+      "skills": [
+        "ponytail"
+      ],
       "transport": "github",
       "ref": "main",
       "path": "skills"
