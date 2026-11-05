@@ -52,6 +52,22 @@ tags:
 
 [Notion 패턴 적합성 보고서](https://app.notion.com/p/40f13d7e58b9810bae96f9ea42d80d80)는 v2가 방향에는 부합하지만 W1~W4 병렬성 과대평가와 W8에 집중된 늦은 통합 검증을 지적했다.
 
+### F6. 기존 Review와 새 Agent는 서로 다른 계약이 필요하다
+
+[현행 Agentic Review Spec](https://github.com/mols3131d/hmda-data-reliability/blob/main/openspec/specs/reliability-agentic-review/spec.md)은 고정 3단계·`null_spike`·텍스트 모드·**no tools**를 요구한다. Tool Calling을 기존 entry point에 조용히 추가하면 계약 위반이다. 기존 baseline을 보존한 신규 capability/entry point를 우선 검토하고, 기존 API·CLI의 제거 또는 대체는 명시적 OpenSpec 전환과 소비자 검증에 따른다.
+
+### F7. 외부 진행 작업과 기술 채택 시점이 결합된다
+
+- [PR #285](https://github.com/mols3131d/hmda-data-reliability/pull/285)는 `code-flow-map`, `mols-project-task-command-design`, `mols-dev-env-bootstrap-design` 도입과 bootstrap/명령 개선을 진행 중이다. 이번 PR의 스크립트·도구 설정·라우팅 변경과 수정 파일이 겹칠 수 있으며 #285의 잠금·생성 산출물을 수동 수정해서는 안 된다. **#285 완료가 #284의 전역 선행조건은 아니며**, 실제 공유 파일·명령 변경에 대해서만 병합/재기반화 순서를 정한다.
+- [Framework 기술 조사](https://app.notion.com/p/40e13d7e58b981198335f151caf1a65c)는 LangChain `create_agent` → 필요 시 Deep Agents/직접 LangGraph를 권고하지만 **채택 확정이 아니다**. 기존 대화에는 #284 이후 프레임워크 고도화라는 순서가 있었으므로, #284에서 요구하는 *실제 Agent 동작*과 *후속 프레임워크 전면 도입*을 구분해야 한다.
+- [MCP·Skills 조사](https://app.notion.com/p/40f13d7e58b9819384edccb4954968ea)는 MCP-first·Skills-first를 설계 후보로 제시한다. 모든 도구를 새 MCP 서버에 강제하거나 범용 Skills 로더를 직접 구현하라는 확정 요구사항은 아니다.
+
+### F8. 로컬 모델과 Langfuse의 기존 상태를 보호해야 한다
+
+- [PR #280 실험 인계](https://github.com/mols3131d/hmda-data-reliability/blob/main/inbox/github-280-improve-review-ai-output-quality/17-brief-review-ai-session-handoff.md)에는 Qwen3.5 4B의 실제 단계 실행과 Langfuse Dataset/Prompt 증거가 있다. **단계 완료는 의미적 정확성 또는 인간 유용성 평가 통과가 아니다.**
+- [현행 Review AI 평가 가이드](https://github.com/mols3131d/hmda-data-reliability/blob/main/docs/development/review-ai-evaluation.md)에 따르면 프로젝트 Langfuse는 `4.15.6` 기준 native Prompt·Dataset·Experiment/trace를 사용한다. `setup` 재실행은 원격 Prompt 버전·Dataset 항목에 중복/변화를 만들 수 있으므로 기존 실행 상태를 조사하지 않고 반복하지 않는다.
+- [PR #280 계획](https://github.com/mols3131d/hmda-data-reliability/blob/main/inbox/github-280-improve-review-ai-output-quality/00-plan-review-ai-output-quality.md)에 기록된 사용자 수용값은 **RTX 3070 8GB + Qwen3.5 4B에서 16K 우선 검증, 32K 조건부 후속 시험**이다. 실제 16K/32K 성능이나 Thinking ON/OFF 개선은 검증 전까지 성공으로 취급하지 않는다.
+
 ## Change Scenarios
 
 | 대표 변경 | 주된 소유 | 선행 계약 / 결합 조건 | 각 변경의 검증 |
@@ -72,6 +88,19 @@ tags:
 | C. 네 논리 영역 중심 재설계 | 장기적 책임 경계·확장성 개선 가능 | 대량 import 변경과 과도한 추상화 위험 |
 
 **권장:** B로 공유 계약과 안전한 접점을 안정화하고, 실제 독립 변경 근거가 있는 부분만 C를 채택한다. 목표 PR은 코드·계약·테스트까지 **선택된 최종 구조로 리팩터링 완료**하는 것이며, 문서 준비만으로 완료 처리하지 않는다.
+
+## Design Context Recovered
+
+이전 v2 설계에서 보존해야 할 의미는 다음과 같다. 이는 **구현 계약 후보**이며 정본 OpenSpec이나 실제로 존재하는 모델 클래스를 뜻하지 않는다.
+
+| 개념 | 보존할 역할 | 권위 |
+| --- | --- | --- |
+| `TaskEnvelope` | 목표·발급 주체/수신자·허용 도구·범위·예산·snapshot 참조 | AI 위임 작업 owner |
+| `InvestigationResult` | 근거 연결 주장, 대립 가설, 미확정 사항, 실제 도구 호출 기록 | AI Investigation |
+| `ActionProposal` / `ExecutionReceipt` | 조치 요청은 승인 아님. 실행 사실과 전후 상태의 정본 receipt는 **실행 도메인**이 소유 | Recovery 등 실제 실행 owner |
+| `ReportEnvelope` | 인간/상위 모델 대상 facts·hypotheses·actions·blocked/unknown·추가 요청 분리 | AI Execution/Reporting |
+
+Coordinator·Investigator·Verifier·Executor·Reporter는 도메인/서비스를 늘리는 명령이 아니라 **필요에 따라 조합할 수 있는 역할**이다. 단일 Agent + 도구로 먼저 검증하고, 병렬 독립 업무에서 성능 이점이 입증될 때만 분리한다. 자세한 작업별 설계·검증 게이트는 [계획서](01-plan-reliability-agentic-complete-refactor.md)가 소유한다.
 
 ## Unresolved Decisions
 
