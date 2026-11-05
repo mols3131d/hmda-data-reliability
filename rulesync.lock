@@ -3,14 +3,14 @@
   "sources": {
     "mols3131d/mols-agent-assets": {
       "requestedRef": "main",
-      "resolvedRef": "e2861bf53d57aca11de1b6629ab01ae56c6bedff",
-      "resolvedAt": "2026-09-24T06:41:22.366Z",
+      "resolvedRef": "0390e4dc714b762fb7e173bcbc3ec71db436453f",
+      "resolvedAt": "2026-11-05T11:42:03.015Z",
       "skills": {
         "mols-agent-asset-find": {
-          "integrity": "sha256-0894496b554b42aae1e0284e5a47b1fa8a3d5b6bfa3026cd412c45daf0381420"
+          "integrity": "sha256-4c409ebc900adf04d6db6c053b14256e3f8427cd631ab73f4333bc17e1abe1a2"
         },
         "mols-agent-asset": {
-          "integrity": "sha256-ba10320d7fadba56e9619c4336d3d6adb57c52fcd2f2a45b8347ffe5d8b84d59"
+          "integrity": "sha256-c95e805777264c3cb5c8687dc0e4499d939fa005d205ab56622dd4276b1ce427"
         },
         "mols-ci-design": {
           "integrity": "sha256-d1e45b38bab766af738f50b2828ce615eacf2ec4d63b5c8cd9b83b31344161b5"
@@ -31,7 +31,7 @@
           "integrity": "sha256-af62134c63221d4f34da41d3ead4f2fe7559887e7615b7a3bec92831731cfa5d"
         },
         "mols-documentation": {
-          "integrity": "sha256-1f7ec4eb7ee2c3597e0fda64c6a224e58e0cf1bb3c4be33c53e5a5cae3dff8dc"
+          "integrity": "sha256-f111a389bc9273a95416c05318698560b29f216281d972eab654d8c511b7cca7"
         },
         "mols-loops": {
           "integrity": "sha256-f3f3de0ae4d899fe029748440d537b2a0624074e238a575dce7565916efa5c9f"
@@ -76,20 +76,22 @@
         "mols-openspec-customize",
         "mols-tach",
         "mols-text-optimizer"
-      ]
+      ],
+      "skillsPath": "src/rulesync/.rulesync/skills"
     },
     "dietrichgebert/ponytail": {
       "requestedRef": "main",
-      "resolvedRef": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
-      "resolvedAt": "2026-09-24T05:48:34.919Z",
+      "resolvedRef": "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846",
+      "resolvedAt": "2026-11-05T11:42:03.040Z",
       "skills": {
         "ponytail": {
-          "integrity": "sha256-388ec42c9551f47d12555b1723b1af67b8fe18a8afbea0a8db96cfb870eb3803"
+          "integrity": "sha256-b40d655883ea462755ae12373b59833fce20ba256bc06b0bc4e08dc59ba2ca5d"
         }
       },
       "skillSelection": [
         "ponytail"
-      ]
+      ],
+      "skillsPath": "skills"
     }
   }
 }
