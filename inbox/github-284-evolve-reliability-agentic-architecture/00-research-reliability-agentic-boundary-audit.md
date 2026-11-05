@@ -26,43 +26,43 @@ tags:
 
 ## Findings
 
-### F1. Deterministic Reliability는 유지해야 할 기반이다
+### F1. Preserve Deterministic Reliability
 
 [`reliability` 정본 가이드](https://github.com/mols3131d/hmda-data-reliability/blob/main/docs/domains/reliability.md)는 profile, incident detection, evidence, dbt impact, remediation draft, recovery, replay/evaluation을 담당한다. [`data_operations/incident_lifecycle.py`](https://github.com/mols3131d/hmda-data-reliability/blob/main/src/hmda_reliability/data_operations/incident_lifecycle.py)가 탐지·영향 분석·초안 작성을 조합한다.
 
 기존 [`reliability/remediation/workflow.py`](https://github.com/mols3131d/hmda-data-reliability/blob/main/src/hmda_reliability/reliability/remediation/workflow.py)의 LangGraph는 `triage → rca → plan`이라는 고정된 결정론적 처리에 사용된다. LLM 기반 자율 조사 루프가 아니므로 별도로 비용 대비 가치를 검토해야 한다. 단순화하더라도 `RemediationDraft` 계약과 결과 의미는 보존해야 한다.
 
-### F2. Review AI는 아직 도구 호출 에이전트가 아니다
+### F2. Current Review AI Is Not a Tool-Using Agent
 
 [`review_ai/staged/service.py`](https://github.com/mols3131d/hmda-data-reliability/blob/main/src/hmda_reliability/review_ai/staged/service.py)는 제한된 세 단계의 텍스트를 수집하고 코드로 결과를 조립한다. 입력·provenance 보존과 실행 예산은 이미 존재하지만, 실제 근거 도구를 선택해 호출하고 조사 결과에 따라 다음 단계를 결정하는 동적 실행을 제공하는 것으로 확인되지 않는다.
 
 [`reliability-agentic-review` Spec](https://github.com/mols3131d/hmda-data-reliability/blob/main/openspec/specs/reliability-agentic-review/spec.md)은 `null_spike` 제한, 불변 입력, evidence linkage, 단계별 응답과 미승인 복구 불가를 규정한다. 신규 capability를 도입한다면 정본 Spec 변경 또는 추가가 선행되어야 한다.
 
-### F3. 기존 Runtime AI는 도메인 정책을 소유하지 않는다
+### F3. Keep Domain Policy Out of Runtime AI
 
 [`runtime_ai`](https://github.com/mols3131d/hmda-data-reliability/blob/main/docs/domains/runtime-ai.md)는 provider-neutral 호출, timeout, retry, usage와 오류 경계를 담당한다. 조사 정책·Agent Task 상태·권한 판단을 단순히 provider adapter로 옮기면 책임이 혼합된다.
 
-### F4. Recovery와 Approval의 권위는 한 곳에 유지해야 한다
+### F4. Preserve Recovery and Approval Authority
 
 현재 `reliability/remediation/`은 제안 초안 생성, `reliability/recovery/`는 승인·실행 경계를 담당한다. 목표 논리 영역을 `reliability.remediation`이라고 명명하더라도 현재 `remediation`의 물리적 구현과 Recovery를 무조건 합치는 것은 잘못된 출발점이다. AI는 권한 있는 공개 실행 경계만 호출할 수 있고 승인·상태 재검증을 생략하지 않는다.
 
-### F5. 다중 코딩 에이전트와 제품 내부 Multi-Agent는 다르다
+### F5. Distinguish Development and Product Agents
 
 [Software Architecture for Multi-Agent Development](https://github.com/mols3131d/mols-agent-assets/blob/main/catalog/patterns/software-engineering/multi-agent-development-architecture.md)의 평가 대상은 여러 **개발 에이전트**가 동일한 소프트웨어를 변경할 때의 책임·공유 의미·조합 비용이다. 제품 내부에서 investigator/worker/reporter를 분리했다고 이 패턴에 부합하는 것은 아니다.
 
 [Notion 패턴 적합성 보고서](https://app.notion.com/p/40f13d7e58b9810bae96f9ea42d80d80)는 v2가 방향에는 부합하지만 W1~W4 병렬성 과대평가와 W8에 집중된 늦은 통합 검증을 지적했다.
 
-### F6. 기존 Review와 새 Agent는 서로 다른 계약이 필요하다
+### F6. Separate Legacy Review and Agent Contracts
 
 [현행 Agentic Review Spec](https://github.com/mols3131d/hmda-data-reliability/blob/main/openspec/specs/reliability-agentic-review/spec.md)은 고정 3단계·`null_spike`·텍스트 모드·**no tools**를 요구한다. Tool Calling을 기존 entry point에 조용히 추가하면 계약 위반이다. 기존 baseline을 보존한 신규 capability/entry point를 우선 검토하고, 기존 API·CLI의 제거 또는 대체는 명시적 OpenSpec 전환과 소비자 검증에 따른다.
 
-### F7. 외부 진행 작업과 기술 채택 시점이 결합된다
+### F7. Coordinate Dependencies and Adoption Timing
 
 - [PR #285](https://github.com/mols3131d/hmda-data-reliability/pull/285)는 `code-flow-map`, `mols-project-task-command-design`, `mols-dev-env-bootstrap-design` 도입과 bootstrap/명령 개선을 진행 중이다. 이번 PR의 스크립트·도구 설정·라우팅 변경과 수정 파일이 겹칠 수 있으며 #285의 잠금·생성 산출물을 수동 수정해서는 안 된다. **#285 완료가 #284의 전역 선행조건은 아니며**, 실제 공유 파일·명령 변경에 대해서만 병합/재기반화 순서를 정한다.
 - [Framework 기술 조사](https://app.notion.com/p/40e13d7e58b981198335f151caf1a65c)는 LangChain `create_agent` → 필요 시 Deep Agents/직접 LangGraph를 권고하지만 **채택 확정이 아니다**. 기존 대화에는 #284 이후 프레임워크 고도화라는 순서가 있었으므로, #284에서 요구하는 *실제 Agent 동작*과 *후속 프레임워크 전면 도입*을 구분해야 한다.
 - [MCP·Skills 조사](https://app.notion.com/p/40f13d7e58b9819384edccb4954968ea)는 MCP-first·Skills-first를 설계 후보로 제시한다. 모든 도구를 새 MCP 서버에 강제하거나 범용 Skills 로더를 직접 구현하라는 확정 요구사항은 아니다.
 
-### F8. 로컬 모델과 Langfuse의 기존 상태를 보호해야 한다
+### F8. Protect Local Model and Langfuse Baselines
 
 - [PR #280 실험 인계](https://github.com/mols3131d/hmda-data-reliability/blob/main/inbox/github-280-improve-review-ai-output-quality/17-brief-review-ai-session-handoff.md)에는 Qwen3.5 4B의 실제 단계 실행과 Langfuse Dataset/Prompt 증거가 있다. **단계 완료는 의미적 정확성 또는 인간 유용성 평가 통과가 아니다.**
 - [현행 Review AI 평가 가이드](https://github.com/mols3131d/hmda-data-reliability/blob/main/docs/development/review-ai-evaluation.md)에 따르면 프로젝트 Langfuse는 `4.15.6` 기준 native Prompt·Dataset·Experiment/trace를 사용한다. `setup` 재실행은 원격 Prompt 버전·Dataset 항목에 중복/변화를 만들 수 있으므로 기존 실행 상태를 조사하지 않고 반복하지 않는다.
