@@ -156,6 +156,7 @@ def test_bootstrap_action_executes_expected_commands(
 @pytest.mark.unit
 def test_bootstrap_main_stops_on_the_first_failed_command(
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     calls: list[tuple[object, ...]] = []
     namespace = _load_bootstrap(monkeypatch, calls)
@@ -171,3 +172,47 @@ def test_bootstrap_main_stops_on_the_first_failed_command(
 
     assert main() == 17
     assert calls == [("run", ("uv", "sync", "--locked"), REPO_ROOT)]
+    assert "setup: dependencies failed (exit 17)" in capsys.readouterr().err
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("failure", [17, FileNotFoundError("missing npm")])
+def test_bootstrap_reports_partial_failure_without_running_later_steps(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    failure: int | OSError,
+) -> None:
+    namespace = _load_bootstrap(monkeypatch, [])
+    main = cast(FunctionType, namespace["main"])
+    calls: list[str] = []
+
+    def succeeded() -> int:
+        calls.append("first")
+        return 0
+
+    def failed() -> int:
+        calls.append("second")
+        if isinstance(failure, OSError):
+            raise failure
+        return failure
+
+    def not_run() -> int:
+        calls.append("third")
+        return 0
+
+    monkeypatch.setitem(
+        main.__globals__,
+        "_steps",
+        lambda _action: [("first", succeeded), ("second", failed), ("third", not_run)],
+    )
+    monkeypatch.setattr(sys, "argv", [str(BOOTSTRAP_SCRIPT), "update"])
+
+    assert main() == (2 if isinstance(failure, OSError) else failure)
+    assert calls == ["first", "second"]
+    error = capsys.readouterr().err
+    assert "update: second" in error
+    if isinstance(failure, OSError):
+        assert "missing npm" in error
+        assert "Traceback" not in error
+    else:
+        assert "Earlier changes are preserved" in error
