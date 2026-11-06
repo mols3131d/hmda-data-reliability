@@ -35,12 +35,12 @@ def test_tach_configuration_covers_source_and_only_forbids_canonical_edges() -> 
     assert "forbid_circular_dependencies" not in config
     assert all("depends_on" not in module for module in modules.values())
     assert modules["hmda_reliability.reliability"]["cannot_depend_on"] == [
-        "hmda_reliability.review_ai",
+        "hmda_reliability.reliability_ai",
         "hmda_reliability.runtime_ai",
     ]
     assert modules["hmda_reliability.runtime_ai"]["cannot_depend_on"] == [
         "hmda_reliability.reliability",
-        "hmda_reliability.review_ai",
+        "hmda_reliability.reliability_ai",
     ]
 
 
@@ -58,7 +58,7 @@ def test_tach_rejects_forbidden_runtime_dependency(tmp_path: Path) -> None:
         / "_tach_negative_control.py"
     )
     negative_control.write_text(
-        "from hmda_reliability import review_ai\n",
+        "from hmda_reliability import reliability_ai\n",
         encoding="utf-8",
     )
 
@@ -73,4 +73,4 @@ def test_tach_rejects_forbidden_runtime_dependency(tmp_path: Path) -> None:
     assert result.returncode != 0
     output = result.stdout + result.stderr
     assert "hmda_reliability.reliability" in output
-    assert "hmda_reliability.review_ai" in output
+    assert "hmda_reliability.reliability_ai" in output

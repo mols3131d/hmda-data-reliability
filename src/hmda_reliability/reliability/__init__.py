@@ -1,5 +1,33 @@
-"""읽기 전용 분석, 승인된 복구, 평가를 위한 공개 신뢰성 API 모듈."""
+"""읽기 전용 상태 평가, 승인된 복구 및 조치 초안, 평가를 위한 공개 모듈."""
 
+from hmda_reliability.reliability import (
+    assessment,
+    contracts,
+    evaluation,
+    remediation,
+)
+from hmda_reliability.reliability.assessment import (
+    BasicIncidentDetector,
+    DbtImpactAnalyzer,
+    DetectionRequest,
+    DetectionResult,
+    DetectionThresholds,
+    DuckDBProfileSnapshotBuilder,
+    DuckDBTableMetadataEvidenceBuilder,
+    ImpactAnalysisRequest,
+    ImpactAnalysisResult,
+    ProfileSnapshotRequest,
+    QualityGateError,
+    TableMetadataEvidenceRequest,
+    analyze_dbt_impact,
+    calculate_schema_hash,
+    create_profile_snapshot,
+    create_table_metadata_evidence,
+    create_table_state_identity,
+    detect_basic_incidents,
+    evaluate_profile_quality_gate,
+    reject_missing_partition_discriminator,
+)
 from hmda_reliability.reliability.contracts import (
     Approval,
     ApprovalStatus,
@@ -20,13 +48,6 @@ from hmda_reliability.reliability.contracts import (
     TableStateIdentity,
     can_execute_risky_action,
     validate_contract,
-)
-from hmda_reliability.reliability.detection import (
-    BasicIncidentDetector,
-    DetectionRequest,
-    DetectionResult,
-    DetectionThresholds,
-    detect_basic_incidents,
 )
 from hmda_reliability.reliability.errors import (
     ApprovalGateError,
@@ -56,47 +77,22 @@ from hmda_reliability.reliability.evaluation import (
     render_evaluation_report_markdown,
     write_evaluation_report,
 )
-from hmda_reliability.reliability.impact import (
-    DbtImpactAnalyzer,
-    ImpactAnalysisRequest,
-    ImpactAnalysisResult,
-    analyze_dbt_impact,
-)
-from hmda_reliability.reliability.metadata import (
-    DuckDBTableMetadataEvidenceBuilder,
-    TableMetadataEvidenceRequest,
-    create_table_metadata_evidence,
-)
-from hmda_reliability.reliability.profiling import (
-    DuckDBProfileSnapshotBuilder,
-    ProfileSnapshotRequest,
-    calculate_schema_hash,
-    create_profile_snapshot,
-    create_table_state_identity,
-)
-from hmda_reliability.reliability.quality_gate import (
-    QualityGateError,
-    evaluate_profile_quality_gate,
-    reject_missing_partition_discriminator,
-)
-from hmda_reliability.reliability.recovery import (
+from hmda_reliability.reliability.remediation import (
     ApprovalBackfillValidator,
     ApprovedBackfillRequest,
     ApprovedSchemaRecoveryRequest,
     BackfillValidationResult,
+    RemediationDraft,
+    RemediationDraftRequest,
+    RemediationState,
     SchemaRecoveryCandidateEvidence,
     SchemaRecoveryValidationResult,
     StagedSchemaRecoveryCandidate,
+    create_remediation_draft,
     execute_approved_backfill,
     execute_approved_schema_recovery,
     preflight_schema_recovery_candidate,
     stage_approved_schema_recovery_candidate,
-)
-from hmda_reliability.reliability.remediation import (
-    RemediationDraft,
-    RemediationDraftRequest,
-    RemediationState,
-    create_remediation_draft,
 )
 
 __all__ = [
@@ -156,10 +152,12 @@ __all__ = [
     "TableStateIdentityError",
     "VolumeDropVerticalSliceResult",
     "analyze_dbt_impact",
+    "assessment",
     "build_evaluation_report",
     "build_recovery_evaluation_case",
     "calculate_schema_hash",
     "can_execute_risky_action",
+    "contracts",
     "create_profile_snapshot",
     "create_remediation_draft",
     "create_table_metadata_evidence",
@@ -170,10 +168,12 @@ __all__ = [
     "evaluate_profile_quality_gate",
     "evaluate_schema_drift_vertical_slice",
     "evaluate_volume_drop_vertical_slice",
+    "evaluation",
     "execute_approved_backfill",
     "execute_approved_schema_recovery",
     "preflight_schema_recovery_candidate",
     "reject_missing_partition_discriminator",
+    "remediation",
     "render_evaluation_report_markdown",
     "stage_approved_schema_recovery_candidate",
     "validate_contract",

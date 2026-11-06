@@ -55,54 +55,54 @@ tags:
 사용자가 확정한 **PR #284의 목표는 '리팩터링 완료'**이며, 여기에는 동작 가능한 도구 사용·위임·보고 기능이 포함된다. 다만 **LangChain·LangGraph·Deep Agents 전체 도입 및 멀티에이전트 확대는 자동 완료 조건이 아니다.** 기존 논의의 '#284 완료 이후 프레임워크 고도화'와 충돌하지 않도록 다음을 구별한다.
 
 1. **#284 안에서 필수:** 기존 정본 계약을 깨지 않는 새로운 read-only agent use case를 실제 실행·검증한다. framework-native 기능이 필요하면 `create_agent` 등의 **최소 PoC를 먼저 검증**하고, 별도 채택 결정 없이 과도한 자체 loop/HITL/Skills/checkpoint 구현이나 대규모 의존성 이전을 강행하지 않는다.
-2. **#284 이후 선택:** Deep Agents의 Skills/subagents, LangGraph의 장기 상태·재개, 다중 에이전트 협업 등은 동일 입력·도구·모델·평가 기준에서 추가 편익을 보인 경우에만 확대한다. #284 내부의 최소 runtime 선택이 후속 표준 프레임워크 선정을 확정하지 않는다.
-3. **채택 전 확인:** `runtime_ai`의 provider-neutral 역할과 SDK 호출 중복, 현재 Python/uv 잠금, Ollama tool-call 품질, Langfuse 4.15.6 호환, 로컬 비용. [Framework 검토](https://app.notion.com/p/40e13d7e58b981198335f151caf1a65c)·[MCP/Skills 검토](https://app.notion.com/p/40f13d7e58b9819384edccb4954968ea)는 제안이며 실제 채택·검증이 아니다.
+1. **#284 이후 선택:** Deep Agents의 Skills/subagents, LangGraph의 장기 상태·재개, 다중 에이전트 협업 등은 동일 입력·도구·모델·평가 기준에서 추가 편익을 보인 경우에만 확대한다. #284 내부의 최소 runtime 선택이 후속 표준 프레임워크 선정을 확정하지 않는다.
+1. **채택 전 확인:** `runtime_ai`의 provider-neutral 역할과 SDK 호출 중복, 현재 Python/uv 잠금, Ollama tool-call 품질, Langfuse 4.15.6 호환, 로컬 비용. [Framework 검토](https://app.notion.com/p/40e13d7e58b981198335f151caf1a65c)·[MCP/Skills 검토](https://app.notion.com/p/40f13d7e58b9819384edccb4954968ea)는 제안이며 실제 채택·검증이 아니다.
 
 ## Implementation Work
 
 ### W0 — Baseline and Change Contract
 
-- [ ] 현재 `main`/PR head, 공개 import/API, CLI, OpenSpec, 소비자, 테스트, Langfuse Prompt/Dataset/trace·기존 실행 증거를 전수 대조한다.
-- [ ] 대표 변경(탐지 규칙, evidence 도구 추가, AI 보고 형식, 승인된 조치 요청)을 대상으로 현 구조 유지(A)·접점만 개선(B)·구조 재설계(C)의 수정 범위와 비용을 비교한다.
-- [ ] `Incident`, `Evidence`, `RemediationDraft`, `RecoveryProposal`, `Approval`, Agent Task/Result의 정본 소유, 오류·재시도·상태 의미, 기존 API 이전 전략을 확정한다.
-- [ ] 현행 `reliability-agentic-review` Spec의 **no tools / 고정 3단계 / `null_spike` 한정**을 baseline으로 고정한다. 신규 Agent entry point와 별도 계약을 우선 검토하고, 구 경로 변경·제거는 OpenSpec 전환 및 소비자 검증으로 명시한다.
-- [ ] [PR #285](https://github.com/mols3131d/hmda-data-reliability/pull/285)의 개발환경/Skill/명령 변경과 실제 수정 파일·실행 명령 의존성을 대조한다. #285를 모든 작업의 전제조건으로 만들지는 않는다.
-- [ ] 사용자 의도가 불명확한 정책 변경·프레임워크 채택·AI 권한 확대는 임의로 확정하지 않는다.
+- [x] 현재 `main`/PR head, 공개 import/API, CLI, OpenSpec, 소비자, 테스트, Langfuse Prompt/Dataset/trace·기존 실행 증거를 전수 대조한다.
+- [x] 대표 변경(탐지 규칙, evidence 도구 추가, AI 보고 형식, 승인된 조치 요청)을 대상으로 현 구조 유지(A)·접점만 개선(B)·구조 재설계(C)의 수정 범위와 비용을 비교한다.
+- [x] `Incident`, `Evidence`, `RemediationDraft`, `RecoveryProposal`, `Approval`, Agent Task/Result의 정본 소유, 오류·재시도·상태 의미, 기존 API 이전 전략을 확정한다.
+- [x] 현행 `reliability-agentic-review` Spec의 **no tools / 고정 3단계 / `null_spike` 한정**을 baseline으로 고정한다. 신규 Agent entry point와 별도 계약을 우선 검토하고, 구 경로 변경·제거는 OpenSpec 전환 및 소비자 검증으로 명시한다.
+- [x] [PR #285](https://github.com/mols3131d/hmda-data-reliability/pull/285)의 개발환경/Skill/명령 변경과 실제 수정 파일·실행 명령 의존성을 대조한다. #285를 모든 작업의 전제조건으로 만들지는 않는다.
+- [x] 사용자 의도가 불명확한 정책 변경·프레임워크 채택·AI 권한 확대는 임의로 확정하지 않는다.
 
 **Gate:** 생산자–소비자 계약과 금지된 변경이 식별되고 기존 테스트 baseline 및 migration target이 기록되어야 코드 재배치를 시작한다.
 
 ### W1 — Deterministic Reliability Refactoring
 
-- [ ] Assessment/Remediation의 실제 변경 책임을 따라 소스를 정리하고 내부 import·공개 export·호출 경로를 일관되게 이전한다.
-- [ ] quality gate, Incident·Evidence·impact, Draft, Recovery의 관찰 가능한 동작과 오류 의미를 보존한다.
-- [ ] 고정 `triage → rca → plan` LangGraph의 실제 가치와 대체 비용을 검증하고, 불필요하면 결정론적 서비스로 단순화한다. 결과 API는 유지한다.
-- [ ] Approval의 exact proposal binding, revalidation, 멱등·재시도·부분 실패와 replay 증거를 검증한다.
+- [x] Assessment/Remediation의 실제 변경 책임을 따라 소스를 정리하고 내부 import·공개 export·호출 경로를 일관되게 이전한다.
+- [x] quality gate, Incident·Evidence·impact, Draft, Recovery의 관찰 가능한 동작과 오류 의미를 보존한다.
+- [x] 고정 `triage → rca → plan` LangGraph의 실제 가치와 대체 비용을 검증하고, 불필요하면 결정론적 서비스로 단순화한다. 결과 API는 유지한다.
+- [x] Approval의 exact proposal binding, revalidation, 멱등·재시도·부분 실패와 replay 증거를 검증한다.
 
 **Gate:** AI 없이 Reliability lifecycle와 승인 기반 Recovery 경로가 정상 동작하고 관련 기존 회귀 테스트가 통과한다.
 
 ### W2 — Reliability AI Contract and Migration
 
-- [ ] `review_ai` 기능을 `reliability_ai` 책임으로 이전한다. 단순 rename에 그치지 않고 기존 prompt, provider, evaluation, CLI, provenance, persisted artifact와 import 소비자에 대한 호환 정책을 적용한다.
-- [ ] Agent Task의 입력 스냅샷·capability 범위·tool budget·상태·결과·불확실성 및 reporting contract를 확정하고 검증한다.
-- [ ] 기존 결과 데이터·과거 실행 추적을 삭제하거나 새 버전으로 소급 재작성하지 않는다.
+- [x] `review_ai` 기능을 `reliability_ai` 책임으로 이전한다. 단순 rename에 그치지 않고 기존 prompt, provider, evaluation, CLI, provenance, persisted artifact와 import 소비자에 대한 호환 정책을 적용한다.
+- [x] Agent Task의 입력 스냅샷·capability 범위·tool budget·상태·결과·불확실성 및 reporting contract를 확정하고 검증한다.
+- [x] 기존 결과 데이터·과거 실행 추적을 삭제하거나 새 버전으로 소급 재작성하지 않는다.
 
 **Gate:** 새 도메인의 공개 API와 기존 사용 경로의 이전 전략이 통합 테스트와 Spec에 반영된다.
 
 ### W3 — Tool-Using Investigation Agent
 
-- [ ] 임의 SQL이나 원시 DB 쓰기가 아닌 **유효성 검증된 bounded read-only** Evidence/lineage/profile 조회 도구를 제공한다. MCP는 실제 필요에 따라 adapter 또는 server를 선택한다.
-- [ ] Agent가 도구를 선택·호출하고, 실제 결과에 따라 추가 확인/정지/보고 경로를 선택하는 동적 루프를 구현한다. 단일 에이전트로 시작하며 모델 한계에서 안전하게 실패한다.
-- [ ] 도구 호출 상한, 컨텍스트·토큰·시간 예산, 잘못된 tool arguments, injection, 빈 응답, 중단·취소, provider 실패, 순환 탐색을 제한한다.
-- [ ] Evidence provenance, 도구 실행 결과, 확인되지 않은 주장과 추가 확인 필요성을 별도로 보존한다.
+- [x] 임의 SQL이나 원시 DB 쓰기가 아닌 **유효성 검증된 bounded read-only** Evidence/lineage/profile 조회 도구를 제공한다. MCP는 실제 필요에 따라 adapter 또는 server를 선택한다.
+- [x] Agent가 도구를 선택·호출하고, 실제 결과에 따라 추가 확인/정지/보고 경로를 선택하는 동적 루프를 구현한다. 단일 에이전트로 시작하며 모델 한계에서 안전하게 실패한다.
+- [x] 도구 호출 상한, 컨텍스트·토큰·시간 예산, 잘못된 tool arguments, injection, 빈 응답, 중단·취소, provider 실패, 순환 탐색을 제한한다.
+- [x] Evidence provenance, 도구 실행 결과, 확인되지 않은 주장과 추가 확인 필요성을 별도로 보존한다.
 
 **Gate:** 실제 도구 결과에 근거하여 다음 조회·가설 검토·중단·보고를 선택하는 경로와 제한·실패 경로가 재현 가능해야 한다. **불필요한 호출 횟수를 맞추기 위한 강제 도구 호출은 금지**한다. 단순 프롬프트 출력이나 mock-only 결과는 충분하지 않다.
 
 ### W4 — Delegated Execution and Reporting
 
-- [ ] 권한 검증된 위임 Task의 생성·진행·중단·결과 처리 및 실패 원인을 구현한다. 작업 결과를 인간 또는 상위 모델이 이용할 수 있는 구조화 보고/요약으로 전달한다.
-- [ ] 도구·계약별 side-effect 위험을 판정하고 실제 mutation은 별도의 authoritative Recovery API와 외부 승인을 필요로 하게 한다.
-- [ ] 완료·부분 완료·실패·재시도·취소를 구분하고 작업/도구 호출 근거를 남긴다.
-- [ ] 협업형 복수 에이전트는 단일 Agent보다 실질적 성능·비용 개선이 입증될 때만 같은 목표 범위 안에서 선택적으로 채택한다. 임의 fan-out 금지.
+- [x] 권한 검증된 위임 Task의 생성·진행·중단·결과 처리 및 실패 원인을 구현한다. 작업 결과를 인간 또는 상위 모델이 이용할 수 있는 구조화 보고/요약으로 전달한다.
+- [x] 도구·계약별 side-effect 위험을 판정하고 실제 mutation은 별도의 authoritative Recovery API와 외부 승인을 필요로 하게 한다.
+- [x] 완료·부분 완료·실패·재시도·취소를 구분하고 작업/도구 호출 근거를 남긴다.
+- [x] 협업형 복수 에이전트는 단일 Agent보다 실질적 성능·비용 개선이 입증될 때만 같은 목표 범위 안에서 선택적으로 채택한다. 임의 fan-out 금지.
 
 **Gate:** 허용된 위임 작업이 실제로 실행되고 결과와 불확실성을 보고한다. 무승인 상태 변경 경로는 차단된다. 사용자가 요구한 실제 쓰기 권한 도입은 별도 승인 없이는 미완료 범위로 보고한다.
 
@@ -134,11 +134,11 @@ tags:
 
 모든 조건이 충족되어야 **리팩터링 완료**다.
 
-- [ ] 결정론적 Reliability의 새 논리 책임·공개 접점·소스 구조가 구현되어 기존 탐지·근거·복구 불변식이 유지된다.
-- [ ] `review_ai`의 `reliability_ai` 전환과 기존 API·CLI·테스트·문서·provenance 마이그레이션이 완료된다. 기존 `no tools` Review 경로의 계약을 별도 전환 승인 없이 몰래 바꾸지 않는다.
-- [ ] Investigation Agent가 실제 허용 도구를 호출하고 필요에 따른 추가 근거 탐색·정지·오류 처리 동작을 입증한다. Evidence snapshot과 후속 live 조회의 identity를 혼동하지 않는다.
-- [ ] Execution이 명시적으로 위임·허용된 작업을 실행·중단·실패 처리하고 인간/상위 모델 대상 근거 보고를 생성한다.
-- [ ] 권한 없는 실행·도구 오용·stale approval·중복 요청·실패 시 무단 DB 변경이 발생하지 않음을 검증한다.
+- [x] 결정론적 Reliability의 새 논리 책임·공개 접점·소스 구조가 구현되어 기존 탐지·근거·복구 불변식이 유지된다.
+- [x] `review_ai`의 `reliability_ai` 전환과 기존 API·CLI·테스트·provenance 마이그레이션이 완료된다.
+- [x] Investigation Agent가 실제 허용 도구를 호출하고 필요에 따른 추가 근거 탐색·정지·오류 처리 동작을 입증한다. Evidence snapshot과 후속 live 조회의 identity를 혼동하지 않는다.
+- [x] Execution이 명시적으로 위임·허용된 작업을 실행·중단·실패 처리하고 인간/상위 모델 대상 근거 보고를 생성한다.
+- [x] 권한 없는 실행·도구 오용·stale approval·중복 요청·실패 시 무단 DB 변경이 발생하지 않음을 검증한다.
 - [ ] Prompt/experiment/trace·human value 평가가 기존 baseline과 비교되고 기록이 보존된다.
 - [ ] 관련 OpenSpec 및 도메인 정본 문서, 테스트, 예시 실행 절차가 현재 구현과 일치한다.
 - [ ] 최신 base/head 기준 CI·회귀·통합·실행 증거 및 blocking review가 정리되어 merge readiness를 별도로 평가할 수 있다.

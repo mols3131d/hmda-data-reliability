@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializerFunctionWrapHandler,
+    StringConstraints,
+    model_serializer,
+    model_validator,
+)
+
+NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class RuntimeAIContract(BaseModel):
@@ -18,14 +28,90 @@ class RuntimeAIContract(BaseModel):
     model_config = ConfigDict(allow_inf_nan=False, extra="forbid", frozen=True)
 
 
+class ToolFunctionDefinition(RuntimeAIContract):
+    """모델에 노출할 읽기 전용 도구 함수 스키마 정의."""
+
+    name: NonEmptyStr
+    description: NonEmptyStr
+    parameters: dict[str, Any]
+
+
+class ToolDefinition(RuntimeAIContract):
+    """OpenAI 호환 function tool 정의."""
+
+    type: Literal["function"] = "function"
+    function: ToolFunctionDefinition
+
+
+class ToolCallFunction(RuntimeAIContract):
+    """모델이 요청한 단일 도구 함수 호출 정보."""
+
+    name: NonEmptyStr
+    arguments: str = ""
+
+
+class ToolCall(RuntimeAIContract):
+    """모델이 반환한 단일 도구 호출 계약."""
+
+    id: NonEmptyStr
+    type: Literal["function"] = "function"
+    function: ToolCallFunction
+
+
 class ChatMessage(RuntimeAIContract):
     """단일 채팅 메시지 표현.
 
-    LLM 제공자에게 전달되는 역할(`role`)과 비어있지 않은 내용(`content`)을 소유한다.
+    LLM 제공자에게 전달되는 역할(`role`), 내용(`content`) 및 선택적 도구 호출
+    메타데이터(`tool_calls`, `tool_call_id`, `name`)를 소유한다.
     """
 
-    role: Literal["system", "user", "assistant"]
-    content: str = Field(min_length=1)
+    role: Literal["system", "user", "assistant", "tool"]
+    content: str = ""
+    tool_calls: tuple[ToolCall, ...] | None = None
+    tool_call_id: NonEmptyStr | None = None
+    name: NonEmptyStr | None = None
+
+    @model_validator(mode="after")
+    def validate_message_by_role(self) -> ChatMessage:
+        has_content = len(self.content) > 0
+        has_tool_calls = bool(self.tool_calls)
+        if self.role == "tool":
+            if self.tool_call_id is None:
+                msg = "tool messages require tool_call_id"
+                raise ValueError(msg)
+            if not has_content:
+                msg = "tool messages require non-empty content"
+                raise ValueError(msg)
+            if self.tool_calls is not None:
+                msg = "tool messages cannot declare tool_calls"
+                raise ValueError(msg)
+            return self
+        if self.role == "assistant":
+            if not has_content and not has_tool_calls:
+                msg = "assistant messages require non-empty content or tool_calls"
+                raise ValueError(msg)
+            if self.tool_call_id is not None:
+                msg = "assistant messages cannot declare tool_call_id"
+                raise ValueError(msg)
+            return self
+        if not has_content:
+            msg = f"{self.role} messages require non-empty content"
+            raise ValueError(msg)
+        if self.tool_calls is not None or self.tool_call_id is not None:
+            msg = f"{self.role} messages cannot declare tool_calls or tool_call_id"
+            raise ValueError(msg)
+        return self
+
+    @model_serializer(mode="wrap")
+    def _serialize_wire_message(
+        self,
+        handler: SerializerFunctionWrapHandler,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = handler(self)
+        for optional_key in ("tool_calls", "tool_call_id", "name"):
+            if payload.get(optional_key) is None:
+                payload.pop(optional_key, None)
+        return payload
 
 
 class ProviderUsage(RuntimeAIContract):
@@ -48,18 +134,15 @@ class ProviderResponseMetadata(RuntimeAIContract):
         ]
         | None
     ) = None
-    content_state: Literal["text", "content_missing", "choices_empty"]
+    content_state: Literal["text", "tool_calls", "content_missing", "choices_empty"]
     content_bytes: int = Field(ge=0)
 
 
 class TransportResponse(RuntimeAIContract):
-    """전송(Transport) 계층에서 어댑터 계층으로 전달되는 1회 시도 응답 DTO.
-
-    응답 본문 텍스트(`content`), 토큰 사용량(`usage`), 그리고 upstream 헤더나
-    OpenAI 클라이언트로부터 캡처된 고유 요청 추적 ID(`trace_id`)를 보관한다.
-    """
+    """전송(Transport) 계층에서 어댑터 계층으로 전달되는 1회 시도 응답 DTO."""
 
     content: str
+    tool_calls: tuple[ToolCall, ...] = ()
     usage: ProviderUsage | None = None
     trace_id: str | None = None
     response_metadata: ProviderResponseMetadata | None = None
@@ -77,8 +160,8 @@ class TransportTimeouts(RuntimeAIContract):
 class ChatCompletionRequest(RuntimeAIContract):
     """OpenAI 호환 wire 규격에 맞춘 단일 Chat Completion 요청 페이로드 계약.
 
-    스트리밍과 도구 호출(function call/tools)을 비활성화한다. 기본 JSON 응답은
-    `response_format`으로 요청하고 일반 텍스트 응답에서는 이 설정을 생략한다.
+    스트리밍을 비활성화하고, 기본 JSON 응답은 `response_format`으로 요청하며
+    일반 텍스트나 도구 호출 요청에서는 선택적으로 생략한다.
     """
 
     messages: tuple[ChatMessage, ...]
@@ -87,7 +170,16 @@ class ChatCompletionRequest(RuntimeAIContract):
     max_tokens: int = Field(gt=0)
     response_format: dict[str, str] | None
     stream: bool
+    tools: tuple[ToolDefinition, ...] | None = None
+    tool_choice: Literal["auto", "none"] | None = None
     timeout: TransportTimeouts | None = None
+
+    @model_validator(mode="after")
+    def validate_wire_profile(self) -> ChatCompletionRequest:
+        if self.tools is not None and len(self.tools) == 0:
+            msg = "tools must not be empty when provided"
+            raise ValueError(msg)
+        return self
 
     def wire_payload(self) -> dict[str, object]:
         """OpenAI SDK completions 또는 HTTP wire 호환 dict를 생성한다."""
@@ -99,6 +191,10 @@ class ChatCompletionRequest(RuntimeAIContract):
         }
         if self.response_format is not None:
             payload["response_format"] = dict(self.response_format)
+        if self.tools is not None:
+            payload["tools"] = [tool.model_dump(mode="json") for tool in self.tools]
+        if self.tool_choice is not None:
+            payload["tool_choice"] = self.tool_choice
         payload["stream"] = self.stream
         return payload
 
@@ -106,12 +202,13 @@ class ChatCompletionRequest(RuntimeAIContract):
 class ProviderResponse(RuntimeAIContract):
     """어댑터 호출이 성공했을 때 반환되는 최종 provider 응답 계약.
 
-    단일 완료 텍스트(`content`) 외에 바운디드 재시도 루프에서 기록된
-    총 시도 횟수(`attempt_count`), 누적 소요 시간(`latency_ms`), 토큰 사용량(`usage`),
-    그리고 요청 추적 식별자(`trace_id`)를 포함한다.
+    단일 완료 텍스트(`content`) 및 도구 호출(`tool_calls`) 외에 바운디드 재시도
+    루프에서 기록된 총 시도 횟수(`attempt_count`), 누적 소요 시간(`latency_ms`),
+    토큰 사용량(`usage`), 그리고 요청 추적 식별자(`trace_id`)를 포함한다.
     """
 
     content: str
+    tool_calls: tuple[ToolCall, ...] = ()
     attempt_count: int = Field(ge=1)
     latency_ms: float = Field(ge=0)
     usage: ProviderUsage | None = None

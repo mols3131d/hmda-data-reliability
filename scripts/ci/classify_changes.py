@@ -146,7 +146,7 @@ def classify(paths: list[str]) -> Scope:
             "tach.toml",
             "src/*.py",
             "tests/scripts/test_tach*.py",
-            "tests/review_ai/test_dependency_boundaries.py",
+            "tests/reliability_ai/test_dependency_boundaries.py",
         ):
             scope.tach = True
 
