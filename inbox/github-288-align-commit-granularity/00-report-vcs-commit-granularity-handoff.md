@@ -12,7 +12,7 @@ tags:
 
 ## Status And Goal
 
-**현재는 구현 인계 준비 단계다.** 정본 정책은 아직 수정하지 않았다. PR의 최종 목표는 갱신된 패턴을 검토해 필요한 기준을 `commit.md`에 **구현하고 현재 revision 기준 검증까지 완료**하는 것이다. 보고서 작성만으로 완료 처리하지 않는다.
+**이 문서는 구현 전 인계 시점의 기록이다.** 아래 분석과 수용 기준은 당시 기준으로 보존한다. 이후 구현·검증 결과는 [PR #288](https://github.com/mols3131d/hmda-data-reliability/pull/288)과 정본 `commit.md`에서 확인한다.
 
 - 작업 PR: [#288](https://github.com/mols3131d/hmda-data-reliability/pull/288) (구현 완료가 최종 목표).
 - 작업 브랜치: `agent/docs/align-commit-granularity` (`main` 기준 `7efb332c2efd78f77ee724440e28285ebb3ee55f`).
