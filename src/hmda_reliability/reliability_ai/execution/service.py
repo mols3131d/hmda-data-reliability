@@ -57,13 +57,74 @@ def execute_delegated_task(
     - 허가되지 않은 도구 호출이나 작업(`allowed_actions`)은 시도되지 않는다.
     - 실행된 복구 작업에 대해서만 공식 `ExecutionReceipt`가 발행된다.
     """
+    incident = review_input.incident
+    conflicts: list[str] = []
+    snapshot_refs = {evidence.evidence_id for evidence in review_input.evidence}
+    for evidence in review_input.evidence:
+        for key in ("snapshot_id", "baseline_snapshot_id", "current_snapshot_id"):
+            reference = evidence.payload.get(key)
+            if isinstance(reference, str):
+                snapshot_refs.add(reference)
+    if not set(task.snapshot_refs).issubset(snapshot_refs):
+        conflicts.append("task snapshot_refs conflict with the incident input")
+    if (
+        approved_backfill_request is not None
+        and approved_schema_recovery_request is not None
+    ):
+        conflicts.append("only one approved recovery request may be supplied")
+    for action, request in (
+        ("execute_approved_backfill", approved_backfill_request),
+        ("execute_approved_schema_recovery", approved_schema_recovery_request),
+    ):
+        if request is None:
+            continue
+        if action not in task.allowed_actions:
+            conflicts.append(f"{action} is not in task.allowed_actions")
+            continue
+        partition = (
+            request.proposal.source_year
+            if isinstance(request, ApprovedBackfillRequest)
+            else request.proposal.observation_partition
+        )
+        proposal = request.proposal
+        if (
+            proposal.incident_id != incident.incident_id
+            or request.approval.incident_id != incident.incident_id
+            or proposal.table_name != incident.asset_name
+            or str(partition) != incident.partition
+            or request.profile_request.asset_name != incident.asset_name
+            or request.profile_request.table_name != incident.asset_name
+            or str(request.profile_request.partition) != incident.partition
+        ):
+            conflicts.append(f"{action} target conflicts with the incident input")
+        if isinstance(request, ApprovedBackfillRequest) and (
+            request.table_name != incident.asset_name
+            or str(request.source_year) != incident.partition
+            or request.proposal.incident_type != incident.incident_type
+        ):
+            conflicts.append("backfill scope conflicts with the incident input")
+    if conflicts:
+        return ReportEnvelope(
+            report_id=f"rep-{uuid.uuid4().hex}",
+            task_id=task.task_id,
+            recipient="supervisor" if task.recipient == "supervisor" else "human",
+            status="blocked",
+            task=task,
+            facts=review_input.deterministic_facts.model_dump(mode="json"),
+            blocked_or_unknown=tuple(conflicts),
+            evidence_refs=tuple(incident.evidence_refs),
+            next_requests=(
+                "사건 입력과 일치하는 단일 복구 요청 및 snapshot 참조 필요",
+            ),
+        )
     configured = ai_settings or ReliabilityAISettings()
-    bounded_settings = ReliabilityAISettings(
-        max_prompt_bytes=configured.max_prompt_bytes,
-        max_tool_calls=min(configured.max_tool_calls, task.max_tool_calls),
-        workflow_budget_seconds=min(
-            configured.workflow_budget_seconds, task.workflow_budget_seconds
-        ),
+    bounded_settings = configured.model_copy(
+        update={
+            "max_tool_calls": min(configured.max_tool_calls, task.max_tool_calls),
+            "workflow_budget_seconds": min(
+                configured.workflow_budget_seconds, task.workflow_budget_seconds
+            ),
+        }
     )
     investigation_result = investigate_incident(
         review_input,
@@ -82,6 +143,7 @@ def execute_delegated_task(
             task_id=task.task_id,
             recipient="supervisor" if task.recipient == "supervisor" else "human",
             status="failed",
+            task=task,
             investigation=investigation_result,
             facts=investigation_result.facts,
             hypotheses=investigation_result.hypotheses,
@@ -271,6 +333,7 @@ def execute_delegated_task(
         task_id=task.task_id,
         recipient=recipient_type,
         status=report_status,
+        task=task,
         investigation=investigation_result,
         facts=investigation_result.facts,
         hypotheses=investigation_result.hypotheses,

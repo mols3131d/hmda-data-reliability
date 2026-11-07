@@ -24,6 +24,9 @@ class ReliabilityAISettings(ReliabilityContract):
     max_prompt_bytes: int = Field(default=65_536, gt=0, le=1_048_576)
     max_tool_calls: int = Field(default=5, ge=1, le=20)
     workflow_budget_seconds: float = Field(default=60.0, gt=0, le=3600.0)
+    prompt_name: str = Field(default="hmda-reliability-ai/investigation", min_length=1)
+    prompt_label: str = Field(default="production", min_length=1)
+    prompt_version: int | None = Field(default=None, ge=1)
 
     def sanitized_configuration(self) -> dict[str, int | float]:
         """호출 evidence 기록을 위한 정제된 review 설정을 반환한다.
@@ -36,6 +39,3 @@ class ReliabilityAISettings(ReliabilityContract):
             "max_tool_calls": self.max_tool_calls,
             "workflow_budget_seconds": self.workflow_budget_seconds,
         }
-
-
-ReviewAISettings = ReliabilityAISettings

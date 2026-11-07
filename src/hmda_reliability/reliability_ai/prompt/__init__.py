@@ -11,6 +11,7 @@ from hmda_reliability.reliability.contracts.base import ReliabilityContract
 from hmda_reliability.reliability_ai.context import (
     BoundedReviewContext,
     build_bounded_review_context,
+    project_remote_output,
 )
 from hmda_reliability.reliability_ai.contracts import AgenticReviewInput
 from hmda_reliability.runtime_ai.contracts import ChatMessage
@@ -70,40 +71,43 @@ def build_canonical_input(
         for evidence_id in draft["evidence_refs"]
         if evidence_id in selected_evidence_ids
     ]
-    return {
-        "incident": _pick(
-            incident,
-            "incident_id",
-            "incident_type",
-            "asset_name",
-            "partition",
-            "status",
-            "severity",
-        ),
-        "evidence": [
-            item for item in sorted(evidence, key=lambda item: str(item["evidence_id"]))
-        ],
-        "draft": _pick(
-            draft,
-            "incident_id",
-            "incident_type",
-            "asset_name",
-            "partition",
-            "rca_summary",
-            "evidence_refs",
-            "affected_assets",
-            "recommended_actions",
-            "dbt_test_suggestions",
-            "backfill_actions",
-            "validation_actions",
-            "requires_approval",
-        ),
-        "deterministic_facts": {
-            "target_column": review_input.target_column,
-            **facts,
-        },
-        "review_context": active_context.model_dump(mode="json"),
-    }
+    return project_remote_output(
+        {
+            "incident": _pick(
+                incident,
+                "incident_id",
+                "incident_type",
+                "asset_name",
+                "partition",
+                "status",
+                "severity",
+            ),
+            "evidence": [
+                item
+                for item in sorted(evidence, key=lambda item: str(item["evidence_id"]))
+            ],
+            "draft": _pick(
+                draft,
+                "incident_id",
+                "incident_type",
+                "asset_name",
+                "partition",
+                "rca_summary",
+                "evidence_refs",
+                "affected_assets",
+                "recommended_actions",
+                "dbt_test_suggestions",
+                "backfill_actions",
+                "validation_actions",
+                "requires_approval",
+            ),
+            "deterministic_facts": {
+                "target_column": review_input.target_column,
+                **facts,
+            },
+            "review_context": active_context.model_dump(mode="json"),
+        }
+    )
 
 
 def canonical_json_bytes(value: object) -> bytes:

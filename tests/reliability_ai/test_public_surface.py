@@ -27,7 +27,6 @@ def test_reliability_ai_exports_only_consumer_surface() -> None:
         "NullSpikeFacts",
         "ReliabilityAISettings",
         "ReportEnvelope",
-        "ReviewAISettings",
         "TaskEnvelope",
         "ToolCallRecord",
         "ToolRegistry",

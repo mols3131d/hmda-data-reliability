@@ -2,16 +2,26 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import duckdb
 import pytest
 
+from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
+from hmda_reliability.hmda_data import (
+    load_hmda_loans_partition,
+    partition_content_identity,
+)
 from hmda_reliability.reliability import (
+    Approval,
+    ApprovalStatus,
     ApprovedBackfillRequest,
     ApprovedSchemaRecoveryRequest,
     BackfillValidationResult,
+    ProfileSnapshotRequest,
+    RecoveryProposal,
 )
 from hmda_reliability.reliability.errors import (
     BackfillValidationError,
@@ -57,8 +67,93 @@ class ScriptedTransport:
     def create(self, request: ChatCompletionRequest) -> TransportResponse:
         self.requests.append(request)
         if not self.responses:
-            return TransportResponse(content="{}")
+            return TransportResponse(
+                content='{"findings":[],"hypotheses":[],"uncertainties":[]}'
+            )
         return self.responses.pop(0)
+
+
+def _bound_request(
+    material: NullSpikeReviewMaterial, *, schema: bool = False
+) -> MagicMock:
+    incident = material.detection.incident
+    request = MagicMock(
+        spec=ApprovedSchemaRecoveryRequest if schema else ApprovedBackfillRequest
+    )
+    request.approval = MagicMock(
+        approval_id="schema-approval" if schema else "backfill-approval",
+        incident_id=incident.incident_id,
+    )
+    request.proposal = MagicMock(
+        proposal_id="schema-proposal" if schema else "backfill-proposal",
+        incident_id=incident.incident_id,
+        incident_type=incident.incident_type,
+        table_name=incident.asset_name,
+        source_year=int(incident.partition),
+        observation_partition=incident.partition,
+    )
+    request.table_name = incident.asset_name
+    request.source_year = int(incident.partition)
+    request.profile_request = MagicMock(
+        asset_name=incident.asset_name,
+        table_name=incident.asset_name,
+        partition=incident.partition,
+    )
+    return request
+
+
+@pytest.mark.parametrize(
+    "conflict", ["incident", "target", "partition", "both", "snapshot"]
+)
+def test_delegated_task_rejects_conflicting_inputs_before_investigation(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    conflict: str,
+) -> None:
+    from hmda_reliability.reliability_ai.execution import service
+
+    material = null_spike_review_material
+    request = _bound_request(material)
+    if conflict == "incident":
+        request.proposal.incident_id = "other-incident"
+    elif conflict == "target":
+        request.proposal.table_name = "raw.other"
+    elif conflict == "partition":
+        request.proposal.source_year = 2024
+    investigate = MagicMock()
+    recover = MagicMock()
+    monkeypatch.setattr(service, "investigate_incident", investigate)
+    monkeypatch.setattr(service, "execute_approved_backfill", recover)
+    report = execute_delegated_task(
+        TaskEnvelope(
+            task_id="conflict",
+            requester="human",
+            recipient="human",
+            goal="recover",
+            allowed_actions=("execute_approved_backfill",),
+            snapshot_refs=("other-snapshot",) if conflict == "snapshot" else (),
+        ),
+        AgenticReviewInput(
+            incident=material.detection.incident,
+            evidence=[material.detection.evidence],
+            draft=material.draft,
+            project_revision="binding-regression",
+        ),
+        settings=_settings(),
+        connection=object(),
+        approved_backfill_request=request,
+        approved_schema_recovery_request=(
+            _bound_request(material, schema=True) if conflict == "both" else None
+        ),
+        artifact_root=tmp_path,
+    )
+    assert report.status == "blocked"
+    assert report.investigation is None
+    assert report.blocked_or_unknown
+    assert not report.execution_receipts
+    investigate.assert_not_called()
+    recover.assert_not_called()
 
 
 def test_delegated_task_unapproved_remediation_generates_action_proposal(
@@ -89,7 +184,11 @@ def test_delegated_task_unapproved_remediation_generates_action_proposal(
     )
 
     transport = ScriptedTransport(
-        [TransportResponse(content='{"facts": {"rule": "null_spike"}}')]
+        [
+            TransportResponse(
+                content='{"findings":[],"hypotheses":[],"uncertainties":[]}'
+            )
+        ]
     )
     adapter = OpenAICompatibleAdapter(_settings(), transport=transport)
 
@@ -168,7 +267,7 @@ def test_delegated_task_preserves_backfill_validation_outcome(
     )
 
     # Fake approved request
-    mock_request = MagicMock()
+    mock_request = _bound_request(material)
     mock_request.approval.approval_id = "app_123"
     mock_request.proposal.incident_id = material.detection.incident.incident_id
     mock_request.proposal.proposal_id = "proposal_123"
@@ -294,7 +393,7 @@ def test_provider_failure_is_not_reported_as_completed(
         provider=provider,
         artifact_root=tmp_path,
         connection=object(),
-        approved_backfill_request=MagicMock(spec=ApprovedBackfillRequest),
+        approved_backfill_request=_bound_request(material),
     )
     assert report.status == "failed"
     assert report.investigation is not None
@@ -318,9 +417,9 @@ def test_post_mutation_failure_preserves_reconciliation_evidence(
     from hmda_reliability.reliability_ai.execution import service
 
     material = null_spike_review_material
-    request = MagicMock(spec=ApprovedBackfillRequest)
-    request.approval = MagicMock(approval_id="approved")
-    request.proposal = MagicMock(proposal_id="proposal")
+    request = _bound_request(material)
+    request.approval.approval_id = "approved"
+    request.proposal.proposal_id = "proposal"
 
     def fail_recovery(*args: object) -> None:
         raise BackfillValidationError(
@@ -374,9 +473,7 @@ def test_schema_recovery_failure_preserves_stage_and_mutation_state(
     from hmda_reliability.reliability_ai.execution import service
 
     material = null_spike_review_material
-    request = MagicMock(spec=ApprovedSchemaRecoveryRequest)
-    request.approval = MagicMock(approval_id="schema-approval")
-    request.proposal = MagicMock(proposal_id="schema-proposal")
+    request = _bound_request(material, schema=True)
 
     def fail_recovery(*args: object) -> None:
         raise SchemaRecoveryValidationError(
@@ -426,9 +523,7 @@ def test_schema_preflight_failure_preserves_known_or_unknown_mutation_state(
     from hmda_reliability.reliability_ai.execution import service
 
     material = null_spike_review_material
-    request = MagicMock(spec=ApprovedSchemaRecoveryRequest)
-    request.approval = MagicMock(approval_id="schema-approval")
-    request.proposal = MagicMock(proposal_id="schema-proposal")
+    request = _bound_request(material, schema=True)
     context = {"candidate_database_path": str(tmp_path / "missing.duckdb")}
 
     def fail_recovery(*args: object) -> None:
@@ -482,9 +577,7 @@ def test_schema_recovery_report_preserves_profile_evidence(
     from hmda_reliability.reliability_ai.execution import service
 
     material = null_spike_review_material
-    request = MagicMock(spec=ApprovedSchemaRecoveryRequest)
-    request.approval = MagicMock(approval_id="schema-approval")
-    request.proposal = MagicMock(proposal_id="schema-proposal")
+    request = _bound_request(material, schema=True)
     result = MagicMock(
         validation_passed=True,
         mutation_state="already_restored",
@@ -529,9 +622,7 @@ def test_backfill_database_error_preserves_unknown_state_and_approval(
     from hmda_reliability.reliability_ai.execution import service
 
     material = null_spike_review_material
-    request = MagicMock(spec=ApprovedBackfillRequest)
-    request.approval = MagicMock(approval_id="backfill-approval")
-    request.proposal = MagicMock(proposal_id="backfill-proposal")
+    request = _bound_request(material)
 
     def fail_recovery(*args: object) -> None:
         raise duckdb.IOException("final identity read failed")
@@ -565,3 +656,134 @@ def test_backfill_database_error_preserves_unknown_state_and_approval(
     assert receipt.proposal_id == "backfill-proposal"
     assert receipt.failure_code == "IOException"
     assert any("실제 상태" in request for request in report.next_requests)
+
+
+@pytest.mark.integration
+def test_delegated_task_reports_real_backfill_and_domain_approval_block(
+    null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
+) -> None:
+    material = null_spike_review_material
+    incident = material.detection.incident
+    source = tmp_path / "year_2025.csv"
+    source.write_text(
+        "activity_year,loan_purpose,action_taken,loan_amount,income,state_code,county_code\n"
+        "2025,1,1,100000,120,CA,06001\n",
+        encoding="utf-8",
+    )
+    with DuckDBConnectionManager() as candidate:
+        load_hmda_loans_partition(candidate, [source], 2025)
+        expected = partition_content_identity(candidate, source_year=2025)
+    with DuckDBConnectionManager() as connection:
+        before = partition_content_identity(connection, source_year=2025)
+        proposal = RecoveryProposal(
+            proposal_id="real-backfill",
+            incident_id=incident.incident_id,
+            incident_type="null_spike",
+            table_name=incident.asset_name,
+            source_year=2025,
+            candidate_identity=expected,
+            approved_before_identity=before,
+            expected_after_identity=expected,
+            validation_evidence_refs=("candidate-content", "candidate-dbt"),
+            dbt_projection_id="dbt:candidate",
+            target_actions=("overwrite_partition", "rerun_profile_snapshot"),
+        )
+        observed_at = datetime(2026, 11, 7, tzinfo=UTC)
+        approval = Approval(
+            approval_id="real-approval",
+            incident_id=incident.incident_id,
+            status=ApprovalStatus.APPROVED,
+            requested_by="operator",
+            requested_at=observed_at,
+            approved_by="data-owner",
+            approved_at=observed_at,
+            requested_actions=proposal.target_actions,
+            recovery_proposal=proposal,
+        )
+        request = ApprovedBackfillRequest(
+            approval=approval,
+            proposal=proposal,
+            source_paths=(source,),
+            source_year=2025,
+            profile_request=ProfileSnapshotRequest(
+                asset_name=incident.asset_name,
+                table_name=incident.asset_name,
+                partition_column="source_year",
+                partition=2025,
+                profile_columns=("income",),
+                observed_at=observed_at,
+            ),
+        )
+        task = TaskEnvelope(
+            task_id="real-domain",
+            requester="operator",
+            recipient="human",
+            goal="recover approved incident",
+            allowed_actions=("execute_approved_backfill",),
+            snapshot_refs=(material.detection.evidence.evidence_id,),
+        )
+        review_input = AgenticReviewInput(
+            incident=incident,
+            evidence=[material.detection.evidence],
+            draft=material.draft,
+            project_revision="real-domain-binding",
+        )
+        for approved, expected_status in ((False, "blocked"), (True, "completed")):
+            active_request = (
+                request
+                if approved
+                else request.model_copy(
+                    update={
+                        "approval": approval.model_copy(
+                            update={"status": ApprovalStatus.PENDING}
+                        )
+                    }
+                )
+            )
+            report = execute_delegated_task(
+                task,
+                review_input,
+                settings=_settings(),
+                provider=OpenAICompatibleAdapter(
+                    _settings(), transport=ScriptedTransport([])
+                ),
+                connection=connection,
+                approved_backfill_request=active_request,
+                artifact_root=tmp_path,
+            )
+            assert report.status == expected_status
+            assert report.task == task
+            assert report.evidence_refs == tuple(incident.evidence_refs)
+            actual = partition_content_identity(connection, source_year=2025)
+            assert actual == (expected if approved else before)
+            if approved:
+                receipt = report.execution_receipts[0]
+                assert receipt.success and receipt.revalidated
+                assert receipt.details["actual_identity"] == expected.model_dump(
+                    mode="json"
+                )
+                assert receipt.approval_id == approval.approval_id
+            else:
+                assert not report.execution_receipts
+
+        connection.close()
+        failed = execute_delegated_task(
+            task,
+            review_input,
+            settings=_settings(),
+            provider=OpenAICompatibleAdapter(
+                _settings(), transport=ScriptedTransport([])
+            ),
+            connection=connection,
+            approved_backfill_request=request,
+            artifact_root=tmp_path,
+        )
+        assert failed.status == "failed"
+        assert failed.task == task
+        assert failed.evidence_refs == tuple(incident.evidence_refs)
+        receipt = failed.execution_receipts[0]
+        assert not receipt.success
+        assert receipt.mutation_state == "not_reported"
+        assert receipt.failure_code == "BackfillValidationError"
+        assert receipt.approval_id == approval.approval_id
+        assert receipt.proposal_id == proposal.proposal_id

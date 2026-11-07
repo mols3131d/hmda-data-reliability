@@ -8,6 +8,10 @@ from typing import Any, Literal
 from pydantic import Field
 
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
+from hmda_reliability.runtime_ai.contracts import (
+    ProviderResponseMetadata,
+    ProviderUsage,
+)
 
 
 class ToolCallRecord(ReliabilityContract):
@@ -54,6 +58,10 @@ class InvestigationTurnRecord(ReliabilityContract):
     tool_call_id: str | None = None
     tool_calls: tuple[dict[str, Any], ...] = Field(default_factory=tuple)
     latency_ms: float = Field(default=0.0, ge=0.0)
+    attempt_count: int | None = Field(default=None, ge=0)
+    usage: ProviderUsage | None = None
+    response_metadata: ProviderResponseMetadata | None = None
+    failure_code: str | None = None
 
 
 class InvestigationResult(ReliabilityContract):

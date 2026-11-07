@@ -17,9 +17,42 @@ from langfuse import get_client
 def main(*, argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Langfuse 합성 Dataset 등록")
     parser.add_argument("--dataset", default="hmda-reliability-ai-v1")
+    parser.add_argument("--prompts-only", action="store_true")
     args = parser.parse_args(argv)
     try:
         langfuse = get_client()
+        resources = files("hmda_reliability.reliability_ai.prompt")
+        references: list[str] = []
+        for path in (
+            "investigation.md",
+            "guidance/numeric_fidelity.md",
+            "guidance/evidence_review.md",
+            "policies/language.md",
+            "policies/advisory.md",
+        ):
+            name = "hmda-reliability-ai/components/" + path.removesuffix(".md")
+            component = langfuse.create_prompt(
+                name=name,
+                type="text",
+                prompt=resources.joinpath(path).read_text(encoding="utf-8"),
+                labels=["production"],
+            )
+            references.append(
+                f"@@@langfusePrompt:name={name}|version={component.version}@@@"
+            )
+        langfuse.create_prompt(
+            name="hmda-reliability-ai/investigation",
+            type="chat",
+            prompt=[
+                {"role": "system", "content": "\n\n".join(references)},
+                {"role": "user", "content": "{{canonical_input}}"},
+                {"type": "placeholder", "name": "history"},
+            ],
+            labels=["production"],
+        )
+        if args.prompts_only:
+            print("조사용 native Prompt를 등록했습니다.")
+            return 0
         langfuse.create_dataset(
             name=args.dataset, description="신뢰성 AI 조사 합성 Dataset"
         )

@@ -44,7 +44,7 @@ Tach의 주된 역할은 다음과 같다.
 | Python dependency와 Tach 설치 상태 | `pyproject.toml`, `uv.lock` |
 | Repository-wide tool choice와 command entrypoint | `DEVELOPMENT.md` |
 | CI 실행 조건과 검증 | `.github/workflows/**`, classifier와 관련 tests |
-| Source-level AI forbidden-import guard | `tests/review_ai/test_dependency_boundaries.py` |
+| Source-level AI forbidden-import guard | `tests/reliability_ai/test_dependency_boundaries.py` |
 
 Policy와 executable configuration이 충돌하면 `tach.toml`을 임의로 완화해 현재 code를 통과시키지 않는다. 먼저 canonical architecture와 현재 source 중 어느 쪽이 변경되어야 하는지 판단한다.
 
@@ -64,9 +64,9 @@ Source root는 `src`다. `hmda_reliability` module이 package root의 `__init__.
 
 특히 AI package의 source dependency 방향은 기존 architecture contract와 일치해야 한다.
 
-- `review_ai`는 `reliability`와 `runtime_ai`를 사용할 수 있다.
-- `reliability`는 `review_ai` 또는 `runtime_ai`에 의존하지 않는다.
-- `runtime_ai`는 `review_ai` 또는 `reliability`에 의존하지 않는다.
+- `reliability_ai`는 `reliability`와 `runtime_ai`를 사용할 수 있다.
+- `reliability`는 `reliability_ai` 또는 `runtime_ai`에 의존하지 않는다.
+- `runtime_ai`는 `reliability_ai` 또는 `reliability`에 의존하지 않는다.
 
 현재 code를 통과시키기 위해 모든 관찰된 import를 permission으로 복사하지 않는다. Canonical contract가 금지 방향만 정의한다면 Tach도 그 경계를 직접 표현하는 최소 rule을 우선한다.
 
@@ -80,7 +80,7 @@ Global circular dependency prohibition도 architecture policy다. Tach가 기능
 
 이 repository에는 `TYPE_CHECKING` 아래의 cross-domain import가 존재한다. 기본 역할 분리에서는 Tach가 runtime-oriented dependency graph를 검사하도록 `ignore_type_checking_imports = true`를 사용한다.
 
-기존 `tests/review_ai/test_dependency_boundaries.py`는 AST를 사용해 Reliability와 AI package 사이의 source-level forbidden import를 검사하며 `TYPE_CHECKING` 내부 import도 포함한다. Tach를 도입한다고 이 guard를 제거하거나 약화하지 않는다.
+기존 `tests/reliability_ai/test_dependency_boundaries.py`는 AST를 사용해 Reliability와 AI package 사이의 source-level forbidden import를 검사하며 `TYPE_CHECKING` 내부 import도 포함한다. Tach를 도입한다고 이 guard를 제거하거나 약화하지 않는다.
 
 이 역할을 변경하려면 먼저 두 검증이 보장하는 범위가 동등하거나 더 강해지는지 확인하고 관련 architecture contract, test와 이 guide를 함께 갱신한다.
 

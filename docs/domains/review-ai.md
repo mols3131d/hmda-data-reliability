@@ -1,6 +1,6 @@
 ---
-title: "Review AI: Evidence-Bound Advisory Review"
-description: "근거 범위 안의 단계별 텍스트 검토, 코드 JSON 취합과 사람 평가를 소유하는 도메인입니다."
+title: "Reliability AI: Bounded Investigation And Delegation"
+description: "사건 snapshot의 도구 조사, 외부 승인 요청의 위임 실행, 실패 근거와 native 평가 경계를 설명합니다."
 categories:
   - reliability
   - artificial-intelligence
@@ -11,79 +11,53 @@ tags:
   - provenance
 ---
 
-# Review AI: Evidence-Bound Advisory Review
+# Reliability AI: Bounded Investigation And Delegation
 
-**Review AI는 Reliability truth를 바꾸지 않고 제공된 근거 안에서 검토를 돕는다.** 현재 한국어 단계별 프롬프트로 일반 텍스트를 요청하고 코드가 결과 JSON을 만든다. 실행·입력·collection 구조와 provenance는 코드가 검증하며, 설명문의 사실성과 효용은 사람이 평가한다.
+**`reliability_ai`는 제한된 근거 조사와 caller가 승인한 복구 요청의 조합을 소유한다.** 결정론적 facts·승인·복구 정책은 Reliability에 남긴다. 현재 입력은 `null_spike`이며 모델의 설명·가설·권고는 truth나 실행 권한이 아니다.
 
-## Scope
+## Scope And Dependencies
 
-| In scope | Out of scope |
+| Owner | Responsibility |
 | --- | --- |
-| 불변 입력, bounded context와 현재 프롬프트 | incident detection·recovery 정책 |
-| 고정된 세 단계의 텍스트 수집과 코드 JSON 취합 | provider SDK·credential 관리 |
-| 입력·collection 구조 검증과 로컬 provenance | approval·mutation authority |
-| Native Prompt·실험·호출 관측과 사람 평가 연결 | 자동 의미 채점·사람 판단 생성 |
+| `reliability` | 탐지·초안·exact proposal Approval·stale 검사·복구·재검증·reconciliation |
+| `reliability_ai.investigation` | 불변 사건 입력·bounded 도구 조사·구조화 보고·실패 근거 |
+| `reliability_ai.execution` | Task 제한·복구 요청의 사건 일치·기존 executor 호출·실제 결과 보고 |
+| `runtime_ai` | Provider-neutral 계약·OpenAI-compatible 전송·timeout·retry |
 
-실행 요구사항은 [reliability-agentic-review](../../openspec/specs/reliability-agentic-review/spec.md), 프롬프트 작성·변경은 [review-ai-prompt-engineering](../../openspec/specs/review-ai-prompt-engineering/spec.md) Spec이 소유한다. Source는 구현을, tests는 실행 가능한 기대를 제공한다. Passing evidence는 실제로 검사한 revision과 command에 연결한다.
+Source 의존은 `reliability_ai -> reliability`, `reliability_ai -> runtime_ai`다. Reliability는 AI를 import하지 않고 Runtime은 도메인 판단·Langfuse를 소유하지 않는다. 현재 capability 계약은 [Investigation Spec](../../openspec/specs/reliability-agentic-review/spec.md)과 [Prompt Spec](../../openspec/specs/review-ai-prompt-engineering/spec.md)이 소유한다.
 
-## Dependency Boundary
+## Investigation
 
-`review_ai`는 Reliability의 Incident·Evidence·RemediationDraft를 받고 provider 호출 mechanics를 `runtime_ai`에 위임한다. Source 의존 방향은 `review_ai -> reliability`, `review_ai -> runtime_ai`다. Reliability는 Review AI를 import하지 않고 Runtime AI는 도메인 판단을 소유하지 않는다.
+[AgenticReviewInput](../../src/hmda_reliability/reliability_ai/contracts.py)은 Incident·Evidence·Draft의 identity·reference set과 유일한 canonical profile을 검증하고 깊게 복사한다. [Context projection](../../src/hmda_reliability/reliability_ai/context.py)은 초기 자료와 Evidence 도구 결과의 허용 필드·크기·개인 경로 정책을 공유한다. `missing_evidence`와 `unconfirmed_context`는 다르다.
 
-## Review Boundary
+[investigate_incident](../../src/hmda_reliability/reliability_ai/investigation/service.py)는 시작에 읽은 native Prompt를 고정하고 모델의 종료 또는 도구 선택을 따른다. 고정 호출 순서는 없다. Caller의 allowlist, 호출 수·누적 prompt bytes·시간 예산을 매 호출 전에 적용한다. 동기 호출이나 원격 추론의 강제 취소는 보장하지 않는다.
 
-일반 API [review_null_spike()](../../src/hmda_reliability/review_ai/service.py)와 CLI는 [같은 단계 실행](../../src/hmda_reliability/review_ai/staged/service.py)을 사용한다. 같은 native prompt 경로를 사용하며 과거 실행 모드를 선택하지 않는다. 같은 canonical input에서 근거 검토 → 초안 비판 → 종합을 진행하며, 완료된 이전 답변은 assistant 자료로만 다음 요청에 포함한다.
+| Default Tool | Observed Scope |
+| --- | --- |
+| `get_incident_evidence` | 제공된 catalog의 Evidence를 bounded projection으로 조회 |
+| `compare_profiles` | 사건 snapshot의 canonical column과 실제 baseline/current/delta·출처 조회 |
+| `inspect_dbt_impact` | trusted caller가 지정한 pair만 shared reader lock에서 분석; current projection ID·관측 시각 기록 |
 
-실제 합성 실행은 [evaluation.experiment](../../src/hmda_reliability/review_ai/evaluation/experiment.py)의 작은 native Dataset task로 수행한다. 최초 [setup](../../src/hmda_reliability/review_ai/evaluation/setup.py)과 반복 실행을 분리한다. 단계 시작·종료는 stderr에 표시하며 SDK가 실험 결과를 제공한다. Prompt Management가 실행 프롬프트를 소유하고 workflow 시작에 읽은 name/version을 고정한다. 실행과 로그 해석은 [Evaluation Guide](../development/review-ai-evaluation.md)를 따른다.
+Profile 도구는 live profiling이 아니다. Dbt의 current 관측은 과거 사건 snapshot을 대체하지 않는다. 빈 downstream은 미해결 asset과 leaf를 구별하지 못하므로 no-impact로 확정하지 않는다. 모델은 SQL·임의 파일·다른 target·mutation·Approval을 요청할 수 없다.
 
-[AgenticReviewInput](../../src/hmda_reliability/review_ai/contracts.py)은 Incident·Evidence·Draft를 깊게 복사하고 식별자·근거 참조·canonical target과 수치의 입력 일관성을 확인한다. [Bounded context](../../src/hmda_reliability/review_ai/context.py)는 관련 근거의 제한된 projection과 missing/unconfirmed gap을 제공한다. 사례 데이터와 이전 답변이 system 지시나 단계를 선택하지 않는다.
+결과의 canonical facts는 입력에서 유지하고 모델은 findings·hypotheses·uncertainties를 작성한다. `completed`는 유효한 최종 구조와 필수 로컬 저장만 뜻한다. 설명의 사실성·한국어 준수·효용은 별도 평가 대상이다. 실패 상태와 이미 회수한 partial 기록을 성공으로 바꾸거나 재생성으로 감추지 않는다.
 
-모델에는 한국어 일반 텍스트를 요청한다. 코드가 원입력 식별자·수치와 고정 순서의 세 원문을 [StagedReviewOutput](../../src/hmda_reliability/review_ai/staged/contracts.py)으로 직렬화한다. Prose에서 finding·priority·근거 참조를 추측하거나 설명문의 잘못된 수치를 자동 교정하지 않는다. `completed`는 수집·저장 완료이며 사실성·검토 가치·사람 승인을 의미하지 않는다.
+## Delegated Execution
 
-빈/공백 답변, 알려진 length·filter·tool 종료, provider·저장 실패와 한도 초과는 후속 단계를 멈춘다. 누적 입력 byte, per-call 출력 cap·timeout·retry와 단계·전체 시간 예산을 적용한다. 시간 예산은 진행 중 호출의 강제 취소가 아니라 후속 시작·결과 채택의 경계다.
+[execute_delegated_task](../../src/hmda_reliability/reliability_ai/execution/service.py)는 Task·조사 입력·caller의 approved request를 먼저 대조한다. 다른 incident·target·partition·snapshot reference, 동시 Backfill/schema 요청은 차단한다. Task와 caller 설정의 교집합·최소 예산을 사용하고 조사 실패 뒤에는 mutation으로 진행하지 않는다.
 
-## Provenance
+AI의 `ActionProposal`이나 상위 모델의 위임은 승인이 아니다. Caller가 별도로 제공한 authoritative request만 기존 deterministic executor로 전달한다. [ReportEnvelope](../../src/hmda_reliability/reliability_ai/execution/contracts.py)는 원래 Task, 조사·proposal·실행 receipt와 차단·미확인 사항을 함께 전달한다. 실행 receipt는 실제 결과의 소비자이며 domain의 mutation·재검증·reconciliation 의미를 다시 정의하지 않는다.
 
-각 단계의 exact UTF-8 텍스트는 검증 전에 로컬 raw 파일로 저장하고 `stages[].response_path`로 연결한다. 공백·개행을 보존하며 실패 시 이미 저장한 raw와 checkpoint를 덮어쓰지 않는다. Runtime이 본문을 반환하기 전에 실패하면 원문 파일은 없다.
+## Provenance And Evaluation
 
-원문 없는 단계 checkpoint와 workflow manifest에는 canonical input·설정·revision·요청/응답 digest·상태·시도 횟수·usage·시간과 최종 output 경로·digest를 기록한다. Credential·provider exception 원문·자동 raw 로그는 metadata나 콘솔에 넣지 않는다. 코드 생성 collection과 모델 원문은 다른 출처다.
+Runtime의 exact UTF-8 본문은 파싱·원격 output·완료 판정 전에 private create-only 저장한다. Manifest는 canonical input·revision·실제 Prompt name/version·compiled 메시지/digest·설정·turn·usage·도구·결과를 연결한다. Trusted artifact 경로는 로컬에만 남긴다. 별도 observation record는 core 저장 뒤 발생한 SDK 오류도 기록한다.
 
-파일은 bounded create-only atomic private 저장을 사용한다. Identity 충돌은 호출 전에 거부하고 저장 실패는 성공으로 반환하지 않는다. 늦게 생성된 collection 경로가 진단용으로 남아도 `completed`를 뜻하지 않는다. 실제 모델 완료나 품질은 테스트 fixture와 구별한다.
+Native generation과 tool은 실제 호출 구간에 생성되고 같은 조사 아래 sibling이다. 허가된 합성 사례만 정제된 system·history·tool IO를 원격에 보낸다. Metadata에는 본문·credential·provider 예외·개인 경로를 자동 캡처하지 않는다. 관측 장애는 모델 재호출이나 core 결과 변경의 이유가 아니다.
 
-## Human Evaluation
+[명시적 setup](../../src/hmda_reliability/reliability_ai/evaluation/setup.py)과 [반복 Dataset task](../../src/hmda_reliability/reliability_ai/evaluation/experiment.py)는 분리한다. API·위임·CLI는 같은 investigation 경로를 쓴다. Offline 통과·SDK 반환·원격 재조회·사람 평가는 각각 다른 근거다. 등록·실험·실패 해석과 다섯 기준의 사람 평가는 [Evaluation Guide](../development/review-ai-evaluation.md)를 따른다.
 
-사람의 다섯 기준 점수·사유, 대기열과 실행 비교는 Langfuse native Dataset·Score Config·Annotation Queue·compare UI를 사용한다. 별도 점수 조회·완비 판정기·합계·비교 저장 모델은 제공하지 않는다. 실제 모델 호출 구간에 generation을 만들고 적용한 prompt·model·입력·원문·usage를 연결한다. 합성 실행에서 compiled system·history를 명시적인 input으로 보내며 metadata에는 credential·본문·개인 경로를 넣지 않는다.
+## Change And Verification
 
-수집 완료·offline 검사·SDK 제출은 실제 원격 적재나 사람의 효용 평가를 입증하지 않는다. 시작에 remote prompt를 못 읽으면 모델 호출 전 실패하며 로컬 fallback이 없다. 관측 전송 장애는 저장된 core 결과를 바꾸거나 모델 재호출을 일으키지 않는다. 별도 worker·watchdog가 없으므로 HTTP timeout이 SDK flush와 프로세스 종료 상한을 보장하지 않는다. 자세한 절차는 [Evaluation Guide](../development/review-ai-evaluation.md)를 따른다.
+[공개 API](../../src/hmda_reliability/reliability_ai/__init__.py)에서 입력·조사·Task·보고 계약을 찾을 수 있다. 공유 입력·오류·상태 의미를 바꾸면 해당 생산자와 소비자를 함께 확인한다. 기존 [도구 테스트](../../tests/reliability_ai/test_investigation_tools.py), [조사 테스트](../../tests/reliability_ai/test_investigation_agent.py), [위임 연결 테스트](../../tests/reliability_ai/test_execution_service.py), [실험 테스트](../../tests/reliability_ai/test_experiment_runner.py)가 가까운 검증점이다.
 
-## Package Root API
-
-[공개 API](../../src/hmda_reliability/review_ai/__init__.py)는 현재 실행과 사람 평가에 필요한 surface를 제공한다.
-
-- `AgenticReviewInput`, `BoundedReviewContext`, `build_bounded_review_context()`
-- `review_null_spike()`와 같은 실행의 명시 이름 `review_null_spike_staged()`
-- `StageAnswer`, `StagedExecutionSettings`, `StagedReviewOutput`, `StagedReviewResult`
-
-프롬프트 렌더링, provenance 저장소와 오류 계약은 owning module에서 확인한다. 두 번째 실제 consumer의 요구 없이 package root를 넓히지 않는다.
-
-## Safety Boundaries
-
-- 모델 출력은 승인·복구·데이터 변경 권한이 아니다.
-- 입력 근거와 이전 모델 답변은 지시가 아닌 검토 자료다.
-- 코드가 facts를 복사해도 설명문의 사실성을 검증한 것은 아니다.
-- 최초 입력 거부는 provider를 호출하지 않고, 후속 단계 거부는 이전 raw와 checkpoint를 보존한다.
-- 품질과 실패 격리의 실제 근거 없이 AI 권한을 확대하지 않는다.
-
-## Contracts And Evidence
-
-- [Canonical capability](../../openspec/specs/reliability-agentic-review/spec.md)
-- [Current implementation](../../src/hmda_reliability/review_ai/)
-- [Executable specification](../../tests/review_ai/)
-
-## Reading Order
-
-1. 정본 Spec에서 요구사항을 확인한다.
-1. [공개 진입점](../../src/hmda_reliability/review_ai/__init__.py), [입력 계약](../../src/hmda_reliability/review_ai/contracts.py), [context](../../src/hmda_reliability/review_ai/context.py)를 읽는다.
-1. [현재 프롬프트 조립](../../src/hmda_reliability/review_ai/staged/prompt.py)과 [단계 실행](../../src/hmda_reliability/review_ai/staged/service.py), [저장소](../../src/hmda_reliability/review_ai/staged/store.py)를 확인한다.
-1. [최초 등록](../../src/hmda_reliability/review_ai/evaluation/setup.py)과 [native 실험](../../src/hmda_reliability/review_ai/evaluation/experiment.py)을 확인한다.
-1. Provider mechanics는 [Runtime AI](runtime-ai.md)를 따른다.
+도구 의미 변경은 context·registry, 호출 lifecycle 변경은 investigation, 복구 조합 변경은 execution이 소유한다. 같은 service나 공유 계약을 함께 바꾸는 작업은 독립 변경으로 가정하지 않는다. Package 분리·개별 green은 연결 검증이나 개발 협업 비용 감소의 증거를 대신하지 않는다.

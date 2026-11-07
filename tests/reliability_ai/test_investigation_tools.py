@@ -68,6 +68,39 @@ def test_tool_registry_handles_missing_evidence() -> None:
     assert payload["found"] is False
 
 
+def test_evidence_tool_uses_bounded_payload_projection() -> None:
+    evidence = _evidence().model_copy(
+        update={
+            "payload": {
+                "rule": "null_spike",
+                "column": "income",
+                "delta": 0.2,
+                "credentials": "private-evidence-value",
+                "local_path": "/home/private/raw.csv",
+            }
+        }
+    )
+    registry = ToolRegistry(evidence_catalog={evidence.evidence_id: evidence})
+    record, output = registry.execute(
+        ToolCall(
+            id="bounded-evidence",
+            function=ToolCallFunction(
+                name="get_incident_evidence",
+                arguments=json.dumps({"evidence_id": evidence.evidence_id}),
+            ),
+        )
+    )
+
+    assert record.status == "success"
+    assert json.loads(output)["payload"] == {
+        "rule": "null_spike",
+        "column": "income",
+        "delta": 0.2,
+    }
+    assert "private-evidence-value" not in output
+    assert "/home/private" not in output
+
+
 def test_tool_registry_does_not_fabricate_unconfigured_observations() -> None:
     registry = ToolRegistry()
     assert [tool.function.name for tool in registry.definitions] == [
@@ -106,9 +139,19 @@ def test_profile_tool_compares_bound_incident_snapshot(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
     material = null_spike_review_material
+    evidence = material.detection.evidence.model_copy(
+        update={
+            "payload": {
+                **material.detection.evidence.payload,
+                "snapshot_id": "incident-profile",
+                "baseline_snapshot_id": "baseline-profile",
+                "current_snapshot_id": "current-profile",
+            }
+        }
+    )
     review_input = AgenticReviewInput(
         incident=material.detection.incident,
-        evidence=[material.detection.evidence],
+        evidence=[evidence],
         draft=material.draft,
         project_revision="profile-tool-test",
     )
@@ -129,6 +172,9 @@ def test_profile_tool_compares_bound_incident_snapshot(
     assert (
         payload["provenance"]["evidence_id"] == material.detection.evidence.evidence_id
     )
+    assert payload["provenance"]["snapshot_id"] == "incident-profile"
+    assert payload["provenance"]["baseline_snapshot_id"] == "baseline-profile"
+    assert payload["provenance"]["current_snapshot_id"] == "current-profile"
     rejected, _ = registry.execute(
         ToolCall(
             id="unrelated-column",
@@ -138,6 +184,37 @@ def test_profile_tool_compares_bound_incident_snapshot(
         )
     )
     assert rejected.status == "error"
+
+
+def test_profile_snapshot_reference_cannot_bypass_response_bound(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    material = null_spike_review_material
+    evidence = material.detection.evidence.model_copy(
+        update={
+            "payload": {
+                **material.detection.evidence.payload,
+                "snapshot_id": "snapshot-" + "x" * 2048,
+            }
+        }
+    )
+    registry = ToolRegistry.from_review_input(
+        AgenticReviewInput(
+            incident=material.detection.incident,
+            evidence=[evidence],
+            draft=material.draft,
+            project_revision="bounded-snapshot-reference",
+        )
+    )
+    record, output = registry.execute(
+        ToolCall(
+            id="oversized-snapshot",
+            function=ToolCallFunction(name="compare_profiles", arguments="{}"),
+        )
+    )
+    assert record.status == "error"
+    assert json.loads(output)["error"] == "tool_execution_failed"
+    assert "snapshot-" not in output
 
 
 def test_tool_registry_blocks_disallowed_configured_tool() -> None:
@@ -208,6 +285,8 @@ def test_dbt_tool_analyzes_bound_artifact_projection(
     assert payload["provenance"]["projection_id"] == artifact_projection_id(
         manifest_path, run_results_path
     )
+    assert str(tmp_path) not in output
+    assert payload["impact_status"] == "downstream_observed"
     rejected, _ = registry.execute(
         call.model_copy(
             update={
@@ -222,6 +301,38 @@ def test_dbt_tool_analyzes_bound_artifact_projection(
     missing, _ = registry.execute(call)
     assert missing.status == "error"
     assert "downstream_assets" not in missing.result
+    assert str(tmp_path) not in json.dumps(missing.result)
+
+
+def test_dbt_empty_downstream_does_not_claim_verified_no_impact(
+    null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
+) -> None:
+    material = null_spike_review_material
+    manifest = tmp_path / "manifest.json"
+    results = tmp_path / "run_results.json"
+    manifest.write_text('{"sources":{},"nodes":{}}', encoding="utf-8")
+    results.write_text("{}", encoding="utf-8")
+    review_input = AgenticReviewInput(
+        incident=material.detection.incident,
+        evidence=[material.detection.evidence],
+        draft=material.draft,
+        project_revision="empty-impact",
+    )
+    registry = ToolRegistry.from_review_input(
+        review_input, dbt_artifact_paths=(manifest, results)
+    )
+    record, output = registry.execute(
+        ToolCall(
+            id="empty-impact",
+            function=ToolCallFunction(
+                name="inspect_dbt_impact",
+                arguments=json.dumps({"asset_name": review_input.incident.asset_name}),
+            ),
+        )
+    )
+    assert record.status == "success"
+    assert json.loads(output)["impact_status"] == "unresolved_or_leaf"
+    assert json.loads(output)["downstream_assets"] == []
 
 
 @pytest.mark.parametrize(

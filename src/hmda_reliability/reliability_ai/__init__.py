@@ -38,10 +38,7 @@ from hmda_reliability.reliability_ai.investigation import (
     ToolRegistry,
     investigate_incident,
 )
-from hmda_reliability.reliability_ai.settings import (
-    ReliabilityAISettings,
-    ReviewAISettings,
-)
+from hmda_reliability.reliability_ai.settings import ReliabilityAISettings
 
 __all__ = [
     "ActionProposal",
@@ -58,7 +55,6 @@ __all__ = [
     "NullSpikeFacts",
     "ReliabilityAISettings",
     "ReportEnvelope",
-    "ReviewAISettings",
     "TaskEnvelope",
     "ToolCallRecord",
     "ToolRegistry",

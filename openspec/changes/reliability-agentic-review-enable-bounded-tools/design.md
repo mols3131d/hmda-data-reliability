@@ -16,8 +16,8 @@ description: "기존 조사 루프·Runtime adapter·artifact primitive를 재�
 
 ### D2. Bind Tool State at Registry Construction
 
-- **Decision:** `ToolRegistry.from_review_input`에서 입력을 재검증·복사하고 canonical profile Evidence를 고정한다. Profile 비교는 저장된 baseline/current 수치를 읽으며 live profiling이나 DB connection을 요구하지 않는다. Evidence 조회도 기존 bounded context의 allowlist projection을 재사용한다.
-- **Rationale:** 범용 handler 확장은 trusted caller용으로 유지하되 기본 경로는 사건 snapshot만 소비한다. 모델에 원본 payload 전체를 노출하는 별도 경로를 만들지 않는다.
+- **Decision:** `ToolRegistry.from_review_input`에서 입력을 재검증·복사하고 canonical profile Evidence를 고정한다. Profile 비교는 저장된 baseline/current 수치를 읽으며 live profiling이나 DB connection을 요구하지 않는다. Provider 자료의 허용 필드·제한·출처 의미는 기존 `context.py`의 bounded projection이 소유한다. 초기 자료·Evidence 도구 응답·원격 output projection은 이 정책을 소비하고, registry·조사 loop가 별도 payload 정책이나 원본 전달 경로를 만들지 않는다. 도구가 추가한 current 관측도 이 owner의 bounded output 정책으로 연결하되 원입력 snapshot과 출처를 구분한다.
+- **Rationale:** 범용 handler 확장은 trusted caller용으로 유지하되 기본 경로는 사건 snapshot만 소비한다. Snapshot 복사·도구 인자 검증·byte 한도는 허용 자료의 의미를 대신하지 않는다. 공유 정책의 변경이 실제 provider 메시지까지 전달되게 하며 generic projection 계층이나 중복 정책 모델을 추가하지 않는다.
 - **Trade-off:** 기본 profile 도구는 새로 프로파일링한 현재 상태를 증명하지 않는다. Output provenance의 snapshot 구분이 이 제한을 설명한다.
 
 ### D3. Reuse the Artifact Projection Boundary
@@ -35,8 +35,8 @@ description: "기존 조사 루프·Runtime adapter·artifact primitive를 재�
 
 ### D5. Preserve Caller-Owned Recovery Requests
 
-- **Decision:** 위임 wrapper의 preflight에서 Task snapshot refs와 조사 Evidence identity, 제공된 approved request의 incident·target·partition을 대조한다. Backfill과 schema request가 함께 제공되면 선택하지 않는다. 기존 domain executor와 그 request·Approval 계약은 변경하지 않는다.
-- **Rationale:** 조사한 사건과 별개 복구를 하나의 보고에 묶거나 `if/elif` 순서로 암묵 선택하는 일을 막는다. Wrapper receipt는 domain result의 보고이며 authoritative receipt라고 재정의하지 않는다.
+- **Decision:** 기존 `execute_delegated_task`가 조사 입력·Task·caller의 approved request를 조합하는 preflight를 소유한다. 이 경계에서 Task snapshot refs와 조사 Evidence identity, 제공된 request의 incident·target·partition을 대조하고 Backfill과 schema request가 함께 제공되면 선택하지 않는다. Exact proposal Approval·stale 검사·mutation·재검증·reconciliation 의미는 기존 deterministic domain이 계속 소유하며 wrapper에 복제하거나 AI 역의존을 만들지 않는다. 기존 domain executor와 그 request·Approval 계약은 변경하지 않는다.
+- **Rationale:** 각 입력의 개별 유효성과 조합의 대상 일치를 구분해 조사한 사건과 별개 복구를 하나의 보고에 묶거나 `if/elif` 순서로 암묵 선택하는 일을 막는다. Wrapper receipt는 실제 domain result의 소비자이며 authoritative receipt나 mutation 상태의 새 owner로 재정의하지 않는다.
 
 ### Migration Strategy
 

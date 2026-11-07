@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Sequence
 from copy import deepcopy
 from datetime import datetime
@@ -12,7 +13,11 @@ from math import isfinite
 
 from pydantic import Field, field_validator
 
-from hmda_reliability.reliability.contracts import Evidence, EvidenceSource
+from hmda_reliability.reliability.contracts import (
+    Evidence,
+    EvidenceSource,
+    LineageEvidence,
+)
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
 from hmda_reliability.reliability_ai.contracts import AgenticReviewInput
 
@@ -66,6 +71,24 @@ _PAYLOAD_ALLOWLIST = {
         "status",
     ),
 }
+_PRIVATE_FIELDS = frozenset(
+    {
+        "credentials",
+        "credential",
+        "password",
+        "secret",
+        "token",
+        "api_key",
+        "connection_string",
+        "local_path",
+        "response_paths",
+        "manifest_path",
+        "observation_record_path",
+    }
+)
+_ABSOLUTE_PATH = re.compile(
+    r"(?i:file://)[^\s\"'<>]*|(?<![\w:/])(?:[A-Za-z]:[\\/]|/)[^\s\"'<>]*"
+)
 
 
 class ReviewContextGapKind(StrEnum):
@@ -148,7 +171,7 @@ def build_bounded_review_context(
             item.evidence_id,
         ),
     )
-    selected = tuple(_project_evidence(item) for item in ordered[:max_evidence])
+    selected = tuple(project_review_evidence(item) for item in ordered[:max_evidence])
     gaps = list(_missing_source_gaps(review_input, required_sources))
     if len(ordered) > max_evidence:
         omitted = len(ordered) - max_evidence
@@ -186,18 +209,26 @@ def build_bounded_review_context(
     return context
 
 
-def _project_evidence(evidence: Evidence) -> BoundedReviewEvidence:
+def project_review_evidence(evidence: Evidence) -> BoundedReviewEvidence:
+    """초기 context와 도구 응답에 같은 허용 필드·크기 정책을 적용한다."""
     facts: dict[str, object] = {}
     for field_name in _PAYLOAD_ALLOWLIST[evidence.source]:
         if field_name not in evidence.payload:
             continue
-        bounded = _bound_json_value(evidence.payload[field_name])
+        bounded = _bound_json_value(
+            _project_fact_shape(field_name, evidence.payload[field_name])
+        )
         if bounded is not _SKIP:
             facts[field_name] = bounded
+    if len(_canonical_json_bytes(facts)) > 4_096:
+        raise ReviewContextTooLargeError("bounded evidence facts exceed the limit")
     return BoundedReviewEvidence(
         evidence_id=evidence.evidence_id,
         source=evidence.source,
-        summary=(evidence.summary.strip() or "근거 요약이 제공되지 않았습니다.")[:1024],
+        summary=_ABSOLUTE_PATH.sub(
+            "[private-path]",
+            evidence.summary.strip() or "근거 요약이 제공되지 않았습니다.",
+        )[:1024],
         facts=facts,
         provenance=ReviewContextProvenance(
             evidence_id=evidence.evidence_id,
@@ -207,6 +238,48 @@ def _project_evidence(evidence: Evidence) -> BoundedReviewEvidence:
             observed_at=evidence.observed_at,
         ),
     )
+
+
+def project_current_impact(
+    lineage: LineageEvidence, *, projection_id: str, observed_at: datetime
+) -> dict[str, object]:
+    """내부 artifact 경로 없이 current 관측과 빈 결과의 한계를 전달한다."""
+    return {
+        "downstream_assets": [
+            _ABSOLUTE_PATH.sub("[private-path]", asset)[:256]
+            for asset in lineage.downstream_assets[:32]
+        ],
+        "omitted_assets": max(0, len(lineage.downstream_assets) - 32),
+        "impact_status": (
+            "downstream_observed" if lineage.downstream_assets else "unresolved_or_leaf"
+        ),
+        "provenance": {
+            "kind": "current_artifact_projection",
+            "source": EvidenceSource.DBT_ARTIFACT.value,
+            "projection_id": projection_id,
+            "observed_at": observed_at.isoformat(),
+            "lineage_id": lineage.lineage_id,
+        },
+    }
+
+
+def project_remote_output(payload: dict[str, object]) -> dict[str, object]:
+    """구조화된 projection에서 민감 필드와 로컬 경로를 제외한다."""
+    return {
+        _ABSOLUTE_PATH.sub("[private-path]", key): _project_public_value(value)
+        for key, value in payload.items()
+        if key.casefold() not in _PRIVATE_FIELDS
+    }
+
+
+def _project_public_value(value: object) -> object:
+    if isinstance(value, str):
+        return _ABSOLUTE_PATH.sub("[private-path]", value)
+    if isinstance(value, dict):
+        return project_remote_output(value)
+    if isinstance(value, (list, tuple)):
+        return [_project_public_value(item) for item in value]
+    return value
 
 
 def _missing_source_gaps(
@@ -228,9 +301,59 @@ def _missing_source_gaps(
 _SKIP = object()
 
 
+def _project_fact_shape(field_name: str, value: object) -> object:
+    if field_name == "columns" and isinstance(value, list):
+        columns: list[object] = []
+        for column in value[:32]:
+            if isinstance(column, str):
+                columns.append(column)
+            elif isinstance(column, dict) and isinstance(column.get("name"), str):
+                columns.append(
+                    {
+                        key: column[key]
+                        for key in ("name", "type", "nullable")
+                        if isinstance(column.get(key), str)
+                    }
+                )
+        return columns
+    if field_name == "column_types" and isinstance(value, dict):
+        return {key: item for key, item in value.items() if isinstance(item, str)}
+    if field_name in ("related_assets", "upstream_assets", "downstream_assets"):
+        return (
+            [item for item in value[:32] if isinstance(item, str)]
+            if isinstance(value, list)
+            else _SKIP
+        )
+    if field_name == "lineage" and isinstance(value, list):
+        return [
+            {key: edge[key] for key in ("from", "to")}
+            for edge in value[:32]
+            if isinstance(edge, dict)
+            and isinstance(edge.get("from"), str)
+            and isinstance(edge.get("to"), str)
+        ]
+    if field_name in (
+        "baseline_null_rate",
+        "current_null_rate",
+        "delta",
+        "threshold",
+        "row_count",
+    ):
+        return (
+            value
+            if isinstance(value, (int, float)) and not isinstance(value, bool)
+            else _SKIP
+        )
+    return value if isinstance(value, str) else _SKIP
+
+
 def _bound_json_value(value: object, *, max_bytes: int = 1_024) -> object:
     if value is None or isinstance(value, (str, bool, int)):
-        bounded = value[:512] if isinstance(value, str) else value
+        bounded = (
+            _ABSOLUTE_PATH.sub("[private-path]", value)[:512]
+            if isinstance(value, str)
+            else value
+        )
         return bounded if len(_canonical_json_bytes(bounded)) <= max_bytes else _SKIP
     if isinstance(value, float):
         return value if isfinite(value) else _SKIP
@@ -248,9 +371,13 @@ def _bound_json_value(value: object, *, max_bytes: int = 1_024) -> object:
     if isinstance(value, dict):
         bounded_mapping: dict[str, object] = {}
         for key in sorted(value)[:32]:
+            if str(key).casefold() in _PRIVATE_FIELDS:
+                continue
             bounded = _bound_json_value(value[key], max_bytes=max_bytes)
             if bounded is not _SKIP:
-                bounded_mapping[str(key)] = bounded
+                bounded_mapping[_ABSOLUTE_PATH.sub("[private-path]", str(key))] = (
+                    bounded
+                )
         return (
             bounded_mapping
             if len(_canonical_json_bytes(bounded_mapping)) <= max_bytes

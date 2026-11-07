@@ -20,6 +20,11 @@ from hmda_reliability.reliability.assessment.impact import (
     analyze_dbt_impact,
 )
 from hmda_reliability.reliability.contracts import Evidence, EvidenceSource
+from hmda_reliability.reliability_ai.context import (
+    project_current_impact,
+    project_remote_output,
+    project_review_evidence,
+)
 from hmda_reliability.reliability_ai.contracts import AgenticReviewInput
 from hmda_reliability.reliability_ai.investigation.contracts import ToolCallRecord
 from hmda_reliability.runtime_ai.contracts import (
@@ -155,6 +160,19 @@ class ToolRegistry:
             column = arguments.get("column", snapshot.target_column)
             if column != snapshot.target_column:
                 raise ValueError("column is outside the incident evidence scope")
+            snapshot_refs: dict[str, object] = {}
+            for key in (
+                "snapshot_id",
+                "baseline_snapshot_id",
+                "current_snapshot_id",
+            ):
+                reference = target.payload.get(key)
+                if isinstance(reference, str):
+                    if len(reference.encode("utf-8")) > 1024:
+                        raise ValueError(
+                            "snapshot reference exceeds the projection limit"
+                        )
+                    snapshot_refs[key] = reference
             return {
                 "asset_name": target.asset_name,
                 "partition": target.partition,
@@ -165,7 +183,7 @@ class ToolRegistry:
                     "evidence_id": target.evidence_id,
                     "source": target.source.value,
                     "observed_at": target.observed_at.isoformat(),
-                    "snapshot_id": target.payload.get("snapshot_id"),
+                    **project_remote_output(snapshot_refs),
                 },
             }
 
@@ -196,14 +214,11 @@ class ToolRegistry:
                 return {
                     "asset_name": snapshot.incident.asset_name,
                     "partition": snapshot.incident.partition,
-                    "downstream_assets": result.lineage_evidence.downstream_assets,
-                    "provenance": {
-                        "kind": "current_artifact_projection",
-                        "source": EvidenceSource.DBT_ARTIFACT.value,
-                        "projection_id": projection_id,
-                        "observed_at": datetime.now(UTC).isoformat(),
-                        "lineage": result.lineage_evidence.model_dump(mode="json"),
-                    },
+                    **project_current_impact(
+                        result.lineage_evidence,
+                        projection_id=projection_id,
+                        observed_at=datetime.now(UTC),
+                    ),
                 }
 
             impact_handler = inspect_dbt_impact
@@ -230,9 +245,9 @@ class ToolRegistry:
             if not isinstance(arguments, dict):
                 msg = f"tool arguments must be a JSON object: {raw_arguments}"
                 raise ValueError(msg)
-        except (ValueError, RecursionError) as exc:
+        except (ValueError, RecursionError):
             latency_ms = max(0.0, (time.monotonic() - started) * 1000)
-            err_result = {"error": f"invalid_arguments: {exc}"}
+            err_result = {"error": "invalid_arguments"}
             record = ToolCallRecord(
                 call_id=tool_call.id,
                 tool_name=tool_name,
@@ -244,10 +259,17 @@ class ToolRegistry:
             return record, json.dumps(err_result, ensure_ascii=False)
 
         try:
-            result = self._dispatch(tool_name, arguments)
-            status = "success"
+            if tool_name not in {tool.function.name for tool in self.definitions}:
+                result = {"error": "unknown tool or unavailable capability"}
+                status = "error"
+            else:
+                result = project_remote_output(self._dispatch(tool_name, arguments))
+                status = "success"
         except Exception as exc:
-            result = {"error": f"tool_execution_failed: {exc}"}
+            result = {
+                "error": "tool_execution_failed",
+                "error_type": type(exc).__name__,
+            }
             status = "error"
 
         latency_ms = max(0.0, (time.monotonic() - started) * 1000)
@@ -273,16 +295,16 @@ class ToolRegistry:
                     "evidence_id": evidence_id,
                     "message": "해당 ID의 증거를 찾을 수 없습니다.",
                 }
-            evidence = self._evidence_catalog[evidence_id]
+            evidence = project_review_evidence(self._evidence_catalog[evidence_id])
             return {
                 "found": True,
                 "evidence_id": evidence.evidence_id,
                 "source": evidence.source.value,
-                "asset_name": evidence.asset_name,
-                "partition": evidence.partition,
-                "observed_at": evidence.observed_at.isoformat(),
+                "asset_name": evidence.provenance.asset_name,
+                "partition": evidence.provenance.partition,
+                "observed_at": evidence.provenance.observed_at.isoformat(),
                 "summary": evidence.summary,
-                "payload": evidence.payload,
+                "payload": evidence.facts,
             }
 
         if tool_name == "compare_profiles":

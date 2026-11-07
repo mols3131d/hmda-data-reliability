@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 
 import pytest
 
 from hmda_reliability.reliability.contracts import Evidence, EvidenceSource
 from hmda_reliability.reliability_ai import contracts
-from hmda_reliability.reliability_ai.context import build_bounded_review_context
+from hmda_reliability.reliability_ai.context import (
+    build_bounded_review_context,
+    project_remote_output,
+)
+from hmda_reliability.reliability_ai.investigation.tools import ToolRegistry
+from hmda_reliability.reliability_ai.prompt import build_canonical_input
+from hmda_reliability.runtime_ai.contracts import ToolCall, ToolCallFunction
 
 from .conftest import NullSpikeReviewMaterial
 
@@ -215,3 +222,141 @@ def test_context_always_includes_canonical_target_within_bound(
     selected_ids = {item.evidence_id for item in context.selected_evidence}
     assert target.evidence_id in selected_ids
     assert len(context.selected_evidence) == 8
+
+
+@pytest.mark.parametrize(
+    "asset_name",
+    [
+        "/home/private/context.csv",
+        "file:///home/private/context.csv",
+        "metadata_file:///home/private/context.csv",
+    ],
+)
+def test_provider_and_remote_projection_remove_nested_private_material(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    asset_name: str,
+) -> None:
+    evidence = _surrounding_evidence(null_spike_review_material)
+    evidence[1] = evidence[1].model_copy(
+        update={
+            "summary": "Inspect /opt/private/source.csv and C:\\private\\source.csv",
+            "asset_name": asset_name,
+            "payload": {
+                "columns": ["income"],
+                "column_types": {
+                    "income": "DOUBLE",
+                    "credentials": {"token": "hidden"},
+                },
+                "table_name": "/var/private/table.csv",
+            },
+        }
+    )
+    review_input = _review_input(null_spike_review_material, evidence)
+    review_input = review_input.model_copy(
+        update={
+            "draft": review_input.draft.model_copy(
+                update={
+                    "rca_summary": "Inspect /srv/private/raw.csv",
+                }
+            ),
+        }
+    )
+
+    canonical = build_canonical_input(review_input)
+    record, tool_output = ToolRegistry.from_review_input(review_input).execute(
+        ToolCall(
+            id="contextual-path",
+            function=ToolCallFunction(
+                name="get_incident_evidence", arguments='{"evidence_id":"ev-table"}'
+            ),
+        )
+    )
+    assert record.status == "success"
+    remote = project_remote_output(
+        {
+            "result": canonical,
+            "manifest_path": "/opt/private/manifest.json",
+            "response_paths": ["/var/private/raw.txt"],
+        }
+    )
+
+    for payload in (canonical, remote, json.loads(tool_output)):
+        encoded = json.dumps(payload)
+        assert "private" not in encoded.replace("[private-path]", "")
+        assert "hidden" not in encoded
+        assert "credentials" not in encoded
+    facts = canonical["deterministic_facts"]
+    assert isinstance(facts, dict)
+    assert facts["current_null_rate"] == 0.21
+    assert "manifest_path" not in remote
+
+
+def test_evidence_metadata_shapes_exclude_nested_raw_rows(
+    null_spike_review_material: NullSpikeReviewMaterial,
+) -> None:
+    evidence = _surrounding_evidence(null_spike_review_material)
+    raw_rows = [{"applicant_id": "SYNTHETIC-ROW", "income": 12345}]
+    evidence[1] = evidence[1].model_copy(
+        update={
+            "payload": {
+                "column_types": {"income": "DOUBLE", "raw_rows": raw_rows},
+                "columns": [
+                    {
+                        "name": "income",
+                        "type": "DOUBLE",
+                        "nullable": "YES",
+                        "raw_rows": raw_rows,
+                    },
+                    {"raw_rows": raw_rows},
+                ],
+                "schema_hash": {"raw_rows": raw_rows},
+            }
+        }
+    )
+    evidence.append(
+        Evidence(
+            evidence_id="catalog-shapes",
+            source=EvidenceSource.CATALOG,
+            asset_name="raw.hmda_loans",
+            partition="2025",
+            observed_at=evidence[1].observed_at,
+            summary="Catalog metadata",
+            payload={
+                "upstream_assets": ["source.hmda", {"raw_rows": raw_rows}],
+                "lineage": [
+                    {
+                        "from": "source.hmda",
+                        "to": "raw.hmda_loans",
+                        "raw_rows": raw_rows,
+                    }
+                ],
+            },
+        )
+    )
+    review_input = _review_input(null_spike_review_material, evidence)
+    canonical = build_canonical_input(review_input)
+    registry = ToolRegistry.from_review_input(review_input)
+    outputs = []
+    for item in (evidence[1], evidence[-1]):
+        record, output = registry.execute(
+            ToolCall(
+                id=item.evidence_id,
+                function=ToolCallFunction(
+                    name="get_incident_evidence",
+                    arguments=json.dumps({"evidence_id": item.evidence_id}),
+                ),
+            )
+        )
+        assert record.status == "success"
+        outputs.append(json.loads(output))
+    for projected in (canonical, *outputs, project_remote_output({"input": canonical})):
+        assert "SYNTHETIC-ROW" not in json.dumps(projected)
+        assert "raw_rows" not in json.dumps(projected)
+    assert outputs[0]["payload"] == {
+        "column_types": {"income": "DOUBLE"},
+        "columns": [{"name": "income", "type": "DOUBLE", "nullable": "YES"}],
+    }
+    assert outputs[1]["payload"] == {
+        "upstream_assets": ["source.hmda"],
+        "lineage": [{"from": "source.hmda", "to": "raw.hmda_loans"}],
+    }

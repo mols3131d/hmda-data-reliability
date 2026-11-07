@@ -6,6 +6,8 @@ import contextlib
 import os
 import re
 import tempfile
+import time
+from collections.abc import Callable
 from pathlib import Path
 
 from hmda_reliability.reliability_ai.prompt import canonical_json_bytes
@@ -27,6 +29,10 @@ class InvocationEvidenceSizeError(InvocationEvidenceStoreError):
 
 class InvocationEvidenceWriteError(InvocationEvidenceStoreError):
     """정제된 레코드를 영속적으로 생성할 수 없을 때 발생하는 예외."""
+
+
+class InvocationEvidenceDeadlineError(InvocationEvidenceStoreError):
+    """완료 근거를 게시하기 전에 실행 예산이 소진된 경우."""
 
 
 class InvocationResponseStore:
@@ -81,13 +87,17 @@ def write_review_json(
     payload: dict[str, object],
     *,
     max_record_bytes: int,
+    deadline: float | None = None,
+    clock: Callable[[], float] = time.monotonic,
 ) -> Path:
     """Review AI의 별도 JSON artifact를 bounded create-only 파일로 보존한다."""
     _validate_invocation_id(path.stem)
     encoded = canonical_json_bytes(payload) + b"\n"
     if len(encoded) > max_record_bytes:
         raise InvocationEvidenceSizeError("review artifact exceeds max_record_bytes")
-    return _write_create_only(path, encoded, invocation_id=path.stem)
+    return _write_create_only(
+        path, encoded, invocation_id=path.stem, deadline=deadline, clock=clock
+    )
 
 
 def _write_create_only(
@@ -95,6 +105,8 @@ def _write_create_only(
     payload: bytes,
     *,
     invocation_id: str,
+    deadline: float | None = None,
+    clock: Callable[[], float] = time.monotonic,
 ) -> Path:
     descriptor = -1
     temporary_path: Path | None = None
@@ -111,6 +123,8 @@ def _write_create_only(
             handle.write(payload)
             handle.flush()
             os.fsync(handle.fileno())
+        if deadline is not None and clock() >= deadline:
+            raise InvocationEvidenceDeadlineError("evidence publication budget expired")
         try:
             os.link(temporary_path, path)
         except FileExistsError as error:
@@ -119,7 +133,11 @@ def _write_create_only(
             ) from error
         try:
             _fsync_directory(path.parent)
-        except OSError:
+            if deadline is not None and clock() >= deadline:
+                raise InvocationEvidenceDeadlineError(
+                    "evidence publication budget expired"
+                )
+        except (OSError, InvocationEvidenceDeadlineError):
             with contextlib.suppress(OSError):
                 path.unlink(missing_ok=True)
             raise

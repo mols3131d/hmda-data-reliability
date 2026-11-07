@@ -71,6 +71,7 @@ class ReportEnvelope(ReliabilityContract):
     task_id: str = Field(min_length=1)
     recipient: Literal["human", "supervisor"]
     status: Literal["completed", "blocked", "awaiting_approval", "failed", "partial"]
+    task: TaskEnvelope | None = None
     investigation: InvestigationResult | None = None
     facts: dict[str, Any] = Field(default_factory=dict)
     hypotheses: tuple[InvestigationHypothesis, ...] = Field(default_factory=tuple)

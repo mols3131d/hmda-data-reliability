@@ -60,6 +60,35 @@ Incident와 draft는 `null_spike`이며 incident ID·asset·partition이 같아�
 - **WHEN** 초기 또는 누적 메시지가 configured `max_prompt_bytes`를 넘을 때
 - **THEN** 해당 provider 호출을 시작하지 않고 `error / prompt_too_large`와 이미 보존한 기록을 반환해야 한다(SHALL).
 
+### Requirement: Bounded review context
+
+시스템은 유효한 input에서 incident 판단에 관련된 Evidence를 stable priority와 identity로 선택·투영하는 immutable `BoundedReviewContext`를 제공해야 한다(SHALL). Canonical target을 포함해 identity·source·asset·partition·observation time·bounded facts·provenance를 보존하고 raw log·전체 row·database 또는 allowlist 밖 payload를 포함해서는 안 된다(MUST NOT). 제공되지 않은 source는 `missing_evidence`, 확정되지 않은 원인·맥락은 `unconfirmed_context`로 구분해야 한다(SHALL).
+
+#### Scenario: Context selects bounded evidence and preserves provenance
+
+- **WHEN** canonical Evidence와 관련 metadata·lineage·validation Evidence가 제공될 때
+- **THEN** limit 안에서 canonical target을 포함한 stable selection과 각 Evidence의 provenance를 보존해야 한다(SHALL).
+
+#### Scenario: Missing and unconfirmed context remain distinct
+
+- **WHEN** 일부 source가 없고 원인도 확정되지 않았을 때
+- **THEN** source 누락과 미확정 내용을 서로 다른 gap으로 기록해야 한다(SHALL).
+
+#### Scenario: Context projection is bounded and replayable
+
+- **WHEN** 같은 input으로 context를 반복 생성할 때
+- **THEN** 같은 projection·digest를 만들고 크기와 Evidence 수 한도를 지켜야 한다(SHALL).
+
+#### Scenario: Oversized context is rejected before invocation
+
+- **WHEN** context가 설정 한도를 넘을 때
+- **THEN** remote prompt·provider·tool 호출 전에 `error / context_too_large`와 로컬 실패 manifest를 반환하고 성공 보고를 합성해서는 안 된다(MUST NOT).
+
+#### Scenario: Prompt-visible evidence references match the bounded allowlist
+
+- **WHEN** bounded context에서 canonical input을 만들 때
+- **THEN** draft의 인용 가능한 Evidence reference는 선택된 context Evidence ID로 제한해야 한다(SHALL).
+
 ### Requirement: Current review surface
 
 공개 실행은 `hmda_reliability.reliability_ai`의 `investigate_incident`와 `execute_delegated_task`, 합성 실행은 `python -m hmda_reliability.reliability_ai.evaluation.experiment`로 제공해야 한다(SHALL). 일반 API와 CLI는 같은 bounded investigation과 native prompt 경로를 사용해야 한다(SHALL). 과거 `review_ai` package·고정 3단계 실행·옛 설정 alias·로컬 prompt fallback을 호환 경로로 남겨서는 안 된다(MUST NOT). 기존 `AgenticReviewInput`의 데이터 계약은 유지해야 한다(SHALL).
