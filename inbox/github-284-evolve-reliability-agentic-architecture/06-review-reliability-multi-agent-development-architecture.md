@@ -74,9 +74,9 @@ PR의 목적에는 동등하게 구분해야 할 두 축이 있다.
 
 #### F1 Locations
 
-- [DEVELOPMENT](../../DEVELOPMENT.md#L65), [Architecture](../../docs/ARCHITECTURE.md#L72), [Review AI guide](../../docs/domains/review-ai.md#L35).
+- [DEVELOPMENT](https://github.com/mols3131d/hmda-data-reliability/blob/1b0bd473e1f0e6c8318974e4b150aeb50968c959/DEVELOPMENT.md#L65), [Architecture](https://github.com/mols3131d/hmda-data-reliability/blob/1b0bd473e1f0e6c8318974e4b150aeb50968c959/docs/ARCHITECTURE.md#L72), [Review AI guide](https://github.com/mols3131d/hmda-data-reliability/blob/1b0bd473e1f0e6c8318974e4b150aeb50968c959/docs/domains/review-ai.md#L35).
 - [현재 공개 API](../../src/hmda_reliability/reliability_ai/__init__.py#L23), [public surface 테스트](../../tests/reliability_ai/test_public_surface.py#L47).
-- [현재 canonical Spec](../../openspec/specs/reliability-agentic-review/spec.md#L177), [조사 system prompt](../../src/hmda_reliability/reliability_ai/investigation/service.py#L37).
+- [현재 canonical Spec](https://github.com/mols3131d/hmda-data-reliability/blob/1b0bd473e1f0e6c8318974e4b150aeb50968c959/openspec/specs/reliability-agentic-review/spec.md#L177), [조사 system prompt](../../src/hmda_reliability/reliability_ai/investigation/service.py#L37).
 
 #### F1 Evidence
 
