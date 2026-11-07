@@ -51,6 +51,7 @@ class InvestigationTurnRecord(ReliabilityContract):
     turn: int = Field(ge=0)
     role: str
     content: str = ""
+    tool_call_id: str | None = None
     tool_calls: tuple[dict[str, Any], ...] = Field(default_factory=tuple)
     latency_ms: float = Field(default=0.0, ge=0.0)
 
@@ -66,4 +67,7 @@ class InvestigationResult(ReliabilityContract):
     hypotheses: tuple[InvestigationHypothesis, ...] = Field(default_factory=tuple)
     uncertainties: tuple[InvestigationUncertainty, ...] = Field(default_factory=tuple)
     tool_calls: tuple[ToolCallRecord, ...] = Field(default_factory=tuple)
+    invocation_id: str | None = None
+    response_paths: tuple[Path, ...] = Field(default_factory=tuple)
+    turns: tuple[InvestigationTurnRecord, ...] = Field(default_factory=tuple)
     manifest_path: Path | None = None

@@ -13,6 +13,9 @@ tags:
 > [!IMPORTANT]
 > **PR #284의 완료 목표는 자료 준비가 아니라 소스 리팩터링의 실제 완료다.** 결정론적 Reliability의 안전한 동작을 보존하면서 `reliability_ai`가 실제 도구를 사용하고, 위임받은 작업을 수행·추적하며, 인간 또는 상위 모델에 근거 기반 보고를 제공하도록 구현한다. 코드·Spec·테스트·실행 증거까지 완료되어야 한다.
 
+> [!WARNING]
+> **2026-11-07 검토 정정:** 아래 W2~W4 및 PR 완료 체크는 이전 작업자의 상태 기록이며 해당 단계 전체의 완료 판정이 아니다. [04 Review and Remediation](04-review-reliability-agentic-remediation.md)의 결함 6건 보완은 회귀·독립 리뷰를 마쳤다. 실제 profile/dbt 연동과 W5 전체 완료·Ready/merge 판단은 별도로 남아 있어 기존 체크를 전체 재승인하지 않는다.
+
 ## Goal and Boundary
 
 - **Result:** `reliability.assessment` / `reliability.remediation` / `reliability_ai.investigation` / `reliability_ai.execution`의 네 논리적 책임을 현재 코드에서 검증 가능한 경계로 완성한다. 필요하면 내부 더 작은 변경 단위로 분할한다. 물리 폴더 네 개를 기계적으로 만드는 것은 목표가 아니다.

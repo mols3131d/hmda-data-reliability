@@ -10,6 +10,7 @@ from pydantic import Field
 from hmda_reliability.reliability.contracts.base import ReliabilityContract
 from hmda_reliability.reliability_ai.investigation.contracts import (
     InvestigationHypothesis,
+    InvestigationResult,
 )
 
 
@@ -58,6 +59,8 @@ class ExecutionReceipt(ReliabilityContract):
     before_state: str | None = None
     after_state: str | None = None
     revalidated: bool = False
+    failure_code: str | None = None
+    reconciliation_action: str | None = None
     details: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -67,7 +70,8 @@ class ReportEnvelope(ReliabilityContract):
     report_id: str = Field(min_length=1)
     task_id: str = Field(min_length=1)
     recipient: Literal["human", "supervisor"]
-    status: Literal["completed", "blocked", "awaiting_approval", "failed"]
+    status: Literal["completed", "blocked", "awaiting_approval", "failed", "partial"]
+    investigation: InvestigationResult | None = None
     facts: dict[str, Any] = Field(default_factory=dict)
     hypotheses: tuple[InvestigationHypothesis, ...] = Field(default_factory=tuple)
     proposed_actions: tuple[ActionProposal, ...] = Field(default_factory=tuple)

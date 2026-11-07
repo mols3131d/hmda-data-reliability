@@ -11,6 +11,9 @@ tags:
 
 # Reliability Agentic Refactoring — Phase 1 Completion & Task Handoff
 
+> [!WARNING]
+> **2026-11-07 검토 정정:** 아래 완료 내역은 당시 작업자의 주장이다. 후속 검토의 실제 조회·위임 제한·실패 보고·원문 보존·평가 결과 결함 6건은 수정과 독립 재리뷰를 마쳤다. 최신 근거와 잔여 범위는 [04 Review and Remediation](04-review-reliability-agentic-remediation.md)을 따른다. 실제 profile/dbt 연동과 W5 작업이 남아 있으며, 라이브·사람 평가는 [01 완료 기준](01-plan-reliability-agentic-complete-refactor.md)에서 제거하지 않는다.
+
 ## 1. 개요 및 인계 배경
 
 본 문서는 PR #284 (`agent/refactor/evolve-reliability-agentic-architecture`)의 대규모 리팩터링 중, **인계 시 복합 결합으로 인해 중단 위험이 높은 핵심 아키텍처 및 소스 코드 재배치(W1~W4)**를 완료하고, 이후 작업자 또는 에이전트가 단독으로 수행하기 용이한 **정본 문서화, OpenSpec 동기화 및 라이브 평가(W5)** 작업을 안전하게 인계하기 위한 인계 보고서다.
@@ -88,17 +91,18 @@ tags:
 - **실행 명령:**
   - `uv run python scripts/generate_docs_indexes.py` 실행하여 `docs/**/INDEX.tsv` 최신화.
 
-### Task 3: (선택) 로컬 Ollama / Langfuse 오프라인 합성 평가
+### Task 3: 로컬 Ollama / Langfuse 합성 평가 및 사람 검토
 
 - **환경:** 로컬 Ollama (`qwen3.5:4b` 또는 `qwen3.5:4b-8k-local`), Langfuse 4.15.6.
 - **작업 내용:**
   - `src/hmda_reliability/reliability_ai/evaluation/cases.json`의 3개 합성 케이스를 대상으로 `investigate_incident` 실행 및 도구 호출/불확실성 보고 검증.
+  - 라이브 실행과 사람의 결과 검토는 01 완료 기준을 따른다. Offline runner 회귀 테스트가 이를 대체하지 않는다.
   - 결과 증적을 `inbox/github-284-evolve-reliability-agentic-architecture/`에 기록.
 
 ### Task 4: 독립 리뷰 게이트 통과 및 PR 푸시
 
 - **작업 내용:**
-  - git 커밋 작성 (`-c commit.gpgsign=false`).
+  - 별도 승인된 커밋·푸시에 앞서 현재 VCS 지침, effective identity와 보호 규칙의 서명 요구를 확인한다.
   - `prj-load-context-review` 및 `mols-review-dualvantage` 스킬을 통한 독립 검토 수행.
   - `git -c url."https://github.com/".insteadOf="git@github.com:" push origin agent/refactor/evolve-reliability-agentic-architecture` 푸시.
   - PR #284 본문 내용 최신화.
@@ -109,4 +113,4 @@ tags:
 
 1. **No Shims:** `review_ai` 하위 호환 래퍼나 별칭을 다시 만들지 않는다. 모든 내부/외부 소비자는 `reliability_ai`를 직접 사용해야 한다.
 1. **Approval Gate:** `reliability_ai`는 절대 자체 권한으로 데이터베이스를 수정할 수 없으며, 반드시 외부 승인 객체(`Approval`)가 제공된 경우에만 `reliability.remediation`의 공개 API를 통해 작업을 수행한다.
-1. **Git 서명 및 URL:** 로컬 SSH 환경 제약으로 인해 git commit 시 `-c commit.gpgsign=false`, git push/fetch 시 `-c url."https://github.com/".insteadOf="git@github.com:"` 옵션을 필수로 사용한다.
+1. **Git 서명 및 URL:** 과거 로컬 우회 옵션을 현재의 필수 절차로 취급하지 않는다. Repository VCS 지침과 현재 보호 규칙을 우선하며, 커밋·푸시는 이번 보완에서 수행하지 않았다.

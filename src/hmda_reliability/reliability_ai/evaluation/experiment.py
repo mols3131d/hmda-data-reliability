@@ -9,12 +9,14 @@ import argparse
 import os
 import subprocess
 import sys
+from collections import Counter
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from langfuse import get_client
+from langfuse.api import DatasetItem
 from pydantic import ValidationError
 
 from hmda_reliability.reliability_ai import (
@@ -54,6 +56,7 @@ def main(*, argv: Sequence[str] | None = None) -> int:
         ).strip():
             revision += "-dirty"
         dataset = langfuse.get_dataset(args.dataset, version=args.dataset_version)
+        expected_items = Counter(item.id for item in dataset.items)
 
         def task(*, item: Any, **_: Any) -> dict[str, Any]:
             try:
@@ -75,11 +78,8 @@ def main(*, argv: Sequence[str] | None = None) -> int:
                 ),
             )
             return {
-                "status": result.status,
-                "failure_code": result.failure_code,
-                "incident_id": result.incident_id,
+                **result.model_dump(mode="json"),
                 "tool_calls_count": len(result.tool_calls),
-                "facts": result.facts,
             }
 
         result = dataset.run_experiment(
@@ -89,6 +89,15 @@ def main(*, argv: Sequence[str] | None = None) -> int:
             metadata={"project_revision": revision, "model": args.model},
         )
         print(result.format())
+        actual_items = Counter(
+            cast(DatasetItem, item.item).id for item in result.item_results
+        )
+        if actual_items != expected_items:
+            print(
+                "실험 결과에 누락되거나 중복된 Dataset 항목이 있습니다.",
+                file=sys.stderr,
+            )
+            return 1
         return (
             0
             if result.item_results
