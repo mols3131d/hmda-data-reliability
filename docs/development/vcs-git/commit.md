@@ -1,6 +1,6 @@
 ---
 title: "Commits"
-description: "하나의 논리적 변경을 review 가능한 history로 기록하기 위한 commit 단위, staging과 history 관리 기준을 정의합니다."
+description: "검토 가능한 커밋 단위와 스테이징·이력 관리 기준을 정의합니다."
 categories:
   - software-engineering
 tags:
