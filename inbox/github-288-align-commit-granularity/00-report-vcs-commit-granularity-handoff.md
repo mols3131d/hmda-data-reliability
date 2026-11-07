@@ -14,6 +14,7 @@ tags:
 
 **현재는 구현 인계 준비 단계다.** 정본 정책은 아직 수정하지 않았다. PR의 최종 목표는 갱신된 패턴을 검토해 필요한 기준을 `commit.md`에 **구현하고 현재 revision 기준 검증까지 완료**하는 것이다. 보고서 작성만으로 완료 처리하지 않는다.
 
+- 작업 PR: [#288](https://github.com/mols3131d/hmda-data-reliability/pull/288) (구현 완료가 최종 목표).
 - 작업 브랜치: `agent/docs/align-commit-granularity` (`main` 기준 `7efb332c2efd78f77ee724440e28285ebb3ee55f`).
 - 적용 근거: [Session Recovery Checkpoint Commits](https://github.com/mols3131d/mols-agent-assets/blob/fa5be3bd63e9c29c30017b9e8c833018c092b9a7/catalog/patterns/workflow/session-recovery-checkpoint-commits.md)의 `Commit Granularity`.
 - 정본 변경 대상: [`docs/development/vcs-git/commit.md`](../../../docs/development/vcs-git/commit.md). 메시지 형식의 owner는 [`.gitmessage`](../../../.gitmessage)다.
