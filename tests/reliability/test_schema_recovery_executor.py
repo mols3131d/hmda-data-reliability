@@ -19,7 +19,6 @@ import pytest
 import hmda_reliability.data_operations.runner as data_runner
 import hmda_reliability.hmda_data.ingestion.partition as partition_module
 import hmda_reliability.reliability as reliability
-import hmda_reliability.reliability.recovery.schema_executor as schema_executor
 from hmda_reliability.data_operations import DataOperationRequest
 from hmda_reliability.data_platform.duckdb import (
     DuckDBConnectionManager,
@@ -46,6 +45,9 @@ from hmda_reliability.reliability import (
 from hmda_reliability.reliability.errors import (
     ProfileSnapshotError,
     TableStateIdentityError,
+)
+from hmda_reliability.reliability.remediation.recovery import (
+    schema_executor,
 )
 
 

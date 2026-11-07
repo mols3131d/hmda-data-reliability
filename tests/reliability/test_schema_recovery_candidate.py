@@ -11,10 +11,12 @@ import pytest
 from pydantic import ValidationError
 
 import hmda_reliability.reliability as reliability
-import hmda_reliability.reliability.recovery.schema_candidate as schema_candidate
 from hmda_reliability.data_operations import DbtBuildResult
 from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
 from hmda_reliability.reliability import SchemaRecoveryCandidateError
+from hmda_reliability.reliability.remediation.recovery import (
+    schema_candidate,
+)
 
 
 def _preflight_api() -> tuple[Any, type[SchemaRecoveryCandidateError], type[Any]]:

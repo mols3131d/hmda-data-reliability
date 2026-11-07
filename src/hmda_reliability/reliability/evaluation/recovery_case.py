@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 
 from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
-from hmda_reliability.reliability.recovery import BackfillValidationResult
+from hmda_reliability.reliability.remediation.recovery import BackfillValidationResult
 
 
 def build_recovery_evaluation_case(
