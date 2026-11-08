@@ -119,7 +119,7 @@ def test_quality_gate_ignores_non_blocking_detector_results(
     monkeypatch: pytest.MonkeyPatch,
     incident_type: str,
 ) -> None:
-    import hmda_reliability.reliability.quality_gate as quality_gate_module
+    import hmda_reliability.reliability.assessment.quality_gate as quality_gate_module
 
     result = SimpleNamespace(
         incident=SimpleNamespace(incident_type=incident_type),

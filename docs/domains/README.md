@@ -16,6 +16,6 @@ tags:
 - [Data Operations](data-operations.md)
 - [Data Platform](data-platform.md)
 - [Reliability](reliability.md)
-- [Review AI](review-ai.md)
+- [Reliability AI](review-ai.md)
 - [Runtime AI](runtime-ai.md)
 - [Orchestration](orchestration.md)

@@ -42,12 +42,13 @@ flowchart TB
     end
 
     subgraph ai_plane ["Bounded AI Delegation"]
-        live_harness["Native Dataset Experiment"] -->|staged review| review["Review AI"]
+        live_harness["Native Dataset Experiment"] -->|bounded investigation| review["Reliability AI Investigation"]
         review -->|provider invocation| runtime["Runtime AI"]
         runtime --> provider["OpenAI-compatible Provider"]
-        review -->|raw / collection / provenance| local_review["Local Review Artifacts"]
-        live_harness -.->|stderr| progress["Local Progress"]
+        review -->|raw / turns / provenance| local_review["Local Investigation Artifacts"]
         local_review -.->|quality review| human_review["Human Evaluation"]
+        delegated["Reliability AI Execution"] -->|same investigation| review
+        caller["Trusted Caller + Task + Approved Request"] --> delegated
     end
 
     subgraph recovery_plane ["Approval-Bound Recovery"]
@@ -63,11 +64,12 @@ flowchart TB
     recovery_candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
     proposal -->|exact proposal| approval["External Approval"]
     approval -->|authorize same proposal| recovery
+    delegated -->|bound request through existing gates| recovery
 ```
 
-`RemediationDraft`는 설명·검토용 산출물이며 실행 권한이 아니다. Review AI output도 approval 또는 Reliability truth가 아니다. Approval은 exact validated recovery proposal에 결합되고, approved recovery는 같은 대상과 상태를 다시 확인한 뒤에만 mutation을 수행한다.
+`RemediationDraft`와 AI 보고·ActionProposal·상위 모델 Task는 실행 권한이 아니다. Approval은 exact validated recovery proposal에 결합된다. 위임 실행은 caller가 별도로 제공한 approved request의 사건·대상·범위 일치를 먼저 확인하고 기존 executor를 사용한다. Approved recovery는 같은 대상·상태·승인을 다시 검증한 뒤에만 mutation을 수행한다.
 
-Review AI의 합성 실행은 도메인 소유의 `hmda_reliability.review_ai.evaluation.experiment`에서 Langfuse native Dataset task로 수행한다. Prompt Management·실험·관측·점수·대기열·비교 UI는 Langfuse가 소유하고 프로젝트는 작은 세 단계 대화 task와 Runtime 한도·원문 우선 로컬 보존·checkpoint·코드 JSON 취합을 소유한다. Native generation은 실제 모델 호출 구간에 생성한다. 최초 등록은 `evaluation.setup`으로 분리하며 반복 실험에서 원격 bootstrap이나 별도 사람 점수 완비 검사를 하지 않는다. 원격 prompt가 없으면 시작하지 않고 관측 전송 장애는 저장된 core 결과를 바꾸지 않는다. 별도 worker·watchdog가 없으며 SDK flush의 프로세스 종료 상한을 보장하지 않는다. 세 단계 수집 완료·SDK 제출·실제 원격 확인·사람의 품질 평가는 각각 구분한다. 실행과 평가 절차는 [Review AI Evaluation](development/review-ai-evaluation.md)을 따른다.
+합성 실행은 `hmda_reliability.reliability_ai.evaluation.experiment`의 직렬 native Dataset task가 일반 API와 같은 조사를 호출한다. Langfuse는 Prompt·실험·관측·사람 평가 UI를, 프로젝트는 snapshot-bound read-only 도구·예산·구조 검증·원문 우선 로컬 근거를 소유한다. Profile snapshot과 current dbt projection은 구분한다. 명시적 setup과 반복 실행을 분리하며 관측 장애는 core 결과를 바꾸거나 재생성을 유발하지 않는다. 구조적 completed·SDK 반환·실제 원격 조회·사람 평가는 별도 근거다. SDK flush의 process 종료 상한은 보장하지 않는다. 절차는 [Reliability AI Evaluation](development/review-ai-evaluation.md)을 따른다.
 
 Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별도 `SchemaRecoveryProposal` contract를 사용한다.
 
@@ -78,7 +80,7 @@ Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별
 | Pipeline | Airflow `hmda_data_plane` DAG은 Bronze 적재 후 read-only quality gate를 실행하고, 통과한 경우에만 dbt 분석을 실행한다. |
 | Quality gate | Data Operations가 전체 Bronze partition profile과 lock-bound dbt build를 조합하고 Reliability가 baseline, threshold, detector와 blocking 판정을 소유한다. Airflow는 task state만 조율한다. |
 | Reliability lifecycle | Read-only다. approval, recovery, evaluation 또는 report write를 수행하지 않는다. |
-| Review AI | Reliability evidence를 immutable input으로 받아 단계별 advisory text 수집, 코드 JSON 취합과 local provenance를 소유한다. 실제 제공자 통합 검증과 사람의 품질 평가를 구분하며 approval·mutation 권한을 부여하지 않는다. |
+| Reliability AI | 불변 사건의 제한된 조회·native Prompt·보고·로컬 근거를 소유한다. 위임 실행은 Task와 별도 approved request를 대조하고 기존 deterministic executor만 사용한다. 모델이 승인·mutation 권한을 만들지 않는다. |
 | Runtime AI | Review semantics를 알지 않고 provider-neutral settings, bounded invocation과 runtime error normalization만 소유한다. |
 | Recovery proposal | Incident evidence, 검증된 candidate와 target state를 mutation 전에 immutable contract로 묶는다. Concrete contract는 recovery scope에 따라 달라진다. |
 | Approval | Lifecycle 밖에서 결정하며 exact validated proposal에 결합된다. |
@@ -88,7 +90,7 @@ Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별
 ## Design Constraints
 
 - lifecycle은 caller가 제공한 baseline을 받아 profile, detection, impact와 remediation draft만 계산한다.
-- `review_ai`는 `reliability`와 `runtime_ai`를 사용할 수 있지만, `reliability`는 AI package를 import하지 않고 `runtime_ai`는 review/Reliability semantics를 import하지 않는다.
+- `reliability_ai`는 `reliability`와 `runtime_ai`를 사용할 수 있지만, `reliability`는 AI package를 import하지 않고 `runtime_ai`는 Reliability·Langfuse semantics를 import하지 않는다.
 - Airflow는 raw → quality gate → analytics data-plane 순서만 담당하며 reliability lifecycle, approval, recovery 또는 evaluation을 자동으로 묶지 않는다.
 - `RemediationDraft`와 validated recovery proposal은 다른 역할이다. Draft는 권고이고 proposal은 승인 가능한 exact mutation contract다.
 - Partition/freshness recovery의 `RecoveryProposal`과 schema/table recovery의 `SchemaRecoveryProposal`은 각 scope의 state identity와 action을 독립적으로 고정한다.
@@ -106,7 +108,7 @@ Current capability의 normative contract는 [`../openspec/specs/`](../openspec/s
 | 실행 request, 결과, dbt build와 promotion | [`Data Operations`](domains/data-operations.md) |
 | DuckDB, dbt model·lineage, artifact projection primitive | [`Data Platform`](domains/data-platform.md) |
 | Incident, impact, remediation, recovery, evaluation | [`Reliability`](domains/reliability.md) |
-| Evidence-bound advisory review와 provenance | [`Review AI`](domains/review-ai.md) |
+| Bounded investigation·위임 보고·provenance | [`Reliability AI`](domains/review-ai.md) |
 | Provider-neutral AI invocation과 settings | [`Runtime AI`](domains/runtime-ai.md) |
 | Airflow DAG와 runtime config | [`Orchestration`](domains/orchestration.md) |
 
@@ -116,5 +118,5 @@ Current capability의 normative contract는 [`../openspec/specs/`](../openspec/s
 | --- | --- |
 | 로컬 DuckDB, HMDA 적재, dbt model, reliability control plane | 원천 다운로드, lakehouse, 분산 처리 |
 | 승인된 recovery와 deterministic re-validation/evaluation | human approval UI, 범용 자율 복구, 감사 시스템 |
-| evidence-bound AI advisory review와 bounded provider runtime | 범용 autonomous agent, model gateway/router, AI-driven mutation |
+| bounded AI 조사·승인 요청의 위임 조합·provider runtime | 범용 autonomous agent, model gateway/router, AI가 생성한 mutation 권한 |
 | 로컬 Airflow data plane | schedule, automatic retry, distributed executor, cloud 배포, production SLO, 장기 모니터링 |

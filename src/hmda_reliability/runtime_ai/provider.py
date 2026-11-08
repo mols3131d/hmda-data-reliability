@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 import time
 from collections.abc import Callable
@@ -17,7 +18,11 @@ from openai import (
     not_given,
     omit,
 )
-from openai.types.chat import ChatCompletionMessageParam
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionMessageParam,
+    ChatCompletionToolParam,
+)
 from openai.types.chat.completion_create_params import ResponseFormat
 
 from hmda_reliability.logger import get_logger
@@ -27,6 +32,9 @@ from hmda_reliability.runtime_ai.contracts import (
     ProviderResponse,
     ProviderResponseMetadata,
     ProviderUsage,
+    ToolCall,
+    ToolCallFunction,
+    ToolDefinition,
     TransportResponse,
     TransportTimeouts,
 )
@@ -150,6 +158,8 @@ class OpenAICompatibleAdapter:
         *,
         output_format: Literal["json_object", "text"] = "json_object",
         budget_seconds: float | None = None,
+        tools: tuple[ToolDefinition, ...] | None = None,
+        tool_choice: Literal["auto", "none"] | None = None,
     ) -> ProviderResponse:
         """지수 백오프 재시도를 적용하여 chat completion 전송을 호출한다.
 
@@ -158,6 +168,8 @@ class OpenAICompatibleAdapter:
         `max_output_bytes` 한도로 제한한다. 예산은 시도와 백오프 시작을 통제하고
         HTTP 대기 제한을 줄이지만 진행 중인 동기 호출의 강제 중단을 보장하지
         않는다. 늦게 완성된 bounded 응답도 호출자가 보존할 수 있도록 반환한다.
+        `tools`가 주어지면 모델이 반환한 도구 호출을 `tool_calls`로 정규화한다;
+        도구 실행 자체는 호출자가 소유한다.
         """
         if budget_seconds is not None and (
             not math.isfinite(budget_seconds) or budget_seconds < 0
@@ -173,6 +185,8 @@ class OpenAICompatibleAdapter:
             if output_format == "json_object"
             else None,
             stream=False,
+            tools=tools,
+            tool_choice=tool_choice,
         )
         started = self._clock()
         deadline = None if budget_seconds is None else started + budget_seconds
@@ -224,7 +238,14 @@ class OpenAICompatibleAdapter:
                 ) from None
 
             latency_ms = _elapsed_ms(started, self._clock)
-            output_bytes = len(response.content.encode("utf-8"))
+            output_bytes = len(response.content.encode("utf-8")) + (
+                len(response.raw_tool_calls.encode("utf-8"))
+                if response.raw_tool_calls is not None
+                else sum(
+                    len(call.function.arguments.encode("utf-8"))
+                    for call in response.tool_calls
+                )
+            )
             if output_bytes > self._settings.max_output_bytes:
                 raise ProviderResponseTooLargeError(
                     attempt_count=attempt_count,
@@ -237,6 +258,8 @@ class OpenAICompatibleAdapter:
                 )
             return ProviderResponse(
                 content=response.content,
+                tool_calls=response.tool_calls,
+                raw_tool_calls=response.raw_tool_calls,
                 attempt_count=attempt_count,
                 latency_ms=latency_ms,
                 usage=response.usage,
@@ -298,7 +321,7 @@ class _OpenAIChatCompletionTransport:
             for message in request.messages
         ]
         try:
-            response = self._client.chat.completions.create(
+            raw_response = self._client.chat.completions.with_raw_response.create(
                 messages=messages,
                 model=request.model,
                 temperature=request.temperature,
@@ -307,10 +330,20 @@ class _OpenAIChatCompletionTransport:
                 if request.response_format is not None
                 else omit,
                 stream=False,
+                tools=[
+                    cast(ChatCompletionToolParam, tool.model_dump(mode="json"))
+                    for tool in request.tools
+                ]
+                if request.tools is not None
+                else omit,
+                tool_choice=request.tool_choice
+                if request.tool_choice is not None
+                else omit,
                 timeout=Timeout(**request.timeout.model_dump())
                 if request.timeout is not None
                 else not_given,
             )
+            response = raw_response.parse(to=ChatCompletion)
         except APITimeoutError as error:
             raise ProviderTransportError(
                 failure_code="provider_timeout",
@@ -340,12 +373,32 @@ class _OpenAIChatCompletionTransport:
         content = ""
         content_state = "choices_empty"
         finish_reason = None
+        tool_calls: tuple[ToolCall, ...] = ()
+        raw_tool_calls = None
         if response.choices:
             choice = response.choices[0]
             content = choice.message.content or ""
-            content_state = (
-                "content_missing" if choice.message.content is None else "text"
-            )
+            try:
+                tool_calls = _normalize_tool_calls(choice.message.tool_calls)
+                if choice.finish_reason == "tool_calls" and not tool_calls:
+                    msg = "tool completion requires tool calls"
+                    raise ValueError(msg)
+            except ValueError:
+                raw_tool_calls = json.dumps(
+                    raw_response.http_response.json()["choices"][0]["message"].get(
+                        "tool_calls"
+                    ),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                )
+                content_state = "invalid_tool_calls"
+            else:
+                if tool_calls:
+                    content_state = "tool_calls"
+                elif choice.message.content is None:
+                    content_state = "content_missing"
+                else:
+                    content_state = "text"
             finish_reason = choice.finish_reason
             if not isinstance(finish_reason, str) or finish_reason not in {
                 "stop",
@@ -364,6 +417,8 @@ class _OpenAIChatCompletionTransport:
             )
         return TransportResponse(
             content=content,
+            tool_calls=tool_calls,
+            raw_tool_calls=raw_tool_calls,
             usage=usage,
             trace_id=response._request_id,
             response_metadata=ProviderResponseMetadata.model_validate(
@@ -374,6 +429,43 @@ class _OpenAIChatCompletionTransport:
                 }
             ),
         )
+
+
+def _normalize_tool_calls(raw_calls: object) -> tuple[ToolCall, ...]:
+    """호출을 순서대로 보존하며 실행 불가능한 형식은 ValueError로 거부한다."""
+    if raw_calls is None:
+        return ()
+    if not isinstance(raw_calls, list):
+        msg = "tool_calls must be a list"
+        raise ValueError(msg)
+    normalized: list[ToolCall] = []
+    seen_ids: set[str] = set()
+    for raw in raw_calls:
+        function = getattr(raw, "function", None)
+        call_id = getattr(raw, "id", None)
+        name = getattr(function, "name", None)
+        arguments = getattr(function, "arguments", None)
+        if (
+            getattr(raw, "type", None) != "function"
+            or not isinstance(call_id, str)
+            or not isinstance(name, str)
+            or not isinstance(arguments, str)
+        ):
+            msg = "invalid function tool call"
+            raise ValueError(msg)
+        call = ToolCall(
+            id=call_id,
+            function=ToolCallFunction(
+                name=name,
+                arguments=arguments,
+            ),
+        )
+        if call.id in seen_ids:
+            msg = "duplicate function tool call id"
+            raise ValueError(msg)
+        seen_ids.add(call.id)
+        normalized.append(call)
+    return tuple(normalized)
 
 
 def _elapsed_ms(started: float, clock: Callable[[], float] = time.monotonic) -> float:

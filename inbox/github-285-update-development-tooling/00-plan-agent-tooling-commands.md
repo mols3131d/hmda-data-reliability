@@ -30,8 +30,8 @@ PR [#285](https://github.com/mols3131d/hmda-data-reliability/pull/285)에서 다
 ### 1. Restore and Validate Skills
 
 1. 현재 프로젝트 하네스와 Rulesync 관리 정책, 세 `SKILL.md` 및 필요한 동반 리소스를 읽는다. 기존 `mols-agent-asset-find`를 자산 도입 절차에 활용한다.
-2. `scripts/agent_assets.py`, `scripts/rulesync.py` 등의 **프로젝트 기본 경로**로 선언·잠금·프로젝션·챗봇 라우팅을 동기화한다. `rulesync.lock`, `skills-lock.json` 및 생성된 라우트를 수동 편집하지 않는다. 필요 없는 외부 source의 revision 전진이나 무관한 파일 변경은 포함하지 않는다.
-3. 세 Skill의 package resources, Rulesync resolved revision, 대상별 실제 Skill 발견·선택 가능 여부를 확인한다. `code-flow-map`의 template 같은 동반 파일 누락에도 유의한다.
+1. `scripts/agent_assets.py`, `scripts/rulesync.py` 등의 **프로젝트 기본 경로**로 선언·잠금·프로젝션·챗봇 라우팅을 동기화한다. `rulesync.lock`, `skills-lock.json` 및 생성된 라우트를 수동 편집하지 않는다. 필요 없는 외부 source의 revision 전진이나 무관한 파일 변경은 포함하지 않는다.
+1. 세 Skill의 package resources, Rulesync resolved revision, 대상별 실제 Skill 발견·선택 가능 여부를 확인한다. `code-flow-map`의 template 같은 동반 파일 누락에도 유의한다.
 
 ### 2. Improve Bootstrap and Task Commands
 
