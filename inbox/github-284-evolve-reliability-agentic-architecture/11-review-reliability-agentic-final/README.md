@@ -12,7 +12,7 @@ tags:
 # PR #284 Final Review Adjudication
 
 > [!IMPORTANT]
-> **이 번들의 최종 리뷰입니다.** 로컬 에이전트는 아래 **Findings**와 **Local Agent Handoff**를 우선 적용합니다. [Adversarial review](adversarial-assessment.md) 및 [Recovery status review](recovery-status-propagation.md)는 초기 후보·근거를 보존한 참고 자료이며, 우선순위와 최종 처분은 이 문서에 따릅니다.
+> **이 번들의 최종 리뷰입니다.** 먼저 **Findings**, [Test Design Review](test-design.md), **Local Agent Handoff**를 확인합니다. [Adversarial review](adversarial-assessment.md) 및 [Recovery status review](recovery-status-propagation.md)는 초기 후보의 근거 자료입니다. **여기서 수용한 finding도 로컬 에이전트가 독립적으로 검증할 후보이며, 무조건적인 수정 지시가 아닙니다.**
 
 > [!WARNING]
 > **Revise (changes_required)** — [리뷰 11](adversarial-assessment.md)·[리뷰 12](recovery-status-propagation.md)의 세 후보를 최신 소스에 대조했다. **병합 전 수정할 문제는 2건(F1, F2)**이다. 기본 경로가 아닌 신뢰된 custom handler의 비직렬화 반환 문제는 실제 도달 가능한 예외지만, 현재 병합 차단 사유에서 제외하고 선택적 후속 개선으로 분리한다.
@@ -107,16 +107,20 @@ tags:
 | ⚪ Not Verified | 문제 재현 및 수정 후 focused pytest | 원격 파일의 **정적 검토만 수행**했다. 로컬 패키지 테스트와 MockTransport 재현은 실행하지 않았다 |
 | ⚪ Not Verified | 현재 head 기준 CI·독립 리뷰·모델 품질 | [기존 셀프 리뷰](../10-report-reliability-agentic-merge-readiness-self-review.md)의 CI 및 독립 리뷰 결과는 과거 revision 증거다. 이번 검토에서 재실행하거나 현재 문제의 부재를 확인한 것은 아니다 |
 
+## Test Design Review
+
+[Test Design Review](test-design.md)는 현재 테스트의 oracle·모킹 경계·실패 시나리오를 점검했다. 기존 실제 SDK + `httpx.MockTransport` 및 하위 DuckDB 검증을 재사용할 수 있으므로 **테스트 프레임워크나 구조를 전면 재설계할 필요는 없다.** 동일 배치의 중복 ID, post-mutation divergence의 상위 상태 및 재승인 의미를 검증하는 반례가 누락되어 있다. 이 테스트 제안도 독립 검증 후 수용한다.
+
 ## Local Agent Handoff
 
-1. **F1 우선** — 단일 응답 ID 충돌을 정규화 단계에서 원자적으로 거부하고 실제 SDK 회귀로 도구 미실행·원문 보존을 입증한다.
-1. **F2 다음** — 상위 보고 상태 분류만 최소 수정하고, 원본 영수증·재검증/재승인 안내가 유지되는 회귀 테스트를 보강한다.
-1. 수정한 코드 revision에서 focused pytest와 영향받는 정적·CI 검증을 실행한다. 결과와 exact head SHA를 남기고 PR [Review Readiness](../../../docs/development/vcs-git/pull-request.md#review-readiness)를 재판정한다.
-1. **Non-blocking follow-up**은 handler JSON 반환 규약과 실제 소비자가 확인된 경우에만 별도 판단한다. 임의의 scope 확대, 데이터 변경, 승인·복구 권한 변경, 과거 기록 수정은 하지 않는다.
+1. **리뷰 자체부터 검증한다.** 최신 HEAD의 구현·정본 계약·기존 safeguard 및 테스트와 F1/F2 주장을 대조한다. 가능한 한 가장 좁은 재현 또는 red test를 먼저 실행해 각 후보에 대해 `Accept / Reject / Revise / Defer`를 근거와 함께 판정한다. 기존 경계가 이미 안전하거나 테스트 기대가 잘못됐으면 **리뷰를 기각하거나 정정**하고, 억지 패치를 하지 않는다.
+1. **검증된 문제만 최소 수정한다.** F1이 유효하면 SDK 경계의 동일 배치 중복 ID를 실행 전에 거부하고 도구 호출 0회·raw/manifest 보존을 검증한다. F2가 유효하면 `diverged_after_profile_failure`의 `partial` 분류와 `request_new_validation_and_approval` receipt 보존을 확인한다. 구체적인 테스트 oracle·재사용 가능 경계는 [Test Design Review](test-design.md)를 참고한다.
+1. 재현 실패 시 해당 테스트의 입력·oracle·기존 guard를 먼저 재검토한다. 통과를 만들기 위해 assertion을 약화하거나 새 구현을 강요하지 않는다. 해결 후 focused pytest, 영향받는 package·정적 검사, 현재 prospective merge CI를 재실행하고 실제 확인한 결과·HEAD SHA 및 기각/수정 사유를 기록한다.
+1. 이후 PR [Review Readiness](../../../docs/development/vcs-git/pull-request.md#review-readiness)를 재판정한다. custom handler JSON 직렬화, 마커 전면 재분류와 대규모 리팩토링은 실제 필수 조건으로 입증되지 않으면 후속으로 분리한다. 권한 확대·GitHub Ready 전환·승인·merge는 자동 실행하지 않는다.
 
 ## Risks and Limits
 
-- F1·F2는 현재 코드와 계약으로 확인한 **reasoned findings**다. 실제 실패 재현(`observed`)으로 과장하지 않는다.
+- F1·F2는 현재 코드와 계약에 근거한 **reasoned findings**로, 로컬 반례 검증 전의 잠정 판정이다. 실제 재현(`observed`)으로 과장하거나 로컬 에이전트의 반증을 차단하지 않는다.
 - 이 문서는 기존 두 리뷰의 **후보 검증·우선순위 조정**이며 세 번째 독립 전수 리뷰가 아니다. VS Code 전용 다중 reviewer나 로컬 테스트 환경을 호출하지 않았으므로 독립 검증 게이트를 충족했다고 주장하지 않는다.
 - [10번 셀프 리뷰](../10-report-reliability-agentic-merge-readiness-self-review.md)의 과거 `ready` 판단은 이후 새로 확인된 F1·F2를 반영하지 않는다. 변경 및 재검증 전에는 최신 merge readiness 근거로 사용하지 않는다.
-- 이번 작업은 인박스 보고서만 작성한다. 코드·테스트 수정, PR Ready 전환, GitHub approval, merge는 수행하지 않는다.
+- 본 번들 작업은 인박스 리뷰·인계만 갱신한다. 코드·테스트 수정, PR Ready 전환, GitHub approval, merge는 수행하지 않는다.
