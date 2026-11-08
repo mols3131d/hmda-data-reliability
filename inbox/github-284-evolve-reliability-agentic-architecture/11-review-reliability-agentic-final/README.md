@@ -111,6 +111,8 @@ tags:
 
 [Test Design Review](test-design.md)는 현재 테스트의 oracle·모킹 경계·실패 시나리오를 점검했다. 기존 실제 SDK + `httpx.MockTransport` 및 하위 DuckDB 검증을 재사용할 수 있으므로 **테스트 프레임워크나 구조를 전면 재설계할 필요는 없다.** 동일 배치의 중복 ID, post-mutation divergence의 상위 상태 및 재승인 의미를 검증하는 반례가 누락되어 있다. 이 테스트 제안도 독립 검증 후 수용한다.
 
+[Adversarial Test Design Review](test-design-adversarial.md)는 허용되지 않은 provider 도구 호출의 상위 실패 oracle, 비신뢰 텍스트의 prompt role 경계, mocked Dataset 실험의 증거 한계를 추가 점검한 **보완 검토**다. 새로운 production defect를 확정하지 않았으며, 기존 필수 F1/F2에 별도의 병합 차단 항목을 추가하지 않는다. 제안은 최신 HEAD에서 독립적으로 검증·반증한다.
+
 ## Local Agent Handoff
 
 1. **리뷰 자체부터 검증한다.** 최신 HEAD의 구현·정본 계약·기존 safeguard 및 테스트와 F1/F2 주장을 대조한다. 가능한 한 가장 좁은 재현 또는 red test를 먼저 실행해 각 후보에 대해 `Accept / Reject / Revise / Defer`를 근거와 함께 판정한다. 기존 경계가 이미 안전하거나 테스트 기대가 잘못됐으면 **리뷰를 기각하거나 정정**하고, 억지 패치를 하지 않는다.
