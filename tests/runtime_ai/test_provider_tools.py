@@ -164,3 +164,26 @@ def test_tool_call_arguments_count_toward_output_byte_cap() -> None:
 
     with pytest.raises(provider_module.ProviderResponseTooLargeError):
         adapter.invoke(_messages(), tools=(_TOOL,))
+
+
+def test_invalid_raw_tool_calls_count_toward_output_byte_cap() -> None:
+    raw_calls = json.dumps(
+        [{"id": "", "function": {"arguments": "x" * 64}}], separators=(",", ":")
+    )
+
+    class Transport:
+        def create(
+            self, request: runtime_contracts.ChatCompletionRequest
+        ) -> runtime_contracts.TransportResponse:
+            return runtime_contracts.TransportResponse(
+                content="report", raw_tool_calls=raw_calls
+            )
+
+    settings = _settings().model_copy(update={"max_output_bytes": 32})
+    adapter = provider_module.OpenAICompatibleAdapter(settings, transport=Transport())
+
+    with pytest.raises(provider_module.ProviderResponseTooLargeError) as error:
+        adapter.invoke(_messages(), tools=(_TOOL,))
+
+    assert error.value.actual_bytes == len(("report" + raw_calls).encode("utf-8"))
+    assert error.value.attempt_count == 1

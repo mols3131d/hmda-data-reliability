@@ -46,7 +46,7 @@ Recovery 결과와 wrapper 보고는 결합 변경이다. Mutation·재검증·r
 
 - [x] 4. Invocation provenance와 실제 모델·도구 관측을 연결한다.
   - **Covers:** Typed review result boundary; Local provider response retention; Investigation provenance and failure retention; Verified model IO observation linkage; Independent external evaluation IO.
-  - **Test first:** canonical 수치와 다른 모델 facts, invalid/깊은 JSON, tool-call-only·빈 응답, 응답/manifest 쓰기 실패·충돌·late response 및 관측 장애를 기존 조사·저장 테스트에서 고정한다.
+  - **Test first:** canonical 수치와 다른 모델 facts, invalid/깊은 JSON, tool-call-only·빈 응답, 응답/manifest 쓰기 실패·충돌·late response 및 관측 장애를 기존 조사·저장 테스트에서 고정한다. 실제 SDK의 비정상 도구 호출이 유효한 최종 본문과 함께 와도 성공으로 바뀌지 않고, 부분 도구 실행·재시도 없이 제한된 본문과 호출 원문을 로컬에 보존하는 생산자–소비자 연결을 검증한다.
   - **Done when:** 실제 input·revision·prompt·설정·turn·usage·attempt·latency·도구 결과가 private create-only 근거로 연결되고 canonical facts와 모델 narrative가 분리되며 실패가 completed로 변하지 않는다. 실제 호출 구간의 generation/tool observation이 올바르게 중첩되며 local raw 저장이 원격 output보다 앞선다. Task 1의 공통 projection을 거친 실제 도구 결과가 후속 모델 메시지·관측에 연결됨을 검증한다. 전송 장애는 모델 재호출·결과 변경을 일으키지 않고 credential·본문·개인 경로가 metadata에 자동 포함되지 않는다.
 
 - [x] 5. 반복 Dataset 실험의 완전성과 실행 조건 추적을 완성한다.

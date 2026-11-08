@@ -382,6 +382,15 @@ def investigate_incident(
             )
             return finish("error", "provider_response_too_large")
 
+        response_failure = (
+            "invalid_provider_tool_calls"
+            if response.raw_tool_calls is not None
+            or (
+                response.response_metadata is not None
+                and response.response_metadata.content_state == "invalid_tool_calls"
+            )
+            else None
+        )
         turn_latency = max(0.0, (clock() - turn_start) * 1000)
         turns.append(
             InvestigationTurnRecord(
@@ -391,10 +400,12 @@ def investigate_incident(
                 tool_calls=tuple(
                     call.model_dump(mode="json") for call in response.tool_calls
                 ),
+                raw_tool_calls=response.raw_tool_calls,
                 latency_ms=turn_latency,
                 attempt_count=response.attempt_count,
                 usage=response.usage,
                 response_metadata=response.response_metadata,
+                failure_code=response_failure,
             )
         )
         try:
@@ -411,6 +422,11 @@ def investigate_incident(
         _update_observation(
             generation,
             observation_errors,
+            **(
+                {"level": "ERROR", "status_message": response_failure}
+                if response_failure is not None
+                else {}
+            ),
             **(
                 {
                     "output": project_remote_output(
@@ -450,6 +466,8 @@ def investigate_incident(
         generation = None
         if clock() >= deadline:
             return finish("budget_exhausted", "workflow_budget_exhausted")
+        if response_failure is not None:
+            return finish("error", response_failure)
         if response.response_metadata is not None and (
             response.response_metadata.finish_reason in {"length", "content_filter"}
         ):

@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+from functools import partial
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
+from openai import OpenAI
 
 from hmda_reliability.reliability.contracts import Evidence, EvidenceSource
 from hmda_reliability.reliability_ai import (
@@ -14,8 +17,10 @@ from hmda_reliability.reliability_ai import (
     ReliabilityAISettings,
     investigate_incident,
 )
+from hmda_reliability.reliability_ai.context import project_remote_output
 from hmda_reliability.reliability_ai.investigation.tools import ToolRegistry
 from hmda_reliability.reliability_ai.store import InvocationEvidenceWriteError
+from hmda_reliability.runtime_ai import provider as provider_module
 from hmda_reliability.runtime_ai.contracts import (
     ChatCompletionRequest,
     ProviderResponseMetadata,
@@ -28,7 +33,7 @@ from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 from .conftest import NullSpikeReviewMaterial
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.integration
 
 _EMPTY_REPORT = '{"findings":[],"hypotheses":[],"uncertainties":[]}'
 
@@ -52,6 +57,162 @@ class ScriptedTransport:
         if not self.responses:
             raise RuntimeError("no more scripted responses")
         return self.responses.pop(0)
+
+
+@pytest.mark.parametrize(
+    ("call_id", "tool_name", "arguments", "call_type"),
+    [
+        ("", "get_incident_evidence", "{}", "function"),
+        (" ", "get_incident_evidence", "{}", "function"),
+        ("call_1", "", "{}", "function"),
+        ("call_1", " ", "{}", "function"),
+        ("call_1", "get_incident_evidence", None, "function"),
+        ("call_1", "get_incident_evidence", {}, "function"),
+        (
+            "call_1",
+            "get_incident_evidence",
+            json.loads("[" * 300 + "0" + "]" * 300),
+            "function",
+        ),
+        ("call_1", "get_incident_evidence", "{}", "unsupported"),
+    ],
+)
+@pytest.mark.parametrize("include_valid_call", [False, True])
+def test_invalid_sdk_tool_calls_fail_without_losing_response(
+    call_id: str,
+    tool_name: str,
+    arguments: object,
+    call_type: str,
+    include_valid_call: bool,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    material = null_spike_review_material
+    raw_calls = [
+        {
+            "id": call_id,
+            "type": call_type,
+            "function": {"name": tool_name, "arguments": arguments},
+        }
+    ]
+    if include_valid_call:
+        raw_calls.insert(
+            0,
+            {
+                "id": "valid_call",
+                "type": "function",
+                "function": {"name": "get_incident_evidence", "arguments": "{}"},
+            },
+        )
+    requests: list[httpx.Request] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "id": "invalid-tool-completion",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": _EMPTY_REPORT,
+                            "tool_calls": raw_calls,
+                        },
+                        "finish_reason": "tool_calls",
+                    }
+                ],
+            },
+        )
+
+    settings = _settings().model_copy(update={"max_retries": 2})
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        result = investigate_incident(
+            AgenticReviewInput(
+                incident=material.detection.incident,
+                evidence=[material.detection.evidence],
+                draft=material.draft,
+                project_revision="invalid-tool-regression",
+            ),
+            settings=settings,
+            artifact_root=tmp_path,
+        )
+
+    assert result.status == "error"
+    assert result.failure_code == "invalid_provider_tool_calls"
+    assert len(requests) == 1
+    assert result.tool_calls == ()
+    assert result.findings == ()
+    assert result.response_paths[0].read_text(encoding="utf-8") == _EMPTY_REPORT
+    assert result.manifest_path is not None
+    manifest = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+    turn = manifest["result"]["turns"][0]
+    assert json.loads(turn["raw_tool_calls"]) == raw_calls
+    assert turn["tool_calls"] == []
+    assert turn["failure_code"] == "invalid_provider_tool_calls"
+    assert "raw_tool_calls" not in project_remote_output(turn)
+
+
+@pytest.mark.parametrize("raw_calls", [None, []])
+def test_sdk_tool_completion_requires_calls_before_accepting_report(
+    raw_calls: list[object] | None,
+    null_spike_review_material: NullSpikeReviewMaterial,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    material = null_spike_review_material
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "id": "missing-tool-completion",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": _EMPTY_REPORT,
+                            "tool_calls": raw_calls,
+                        },
+                        "finish_reason": "tool_calls",
+                    }
+                ],
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        result = investigate_incident(
+            AgenticReviewInput(
+                incident=material.detection.incident,
+                evidence=[material.detection.evidence],
+                draft=material.draft,
+                project_revision="missing-tool-regression",
+            ),
+            settings=_settings(),
+            artifact_root=tmp_path,
+        )
+
+    assert result.status == "error"
+    assert result.failure_code == "invalid_provider_tool_calls"
+    assert result.tool_calls == ()
+    assert result.turns[0].raw_tool_calls is not None
+    assert json.loads(result.turns[0].raw_tool_calls) == raw_calls
+    assert result.response_paths[0].read_text(encoding="utf-8") == _EMPTY_REPORT
 
 
 def test_investigate_incident_dynamic_tool_calling_loop(

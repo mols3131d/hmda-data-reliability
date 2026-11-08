@@ -134,7 +134,9 @@ class ProviderResponseMetadata(RuntimeAIContract):
         ]
         | None
     ) = None
-    content_state: Literal["text", "tool_calls", "content_missing", "choices_empty"]
+    content_state: Literal[
+        "text", "tool_calls", "invalid_tool_calls", "content_missing", "choices_empty"
+    ]
     content_bytes: int = Field(ge=0)
 
 
@@ -143,6 +145,7 @@ class TransportResponse(RuntimeAIContract):
 
     content: str
     tool_calls: tuple[ToolCall, ...] = ()
+    raw_tool_calls: str | None = None
     usage: ProviderUsage | None = None
     trace_id: str | None = None
     response_metadata: ProviderResponseMetadata | None = None
@@ -209,6 +212,7 @@ class ProviderResponse(RuntimeAIContract):
 
     content: str
     tool_calls: tuple[ToolCall, ...] = ()
+    raw_tool_calls: str | None = None
     attempt_count: int = Field(ge=1)
     latency_ms: float = Field(ge=0)
     usage: ProviderUsage | None = None

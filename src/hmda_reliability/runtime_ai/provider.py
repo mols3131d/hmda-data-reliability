@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 import time
 from collections.abc import Callable
@@ -17,7 +18,11 @@ from openai import (
     not_given,
     omit,
 )
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionMessageParam,
+    ChatCompletionToolParam,
+)
 from openai.types.chat.completion_create_params import ResponseFormat
 
 from hmda_reliability.logger import get_logger
@@ -233,9 +238,13 @@ class OpenAICompatibleAdapter:
                 ) from None
 
             latency_ms = _elapsed_ms(started, self._clock)
-            output_bytes = len(response.content.encode("utf-8")) + sum(
-                len(call.function.arguments.encode("utf-8"))
-                for call in response.tool_calls
+            output_bytes = len(response.content.encode("utf-8")) + (
+                len(response.raw_tool_calls.encode("utf-8"))
+                if response.raw_tool_calls is not None
+                else sum(
+                    len(call.function.arguments.encode("utf-8"))
+                    for call in response.tool_calls
+                )
             )
             if output_bytes > self._settings.max_output_bytes:
                 raise ProviderResponseTooLargeError(
@@ -250,6 +259,7 @@ class OpenAICompatibleAdapter:
             return ProviderResponse(
                 content=response.content,
                 tool_calls=response.tool_calls,
+                raw_tool_calls=response.raw_tool_calls,
                 attempt_count=attempt_count,
                 latency_ms=latency_ms,
                 usage=response.usage,
@@ -311,7 +321,7 @@ class _OpenAIChatCompletionTransport:
             for message in request.messages
         ]
         try:
-            response = self._client.chat.completions.create(
+            raw_response = self._client.chat.completions.with_raw_response.create(
                 messages=messages,
                 model=request.model,
                 temperature=request.temperature,
@@ -333,6 +343,7 @@ class _OpenAIChatCompletionTransport:
                 if request.timeout is not None
                 else not_given,
             )
+            response = raw_response.parse(to=ChatCompletion)
         except APITimeoutError as error:
             raise ProviderTransportError(
                 failure_code="provider_timeout",
@@ -363,16 +374,31 @@ class _OpenAIChatCompletionTransport:
         content_state = "choices_empty"
         finish_reason = None
         tool_calls: tuple[ToolCall, ...] = ()
+        raw_tool_calls = None
         if response.choices:
             choice = response.choices[0]
             content = choice.message.content or ""
-            tool_calls = _normalize_tool_calls(choice.message.tool_calls)
-            if tool_calls:
-                content_state = "tool_calls"
-            else:
-                content_state = (
-                    "content_missing" if choice.message.content is None else "text"
+            try:
+                tool_calls = _normalize_tool_calls(choice.message.tool_calls)
+                if choice.finish_reason == "tool_calls" and not tool_calls:
+                    msg = "tool completion requires tool calls"
+                    raise ValueError(msg)
+            except ValueError:
+                raw_tool_calls = json.dumps(
+                    raw_response.http_response.json()["choices"][0]["message"].get(
+                        "tool_calls"
+                    ),
+                    ensure_ascii=False,
+                    separators=(",", ":"),
                 )
+                content_state = "invalid_tool_calls"
+            else:
+                if tool_calls:
+                    content_state = "tool_calls"
+                elif choice.message.content is None:
+                    content_state = "content_missing"
+                else:
+                    content_state = "text"
             finish_reason = choice.finish_reason
             if not isinstance(finish_reason, str) or finish_reason not in {
                 "stop",
@@ -392,6 +418,7 @@ class _OpenAIChatCompletionTransport:
         return TransportResponse(
             content=content,
             tool_calls=tool_calls,
+            raw_tool_calls=raw_tool_calls,
             usage=usage,
             trace_id=response._request_id,
             response_metadata=ProviderResponseMetadata.model_validate(
@@ -405,27 +432,32 @@ class _OpenAIChatCompletionTransport:
 
 
 def _normalize_tool_calls(raw_calls: object) -> tuple[ToolCall, ...]:
-    """SDK 도구 호출 중 function 형식만 provider 중립 계약으로 정규화한다.
-
-    이름이나 id가 비어 있는 호출은 실행할 수 없으므로 버리며, 인자 검증은
-    호출자의 도구 게이트웨이가 소유한다.
-    """
-    if not isinstance(raw_calls, list):
+    """호출을 순서대로 보존하며 실행 불가능한 형식은 ValueError로 거부한다."""
+    if raw_calls is None:
         return ()
+    if not isinstance(raw_calls, list):
+        msg = "tool_calls must be a list"
+        raise ValueError(msg)
     normalized: list[ToolCall] = []
     for raw in raw_calls:
         function = getattr(raw, "function", None)
         call_id = getattr(raw, "id", None)
         name = getattr(function, "name", None)
-        if not call_id or not name:
-            continue
         arguments = getattr(function, "arguments", None)
+        if (
+            getattr(raw, "type", None) != "function"
+            or not isinstance(call_id, str)
+            or not isinstance(name, str)
+            or not isinstance(arguments, str)
+        ):
+            msg = "invalid function tool call"
+            raise ValueError(msg)
         normalized.append(
             ToolCall(
                 id=call_id,
                 function=ToolCallFunction(
                     name=name,
-                    arguments=arguments if isinstance(arguments, str) else "",
+                    arguments=arguments,
                 ),
             )
         )
