@@ -12,7 +12,7 @@ tags:
 # PR #284 Final Review Adjudication
 
 > [!IMPORTANT]
-> **이 번들의 최종 리뷰입니다.** 먼저 **Findings**, [Test Design Review](test-design.md), **Local Agent Handoff**를 확인합니다. [Adversarial review](adversarial-assessment.md) 및 [Recovery status review](recovery-status-propagation.md)는 초기 후보의 근거 자료입니다. **여기서 수용한 finding도 로컬 에이전트가 독립적으로 검증할 후보이며, 무조건적인 수정 지시가 아닙니다.**
+> **이 번들의 최종 리뷰입니다.** 먼저 **Findings**, [Final Test Design Report](report-test-design-final.md), **Local Agent Handoff**를 확인합니다. [Adversarial review](adversarial-assessment.md) 및 [Recovery status review](recovery-status-propagation.md)는 초기 후보의 근거 자료입니다. **여기서 수용한 finding도 로컬 에이전트가 독립적으로 검증할 후보이며, 무조건적인 수정 지시가 아닙니다.**
 
 > [!WARNING]
 > **Revise (changes_required)** — [리뷰 11](adversarial-assessment.md)·[리뷰 12](recovery-status-propagation.md)의 세 후보를 최신 소스에 대조했다. **병합 전 수정할 문제는 2건(F1, F2)**이다. 기본 경로가 아닌 신뢰된 custom handler의 비직렬화 반환 문제는 실제 도달 가능한 예외지만, 현재 병합 차단 사유에서 제외하고 선택적 후속 개선으로 분리한다.
@@ -109,14 +109,12 @@ tags:
 
 ## Test Design Review
 
-[Test Design Review](test-design.md)는 현재 테스트의 oracle·모킹 경계·실패 시나리오를 점검했다. 기존 실제 SDK + `httpx.MockTransport` 및 하위 DuckDB 검증을 재사용할 수 있으므로 **테스트 프레임워크나 구조를 전면 재설계할 필요는 없다.** 동일 배치의 중복 ID, post-mutation divergence의 상위 상태 및 재승인 의미를 검증하는 반례가 누락되어 있다. 이 테스트 제안도 독립 검증 후 수용한다.
-
-[Adversarial Test Design Review](test-design-adversarial.md)는 허용되지 않은 provider 도구 호출의 상위 실패 oracle, 비신뢰 텍스트의 prompt role 경계, mocked Dataset 실험의 증거 한계를 추가 점검한 **보완 검토**다. 새로운 production defect를 확정하지 않았으며, 기존 필수 F1/F2에 별도의 병합 차단 항목을 추가하지 않는다. 제안은 최신 HEAD에서 독립적으로 검증·반증한다.
+[Final Test Design Report](report-test-design-final.md)에 [기존 테스트 설계 검토](test-design.md)와 [적대적 테스트 설계 검토](test-design-adversarial.md)의 유효한 내용을 통합했다. **기존 SDK + `httpx.MockTransport` 및 하위 DuckDB 테스트를 재사용**하고, F1/F2 반례를 먼저 재현한다. 금지 도구 응답·비신뢰 텍스트의 구조적 검사 보강은 기존 safeguard와의 중복을 확인한 뒤 선택한다. mocked Dataset 실험은 실모델·인간 평가 증거가 아니다. 모든 제안은 로컬 에이전트가 현재 HEAD에서 직접 검토·테스트한 후 채택·수정·기각해야 하며 추가 production blocker를 확정한 것이 아니다.
 
 ## Local Agent Handoff
 
 1. **리뷰 자체부터 검증한다.** 최신 HEAD의 구현·정본 계약·기존 safeguard 및 테스트와 F1/F2 주장을 대조한다. 가능한 한 가장 좁은 재현 또는 red test를 먼저 실행해 각 후보에 대해 `Accept / Reject / Revise / Defer`를 근거와 함께 판정한다. 기존 경계가 이미 안전하거나 테스트 기대가 잘못됐으면 **리뷰를 기각하거나 정정**하고, 억지 패치를 하지 않는다.
-1. **검증된 문제만 최소 수정한다.** F1이 유효하면 SDK 경계의 동일 배치 중복 ID를 실행 전에 거부하고 도구 호출 0회·raw/manifest 보존을 검증한다. F2가 유효하면 `diverged_after_profile_failure`의 `partial` 분류와 `request_new_validation_and_approval` receipt 보존을 확인한다. 구체적인 테스트 oracle·재사용 가능 경계는 [Test Design Review](test-design.md)를 참고한다.
+1. **검증된 문제만 최소 수정한다.** F1이 유효하면 SDK 경계의 동일 배치 중복 ID를 실행 전에 거부하고 도구 호출 0회·raw/manifest 보존을 검증한다. F2가 유효하면 `diverged_after_profile_failure`의 `partial` 분류와 `request_new_validation_and_approval` receipt 보존을 확인한다. 구체적인 테스트 oracle·우선순위·수용 조건은 [Final Test Design Report](report-test-design-final.md)를 참고한다.
 1. 재현 실패 시 해당 테스트의 입력·oracle·기존 guard를 먼저 재검토한다. 통과를 만들기 위해 assertion을 약화하거나 새 구현을 강요하지 않는다. 해결 후 focused pytest, 영향받는 package·정적 검사, 현재 prospective merge CI를 재실행하고 실제 확인한 결과·HEAD SHA 및 기각/수정 사유를 기록한다.
 1. 이후 PR [Review Readiness](../../../docs/development/vcs-git/pull-request.md#review-readiness)를 재판정한다. custom handler JSON 직렬화, 마커 전면 재분류와 대규모 리팩토링은 실제 필수 조건으로 입증되지 않으면 후속으로 분리한다. 권한 확대·GitHub Ready 전환·승인·merge는 자동 실행하지 않는다.
 
