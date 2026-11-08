@@ -439,6 +439,7 @@ def _normalize_tool_calls(raw_calls: object) -> tuple[ToolCall, ...]:
         msg = "tool_calls must be a list"
         raise ValueError(msg)
     normalized: list[ToolCall] = []
+    seen_ids: set[str] = set()
     for raw in raw_calls:
         function = getattr(raw, "function", None)
         call_id = getattr(raw, "id", None)
@@ -452,15 +453,18 @@ def _normalize_tool_calls(raw_calls: object) -> tuple[ToolCall, ...]:
         ):
             msg = "invalid function tool call"
             raise ValueError(msg)
-        normalized.append(
-            ToolCall(
-                id=call_id,
-                function=ToolCallFunction(
-                    name=name,
-                    arguments=arguments,
-                ),
-            )
+        call = ToolCall(
+            id=call_id,
+            function=ToolCallFunction(
+                name=name,
+                arguments=arguments,
+            ),
         )
+        if call.id in seen_ids:
+            msg = "duplicate function tool call id"
+            raise ValueError(msg)
+        seen_ids.add(call.id)
+        normalized.append(call)
     return tuple(normalized)
 
 

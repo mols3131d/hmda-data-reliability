@@ -355,6 +355,7 @@ def _recovery_failure_status(
             "partition_changed",
             "partition_replaced",
             "already_recovered",
+            "diverged_after_profile_failure",
             "table_replaced",
             "already_restored",
         }

@@ -334,7 +334,7 @@ def test_delegated_task_enforces_empty_tool_allowlist_and_timeout(
             )
         ]
     )
-    execute_delegated_task(
+    report = execute_delegated_task(
         TaskEnvelope(
             task_id="restricted",
             requester="human",
@@ -359,6 +359,10 @@ def test_delegated_task_enforces_empty_tool_allowlist_and_timeout(
     assert transport.requests[0].tool_choice == "none"
     assert transport.requests[0].timeout is not None
     assert transport.requests[0].timeout.read <= 0.001
+    assert report.status == "failed"
+    assert report.investigation is not None
+    assert report.investigation.failure_code == "tool_not_allowed"
+    assert report.execution_receipts == ()
 
 
 def test_provider_failure_is_not_reported_as_completed(
@@ -404,14 +408,23 @@ def test_provider_failure_is_not_reported_as_completed(
 
 
 @pytest.mark.parametrize(
-    ("mutation_state", "expected_status"),
-    [(None, "failed"), ("partition_changed", "partial")],
+    ("mutation_state", "reconciliation_action", "expected_status"),
+    [
+        (None, "resume_verification", "failed"),
+        ("partition_changed", "resume_verification", "partial"),
+        (
+            "diverged_after_profile_failure",
+            "request_new_validation_and_approval",
+            "partial",
+        ),
+    ],
 )
 def test_post_mutation_failure_preserves_reconciliation_evidence(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     mutation_state: str | None,
+    reconciliation_action: str,
     expected_status: str,
 ) -> None:
     from hmda_reliability.reliability_ai.execution import service
@@ -425,7 +438,7 @@ def test_post_mutation_failure_preserves_reconciliation_evidence(
         raise BackfillValidationError(
             "verification failed after commit",
             mutation_state=mutation_state,
-            reconciliation_action="resume_verification",
+            reconciliation_action=reconciliation_action,
             context={"actual_identity": {"digest": "after"}},
         )
 
@@ -455,7 +468,7 @@ def test_post_mutation_failure_preserves_reconciliation_evidence(
     assert receipt.success is False
     assert receipt.revalidated is False
     assert receipt.mutation_state == (mutation_state or "not_reported")
-    assert receipt.reconciliation_action == "resume_verification"
+    assert receipt.reconciliation_action == reconciliation_action
     assert receipt.details["context"] == {"actual_identity": {"digest": "after"}}
 
 

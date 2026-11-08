@@ -215,6 +215,91 @@ def test_sdk_tool_completion_requires_calls_before_accepting_report(
     assert result.response_paths[0].read_text(encoding="utf-8") == _EMPTY_REPORT
 
 
+def test_duplicate_sdk_tool_call_ids_fail_before_dispatch(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    material = null_spike_review_material
+    raw_calls = [
+        {
+            "id": "dup_call",
+            "type": "function",
+            "function": {
+                "name": "compare_profiles",
+                "arguments": '{"column":"income"}',
+            },
+        },
+        {
+            "id": " dup_call ",
+            "type": "function",
+            "function": {
+                "name": "compare_profiles",
+                "arguments": "{}",
+            },
+        },
+    ]
+    requests: list[httpx.Request] = []
+    spy_calls: list[dict[str, object]] = []
+
+    def spy_handler(arguments: dict[str, object]) -> dict[str, object]:
+        spy_calls.append(dict(arguments))
+        return {"ok": True}
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "id": "duplicate-id-tool-completion",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": _EMPTY_REPORT,
+                            "tool_calls": raw_calls,
+                        },
+                        "finish_reason": "tool_calls",
+                    }
+                ],
+            },
+        )
+
+    settings = _settings().model_copy(update={"max_retries": 2})
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        result = investigate_incident(
+            AgenticReviewInput(
+                incident=material.detection.incident,
+                evidence=[material.detection.evidence],
+                draft=material.draft,
+                project_revision="duplicate-tool-id-regression",
+            ),
+            settings=settings,
+            tool_registry=ToolRegistry(profile_comparison_handler=spy_handler),
+            artifact_root=tmp_path,
+        )
+
+    assert result.status == "error"
+    assert result.failure_code == "invalid_provider_tool_calls"
+    assert len(requests) == 1
+    assert spy_calls == []
+    assert result.tool_calls == ()
+    assert result.response_paths[0].read_text(encoding="utf-8") == _EMPTY_REPORT
+    assert result.manifest_path is not None
+    manifest = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+    turn = manifest["result"]["turns"][0]
+    assert json.loads(turn["raw_tool_calls"]) == raw_calls
+    assert turn["tool_calls"] == []
+    assert turn["failure_code"] == "invalid_provider_tool_calls"
+
+
 def test_investigate_incident_dynamic_tool_calling_loop(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,

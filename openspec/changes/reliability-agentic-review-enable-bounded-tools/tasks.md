@@ -36,7 +36,7 @@ Recovery 결과와 wrapper 보고는 결합 변경이다. Mutation·재검증·r
 
 - [x] 2. Task와 복구 요청의 사건 일치 및 실제 실행 보고를 완성한다.
   - **Covers:** Delegated task limits and recovery reporting; Advisory and read-only boundary; Design D5.
-  - **Test first:** 다른 incident·target·partition의 approved request, 두 복구 요청 동시 제공, 충돌하는 snapshot refs와 조사 실패에서 executor가 호출되지 않는 검사를 추가한다.
+  - **Test first:** 다른 incident·target·partition의 approved request, 두 복구 요청 동시 제공, 충돌하는 snapshot refs와 조사 실패에서 executor가 호출되지 않는 검사를 추가한다. 금지된 도구 호출 응답 시 상위 실패(`tool_not_allowed`)와 백필 후 `diverged_after_profile_failure`의 `partial` 상태·재승인 요구 영수증 보존을 검증한다.
   - **Done when:** execution 진입점의 preflight가 충돌을 차단하고 Task/caller의 도구 교집합·최소 예산을 적용한다. 기존 authoritative executor·Approval을 유지하며 성공·freshness 실패·부분 mutation·reconciliation·미보고 상태를 실제 domain result와 구분 가능한 ReportEnvelope로 보존한다. 기존 domain 결과를 실제 연결한 성공·차단·실패 검증으로 조사 사건·실행 대상·보고 참조의 일치를 확인하고, executor mock의 개별 green만으로 조합 완료를 판정하지 않는다.
 
 - [x] 3. 조사용 native Prompt lifecycle을 공통 실행에 연결한다.
@@ -46,7 +46,7 @@ Recovery 결과와 wrapper 보고는 결합 변경이다. Mutation·재검증·r
 
 - [x] 4. Invocation provenance와 실제 모델·도구 관측을 연결한다.
   - **Covers:** Typed review result boundary; Local provider response retention; Investigation provenance and failure retention; Verified model IO observation linkage; Independent external evaluation IO.
-  - **Test first:** canonical 수치와 다른 모델 facts, invalid/깊은 JSON, tool-call-only·빈 응답, 응답/manifest 쓰기 실패·충돌·late response 및 관측 장애를 기존 조사·저장 테스트에서 고정한다. 실제 SDK의 비정상 도구 호출이 유효한 최종 본문과 함께 와도 성공으로 바뀌지 않고, 부분 도구 실행·재시도 없이 제한된 본문과 호출 원문을 로컬에 보존하는 생산자–소비자 연결을 검증한다.
+  - **Test first:** canonical 수치와 다른 모델 facts, invalid/깊은 JSON, tool-call-only·빈 응답, 응답/manifest 쓰기 실패·충돌·late response 및 관측 장애를 기존 조사·저장 테스트에서 고정한다. 실제 SDK의 비정상 도구 호출(동일 응답 배치 내 중복 호출 ID 포함)이 유효한 최종 본문과 함께 와도 성공으로 바뀌지 않고, 부분 도구 실행·재시도 없이 제한된 본문과 호출 원문을 로컬에 보존하는 생산자–소비자 연결을 검증한다.
   - **Done when:** 실제 input·revision·prompt·설정·turn·usage·attempt·latency·도구 결과가 private create-only 근거로 연결되고 canonical facts와 모델 narrative가 분리되며 실패가 completed로 변하지 않는다. 실제 호출 구간의 generation/tool observation이 올바르게 중첩되며 local raw 저장이 원격 output보다 앞선다. Task 1의 공통 projection을 거친 실제 도구 결과가 후속 모델 메시지·관측에 연결됨을 검증한다. 전송 장애는 모델 재호출·결과 변경을 일으키지 않고 credential·본문·개인 경로가 metadata에 자동 포함되지 않는다.
 
 - [x] 5. 반복 Dataset 실험의 완전성과 실행 조건 추적을 완성한다.
