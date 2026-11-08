@@ -11,6 +11,9 @@ tags:
 
 # PR #284 Adversarial Code Review
 
+> [!NOTE]
+> **초기 검토 기록입니다.** 이 문서의 판정과 수정 우선순위는 [최종 리뷰](README.md)에서 재검토했습니다. 실제 작업은 최종 리뷰를 먼저 확인하세요.
+
 > [!WARNING]
 > **Revise (changes_required)** — 정적 코드 추적에서 비정상 provider 도구 호출의 ID 충돌을 허용하는 결함(F1)을 확인했다. 추가로 주입형 도구 handler가 직렬화 불가능한 결과를 반환하면 조사 실패가 정상적으로 기록되지 않는 경로(F2)가 있다. 기존 CI와 셀프 리뷰의 통과 기록만으로 이 두 실패 경로를 배제할 수 없으므로 수정과 회귀 검증 후 재평가한다.
 
@@ -31,13 +34,13 @@ tags:
 
 #### Locations
 
-- [`runtime_ai/provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)
+- [`runtime_ai/provider.py`](../../../src/hmda_reliability/runtime_ai/provider.py)
   - `_normalize_tool_calls`, `_OpenAIChatCompletionTransport.create`
-- [`runtime_ai/contracts.py`](../../src/hmda_reliability/runtime_ai/contracts.py)
+- [`runtime_ai/contracts.py`](../../../src/hmda_reliability/runtime_ai/contracts.py)
   - `ToolCall.id`, `ChatMessage.tool_call_id`
-- [`reliability_ai/investigation/service.py`](../../src/hmda_reliability/reliability_ai/investigation/service.py)
+- [`reliability_ai/investigation/service.py`](../../../src/hmda_reliability/reliability_ai/investigation/service.py)
   - assistant `history` 및 tool result 추가 루프
-- [`reliability-agentic-review/spec.md`](../../openspec/specs/reliability-agentic-review/spec.md)
+- [`reliability-agentic-review/spec.md`](../../../openspec/specs/reliability-agentic-review/spec.md)
   - `Provider-compatible bounded invocation`
 
 #### Evidence
@@ -58,11 +61,11 @@ tags:
 
 #### Locations
 
-- [`reliability_ai/investigation/tools.py`](../../src/hmda_reliability/reliability_ai/investigation/tools.py)
+- [`reliability_ai/investigation/tools.py`](../../../src/hmda_reliability/reliability_ai/investigation/tools.py)
   - `ToolRegistry.__init__`, `ToolRegistry.execute`
-- [`reliability_ai/context.py`](../../src/hmda_reliability/reliability_ai/context.py)
+- [`reliability_ai/context.py`](../../../src/hmda_reliability/reliability_ai/context.py)
   - `project_remote_output`, `_project_public_value`
-- [`reliability_ai/investigation/service.py`](../../src/hmda_reliability/reliability_ai/investigation/service.py)
+- [`reliability_ai/investigation/service.py`](../../../src/hmda_reliability/reliability_ai/investigation/service.py)
   - `record, tool_output = registry.execute(call)`
 
 #### Evidence
@@ -89,7 +92,7 @@ handler 결과를 **success로 표시하기 전에** JSON 직렬화 가능 여�
 | ✅ Pass | 기존 회귀 테스트와 반례 대조 | `tests/runtime_ai/test_provider_tools.py`, `tests/reliability_ai/test_investigation_agent.py`, `test_investigation_tools.py`에서 관련 기존 safeguard를 검토 |
 | ⚪ Not Verified | 재현 테스트 실행 | 원격 저장소 소스만 정적으로 검토했다. SDK 실제 응답 모킹·pytest·ruff·tach를 이번 리뷰에서 실행하지 않음 |
 | ⚪ Not Verified | 전체 PR 전수 검토와 별도 독립 리뷰 | 166개 파일의 모든 실행 경로를 전수 검증하지 않았으며, 이 실행 환경에서 VS Code 전용 DualVantage 독립 서브에이전트를 호출하지 못함 |
-| ⚪ Not Verified | 최신 실제 모델 품질·인간 평가 | 기존 [self-review](10-report-reliability-agentic-merge-readiness-self-review.md)에 보고된 CI(1,196 passed / 1 skipped)·기존 독립 리뷰를 참고했지만 직접 재실행하거나 인간 평가를 대신하지 않음 |
+| ⚪ Not Verified | 최신 실제 모델 품질·인간 평가 | 기존 [self-review](../10-report-reliability-agentic-merge-readiness-self-review.md)에 보고된 CI(1,196 passed / 1 skipped)·기존 독립 리뷰를 참고했지만 직접 재실행하거나 인간 평가를 대신하지 않음 |
 
 ## Risks and Limits
 

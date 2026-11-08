@@ -11,6 +11,9 @@ tags:
 
 # PR #284 Recovery Status Propagation Review
 
+> [!NOTE]
+> **초기 검토 기록입니다.** 이 문서의 판정과 수정 우선순위는 [최종 리뷰](README.md)에서 재검토했습니다. 실제 작업은 최종 리뷰를 먼저 확인하세요.
+
 > [!WARNING]
 > **Revise (changes_required)** — 백필 후 프로파일 검증 실패 시 하위 실행기가 반환할 수 있는 `diverged_after_profile_failure`가 상위 상태 변환에서 빠져 있다. 실제 변경이 있었던 실패도 `ReportEnvelope.status="failed"`로 분류될 수 있으므로, 상태 분류와 회귀 테스트를 보완한 뒤 재검토한다.
 
@@ -30,12 +33,12 @@ tags:
 
 #### Locations
 
-- [`execution/service.py`](../../src/hmda_reliability/reliability_ai/execution/service.py)
+- [`execution/service.py`](../../../src/hmda_reliability/reliability_ai/execution/service.py)
   - `execute_delegated_task`의 `BackfillValidationError` 처리: 208–219행
   - `_recovery_failure_status`: 348–362행
-- [`recovery/executor.py`](../../src/hmda_reliability/reliability/remediation/recovery/executor.py)
+- [`recovery/executor.py`](../../../src/hmda_reliability/reliability/remediation/recovery/executor.py)
   - `ApprovalBackfillValidator._execute_locked`: 183–260행
-- [`test_execution_service.py`](../../tests/reliability_ai/test_execution_service.py)
+- [`test_execution_service.py`](../../../tests/reliability_ai/test_execution_service.py)
   - `test_post_mutation_failure_preserves_reconciliation_evidence`: 406행부터
 
 #### Evidence
@@ -68,5 +71,5 @@ tags:
 
 - **Evidence confidence:** F1은 소스에서 도출한 조건부 실행 경로에 근거한 `SUPPORTED` finding이다. 실제 데이터 변경을 재현한 `CONFIRMED` 실행 결과로 표현하지 않는다.
 - **Scope relation / disposition:** 이 PR이 추가한 `ReportEnvelope` 상태 의미와 직접 연결된 `contract_dependency / current_required`다. 수정은 기존 위임 보고 계약 내에서 가능하며 승인·복구 권한을 확장하지 않는다.
-- **Prior review:** [기존 Adversarial Code Review](11-review-reliability-agentic-adversarial-assessment.md)의 별도 F1(중복 tool-call ID), F2(주입형 handler 직렬화 오류)는 이 보고서의 F1과 독립적이며 해결 여부를 재검증하지 않았다. 두 검토의 finding을 혼동하거나 해결됐다고 간주하지 않는다.
+- **Prior review:** [기존 Adversarial Code Review](adversarial-assessment.md)의 별도 F1(중복 tool-call ID), F2(주입형 handler 직렬화 오류)는 이 보고서의 F1과 독립적이며 해결 여부를 재검증하지 않았다. 두 검토의 finding을 혼동하거나 해결됐다고 간주하지 않는다.
 - **Handoff:** 이 보고서는 read-only 검토 결과를 기록한다. 승인된 복구 코드·테스트는 수정하지 않았고 PR의 Ready 전환·approval·merge도 수행하지 않았다. 위 경계 테스트가 실패하는지 확인하고 필요한 수정·재검증을 거친 후 review readiness를 다시 판단한다.
