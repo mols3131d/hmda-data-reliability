@@ -31,7 +31,7 @@ tags:
 | validated recovery proposal과 approved recovery | AI review와 provider runtime |
 | deterministic recovery/replay evaluation | automatic approval, human approval UI와 production monitoring |
 
-Normative behavior는 [`../../openspec/specs/`](../../openspec/specs/)의 Reliability capability Specs가 소유한다. Evidence-bound AI advisory review는 [Review AI](review-ai.md), provider invocation mechanics는 [Runtime AI](runtime-ai.md)가 소유한다.
+Normative behavior는 [`../../openspec/specs/`](../../openspec/specs/)의 Reliability capability Specs가 소유한다. Bounded 조사·외부 승인 요청의 위임 조합은 [Reliability AI](review-ai.md), provider invocation mechanics는 [Runtime AI](runtime-ai.md)가 소유한다.
 
 ## Read-Only Lifecycle
 

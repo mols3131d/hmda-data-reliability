@@ -97,7 +97,7 @@ def pytest() -> None:
         "-ra",
     ]
     selected_args = (
-        ["--ignore=tests/review_ai/test_dependency_boundaries.py"]
+        ["--ignore=tests/reliability_ai/test_dependency_boundaries.py"]
         if os.environ.get("BOUNDARIES_CHECKED", "false") == "true"
         else []
     )

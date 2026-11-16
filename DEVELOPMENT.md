@@ -11,7 +11,7 @@
 | [Tooling](docs/development/tooling/README.md) | repository 개발·검증·유지보수 도구의 project-specific usage와 entrypoint |
 | [Testing Guide](docs/development/testing.md) | pytest 실행 command, marker, report, coverage, tracing |
 | [Test Design](docs/development/test-design.md) | test design, observable contract, scenario, oracle, validation 기준 |
-| [Review AI Prompts](docs/development/review-ai-prompts.md) | 프롬프트 조립, 단계별 실행과 HTTP timeout·실행 예산·환경 설정 |
+| [Reliability AI Prompts](docs/development/review-ai-prompts.md) | Native Prompt 조합·조사 history·호출 예산·명시적 설정 |
 | [Version Control and GitHub](docs/development/vcs-git/README.md) | branch, commit, Pull Request와 review workflow |
 
 ## Quick Commands
@@ -52,16 +52,16 @@
 | Silver / Gold | `dbt Core`, `dbt-duckdb` | staging, mart, test와 `manifest.json` |
 | Contracts | `Pydantic` | reliability structured models |
 | Control quality | custom profiler/detector | profile snapshot과 detection rules |
-| Remediation | `LangGraph` | remediation draft 경로만 |
+| Remediation | 결정론적 Python 함수 | assessment 결과의 초안 계산과 승인된 별도 복구 |
 | AI runtime | `OpenAI` Python SDK | OpenAI-compatible bounded provider invocation |
 | Orchestration | `Apache Airflow` | DAG dependency와 task/data-update evidence |
 
-`PyIceberg`는 dependency로 존재하지만 active table engine으로 사용하지 않는다. Spark, cloud warehouse, FastAPI 기반 통합 pipeline CLI, OpenTelemetry, 외부 catalog와 approval UI는 현재 active toolchain에 포함하지 않는다.
+`PyIceberg`는 dependency로 존재하지만 active table engine으로 사용하지 않는다. Spark, cloud warehouse, FastAPI 기반 통합 pipeline CLI, 외부 catalog와 approval UI는 현재 active toolchain에 포함하지 않는다. Langfuse SDK의 OpenTelemetry 관측은 AI invocation에 한정하며 별도 telemetry platform을 운영하지 않는다.
 
 ## Package And Directory Layout
 
 - 애플리케이션 package root는 `src/hmda_reliability/`다.
-- 새 package를 만들기 전에 `configs`, `data_operations`, `data_platform`, `hmda_data`, `orchestration`, `reliability`, `review_ai`, `runtime_ai`, `shared` 중 기존 domain을 우선 사용한다.
+- 새 package를 만들기 전에 `configs`, `data_operations`, `data_platform`, `hmda_data`, `orchestration`, `reliability`, `reliability_ai`, `runtime_ai`, `shared` 중 기존 domain을 우선 사용한다.
 
 | Directory | Purpose |
 | --- | --- |

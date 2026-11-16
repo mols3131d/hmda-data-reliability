@@ -77,7 +77,7 @@ def test_pytest_missing_selection_fails_before_tools(
         ({"BOUNDARIES_CHECKED": "false"}, []),
         (
             {"BOUNDARIES_CHECKED": "true"},
-            ["--ignore=tests/review_ai/test_dependency_boundaries.py"],
+            ["--ignore=tests/reliability_ai/test_dependency_boundaries.py"],
         ),
     ],
     ids=["unconfirmed", "not-checked", "checked"],
@@ -86,23 +86,23 @@ def test_pytest_missing_selection_fails_before_tools(
     ("selection", "expected"),
     [
         (
-            {"TARGETS": "tests/runtime_ai tests/review_ai"},
+            {"TARGETS": "tests/runtime_ai tests/reliability_ai"},
             [
                 "-m",
                 "not memory and not stress",
                 "tests/runtime_ai",
-                "tests/review_ai",
+                "tests/reliability_ai",
             ],
         ),
         (
-            {"TARGETS": "tests/reliability tests/review_ai tests/data_operations"},
+            {"TARGETS": "tests/reliability tests/reliability_ai tests/data_operations"},
             [
                 "-n",
                 "auto",
                 "-m",
                 "not memory and not stress",
                 "tests/reliability",
-                "tests/review_ai",
+                "tests/reliability_ai",
                 "tests/data_operations",
             ],
         ),
@@ -138,7 +138,7 @@ def test_pytest_failure_propagates(repo: Path, tool_env: dict[str, str]) -> None
 
 @pytest.mark.parametrize(
     "selection",
-    [{"TARGETS": "tests/review_ai"}, {"FULL_TESTS": "true"}],
+    [{"TARGETS": "tests/reliability_ai"}, {"FULL_TESTS": "true"}],
     ids=["scoped", "full-tests"],
 )
 def test_boundary_success_does_not_hide_selected_test_failure(
@@ -192,7 +192,7 @@ def test_broad_selection_preserves_all_non_resource_tests_in_one_run(
     assert tool_calls(tool_env) == [
         [
             *PYTEST_COMMAND,
-            "--ignore=tests/review_ai/test_dependency_boundaries.py",
+            "--ignore=tests/reliability_ai/test_dependency_boundaries.py",
             "-n",
             "auto",
             "-m",

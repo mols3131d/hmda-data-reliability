@@ -23,8 +23,12 @@ from hmda_reliability.hmda_data import (
     null_spike,
     partition_content_identity,
 )
+from hmda_reliability.reliability.assessment.detection import DetectionThresholds
+from hmda_reliability.reliability.assessment.profiling import (
+    ProfileSnapshotRequest,
+    create_profile_snapshot,
+)
 from hmda_reliability.reliability.contracts import Approval, RecoveryProposal
-from hmda_reliability.reliability.detection import DetectionThresholds
 from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     BackfillValidationError,
@@ -34,11 +38,7 @@ from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseRe
 from hmda_reliability.reliability.evaluation.recovery_case import (
     build_recovery_evaluation_case,
 )
-from hmda_reliability.reliability.profiling import (
-    ProfileSnapshotRequest,
-    create_profile_snapshot,
-)
-from hmda_reliability.reliability.recovery import (
+from hmda_reliability.reliability.remediation.recovery import (
     ApprovedBackfillRequest,
     BackfillValidationResult,
     execute_approved_backfill,

@@ -12,6 +12,11 @@ from hmda_reliability.data_platform.duckdb import (
 )
 from hmda_reliability.data_platform.sql import qualify_table_name, quote_identifier
 from hmda_reliability.hmda_data import load_hmda_loans
+from hmda_reliability.reliability.assessment.profiling import (
+    ProfileSnapshotRequest,
+    create_profile_snapshot,
+    create_table_state_identity,
+)
 from hmda_reliability.reliability.contracts import (
     ReliabilityContract,
     SchemaRecoveryApproval,
@@ -25,12 +30,7 @@ from hmda_reliability.reliability.errors import (
     SchemaRecoveryValidationError,
 )
 from hmda_reliability.reliability.evaluation.case_result import EvaluationCaseResult
-from hmda_reliability.reliability.profiling import (
-    ProfileSnapshotRequest,
-    create_profile_snapshot,
-    create_table_state_identity,
-)
-from hmda_reliability.reliability.recovery import (
+from hmda_reliability.reliability.remediation.recovery import (
     ApprovedSchemaRecoveryRequest,
     SchemaRecoveryValidationResult,
     execute_approved_schema_recovery,

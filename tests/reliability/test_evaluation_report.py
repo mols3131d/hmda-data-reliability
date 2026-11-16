@@ -15,7 +15,7 @@ import pytest
 import hmda_reliability.reliability as reliability
 import hmda_reliability.reliability.evaluation as reliability_evaluation
 import hmda_reliability.reliability.evaluation.volume_drop as volume_drop
-import hmda_reliability.reliability.recovery.executor as recovery_executor
+import hmda_reliability.reliability.remediation.recovery.executor as recovery_executor
 from hmda_reliability.data_operations import (
     DataOperationRequest,
     DbtBuildResult,
@@ -37,8 +37,8 @@ from hmda_reliability.reliability import (
     render_evaluation_report_markdown,
     write_evaluation_report,
 )
+from hmda_reliability.reliability.assessment.profiling import ProfileSnapshotRequest
 from hmda_reliability.reliability.errors import ProfileSnapshotError
-from hmda_reliability.reliability.profiling import ProfileSnapshotRequest
 
 
 @pytest.mark.unit
