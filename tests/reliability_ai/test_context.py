@@ -225,26 +225,88 @@ def test_context_always_includes_canonical_target_within_bound(
 
 
 @pytest.mark.parametrize(
-    "asset_name",
+    ("asset_name", "expected_asset_name", "summary_prefix", "summary_suffix"),
     [
-        "/home/private/context.csv",
-        "file:///home/private/context.csv",
-        "metadata_file:///home/private/context.csv",
+        pytest.param(
+            "/home/private/context.csv", "[private-path]", "Inspect ", "", id="posix"
+        ),
+        pytest.param(
+            "file:///home/private/context.csv",
+            "[private-path]",
+            "Inspect ",
+            "",
+            id="file-uri",
+        ),
+        pytest.param(
+            "metadata_file:///home/private/context.csv",
+            "metadata_[private-path]",
+            "Inspect ",
+            "",
+            id="prefixed-file-uri",
+        ),
+        pytest.param(
+            r"C:\private\context.csv",
+            "[private-path]",
+            "Inspect ",
+            "",
+            id="windows-drive",
+        ),
+        pytest.param(
+            r"\\fileserver\private\hmda.csv",
+            "[private-path]",
+            "Inspect ",
+            "",
+            id="unc",
+        ),
+        pytest.param(
+            r"\\fileserver\Private Share\income.csv",
+            "[private-path]",
+            'Inspect "',
+            '" and raw.hmda_loans',
+            id="unc-space-in-share",
+        ),
+        pytest.param(
+            r"\\fileserver\private\income data.csv",
+            "[private-path]",
+            "Inspect ",
+            "",
+            id="unc-space-in-basename",
+        ),
+        pytest.param(
+            r"\\fileserver\Private Share",
+            "[private-path]",
+            "Inspect ",
+            "",
+            id="unc-space-in-share-root",
+        ),
+        pytest.param(
+            r"\\fileserver\private\hmda.csv",
+            "[private-path]",
+            "Inspect:",
+            "",
+            id="unc-after-colon",
+        ),
     ],
 )
 def test_provider_and_remote_projection_remove_nested_private_material(
     null_spike_review_material: NullSpikeReviewMaterial,
     asset_name: str,
+    expected_asset_name: str,
+    summary_prefix: str,
+    summary_suffix: str,
 ) -> None:
     evidence = _surrounding_evidence(null_spike_review_material)
+    summary = f"{summary_prefix}{asset_name}{summary_suffix}"
+    expected_summary = f"{summary_prefix}{expected_asset_name}{summary_suffix}"
     evidence[1] = evidence[1].model_copy(
         update={
-            "summary": "Inspect /opt/private/source.csv and C:\\private\\source.csv",
+            "summary": summary,
             "asset_name": asset_name,
             "payload": {
                 "columns": ["income"],
                 "column_types": {
                     "income": "DOUBLE",
+                    "source": asset_name,
                     "credentials": {"token": "hidden"},
                 },
                 "table_name": "/var/private/table.csv",
@@ -274,13 +336,42 @@ def test_provider_and_remote_projection_remove_nested_private_material(
     assert record.status == "success"
     remote = project_remote_output(
         {
-            "result": canonical,
+            "result": {
+                "summary": summary,
+                "facts": evidence[1].payload,
+                "provenance": {"asset_name": asset_name},
+            },
             "manifest_path": "/opt/private/manifest.json",
             "response_paths": ["/var/private/raw.txt"],
         }
     )
 
-    for payload in (canonical, remote, json.loads(tool_output)):
+    assert evidence[1].summary == summary
+    assert review_input.evidence[1].summary == summary
+    canonical_evidence = canonical["evidence"]
+    assert isinstance(canonical_evidence, list)
+    table = next(
+        item for item in canonical_evidence if item["evidence_id"] == "ev-table"
+    )
+    remote_result = remote["result"]
+    assert isinstance(remote_result, dict)
+    tool_result = json.loads(tool_output)
+    expected_facts = {
+        "columns": ["income"],
+        "column_types": {"income": "DOUBLE", "source": expected_asset_name},
+        "table_name": "[private-path]",
+    }
+    for projected in (table, remote_result):
+        assert projected["summary"] == expected_summary
+        assert projected["facts"] == expected_facts
+        provenance = projected["provenance"]
+        assert isinstance(provenance, dict)
+        assert provenance["asset_name"] == expected_asset_name
+    assert tool_result["summary"] == expected_summary
+    assert tool_result["payload"] == expected_facts
+    assert tool_result["asset_name"] == expected_asset_name
+
+    for payload in (canonical, remote, tool_result):
         encoded = json.dumps(payload)
         assert "private" not in encoded.replace("[private-path]", "")
         assert "hidden" not in encoded
@@ -289,6 +380,45 @@ def test_provider_and_remote_projection_remove_nested_private_material(
     assert isinstance(facts, dict)
     assert facts["current_null_rate"] == 0.21
     assert "manifest_path" not in remote
+
+
+@pytest.mark.parametrize(
+    "summary",
+    [
+        pytest.param(
+            r"Inspect raw.hmda_loans with \n, \t and \\n escapes",
+            id="original-escapes",
+        ),
+        pytest.param(r"Literal escaped controls: \\n\\t", id="escaped-controls"),
+        pytest.param(r"Regex \\d+\\s+ for raw.hmda_loans", id="regex-escapes"),
+    ],
+)
+def test_remote_projection_preserves_public_text_and_backslash_escapes(
+    summary: str,
+) -> None:
+    projected = project_remote_output(
+        {
+            "result": {
+                "summary": summary,
+                "table_name": "raw.hmda_loans",
+                "columns": ["income", "loan_amount"],
+                "url": "https://example.com/hmda",
+            }
+        }
+    )
+
+    assert projected == {
+        "result": {
+            "summary": summary,
+            "table_name": "raw.hmda_loans",
+            "columns": ["income", "loan_amount"],
+            "url": "https://example.com/hmda",
+        }
+    }
+    serialized_summary = json.dumps({"summary": summary})
+    remote = project_remote_output({"messages": [{"content": serialized_summary}]})
+
+    assert remote == {"messages": [{"content": serialized_summary}]}
 
 
 def test_evidence_metadata_shapes_exclude_nested_raw_rows(

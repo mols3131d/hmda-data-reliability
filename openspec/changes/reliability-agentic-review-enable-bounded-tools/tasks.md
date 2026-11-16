@@ -31,7 +31,7 @@ Recovery 결과와 wrapper 보고는 결합 변경이다. Mutation·재검증·r
 
 - [x] 1. 사건 snapshot과 current artifact를 구분하는 실제 조회 gateway를 완성한다.
   - **Covers:** Bounded incident tools; Canonical provider input projection; Design D2·D3.
-  - **Test first:** 원본 nested payload 변경, 비허용 Evidence 필드·column·asset·path 인자, 미연결 handler, artifact 누락과 빈 downstream의 의미를 기존 도구 테스트에서 고정한다. Fake provider와 실제 registry를 연결한 조사 loop에서 초기·후속 메시지의 비허용 필드·개인 경로 부재를 확인한다.
+  - **Test first:** 원본 nested payload 변경, 비허용 Evidence 필드·column·asset·path 인자, 미연결 handler, artifact 누락과 빈 downstream의 의미를 기존 도구 테스트에서 고정한다. UNC summary·중첩 도구 및 원격 출력의 경로 제거와 기존 경로 형식·공개 식별자 보존을 실제 projection 반환값으로 검증한다. Fake provider와 실제 registry를 연결한 조사 loop에서 초기·후속 메시지의 비허용 필드·개인 경로 부재를 확인한다.
   - **Done when:** 기본 registry가 snapshot profile의 실제 수치와 출처를 반환하고, trusted artifact pair만 기존 shared lock·projection identity·impact API로 조회한다. 기존 context projection이 provider 자료의 의미를 소유하며 실제 초기·tool 메시지와 원격 output projection에 allowlist 밖 payload·개인 절대 경로가 없다. 빈 목록을 검증된 no-impact로 표현하지 않는다. 조사·위임·실험의 trusted caller 접점과 기존 테스트에 연결되며 touched 파일의 Ruff·format 검사가 통과한다.
 
 - [x] 2. Task와 복구 요청의 사건 일치 및 실제 실행 보고를 완성한다.
