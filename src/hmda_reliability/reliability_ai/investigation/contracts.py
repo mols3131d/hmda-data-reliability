@@ -58,6 +58,7 @@ class InvestigationTurnRecord(ReliabilityContract):
     tool_call_id: str | None = None
     tool_calls: tuple[dict[str, Any], ...] = Field(default_factory=tuple)
     raw_tool_calls: str | None = None
+    tool_calls_path: Path | None = None
     latency_ms: float = Field(default=0.0, ge=0.0)
     attempt_count: int | None = Field(default=None, ge=0)
     usage: ProviderUsage | None = None

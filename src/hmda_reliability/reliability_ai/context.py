@@ -83,6 +83,7 @@ _PRIVATE_FIELDS = frozenset(
         "local_path",
         "response_paths",
         "raw_tool_calls",
+        "tool_calls_path",
         "manifest_path",
         "observation_record_path",
     }

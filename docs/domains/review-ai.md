@@ -50,7 +50,7 @@ AI의 `ActionProposal`이나 상위 모델의 위임은 승인이 아니다. Cal
 
 ## Provenance And Evaluation
 
-Runtime의 exact UTF-8 본문은 파싱·원격 output·완료 판정 전에 private create-only 저장한다. Manifest는 canonical input·revision·실제 Prompt name/version·compiled 메시지/digest·설정·turn·usage·도구·결과를 연결한다. Trusted artifact 경로는 로컬에만 남긴다. 별도 observation record는 core 저장 뒤 발생한 SDK 오류도 기록한다.
+Runtime의 exact UTF-8 본문과 호출 자료는 파싱·원격 output·완료 판정 전에 private create-only 저장한다. 호출 자료 경로는 turn에 연결해 이후 manifest 실패에도 회수할 수 있다. 저장 실패 결과는 완성 보고 대신 실패와 partial 근거를 유지하며, 미보존 호출 자료를 원격 output에 포함하지 않는다. Manifest는 canonical input·revision·실제 Prompt name/version·compiled 메시지/digest·설정·turn·usage·도구·결과를 연결한다. Trusted artifact 경로는 로컬에만 남긴다. 별도 observation record는 core 저장 뒤 발생한 SDK 오류도 기록한다.
 
 Native generation과 tool은 실제 호출 구간에 생성되고 같은 조사 아래 sibling이다. 허가된 합성 사례만 정제된 system·history·tool IO를 원격에 보낸다. Metadata에는 본문·credential·provider 예외·개인 경로를 자동 캡처하지 않는다. 관측 장애는 모델 재호출이나 core 결과 변경의 이유가 아니다.
 

@@ -216,16 +216,25 @@ def investigate_incident(
                     "status": "error",
                     "failure_code": "manifest_persistence_failed",
                     "manifest_path": None,
+                    "facts": {},
+                    "findings": (),
+                    "hypotheses": (),
+                    "uncertainties": (),
                 }
             )
+        remote_result: dict[str, Any] = {}
+        if observe_io:
+            remote_result = result.model_dump(mode="json")
+            remote_result["turns"] = [
+                turn
+                for turn in remote_result["turns"]
+                if turn["tool_calls_path"] is not None
+                or (not turn["tool_calls"] and turn["raw_tool_calls"] is None)
+            ]
         _update_observation(
             root_observation,
             observation_errors,
-            **(
-                {"output": project_remote_output(result.model_dump(mode="json"))}
-                if observe_io
-                else {}
-            ),
+            **({"output": project_remote_output(remote_result)} if observe_io else {}),
             metadata={"status": result.status, "failure_code": result.failure_code},
         )
         _end_observation(root_observation, observation_errors)
@@ -416,6 +425,20 @@ def investigate_incident(
                     max_response_bytes=settings.max_output_bytes,
                 )
             )
+            if response.tool_calls or response.raw_tool_calls is not None:
+                tool_calls_path = write_review_json(
+                    store.path_for(f"{invocation_id}-{turn}-tool-calls").with_suffix(
+                        ".json"
+                    ),
+                    {
+                        "tool_calls": list(turns[-1].tool_calls),
+                        "raw_tool_calls": response.raw_tool_calls,
+                    },
+                    max_record_bytes=settings.max_output_bytes * 6 + 128,
+                )
+                turns[-1] = turns[-1].model_copy(
+                    update={"tool_calls_path": tool_calls_path}
+                )
         except InvocationEvidenceStoreError:
             return finish("error", "response_persistence_failed")
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from functools import partial
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import httpx
@@ -1171,6 +1172,7 @@ def test_same_clock_investigations_preserve_distinct_responses(
 def test_evidence_write_failure_cannot_be_completed(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
+    native_prompt_client: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
     failed_store: str,
 ) -> None:
@@ -1184,6 +1186,32 @@ def test_evidence_write_failure_cannot_be_completed(
     else:
         monkeypatch.setattr(service, "write_review_json", fail_write)
     material = null_spike_review_material
+    content = json.dumps(
+        {
+            "findings": [
+                {
+                    "topic": "null_rate_spike",
+                    "description": "Income null rate increased.",
+                    "evidence_refs": [material.detection.evidence.evidence_id],
+                }
+            ],
+            "hypotheses": [
+                {
+                    "hypothesis": "Upstream collection introduced missing values.",
+                    "status": "uncertain",
+                    "rationale": "The profile changed but upstream logs are absent.",
+                }
+            ],
+            "uncertainties": [
+                {
+                    "topic": "upstream_pipeline",
+                    "description": "The upstream cause is not confirmed.",
+                    "needed_evidence": "Collection logs.",
+                }
+            ],
+        }
+    )
+    transport = ScriptedTransport([TransportResponse(content=content)])
     result = investigate_incident(
         AgenticReviewInput(
             incident=material.detection.incident,
@@ -1194,9 +1222,10 @@ def test_evidence_write_failure_cannot_be_completed(
         settings=_settings(),
         provider=OpenAICompatibleAdapter(
             _settings(),
-            transport=ScriptedTransport([TransportResponse(content=_EMPTY_REPORT)]),
+            transport=transport,
         ),
         artifact_root=tmp_path,
+        observe_io=True,
     )
     assert result.status == "error"
     assert result.failure_code == f"{failed_store}_persistence_failed"
@@ -1204,9 +1233,321 @@ def test_evidence_write_failure_cannot_be_completed(
         assert result.response_paths == ()
         assert result.manifest_path is not None
     else:
-        assert result.response_paths[0].read_text(encoding="utf-8") == _EMPTY_REPORT
+        assert len(result.response_paths) == 1
+        assert result.response_paths[0].read_bytes() == content.encode("utf-8")
         assert result.manifest_path is None
-    assert result.turns[0].content == _EMPTY_REPORT
+    assert len(result.turns) == 1
+    assert result.turns[0].role == "assistant"
+    assert result.turns[0].content == content
+    assert len(transport.requests) == 1
+    assert result.facts == {}
+    assert result.findings == ()
+    assert result.hypotheses == ()
+    assert result.uncertainties == ()
+    root = native_prompt_client.start_observation.return_value
+    root_outputs = [
+        call.kwargs["output"]
+        for call in root.update.call_args_list
+        if "output" in call.kwargs
+    ]
+    assert len(root_outputs) == 1
+    assert root_outputs[0]["status"] == "error"
+    assert root_outputs[0]["failure_code"] == f"{failed_store}_persistence_failed"
+    assert root_outputs[0]["facts"] == {}
+    assert root_outputs[0]["findings"] == []
+    assert root_outputs[0]["hypotheses"] == []
+    assert root_outputs[0]["uncertainties"] == []
+
+
+@pytest.mark.parametrize(
+    ("content", "malformed_raw"),
+    [
+        pytest.param("", False, id="tool-only"),
+        pytest.param("  Inspect income.\n\n", False, id="content-and-calls"),
+        pytest.param("", True, id="malformed-raw"),
+    ],
+)
+def test_tool_call_data_precedes_remote_output_and_survives_manifest_failure(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    tmp_path: Path,
+    native_prompt_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    content: str,
+    malformed_raw: bool,
+) -> None:
+    from hmda_reliability.reliability_ai.investigation import service
+
+    response_directory = tmp_path / "reliability-ai" / "responses"
+    expected_call = {
+        "id": "retained-call",
+        "type": "function",
+        "function": {
+            "name": "compare_profiles",
+            "arguments": '{\n  "column": "income"\n}',
+        },
+    }
+    raw_tool_calls = (
+        '[\n  {"id":"raw-call","type":"function","function":'
+        '{"name":"compare_profiles","arguments":null},"note":"원문"}\n]\n'
+        if malformed_raw
+        else None
+    )
+    expected_calls = [] if malformed_raw else [expected_call]
+    expected_payload = {
+        "tool_calls": expected_calls,
+        "raw_tool_calls": raw_tool_calls,
+    }
+    call_snapshots: list[dict[Path, bytes]] = []
+    text_snapshots: list[dict[Path, bytes]] = []
+    dispatch_snapshots: list[dict[Path, bytes]] = []
+
+    def update_generation(**values: object) -> None:
+        if "output" in values:
+            call_snapshots.append(
+                {
+                    path: path.read_bytes()
+                    for path in response_directory.glob("*-tool-calls.json")
+                }
+            )
+            text_snapshots.append(
+                {path: path.read_bytes() for path in response_directory.glob("*.txt")}
+            )
+
+    def start_child(**values: object) -> MagicMock:
+        observation = MagicMock()
+        if values.get("as_type") == "generation":
+            observation.update.side_effect = update_generation
+        return observation
+
+    root = native_prompt_client.start_observation.return_value
+    root.start_observation.side_effect = start_child
+
+    def inspect_profiles(arguments: dict[str, object]) -> dict[str, object]:
+        dispatch_snapshots.append(
+            {
+                path: path.read_bytes()
+                for path in response_directory.glob("*-tool-calls.json")
+            }
+        )
+        return {"column": arguments["column"], "checked": True}
+
+    write_review_json = service.write_review_json
+    manifest_attempts: list[Path] = []
+
+    def fail_manifest(path: Path, payload: dict[str, object], **kwargs: Any) -> Path:
+        if "result" in payload:
+            manifest_attempts.append(path)
+            raise InvocationEvidenceWriteError("synthetic manifest failure")
+        return write_review_json(path, payload, **kwargs)
+
+    monkeypatch.setattr(service, "write_review_json", fail_manifest)
+    material = null_spike_review_material
+    transport = ScriptedTransport(
+        [
+            TransportResponse(
+                content=content,
+                tool_calls=(
+                    () if malformed_raw else (ToolCall.model_validate(expected_call),)
+                ),
+                raw_tool_calls=raw_tool_calls,
+            ),
+            TransportResponse(content=_EMPTY_REPORT),
+        ]
+    )
+    result = investigate_incident(
+        AgenticReviewInput(
+            incident=material.detection.incident,
+            evidence=[material.detection.evidence],
+            draft=material.draft,
+            project_revision="tool-retention-regression",
+        ),
+        settings=_settings(),
+        provider=OpenAICompatibleAdapter(_settings(), transport=transport),
+        tool_registry=ToolRegistry(profile_comparison_handler=inspect_profiles),
+        artifact_root=tmp_path,
+        observe_io=True,
+    )
+
+    expected_path = (
+        response_directory
+        / f"{result.invocation_id}-{result.turns[0].turn}-tool-calls.json"
+    )
+    assert call_snapshots
+    assert {path: json.loads(raw) for path, raw in call_snapshots[0].items()} == {
+        expected_path: expected_payload
+    }
+    assert expected_path.read_bytes() == call_snapshots[0][expected_path]
+    assert all(snapshot == call_snapshots[0] for snapshot in call_snapshots)
+    assert result.turns[0].tool_calls_path == expected_path
+    assert result.turns[0].content == content
+    assert result.turns[0].tool_calls == tuple(expected_calls)
+    assert result.turns[0].raw_tool_calls == raw_tool_calls
+    assert result.status == "error"
+    assert result.failure_code == "manifest_persistence_failed"
+    assert result.manifest_path is None
+    assert len(manifest_attempts) == 1
+    assert result.facts == {}
+    assert result.findings == ()
+    assert result.hypotheses == ()
+    assert result.uncertainties == ()
+    assert text_snapshots[0] == {result.response_paths[0]: content.encode("utf-8")}
+    expected_texts = [content] if malformed_raw else [content, _EMPTY_REPORT]
+    assert [path.read_bytes() for path in result.response_paths] == [
+        text.encode("utf-8") for text in expected_texts
+    ]
+    assert set(response_directory.glob("*.txt")) == set(result.response_paths)
+    assert all(path.suffix == ".txt" for path in result.response_paths)
+    assert expected_path.stat().st_mode & 0o077 == 0
+    assert all(path.stat().st_mode & 0o077 == 0 for path in result.response_paths)
+    expected_requests = 1 if malformed_raw else 2
+    assert len(transport.requests) == expected_requests
+    assert len(call_snapshots) == expected_requests
+    if malformed_raw:
+        assert dispatch_snapshots == []
+        assert result.tool_calls == ()
+        assert len(result.turns) == 1
+        assert result.turns[0].failure_code == "invalid_provider_tool_calls"
+    else:
+        assert dispatch_snapshots == [call_snapshots[0]]
+        assert [turn.role for turn in result.turns] == [
+            "assistant",
+            "tool",
+            "assistant",
+        ]
+        assert result.turns[-1].content == _EMPTY_REPORT
+        assert result.turns[-1].tool_calls_path is None
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0].call_id == "retained-call"
+        assert result.tool_calls[0].status == "success"
+        assert result.tool_calls[0].arguments == {"column": "income"}
+        assert result.tool_calls[0].result == {"column": "income", "checked": True}
+        assert result.turns[1].tool_call_id == "retained-call"
+        assert json.loads(result.turns[1].content) == result.tool_calls[0].result
+    root_outputs = [
+        call.kwargs["output"]
+        for call in root.update.call_args_list
+        if "output" in call.kwargs
+    ]
+    assert len(root_outputs) == 1
+    assert root_outputs[0]["status"] == "error"
+    assert root_outputs[0]["failure_code"] == "manifest_persistence_failed"
+    assert root_outputs[0]["facts"] == {}
+    assert root_outputs[0]["findings"] == []
+    assert root_outputs[0]["hypotheses"] == []
+    assert root_outputs[0]["uncertainties"] == []
+    remote_json = json.dumps(root_outputs)
+    assert '"tool_calls_path"' not in remote_json
+    assert '"raw_tool_calls"' not in remote_json
+    observation_path = (
+        tmp_path
+        / "reliability-ai"
+        / "investigations"
+        / f"{result.invocation_id}-observations.json"
+    )
+    assert json.loads(observation_path.read_bytes()) == {
+        "invocation_id": result.invocation_id,
+        "errors": [],
+    }
+
+
+def test_tool_call_data_write_failure_stops_before_dispatch_and_remote_output(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    tmp_path: Path,
+    native_prompt_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from hmda_reliability.reliability_ai.investigation import service
+
+    write_review_json = service.write_review_json
+    failed_paths: list[Path] = []
+
+    def fail_call_data(path: Path, payload: dict[str, object], **kwargs: Any) -> Path:
+        if path.name.endswith("-tool-calls.json"):
+            failed_paths.append(path)
+            raise InvocationEvidenceWriteError("synthetic tool call storage failure")
+        return write_review_json(path, payload, **kwargs)
+
+    monkeypatch.setattr(service, "write_review_json", fail_call_data)
+    dispatches: list[dict[str, object]] = []
+
+    def inspect_profiles(arguments: dict[str, object]) -> dict[str, object]:
+        dispatches.append(arguments)
+        return {"checked": True}
+
+    content = "  Inspect income.\n\n"
+    transport = ScriptedTransport(
+        [
+            TransportResponse(
+                content=content,
+                tool_calls=(
+                    ToolCall(
+                        id="unsaved-call",
+                        function=ToolCallFunction(
+                            name="compare_profiles", arguments='{"column":"income"}'
+                        ),
+                    ),
+                ),
+            ),
+            TransportResponse(content=_EMPTY_REPORT),
+        ]
+    )
+    material = null_spike_review_material
+    result = investigate_incident(
+        AgenticReviewInput(
+            incident=material.detection.incident,
+            evidence=[material.detection.evidence],
+            draft=material.draft,
+            project_revision="tool-persistence-failure-regression",
+        ),
+        settings=_settings(),
+        provider=OpenAICompatibleAdapter(_settings(), transport=transport),
+        tool_registry=ToolRegistry(profile_comparison_handler=inspect_profiles),
+        artifact_root=tmp_path,
+        observe_io=True,
+    )
+
+    assert result.status == "error"
+    assert result.failure_code == "response_persistence_failed"
+    assert len(failed_paths) == 1
+    assert not failed_paths[0].exists()
+    assert len(result.response_paths) == 1
+    assert result.response_paths[0].read_bytes() == content.encode("utf-8")
+    assert len(result.turns) == 1
+    assert result.turns[0].content == content
+    assert result.turns[0].tool_calls[0]["id"] == "unsaved-call"
+    assert result.turns[0].tool_calls_path is None
+    assert result.tool_calls == ()
+    assert dispatches == []
+    assert len(transport.requests) == 1
+    assert result.manifest_path is not None
+    manifest = json.loads(result.manifest_path.read_bytes())
+    assert manifest["result"]["failure_code"] == "response_persistence_failed"
+    assert manifest["result"]["turns"][0]["tool_calls"][0]["id"] == "unsaved-call"
+    root = native_prompt_client.start_observation.return_value
+    generation_outputs = [
+        call.kwargs["output"]
+        for call in root.start_observation.return_value.update.call_args_list
+        if "output" in call.kwargs
+    ]
+    assert generation_outputs == []
+    root_outputs = [
+        call.kwargs["output"]
+        for call in root.update.call_args_list
+        if "output" in call.kwargs
+    ]
+    assert len(root_outputs) == 1
+    assert root_outputs[0]["status"] == "error"
+    assert root_outputs[0]["failure_code"] == "response_persistence_failed"
+    assert not root_outputs[0].get("tool_calls")
+    assert all(not turn.get("tool_calls") for turn in root_outputs[0].get("turns", []))
+    assert "unsaved-call" not in json.dumps(root_outputs)
+    assert "compare_profiles" not in json.dumps(root_outputs)
+    assert '"raw_tool_calls"' not in json.dumps(root_outputs)
+    assert '"tool_calls_path"' not in json.dumps(root_outputs)
+    assert root_outputs[0]["status"] == "error"
+    assert root_outputs[0]["failure_code"] == "response_persistence_failed"
+    assert "unsaved-call" not in json.dumps(root_outputs)
+    assert "compare_profiles" not in json.dumps(root_outputs)
 
 
 @pytest.mark.parametrize("failure_point", [None, "start", "update", "end"])
