@@ -51,7 +51,7 @@ Recovery 결과와 wrapper 보고는 결합 변경이다. Mutation·재검증·r
 
 - [x] 5. 반복 Dataset 실험의 완전성과 실행 조건 추적을 완성한다.
   - **Covers:** Native synthetic dataset experiments; Provider-compatible bounded invocation; Bounded investigation budgets; Design D1·D4.
-  - **Test first:** SDK task exception 누락·중복 ID·invalid input·실패 결과·oracle 유출과 반복 실행 중 setup 호출이 없는 조건을 기존 실험 테스트에서 확인한다.
+  - **Test first:** SDK task exception 누락·중복 ID·invalid input·실패 결과·oracle 유출과 반복 실행 중 setup 호출이 없는 조건을 기존 실험 테스트에서 확인한다. 공통 Runtime의 정상 tool-call 응답은 본문과 호출 ID·이름·인자·직렬화 구조의 전체 크기를 합산해 출력 바이트 상한을 적용하고, 정확한 경계·여러 호출의 누적·UTF-8·재시도 없음과 기존 본문/비정상 원문 계산을 검증한다.
   - **Done when:** 기존 Dataset을 직렬 native task로 실행하고 전체 조사 결과와 실제 Dataset version·revision·model·prompt·예산을 보존한다. 결과 multiset이 일치하고 모든 항목이 completed일 때만 CLI가 성공한다. Trusted dbt pair와 명시적 실행 예산을 전달할 수 있고 반복 실행은 Prompt·Dataset·평가 자산을 생성하거나 변경하지 않는다. 별도 실험 loop가 아닌 공통 조사·native Prompt·관측 경로를 소비함을 연결 검증한다. 실제 SDK 제출과 원격 확인은 별도 근거로 보고한다.
 
 - [x] 6. 실제 실행한 후보의 로컬 모델 비교 근거를 확보한다.

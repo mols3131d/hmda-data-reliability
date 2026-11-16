@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from functools import partial
+from typing import Literal
 
 import httpx
 import pytest
@@ -101,6 +102,153 @@ def test_sdk_sends_tools_and_normalizes_tool_calls(
     assert result.response_metadata is not None
     assert result.response_metadata.content_state == "tool_calls"
     assert result.response_metadata.finish_reason == "tool_calls"
+
+
+@pytest.mark.parametrize(
+    ("wire_tool_calls", "content", "expected_state"),
+    [
+        pytest.param(
+            '[{"id":"call_0123456789abcdef0123456789abcdef'
+            "0123456789abcdef0123456789abcdef0123456789abcdef"
+            '0123456789abcdef0123456789abcdef0123456789abcdef",'
+            '"type":"function","function":{"name":"get_incident_evidence",'
+            '"arguments":"{}"}}]',
+            "report",
+            "tool_calls",
+            id="long-call-id",
+        ),
+        pytest.param(
+            '[{"id":"call_1","type":"function","function":{"name":'
+            '"get_incident_evidence_0123456789abcdef0123456789abcdef'
+            "0123456789abcdef0123456789abcdef0123456789abcdef"
+            '0123456789abcdef0123456789abcdef0123456789abcdef",'
+            '"arguments":"{}"}}]',
+            "report",
+            "tool_calls",
+            id="long-unknown-function-name",
+        ),
+        pytest.param(
+            '[{"id":"call_1","type":"function","function":'
+            '{"name":"get_incident_evidence","arguments":"{}"}},'
+            '{"id":"call_2","type":"function","function":'
+            '{"name":"get_incident_evidence","arguments":"{}"}}]',
+            "report",
+            "tool_calls",
+            id="cumulative-call-structure",
+        ),
+        pytest.param(
+            '[{"id":"call_\ud55c","type":"function",'
+            '"function":{"name":"get_\uae00",'
+            r'"arguments":"{\"note\":\"'
+            "\ud55c"
+            r'\\n\"}"}}]',
+            '\uacb0\uacfc\n"\\',
+            "tool_calls",
+            id="utf8-and-json-escapes",
+        ),
+        pytest.param(
+            None,
+            '\ubcf8\ubb38\n"\\',
+            "text",
+            id="content-only-utf8",
+        ),
+        pytest.param(
+            '[{"id":"","type":"function",'
+            '"function":{"name":"get_incident_evidence",'
+            r'"arguments":"{\"note\":\"'
+            "\ud55c"
+            r'\\n\"}"}}]',
+            '\ubcf8\ubb38\n"\\',
+            "invalid_tool_calls",
+            id="malformed-raw-utf8",
+        ),
+    ],
+)
+def test_sdk_output_byte_cap_uses_complete_tool_payload_and_exact_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    wire_tool_calls: str | None,
+    content: str,
+    expected_state: Literal["tool_calls", "text", "invalid_tool_calls"],
+) -> None:
+    wire_calls = None if wire_tool_calls is None else json.loads(wire_tool_calls)
+    expected_bytes = len((content + (wire_tool_calls or "")).encode("utf-8"))
+    finish_reason = "stop" if expected_state == "text" else "tool_calls"
+    requests: list[httpx.Request] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"x-request-id": "sdk-output-limit-request"},
+            json={
+                "id": "tool-output-limit-completion",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {
+                            "role": "assistant",
+                            "content": content,
+                            "tool_calls": wire_calls,
+                        },
+                        "finish_reason": finish_reason,
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 3,
+                    "total_tokens": 13,
+                },
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(
+            provider_module, "OpenAI", partial(OpenAI, http_client=client)
+        )
+        settings = _settings().model_copy(
+            update={"max_output_bytes": expected_bytes, "max_retries": 2}
+        )
+        adapter = provider_module.OpenAICompatibleAdapter(settings)
+        result = adapter.invoke(
+            _messages(), output_format="text", tools=(_TOOL,), tool_choice="auto"
+        )
+
+        assert len(requests) == 1
+        assert result.content == content
+        assert [call.model_dump(mode="json") for call in result.tool_calls] == (
+            wire_calls if expected_state == "tool_calls" else []
+        )
+        assert result.raw_tool_calls == (
+            wire_tool_calls if expected_state == "invalid_tool_calls" else None
+        )
+
+        requests.clear()
+        oversized_adapter = provider_module.OpenAICompatibleAdapter(
+            settings.model_copy(update={"max_output_bytes": expected_bytes - 1})
+        )
+        with pytest.raises(provider_module.ProviderResponseTooLargeError) as error:
+            oversized_adapter.invoke(
+                _messages(), output_format="text", tools=(_TOOL,), tool_choice="auto"
+            )
+
+        assert len(requests) == 1
+
+    assert error.value.actual_bytes == expected_bytes
+    assert error.value.max_bytes == expected_bytes - 1
+    for response in (result, error.value):
+        assert response.attempt_count == 1
+        assert response.usage == runtime_contracts.ProviderUsage(
+            prompt_tokens=10, completion_tokens=3, total_tokens=13
+        )
+        assert response.trace_id == "sdk-output-limit-request"
+        assert response.response_metadata == runtime_contracts.ProviderResponseMetadata(
+            finish_reason=finish_reason,
+            content_state=expected_state,
+            content_bytes=len(content.encode("utf-8")),
+        )
 
 
 def test_tool_history_messages_serialize_to_the_wire_profile() -> None:

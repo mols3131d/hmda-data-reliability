@@ -238,13 +238,15 @@ class OpenAICompatibleAdapter:
                 ) from None
 
             latency_ms = _elapsed_ms(started, self._clock)
-            output_bytes = len(response.content.encode("utf-8")) + (
-                len(response.raw_tool_calls.encode("utf-8"))
-                if response.raw_tool_calls is not None
-                else sum(
-                    len(call.function.arguments.encode("utf-8"))
-                    for call in response.tool_calls
+            tool_call_output = response.raw_tool_calls or ""
+            if response.raw_tool_calls is None and response.tool_calls:
+                tool_call_output = json.dumps(
+                    [call.model_dump(mode="json") for call in response.tool_calls],
+                    ensure_ascii=False,
+                    separators=(",", ":"),
                 )
+            output_bytes = len(response.content.encode("utf-8")) + len(
+                tool_call_output.encode("utf-8")
             )
             if output_bytes > self._settings.max_output_bytes:
                 raise ProviderResponseTooLargeError(
