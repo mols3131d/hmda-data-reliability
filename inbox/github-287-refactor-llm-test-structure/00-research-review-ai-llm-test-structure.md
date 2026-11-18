@@ -84,12 +84,14 @@ tags:
 권고 구현 순서:
 
 1. **Inventory and contract mapping.** `tests/review_ai`, `tests/runtime_ai`, 외부 SDK/HTTP/fixture 사용을 검토해 offline/실서비스 호출을 실증적으로 분류한다. 실제 외부 호출이 없는 테스트는 level marker를 유지하고 불필요하게 live로 이동하지 않는다.
-2. **Tests first.** 잘못된 `llm_paid` 단독 표기, 무단 live 실행, mock transport의 정상 실행, 명시적으로 허용된 local/live 실행과 credential 누락을 observable outcome으로 검증하는 focused contract tests를 설계한다. 무조건 skip으로 잘못된 접근을 PASS 처리하지 않는다.
-3. **Marker + guard integration.** `pyproject.toml`과 필요한 pytest fixture/test만 최소 수정한다. 단순 `-m` 직접 지정으로 guard가 우회되지 않아야 한다. `llm_live`에는 별도 explicit opt-in, `llm_paid`에는 추가 opt-in·허용 provider/endpoint·비용 상한이 필요하다. `service_live`도 독립 외부 접속 허용 정책을 갖는다.
-4. **CI routing and docs.** `scripts/ci/run_checks.py`의 full/scoped 필터 및 `tests/scripts/ci/test_ci_pytest.py`의 argv 계약을 함께 변경한다. 필요 시 `scripts/ci/classify_changes.py`의 변경 영향 전파와 CI 계약 테스트를 수정한다. `docs/development/testing.md`에 실행 명령과 marker 의미를 설명한다.
-5. **Optional smoke.** 실제로 검증 가치가 입증된 최소 로컬 모델 smoke부터 만들고, 유료 호출은 별도 명시적 승인·상한·trusted runner가 확인된 경우에만 추가한다. 품질 평가는 현재 Langfuse Dataset Experiment를 재사용한다.
+1. **Tests first.** 잘못된 `llm_paid` 단독 표기, 무단 live 실행, mock transport의 정상 실행, 명시적으로 허용된 local/live 실행과 credential 누락을 observable outcome으로 검증하는 focused contract tests를 설계한다. 무조건 skip으로 잘못된 접근을 PASS 처리하지 않는다.
+1. **Marker + guard integration.** `pyproject.toml`과 필요한 pytest fixture/test만 최소 수정한다. 단순 `-m` 직접 지정으로 guard가 우회되지 않아야 한다. `llm_live`에는 별도 explicit opt-in, `llm_paid`에는 추가 opt-in·허용 provider/endpoint·비용 상한이 필요하다. `service_live`도 독립 외부 접속 허용 정책을 갖는다.
+1. **CI routing and docs.** `scripts/ci/run_checks.py`의 full/scoped 필터 및 `tests/scripts/ci/test_ci_pytest.py`의 argv 계약을 함께 변경한다. 필요 시 `scripts/ci/classify_changes.py`의 변경 영향 전파와 CI 계약 테스트를 수정한다. `docs/development/testing.md`에 실행 명령과 marker 의미를 설명한다.
+1. **Optional smoke.** 실제로 검증 가치가 입증된 최소 로컬 모델 smoke부터 만들고, 유료 호출은 별도 명시적 승인·상한·trusted runner가 확인된 경우에만 추가한다. 품질 평가는 현재 Langfuse Dataset Experiment를 재사용한다.
 
-**Acceptance conditions — 실제 증거로 확인할 것**
+### Acceptance Conditions
+
+다음 조건은 실제 검증 근거로 확인한다.
 
 - 일반 `uv run pytest`, CI full/scoped 검사, 테스트 파일 직접 실행에서 무의도한 외부 LLM/유료 API/원격 Langfuse 요청이 발생하지 않는다. 직접 실행이 live guard에 의해 차단되는 경우 해당 의도와 실패 메시지가 명확하다.
 - `unit`·`component`·`integration`의 primary 의미는 유지하고 기존 mock/SDK 계약 테스트가 기본 suite에서 계속 실행된다.
