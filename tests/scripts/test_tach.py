@@ -37,9 +37,9 @@ def check(project: Path) -> subprocess.CompletedProcess[str]:
 @pytest.mark.parametrize(
     ("source", "target"),
     [
-        ("reliability", "review_ai"),
+        ("reliability", "reliability_ai"),
         ("reliability", "runtime_ai"),
-        ("runtime_ai", "review_ai"),
+        ("runtime_ai", "reliability_ai"),
         ("runtime_ai", "reliability"),
     ],
 )
@@ -59,7 +59,7 @@ def test_type_only_import_stays_outside_runtime_graph(project: Path) -> None:
     probe.write_text(
         "from typing import TYPE_CHECKING\n"
         "if TYPE_CHECKING:\n"
-        "    import hmda_reliability.review_ai\n",
+        "    import hmda_reliability.reliability_ai\n",
         encoding="utf-8",
     )
     result = check(project)
@@ -68,12 +68,12 @@ def test_type_only_import_stays_outside_runtime_graph(project: Path) -> None:
 
 def test_advisory_and_unrestricted_root_imports_remain_allowed(project: Path) -> None:
     root = project / "src/hmda_reliability"
-    (root / "review_ai/boundary_probe.py").write_text(
+    (root / "reliability_ai/boundary_probe.py").write_text(
         "import hmda_reliability.reliability\nimport hmda_reliability.runtime_ai\n",
         encoding="utf-8",
     )
     (root / "boundary_probe.py").write_text(
-        "import hmda_reliability.review_ai\n", encoding="utf-8"
+        "import hmda_reliability.reliability_ai\n", encoding="utf-8"
     )
     result = check(project)
     assert result.returncode == 0, result.stdout + result.stderr
@@ -81,7 +81,7 @@ def test_advisory_and_unrestricted_root_imports_remain_allowed(project: Path) ->
 
 def test_unowned_source_cannot_silently_use_implicit_root(project: Path) -> None:
     (project / "src/unowned.py").write_text(
-        "import hmda_reliability.review_ai\n", encoding="utf-8"
+        "import hmda_reliability.reliability_ai\n", encoding="utf-8"
     )
     result = check(project)
     assert result.returncode != 0

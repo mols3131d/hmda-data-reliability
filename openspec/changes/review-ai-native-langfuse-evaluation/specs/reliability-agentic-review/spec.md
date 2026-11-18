@@ -84,6 +84,11 @@ Baseline/candidate는 Langfuse native experiment 비교 화면에서 동일 Data
 - **WHEN** 합성 item을 검토할 때
 - **THEN** oracle·controls·expected output을 provider에 주입하지 않고 원래 사례만 검토해야 한다(SHALL).
 
+#### Scenario: Omitted task exceptions cannot produce success
+
+- **WHEN** SDK가 task exception 항목을 결과에서 제외하거나 항목을 중복 반환할 때
+- **THEN** CLI는 불완전성을 보고하고 nonzero로 끝나야 한다(SHALL).
+
 ### Requirement: Verified model IO observation linkage
 
 Native generation은 실제 단계 모델 호출 구간을 감싸고 적용한 native prompt 객체·model과 실제 메시지 input, 로컬 저장 이후의 반환 output, native usage를 연결해야 한다(SHALL). 실행 뒤 빈 generation을 재생성하거나 원격 전송만을 위해 모든 manifest·checkpoint·원문을 다시 읽는 계층을 두어서는 안 된다(MUST NOT). 단계 provenance에는 적용한 prompt name/version과 메시지 digest를 보존해야 한다(SHALL).

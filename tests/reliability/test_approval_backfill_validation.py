@@ -15,7 +15,7 @@ import pytest
 from pydantic import ValidationError
 
 import hmda_reliability.data_platform.duckdb as duckdb_module
-import hmda_reliability.reliability.recovery.executor as recovery_executor
+import hmda_reliability.reliability.remediation.recovery.executor as recovery_executor
 from hmda_reliability.data_platform.duckdb import DuckDBConnectionManager
 from hmda_reliability.hmda_data import (
     HMDA_LOANS_TABLE,

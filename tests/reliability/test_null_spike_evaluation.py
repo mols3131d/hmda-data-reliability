@@ -19,7 +19,7 @@ import pytest
 
 import hmda_reliability.data_operations as data_operations
 import hmda_reliability.reliability.evaluation.null_spike as null_spike_evaluation
-import hmda_reliability.reliability.recovery.executor as recovery_executor
+import hmda_reliability.reliability.remediation.recovery.executor as recovery_executor
 from hmda_reliability.data_operations import (
     DataOperationRequest,
     DbtBuildResult,
@@ -44,12 +44,12 @@ from hmda_reliability.reliability import (
     ProfileSnapshot,
     RecoveryProposal,
 )
+from hmda_reliability.reliability.assessment.profiling import ProfileSnapshotRequest
 from hmda_reliability.reliability.errors import (
     ApprovalGateError,
     BackfillValidationError,
     ProfileSnapshotError,
 )
-from hmda_reliability.reliability.profiling import ProfileSnapshotRequest
 
 
 @pytest.mark.integration

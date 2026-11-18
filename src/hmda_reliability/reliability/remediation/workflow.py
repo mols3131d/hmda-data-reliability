@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
 
 from hmda_reliability.reliability.errors import RemediationError
@@ -29,31 +28,20 @@ def create_remediation_draft(request: RemediationDraftRequest) -> RemediationDra
     """검토용 조치 초안을 생성한다; 승인이나 복구 실행은 수행하지 않는다.
 
     워크플로 및 안전성 원칙:
-    - LangGraph 기반의 `triage` -> `rca` -> `plan` 상태 머신을 거쳐 결정론적으로 생성.
+    - 결정론적 순수 함수 파이프라인(`triage` -> `rca` -> `plan`)을 거쳐 생성.
     - `requires_approval`: 백필 조치가 포함된 제안은 검토가 필수적이므로
       `requires_approval=True`로 설정된다. 초안 생성이 실행 권한을 부여하지 않는다.
     """
 
-    graph = _build_graph()
-    final_state = graph.invoke({"request": request})
+    state: RemediationState = {"request": request}
+    state = _triage_node(state)
+    state = _rca_node(state)
+    final_state = _plan_node(state)
     draft = final_state.get("draft")
     if not isinstance(draft, RemediationDraft):
         msg = "remediation workflow가 draft를 생성하지 못했습니다."
         raise RemediationError(msg)
     return draft
-
-
-def _build_graph() -> Any:
-    # LangGraph의 TypedDict Protocol은 ty에서 구조적으로 인식되지 않는다.
-    graph = StateGraph(RemediationState)  # ty: ignore[invalid-argument-type]
-    graph.add_node("triage", _triage_node)
-    graph.add_node("rca", _rca_node)
-    graph.add_node("plan", _plan_node)
-    graph.set_entry_point("triage")
-    graph.add_edge("triage", "rca")
-    graph.add_edge("rca", "plan")
-    graph.add_edge("plan", END)
-    return graph.compile()
 
 
 def _triage_node(state: RemediationState) -> RemediationState:

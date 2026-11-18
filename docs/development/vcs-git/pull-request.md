@@ -83,6 +83,8 @@ flowchart TB
 
 수정 요청이 있으면 변경과 validation을 갱신한 뒤 인간 검토를 반복한다. 동일한 변경 목적은 기존 Draft PR을 이어가고, 목적이나 접근 방식이 달라지면 새 branch와 Pull Request를 사용한다.
 
+기존 PR 브랜치에 push하면 GitHub가 diff·commit을 자동 반영한다. Push 후 PR 본문과 검증 근거를 현재 base/head와 대조하고, 달라진 정보만 갱신한다. 더 이상 유효하지 않은 검증은 다시 수행하거나 미검증으로 명시한다.
+
 ## Agent Instructions
 
 - Repository content 변경은 Draft Pull Request로 전달한다.

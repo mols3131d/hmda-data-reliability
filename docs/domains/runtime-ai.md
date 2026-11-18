@@ -27,9 +27,9 @@ Current provider-compatible bounded invocation의 normative behavior는 [`reliab
 
 ## Dependency Boundary
 
-`runtime_ai`는 `reliability`와 `review_ai`를 import하지 않는다. Runtime contract는 package-local Pydantic base를 사용하며 review-specific identity, validation, provenance 의미를 포함하지 않는다.
+`runtime_ai`는 `reliability`와 `reliability_ai`를 import하지 않는다. Runtime contract는 package-local Pydantic base를 사용하며 도메인 identity·validation·provenance·Langfuse 의미를 포함하지 않는다.
 
-`review_ai` 같은 capability owner는 자신의 prompt semantics를 소유하고 provider-neutral runtime contract와 adapter만 사용한다. 새 AI capability가 생겨도 provider mechanics만 재사용하고 capability semantics는 각 owner에 남긴다.
+`reliability_ai` 같은 capability owner는 자신의 prompt·tool 허용 의미를 소유하고 provider-neutral runtime contract와 adapter만 사용한다. 새 AI capability가 생겨도 provider mechanics만 재사용하고 capability semantics는 각 owner에 남긴다.
 
 ## Runtime Contract
 
@@ -41,7 +41,7 @@ Current provider-compatible bounded invocation의 normative behavior는 [`reliab
 
 `hmda_reliability.runtime_ai` package root는 capability caller가 configuration contract로 사용하는 `RuntimeAISettings`만 노출한다. OpenAI-compatible adapter, provider-neutral request/response contract와 transport error는 현재 repository 내부 module surface이며 package root에서 re-export하지 않는다.
 
-이 경계는 provider implementation detail을 public API로 고정하지 않으면서 `review_ai`가 필요한 runtime mechanics를 직접 module dependency로 사용할 수 있게 한다.
+이 경계는 provider implementation detail을 public API로 고정하지 않으면서 `reliability_ai`가 필요한 runtime mechanics를 직접 module dependency로 사용할 수 있게 한다.
 
 ## Contracts And Evidence
 
@@ -55,4 +55,4 @@ Current provider-compatible bounded invocation의 normative behavior는 [`reliab
 1. [`runtime_ai/__init__.py`](../../src/hmda_reliability/runtime_ai/__init__.py)에서 current package root API를 확인한다.
 1. [`contracts.py`](../../src/hmda_reliability/runtime_ai/contracts.py)와 [`settings.py`](../../src/hmda_reliability/runtime_ai/settings.py)에서 current provider-neutral boundary 구현을 확인한다.
 1. [`provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)에서 current OpenAI-compatible adapter와 retry/error normalization 구현을 확인한다.
-1. Review semantics가 필요하면 [Review AI](review-ai.md)로 이동한다.
+1. 조사·위임 semantics가 필요하면 [Reliability AI](review-ai.md)로 이동한다.

@@ -380,7 +380,7 @@ def test_workflow_tach_step_runs_required_checks(
             "--tb=short",
             "tests/scripts/test_tach.py",
             "tests/scripts/test_tach_config.py",
-            "tests/review_ai/test_dependency_boundaries.py",
+            "tests/reliability_ai/test_dependency_boundaries.py",
         ],
     ]
 

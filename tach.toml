@@ -25,18 +25,18 @@ path = "hmda_reliability.orchestration"
 [[modules]]
 path = "hmda_reliability.reliability"
 cannot_depend_on = [
-  "hmda_reliability.review_ai",
+  "hmda_reliability.reliability_ai",
   "hmda_reliability.runtime_ai",
 ]
 
 [[modules]]
-path = "hmda_reliability.review_ai"
+path = "hmda_reliability.reliability_ai"
 
 [[modules]]
 path = "hmda_reliability.runtime_ai"
 cannot_depend_on = [
   "hmda_reliability.reliability",
-  "hmda_reliability.review_ai",
+  "hmda_reliability.reliability_ai",
 ]
 
 [[modules]]
