@@ -1,71 +1,43 @@
 <!--
-관련 문서 및 적용되는 지침·Skill을 확인한다.
-프로젝트: `AGENTS.md`, `docs/development/vcs-git/README.md`, `.rulesync/skills/prj-vcs-git-github/SKILL.md`.
-사용자·로컬 환경의 별도 하네스도 확인하고 적용되는 지침을 따른다.
+Keep Summary, Goal, Tasks, Checklist, and Boundaries as the five required H2 sections, in order.
+Split a long H2 into descriptive H3 subsections when distinct topics or workstreams make it easier to scan; otherwise omit H3. Keep the three fixed Checklist H3 groups.
+Remove unused optional sections, empty headings, placeholders, and authoring comments before submitting.
 -->
 
 ## Summary
 
-<!--
-왜 이 변경이 필요한가? 병합 후 무엇이 달라지는가?
-2~4문장으로 핵심부터 설명하고 구현 상세는 Changes에 둔다.
--->
+<!-- Summarize the outcome; link a related Issue or task when one exists. -->
 
-<변경 이유와 기대 결과>
+## Goal
 
-## Changes
+<!-- State the problem, intended outcome, and success criteria. Avoid repeating the Tasks list. -->
 
-<!--
-검토자가 diff에서 확인해야 할 최종 변화는 무엇인가?
-파일 목록보다 동작, 계약, 구조의 변화에 집중한다.
-여러 하위 항목이 필요한 경우 nested list를 사용할 수 있으며 depth 2를 권장하고 최대 3까지만 사용한다.
--->
+## Tasks
 
-- <주요 변경>
+<!-- Track concrete deliverables using - [ ] and - [x]. Check only completed work. Group longer task lists under descriptive H3 headings when helpful; do not duplicate the changed-files list or commit history. -->
 
-## Validation
+## Checklist
 
-<!--
-무엇을 확인했고 결과는 어땠는가?
-실제로 수행한 검증만 기록한다. 중요한 미수행 검증은 ⚪ Not Verified로 남긴다.
-상태: ✅ Pass / ❌ Fail / ⚪ Not Verified
--->
+<!-- Keep the fixed checks below. Check only a criterion that was actually satisfied. Keep failed, pending, or unverified checks unchecked and explain why. For an inapplicable check, replace its entire checkbox item with a plain Markdown bullet in the form `- N/A: <reason>` (for example, `- N/A: no runtime behavior to verify`); do not use any checkbox syntax for N/A because it affects GitHub task progress. Add relevant checks as needed without copying CI logs. -->
 
-- `<status>` — `<check>`: <result 또는 evidence>
+### Self-review
 
-<!--
-Optional — 판단 비용을 줄일 때만 해당 section을 추가한다.
+- [ ] Confirmed the Goal and Boundaries against the actual diff.
+- [ ] Reviewed the diff for unintended changes and regressions.
 
-- Boundaries — 범위를 오해하기 쉬울 때
-  `## Boundaries` → `- **Out of Scope:** <의도적으로 제외한 범위>`
-- Review Focus — 중요한 결정, trade-off, 가정을 집중 검토해야 할 때
-  `## Review Focus` → `- <집중해서 검토할 결정, trade-off 또는 가정>`
-- Risks — Validation과 별개로 병합 후에도 위험이나 제한이 남을 때
-  `## Risks` → `- ⚠️ <위험 또는 제한>: <영향 또는 대응>`
-- References — 요구사항이나 판단 근거를 다른 artifact가 소유할 때
-  `## References` → `- <repository-relative path 또는 link>`
+### Automated checks
 
-Validation 항목이 많고 Check / Result / Evidence 비교가 중요하면 table을 사용할 수 있다.
+- [ ] Applicable formatting and lint checks passed.
+- [ ] Applicable automated tests passed.
+- [ ] Applicable GitHub CI checks passed.
 
-| Check | Result | Evidence |
-| --- | --- | --- |
-| `<check>` | `<status>` | `<evidence>` |
--->
+### Verification
 
-<!--
-Optional metadata — GitHub가 제공하지 않는 provenance가 판단에 필요할 때만 본문 마지막에 추가한다.
-Footnote 정의가 있으면 metadata를 그 바로 앞에 두고 별도 Metadata heading은 만들지 않는다.
-공통 규칙은 `.github/templates/README.md`를 따른다.
+- [ ] Task-specific acceptance criteria and runtime/manual behavior verified where applicable.
+- [ ] Recorded failed, skipped, or unverified checks and unresolved risks (or confirmed none).
 
-`author`는 Agent 주도 작성의 실제 작성 주체를 식별한다.
-`revision`은 이 description의 validation과 상태 설명이 기준으로 삼은 exact base/head commit pair다.
-`revision`을 사용한 뒤 base 또는 head가 바뀐 상태로 본문을 갱신하면 값도 함께 갱신한다.
+## Boundaries
 
-```yaml
-author:
-  - <user-id>:<provider>-<service>
-revision:
-  base: <full-base-commit-sha>
-  head: <full-head-commit-sha>
-```
--->
+<!-- Describe deliberate exclusions, material constraints, permissions, side effects, or follow-up work; use N/A when none apply. -->
+
+<!-- Optional: add useful H2 sections such as Risks, Review Focus, Compatibility, Migration, Security, Handoff, or References. Omit empty sections. Add descriptive H3 subsections only when they improve readability. -->
