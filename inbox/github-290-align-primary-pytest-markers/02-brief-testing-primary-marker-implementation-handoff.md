@@ -20,7 +20,7 @@ description: "PR #290에서 마커 수집 정확성을 수정할 로컬 에이�
 ## Next Action
 
 1. 현재 head, 원격 `main`, 사용자/로컬 harness와 적용되는 repo context를 확인하고 기존 변경을 보호한다.
-2. 실제 pytest collection에서 primary marker 충돌을 재현하고 각 test의 true boundary를 확인한다.
+2. 전체 effective marker 수집과 두 알려진 사례의 중복 선택을 재현하고, 특히 local DuckDB를 사용하는 test의 실제 level을 확인한다. 명시적 `-m` 사용 시 기본 resource exclusion이 보존된다고 가정하지 않는다.
 3. 최소 coherent code/test 변경을 수행하고 선택 정확성, 테스트 동작 보존, CI를 검증한다.
 4. 수행한 검증/미수행 항목 및 주요 판단을 PR 본문에 반영하고 review를 요청한다. **Ready 전환과 merge는 별도 인간 결정**이다.
 
@@ -28,5 +28,5 @@ description: "PR #290에서 마커 수집 정확성을 수정할 로컬 에이�
 
 - 사용자가 지정한 계정 `mols3131d` / `mols3131d@gmail.com`만 사용한다.
 - 마커 이름을 바꾸기 전에 실제 테스트가 보호하는 동작을 확인한다. 리뷰 의견도 무조건 수용하지 않고 로컬 실행·근거로 재검토한다.
-- Scope는 pytest marker 정확성이다. 다른 테스트 구조 문제, LLM 평가, framework 도입을 결합하지 않는다.
+- Scope는 pytest marker 정확성이다. 같은 module/class/function 상속 충돌의 최소 해소에 집중하고, 무표식 테스트 전체 일괄 정리나 포괄적 CI 재설계, LLM 평가, framework 도입을 결합하지 않는다.
 - 이번 준비 단계에서 테스트 실행 없음. 이전 PR의 PASS 기록은 현재 PR에 대한 검증이 아니다.

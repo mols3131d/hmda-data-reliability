@@ -8,7 +8,7 @@ description: "pytest 수집 마커의 중복을 정리하고 실행 선택·회�
 
 ## Goal
 
-모든 in-scope pytest test item이 `unit` / `component` / `integration` 중 의도한 primary marker **하나만** 가지며, 각 `-m` 선택이 그 분류와 일치하도록 수정한다. 이 PR의 완료 목표는 **실제 마커 정합성 수정 + 검증**이다. 문서 작성만으로 완료 처리하지 않는다.
+기존 pytest test의 실제 검증 경계에 맞춰 `unit` / `component` / `integration` 중 **정확한 하나의 primary level**로 선택되도록 수정한다. `memory` / `stress`는 별도 resource marker로 보존한다. 현재 확인된 두 중복 사례부터 시작하며, 추가 사례는 실제 collection 근거로만 범위에 포함한다. 이 PR의 완료 목표는 **실제 마커 정합성 수정 + 검증**이다. 문서 작성만으로 완료 처리하지 않는다.
 
 ## Work
 
@@ -16,14 +16,14 @@ description: "pytest 수집 마커의 중복을 정리하고 실행 선택·회�
 2. 조사에서 확인된 두 사례를 우선 검토한다.
    - `tests/reliability_ai/test_execution_service.py`: module `unit` + `test_delegated_task_reports_real_backfill_and_domain_approval_block`의 `integration`.
    - `tests/reliability_ai/test_investigation_agent.py`: module `integration` + `test_native_sdk_records_sibling_generations_and_tool_history`의 `component`.
-3. **이름만 따라 수정하지 않는다.** 각 테스트가 실제 관찰하는 I/O와 component 경계로 primary level을 재판단한다. Module 전체 marker를 유지하면 예외 test를 성격이 맞는 기존/신규 module로 이동하거나 class 단위 그룹화하는 식으로 상속 충돌을 제거한다. Fixture나 helper의 이동이 과도하면 가장 작은 대안을 선택한다.
+3. **이름만 따라 수정하지 않는다.** 각 테스트가 실제 관찰하는 I/O와 component 경계로 primary level을 재판단한다. module과 class marker는 function marker로 override되지 않고 누적된다. 따라서 class 분리만으로 module-level 중복을 해결했다고 간주하지 않는다. 예외 test를 적절한 module로 이동하거나 module-level marker를 제거하고 필요한 test에 개별 마커를 지정하는 대안을 비교하여 fixture·test ID·oracle 보존 비용이 가장 낮은 방식을 택한다.
 4. 다른 중복 사례가 수집 결과로 확인되면 같은 목적과 위험 범위 안에서 함께 정리한다. 불분명한 테스트는 계약과 책임 경계를 확인한 뒤 결정한다.
 5. 필요할 때만 lightweight collection regression guard를 추가한다. 기존 fixture, production source, CI 설정을 광범위하게 재설계하지 않는다.
 
 ## Acceptance
 
-- collection 결과 일반 test item마다 effective primary **name set**이 정확히 하나다. Resource marker `memory` / `stress`는 추가될 수 있다.
-- `-m unit`, `-m component`, `-m integration`의 각 선택 범위가 상호 중복 없이 의도한 수준을 반영한다. 실제 물리적 marker 객체 개수와 unique name 차이도 확인하여 우연히 통과하지 않도록 한다.
+- 수정한 test의 effective primary **name set**이 정확히 하나이며, 전체 수집에서도 다른 primary 충돌이 없는지 확인한다. 이미 있던 무표식 test나 같은 이름의 중복 mark가 나오면 실제 의미와 이 PR의 범위를 판단해 별도 기록한다. Resource marker `memory` / `stress`는 보존한다.
+- `-m unit`, `-m component`, `-m integration` 선택에서 수정 대상 item이 중복 선택되지 않으며, 예상한 level에 포함되는지 확인한다. `iter_markers()`가 반환하는 실제 mark와 unique name을 모두 관찰한다.
 - 변경된 테스트의 observable behavior assertion과 oracle은 약화되지 않는다. Test relocation 후 fixture, test ID, collection, marker 선택이 정상이다.
 - Focused tests → 해당 domain suites → 영향에 비례한 non-resource suite를 실행하고 결과를 evidence로 남긴다. CI Lite의 최신 prospective merge 결과를 확인한다.
 - 변경된 코드와 인박스의 최종 상태, 미해결 gap을 PR 본문과 인계 문서에 일치시킨다.
@@ -39,13 +39,13 @@ description: "pytest 수집 마커의 중복을 정리하고 실행 선택·회�
 
 ```bash
 uv run pytest --collect-only -q tests/reliability_ai
-uv run pytest --collect-only -q -m unit tests/reliability_ai
-uv run pytest --collect-only -q -m component tests/reliability_ai
-uv run pytest --collect-only -q -m integration tests/reliability_ai
+uv run pytest --collect-only -q -m 'unit and not memory and not stress' tests/reliability_ai
+uv run pytest --collect-only -q -m 'component and not memory and not stress' tests/reliability_ai
+uv run pytest --collect-only -q -m 'integration and not memory and not stress' tests/reliability_ai
 uv run pytest tests/reliability_ai
 ```
 
-위 명령은 선택 결과 파악용 시작점이다. 전체 분류 무결성 검사에서는 기본 `not memory and not stress` 필터가 resource test를 제외한다는 점을 고려해 명시적으로 pytest option을 조정한다. 실제 수행한 결과만 기록한다.
+위 명령은 선택 결과 확인용이며 아직 실행하지 않았다. 명시한 `-m`은 기본 addopts의 `-m 'not memory and not stress'`를 대체할 수 있으므로, 일반 테스트 선택에는 resource exclusion을 표현식에 함께 적는다. Resource test까지 포함한 collection audit는 `-o addopts='--timeout=60 --strict-markers'`와 임시 collection hook 등 읽기 전용 수집 방식으로 별도 확인한다. 실제 수행한 결과만 기록한다.
 
 ## References
 
