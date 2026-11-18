@@ -204,6 +204,10 @@ uv run python scripts/run_actual_source.py
 
 Reliability AI의 deterministic suite·실제 합성 실험·사람 평가는 [Evaluation](review-ai-evaluation.md)을 따른다. 기본 pytest는 fake transport·고정 native Prompt·실제 SDK의 메모리 exporter를 사용하며 서버·모델을 호출하지 않는다. SDK 4.15.6은 기본 의존성이다. 최초 등록은 `hmda_reliability.reliability_ai.evaluation.setup`, 반복 실행은 `hmda_reliability.reliability_ai.evaluation.experiment`에서 명시적으로 수행한다. Offline 통과·구조적 완료·SDK 반환·실제 원격 적재·사람 평가는 구별한다.
 
+`tests/reliability_ai`와 `tests/runtime_ai`에서는 각 테스트의 setup·실행·teardown 중 CPython audit event로 감지한 socket 주소 조회와 IPv4·IPv6 소켓 연결을 차단한다. SDK가 연결 오류를 처리해도 시도가 있으면 pytest가 실패한다. Node ID나 `-m`으로 직접 선택해도 같은 규칙이 적용된다. [AI 테스트의 네트워크 차단](../../tests/conftest.py)
+
+`--export-traces`를 사용하면 pytest가 시작 시 새로 구성한 provider의 OTLP/HTTP 전송을 허용한다. 같은 실행에서 기존 provider와 AI 클라이언트에는 오프라인 차단을 적용한다.
+
 이 문서는 일반 pytest 선택, CI behavior와 공통 test result 해석을 소유한다.
 
 ## Interpret Results
