@@ -23,11 +23,13 @@ Pull Request는 branch의 변경을 검토하고 repository에 반영할지 결�
 
 ## Description
 
-본문에는 **현재 변경을 판단하는 데 필요한 정보만** 남긴다. Section 구성, optional section과 validation 표시 형식은 [Pull Request Template](../../../.github/pull_request_template.md)을 따른다.
+본문에는 **현재 변경을 판단하는 데 필요한 정보만** 남긴다. 필수 section의 순서, checklist group과 optional section은 [Pull Request Template](../../../.github/pull_request_template.md)을 따른다.
 
-- `Summary`는 변경 이유와 기대 결과를 먼저 설명한다.
-- `Changes`는 시행착오나 파일 목록이 아니라 최종 동작, 계약 또는 구조의 변화를 기록한다.
-- `Validation`은 실제 수행한 검증과 evidence를 연결하고, 실패하거나 확인하지 못한 결과를 숨기지 않는다.
+- `Summary`는 변경의 핵심 결과를 먼저 설명한다.
+- `Goal`은 변경 이유, 기대 결과와 성공 기준을 설명한다.
+- `Tasks`는 구체적인 deliverable을 체크박스로 관리하며 완료한 작업만 체크한다.
+- `Checklist`는 `Self-review`, `Automated checks`, `Verification`의 세 그룹을 유지하고 실제 충족한 항목만 체크한다. 미실행·실패 항목은 체크하지 않고 이유를 설명하며, 적용하지 않는 항목은 checkbox 없이 `N/A`로 명시한다.
+- `Boundaries`는 의도적으로 제외한 범위, 권한, 제약과 후속 작업을 구분한다.
 
 다음 정보는 PR description에 복제하지 않는다.
 
