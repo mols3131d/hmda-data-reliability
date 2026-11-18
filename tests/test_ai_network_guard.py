@@ -34,10 +34,12 @@ def test_network_policy_applies_to_ai_test_phases(
     test_dir = pytester.path / domain
     test_dir.mkdir()
     test_file = test_dir / "test_client.py"
+    operation_result = test_dir / "socket-result.txt"
     test_file.write_text(
         f"""
 import socket
 import sys
+from pathlib import Path
 from socket import getaddrinfo, gethostbyname
 from types import SimpleNamespace
 
@@ -58,8 +60,12 @@ def try_network():
                 SimpleNamespace(family=socket.AF_INET),
                 ('127.0.0.1', 9),
             )
-    except OSError:
-        pass
+    except OSError as error:
+        result = f'{{type(error).__name__}}: {{error}}'
+    else:
+        result = 'returned'
+    result_path = Path(__file__).with_name({operation_result.name!r})
+    result_path.write_text(result, encoding='utf-8')
 
 
 @pytest.fixture(scope='module')
@@ -87,8 +93,11 @@ def test_client(client):
     )
 
     result.assert_outcomes(**outcomes)
+    observed_result = operation_result.read_text(encoding="utf-8")
     if outcomes == {"passed": 1}:
+        assert observed_result == "returned"
         assert result.ret == pytest.ExitCode.OK
     else:
+        assert observed_result == "OSError: AI tests must use offline transports"
         assert result.ret == pytest.ExitCode.TESTS_FAILED
         result.stdout.fnmatch_lines(["*AI test attempted to resolve or connect*"])

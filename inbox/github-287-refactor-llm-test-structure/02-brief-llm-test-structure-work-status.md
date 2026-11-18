@@ -34,9 +34,17 @@ tags:
 ## Validation And Resume
 
 - 변경 후보에서 두 AI suite, 네트워크 차단 회귀, CI pytest·Python 분류 계약을 xdist 2개 worker로 실행해 330개 통과를 확인했다. Ruff, 전체 `ty check`, 변경한 테스트 가이드의 Markdown 검사도 통과했다.
-- 두 관점에서 독립 검토했다. 초기 구현에서 기존 SDK가 오류를 처리한 뒤 `skip` 또는 `xfail`로 끝나면 테스트가 통과하던 문제와, 테스트 수집 때 가져온 socket 함수가 차단되지 않던 문제를 재현했다. 현재 후보의 독립 재검토는 `clear`다.
+- 초기 독립 검토에서 `skip`·`xfail`을 통한 실패 누락과 수집 때 가져온 socket 함수의 차단 우회를 수정했다. `7aec7be0`의 두 관점 재검토는 `clear`였고 당시 CI Lite에서 `1225 passed, 2 skipped`를 확인했다. [이전 CI Lite 실행](https://github.com/mols3131d/hmda-data-reliability/actions/runs/44272773892)
 - 초기 후보의 로컬 전체 pytest에서 Git 서명 키, 읽기 전용 도구 저장 경로, 소켓 제한과 Airflow 타임아웃도 확인했다. 현 후보 전체 통과 여부는 GitHub CI 결과를 기준으로 확인한다.
 - 공유 `tests/conftest.py`가 변경됐으므로 CI 분류기는 full pytest를 선택한다. 재개 시 PR base/head와 연결된 prospective merge에서 `Run selected tests`의 실제 결과를 확인한다. [CI 분류기](../../scripts/ci/classify_changes.py), [PR #287](https://github.com/mols3131d/hmda-data-reliability/pull/287)
 - 실제 LLM·Langfuse 호출, 원격 수집 및 사람 평가는 수행하지 않았다. 이후 실제 호출이 필요한 새 테스트를 제안하면 그 사례를 기준으로 실행 위치, 명시 선택과 예산을 검토한다.
 
 초기 제안과 기존 Review AI 경로에서 변경된 사항은 조사와 인계에 보존돼 있다. [Original Research](00-research-review-ai-llm-test-structure.md), [Main Alignment Handoff](01-brief-llm-test-structure-main-alignment-handoff.md)
+
+## Review Follow-Up
+
+`7aec7be0`을 대상으로 한 후속 리뷰의 F1·F2를 재현하고 수용했다. 혼합 suite의 공유 session fixture 정리 시점은 리뷰 문서에 후속 관찰로 남겨 두었다. 현재 적용 범위는 pytest 항목의 실행이다. [Independent Review](03-review-ai-offline-network-guard.md)
+
+- **F1**은 하위 pytest의 실패 여부와 별도로 주소 조회나 연결 시도가 차단 예외를 받았는지 확인한다. 차단 예외 한 줄을 제거한 사본에서는 차단 사례 5개가 실패하고 허용 대조군 2개가 통과했다.
+- **F2**는 `--export-traces`에서 pytest가 새로 구성한 provider의 OTLP/HTTP exporter 전송을 허용한다. 같은 실행의 AI 작업 스레드는 차단된다. 독립 재검토에서 pytest 진입 전에 설치된 provider의 전송까지 허용되는 경우를 발견해 provider 식별 조건을 좁히고 회귀 검증을 추가했다.
+- 최종 독립 재검토는 `clear`였다. AI suite·차단 회귀·pytest OpenTelemetry·CI 선택 계약은 xdist 2개 worker에서 `335 passed`였고 Ruff, 전체 타입 검사, Markdown·Inbox 검사도 통과했다. 실제 collector, LLM·Langfuse 및 OTLP/gRPC는 실행하지 않았다. 게시된 head의 전체 CI와 검토 상태는 PR 본문에서 확인한다. [PR #287](https://github.com/mols3131d/hmda-data-reliability/pull/287)
