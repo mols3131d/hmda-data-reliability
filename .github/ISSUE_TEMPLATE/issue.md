@@ -1,11 +1,5 @@
 ---
-description: Report a problem, propose an improvement, or request an investigation
-source_revision: <full-commit-sha>
-author:
-  - <user-id>:<provider>-<service>
-environment:
-  runtime: <runtime-name>
-  version: <verified-runtime-version>
+about: Report a problem, propose an improvement, or request an investigation
 ---
 
 <!--
@@ -38,3 +32,17 @@ environment:
 <!-- 이슈에 대한 오해 가능성, 확인되지 않은 가정, 근거·재현·검증의 한계, 누락되거나 미확정된 정보를 밝힌다. 알려진 사항이 없으면 N/A와 이유를 적는다. -->
 
 <오해 가능성·한계·증거 부족·미확정 사항 또는 N/A와 이유>
+
+<!--
+Optional metadata: 확인된 field만 남기고 placeholder·불필요한 key는 제거한다.
+environment를 사용하면 runtime과 검증된 version을 함께 기록한다.
+-->
+
+```yaml
+source_revision: <full-commit-sha>
+author:
+  - <user-id>:<provider>-<service>
+environment:
+  runtime: <runtime-name>
+  version: <verified-runtime-version>
+```
