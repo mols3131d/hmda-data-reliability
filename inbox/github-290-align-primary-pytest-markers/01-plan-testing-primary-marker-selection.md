@@ -13,12 +13,12 @@ description: "pytest 수집 마커의 중복을 정리하고 실행 선택·회�
 ## Work
 
 1. `main` 대비 변경을 확인하고 `pytest --collect-only`로 실제 item의 effective marker를 점검한다. `item.iter_markers()`에서 세 primary marker의 unique name set 및 필요 시 중복 발생 위치를 기록한다. `pytest -m` 필터의 실제 선택 결과도 확인한다.
-1. 조사에서 확인된 두 사례를 우선 검토한다.
+2. 조사에서 확인된 두 사례를 우선 검토한다.
    - `tests/reliability_ai/test_execution_service.py`: module `unit` + `test_delegated_task_reports_real_backfill_and_domain_approval_block`의 `integration`.
    - `tests/reliability_ai/test_investigation_agent.py`: module `integration` + `test_native_sdk_records_sibling_generations_and_tool_history`의 `component`.
-1. **이름만 따라 수정하지 않는다.** 각 테스트가 실제 관찰하는 I/O와 component 경계로 primary level을 재판단한다. module과 class marker는 function marker로 override되지 않고 누적된다. 따라서 class 분리만으로 module-level 중복을 해결했다고 간주하지 않는다. 예외 test를 적절한 module로 이동하거나 module-level marker를 제거하고 필요한 test에 개별 마커를 지정하는 대안을 비교하여 fixture·test ID·oracle 보존 비용이 가장 낮은 방식을 택한다.
-1. 다른 중복 사례가 수집 결과로 확인되면 같은 목적과 위험 범위 안에서 함께 정리한다. 불분명한 테스트는 계약과 책임 경계를 확인한 뒤 결정한다.
-1. 필요할 때만 lightweight collection regression guard를 추가한다. 기존 fixture, production source, CI 설정을 광범위하게 재설계하지 않는다.
+3. **이름만 따라 수정하지 않는다.** 각 테스트가 실제 관찰하는 I/O와 component 경계로 primary level을 재판단한다. module과 class marker는 function marker로 override되지 않고 누적된다. 따라서 class 분리만으로 module-level 중복을 해결했다고 간주하지 않는다. 예외 test를 적절한 module로 이동하거나 module-level marker를 제거하고 필요한 test에 개별 마커를 지정하는 대안을 비교하여 fixture·test ID·oracle 보존 비용이 가장 낮은 방식을 택한다.
+4. 다른 중복 사례가 수집 결과로 확인되면 같은 목적과 위험 범위 안에서 함께 정리한다. 불분명한 테스트는 계약과 책임 경계를 확인한 뒤 결정한다.
+5. 필요할 때만 lightweight collection regression guard를 추가한다. 기존 fixture, production source, CI 설정을 광범위하게 재설계하지 않는다.
 
 ## Acceptance
 
