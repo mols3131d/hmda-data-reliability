@@ -1,64 +1,44 @@
----
-name: General Issue
-about: Report a problem, propose an improvement, or request an investigation
----
-
 <!--
 관련 문서 및 적용되는 지침·Skill을 확인한다.
 프로젝트: `AGENTS.md`, `docs/development/vcs-git/README.md`, `.rulesync/skills/prj-vcs-git-github/SKILL.md`.
 사용자·로컬 환경의 별도 하네스도 확인하고 적용되는 지침을 따른다.
 -->
 
-## Objective
-
-<!-- 어떤 문제를 해결하거나 무엇을 바꾸거나 조사하려는가? -->
-
-<문제, 제안 또는 조사 목표>
-
-## Acceptance
-
-<!-- 완료를 판단할 결과·조건·산출물을 적는다. 미정인 항목은 구분한다. -->
-
-- <완료 조건 또는 기대 산출물>
-
-## Context
-
-<!-- Optional — 관련 배경·문서·이슈·참고 정보를 적는다. 불필요하면 제거한다. -->
-
-<배경 및 참고 자료>
 
 <!--
-Optional — 필요한 section만 추가한다. 간단한 내용은 Context에 함께 적어도 된다.
+필수 H2: Summary, Boundaries, Caveats. 이 순서로 모두 작성한다.
+그 외 H2/H3는 이슈의 목적과 성격에 따라 자유롭게 추가·배치한다.
+사용하지 않는 optional section, 작성 안내, 미치환 placeholder는 최종 Issue에서 제거한다.
+-->
 
-## Evidence
+## Summary
 
-- <관찰 결과, 재현 방법, 로그 또는 관련 근거>
+<!-- 문제·변경 제안·조사 질문의 핵심과 목적, 기대 결과를 간결하게 기술한다. -->
 
-## Environment
-
-- <관련 실행 환경, 버전, 설정, 데이터 등>
+<핵심 내용과 이슈를 제기하는 이유>
 
 ## Boundaries
 
-- **Out of Scope:** <제외 범위>
-- **Constraints:** <제약 사항>
+<!-- 해결·조사 범위, 의도적으로 제외하는 사항, 제약 및 권한 경계를 명시한다. 없으면 N/A와 이유를 적는다. -->
 
-## Open Decisions
+<범위, 제외 사항, 제약 또는 N/A와 이유>
 
-- <결정이 필요한 사항 또는 미확정 질문>
--->
+## Caveats
+
+<!-- 이슈에 대한 오해 가능성, 확인되지 않은 가정, 근거·재현·검증의 한계, 누락되거나 미확정된 정보를 밝힌다. 알려진 사항이 없으면 N/A와 이유를 적는다. -->
+
+<오해 가능성·한계·증거 부족·미확정 사항 또는 N/A와 이유>
 
 <!--
-Optional metadata — 구조화된 정보가 필요할 때만 본문 마지막에 추가한다.
-필요한 field만 사용하고 중복·비밀 값은 제외한다.
-자세한 규칙: .github/templates/README.md
+Optional metadata: 확인된 field만 남기고 placeholder·불필요한 key는 제거한다.
+environment를 사용하면 runtime과 검증된 version을 함께 기록한다.
+-->
 
 ```yaml
+source_revision: <full-commit-sha>
 author:
   - <user-id>:<provider>-<service>
 environment:
-  runtime: <runtime-and-version>
-  configuration: <relevant-non-secret-settings>
-source_revision: <full-commit-sha>
+  runtime: <runtime-name>
+  version: <verified-runtime-version>
 ```
--->

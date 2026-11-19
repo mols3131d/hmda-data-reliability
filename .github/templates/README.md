@@ -1,16 +1,16 @@
 # GitHub Templates
 
-GitHub가 인식하는 Issue와 Pull Request 템플릿은 각각 [`ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md), [`pull_request_template.md`](../pull_request_template.md)에 둔다. 이 directory는 공통 작성 규칙과 GitHub가 자동 제공하지 않는 Pull Request Review 템플릿을 관리한다. GitHub 템플릿은 default branch에 반영된 뒤 적용된다.
+Issue 작성용 Markdown scaffold는 [`ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md), GitHub native Pull Request 템플릿은 [`pull_request_template.md`](../pull_request_template.md)에 둔다. 이 directory는 공통 작성 규칙과 GitHub가 자동 제공하지 않는 Pull Request Review 템플릿을 관리한다. Issue scaffold는 YAML Front Matter가 없어 **GitHub native issue template chooser에서 사용할 수 없으며**, 이슈 작성 시 수동 또는 생성 도구로 적용한다.
 
 ## Issue Composition
 
-Issue는 문제 보고, 변경 제안, 조사 요청에 공통으로 사용한다. 필요한 정보만 작성하고 해당하지 않는 optional section과 빈 placeholder는 제거한다.
+Issue는 문제 보고, 변경 제안, 조사 요청에 공통으로 사용한다. 다음 세 H2는 **필수**이며 아래 순서로 작성한다.
 
-- **Objective:** 문제, 제안 또는 조사할 질문과 목적
-- **Acceptance:** 완료를 판단할 결과·조건 또는 조사 산출물. 아직 결정되지 않았다면 미확정 사항을 명시한다.
-- **Context:** 배경, 관련 문서·이슈 및 참고 정보
-- **Evidence / Environment:** 현상·재현 근거와 관련 실행 조건. 필요할 때 별도 section으로 구분한다.
-- **Boundaries / Open Decisions:** 제외 범위, 제약과 결정이 필요한 사항
+- **Summary:** 이슈의 핵심 문제·제안·조사 질문과 목적, 기대 결과를 요약한다.
+- **Boundaries:** 해결·조사 대상, 명시적인 제외 범위, 제약 및 권한 경계를 구분한다.
+- **Caveats:** 작성자가 독자의 오해 가능성, 확인되지 않은 가정, 불완전한 근거·재현·검증, 정보 부족과 해석의 한계를 드러낸다. 확인된 사항이 없다면 `N/A`와 그 이유를 적고 빈 섹션을 남기지 않는다.
+
+그 외 H2/H3는 모두 **선택 사항**이다. `Acceptance`, `Context`, `Evidence`, `Environment`, `Open Decisions` 같은 이름은 예시일 뿐이며, 이슈의 작성 취지와 목적에 따라 제목·순서·하위 구성을 자유롭게 정한다. 불필요한 섹션과 placeholder는 제거한다.
 
 확인한 사실과 추정·미확정 사항을 구분한다. 중복 설명, 불필요한 환경 정보 및 비밀 값은 제외하고, 별도 원본이 있는 요구사항과 증거는 링크로 연결한다.
 
@@ -18,10 +18,10 @@ Issue는 문제 보고, 변경 제안, 조사 요청에 공통으로 사용한�
 
 GitHub가 제공하지 않는 정보만 optional YAML metadata로 보완한다. Metadata field는 서로 독립적이며 필요한 field만 사용한다.
 
-- **Issue:** 템플릿의 YAML Front Matter에는 GitHub가 해석하는 `name`과 `about`을 둔다. 이 설정은 생성된 Issue 본문에 보존되지 않는다. `author`, `environment`, `source_revision`은 필요할 때만 본문 마지막의 `yaml` code block에 기록한다.
+- **Issue:** YAML Front Matter는 사용하지 않는다. `source_revision`, `author`, `environment`는 **이슈 본문 마지막의 단일 `yaml` code block**에 필요한 항목만 순서대로 기록한다. `environment`를 포함한 본문 metadata는 optional이며 미확인 값이나 placeholder는 제거한다. GitHub는 해당 YAML code block을 네이티브 이슈 속성으로 해석하지 않는다. 이 Markdown scaffold는 네이티브 이슈 템플릿으로 인식되지 않는다.
 - **Pull Request / Review:** 기존과 같이 본문 마지막에 하나의 `yaml` code block으로 기록한다. PR의 `revision.base/head`는 비교 기준 commit pair이며 Issue의 `source_revision`과 다르다.
 
-본문 YAML block은 GitHub metadata에 자동 연동되지 않는다. Footnote 정의가 있으면 바로 앞에 두고 별도 `Metadata` heading은 만들지 않는다.
+Issue/PR/Review 본문의 YAML code block은 GitHub metadata에 자동 연동되지 않는다. Issue 생성 도구는 기록할 metadata를 본문 마지막에 명시적으로 포함해야 한다. PR·Review에 footnote 정의가 있으면 metadata block 바로 앞에 두고 별도 `Metadata` heading은 만들지 않는다.
 
 ### `author`
 
@@ -39,13 +39,24 @@ author:
 
 ### `environment`
 
-`environment`는 Issue의 증상이나 결과에 영향을 주는 확인된 조건만 담는 optional map이다. 필요에 따라 runtime, model, hardware, data, configuration 등 관련 key만 기록한다. 비밀 값이나 확인하지 못한 추정은 넣지 않으며, 본문 Environment와 중복하지 않는다.
+`environment`는 재현이나 판단에 영향을 주는 **확인된 실행 환경**을 기록하는 optional YAML map이다. 실행 환경이 이슈와 무관하거나 확인할 수 없으면 필드 자체를 생략하고, 필요한 미확정 사항은 `Caveats`에 설명한다.
+
+`environment`를 사용하는 경우 다음 두 필드를 필수로 작성한다.
+
+- **`runtime`:** 문제가 관찰된 주요 실행 엔진·서비스·플랫폼의 이름. 패키지나 관련 도구를 모두 나열하지 않는다.
+- **`version`:** 해당 `runtime`의 확인된 버전. 추정값이나 임의 기본값은 사용하지 않는다.
+
+그 외 `os`, `data`, `model`, `configuration` 등은 **이슈의 원인 분석·재현·판단에 영향을 미치는 경우에만** 추가한다. 추가 키의 이름과 구조는 관련 정보에 맞게 정하고, `configuration`을 사용할 때는 문자열 대신 개별 설정으로 구성한 map을 사용한다. 본문과 불필요하게 중복하거나 비밀 값을 노출하지 않는다.
 
 ```yaml
 environment:
-  runtime: <runtime-and-version>
-  configuration: <relevant-non-secret-settings>
+  runtime: Python
+  version: "3.12"
+  configuration:
+    ingestion_mode: full
 ```
+
+위 예시는 구조 설명용이며 실제 이슈에는 검증한 조건만 기재한다.
 
 ### `source_revision`
 
@@ -72,7 +83,7 @@ revision:
   head: <full-head-commit-sha>
 ```
 
-Template에서는 기본 읽기 흐름을 방해하지 않도록 optional metadata 예시를 HTML comment 안에 둔다. 실제 사용할 때는 comment를 제거하고 필요한 field만 본문 마지막에 둔다.
+Issue scaffold는 Front Matter 없이 optional metadata 예시를 본문 마지막 YAML code block에 둔다. 실제 Issue 작성 시 필요한 metadata field만 남긴다. PR·Review 템플릿의 metadata 예시는 기본 읽기 흐름을 방해하지 않도록 HTML comment 안에 두며, 사용할 때는 comment를 제거하고 필요한 필드만 본문 마지막에 둔다.
 
 ## Writing Rules
 
@@ -92,6 +103,6 @@ Template에서는 기본 읽기 흐름을 방해하지 않도록 optional metada
 
 ## Templates
 
-- [`.github/ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md): GitHub native Issue template
+- [`.github/ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md): Issue 작성용 Markdown scaffold (네이티브 템플릿 선택기 미지원)
 - [`.github/pull_request_template.md`](../pull_request_template.md): GitHub native Pull Request description
 - [`pull-request-review.md`](pull-request-review.md): Pull Request review body
