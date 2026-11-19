@@ -25,7 +25,7 @@ tags:
 | `reliability_ai.ingestion` | 원천 준비와 지정된 DAG 실행의 읽기 전용 조사·운영자 인계 |
 | `runtime_ai` | 구독 OAuth Codex와 OpenAI 호환 전송·timeout·retry |
 
-Source 의존은 `reliability_ai -> reliability`, `reliability_ai -> runtime_ai`다. Reliability는 AI를 import하지 않고 Runtime은 도메인 판단·Langfuse를 소유하지 않는다. 현재 capability 계약은 [Investigation Spec](../../openspec/specs/reliability-agentic-review/spec.md)과 [Prompt Spec](../../openspec/specs/review-ai-prompt-engineering/spec.md)이 소유한다.
+Source 의존은 `reliability_ai -> reliability`, `reliability_ai -> runtime_ai`다. Reliability는 AI를 import하지 않고 Runtime은 도메인 판단·Langfuse를 소유하지 않는다. 현재 계약은 [사고 조사 명세](../../openspec/specs/reliability-agentic-review/spec.md), [적재 조사 명세](../../openspec/specs/reliability-ai-ingestion-investigation/spec.md), [Prompt 명세](../../openspec/specs/review-ai-prompt-engineering/spec.md)에 있다.
 
 ## Investigation
 
@@ -45,7 +45,9 @@ Profile 도구는 live profiling이 아니다. Dbt의 current 관측은 과거 �
 
 ## Shared Graph And Ingestion
 
-사고 조사와 적재 조사는 하나의 LangGraph에서 판정, 모델 호출, 응답 보존, 허용 조회를 실행한다. 사고 조사에서는 모델 보고서를 검증한다. 적재 준비에서는 코드가 전체 파일의 필수 열과 대상 파티션의 행을 검사하고 판정과 조치가 확정되면 모델 호출 없이 반환한다. 사후 조사는 실행·태스크·시도가 일치하는 관찰값으로 단계를 설명한다. 두 모드 모두 조회 권한은 호출자가 넘긴 범위로 제한한다. [공용 그래프](../../src/hmda_reliability/reliability_ai/investigation/graph.py) · [적재 조사 사용법](../development/ingestion-investigation.md)
+사고 조사와 적재 조사는 판정 → 모델 호출 → 응답 보존 → 허용 조회의 흐름을 공유한다. 그래프는 턴과 조회 순서를 관리한다. 각 조사 서비스가 입력·허용 도구·기한을 관리하고, 그래프가 종료하면 도메인 결과를 저장한다. [공용 그래프](../../src/hmda_reliability/reliability_ai/investigation/graph.py) · [사고 조사 실행 연결](../../src/hmda_reliability/reliability_ai/investigation/service.py#L847) · [적재 조사 실행 연결](../../src/hmda_reliability/reliability_ai/ingestion/service.py#L347)
+
+사고 조사는 모델의 최종 보고를 검증한다. 적재 준비 조사는 전체 파일의 필수 열과 대상 파티션의 행을 검사하고, 판정과 다음 조치가 확정되면 모델 호출 없이 결과를 반환한다. 적재 사후 조사는 지정한 DAG 실행의 단계별 상태를 읽고, 실행·태스크·시도가 일치하는 근거를 연결한다. [적재 조사 사용법](../development/ingestion-investigation.md)
 
 ## Delegated Execution
 

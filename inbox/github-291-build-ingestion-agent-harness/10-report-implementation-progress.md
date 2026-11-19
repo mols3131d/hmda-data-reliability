@@ -11,7 +11,7 @@ description: PR 작업 트리에서 실행한 변경과 검증, 남은 증명 �
 ## Current Status
 
 - **구현** · 사고 조사 교체와 HMDA 적재 조사, 두 OpenSpec 작업을 각각 7/7 완료했다. Codex 구독 OAuth·Ollama의 실제 사고 조사와 오프라인 재현을 확인했다.
-- **검증** · `main`과 통합한 구현이 GitHub CI를 통과했다. 로컬 전체 재실행에서 1,319건 통과·2건 생략. 앞선 추적 테스트 실패와 대조 결과는 아래에 기록했다. [최종 PR 검사](https://github.com/mols3131d/hmda-data-reliability/pull/291/checks)
+- **검증** · 구현 커밋 `bba126ec`의 GitHub CI에서 1,318건 통과·2건 생략. 로컬 전체 재실행 1,319건 통과·2건 생략은 앞선 `bb67a5f0`의 결과다. 문서 변경을 포함한 현재 검사는 PR에서 확인한다. [구현 CI](https://github.com/mols3131d/hmda-data-reliability/actions/runs/44563402735) · [현재 PR 검사](https://github.com/mols3131d/hmda-data-reliability/pull/291/checks)
 - **운영 결정** · 규칙으로 끝나는 적재 조사는 즉시 실행할 수 있다. 모델 보조를 운영에서 쓰려면 담당자가 적재 Prompt의 `production` 라벨 발행을 선택한다. [운영 가이드](../../docs/development/ingestion-investigation.md#model-and-observation)
 
 ## Work Log
@@ -47,6 +47,7 @@ description: PR 작업 트리에서 실행한 변경과 검증, 남은 증명 �
 | 23:32 | 통합 후 전체 회귀 재검증과 인계 | `bb67a5f0`에서 전체 테스트를 다시 실행해 1,319건 통과·2건 생략(235.94초). 생략한 검사는 위와 같다. Draft PR 본문을 구현·검증 결과로 갱신했다. 최종 보고서 커밋의 검사 결과는 [PR 검사](https://github.com/mols3131d/hmda-data-reliability/pull/291/checks)에서 확인한다. |
 | 11월 20일 | Codex 기본 모델 변경 | 현재 모델 목록의 Luna 모델 중 최신인 `gpt-6-luna`를 기본으로 지정했다. 실제 구독 연결에서 조사 `inv-6a85377047f941dca356aa6a262d0f11`가 모델 2턴·조회 1건으로 완료하고 오프라인 재현됐다. 선택·어댑터 테스트 28건 통과. 모델은 버전 고정이므로 후속 모델이 나오면 설정 갱신이 필요하다. |
 | 11월 20일 | 사고 조사 결과 JSON 자동 저장 | 새 사고 조사의 읽기용 결과를 `reliability-ai/results/<invocation_id>.json`에 자동 저장한다. 정상·모델 오류·기한 종료·쓰기 실패와 오프라인 재현을 검증했다. 적재 조사의 결과 파일은 `ingestion/<investigation_id>/result.json`에서 읽는다. |
+| 11월 20일 | 문서와 구현 정합화 | 사고·적재 조사 Change의 명세를 정본에 반영하고, 그래프 상태의 범위와 제공자 연결, 결과 파일의 위치를 안내 문서에 정리했다. |
 
 ## Resume
 

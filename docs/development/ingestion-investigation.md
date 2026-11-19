@@ -11,7 +11,7 @@ tags:
 
 # Ingestion Investigation
 
-`prepare`는 요청에 지정된 원천을 읽고 운영자가 적재를 진행할 수 있는지 검사한다. `review_run`은 이미 존재하는 DAG 실행의 단계를 읽는다. 두 호출은 같은 디렉터리에 조사 ID별 기록을 남긴다.
+`prepare`는 요청에 지정된 원천을 읽고 운영자가 적재를 진행할 수 있는지 검사한다. `review_run`은 이미 존재하는 DAG 실행의 단계를 읽는다. 결과 게시가 끝나면 반환한 조사 ID의 `ingestion/<investigation_id>/result.json`을 저장 루트 아래에서 볼 수 있다. 파일의 `result`에 판정과 다음 조치가 있고 `events`는 재현에 필요한 근거 파일을 가리킨다.
 
 ## Prepare And Review
 
@@ -29,7 +29,12 @@ from hmda_reliability.reliability_ai.ingestion import (
 root = Path(".local/artifacts")
 request = DataOperationRequest(source_root=Path("data/raw/hmda"), source_year=2025)
 before = investigate_ingestion("prepare", request=request, artifact_root=root)
-print(before["status"], before["next_action"], before["initial"]["version"])
+print(
+    before["status"],
+    before["next_action"],
+    before["termination"],
+    before["initial"].get("version"),
+)
 
 with httpx.Client(
     base_url=os.environ["AIRFLOW_API_V2_URL"],  # 예: http://localhost:8080/api/v2/
@@ -44,7 +49,7 @@ with httpx.Client(
     )
 
 again = replay_ingestion(after["investigation_id"], artifact_root=root)
-print(after["initial"]["stages"], again["termination"])
+print(after["termination"], after["initial"].get("stages"), again["termination"])
 ```
 
 | 결과 | 운영자가 확인할 내용 |

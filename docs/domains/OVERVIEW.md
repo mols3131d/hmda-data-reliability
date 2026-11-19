@@ -19,8 +19,8 @@ tags:
 | [Data Operations](data-operations.md) | 독립 application entry point의 request·domain 호출 조합·결과, 전체 Bronze quality profile, lock-bound dbt execution/promotion, 오류 경계 | request → stage별 result, quality gate, lifecycle result | full-pipeline 순서, 파일 파싱, DuckDB 세부 구현, incident/quality 규칙 |
 | [Data Platform](data-platform.md) | DuckDB helper, dbt source·model·test·lineage, artifact projection primitive | `raw.hmda_loans` → staging/mart, dbt artifact pair identity | 원천 적재, dbt subprocess 실행, promotion 결정, orchestration |
 | [Reliability](reliability.md) | profile, quality policy, incident, 영향 분석, remediation, recovery, evaluation | profile/raw table + dbt artifacts → gate/lifecycle/recovery/evaluation result | AI review/provider runtime, 외부 approval 결정과 Airflow orchestration |
-| [Reliability AI](review-ai.md) | bounded investigation·도구 projection·위임 조합·보고·native 평가 | Incident snapshot → 조사 결과; Task + 별도 approved request → 실행 보고 | deterministic truth, provider SDK mechanics, approval/recovery 정책 |
-| [Runtime AI](runtime-ai.md) | provider-neutral message/settings/response contract와 OpenAI-compatible adapter | rendered messages + explicit settings → provider response/typed runtime failure | review policy, Reliability contract, provenance meaning |
+| [Reliability AI](review-ai.md) | 사고·적재 조사, 도구 조회, 위임·보고·native 평가 | 사건 스냅샷 또는 지정한 적재 범위 → 조사 결과. Task와 별도로 승인된 요청 → 실행 보고 | deterministic truth, provider SDK mechanics, approval/recovery 정책 |
+| [Runtime AI](runtime-ai.md) | 공용 호출 계약과 Codex App Server·OpenAI 호환 어댑터 | 모델 메시지와 설정 → 응답 또는 호출 실패 | review policy, Reliability contract, provenance meaning |
 | [Orchestration](orchestration.md) | Airflow DAG dependency와 config 변환 | `load_raw_hmda_loans` → `evaluate_quality_gate` → `build_dbt_loan_analytics` | domain business logic, quality policy, reliability control-plane |
 
 ```mermaid

@@ -54,5 +54,5 @@ Current provider-compatible bounded invocation의 normative behavior는 [`reliab
 1. Exact provider-compatible invocation requirement를 판단할 때는 canonical [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec을 확인한다.
 1. [`runtime_ai/__init__.py`](../../src/hmda_reliability/runtime_ai/__init__.py)에서 current package root API를 확인한다.
 1. [`contracts.py`](../../src/hmda_reliability/runtime_ai/contracts.py)와 [`settings.py`](../../src/hmda_reliability/runtime_ai/settings.py)에서 current provider-neutral boundary 구현을 확인한다.
-1. [`provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)에서 current OpenAI-compatible adapter와 retry/error normalization 구현을 확인한다.
+1. [`selection.py`](../../src/hmda_reliability/runtime_ai/selection.py)에서 조사 제공자 선택을 읽고, [`codex.py`](../../src/hmda_reliability/runtime_ai/codex.py)와 [`provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)에서 각각의 연결과 오류 처리를 확인한다.
 1. 조사·위임 semantics가 필요하면 [Reliability AI](review-ai.md)로 이동한다.

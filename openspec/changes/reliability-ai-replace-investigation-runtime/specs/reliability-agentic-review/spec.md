@@ -22,54 +22,11 @@ description: 사고 조사 제공자 선택, 제한된 실행과 오프라인 �
 - **WHEN** 필수 입력·관찰·시각·저장 결과가 누락 또는 손상됐거나 실행 버전이 호환되지 않을 때
 - **THEN** 재현 불가 사유를 보고하고 원본 조사의 상태 또는 기록을 변경해서는 안 된다(MUST NOT).
 
-## MODIFIED Requirements
-
-### Requirement: Typed review result boundary
-
-조사는 `InvestigationResult`의 `completed`, `budget_exhausted`, `tool_cycle_detected`, `error`와 원인을 구별하는 failure code를 반환해야 한다(SHALL). 결과는 input에서 고정한 사건 identity·결정론적 facts와 모델의 findings·hypotheses·uncertainties, 실제 도구 기록·turn·원문 경로·manifest를 구분해야 한다(SHALL). 모델의 다른 수치를 canonical facts로 채택해서는 안 된다(MUST NOT).
-
-`completed`는 실제 모델의 최종 보고가 유효하고 필수 로컬 근거 게시가 조사 기한 안에 완료된 상태를 의미하며 사실성·검토 가치·사람 승인·실행 허가를 뜻해서는 안 된다(MUST NOT). Invalid JSON·잘못된 결과 구조·provider·시간·저장 실패를 성공형 요약으로 대체해서는 안 된다(MUST NOT). 실패는 이전 partial 기록을 유지하되 완성 보고를 합성해서는 안 된다(MUST NOT).
-
-#### Scenario: Completed result requires retained provenance
-
-- **WHEN** 유효한 최종 모델 보고와 필수 원문·manifest가 기한 안에 저장될 때
-- **THEN** `completed`와 회수 가능한 경로를 반환해야 한다(SHALL).
-
-#### Scenario: Failure never exposes a complete output
-
-- **WHEN** 파싱·구조·provider·예산·저장이 실패할 때
-- **THEN** 실패 상태·code와 보존한 partial 근거를 반환하고 성공을 합성해서는 안 된다(MUST NOT).
-
-#### Scenario: Rule-only facts cannot complete an incident investigation
-
-- **WHEN** 모든 결정론적 facts를 확보했지만 실제 모델의 유효한 최종 보고가 없을 때
-- **THEN** facts와 종료 사유를 보고하고 `completed`를 반환해서는 안 된다(MUST NOT).
-
-### Requirement: Provider-compatible bounded invocation
+### Requirement: Investigation provider selection
 
 시스템은 조사 단위로 모델 제공자와 설정을 고정하고 선택한 제공자의 요청·응답·실패를 공통 계약으로 전달해야 한다(SHALL). 공개 API는 주입한 `provider=`, `RuntimeAISettings`에 명시한 호환 연결, 로컬 Codex 순으로 선택해야 한다(SHALL). 평가 CLI는 명시적 제공자, 명시적 `OPENAI_BASE_URL`, 로컬 Codex 순으로 선택해야 한다(SHALL). `OPENAI_API_KEY`만으로 호환 연결을 선택해서는 안 되며 서로 충돌하는 새 명시적 설정은 호출 전에 거절해야 한다(SHALL). 선택된 제공자에서 모델 기본값과 인증 정보를 가져오고 해당 제공자의 장애를 자동 fallback으로 감춰서는 안 된다(MUST NOT).
 
-Ollama와 OpenAI 등 호환 연결은 credentials-free URL·SecretStr credential·model·bounded 설정을 사용해야 한다(SHALL). 도메인별 provider business rule을 두거나 URL의 userinfo·query·fragment를 허용해서는 안 된다(MUST NOT).
-
-OpenAI 호환 호출은 non-streaming·temperature 0·bounded output tokens와 허용된 tool definition만 사용해야 한다(SHALL). Assistant tool call과 matching tool result의 ID·순서·원문을 유지하고 tools와 충돌하는 JSON response forcing을 해서는 안 된다(MUST NOT). SDK hidden retry는 끄고 configured transport retry만 허용해야 한다(SHALL). Invalid output을 고치기 위한 생성 재시도를 자동 수행해서는 안 된다(MUST NOT).
-Codex는 관리형 ChatGPT 구독 OAuth 로그인과 허용된 도구 범위에 맞는 실행 격리를 확인한 경우에만 조사 자료를 전달해야 한다(SHALL). 모델이 지정한 경로·명령·권한 승격과 상속된 도구가 조사 범위 밖에서 동작해서는 안 된다(MUST NOT). 시도별 실제 앱 입력과 호스트 조회 결과를 해당 제안과 순서대로 연결하고, 조사·논리 턴·시도·제공자 요청·스레드·턴의 식별자를 대조해 유효한 종료 응답만 받아야 한다(SHALL). 앱 입력에 적용한 한도와 digest를 제공자가 내부에서 추가한 문맥의 증거로 사용해서는 안 된다(MUST NOT).
-
-호환 호출은 설정된 retry와 타임아웃·연결 오류·5xx 분류를 유지해야 한다(SHALL). Codex의 이전 요청이 수락되지 않았음을 확인한 경우에만 같은 조사 예산 안에서 재시도할 수 있어야 한다(SHALL). 이전 시도가 수락됐거나 수락 여부가 불명확하면 같은 논리 턴을 재시도해서는 안 된다(MUST NOT). 기한이 소진되면 가능한 중단 요청의 결과와 실제 턴 종료를 구분해 기록해야 한다(SHALL). 모델 전송 재시도는 선택한 어댑터에서 허용하고 기록한 시도에 한정해야 한다(SHALL).
-
-#### Scenario: Local and cloud-compatible configuration
-
-- **WHEN** 같은 사례에 다른 OpenAI-compatible endpoint를 설정할 때
-- **THEN** 같은 domain 실행·Runtime adapter를 사용해야 한다(SHALL).
-
-#### Scenario: Provider timeout or unavailability
-
-- **WHEN** timeout·connection failure·bounded retry 소진이 발생할 때
-- **THEN** 구분 가능한 failure code와 실제 attempt·latency를 보존해야 한다(SHALL).
-
-#### Scenario: Text invocation keeps history without JSON forcing
-
-- **WHEN** 모델 호출과 도구 결과가 누적될 때
-- **THEN** matching history를 보존하고 `response_format`을 강제해서는 안 된다(MUST NOT).
+모델 전송 재시도는 선택한 어댑터에서 허용하고 기록한 시도에 한정해야 한다(SHALL).
 
 #### Scenario: Explicit provider configuration takes precedence
 
@@ -81,6 +38,12 @@ Codex는 관리형 ChatGPT 구독 OAuth 로그인과 허용된 도구 범위에 
 - **WHEN** API에 주입과 호환 설정이 모두 없거나 CLI에 제공자와 `OPENAI_BASE_URL`이 모두 없을 때
 - **THEN** 로컬 Codex를 선택해야 한다(SHALL).
 - **AND** `OPENAI_API_KEY`만 설정되어 있어도 같은 선택을 사용해야 한다(SHALL).
+
+### Requirement: Bounded Codex subscription invocation
+
+Codex는 관리형 ChatGPT 구독 OAuth 로그인과 허용된 도구 범위에 맞는 실행 격리를 확인한 경우에만 조사 자료를 전달해야 한다(SHALL). 모델이 지정한 경로·명령·권한 승격과 상속된 도구가 조사 범위 밖에서 동작해서는 안 된다(MUST NOT). 시도별 실제 앱 입력과 호스트 조회 결과를 해당 제안과 순서대로 연결하고, 조사·논리 턴·시도·제공자 요청·스레드·턴의 식별자를 대조해 유효한 종료 응답만 받아야 한다(SHALL). 앱 입력에 적용한 한도와 digest를 제공자가 내부에서 추가한 문맥의 증거로 사용해서는 안 된다(MUST NOT).
+
+Codex의 이전 요청이 수락되지 않았음을 확인한 경우에만 같은 조사 예산 안에서 재시도할 수 있어야 한다(SHALL). 이전 시도가 수락됐거나 수락 여부가 불명확하면 같은 논리 턴을 재시도해서는 안 된다(MUST NOT). 기한이 소진되면 가능한 중단 요청의 결과와 실제 턴 종료를 구분해 기록해야 한다(SHALL).
 
 #### Scenario: Codex requires verified account and isolation
 
@@ -97,13 +60,71 @@ Codex는 관리형 ChatGPT 구독 OAuth 로그인과 허용된 도구 범위에 
 - **WHEN** 다른 요청·스레드·턴의 종료 이벤트 또는 같은 종료 이벤트를 반복해서 받았을 때
 - **THEN** 현재 시도의 유효한 종료 이벤트와 응답만 처리하고 도구를 중복 실행해서는 안 된다(MUST NOT).
 
+### Requirement: Synthetic experiment authorization and observation linkage
+
+실험 시작 전에 Dataset의 모든 항목이 합성 입력으로 명시적으로 허용됐는지 검사해야 한다(SHALL). 어떤 제공자를 선택했는지 기록하고 각 Dataset 항목을 해당 조사·턴·관측 식별자와 연결해야 한다(SHALL).
+
+#### Scenario: Dataset preflight rejects unapproved items
+
+- **WHEN** 조회한 Dataset에 `metadata.synthetic`이 `true`가 아닌 항목이 하나라도 있을 때
+- **THEN** 실험 시작 전에 합성 입력 허용 오류를 보고하고 CLI 종료 코드 `2`를 반환해야 한다(SHALL).
+- **AND** 어떤 항목의 조사나 모델 호출도 시작해서는 안 된다(MUST NOT).
+
+#### Scenario: Observations are matched to the actual experiment item
+
+- **WHEN** 완료한 Dataset 항목의 원격 관측을 확인할 때
+- **THEN** 같은 리비전·Dataset 항목·조사·턴의 관측을 다시 조회한 경우에만 확인된 관측으로 기록해야 한다(SHALL).
+
+## MODIFIED Requirements
+
+### Requirement: Typed review result boundary
+
+조사는 `InvestigationResult`의 `completed`, `budget_exhausted`, `tool_cycle_detected`, `error`와 원인을 구별하는 failure code를 반환해야 한다(SHALL). 결과는 input에서 고정한 사건 identity·결정론적 facts와 모델의 findings·hypotheses·uncertainties, 실제 도구 기록·turn·원문 경로·manifest를 구분해야 한다(SHALL). 모델의 다른 수치를 canonical facts로 채택해서는 안 된다(MUST NOT).
+
+`completed`는 실제 모델의 최종 보고가 유효하고 필수 로컬 근거 게시가 조사 기한 안에 완료된 상태를 의미하며 사실성·검토 가치·사람 승인·실행 허가를 뜻해서는 안 된다(MUST NOT). Invalid JSON·잘못된 결과 구조·provider·시간·저장 실패를 성공형 요약으로 대체해서는 안 된다(MUST NOT). 실패는 이전 partial 기록을 유지하되 완성 보고를 합성해서는 안 된다(MUST NOT).
+
+유효한 모델 보고가 없는 조사는 종료 사유를 반환하고 확보한 사실을 로컬 조사 기록에 보존해야 한다(SHALL).
+
+#### Scenario: Completed result requires retained provenance
+
+- **WHEN** 유효한 최종 모델 보고와 필수 원문·manifest가 기한 안에 저장될 때
+- **THEN** `completed`와 회수 가능한 경로를 반환해야 한다(SHALL).
+
+#### Scenario: Failure never exposes a complete output
+
+- **WHEN** 파싱·구조·provider·예산·저장이 실패할 때
+- **THEN** 실패 상태·code와 보존한 partial 근거를 반환하고 성공을 합성해서는 안 된다(MUST NOT).
+
+### Requirement: Provider-compatible bounded invocation
+
+Ollama와 OpenAI 등 호환 연결은 credentials-free URL·SecretStr credential·model·bounded 설정을 사용해야 한다(SHALL). 도메인별 provider business rule을 두거나 URL의 userinfo·query·fragment를 허용해서는 안 된다(MUST NOT).
+
+OpenAI 호환 호출은 non-streaming·temperature 0·bounded output tokens와 허용된 tool definition만 사용해야 한다(SHALL). Assistant tool call과 matching tool result의 ID·순서·원문을 유지하고 tools와 충돌하는 JSON response forcing을 해서는 안 된다(MUST NOT). SDK hidden retry는 끄고 configured transport retry만 허용해야 한다(SHALL). Invalid output을 고치기 위한 생성 재시도를 자동 수행해서는 안 된다(MUST NOT).
+
+호환 호출은 설정된 retry와 타임아웃·연결 오류·5xx 분류를 유지해야 한다(SHALL).
+
+#### Scenario: Local and cloud-compatible configuration
+
+- **WHEN** 같은 사례에 다른 OpenAI-compatible endpoint를 설정할 때
+- **THEN** 같은 domain 실행·Runtime adapter를 사용해야 한다(SHALL).
+
+#### Scenario: Provider timeout or unavailability
+
+- **WHEN** timeout·connection failure·bounded retry 소진이 발생할 때
+- **THEN** 구분 가능한 failure code와 실제 attempt·latency를 보존해야 한다(SHALL).
+
+#### Scenario: Text invocation keeps history without JSON forcing
+
+- **WHEN** 모델 호출과 도구 결과가 누적될 때
+- **THEN** matching history를 보존하고 `response_format`을 강제해서는 안 된다(MUST NOT).
+
 ### Requirement: Native synthetic dataset experiments
 
 최초 등록은 `python -m hmda_reliability.reliability_ai.evaluation.setup`, 반복 실행은 `python -m hmda_reliability.reliability_ai.evaluation.experiment`로 분리해야 한다(SHALL). 명시적 setup만 seed Prompt·합성 Dataset을 등록하고 반복 실험은 기존 Dataset을 조회해야 한다(SHALL). Experiment가 Dataset item·Prompt version·Score Config·Annotation Queue를 자동 생성·수정해서는 안 된다(MUST NOT).
 
 SDK의 native Dataset task·직렬 실행·결과 표시를 사용하고 Dataset 이름·run 이름·timezone-aware version·model·prompt label·실제 revision과 적용 예산을 식별할 수 있어야 한다(SHALL). Oracle·controls·expected output·검토자 질문을 모델 입력에 넣어서는 안 된다(MUST NOT). 결과에는 전체 InvestigationResult를 보존하고 Dataset item ID의 multiset과 반환 결과의 완전성을 검증해야 한다(SHALL). 누락·중복·실패 항목이 있으면 CLI 성공을 반환해서는 안 된다(MUST NOT).
 
-실험 시작 전에 Dataset의 모든 항목이 합성 입력으로 명시적으로 허용됐는지 검사해야 한다(SHALL). 표준 `LANGFUSE_*`와 기존 artifact root를 사용해야 한다(SHALL). 호환 연결에서는 제공된 `OPENAI_BASE_URL`과 `OPENAI_API_KEY`를 사용하고 명시적 로컬 Ollama 선택에는 기존 로컬 기본값을 지원해야 한다(SHALL). 어떤 제공자를 선택했는지 기록하고 각 Dataset 항목을 해당 조사·턴·관측 식별자와 연결해야 한다(SHALL). 옛 전용 환경 설정을 재해석해서는 안 된다(MUST NOT). Native 관측 실패를 이유로 모델을 재실행해서는 안 된다(MUST NOT).
+표준 `LANGFUSE_*`와 기존 artifact root를 사용해야 한다(SHALL). 호환 연결에서는 제공된 `OPENAI_BASE_URL`과 `OPENAI_API_KEY`를 사용하고 명시적 로컬 Ollama 선택에는 기존 로컬 기본값을 지원해야 한다(SHALL). 옛 전용 환경 설정을 재해석해서는 안 된다(MUST NOT). Native 관측 실패를 이유로 모델을 재실행해서는 안 된다(MUST NOT).
 
 #### Scenario: Setup is separate from repeated experiments
 
@@ -115,21 +136,10 @@ SDK의 native Dataset task·직렬 실행·결과 표시를 사용하고 Dataset
 - **WHEN** 합성 item을 조사할 때
 - **THEN** item의 허용 input만 모델 자료로 사용해야 한다(SHALL).
 
-#### Scenario: Dataset preflight rejects unapproved items
-
-- **WHEN** 조회한 Dataset에 `metadata.synthetic`이 `true`가 아닌 항목이 하나라도 있을 때
-- **THEN** 실험 시작 전에 합성 입력 허용 오류를 보고하고 CLI 종료 코드 `2`를 반환해야 한다(SHALL).
-- **AND** 어떤 항목의 조사나 모델 호출도 시작해서는 안 된다(MUST NOT).
-
 #### Scenario: Omitted task exceptions cannot produce success
 
 - **WHEN** SDK가 task exception 항목을 결과에서 제외하거나 항목을 중복 반환할 때
 - **THEN** CLI는 불완전성을 보고하고 nonzero로 끝나야 한다(SHALL).
-
-#### Scenario: Observations are matched to the actual experiment item
-
-- **WHEN** 완료한 Dataset 항목의 원격 관측을 확인할 때
-- **THEN** 같은 리비전·Dataset 항목·조사·턴의 관측을 다시 조회한 경우에만 확인된 관측으로 기록해야 한다(SHALL).
 
 ### Requirement: Bounded investigation budgets
 
@@ -174,7 +184,7 @@ SDK의 native Dataset task·직렬 실행·결과 표시를 사용하고 Dataset
 
 #### Scenario: Persistence failure cannot become success
 
-- **WHEN** 원문·결과·manifest 쓰기가 실패하거나 경로가 충돌할 때
+- **WHEN** 원문·도구 근거·최종 manifest의 필수 쓰기가 실패하거나 경로가 충돌할 때
 - **THEN** 오류와 이미 생성한 경로를 반환하고 completed를 반환해서는 안 된다(MUST NOT).
 
 #### Scenario: Referenced evidence restores public results
@@ -186,7 +196,7 @@ SDK의 native Dataset task·직렬 실행·결과 표시를 사용하고 Dataset
 
 - **WHEN** 사고 조사에서 최종 manifest를 게시할 때
 - **THEN** 같은 조사 ID의 읽기용 JSON을 자동 생성해야 한다(SHALL). 파일에는 상태·실패 사유·사실·발견·가설·미확정 사항이 들어간다.
-- **AND** 읽기용 사본 쓰기에 실패하면 조사 ID로 경고하고, 이미 저장한 manifest에서 조사 결과를 읽을 수 있어야 한다(SHALL).
+- **AND** 읽기용 사본 쓰기에 실패하면 조사 ID가 포함된 경고를 남기고, 이미 저장한 manifest에서 같은 조사 결과를 읽을 수 있어야 한다(SHALL).
 
 ### Requirement: Delegated task limits and recovery reporting
 

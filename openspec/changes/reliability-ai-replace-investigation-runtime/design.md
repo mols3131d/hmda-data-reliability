@@ -11,7 +11,7 @@ description: 조사 그래프와 제공자 경계, 로컬 기록과 기존 호�
 
 ### D1. Investigation Graph
 
-- **Decision** `reliability_ai`에서 LangGraph `StateGraph`가 입력 확인, 제한된 모델 호출, 원문 보존, 제안 검증, 조회와 종료를 수행한다. 상태는 불변 입력, 허용 도구, 아직 처리하지 않은 같은 턴의 요청, 기한·한도와 기록 참조를 담는다. 사고 조사와 적재 조사는 각자의 입력·도구·완료 판단을 제공한다. [그래프와 권한](../../../inbox/github-291-build-ingestion-agent-harness/07-design-reliability-ai-runtime-replacement/architecture.md)
+- **Decision** 공용 `StateGraph`는 판정, 모델 호출, 원문 보존·검증, 조회 단계 사이를 전이한다. 그래프 상태에는 턴 번호, 현재 턴의 조회 위치, 누적 조회 횟수, 다음 단계가 있다. 실행 컨텍스트는 모드별 단계 함수와 호출 한도, 현재 모델 응답, 종료 결정을 담는다. 각 조사 서비스가 입력, 허용 도구, 기한, 기록을 관리하고 그래프 종료 후 결과를 게시한다. [공용 그래프](../../../src/hmda_reliability/reliability_ai/investigation/graph.py)
 - **Rationale** 사고 조사에는 검증된 모델 보고서가 필요하고, 적재 조사는 규칙으로 상태와 조치가 확정될 수 있다. 이 판단을 호출 모드가 소유하면 공통 그래프에 적재기나 복구 실행기를 넣을 필요가 없다.
 
 ### D2. Provider Integration

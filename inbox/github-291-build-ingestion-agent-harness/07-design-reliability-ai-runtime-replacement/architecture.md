@@ -17,7 +17,7 @@ description: 공통 조사 그래프와 도메인별 근거 조회, 위임·적�
 
 ## Investigation Workflow
 
-그래프는 고정한 입력, 근거와 턴 기록의 참조, 허용 도구, 단조 시계 기준 종료 시각과 호출 수를 갖는다. 사건의 사실과 적재 준비 판정은 도메인 코드에서 얻는다. 첫 모델 호출에 필요한 native Prompt를 한 버전으로 고정한다. 조회에 실패하면 `prompt_unavailable`을 반환한다.
+공용 그래프는 턴·조회 위치·누적 조회 수·다음 단계를 관리한다. 입력, 도구 범위, 기한과 기록은 각 조사 서비스가 관리한다. 도메인 코드에서 사건의 사실과 적재 준비 판정을 얻고, 모델을 호출할 때 native Prompt를 한 버전으로 고정한다. Prompt 조회에 실패하면 `prompt_unavailable`을 반환한다. [구현 설계](../../../openspec/changes/reliability-ai-replace-investigation-runtime/design.md#d1-investigation-graph)
 
 ```mermaid
 flowchart TD
