@@ -400,8 +400,8 @@ class _IncidentRun:
                     )
                 except InvocationEvidenceStoreError:
                     logging.getLogger(__name__).warning(
-                        "investigation result JSON unavailable",
-                        extra={"invocation_id": self.invocation_id},
+                        "investigation result JSON unavailable for %s",
+                        self.invocation_id,
                     )
         remote_result: dict[str, Any] = {}
         if self.observe_io:

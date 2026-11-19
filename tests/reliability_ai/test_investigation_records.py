@@ -194,7 +194,10 @@ def test_replay_uses_original_boundaries_with_no_external_calls(
     if case in {"final-write", "result-copy-write"}:
         assert not result_path.exists()
         if case == "result-copy-write":
-            assert "investigation result JSON unavailable" in caplog.text
+            assert (
+                f"investigation result JSON unavailable for {result.invocation_id}"
+                in caplog.text
+            )
     else:
         displayed = result_path.read_text(encoding="utf-8")
         assert displayed.startswith('{\n  "')
