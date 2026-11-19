@@ -18,10 +18,10 @@ Issue는 문제 보고, 변경 제안, 조사 요청에 공통으로 사용한�
 
 GitHub가 제공하지 않는 정보만 optional YAML metadata로 보완한다. Metadata field는 서로 독립적이며 필요한 field만 사용한다.
 
-- **Issue:** 템플릿의 YAML Front Matter에는 `about`만 둔다(`name`과 `description`은 사용하지 않는다). `source_revision`, `author`, `environment`는 이슈 본문 **마지막의 단일 `yaml` code block**에 필요한 항목만 순서대로 기록한다. `environment`를 포함한 모든 본문 metadata는 optional이며 미확인 값이나 placeholder는 제거한다. GitHub는 이슈 본문 최상단의 `about` 또는 하단 YAML code block을 네이티브 이슈 속성으로 해석하지 않는다. Markdown Issue template chooser는 `name`과 `about`을 함께 요구하므로 이 구성은 chooser와 호환되지 않는다.
+- **Issue:** GitHub Markdown Issue 템플릿의 YAML Front Matter에는 필수 `name`과 `about`을 함께 둔다(`description`은 Issue Form 용도이므로 사용하지 않는다). `source_revision`, `author`, `environment`는 **완성된 이슈 본문 마지막의 단일 `yaml` code block**에 필요한 항목만 순서대로 기록한다. `environment`를 포함한 본문 metadata는 optional이며 미확인 값이나 placeholder는 제거한다. GitHub는 해당 YAML code block을 네이티브 이슈 속성으로 해석하지 않는다. 이미 생성된 이슈 본문에는 템플릿 전용 Front Matter(`name`, `about`)를 포함하지 않는다.
 - **Pull Request / Review:** 기존과 같이 본문 마지막에 하나의 `yaml` code block으로 기록한다. PR의 `revision.base/head`는 비교 기준 commit pair이며 Issue의 `source_revision`과 다르다.
 
-Issue 본문의 `about` Front Matter 형태 텍스트와 Issue/PR/Review 본문의 YAML code block은 GitHub metadata에 자동 연동되지 않는다. Issue 생성 도구는 기록할 metadata를 본문 마지막에 명시적으로 포함해야 한다. PR·Review에 footnote 정의가 있으면 metadata block 바로 앞에 두고 별도 `Metadata` heading은 만들지 않는다.
+Markdown Issue 템플릿의 `name`·`about`은 템플릿 선택기에서 사용하는 설정이며, 생성된 이슈 본문으로 복사하는 metadata가 아니다. Issue/PR/Review 본문의 YAML code block은 GitHub metadata에 자동 연동되지 않는다. Issue 생성 도구는 기록할 metadata를 본문 마지막에 명시적으로 포함해야 한다. PR·Review에 footnote 정의가 있으면 metadata block 바로 앞에 두고 별도 `Metadata` heading은 만들지 않는다.
 
 ### `author`
 
@@ -83,7 +83,7 @@ revision:
   head: <full-head-commit-sha>
 ```
 
-Issue 템플릿은 `about`만 Front Matter에 두고 optional metadata 예시를 본문 마지막 YAML code block에 둔다. 실제 Issue 작성 시 필요한 field만 남긴다. PR·Review 템플릿의 metadata 예시는 기본 읽기 흐름을 방해하지 않도록 HTML comment 안에 두며, 사용할 때는 comment를 제거하고 필요한 필드만 본문 마지막에 둔다.
+Issue 템플릿은 `name`·`about`을 Front Matter에 두고 optional metadata 예시를 본문 마지막 YAML code block에 둔다. 실제 Issue 작성 시 템플릿 Front Matter는 제거하고 필요한 metadata field만 남긴다. PR·Review 템플릿의 metadata 예시는 기본 읽기 흐름을 방해하지 않도록 HTML comment 안에 두며, 사용할 때는 comment를 제거하고 필요한 필드만 본문 마지막에 둔다.
 
 ## Writing Rules
 
@@ -103,6 +103,6 @@ Issue 템플릿은 `about`만 Front Matter에 두고 optional metadata 예시를
 
 ## Templates
 
-- [`.github/ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md): Issue 작성 템플릿 (현재 Front Matter 구성은 GitHub native template chooser 미지원)
+- [`.github/ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md): GitHub Markdown Issue 템플릿 (`name`·`about` 설정, 본문 YAML metadata)
 - [`.github/pull_request_template.md`](../pull_request_template.md): GitHub native Pull Request description
 - [`pull-request-review.md`](pull-request-review.md): Pull Request review body

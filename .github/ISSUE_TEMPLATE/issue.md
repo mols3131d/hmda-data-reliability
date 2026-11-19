@@ -1,4 +1,5 @@
 ---
+name: General Issue
 about: Report a problem, propose an improvement, or request an investigation
 ---
 
