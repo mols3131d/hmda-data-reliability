@@ -270,14 +270,35 @@ def project_current_impact(
 def project_remote_output(payload: dict[str, object]) -> dict[str, object]:
     """구조화된 projection에서 민감 필드와 로컬 경로를 제외한다."""
     return {
-        _ABSOLUTE_PATH.sub("[private-path]", key): _project_public_value(value)
+        _ABSOLUTE_PATH.sub("[private-path]", key): _project_public_value(
+            value, field=key
+        )
         for key, value in payload.items()
         if key.casefold() not in _PRIVATE_FIELDS
     }
 
 
-def _project_public_value(value: object) -> object:
+def json_message_body(content: str) -> str:
+    """조사 결과와 원격 투영에서 같은 Markdown 경계를 해석한다."""
+    body = content.strip()
+    if body.startswith("```json"):
+        body = body[7:]
+    return body.removeprefix("```").removesuffix("```").strip()
+
+
+def _project_public_value(value: object, *, field: str = "") -> object:
     if isinstance(value, str):
+        # Provider wire messages embed structured payloads as a second JSON string.
+        if field in {"content", "arguments"}:
+            body = json_message_body(value)
+            if body.startswith(("{", "[")):
+                try:
+                    parsed = json.loads(body)
+                    return json.dumps(_project_public_value(parsed), ensure_ascii=False)
+                except (ValueError, RecursionError):
+                    return "[unprojectable-json]"
+            if value.lstrip().startswith("```") or field == "arguments" and body:
+                return "[unprojectable-json]"
         return _ABSOLUTE_PATH.sub("[private-path]", value)
     if isinstance(value, dict):
         return project_remote_output(value)
@@ -353,7 +374,7 @@ def _project_fact_shape(field_name: str, value: object) -> object:
 
 def _bound_json_value(value: object, *, max_bytes: int = 1_024) -> object:
     if value is None or isinstance(value, (str, bool, int)):
-        bounded = (
+        bounded: object = (
             _ABSOLUTE_PATH.sub("[private-path]", value)[:512]
             if isinstance(value, str)
             else value

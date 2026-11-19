@@ -28,6 +28,7 @@ tags:
 | [Continuous Integration](ci/README.md) | CI의 목적·원칙·패턴과 책임별 운영 계약의 진입점 | CI scope, change-impact routing 또는 merge gate를 설계·변경할 때 |
 | [Testing Guide](testing.md) | pytest command, marker, report, coverage, tracing | 일반 test를 실행하거나 결과를 확인할 때 |
 | [Reliability AI Prompt Management](review-ai-prompts.md) | Native 조사 Prompt·history·모델 전달 경로 | Prompt를 편집하거나 실제 메시지·version·예산을 확인할 때 |
+| [Ingestion Investigation](ingestion-investigation.md) | 원천 준비·실행 결과와 재현 | 적재를 진행하거나 추가로 확인할 근거를 결정할 때 |
 | [Reliability AI Evaluation](review-ai-evaluation.md) | Offline 회귀·native Dataset 실험·사람 평가 | 실제 출력·실패·원격 관측과 품질 근거를 실행하거나 해석할 때 |
 | [Test Design](test-design.md) | requirement를 observable contract, scenario와 oracle로 변환하는 기준 | test를 설계하거나 requirement를 추적할 때 |
 | [Version Control and GitHub](vcs-git/README.md) | branch, commit, Pull Request와 review 운영 규칙 | Git/GitHub 작업을 수행할 때 |

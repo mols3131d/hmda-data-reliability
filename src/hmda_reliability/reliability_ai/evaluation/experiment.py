@@ -25,7 +25,7 @@ from hmda_reliability.reliability_ai import (
     investigate_incident,
 )
 from hmda_reliability.reliability_ai.context import project_remote_output
-from hmda_reliability.runtime_ai import RuntimeAISettings
+from hmda_reliability.runtime_ai.selection import CodexSettings, cli_provider_settings
 
 
 def main(*, argv: Sequence[str] | None = None) -> int:
@@ -33,7 +33,9 @@ def main(*, argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--dataset", default="hmda-reliability-ai-v1")
     parser.add_argument("--name", default="신뢰성 AI 조사 실험")
     parser.add_argument("--dataset-version", type=datetime.fromisoformat)
-    parser.add_argument("--model", default="qwen3.5:4b-8k-local")
+    parser.add_argument("--provider", choices=("codex", "ollama", "compatible"))
+    parser.add_argument("--base-url")
+    parser.add_argument("--model")
     parser.add_argument("--dbt-manifest", type=Path)
     parser.add_argument("--dbt-run-results", type=Path)
     parser.add_argument("--prompt-name", default="hmda-reliability-ai/investigation")
@@ -42,7 +44,7 @@ def main(*, argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--max-tool-calls", type=int, default=5)
     parser.add_argument("--workflow-budget-seconds", type=float, default=300)
     parser.add_argument("--max-prompt-bytes", type=int, default=65536)
-    parser.add_argument("--max-output-tokens", type=int, default=4096)
+    parser.add_argument("--max-output-tokens", type=int)
     args = parser.parse_args(argv)
     try:
         if (args.dbt_manifest is None) != (args.dbt_run_results is None):
@@ -54,16 +56,10 @@ def main(*, argv: Sequence[str] | None = None) -> int:
         )
         if args.dataset_version is not None and args.dataset_version.tzinfo is None:
             raise ValueError("dataset version requires a timezone")
-        langfuse = get_client()
-        settings = RuntimeAISettings(
-            base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:11434/v1"),
-            api_key=os.environ.get("OPENAI_API_KEY", "local"),
-            model=args.model,
-            max_output_tokens=args.max_output_tokens,
-            connect_timeout_seconds=10,
-            read_timeout_seconds=300,
-            max_retries=0,
+        settings = cli_provider_settings(
+            args.provider, args.model, args.base_url, args.max_output_tokens, os.environ
         )
+        langfuse = get_client()
         ai_settings = ReliabilityAISettings(
             prompt_name=args.prompt_name,
             prompt_label=args.prompt_label,
@@ -126,13 +122,15 @@ def main(*, argv: Sequence[str] | None = None) -> int:
             max_concurrency=1,
             metadata={
                 "project_revision": revision,
-                "model": args.model,
+                "model": settings.model,
+                "provider": args.provider
+                or ("codex" if isinstance(settings, CodexSettings) else "compatible"),
                 "dataset_version": dataset_version.isoformat(),
                 "prompt_name": args.prompt_name,
                 "prompt_label": args.prompt_label,
                 "prompt_version": args.prompt_version,
                 **ai_settings.sanitized_configuration(),
-                "max_output_tokens": args.max_output_tokens,
+                "max_output_tokens": settings.max_output_tokens,
             },
         )
         try:

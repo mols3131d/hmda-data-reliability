@@ -17,11 +17,29 @@ from langfuse import get_client
 def main(*, argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Langfuse 합성 Dataset 등록")
     parser.add_argument("--dataset", default="hmda-reliability-ai-v1")
-    parser.add_argument("--prompts-only", action="store_true")
+    target = parser.add_mutually_exclusive_group()
+    target.add_argument("--prompts-only", action="store_true")
+    target.add_argument("--ingestion-prompt-only", action="store_true")
     args = parser.parse_args(argv)
     try:
         langfuse = get_client()
         resources = files("hmda_reliability.reliability_ai.prompt")
+        if args.ingestion_prompt_only:
+            langfuse.create_prompt(
+                name="hmda-reliability-ai/ingestion",
+                type="chat",
+                prompt=[
+                    {
+                        "role": "system",
+                        "content": resources.joinpath("ingestion.md").read_text(
+                            encoding="utf-8"
+                        ),
+                    },
+                    {"role": "user", "content": "{{canonical_input}}"},
+                ],
+                labels=["production"],
+            )
+            return 0
         references: list[str] = []
         for path in (
             "investigation.md",

@@ -28,11 +28,13 @@ uv run pytest tests/reliability_ai tests/runtime_ai
 
 ## Configure Connections
 
-PR을 시험할 때는 해당 PR checkout의 repository root를 사용한다. [환경 예제](../../.env.example)를 참고해 `.env`에 `LANGFUSE_BASE_URL`, public/secret key와 `OPENAI_BASE_URL`, `OPENAI_API_KEY`를 설정한다. 사용 중인 파일을 예제로 덮어쓰지 않고 자격 증명을 Git·로그·문서에 복사하지 않는다.
+PR 작업 트리에서 Langfuse 연결 설정을 읽는다. 구독 요금제로 시험하려면 `codex login`의 ChatGPT 로그인 방식을 사용하고 실험에 `--provider codex`를 넘긴다. App Server가 계정 종류와 제한된 실행 환경을 확인한다. 현재 계정 검사는 개인 구독 Go·Plus·Pro 계열을 허용한다. 조직·종량·미확인 요금제는 모델 입력 전송 전에 중단한다. Codex 모델 이름은 생략할 수 있다. [환경 예제](../../.env.example)
 
-표준 `LANGFUSE_*`는 SDK가 읽는다. 별도 Langfuse opt-in·기존 live 환경·SDK extra 설치는 없다. 아래 명령의 명시적 실행이 원격 등록과 모델 호출을 시작한다. Import와 기본 테스트는 실행하지 않는다.
-
-`OPENAI_BASE_URL=http://localhost:11434/v1`은 SDK task 실행 머신의 Ollama를 가리킨다. Langfuse Cloud UI의 모델 호출은 서버에서 수행하므로 이 localhost 설정을 그대로 쓸 수 없다. Cloud UI에는 접근 가능한 HTTPS 제공자 연결을 별도로 설정한다. 이 구분은 [공식 LLM Connection 안내](https://langfuse.com/docs/administration/llm-connection)를 따른다.
+| 제공자 | 선택과 설정 |
+| --- | --- |
+| Codex | 제공자와 호환 URL을 생략한 기본값. 명시적 `--provider codex`는 환경의 호환 URL보다 우선한다. `--max-output-tokens`는 호환 전송에서만 사용한다. |
+| Ollama | `--provider ollama`의 기본 주소는 `http://localhost:11434/v1`, 모델은 `qwen3.5:4b-8k-local`이다. |
+| OpenAI 호환 | `--provider compatible --base-url …` 또는 `OPENAI_BASE_URL` 설정으로 선택한다. API 키만 설정하면 기본 Codex를 사용한다. |
 
 ## Initial Setup
 
@@ -57,7 +59,7 @@ uv run --env-file .env python -m hmda_reliability.reliability_ai.evaluation.expe
   --dataset hmda-reliability-ai-v1 \
   --dataset-version 2026-11-07T12:58:25+00:00 \
   --name bounded-investigation \
-  --model qwen3.5:4b-16k-local \
+  --provider ollama --model qwen3.5:4b-16k-local \
   --prompt-version 1 \
   --max-tool-calls 5 \
   --workflow-budget-seconds 300 \
@@ -80,7 +82,7 @@ Langfuse experiment에서 항목 output과 실제 generation·tool을 연다. �
 
 | Local evidence | Content |
 | --- | --- |
-| `reliability-ai/investigations/<invocation_id>.json` | canonical input·revision·설정·실제 Prompt·메시지/digest·turn·tool·결과·trace ID |
+| `reliability-ai/investigations/<invocation_id>.json` | 버전·입력·Prompt·메시지 차이와 digest·응답과 조회 참조·종료 결과 |
 | `reliability-ai/responses/<invocation_id>-<turn>.txt` | Runtime이 반환한 exact UTF-8 본문; tool-only 응답의 빈 bytes도 보존 |
 | `reliability-ai/investigations/<invocation_id>-observations.json` | core manifest와 분리한 관측 오류; 완료 후 SDK 오류 포함 |
 
@@ -100,6 +102,10 @@ Langfuse experiment에서 항목 output과 실제 generation·tool을 연다. �
 | `response_persistence_failed` / `manifest_persistence_failed` | 보존한 partial 경로를 확인하고 필수 근거 없는 완료를 주장하지 않는다. |
 
 `completed`는 유효한 최종 구조와 필수 로컬 근거 저장이다. 언어·사실성·유용성·사람 승인은 아니다. SDK 반환·flush와 실제 원격 적재는 다르다. Trace ID로 observation을 다시 조회해 실제 parent·Prompt version·IO·usage·실패 상태를 대조한다. 관측 장애는 core 결과 변경이나 모델 재호출을 유발하지 않는다.
+
+## Offline Replay
+
+`investigation.records.load_investigation(path)`는 기존 파일과 새 참조형 기록에서 공개 결과를 복원한다. `investigation.replay.replay_investigation(path)`는 기록된 입력과 응답으로 새 조사를 실행해 결과와 종료 사유를 대조한다. 최종 게시가 실패한 경우 `reliability-ai/failures/<invocation_id>.json`을 확인한다. 두 함수의 패키지 경로는 `hmda_reliability.reliability_ai`로 시작한다. [읽기](../../src/hmda_reliability/reliability_ai/investigation/records.py) · [재현](../../src/hmda_reliability/reliability_ai/investigation/replay.py)
 
 ## Timeouts And Availability
 

@@ -19,6 +19,7 @@ from hmda_reliability.reliability_ai import (
     investigate_incident,
 )
 from hmda_reliability.reliability_ai.context import project_remote_output
+from hmda_reliability.reliability_ai.investigation.records import load_investigation
 from hmda_reliability.reliability_ai.investigation.tools import ToolRegistry
 from hmda_reliability.reliability_ai.store import InvocationEvidenceWriteError
 from hmda_reliability.runtime_ai import provider as provider_module
@@ -154,8 +155,7 @@ def test_invalid_sdk_tool_calls_fail_without_losing_response(
     assert result.findings == ()
     assert result.response_paths[0].read_text(encoding="utf-8") == _EMPTY_REPORT
     assert result.manifest_path is not None
-    manifest = json.loads(result.manifest_path.read_text(encoding="utf-8"))
-    turn = manifest["result"]["turns"][0]
+    turn = load_investigation(result.manifest_path).turns[0].model_dump(mode="json")
     assert json.loads(turn["raw_tool_calls"]) == raw_calls
     assert turn["tool_calls"] == []
     assert turn["failure_code"] == "invalid_provider_tool_calls"
@@ -294,8 +294,7 @@ def test_duplicate_sdk_tool_call_ids_fail_before_dispatch(
     assert result.tool_calls == ()
     assert result.response_paths[0].read_text(encoding="utf-8") == _EMPTY_REPORT
     assert result.manifest_path is not None
-    manifest = json.loads(result.manifest_path.read_text(encoding="utf-8"))
-    turn = manifest["result"]["turns"][0]
+    turn = load_investigation(result.manifest_path).turns[0].model_dump(mode="json")
     assert json.loads(turn["raw_tool_calls"]) == raw_calls
     assert turn["tool_calls"] == []
     assert turn["failure_code"] == "invalid_provider_tool_calls"
@@ -892,10 +891,7 @@ def test_unserializable_tool_record_preserves_safe_error_and_raw_turns(
     assert result.turns[0].tool_calls[0]["function"]["arguments"] == arguments
     assert result.turns[1].tool_call_id == "unsafe-record"
     assert result.manifest_path is not None
-    assert (
-        json.loads(result.manifest_path.read_text(encoding="utf-8"))["result"]
-        == exported
-    )
+    assert load_investigation(result.manifest_path).model_dump(mode="json") == exported
     assert [path.read_text(encoding="utf-8") for path in result.response_paths] == [
         "",
         _EMPTY_REPORT,
