@@ -1,8 +1,3 @@
----
-name: General Issue
-about: Report a problem, propose an improvement, or request an investigation
----
-
 <!--
 관련 문서 및 적용되는 지침·Skill을 확인한다.
 프로젝트: `AGENTS.md`, `docs/development/vcs-git/README.md`, `.rulesync/skills/prj-vcs-git-github/SKILL.md`.
