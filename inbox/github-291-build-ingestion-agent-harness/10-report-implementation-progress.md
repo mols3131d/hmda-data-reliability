@@ -8,6 +8,12 @@ description: PR 작업 트리에서 실행한 변경과 검증, 남은 증명 �
 
 [작업 목록](09-plan-implementation-todo.md) · [교체 설계](07-design-reliability-ai-runtime-replacement/README.md)
 
+## Current Status
+
+- **구현** · 사고 조사 교체와 HMDA 적재 조사, 두 OpenSpec 작업을 각각 7/7 완료했다. Codex 구독 OAuth·Ollama의 실제 사고 조사와 오프라인 재현을 확인했다.
+- **검증** · `main`과 통합한 구현이 GitHub CI를 통과했다. 로컬 전체 재실행에서 1,319건 통과·2건 생략. 앞선 추적 테스트 실패와 대조 결과는 아래에 기록했다. [최종 PR 검사](https://github.com/mols3131d/hmda-data-reliability/pull/291/checks)
+- **운영 결정** · 규칙으로 끝나는 적재 조사는 즉시 실행할 수 있다. 모델 보조를 운영에서 쓰려면 담당자가 적재 Prompt의 `production` 라벨 발행을 선택한다. [운영 가이드](../../docs/development/ingestion-investigation.md#model-and-observation)
+
 ## Work Log
 
 | 시점 (KST) | 작업 | 확인한 결과 |
@@ -33,6 +39,12 @@ description: PR 작업 트리에서 실행한 변경과 검증, 남은 증명 �
 | 23:15 | 원격·Airflow 재확인 | Langfuse 실험 `2e2925a0-c433-43a6-aa02-9590bf2912b5`에서 위 구현 SHA, 항목 3개, 실제 span 12개를 조회했다. 격리 DAG 조사 `ing-628a077c45084679a77c6909525cec19`에서 성공·성공·생략을 확인하고 `ing-c699f27ae63f41c79d2320f3a227220a`로 재현했다. |
 | 23:18 | 구현 커밋 전체 테스트 | `pytest -q -rs -p no:testmon tests`에서 1,319건 통과·2건 skip. skip은 Windows npm/Node 전용 검사와 로컬에 캐시되지 않은 zizmor 감사다. 제공자 테스트의 선택적 시도 기록에 명시적 단언을 추가하고 전 저장소 ty와 관련 테스트 28건을 별도 확인했다. |
 | 23:20 | 로컬 푸시 훅 복구 | 훅이 상속한 Git 환경 때문에 테스트가 PR 로컬 ref와 인덱스·공용 Git 설정을 바꿨다. 푸시를 중단하고 구현 SHA·인덱스 트리 `de232a5a`·원래 작성자 설정을 복구했다. 주 작업 트리는 원래 `9b71834c`에서 clean, 원격은 `1f1c18bf`임을 확인했다. Git 환경을 비운 테스트 자식 프로세스에서 임시 저장소 생성·커밋 격리 검사를 통과했다. |
+| 23:24 | `main` 테스트 분류 통합 | 기한 만료 회귀에 `component`를 적용하고 기존 테스트의 분류를 보존했다. 충돌이 있던 두 모듈에서 86건 통과. 격리한 훅으로 `742dc0ff`를 푸시한 뒤 두 작업 트리와 PR 인덱스를 확인했다. 원격에서 `main`의 `fe67f9eb`와 병합 가능 상태를 확인했다. |
+| 23:25 | 변경 테스트 분류 독립 검증 | `bb67a5f0`에서 PR이 수정한 11개 테스트 모듈의 186건을 수집했다. unit 64건, component 56건, integration 66건이고 분류 누락·중복은 0건이었다. 병합 훅이 재정렬했던 타 PR의 문서는 `main` 원본과 동일하다. |
+| 23:27 | 원격 통합 CI 통과 | head `742dc0ff`, base `fe67f9eb`, 시험 병합 `33af652a`. CI가 선택한 테스트 1,317건 통과·2건 생략. Python·wheel·OpenSpec 검사도 통과했다. [CI 실행 기록](https://github.com/mols3131d/hmda-data-reliability/actions/runs/44543419980) |
+| 23:28 | 로컬 전체 실행에서 추적 테스트 차이 발견 | 1,318건 통과·2건 생략·1건 실패. 사전 설치한 OpenTelemetry 제공자의 네트워크 접근은 차단됐지만 테스트가 예상한 두 실패 중 하나를 pytest가 setup 오류로 분류했다. 해당 모듈만 재실행해도 한 번 재현됐다. |
+| 23:30 | 추적 테스트 대조 | 테스트와 네트워크 차단 코드가 `main`과 동일함을 확인했다. 독립 검토자는 `main`에서 해당 사례를 3회 실행해 모두 통과했다. 같은 Python 환경에서 모듈 전체를 양쪽에 한 번씩 실행한 결과도 각각 5/5 통과였다. 최초 실패의 원인은 확정하지 못했다. |
+| 23:32 | 통합 후 전체 회귀 재검증과 인계 | `bb67a5f0`에서 전체 테스트를 다시 실행해 1,319건 통과·2건 생략(235.94초). 생략한 검사는 위와 같다. Draft PR 본문을 구현·검증 결과로 갱신했다. 최종 보고서 커밋의 검사 결과는 [PR 검사](https://github.com/mols3131d/hmda-data-reliability/pull/291/checks)에서 확인한다. |
 
 ## Resume
 
