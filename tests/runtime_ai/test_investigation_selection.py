@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 
 from hmda_reliability.runtime_ai.selection import (
@@ -43,7 +45,7 @@ def test_api_preserves_explicit_provider_even_when_settings_are_supplied():
         None,
         {"OPENAI_BASE_URL": "https://example.org/v1", "OPENAI_API_KEY": "demo"},
     )
-    adapter = object()
+    adapter = Mock()
     assert resolve_investigation_provider(settings, adapter) == (settings, adapter)
 
 

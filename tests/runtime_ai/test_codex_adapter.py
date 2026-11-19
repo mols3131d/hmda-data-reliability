@@ -88,7 +88,9 @@ def test_retries_only_the_explicit_overload_with_a_fresh_thread(
     )
     raw = adapter(monkeypatch, server).invoke_for_turn("inv-test", 4, _MESSAGES)
     assert raw.content == _VALID and raw.attempt_count == 2
+    assert raw.response_metadata is not None
     attempt = raw.response_metadata.codex_attempt
+    assert attempt is not None
     assert (
         attempt.logical_turn,
         attempt.thread_id,
@@ -111,6 +113,8 @@ def test_disconnect_during_start_is_ambiguous_and_never_retried(
         adapter(monkeypatch, server).invoke_for_turn("inv-test", 0, _MESSAGES)
     assert error.value.failure_code == "codex_acceptance_unknown"
     assert error.value.attempt_count == 1 and len(server.calls) == 1
+    assert error.value.response_metadata is not None
+    assert error.value.response_metadata.codex_attempt is not None
     assert not error.value.response_metadata.codex_attempt.terminated
 
 
@@ -131,7 +135,9 @@ def test_interrupt_and_actual_termination_are_separate(
         with pytest.raises(ProviderUnavailableError) as failure:
             active.invoke_for_turn("inv-test", 0, _MESSAGES)
         meta = failure.value.response_metadata
+    assert meta is not None
     attempt = meta.codex_attempt
+    assert attempt is not None
     assert attempt.interrupt_requested and attempt.interrupt_acknowledged
     assert attempt.terminated == terminal
     assert server.calls[-1] == (
@@ -292,6 +298,8 @@ def test_disconnect_after_confirmed_rejection_has_no_new_ambiguous_turn(monkeypa
         active.invoke_for_turn("inv-test", 0, _MESSAGES)
     assert failure.value.failure_code == "codex_thread_unavailable"
     assert failure.value.attempt_count == 1
+    assert failure.value.response_metadata is not None
+    assert failure.value.response_metadata.codex_attempt is not None
     assert failure.value.response_metadata.codex_attempt.rejected_requests == (1,)
     assert [method for method, _ in server.calls] == ["turn/start"]
 
