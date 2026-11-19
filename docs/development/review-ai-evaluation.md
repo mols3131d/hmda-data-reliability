@@ -28,7 +28,7 @@ uv run pytest tests/reliability_ai tests/runtime_ai
 
 ## Configure Connections
 
-PR 작업 트리에서 Langfuse 연결 설정을 읽는다. 구독 요금제로 시험하려면 `codex login`의 ChatGPT 로그인 방식을 사용하고 실험에 `--provider codex`를 넘긴다. App Server가 계정 종류와 제한된 실행 환경을 확인한다. 현재 계정 검사는 개인 구독 Go·Plus·Pro 계열을 허용한다. 조직·종량·미확인 요금제는 모델 입력 전송 전에 중단한다. Codex 모델 이름은 생략할 수 있다. [환경 예제](../../.env.example)
+PR 작업 트리에서 Langfuse 연결 설정을 읽는다. 구독 요금제로 시험하려면 `codex login`의 ChatGPT 로그인 방식을 사용하고 실험에 `--provider codex`를 넘긴다. App Server가 계정 종류와 제한된 실행 환경을 확인한다. 현재 계정 검사는 개인 구독 Go·Plus·Pro 계열을 허용한다. 조직·종량·미확인 요금제는 모델 입력 전송 전에 중단한다. Codex 모델을 생략하면 `gpt-6-luna`를 사용한다. 다른 모델은 `--model`로 지정한다. [환경 예제](../../.env.example)
 
 | 제공자 | 선택과 설정 |
 | --- | --- |

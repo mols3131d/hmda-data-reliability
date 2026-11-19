@@ -38,8 +38,8 @@ def resolve_investigation_provider(
         provider, (CodexAdapter, OpenAICompatibleAdapter)
     ):
         settings = provider.settings
-    active = settings or CodexSettings(
-        model="injected" if provider is not None else "codex-default"
+    active = settings or (
+        CodexSettings(model="injected") if provider is not None else CodexSettings()
     )
     if provider is not None:
         return active, provider
@@ -62,7 +62,7 @@ def cli_provider_settings(
             raise ValueError("--base-url requires a compatible provider")
         if max_output_tokens is not None:
             raise ValueError("--max-output-tokens is unavailable for Codex App Server")
-        return CodexSettings(model=model or "codex-default")
+        return CodexSettings(model=model) if model else CodexSettings()
     if selected == "ollama":
         url = base_url or "http://localhost:11434/v1"
         key = "local"

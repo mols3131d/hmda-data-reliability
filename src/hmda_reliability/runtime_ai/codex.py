@@ -43,7 +43,7 @@ from hmda_reliability.runtime_ai.provider import (
 
 
 class CodexSettings(RuntimeAIContract):
-    model: NonEmptyStr = "codex-default"
+    model: NonEmptyStr = "gpt-6-luna"
     max_output_bytes: int = Field(default=32_768, gt=0, le=1_048_576)
     max_retries: int = Field(default=1, ge=0, le=5)
     temperature: None = None

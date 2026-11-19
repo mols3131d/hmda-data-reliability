@@ -15,6 +15,8 @@ pytestmark = pytest.mark.unit
 def test_key_alone_never_selects_a_compatible_endpoint():
     settings = cli_provider_settings(None, None, None, None, {"OPENAI_API_KEY": "demo"})
     assert isinstance(settings, CodexSettings)
+    assert settings.model == "gpt-6-luna"
+    assert resolve_investigation_provider(None, None)[0].model == "gpt-6-luna"
     assert "base_url" not in settings.sanitized_configuration()
 
 
