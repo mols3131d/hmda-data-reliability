@@ -1,6 +1,6 @@
 # GitHub Templates
 
-GitHub가 인식하는 Issue와 Pull Request 템플릿은 각각 [`ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md), [`pull_request_template.md`](../pull_request_template.md)에 둔다. 이 directory는 공통 작성 규칙과 GitHub가 자동 제공하지 않는 Pull Request Review 템플릿을 관리한다. GitHub 템플릿은 default branch에 반영된 뒤 적용된다.
+Issue 작성 템플릿은 [`ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md), GitHub native Pull Request 템플릿은 [`pull_request_template.md`](../pull_request_template.md)에 둔다. 이 directory는 공통 작성 규칙과 GitHub가 자동 제공하지 않는 Pull Request Review 템플릿을 관리한다. GitHub native 템플릿은 default branch에 반영된 뒤 적용된다.
 
 ## Issue Composition
 
@@ -18,10 +18,10 @@ Issue는 문제 보고, 변경 제안, 조사 요청에 공통으로 사용한�
 
 GitHub가 제공하지 않는 정보만 optional YAML metadata로 보완한다. Metadata field는 서로 독립적이며 필요한 field만 사용한다.
 
-- **Issue:** 템플릿의 YAML Front Matter에는 GitHub가 해석하는 `name`과 `about`을 둔다. 이 설정은 생성된 Issue 본문에 보존되지 않는다. `author`, `environment`, `source_revision`은 필요할 때만 본문 마지막의 `yaml` code block에 기록한다.
+- **Issue:** YAML Front Matter는 `description`, `source_revision`, `author`, `environment` 순서로 선언한다. `description`은 템플릿 용도 설명이고, 나머지는 필요한 경우에만 사용하는 optional metadata다. 작성 완료 시 필요 없는 필드와 placeholder는 제거한다. GitHub는 해당 필드를 Issue 속성으로 해석하지 않으며, 템플릿 내용도 이슈 본문으로 자동 전송하지 않는다. GitHub Markdown Issue 템플릿 선택기에 등록하려면 별도로 `name`과 `about`이 필요하므로 현재 구성은 native 템플릿 선택기와 호환되지 않는다.
 - **Pull Request / Review:** 기존과 같이 본문 마지막에 하나의 `yaml` code block으로 기록한다. PR의 `revision.base/head`는 비교 기준 commit pair이며 Issue의 `source_revision`과 다르다.
 
-본문 YAML block은 GitHub metadata에 자동 연동되지 않는다. Footnote 정의가 있으면 바로 앞에 두고 별도 `Metadata` heading은 만들지 않는다.
+Issue Front Matter와 PR·Review 본문의 YAML block은 GitHub metadata에 자동 연동되지 않는다. 생성 도구는 사용할 metadata를 실제 Issue 본문에 명시적으로 포함해야 한다. PR·Review에 footnote 정의가 있으면 metadata block 바로 앞에 두고 별도 `Metadata` heading은 만들지 않는다.
 
 ### `author`
 
@@ -72,7 +72,7 @@ revision:
   head: <full-head-commit-sha>
 ```
 
-Template에서는 기본 읽기 흐름을 방해하지 않도록 optional metadata 예시를 HTML comment 안에 둔다. 실제 사용할 때는 comment를 제거하고 필요한 field만 본문 마지막에 둔다.
+Issue 템플릿은 optional metadata 예시를 Front Matter에 둔다. 실제 Issue 작성 시 필요한 필드만 유지한다. PR·Review 템플릿의 metadata 예시는 기본 읽기 흐름을 방해하지 않도록 HTML comment 안에 두며, 사용할 때는 comment를 제거하고 필요한 필드만 본문 마지막에 둔다.
 
 ## Writing Rules
 
@@ -92,6 +92,6 @@ Template에서는 기본 읽기 흐름을 방해하지 않도록 optional metada
 
 ## Templates
 
-- [`.github/ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md): GitHub native Issue template
+- [`.github/ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md): Issue 작성 템플릿 (현재 Front Matter 구성은 GitHub native template chooser 미지원)
 - [`.github/pull_request_template.md`](../pull_request_template.md): GitHub native Pull Request description
 - [`pull-request-review.md`](pull-request-review.md): Pull Request review body

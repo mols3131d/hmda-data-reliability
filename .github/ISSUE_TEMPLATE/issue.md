@@ -1,6 +1,11 @@
 ---
-name: General Issue
-about: Report a problem, propose an improvement, or request an investigation
+description: Report a problem, propose an improvement, or request an investigation
+source_revision: <full-commit-sha>
+author:
+  - <user-id>:<provider>-<service>
+environment:
+  runtime: <runtime-and-version>
+  configuration: <relevant-non-secret-settings>
 ---
 
 <!--
@@ -46,19 +51,4 @@ Optional — 필요한 section만 추가한다. 간단한 내용은 Context에 �
 ## Open Decisions
 
 - <결정이 필요한 사항 또는 미확정 질문>
--->
-
-<!--
-Optional metadata — 구조화된 정보가 필요할 때만 본문 마지막에 추가한다.
-필요한 field만 사용하고 중복·비밀 값은 제외한다.
-자세한 규칙: .github/templates/README.md
-
-```yaml
-author:
-  - <user-id>:<provider>-<service>
-environment:
-  runtime: <runtime-and-version>
-  configuration: <relevant-non-secret-settings>
-source_revision: <full-commit-sha>
-```
 -->
