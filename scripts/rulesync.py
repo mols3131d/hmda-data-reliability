@@ -18,9 +18,8 @@ CLAUDE_BRIDGE_MARKER = (
 )
 CLAUDE_BRIDGE_CONTENT = f"{CLAUDE_BRIDGE_MARKER}\n\n@AGENTS.md\n"
 _STALE_PROJECTION_NOTICE = (
-    "info: Rulesync preserves existing projections on generate. "
-    "If you removed skills from rulesync.jsonc, please review and "
-    "prune stale target directories manually."
+    "info: Rulesync generate leaves stale projections in place. "
+    "Use prune-preview to review native deletion before running prune."
 )
 
 _SOURCE_ACTIONS: dict[str, tuple[str, ...]] = {
@@ -30,6 +29,8 @@ _SOURCE_ACTIONS: dict[str, tuple[str, ...]] = {
 _ACTIONS: dict[str, tuple[str, ...]] = {
     "preview": ("generate", "--dry-run"),
     "generate": ("generate",),
+    "prune-preview": ("generate", "--delete", "--dry-run"),
+    "prune": ("generate", "--delete"),
     "check": ("generate", "--check"),
     "doctor": ("doctor", "--strict"),
 }
@@ -292,7 +293,7 @@ def main() -> int:
         choices=(*_SOURCE_ACTIONS, *_ACTIONS, "validate"),
         help=(
             "install locked or update external sources, "
-            "preview or generate projections, "
+            "preview, generate, or explicitly prune projections, "
             "check drift, run doctor, or validate the locked projection state"
         ),
     )
@@ -307,13 +308,14 @@ def main() -> int:
         returncode = _run(_ACTIONS[args.action])
         if returncode != 0:
             return returncode
-        if args.action == "generate":
+        if args.action in ("generate", "prune"):
             _write_claude_bridges()
-            print(_STALE_PROJECTION_NOTICE, file=sys.stderr)
+            if args.action == "generate":
+                print(_STALE_PROJECTION_NOTICE, file=sys.stderr)
             return 0
         if args.action == "check":
             return _check_claude_bridges()
-        if args.action == "preview":
+        if args.action in ("preview", "prune-preview"):
             return _preview_claude_bridges()
         return 0
     except RuntimeError as error:

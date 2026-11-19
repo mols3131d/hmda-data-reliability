@@ -14,6 +14,18 @@
       "detail": "Refresh externally managed repository tooling."
     },
     {
+      "label": "Rulesync: Prune Preview",
+      "type": "shell",
+      "command": "uv run --no-sync python scripts/rulesync.py prune-preview",
+      "detail": "Preview native Rulesync orphan cleanup before deletion."
+    },
+    {
+      "label": "Rulesync: Prune",
+      "type": "shell",
+      "command": "uv run --no-sync python scripts/rulesync.py prune",
+      "detail": "Delete stale projections via Rulesync; review the preview for other installers first."
+    },
+    {
       "label": "Format",
       "type": "shell",
       "command": "uv run ruff check --fix . && uv run ruff format . && uv run rumdl fmt . && uv run python scripts/biome.py format --write --files-ignore-unknown=true . && uv run python scripts/tombi.py format .",
