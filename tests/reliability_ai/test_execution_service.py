@@ -47,8 +47,6 @@ from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 from .conftest import NullSpikeReviewMaterial
 
-pytestmark = pytest.mark.unit
-
 
 def _settings() -> RuntimeAISettings:
     return RuntimeAISettings(
@@ -106,6 +104,7 @@ def _bound_request(
     "conflict",
     ["incident", "target", "partition", "both", "snapshot", "missing_connection"],
 )
+@pytest.mark.unit
 def test_delegated_task_rejects_conflicting_inputs_before_investigation(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -157,6 +156,7 @@ def test_delegated_task_rejects_conflicting_inputs_before_investigation(
     recover.assert_not_called()
 
 
+@pytest.mark.component
 @pytest.mark.parametrize("schema", [False, True])
 def test_recovery_waiting_past_task_deadline_is_not_dispatched(
     null_spike_review_material: NullSpikeReviewMaterial,
@@ -212,6 +212,7 @@ def test_recovery_waiting_past_task_deadline_is_not_dispatched(
     assert not report.execution_receipts
 
 
+@pytest.mark.unit
 def test_delegated_task_unapproved_remediation_generates_action_proposal(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
@@ -264,6 +265,7 @@ def test_delegated_task_unapproved_remediation_generates_action_proposal(
     assert len(report.execution_receipts) == 0
 
 
+@pytest.mark.unit
 def test_delegated_task_blocks_unauthorized_action(
     null_spike_review_material: NullSpikeReviewMaterial,
 ) -> None:
@@ -300,6 +302,7 @@ def test_delegated_task_blocks_unauthorized_action(
 
 
 @pytest.mark.parametrize("freshness_validated", [None, True, False])
+@pytest.mark.unit
 def test_delegated_task_preserves_backfill_validation_outcome(
     null_spike_review_material: NullSpikeReviewMaterial,
     monkeypatch: pytest.MonkeyPatch,
@@ -370,6 +373,7 @@ def test_delegated_task_preserves_backfill_validation_outcome(
     assert receipt.details["actual_freshness"] == {"freshness_status": "unavailable"}
 
 
+@pytest.mark.unit
 def test_delegated_task_enforces_empty_tool_allowlist_and_timeout(
     null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
 ) -> None:
@@ -421,6 +425,7 @@ def test_delegated_task_enforces_empty_tool_allowlist_and_timeout(
     assert report.execution_receipts == ()
 
 
+@pytest.mark.unit
 def test_provider_failure_is_not_reported_as_completed(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -475,6 +480,7 @@ def test_provider_failure_is_not_reported_as_completed(
         ),
     ],
 )
+@pytest.mark.unit
 def test_post_mutation_failure_preserves_reconciliation_evidence(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -532,6 +538,7 @@ def test_post_mutation_failure_preserves_reconciliation_evidence(
     ("mutation_state", "expected_status"),
     [("rolled_back", "failed"), ("table_replaced", "partial")],
 )
+@pytest.mark.unit
 def test_schema_recovery_failure_preserves_stage_and_mutation_state(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -583,6 +590,7 @@ def test_schema_recovery_failure_preserves_stage_and_mutation_state(
 
 
 @pytest.mark.parametrize("failure_type", ["candidate", "os"])
+@pytest.mark.unit
 def test_schema_preflight_failure_preserves_known_or_unknown_mutation_state(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -638,6 +646,7 @@ def test_schema_preflight_failure_preserves_known_or_unknown_mutation_state(
         assert any("실제 상태" in request for request in report.next_requests)
 
 
+@pytest.mark.unit
 def test_schema_recovery_report_preserves_profile_evidence(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -683,6 +692,7 @@ def test_schema_recovery_report_preserves_profile_evidence(
     assert report.execution_receipts[0].details == evidence
 
 
+@pytest.mark.unit
 def test_backfill_database_error_preserves_unknown_state_and_approval(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
