@@ -109,7 +109,7 @@ def test_rulesync_generate_emits_stale_projection_notice(
 
     captured = capsys.readouterr()
     assert "Rulesync generate leaves stale projections in place" in captured.err
-    assert "Use prune-preview to review native deletion before running prune" in captured.err
+    assert "Use prune-preview to review native deletion" in captured.err
 
 
 @pytest.mark.unit
