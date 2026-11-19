@@ -1,37 +1,45 @@
 ---
 type: report
 title: LLMOps Redesign Runtime Selection
-description: LangGraph와 Deep Agents의 선택 기준과 PR 291에서 비교할 범위를 정리합니다.
+description: 기존 Reliability AI 실행부를 교체하고 적재 조사까지 연결할 LLMOps 런타임 기준을 정리합니다.
 tags:
   - llmops
   - langgraph
-  - deep-agents
+  - codex
   - reliability-ai
   - langfuse
 ---
 
 # LLMOps Redesign Runtime Selection
 
-**권고는 기존 Python 실행부와 Langfuse를 기준으로 삼고, PR #291의 읽기 전용 조사에서 필요한 만큼만 바꾸는 것이다.** 정해진 절차의 흐름과 중단 후 재개가 문제라면 LangGraph를 우선한다. 증거가 부족하거나 상충할 때 모델이 다음 조회를 고르는 일이 중요하다면 Deep Agents를 시험한다.
+**이번 개편의 기본 구성은 LangGraph와 LangChain Core다.** 기존 Python 조사 루프와 OpenAI-compatible 전용 제공자 경계를 새 그래프와 모델 제공자 계약으로 교체한다. 첫 로컬 제공자는 ChatGPT 구독 OAuth를 사용하는 Codex로 검증하고, Ollama도 같은 작업 흐름에서 선택할 수 있게 한다.
 
-## Decision Criteria
+## Decision
 
-LangGraph에서는 코드가 단계, 실패 시 분기, 재개 위치를 정한다. Deep Agents는 그 위에서 모델이 계획을 세우고 도구를 고르도록 돕는다. 현재 Python 조사도 허용된 도구 안에서 모델이 다음 조회를 고를 수 있으므로, Deep Agents는 그 기준보다 나은 결과를 보여야 한다. [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), [Deep Agents](https://docs.langchain.com/oss/python/deepagents/overview), [현재 조사 코드](../../src/hmda_reliability/reliability_ai/investigation/service.py)
+LangGraph가 조사 상태, 허용 도구 실행, 분기와 종료를 명시적으로 관리한다. LangChain Core는 공통 메시지·도구·모델 인터페이스에 사용한다. Deep Agents는 별도 계획 계층이나 하위 에이전트가 필요한 요구가 확인되지 않아 이번 구조의 중심에 두지 않는다.
 
-| 가장 큰 문제 | 우선 선택 | 판단 기준 |
-| --- | --- | --- |
-| 실행 기록이나 평가 결과를 비교하기 어렵다 | 현재 실행부 + Langfuse | 프롬프트 버전, 사용한 근거, 결과와 사람 평가를 같은 실행에서 확인할 수 있는가? |
-| 절차에 분기가 많고 중단 뒤 이어가기 어렵다 | LangGraph 중심 | 실패 지점이 분명하고, 재개해도 이미 끝난 작업이 중복되지 않는가? |
-| 사건마다 필요한 근거와 조사 순서가 달라진다 | Deep Agents 중심 | 중요한 근거를 더 자주 찾거나 사람이 다시 확인하는 일을 줄이는가? 추가 호출·지연·운영 부담을 감당할 수 있는가? |
+현재 `investigate_incident`는 Python의 동기 반복문이 tool-call 순서와 예산·응답 보존을 함께 소유한다. `runtime_ai`의 단일 OpenAI-compatible Chat Completions adapter는 Ollama 같은 호환 endpoint를 연결하지만, Codex의 ChatGPT 구독 OAuth App Server 흐름을 표현하지 않는다. 따라서 현재 실행부와 모델 adapter를 새 그래프·제공자 경계로 바꾼다. 결정론적 incident/evidence와 승인된 복구 계약은 새 실행부의 입력·도구·권한 경계로 유지한다. [현재 조사 루프](../../src/hmda_reliability/reliability_ai/investigation/service.py), [현재 제공자](../../src/hmda_reliability/runtime_ai/provider.py), [도메인 경계](../../docs/domains/review-ai.md)
 
-## First Trial In PR 291
+## Provider Priority
 
-PR #291은 아직 계획 단계다. 첫 비교는 허용된 자료를 읽고, 근거와 함께 `ready`, `blocked`, `needs_human`을 반환하는 데까지 한다. 실제 적재와 복구는 기존 서비스가 맡는다. 앞으로 쓰기를 연결할 경우, 실행 직전에 대상·현재 상태·권한을 재확인하고 재시도해도 변경이 한 번만 일어나는지 검증해야 한다. [PR #291 계획](https://github.com/mols3131d/hmda-data-reliability/blob/617aba0434bed79273c55530f67bfc04189afffd/inbox/github-291-build-ingestion-agent-harness/01-plan-ingestion-agent-harness-mvp.md#L15-L63), [실행 경계](../../docs/ARCHITECTURE.md#execution-boundaries), [중단 후 재개](https://docs.langchain.com/oss/python/langgraph/interrupts)
+1. **Codex via ChatGPT subscription OAuth.** Codex App Server의 ChatGPT 계정 인증을 확인하고, 구조화된 조사 제안과 완료·실패·중단 상태를 그래프의 제공자 계약으로 변환한다. 인증 정보는 Codex가 관리하는 경로에 둔다.
+1. **Ollama.** 로컬 Chat Completions 제공자를 동일한 그래프 입력·결과 계약으로 연결한다. 제공자별 요청 방식은 adapter 안에 둔다.
 
-1. **같은 조건에서 비교한다.** 모델, 프롬프트, 입력, 도구와 예산을 고정한다. 현재 Python 조사와 두 후보에 정상 사례와 근거가 상충하는 사례를 준다. 미구현 적재 조사는 같은 입출력을 쓰는 간단한 Python 흐름을 비교 기준으로 삼는다.
-1. **권한과 실패 처리부터 확인한다.** 범위 밖 조회·변경·원문 전송을 막고, 한도를 넘기면 이유를 남기고 종료해야 한다. 로컬 근거를 보존하고, Langfuse 전송 실패가 모델 재호출을 일으키지 않는지 확인한다. 재개를 도입하면 중복 실행도 검사한다.
-1. **사람에게 생긴 이점을 확인한다.** 후보 이름을 가리고 근거의 정확성, 불확실성 표시, 다음 조치의 구체성을 평가한다. 수동 재조회 횟수와 함께 지연·토큰·도구 호출을 비교한다. 정상 사례의 품질을 유지하면서 중요한 누락이나 재작업이 반복해서 줄어들 때 도입 범위를 넓힌다. [현행 평가 기준](../../docs/development/review-ai-evaluation.md#human-evaluation)
+두 adapter는 조사 요청, 정규화된 제안·사용량·실패 상태를 같은 경계로 전달한다. 그래프가 결과를 검증한 뒤 허용 도구를 실행한다. 제공자 응답으로 도구 권한이나 복구 승인이 생기지는 않는다. [Codex 제공자 설계](04-design-runtime-ai-codex-oauth-provider.md)
 
-Langfuse는 두 방식 모두에서 프롬프트 관리, 실행 추적, 실험과 사람 평가에 쓸 수 있다. 원격 추적은 실행 ID로 실제 조회해 확인한다. [현재 실행·평가 절차](../../docs/development/review-ai-evaluation.md), [Langfuse 연동](https://langfuse.com/integrations/frameworks/langgraph)
+## LLMOps Boundaries
 
-2026-11-19 문서·코드 조사 기준은 로컬 `origin/main` `fe67f9eb6b76f4f4f3215c355dbdff91f689b7f7`과 PR #291 `617aba0434bed79273c55530f67bfc04189afffd`이다. 후보 실행·원격 추적 조회·사람 평가는 검증 과제로 남아 있다.
+Langfuse native Prompt와 실제 모델·도구 관측은 프롬프트 버전 및 실행 증거를 연결하는 경로로 유지한다. 실행 ID, 요청 입력, 응답 원문, 선택된 도구, 조사 상태와 실패 이유는 로컬에서 먼저 보존한다. 외부 관측이 실패해도 이미 계산한 결과를 모델 재호출 사유로 사용하지 않는다. 기존 평가 CLI와 사람 평가의 증거는 새 조사 실행의 기술적 완료와 구분한다. [현재 평가·관측 계약](../../docs/domains/review-ai.md#provenance-and-evaluation)
+
+## Apply to Ingestion
+
+기존 incident 조사 실행부를 먼저 새 그래프와 제공자 계약으로 전환한다. 다음으로 같은 실행부를 재사용해 HMDA 적재 전 `prepare` 조사와 지정 Airflow 실행의 사후 `review_run`을 붙인다. 원천 버전 검증, 적재 권한과 data-plane 흐름은 기존 HMDA Data·Data Operations·Airflow 경계를 계속 사용한다. [적재 조사 설계](02-proposal-ingestion-llmops/README.md), [Codex 연동 순서](04-design-runtime-ai-codex-oauth-provider.md#implementation-order)
+
+## Verification
+
+이번 PR에서 새 실행부를 사용할 때까지는 다음을 완료 근거로 기록하지 않는다.
+
+- Codex 구독 OAuth로 합성 입력 한 건을 실행하고 구조화된 제안과 조사 근거를 대조한다.
+- Ollama가 같은 입출력 계약으로 동작하는지 확인한다.
+- Fake provider로 그래프 분기, 도구 범위 거부, 시간 초과, 원문 보존과 재현을 검사한다.
+- Airflow에서 실제 mutation 없이 지정 실행의 단계를 조회하고 원천 준비 조사와 결과 연결을 확인한다.
