@@ -1,32 +1,32 @@
 ---
 type: brief
 title: "Primary Marker Implementation Handoff"
-description: "PR #290에서 마커 수집 정확성을 수정할 로컬 에이전트의 현재 상태와 검증 지점을 전달한다."
+description: "PR #290의 pytest 마커 수정, 수집 및 실행 검증 결과와 원격 검증 위치를 기록한다."
 ---
 
 # Primary Marker Implementation Handoff
 
-> [!IMPORTANT]
-> **PR #290은 Draft이며 아직 marker 수정 및 테스트 검증 전이다.** 목표는 문서 완료가 아니라 단일 primary marker 정합성의 구현·검증이다. `main`을 직접 변경하거나 임의로 merge하지 않는다.
+PR #290의 두 마커 충돌을 수정했다. 전체 수집에서 1,229개 항목이 각각 정확히 하나의 primary marker를 가진다. 코드 변경은 `f470e5061fee9ecff12170e8f662a7c62295af39`에 있다.
+
+## Scope and Decisions
+
+- 소유 브랜치는 `agent/test/align-primary-pytest-markers`다. 변경 전 수집은 PR head `505b0992b255f35b508bde1aba04ab5d608fb01c`에서 실행했다.
+- `test_delegated_task_reports_real_backfill_and_domain_approval_block`은 실제 DuckDB 파티션, 승인과 복구 실행을 연결하므로 `integration`으로 분류했다.
+- `test_native_sdk_records_sibling_generations_and_tool_history`는 모의 provider transport에서 실제 Langfuse SDK의 로컬 trace와 redaction을 검증하므로 `component`로 분류했다.
+- 두 모듈의 공통 마커를 함수별로 명시해 파일과 pytest node ID를 보존했다. Primary marker 선언을 제외한 AST가 동일해 fixture, assertion과 나머지 데코레이터도 보존됐음을 확인했다.
+
+## Evidence
+
+| Check | Result |
+| --- | --- |
+| 전체 수집 및 `item.iter_markers()` | 변경 전 중복 2개, 변경 후 중복과 미표식 0개. 수집 전후 같은 1,229개 node ID를 확인. |
+| `-m '<level> and not memory and not stress'` | `unit` 379 → 378, `component` 647 → 647, `integration` 205 → 204. 두 항목의 중복 선택만 제거. |
+| Resource marker | 자원 필터를 끈 수집에서 `memory`와 `stress` 항목이 전후 0개. |
+| 테스트 실행 | 두 수정 사례 2개와 `tests/reliability_ai` 167개 통과. |
+| 정적 검사와 독립 검토 | Ruff lint·format과 CI 범위의 `ty check` 통과. 두 관점의 독립 검토에서 필수 수정 사항 없음. |
 
 ## Continuation
 
-- Owning PR: [#290](https://github.com/mols3131d/hmda-data-reliability/pull/290)
-- Owning branch: `agent/test/align-primary-pytest-markers`
-- Initial base: `main@35d099c748cbe08ae6a12ce60acd7574fe086719` (후속 작업 시 live base/head 재확인).
-- Starting evidence: [Research](00-research-testing-primary-marker-accuracy.md). Work / acceptance: [Plan](01-plan-testing-primary-marker-selection.md).
-- Confirmed static examples: `tests/reliability_ai/test_execution_service.py`의 `unit + integration`, `tests/reliability_ai/test_investigation_agent.py`의 `integration + component`.
+전체 실행 결과와 최신 검증 상태는 PR 본문에서 확인할 수 있다. CI Lite는 해당 실행의 prospective merge에 연결된다. Ready 전환과 merge는 사람의 결정이다. [PR #290](https://github.com/mols3131d/hmda-data-reliability/pull/290), [Checks](https://github.com/mols3131d/hmda-data-reliability/pull/290/checks)
 
-## Next Action
-
-1. 현재 head, 원격 `main`, 사용자/로컬 harness와 적용되는 repo context를 확인하고 기존 변경을 보호한다.
-2. 전체 effective marker 수집과 두 알려진 사례의 중복 선택을 재현하고, 특히 local DuckDB를 사용하는 test의 실제 level을 확인한다. 명시적 `-m` 사용 시 기본 resource exclusion이 보존된다고 가정하지 않는다.
-3. 최소 coherent code/test 변경을 수행하고 선택 정확성, 테스트 동작 보존, CI를 검증한다.
-4. 수행한 검증/미수행 항목 및 주요 판단을 PR 본문에 반영하고 review를 요청한다. **Ready 전환과 merge는 별도 인간 결정**이다.
-
-## Safeguards
-
-- 사용자가 지정한 계정 `mols3131d` / `mols3131d@gmail.com`만 사용한다.
-- 마커 이름을 바꾸기 전에 실제 테스트가 보호하는 동작을 확인한다. 리뷰 의견도 무조건 수용하지 않고 로컬 실행·근거로 재검토한다.
-- Scope는 pytest marker 정확성이다. 같은 module/class/function 상속 충돌의 최소 해소에 집중하고, 무표식 테스트 전체 일괄 정리나 포괄적 CI 재설계, LLM 평가, framework 도입을 결합하지 않는다.
-- 이번 준비 단계에서 테스트 실행 없음. 이전 PR의 PASS 기록은 현재 PR에 대한 검증이 아니다.
+변경 전 판단과 검증 명령은 준비 단계 문서에 있다. [Research](00-research-testing-primary-marker-accuracy.md), [Plan](01-plan-testing-primary-marker-selection.md), [Preparation Self-Review](03-review-testing-primary-marker-pr-preparation.md)
