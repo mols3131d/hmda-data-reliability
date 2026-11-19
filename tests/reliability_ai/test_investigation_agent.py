@@ -34,8 +34,6 @@ from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 from .conftest import NullSpikeReviewMaterial
 
-pytestmark = pytest.mark.integration
-
 _EMPTY_REPORT = '{"findings":[],"hypotheses":[],"uncertainties":[]}'
 
 
@@ -79,6 +77,7 @@ class ScriptedTransport:
     ],
 )
 @pytest.mark.parametrize("include_valid_call", [False, True])
+@pytest.mark.integration
 def test_invalid_sdk_tool_calls_fail_without_losing_response(
     call_id: str,
     tool_name: str,
@@ -163,6 +162,7 @@ def test_invalid_sdk_tool_calls_fail_without_losing_response(
 
 
 @pytest.mark.parametrize("raw_calls", [None, []])
+@pytest.mark.integration
 def test_sdk_tool_completion_requires_calls_before_accepting_report(
     raw_calls: list[object] | None,
     null_spike_review_material: NullSpikeReviewMaterial,
@@ -216,6 +216,7 @@ def test_sdk_tool_completion_requires_calls_before_accepting_report(
     assert result.response_paths[0].read_text(encoding="utf-8") == _EMPTY_REPORT
 
 
+@pytest.mark.integration
 def test_duplicate_sdk_tool_call_ids_fail_before_dispatch(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -301,6 +302,7 @@ def test_duplicate_sdk_tool_call_ids_fail_before_dispatch(
     assert turn["failure_code"] == "invalid_provider_tool_calls"
 
 
+@pytest.mark.integration
 def test_investigate_incident_dynamic_tool_calling_loop(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -442,6 +444,7 @@ def test_investigate_incident_dynamic_tool_calling_loop(
     ] == ["staging"]
 
 
+@pytest.mark.integration
 def test_unavailable_native_prompt_never_invokes_provider(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -466,6 +469,7 @@ def test_unavailable_native_prompt_never_invokes_provider(
     assert transport.requests == []
 
 
+@pytest.mark.integration
 def test_investigate_incident_detects_duplicate_tool_call_cycle(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -505,6 +509,7 @@ def test_investigate_incident_detects_duplicate_tool_call_cycle(
     assert result.failure_code == "duplicate_tool_call_cycle"
 
 
+@pytest.mark.integration
 def test_investigate_incident_handles_budget_exhaustion(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -543,6 +548,7 @@ def test_investigate_incident_handles_budget_exhaustion(
     assert result.failure_code == "workflow_budget_exhausted"
 
 
+@pytest.mark.integration
 def test_budget_expiring_during_preflight_never_starts_provider(
     null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
 ) -> None:
@@ -570,6 +576,7 @@ def test_budget_expiring_during_preflight_never_starts_provider(
 
 
 @pytest.mark.parametrize("failure_point", ["parse", "serialization", "manifest"])
+@pytest.mark.integration
 def test_finalization_expiry_preserves_budget_failure_not_completion(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -640,6 +647,7 @@ def test_finalization_expiry_preserves_budget_failure_not_completion(
     assert result.response_paths[0].read_text() == _EMPTY_REPORT
 
 
+@pytest.mark.integration
 def test_batched_tool_calls_cannot_exceed_limit(
     null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
 ) -> None:
@@ -676,6 +684,7 @@ def test_batched_tool_calls_cannot_exceed_limit(
     assert len(transport.requests) == 1
 
 
+@pytest.mark.integration
 def test_budget_expiring_during_argument_preflight_never_starts_tool(
     null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
 ) -> None:
@@ -717,6 +726,7 @@ def test_budget_expiring_during_argument_preflight_never_starts_tool(
 
 
 @pytest.mark.parametrize("output_kind", ["arguments", "report"])
+@pytest.mark.integration
 def test_deeply_nested_json_returns_error_with_preserved_response(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -762,6 +772,7 @@ def test_deeply_nested_json_returns_error_with_preserved_response(
     assert result.response_paths[0].read_text(encoding="utf-8") == response.content
 
 
+@pytest.mark.integration
 def test_final_synthesis_has_no_tools_after_limit(
     null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
 ) -> None:
@@ -811,6 +822,7 @@ def test_final_synthesis_has_no_tools_after_limit(
         '{"facts":{"nested":' + "[" * 300 + "0" + "]" * 300 + "}}",
     ],
 )
+@pytest.mark.integration
 def test_invalid_report_returns_json_safe_error_and_evidence(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -840,6 +852,7 @@ def test_invalid_report_returns_json_safe_error_and_evidence(
 
 
 @pytest.mark.parametrize("unsafe_field", ["arguments", "result"])
+@pytest.mark.integration
 def test_unserializable_tool_record_preserves_safe_error_and_raw_turns(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -903,6 +916,7 @@ def test_unserializable_tool_record_preserves_safe_error_and_raw_turns(
 
 
 @pytest.mark.parametrize("finish_reason", ["length", "content_filter"])
+@pytest.mark.integration
 def test_known_incomplete_response_retains_raw_without_completion(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -941,6 +955,7 @@ def test_known_incomplete_response_retains_raw_without_completion(
     assert len(transport.requests) == 1
 
 
+@pytest.mark.integration
 def test_malformed_tool_arguments_with_observation_remain_tool_errors(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -982,6 +997,7 @@ def test_malformed_tool_arguments_with_observation_remain_tool_errors(
     assert "invalid_arguments" in transport.requests[1].messages[-1].content
 
 
+@pytest.mark.integration
 def test_oversized_context_is_retained_as_error_before_prompt_or_provider(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -1029,6 +1045,7 @@ def test_oversized_context_is_retained_as_error_before_prompt_or_provider(
     native_prompt_client.get_prompt.assert_not_called()
 
 
+@pytest.mark.integration
 def test_oversized_prompt_is_rejected_before_provider_call(
     null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
 ) -> None:
@@ -1051,6 +1068,7 @@ def test_oversized_prompt_is_rejected_before_provider_call(
     assert transport.requests == []
 
 
+@pytest.mark.integration
 def test_oversized_evidence_facts_return_context_failure_manifest(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -1102,6 +1120,7 @@ def test_oversized_evidence_facts_return_context_failure_manifest(
     native_prompt_client.get_prompt.assert_not_called()
 
 
+@pytest.mark.integration
 def test_unprojectable_context_identity_returns_failure_manifest(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -1134,6 +1153,7 @@ def test_unprojectable_context_identity_returns_failure_manifest(
     native_prompt_client.get_prompt.assert_not_called()
 
 
+@pytest.mark.integration
 def test_same_clock_investigations_preserve_distinct_responses(
     null_spike_review_material: NullSpikeReviewMaterial, tmp_path: Path
 ) -> None:
@@ -1169,6 +1189,7 @@ def test_same_clock_investigations_preserve_distinct_responses(
 
 
 @pytest.mark.parametrize("failed_store", ["response", "manifest"])
+@pytest.mark.integration
 def test_evidence_write_failure_cannot_be_completed(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -1267,6 +1288,7 @@ def test_evidence_write_failure_cannot_be_completed(
         pytest.param("", True, id="malformed-raw"),
     ],
 )
+@pytest.mark.integration
 def test_tool_call_data_precedes_remote_output_and_survives_manifest_failure(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -1450,6 +1472,7 @@ def test_tool_call_data_precedes_remote_output_and_survives_manifest_failure(
     }
 
 
+@pytest.mark.integration
 def test_tool_call_data_write_failure_stops_before_dispatch_and_remote_output(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
@@ -1551,6 +1574,7 @@ def test_tool_call_data_write_failure_stops_before_dispatch_and_remote_output(
 
 
 @pytest.mark.parametrize("failure_point", [None, "start", "update", "end"])
+@pytest.mark.integration
 def test_observations_surround_real_calls_and_follow_local_raw_retention(
     null_spike_review_material: NullSpikeReviewMaterial,
     tmp_path: Path,
