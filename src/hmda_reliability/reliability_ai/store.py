@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import json
 import os
 import re
 import tempfile
@@ -90,10 +91,19 @@ def write_review_json(
     max_record_bytes: int,
     deadline: float | None = None,
     clock: Callable[[], float] = time.monotonic,
+    indent: int | None = None,
 ) -> Path:
     """Review AI의 별도 JSON artifact를 bounded create-only 파일로 보존한다."""
     _validate_invocation_id(path.stem)
-    encoded = canonical_json_bytes(payload) + b"\n"
+    if indent is None:
+        encoded = canonical_json_bytes(payload) + b"\n"
+    else:
+        encoded = (
+            json.dumps(
+                payload, ensure_ascii=False, allow_nan=False, indent=indent
+            ).encode("utf-8")
+            + b"\n"
+        )
     if len(encoded) > max_record_bytes:
         raise InvocationEvidenceSizeError("review artifact exceeds max_record_bytes")
     return _write_create_only(

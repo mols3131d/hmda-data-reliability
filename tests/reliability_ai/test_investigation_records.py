@@ -1,5 +1,6 @@
 """버전 있는 조사 기록은 외부 호출 없이 검증하고 복원한다."""
 
+import json
 from pathlib import Path
 from typing import Any, Never
 from unittest.mock import MagicMock
@@ -55,7 +56,15 @@ def test_tool_observation_survives_without_a_final_manifest(tmp_path: Path) -> N
 
 @pytest.mark.parametrize(
     "case",
-    ["completed", "invalid", "late", "final-write", "tool-write", "response-write"],
+    [
+        "completed",
+        "invalid",
+        "late",
+        "final-write",
+        "tool-write",
+        "response-write",
+        "result-copy-write",
+    ],
 )
 def test_replay_uses_original_boundaries_with_no_external_calls(
     case: str,
@@ -63,6 +72,7 @@ def test_replay_uses_original_boundaries_with_no_external_calls(
     native_prompt_client: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     from hmda_reliability.reliability_ai import AgenticReviewInput, investigate_incident
     from hmda_reliability.reliability_ai.investigation import service
@@ -101,7 +111,11 @@ def test_replay_uses_original_boundaries_with_no_external_calls(
         ProviderResponse(
             content="invalid JSON"
             if case == "invalid"
-            else '{"findings":[],"hypotheses":[],"uncertainties":[]}',
+            else (
+                '{"findings":[{"topic":"결측률",'
+                '"description":"프로파일에서 결측률 증가를 확인했다."}],'
+                '"hypotheses":[],"uncertainties":[]}'
+            ),
             attempt_count=1,
             latency_ms=0,
         ),
@@ -145,16 +159,18 @@ def test_replay_uses_original_boundaries_with_no_external_calls(
 
                 storage_failure.setattr(InvocationResponseStore, "write", fail_response)
             result = run()
-    elif case == "final-write":
+    elif case in {"final-write", "result-copy-write"}:
 
-        def fail_manifest(path: Path, data: dict[str, object], **kwargs: Any) -> Path:
-            if "result" in data:
-                raise InvocationEvidenceWriteError(
-                    "simulated final publication failure"
-                )
+        def fail_publication(
+            path: Path, data: dict[str, object], **kwargs: Any
+        ) -> Path:
+            if (case == "final-write" and "result" in data) or (
+                case == "result-copy-write" and path.parent.name == "results"
+            ):
+                raise InvocationEvidenceWriteError("simulated publication failure")
             return write_review_json(path, data, **kwargs)
 
-        monkeypatch.setattr(service, "write_review_json", fail_manifest)
+        monkeypatch.setattr(service, "write_review_json", fail_publication)
         result = run()
     else:
         result = run()
@@ -165,12 +181,42 @@ def test_replay_uses_original_boundaries_with_no_external_calls(
         "invalid": ("error", "invalid_investigation_output"),
         "late": ("budget_exhausted", "workflow_budget_exhausted"),
         "final-write": ("error", "manifest_persistence_failed"),
+        "result-copy-write": ("completed", None),
     }
     assert (result.status, result.failure_code) == expected[case]
     path = result.manifest_path or (
         tmp_path / "reliability-ai" / "failures" / f"{result.invocation_id}.json"
     )
     assert load_investigation(path).status == result.status
+    result_path = (
+        tmp_path / "reliability-ai" / "results" / f"{result.invocation_id}.json"
+    )
+    if case in {"final-write", "result-copy-write"}:
+        assert not result_path.exists()
+        if case == "result-copy-write":
+            assert "investigation result JSON unavailable" in caplog.text
+    else:
+        displayed = result_path.read_text(encoding="utf-8")
+        assert displayed.startswith('{\n  "')
+        assert result_path.stat().st_mode & 0o077 == 0
+        assert json.loads(displayed) == {
+            "incident_id": result.incident_id,
+            "invocation_id": result.invocation_id,
+            "status": expected[case][0],
+            "failure_code": expected[case][1],
+            "facts": result.facts,
+            "findings": [
+                {
+                    "topic": "결측률",
+                    "description": "프로파일에서 결측률 증가를 확인했다.",
+                    "evidence_refs": [],
+                }
+            ]
+            if case == "completed"
+            else [],
+            "hypotheses": [],
+            "uncertainties": [],
+        }
     before = {p: p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
 
     def forbidden(*args: Any, **kwargs: Any) -> Never:

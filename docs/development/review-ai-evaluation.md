@@ -82,11 +82,12 @@ Langfuse experiment에서 항목 output과 실제 generation·tool을 연다. �
 
 | Local evidence | Content |
 | --- | --- |
+| `reliability-ai/results/<invocation_id>.json` | 상태와 실패 사유, 사실·발견·가설·미확정 사항을 읽을 수 있는 최종 결과 |
 | `reliability-ai/investigations/<invocation_id>.json` | 버전·입력·Prompt·메시지 차이와 digest·응답과 조회 참조·종료 결과 |
 | `reliability-ai/responses/<invocation_id>-<turn>.txt` | Runtime이 반환한 exact UTF-8 본문; tool-only 응답의 빈 bytes도 보존 |
 | `reliability-ai/investigations/<invocation_id>-observations.json` | core manifest와 분리한 관측 오류; 완료 후 SDK 오류 포함 |
 
-저장 루트는 `HMDA_RELIABILITY_ARTIFACTS_DIR`다. 공백·개행을 그대로 보존하며 실패 응답도 Runtime이 반환한 bounded 범위에서 남는다. 전체 HTTP 응답이나 내부 추론을 보존한다는 뜻이 아니다. 본문을 반환하기 전 실패에는 raw 파일이 없다.
+저장 루트는 `HMDA_RELIABILITY_ARTIFACTS_DIR`다. 사고 조사는 근거 기록 저장을 마친 뒤 읽기용 결과 JSON을 자동 생성한다. 결과 사본 저장에 실패하면 경고를 남기며, 조사 ID로 근거 기록에서 최종 결과를 확인할 수 있다. 공백·개행을 그대로 보존하며 실패 응답도 Runtime이 반환한 bounded 범위에서 남는다. 전체 HTTP 응답이나 내부 추론을 보존한다는 뜻이 아니다. 본문을 반환하기 전 실패에는 raw 파일이 없다.
 
 ### Diagnose A Failed Investigation
 

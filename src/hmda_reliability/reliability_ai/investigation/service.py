@@ -295,8 +295,14 @@ class _IncidentRun:
         observation_record_path = manifest_path.with_name(
             f"{self.invocation_id}-observations.json"
         )
+        max_record_bytes = (
+            self.limits.max_prompt_bytes * (self.max_turns + 1)
+            + self.settings.max_output_bytes * (self.max_turns + 1) * 4
+            + 65_536
+        )
         self.trace.end(self.generation)
         try:
+            result_payload = result.model_dump(mode="json")
             result = self.journal.publish(
                 manifest_path,
                 {
@@ -344,11 +350,9 @@ class _IncidentRun:
                     "observation_record_path": str(observation_record_path),
                     "trace_id": self.trace.trace_id,
                     "observation_ids": self.trace.observations,
-                    "result": result.model_dump(mode="json"),
+                    "result": result_payload,
                 },
-                max_record_bytes=self.limits.max_prompt_bytes * (self.max_turns + 1)
-                + self.settings.max_output_bytes * (self.max_turns + 1) * 4
-                + 65_536,
+                max_record_bytes=max_record_bytes,
                 deadline=self.deadline if result.status == "completed" else None,
                 clock=self.clock,
                 writer=self.publish,
@@ -373,6 +377,32 @@ class _IncidentRun:
                     "uncertainties": (),
                 }
             )
+        else:
+            if self.replay is None:
+                try:
+                    write_review_json(
+                        self.journal.root / "results" / manifest_path.name,
+                        {
+                            field: result_payload[field]
+                            for field in (
+                                "incident_id",
+                                "invocation_id",
+                                "status",
+                                "failure_code",
+                                "facts",
+                                "findings",
+                                "hypotheses",
+                                "uncertainties",
+                            )
+                        },
+                        max_record_bytes=max_record_bytes,
+                        indent=2,
+                    )
+                except InvocationEvidenceStoreError:
+                    logging.getLogger(__name__).warning(
+                        "investigation result JSON unavailable",
+                        extra={"invocation_id": self.invocation_id},
+                    )
         remote_result: dict[str, Any] = {}
         if self.observe_io:
             remote_result = result.model_dump(mode="json")

@@ -182,6 +182,12 @@ SDK의 native Dataset task·직렬 실행·결과 표시를 사용하고 Dataset
 - **WHEN** 참조 방식으로 보존한 실행을 공개 API 결과나 Dataset 결과로 반환할 때
 - **THEN** 보존한 turn·응답 본문·도구 결과와 근거 경로를 기존 결과 필드로 반환해야 한다(SHALL).
 
+#### Scenario: Publish a readable JSON copy of the investigation result
+
+- **WHEN** 사고 조사에서 최종 manifest를 게시할 때
+- **THEN** 같은 조사 ID의 읽기용 JSON을 자동 생성해야 한다(SHALL). 파일에는 상태·실패 사유·사실·발견·가설·미확정 사항이 들어간다.
+- **AND** 읽기용 사본 쓰기에 실패하면 조사 ID로 경고하고, 이미 저장한 manifest에서 조사 결과를 읽을 수 있어야 한다(SHALL).
+
 ### Requirement: Delegated task limits and recovery reporting
 
 위임 실행은 Task의 허용 도구와 caller capability의 교집합, Task·caller 중 더 작은 tool/time 예산을 적용해야 한다(SHALL). Goal·task ID·requester/recipient와 명시된 snapshot references를 사건 입력과 함께 추적하고, snapshot reference가 입력과 충돌하면 실행 전에 거부해야 한다(SHALL). 허용 action이나 approval flag만으로 복구 권한을 만들 수 없어야 한다(SHALL).
