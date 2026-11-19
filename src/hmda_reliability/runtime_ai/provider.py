@@ -53,7 +53,7 @@ def _calculate_backoff_delay(attempt: int) -> float:
     1차 실패 후 attempt=1일 때 0.25s, attempt=2일 때 0.5s, 이후 최대 1.0s로 상한된다.
     """
     delay = _INITIAL_BACKOFF_SECONDS * (2 ** (attempt - 1))
-    return min(delay, _MAX_BACKOFF_SECONDS)
+    return min(float(delay), _MAX_BACKOFF_SECONDS)
 
 
 class ProviderTransportError(Exception):
@@ -83,7 +83,9 @@ class ProviderUnavailableError(Exception):
         failure_code: str,
         attempt_count: int,
         latency_ms: float,
+        response_metadata: ProviderResponseMetadata | None = None,
     ) -> None:
+        self.response_metadata = response_metadata
         super().__init__("provider unavailable after bounded attempts")
         self.failure_code = failure_code
         self.attempt_count = attempt_count
@@ -151,6 +153,10 @@ class OpenAICompatibleAdapter:
             )
             transport = _OpenAIChatCompletionTransport(client)
         self._transport = transport
+
+    @property
+    def settings(self) -> RuntimeAISettings:
+        return self._settings
 
     def invoke(
         self,
@@ -374,7 +380,7 @@ class _OpenAIChatCompletionTransport:
 
         content = ""
         content_state = "choices_empty"
-        finish_reason = None
+        finish_reason: str | None = None
         tool_calls: tuple[ToolCall, ...] = ()
         raw_tool_calls = None
         if response.choices:

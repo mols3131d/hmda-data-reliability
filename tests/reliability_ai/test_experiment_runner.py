@@ -125,6 +125,8 @@ def test_experiment_preserves_investigation_output_and_exit_status(
             "3",
             "--workflow-budget-seconds",
             "120",
+            "--provider",
+            "ollama",
             "--max-output-tokens",
             "2048",
         ]
@@ -252,3 +254,15 @@ def test_unapproved_dataset_stops_before_native_experiment(
     dataset.run_experiment.assert_not_called()
     invoke.assert_not_called()
     client.flush.assert_not_called()
+
+
+def test_ingestion_prompt_setup_only_registers_scoped_chat(monkeypatch):
+    client = MagicMock()
+    monkeypatch.setattr(evaluation_setup, "get_client", lambda: client)
+    assert evaluation_setup.main(argv=["--ingestion-prompt-only"]) == 0
+    chat = client.create_prompt.call_args.kwargs
+    assert chat["name"] == "hmda-reliability-ai/ingestion"
+    assert chat["prompt"][1]["content"] == "{{canonical_input}}"
+    assert "evidence_ids" in chat["prompt"][0]["content"]
+    client.create_prompt.assert_called_once()
+    client.create_dataset.assert_not_called()

@@ -53,7 +53,8 @@
 | Contracts | `Pydantic` | reliability structured models |
 | Control quality | custom profiler/detector | profile snapshot과 detection rules |
 | Remediation | 결정론적 Python 함수 | assessment 결과의 초안 계산과 승인된 별도 복구 |
-| AI runtime | `OpenAI` Python SDK | OpenAI-compatible bounded provider invocation |
+| AI investigation | `LangGraph`, `LangChain Core` | 사고·적재 조사 흐름, 모델 메시지와 도구 스키마 |
+| AI runtime | `Codex App Server`, `OpenAI` Python SDK | ChatGPT 구독 OAuth 기본 연결과 OpenAI 호환 호출 |
 | Orchestration | `Apache Airflow` | DAG dependency와 task/data-update evidence |
 
 `PyIceberg`는 dependency로 존재하지만 active table engine으로 사용하지 않는다. Spark, cloud warehouse, FastAPI 기반 통합 pipeline CLI, 외부 catalog와 approval UI는 현재 active toolchain에 포함하지 않는다. Langfuse SDK의 OpenTelemetry 관측은 AI invocation에 한정하며 별도 telemetry platform을 운영하지 않는다.

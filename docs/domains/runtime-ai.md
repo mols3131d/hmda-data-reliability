@@ -12,7 +12,7 @@ tags:
 
 # Runtime AI: Provider-Neutral Invocation
 
-**`runtime_ai`는 AI capability의 의미를 알지 않고 provider 호출 mechanics만 소유한다.** Caller가 렌더링한 message와 명시적 settings를 받아 bounded OpenAI-compatible request를 실행하고 typed response 또는 runtime failure를 반환한다.
+**`runtime_ai`는 AI capability의 의미를 알지 않고 provider 호출 mechanics만 소유한다.** Caller가 렌더링한 message와 명시적 settings를 받아 선택한 제공자에서 제한된 호출을 실행하고 typed response 또는 runtime failure를 반환한다.
 
 ## Scope
 
@@ -20,7 +20,7 @@ tags:
 | --- | --- |
 | provider-neutral message/request/response contract | review prompt 내용과 policy |
 | `RuntimeAISettings`와 sanitized runtime configuration | Reliability incident/evidence contract |
-| OpenAI-compatible invocation adapter | approval, recovery 또는 mutation |
+| Codex App Server·OpenAI-compatible invocation adapter | approval, recovery 또는 mutation |
 | timeout, bounded retry, output limit, usage/trace metadata | 범용 model router, fallback graph, agent orchestration |
 
 Current provider-compatible bounded invocation의 normative behavior는 [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec이 소유한다. Source는 current adapter와 configuration implementation을, tests는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
@@ -35,7 +35,7 @@ Current provider-compatible bounded invocation의 normative behavior는 [`reliab
 
 `RuntimeAISettings`는 environment를 암묵적으로 읽지 않는다. Caller가 provider identity와 필요한 runtime limit을 명시적으로 전달한다. Adapter는 deterministic한 bounded request profile과 자체 retry/error normalization을 적용하며 provider-compatible request, timeout/retry와 no-hidden-retry behavior의 normative contract는 canonical Spec을 따른다. Exact current implementation detail은 [`runtime_ai`](../../src/hmda_reliability/runtime_ai/) source에서 확인하고 [`tests/runtime_ai`](../../tests/runtime_ai/)는 executable expectation을 제공한다. Passing evidence는 matching repository revision의 command, CI result 또는 보존된 runtime evidence에서 확인한다.
 
-현재 concrete integration은 OpenAI Python SDK를 사용하는 OpenAI-compatible chat-completions adapter 하나다. Provider routing이나 새로운 abstraction은 두 번째 concrete need가 생기기 전까지 추가하지 않는다.
+로컬 조사의 기본 제공자는 ChatGPT 구독 OAuth로 로그인한 Codex App Server다. 조사마다 격리 정책을 확인하고 시도마다 새 임시 스레드에 제한된 이력을 보낸다. 모델이 제안한 도구를 집행하는 쪽은 조사 호스트다. 기존 `RuntimeAISettings`를 전달하면 OpenAI 호환 Chat Completions 전송을 사용하고, `provider=`를 주입하면 이 어댑터가 우선한다. Ollama는 호환 전송을 사용하는 명시적 선택이다. [제공자 선택](../../src/hmda_reliability/runtime_ai/selection.py) · [실행 옵션](../development/review-ai-evaluation.md#configure-connections)
 
 ## Package Root API
 
@@ -54,5 +54,5 @@ Current provider-compatible bounded invocation의 normative behavior는 [`reliab
 1. Exact provider-compatible invocation requirement를 판단할 때는 canonical [`reliability-agentic-review`](../../openspec/specs/reliability-agentic-review/spec.md) Spec을 확인한다.
 1. [`runtime_ai/__init__.py`](../../src/hmda_reliability/runtime_ai/__init__.py)에서 current package root API를 확인한다.
 1. [`contracts.py`](../../src/hmda_reliability/runtime_ai/contracts.py)와 [`settings.py`](../../src/hmda_reliability/runtime_ai/settings.py)에서 current provider-neutral boundary 구현을 확인한다.
-1. [`provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)에서 current OpenAI-compatible adapter와 retry/error normalization 구현을 확인한다.
+1. [`selection.py`](../../src/hmda_reliability/runtime_ai/selection.py)에서 조사 제공자 선택을 읽고, [`codex.py`](../../src/hmda_reliability/runtime_ai/codex.py)와 [`provider.py`](../../src/hmda_reliability/runtime_ai/provider.py)에서 각각의 연결과 오류 처리를 확인한다.
 1. 조사·위임 semantics가 필요하면 [Reliability AI](review-ai.md)로 이동한다.

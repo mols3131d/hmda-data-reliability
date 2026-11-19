@@ -236,6 +236,23 @@ def _partition_row_count(
     return int(result[0])
 
 
+def inspect_partition_rows(
+    connection: duckdb.DuckDBPyConnection,
+    paths: Sequence[Path],
+    source_year: int,
+    source_file: str | None,
+) -> int:
+    """호출자가 소유한 임시 DB에서 적재와 같은 파서를 끝까지 실행한다."""
+    _create_staging_table(
+        connection=connection,
+        source_paths=paths,
+        source_year=source_year,
+        source_file=source_file,
+        preserve_source_metadata=False,
+    )
+    return table_row_count(connection, _STAGING_TABLE)
+
+
 def _create_staging_table(
     *,
     connection: duckdb.DuckDBPyConnection,

@@ -101,7 +101,8 @@ def _bound_request(
 
 
 @pytest.mark.parametrize(
-    "conflict", ["incident", "target", "partition", "both", "snapshot"]
+    "conflict",
+    ["incident", "target", "partition", "both", "snapshot", "missing_connection"],
 )
 @pytest.mark.unit
 def test_delegated_task_rejects_conflicting_inputs_before_investigation(
@@ -140,7 +141,7 @@ def test_delegated_task_rejects_conflicting_inputs_before_investigation(
             project_revision="binding-regression",
         ),
         settings=_settings(),
-        connection=object(),
+        connection=None if conflict == "missing_connection" else object(),
         approved_backfill_request=request,
         approved_schema_recovery_request=(
             _bound_request(material, schema=True) if conflict == "both" else None
@@ -153,6 +154,62 @@ def test_delegated_task_rejects_conflicting_inputs_before_investigation(
     assert not report.execution_receipts
     investigate.assert_not_called()
     recover.assert_not_called()
+
+
+@pytest.mark.component
+@pytest.mark.parametrize("schema", [False, True])
+def test_recovery_waiting_past_task_deadline_is_not_dispatched(
+    null_spike_review_material: NullSpikeReviewMaterial,
+    monkeypatch: pytest.MonkeyPatch,
+    schema: bool,
+    tmp_path: Path,
+) -> None:
+    from hmda_reliability.reliability_ai.execution import service
+
+    material = null_spike_review_material
+    review_input = AgenticReviewInput(
+        incident=material.detection.incident,
+        evidence=[material.detection.evidence],
+        draft=material.draft,
+        project_revision="deadline",
+    )
+    now = [0.0]
+    real_investigate = service.investigate_incident
+
+    def finish_at_deadline(*args, **kwargs):
+        result = real_investigate(*args, **kwargs)
+        assert result.status == "completed"
+        now[0] = 5.0
+        return result
+
+    monkeypatch.setattr(service, "investigate_incident", finish_at_deadline)
+    recover = MagicMock()
+    action = (
+        "execute_approved_schema_recovery" if schema else "execute_approved_backfill"
+    )
+    monkeypatch.setattr(service, action, recover)
+    request = _bound_request(material, schema=schema)
+    report = execute_delegated_task(
+        TaskEnvelope(
+            task_id="deadline",
+            requester="human",
+            recipient="human",
+            goal="recover",
+            allowed_actions=(action,),
+            workflow_budget_seconds=5,
+        ),
+        review_input,
+        approved_backfill_request=None if schema else request,
+        approved_schema_recovery_request=request if schema else None,
+        settings=_settings(),
+        provider=OpenAICompatibleAdapter(_settings(), transport=ScriptedTransport([])),
+        connection=object(),
+        artifact_root=tmp_path,
+        clock=lambda: now[0],
+    )
+    recover.assert_not_called()
+    assert report.status == "blocked"
+    assert not report.execution_receipts
 
 
 @pytest.mark.unit

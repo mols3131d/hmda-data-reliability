@@ -32,7 +32,8 @@ from hmda_reliability.reliability_ai.execution.contracts import (
 )
 from hmda_reliability.reliability_ai.investigation.service import investigate_incident
 from hmda_reliability.reliability_ai.settings import ReliabilityAISettings
-from hmda_reliability.runtime_ai.provider import OpenAICompatibleAdapter
+from hmda_reliability.runtime_ai.codex import CodexSettings
+from hmda_reliability.runtime_ai.selection import InvestigationProvider
 from hmda_reliability.runtime_ai.settings import RuntimeAISettings
 
 
@@ -40,9 +41,9 @@ def execute_delegated_task(
     task: TaskEnvelope,
     review_input: AgenticReviewInput,
     *,
-    settings: RuntimeAISettings,
+    settings: RuntimeAISettings | CodexSettings | None = None,
     ai_settings: ReliabilityAISettings | None = None,
-    provider: OpenAICompatibleAdapter | None = None,
+    provider: InvestigationProvider | None = None,
     connection: Any | None = None,
     approved_backfill_request: ApprovedBackfillRequest | None = None,
     approved_schema_recovery_request: ApprovedSchemaRecoveryRequest | None = None,
@@ -57,6 +58,7 @@ def execute_delegated_task(
     - 허가되지 않은 도구 호출이나 작업(`allowed_actions`)은 시도되지 않는다.
     - 실행된 복구 작업에 대해서만 공식 `ExecutionReceipt`가 발행된다.
     """
+    started_at = clock()
     incident = review_input.incident
     conflicts: list[str] = []
     snapshot_refs = {evidence.evidence_id for evidence in review_input.evidence}
@@ -103,6 +105,8 @@ def execute_delegated_task(
             or request.proposal.incident_type != incident.incident_type
         ):
             conflicts.append("backfill scope conflicts with the incident input")
+    if approved_backfill_request is not None and connection is None:
+        conflicts.append("connection is required to execute approved backfill")
     if conflicts:
         return ReportEnvelope(
             report_id=f"rep-{uuid.uuid4().hex}",
@@ -161,138 +165,142 @@ def execute_delegated_task(
     blocked_or_unknown: list[str] = [
         f"{u.topic}: {u.description}" for u in investigation_result.uncertainties
     ]
-    report_status = "completed"
+    report_status: Literal[
+        "completed", "blocked", "awaiting_approval", "failed", "partial"
+    ] = "completed"
+
+    if (
+        approved_backfill_request is not None
+        or approved_schema_recovery_request is not None
+    ) and clock() - started_at >= bounded_settings.workflow_budget_seconds:
+        return ReportEnvelope(
+            report_id=f"rep-{uuid.uuid4().hex}",
+            task_id=task.task_id,
+            recipient="supervisor" if task.recipient == "supervisor" else "human",
+            status="blocked",
+            task=task,
+            investigation=investigation_result,
+            facts=investigation_result.facts,
+            hypotheses=investigation_result.hypotheses,
+            blocked_or_unknown=("workflow_budget_exceeded_before_recovery",),
+            evidence_refs=tuple(incident.evidence_refs),
+            next_requests=("기한이 지난 위임 요청 확인 필요",),
+        )
 
     # 승인된 백필 요청이 제공되었고 허용 목록에 포함된 경우
     if approved_backfill_request is not None:
-        if "execute_approved_backfill" not in task.allowed_actions:
-            blocked_or_unknown.append(
-                "execute_approved_backfill is not in task.allowed_actions"
+        assert connection is not None  # 백필 사전 검사에서 확인한 연결이다.
+        try:
+            backfill_result = execute_approved_backfill(
+                connection, approved_backfill_request
             )
-            report_status = "blocked"
-        elif connection is None:
-            blocked_or_unknown.append(
-                "connection is required to execute approved backfill"
+            backfill_validated = (
+                backfill_result.validation_passed
+                and backfill_result.freshness_validation_passed is not False
             )
+            receipts.append(
+                ExecutionReceipt(
+                    receipt_id=f"rec-backfill-{uuid.uuid4().hex[:8]}",
+                    task_id=task.task_id,
+                    action_type="backfill",
+                    executor="reliability.remediation.execute_approved_backfill",
+                    approval_id=approved_backfill_request.approval.approval_id,
+                    proposal_id=approved_backfill_request.proposal.proposal_id,
+                    executed_at=datetime.now(UTC),
+                    success=backfill_validated,
+                    mutation_state=backfill_result.mutation_state,
+                    before_state=str(backfill_result.approved_before_identity),
+                    after_state=str(backfill_result.actual_identity),
+                    revalidated=backfill_validated,
+                    reconciliation_action=backfill_result.reconciliation_action,
+                    details=backfill_result.model_dump(mode="json"),
+                )
+            )
+            if not backfill_validated:
+                report_status = "partial"
+                blocked_or_unknown.append("backfill validation did not pass")
+        except BackfillValidationError as exc:
+            receipts.append(
+                _failed_recovery_receipt(
+                    task,
+                    action_type="backfill",
+                    approval_id=approved_backfill_request.approval.approval_id,
+                    proposal_id=approved_backfill_request.proposal.proposal_id,
+                    error=exc,
+                )
+            )
+            blocked_or_unknown.append(f"backfill execution failed: {exc}")
+            report_status = _recovery_failure_status(exc.mutation_state)
+        except (OSError, duckdb.Error) as exc:
+            receipts.append(
+                _failed_recovery_receipt(
+                    task,
+                    action_type="backfill",
+                    approval_id=approved_backfill_request.approval.approval_id,
+                    proposal_id=approved_backfill_request.proposal.proposal_id,
+                    error=exc,
+                )
+            )
+            blocked_or_unknown.append(f"backfill execution state unknown: {exc}")
+            report_status = "failed"
+        except ApprovalGateError as exc:
+            blocked_or_unknown.append(f"backfill execution failed: {exc}")
             report_status = "blocked"
-        else:
-            try:
-                backfill_result = execute_approved_backfill(
-                    connection, approved_backfill_request
-                )
-                backfill_validated = (
-                    backfill_result.validation_passed
-                    and backfill_result.freshness_validation_passed is not False
-                )
-                receipts.append(
-                    ExecutionReceipt(
-                        receipt_id=f"rec-backfill-{uuid.uuid4().hex[:8]}",
-                        task_id=task.task_id,
-                        action_type="backfill",
-                        executor="reliability.remediation.execute_approved_backfill",
-                        approval_id=approved_backfill_request.approval.approval_id,
-                        proposal_id=approved_backfill_request.proposal.proposal_id,
-                        executed_at=datetime.now(UTC),
-                        success=backfill_validated,
-                        mutation_state=backfill_result.mutation_state,
-                        before_state=str(backfill_result.approved_before_identity),
-                        after_state=str(backfill_result.actual_identity),
-                        revalidated=backfill_validated,
-                        reconciliation_action=backfill_result.reconciliation_action,
-                        details=backfill_result.model_dump(mode="json"),
-                    )
-                )
-                if not backfill_validated:
-                    report_status = "partial"
-                    blocked_or_unknown.append("backfill validation did not pass")
-            except BackfillValidationError as exc:
-                receipts.append(
-                    _failed_recovery_receipt(
-                        task,
-                        action_type="backfill",
-                        approval_id=approved_backfill_request.approval.approval_id,
-                        proposal_id=approved_backfill_request.proposal.proposal_id,
-                        error=exc,
-                    )
-                )
-                blocked_or_unknown.append(f"backfill execution failed: {exc}")
-                report_status = _recovery_failure_status(exc.mutation_state)
-            except (OSError, duckdb.Error) as exc:
-                receipts.append(
-                    _failed_recovery_receipt(
-                        task,
-                        action_type="backfill",
-                        approval_id=approved_backfill_request.approval.approval_id,
-                        proposal_id=approved_backfill_request.proposal.proposal_id,
-                        error=exc,
-                    )
-                )
-                blocked_or_unknown.append(f"backfill execution state unknown: {exc}")
-                report_status = "failed"
-            except ApprovalGateError as exc:
-                blocked_or_unknown.append(f"backfill execution failed: {exc}")
-                report_status = "blocked"
 
     # 승인된 스키마 복구 요청이 제공되었고 허용 목록에 포함된 경우
     elif approved_schema_recovery_request is not None:
-        if "execute_approved_schema_recovery" not in task.allowed_actions:
-            blocked_or_unknown.append(
-                "execute_approved_schema_recovery is not in task.allowed_actions"
+        try:
+            schema_result = execute_approved_schema_recovery(
+                approved_schema_recovery_request
             )
+            receipts.append(
+                ExecutionReceipt(
+                    receipt_id=f"rec-schema-{uuid.uuid4().hex[:8]}",
+                    task_id=task.task_id,
+                    action_type="schema_recovery",
+                    executor="reliability.remediation.execute_approved_schema_recovery",
+                    approval_id=approved_schema_recovery_request.approval.approval_id,
+                    proposal_id=approved_schema_recovery_request.proposal.proposal_id,
+                    executed_at=datetime.now(UTC),
+                    success=schema_result.validation_passed,
+                    mutation_state=schema_result.mutation_state,
+                    before_state=str(schema_result.approved_before_state),
+                    after_state=str(schema_result.actual_state),
+                    revalidated=schema_result.validation_passed,
+                    reconciliation_action=schema_result.reconciliation_action,
+                    details=schema_result.model_dump(mode="json"),
+                )
+            )
+            if not schema_result.validation_passed:
+                report_status = "partial"
+                blocked_or_unknown.append("schema recovery validation did not pass")
+        except SchemaRecoveryValidationError as exc:
+            receipts.append(
+                _failed_recovery_receipt(
+                    task,
+                    action_type="schema_recovery",
+                    approval_id=approved_schema_recovery_request.approval.approval_id,
+                    proposal_id=approved_schema_recovery_request.proposal.proposal_id,
+                    error=exc,
+                )
+            )
+            blocked_or_unknown.append(f"schema recovery execution failed: {exc}")
+            report_status = _recovery_failure_status(exc.mutation_state)
+        except (SchemaRecoveryCandidateError, OSError, duckdb.Error) as exc:
+            receipts.append(
+                _failed_recovery_receipt(
+                    task,
+                    action_type="schema_recovery",
+                    approval_id=approved_schema_recovery_request.approval.approval_id,
+                    proposal_id=approved_schema_recovery_request.proposal.proposal_id,
+                    error=exc,
+                )
+            )
+            blocked_or_unknown.append(f"schema recovery execution failed: {exc}")
+            report_status = "failed"
+        except ApprovalGateError as exc:
+            blocked_or_unknown.append(f"schema recovery execution failed: {exc}")
             report_status = "blocked"
-        else:
-            try:
-                schema_result = execute_approved_schema_recovery(
-                    approved_schema_recovery_request
-                )
-                receipts.append(
-                    ExecutionReceipt(
-                        receipt_id=f"rec-schema-{uuid.uuid4().hex[:8]}",
-                        task_id=task.task_id,
-                        action_type="schema_recovery",
-                        executor="reliability.remediation.execute_approved_schema_recovery",
-                        approval_id=approved_schema_recovery_request.approval.approval_id,
-                        proposal_id=approved_schema_recovery_request.proposal.proposal_id,
-                        executed_at=datetime.now(UTC),
-                        success=schema_result.validation_passed,
-                        mutation_state=schema_result.mutation_state,
-                        before_state=str(schema_result.approved_before_state),
-                        after_state=str(schema_result.actual_state),
-                        revalidated=schema_result.validation_passed,
-                        reconciliation_action=schema_result.reconciliation_action,
-                        details=schema_result.model_dump(mode="json"),
-                    )
-                )
-                if not schema_result.validation_passed:
-                    report_status = "partial"
-                    blocked_or_unknown.append("schema recovery validation did not pass")
-            except SchemaRecoveryValidationError as exc:
-                receipts.append(
-                    _failed_recovery_receipt(
-                        task,
-                        action_type="schema_recovery",
-                        approval_id=approved_schema_recovery_request.approval.approval_id,
-                        proposal_id=approved_schema_recovery_request.proposal.proposal_id,
-                        error=exc,
-                    )
-                )
-                blocked_or_unknown.append(f"schema recovery execution failed: {exc}")
-                report_status = _recovery_failure_status(exc.mutation_state)
-            except (SchemaRecoveryCandidateError, OSError, duckdb.Error) as exc:
-                receipts.append(
-                    _failed_recovery_receipt(
-                        task,
-                        action_type="schema_recovery",
-                        approval_id=approved_schema_recovery_request.approval.approval_id,
-                        proposal_id=approved_schema_recovery_request.proposal.proposal_id,
-                        error=exc,
-                    )
-                )
-                blocked_or_unknown.append(f"schema recovery execution failed: {exc}")
-                report_status = "failed"
-            except ApprovalGateError as exc:
-                blocked_or_unknown.append(f"schema recovery execution failed: {exc}")
-                report_status = "blocked"
 
     # 승인된 복구 실행이 없는 일반 조치 제안 생성 (승인 필요 상태 유지)
     needs_backfill = (
@@ -317,7 +325,9 @@ def execute_delegated_task(
         )
         report_status = "awaiting_approval"
 
-    recipient_type = "supervisor" if task.recipient == "supervisor" else "human"
+    recipient_type: Literal["supervisor", "human"] = (
+        "supervisor" if task.recipient == "supervisor" else "human"
+    )
 
     if report_status == "completed":
         next_reqs = tuple(review_input.draft.validation_actions)

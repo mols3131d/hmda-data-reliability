@@ -58,8 +58,9 @@ flowchart TB
 | Data | `DuckDB`, `dbt Core`, `Polars`, `PyArrow` | ingestion, query, transform |
 | Orchestration | `Apache Airflow 3.3.0` | data-plane DAG 실행 |
 | Contracts | `Pydantic` | reliability contract와 AI review model |
-| Remediation | `LangGraph` | deterministic remediation draft workflow |
-| AI runtime | `OpenAI` Python SDK | OpenAI-compatible bounded provider invocation |
+| Remediation | 결정론적 Python 함수 | 조치 초안 계산과 승인된 복구 |
+| AI investigation | `LangGraph`, `LangChain Core` | 사고·적재 조사 흐름, 모델 메시지와 도구 스키마 |
+| AI runtime | `Codex App Server`, `OpenAI` Python SDK | ChatGPT 구독 OAuth 기본 연결과 OpenAI 호환 호출 |
 
 세부 tool choice와 layer별 책임은 [`DEVELOPMENT.md`](DEVELOPMENT.md)에 정리되어 있다.
 

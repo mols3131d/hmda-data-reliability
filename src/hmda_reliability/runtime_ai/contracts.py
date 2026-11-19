@@ -125,6 +125,21 @@ class ProviderUsage(RuntimeAIContract):
     total_tokens: int | None = Field(default=None, ge=0)
 
 
+class CodexAttempt(RuntimeAIContract):
+    """한 App Server 시도에서 대조한 로컬·원격 식별자와 종료 경계."""
+
+    invocation_id: NonEmptyStr
+    logical_turn: int = Field(ge=0)
+    request_id: int = Field(gt=0)
+    thread_id: str
+    turn_id: str | None = None
+    model: str
+    rejected_requests: tuple[int, ...] = ()
+    interrupt_requested: bool = False
+    interrupt_acknowledged: bool = False
+    terminated: bool = False
+
+
 class ProviderResponseMetadata(RuntimeAIContract):
     """본문이나 provider 자유 문자열 없이 완료 상태를 설명하는 metadata."""
 
@@ -138,6 +153,7 @@ class ProviderResponseMetadata(RuntimeAIContract):
         "text", "tool_calls", "invalid_tool_calls", "content_missing", "choices_empty"
     ]
     content_bytes: int = Field(ge=0)
+    codex_attempt: CodexAttempt | None = None
 
 
 class TransportResponse(RuntimeAIContract):

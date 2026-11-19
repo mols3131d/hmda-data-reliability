@@ -7,8 +7,9 @@ import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from hmda_reliability.data_platform.artifacts import (
@@ -30,60 +31,61 @@ from hmda_reliability.reliability_ai.investigation.contracts import ToolCallReco
 from hmda_reliability.runtime_ai.contracts import (
     ToolCall,
     ToolDefinition,
-    ToolFunctionDefinition,
 )
 
-GET_INCIDENT_EVIDENCE_TOOL = ToolDefinition(
-    function=ToolFunctionDefinition(
-        name="get_incident_evidence",
-        description="증거 ID로 관측 증거의 상세 내용(payload, summary)을 조회한다.",
-        parameters={
-            "type": "object",
-            "properties": {
-                "evidence_id": {
-                    "type": "string",
-                    "description": "조회할 증거의 고유 식별자",
-                }
-            },
-            "required": ["evidence_id"],
-            "additionalProperties": False,
+
+def _tool_schema(
+    name: str, description: str, parameters: dict[str, Any]
+) -> ToolDefinition:
+    schema = {"title": name, "description": description, **parameters}
+    return ToolDefinition.model_validate(convert_to_openai_tool(schema))
+
+
+GET_INCIDENT_EVIDENCE_TOOL = _tool_schema(
+    name="get_incident_evidence",
+    description="증거 ID로 관측 증거의 상세 내용(payload, summary)을 조회한다.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "evidence_id": {
+                "type": "string",
+                "description": "조회할 증거의 고유 식별자",
+            }
         },
-    )
+        "required": ["evidence_id"],
+        "additionalProperties": False,
+    },
 )
 
-COMPARE_PROFILES_TOOL = ToolDefinition(
-    function=ToolFunctionDefinition(
-        name="compare_profiles",
-        description="기준 프로파일과 현재 프로파일 간의 결측률과 수치 변경을 비교한다.",
-        parameters={
-            "type": "object",
-            "properties": {
-                "column": {
-                    "type": "string",
-                    "description": "비교할 특정 대상 컬럼 이름 (선택)",
-                }
-            },
-            "additionalProperties": False,
+COMPARE_PROFILES_TOOL = _tool_schema(
+    name="compare_profiles",
+    description="기준 프로파일과 현재 프로파일 간의 결측률과 수치 변경을 비교한다.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "column": {
+                "type": "string",
+                "description": "비교할 특정 대상 컬럼 이름 (선택)",
+            }
         },
-    )
+        "additionalProperties": False,
+    },
 )
 
-INSPECT_DBT_IMPACT_TOOL = ToolDefinition(
-    function=ToolFunctionDefinition(
-        name="inspect_dbt_impact",
-        description="다운스트림 dbt 모델 목록 및 계통(lineage) 의존성을 조회한다.",
-        parameters={
-            "type": "object",
-            "properties": {
-                "asset_name": {
-                    "type": "string",
-                    "description": "영향 분석 대상 에셋 이름 (예: raw.hmda_loans)",
-                }
-            },
-            "required": ["asset_name"],
-            "additionalProperties": False,
+INSPECT_DBT_IMPACT_TOOL = _tool_schema(
+    name="inspect_dbt_impact",
+    description="다운스트림 dbt 모델 목록 및 계통(lineage) 의존성을 조회한다.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "asset_name": {
+                "type": "string",
+                "description": "영향 분석 대상 에셋 이름 (예: raw.hmda_loans)",
+            }
         },
-    )
+        "required": ["asset_name"],
+        "additionalProperties": False,
+    },
 )
 
 DEFAULT_INVESTIGATION_TOOLS: tuple[ToolDefinition, ...] = (
@@ -258,6 +260,8 @@ class ToolRegistry:
             )
             return record, json.dumps(err_result, ensure_ascii=False)
 
+        result: dict[str, Any]
+        status: Literal["success", "error"]
         try:
             if tool_name not in {tool.function.name for tool in self.definitions}:
                 result = {"error": "unknown tool or unavailable capability"}

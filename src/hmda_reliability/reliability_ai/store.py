@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
+import json
 import os
 import re
 import tempfile
@@ -89,10 +91,19 @@ def write_review_json(
     max_record_bytes: int,
     deadline: float | None = None,
     clock: Callable[[], float] = time.monotonic,
+    indent: int | None = None,
 ) -> Path:
     """Review AI의 별도 JSON artifact를 bounded create-only 파일로 보존한다."""
     _validate_invocation_id(path.stem)
-    encoded = canonical_json_bytes(payload) + b"\n"
+    if indent is None:
+        encoded = canonical_json_bytes(payload) + b"\n"
+    else:
+        encoded = (
+            json.dumps(
+                payload, ensure_ascii=False, allow_nan=False, indent=indent
+            ).encode("utf-8")
+            + b"\n"
+        )
     if len(encoded) > max_record_bytes:
         raise InvocationEvidenceSizeError("review artifact exceeds max_record_bytes")
     return _write_create_only(
@@ -164,3 +175,43 @@ def _fsync_directory(directory: Path) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+class ReplayEvidenceError(ValueError):
+    """기록의 어느 경계 때문에 재현할 수 없는지 구분한다."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+def evidence_digest(value: bytes) -> str:
+    return "sha256:" + hashlib.sha256(value).hexdigest()
+
+
+def evidence_file_ref(path: Path) -> dict[str, str]:
+    return {"name": path.name, "digest": evidence_digest(path.read_bytes())}
+
+
+def read_evidence_ref(directory: Path, ref: dict[str, str], expected: str) -> bytes:
+    if ref["name"] != expected or Path(expected).name != expected:
+        raise ReplayEvidenceError("corrupt_evidence")
+    try:
+        payload = (directory / expected).read_bytes()
+    except FileNotFoundError:
+        raise ReplayEvidenceError("missing_evidence") from None
+    if evidence_digest(payload) != ref["digest"]:
+        raise ReplayEvidenceError("corrupt_evidence")
+    return payload
+
+
+def write_evidence_ref(
+    directory: Path, filename: str, payload: dict[str, object], *, max_record_bytes: int
+) -> dict[str, str]:
+    """사용자가 제공한 경로를 따라가지 않고 단일 JSON 파일을 생성한다."""
+    if Path(filename).name != filename or not filename.endswith(".json"):
+        raise ValueError("unsafe evidence filename")
+    path = write_review_json(
+        directory / filename, payload, max_record_bytes=max_record_bytes
+    )
+    return evidence_file_ref(path)

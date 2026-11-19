@@ -13,7 +13,7 @@ tags:
 
 # Reliability AI: Bounded Investigation And Delegation
 
-**`reliability_ai`는 제한된 근거 조사와 caller가 승인한 복구 요청의 조합을 소유한다.** 결정론적 facts·승인·복구 정책은 Reliability에 남긴다. 현재 입력은 `null_spike`이며 모델의 설명·가설·권고는 truth나 실행 권한이 아니다.
+**`reliability_ai`는 제한된 근거 조사와 caller가 승인한 복구 요청의 조합을 소유한다.** 결정론적 facts·승인·복구 정책은 Reliability에 남긴다. 사고 조사는 `null_spike`를 입력으로 받으며 모델의 설명·가설·권고는 truth나 실행 권한이 아니다.
 
 ## Scope And Dependencies
 
@@ -22,9 +22,10 @@ tags:
 | `reliability` | 탐지·초안·exact proposal Approval·stale 검사·복구·재검증·reconciliation |
 | `reliability_ai.investigation` | 불변 사건 입력·bounded 도구 조사·구조화 보고·실패 근거 |
 | `reliability_ai.execution` | Task 제한·복구 요청의 사건 일치·기존 executor 호출·실제 결과 보고 |
-| `runtime_ai` | Provider-neutral 계약·OpenAI-compatible 전송·timeout·retry |
+| `reliability_ai.ingestion` | 원천 준비와 지정된 DAG 실행의 읽기 전용 조사·운영자 인계 |
+| `runtime_ai` | 구독 OAuth Codex와 OpenAI 호환 전송·timeout·retry |
 
-Source 의존은 `reliability_ai -> reliability`, `reliability_ai -> runtime_ai`다. Reliability는 AI를 import하지 않고 Runtime은 도메인 판단·Langfuse를 소유하지 않는다. 현재 capability 계약은 [Investigation Spec](../../openspec/specs/reliability-agentic-review/spec.md)과 [Prompt Spec](../../openspec/specs/review-ai-prompt-engineering/spec.md)이 소유한다.
+Source 의존은 `reliability_ai -> reliability`, `reliability_ai -> runtime_ai`다. Reliability는 AI를 import하지 않고 Runtime은 도메인 판단·Langfuse를 소유하지 않는다. 현재 계약은 [사고 조사 명세](../../openspec/specs/reliability-agentic-review/spec.md), [적재 조사 명세](../../openspec/specs/reliability-ai-ingestion-investigation/spec.md), [Prompt 명세](../../openspec/specs/review-ai-prompt-engineering/spec.md)에 있다.
 
 ## Investigation
 
@@ -42,11 +43,19 @@ Profile 도구는 live profiling이 아니다. Dbt의 current 관측은 과거 �
 
 결과의 canonical facts는 입력에서 유지하고 모델은 findings·hypotheses·uncertainties를 작성한다. `completed`는 유효한 최종 구조와 필수 로컬 저장만 뜻한다. 설명의 사실성·한국어 준수·효용은 별도 평가 대상이다. 실패 상태와 이미 회수한 partial 기록을 성공으로 바꾸거나 재생성으로 감추지 않는다.
 
+## Shared Graph And Ingestion
+
+사고 조사와 적재 조사는 판정 → 모델 호출 → 응답 보존 → 허용 조회의 흐름을 공유한다. 그래프는 턴과 조회 순서를 관리한다. 각 조사 서비스가 입력·허용 도구·기한을 관리하고, 그래프가 종료하면 도메인 결과를 저장한다. [공용 그래프](../../src/hmda_reliability/reliability_ai/investigation/graph.py) · [사고 조사 실행 연결](../../src/hmda_reliability/reliability_ai/investigation/service.py#L847) · [적재 조사 실행 연결](../../src/hmda_reliability/reliability_ai/ingestion/service.py#L347)
+
+사고 조사는 모델의 최종 보고를 검증한다. 적재 준비 조사는 전체 파일의 필수 열과 대상 파티션의 행을 검사하고, 판정과 다음 조치가 확정되면 모델 호출 없이 결과를 반환한다. 적재 사후 조사는 지정한 DAG 실행의 단계별 상태를 읽고, 실행·태스크·시도가 일치하는 근거를 연결한다. [적재 조사 사용법](../development/ingestion-investigation.md)
+
 ## Delegated Execution
 
 [execute_delegated_task](../../src/hmda_reliability/reliability_ai/execution/service.py)는 Task·조사 입력·caller의 approved request를 먼저 대조한다. 다른 incident·target·partition·snapshot reference, 동시 Backfill/schema 요청은 차단한다. Task와 caller 설정의 교집합·최소 예산을 사용하고 조사 실패 뒤에는 mutation으로 진행하지 않는다.
 
 AI의 `ActionProposal`이나 상위 모델의 위임은 승인이 아니다. Caller가 별도로 제공한 authoritative request만 기존 deterministic executor로 전달한다. [ReportEnvelope](../../src/hmda_reliability/reliability_ai/execution/contracts.py)는 원래 Task, 조사·proposal·실행 receipt와 차단·미확인 사항을 함께 전달한다. 실행 receipt는 실제 결과의 소비자이며 domain의 mutation·재검증·reconciliation 의미를 다시 정의하지 않는다.
+
+승인된 백필에 DB 연결이 빠지면 모델 조사 전에 `blocked`로 반환한다. 조사에서 복구로 넘어갈 때 위임 기한을 다시 확인한다.
 
 ## Provenance And Evaluation
 

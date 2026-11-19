@@ -42,10 +42,12 @@ flowchart TB
     end
 
     subgraph ai_plane ["Bounded AI Delegation"]
-        live_harness["Native Dataset Experiment"] -->|bounded investigation| review["Reliability AI Investigation"]
-        review -->|provider invocation| runtime["Runtime AI"]
-        runtime --> provider["OpenAI-compatible Provider"]
-        review -->|raw / turns / provenance| local_review["Local Investigation Artifacts"]
+        live_harness["Native Dataset Experiment"] -->|bounded investigation| review["Incident Investigation"]
+        review --> investigation_graph["Shared LangGraph"]
+        ingestion_review["Ingestion Investigation"] --> investigation_graph
+        investigation_graph -->|when model assistance is needed| runtime["Runtime AI"]
+        runtime --> provider["Codex App Server or OpenAI-compatible Provider"]
+        investigation_graph -->|results and evidence| local_review["Local Investigation Artifacts"]
         local_review -.->|quality review| human_review["Human Evaluation"]
         delegated["Reliability AI Execution"] -->|same investigation| review
         caller["Trusted Caller + Task + Approved Request"] --> delegated
@@ -60,6 +62,8 @@ flowchart TB
     current_artifacts -.->|read lineage / run evidence| lifecycle
     incident -.->|deterministic input| review
     draft -.->|advisory input| review
+    files -.->|inspect requested source| ingestion_review
+    data_plane -.->|read specified DAG run| ingestion_review
     incident -->|bind evidence + target| proposal
     recovery_candidate["Validated Recovery Candidate"] -->|bind candidate + before / after state| proposal
     proposal -->|exact proposal| approval["External Approval"]
@@ -80,7 +84,7 @@ Partition/freshness recovery는 `RecoveryProposal`, schema/table recovery는 별
 | Pipeline | Airflow `hmda_data_plane` DAG은 Bronze 적재 후 read-only quality gate를 실행하고, 통과한 경우에만 dbt 분석을 실행한다. |
 | Quality gate | Data Operations가 전체 Bronze partition profile과 lock-bound dbt build를 조합하고 Reliability가 baseline, threshold, detector와 blocking 판정을 소유한다. Airflow는 task state만 조율한다. |
 | Reliability lifecycle | Read-only다. approval, recovery, evaluation 또는 report write를 수행하지 않는다. |
-| Reliability AI | 불변 사건의 제한된 조회·native Prompt·보고·로컬 근거를 소유한다. 위임 실행은 Task와 별도 approved request를 대조하고 기존 deterministic executor만 사용한다. 모델이 승인·mutation 권한을 만들지 않는다. |
+| Reliability AI | 사건의 제한된 조회와 적재 준비·실행의 읽기 전용 조사를 같은 그래프에서 실행한다. 조사별 보고와 로컬 근거를 보존하고, 위임 실행에서는 Task와 별도로 승인된 요청을 대조해 기존 실행기에 전달한다. |
 | Runtime AI | Review semantics를 알지 않고 provider-neutral settings, bounded invocation과 runtime error normalization만 소유한다. |
 | Recovery proposal | Incident evidence, 검증된 candidate와 target state를 mutation 전에 immutable contract로 묶는다. Concrete contract는 recovery scope에 따라 달라진다. |
 | Approval | Lifecycle 밖에서 결정하며 exact validated proposal에 결합된다. |
