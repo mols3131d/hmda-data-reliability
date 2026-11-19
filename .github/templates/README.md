@@ -4,13 +4,13 @@ Issue 작성 템플릿은 [`ISSUE_TEMPLATE/issue.md`](../ISSUE_TEMPLATE/issue.md
 
 ## Issue Composition
 
-Issue는 문제 보고, 변경 제안, 조사 요청에 공통으로 사용한다. 필요한 정보만 작성하고 해당하지 않는 optional section과 빈 placeholder는 제거한다.
+Issue는 문제 보고, 변경 제안, 조사 요청에 공통으로 사용한다. 다음 세 H2는 **필수**이며 아래 순서로 작성한다.
 
-- **Objective:** 문제, 제안 또는 조사할 질문과 목적
-- **Acceptance:** 완료를 판단할 결과·조건 또는 조사 산출물. 아직 결정되지 않았다면 미확정 사항을 명시한다.
-- **Context:** 배경, 관련 문서·이슈 및 참고 정보
-- **Evidence / Environment:** 현상·재현 근거와 관련 실행 조건. 필요할 때 별도 section으로 구분한다.
-- **Boundaries / Open Decisions:** 제외 범위, 제약과 결정이 필요한 사항
+- **Summary:** 이슈의 핵심 문제·제안·조사 질문과 목적, 기대 결과를 요약한다.
+- **Boundaries:** 해결·조사 대상, 명시적인 제외 범위, 제약 및 권한 경계를 구분한다.
+- **Caveats:** 작성자가 독자의 오해 가능성, 확인되지 않은 가정, 불완전한 근거·재현·검증, 정보 부족과 해석의 한계를 드러낸다. 확인된 사항이 없다면 `N/A`와 그 이유를 적고 빈 섹션을 남기지 않는다.
+
+그 외 H2/H3는 모두 **선택 사항**이다. `Acceptance`, `Context`, `Evidence`, `Environment`, `Open Decisions` 같은 이름은 예시일 뿐이며, 이슈의 작성 취지와 목적에 따라 제목·순서·하위 구성을 자유롭게 정한다. 불필요한 섹션과 placeholder는 제거한다.
 
 확인한 사실과 추정·미확정 사항을 구분한다. 중복 설명, 불필요한 환경 정보 및 비밀 값은 제외하고, 별도 원본이 있는 요구사항과 증거는 링크로 연결한다.
 
