@@ -4,8 +4,8 @@ source_revision: <full-commit-sha>
 author:
   - <user-id>:<provider>-<service>
 environment:
-  runtime: <runtime-and-version>
-  configuration: <relevant-non-secret-settings>
+  runtime: <runtime-name>
+  version: <verified-runtime-version>
 ---
 
 <!--

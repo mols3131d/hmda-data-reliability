@@ -39,13 +39,24 @@ author:
 
 ### `environment`
 
-`environment`는 Issue의 증상이나 결과에 영향을 주는 확인된 조건만 담는 optional map이다. 필요에 따라 runtime, model, hardware, data, configuration 등 관련 key만 기록한다. 비밀 값이나 확인하지 못한 추정은 넣지 않으며, 본문 Environment와 중복하지 않는다.
+`environment`는 재현이나 판단에 영향을 주는 **확인된 실행 환경**을 기록하는 optional YAML map이다. 실행 환경이 이슈와 무관하거나 확인할 수 없으면 필드 자체를 생략하고, 필요한 미확정 사항은 `Caveats`에 설명한다.
+
+`environment`를 사용하는 경우 다음 두 필드를 필수로 작성한다.
+
+- **`runtime`:** 문제가 관찰된 주요 실행 엔진·서비스·플랫폼의 이름. 패키지나 관련 도구를 모두 나열하지 않는다.
+- **`version`:** 해당 `runtime`의 확인된 버전. 추정값이나 임의 기본값은 사용하지 않는다.
+
+그 외 `os`, `data`, `model`, `configuration` 등은 **이슈의 원인 분석·재현·판단에 영향을 미치는 경우에만** 추가한다. 추가 키의 이름과 구조는 관련 정보에 맞게 정하고, `configuration`을 사용할 때는 문자열 대신 개별 설정으로 구성한 map을 사용한다. 본문과 불필요하게 중복하거나 비밀 값을 노출하지 않는다.
 
 ```yaml
 environment:
-  runtime: <runtime-and-version>
-  configuration: <relevant-non-secret-settings>
+  runtime: Python
+  version: "3.12"
+  configuration:
+    ingestion_mode: full
 ```
+
+위 예시는 구조 설명용이며 실제 이슈에는 검증한 조건만 기재한다.
 
 ### `source_revision`
 
