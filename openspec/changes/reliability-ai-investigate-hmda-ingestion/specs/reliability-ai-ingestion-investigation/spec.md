@@ -40,14 +40,19 @@ description: HMDA 적재 전후 조사, 근거에 따른 후속 조치, 운영�
 - **WHEN** 실제 적재기가 검사할 파일의 필수 열이 누락되거나, 파싱 불가 또는 대상 범위가 0행임이 확인될 때
 - **THEN** 확인된 위반과 근거를 담은 `blocked`를 반환해야 함
 
+#### Scenario: Complete discovery confirms an empty source
+
+- **WHEN** 요청에 해당하는 허용 원천 범위 전체의 발견을 마쳤고 지원하는 파일이 하나도 없음을 확인했을 때
+- **THEN** 확인한 범위와 빈 파일 집합을 근거로 `blocked`를 반환해야 함
+
 #### Scenario: Input identity or inspection is inconclusive
 
-- **WHEN** 파일 버전이 달라지거나 읽기 실패로 필수 검사를 마치지 못했고 유효한 위반 근거가 없을 때
+- **WHEN** 파일 버전 변경, 접근 실패 또는 시간 초과로 원천 발견이나 필수 검사를 마치지 못했고 유효한 위반 근거가 없을 때
 - **THEN** 시스템은 미확인 이유를 담은 `needs_human`을 반환해야 함
 
 ### Requirement: Evidence driven model assistance
 
-시스템은 확인한 규칙 결과와 근거 요약을 바탕으로 다음 조치를 평가해야 한다(SHALL). 추가 확인이나 해석이 필요한 때 모델은 허용된 조회 한 건 또는 근거를 인용한 권고를 제안할 수 있어야 한다(SHALL). 시스템은 승인된 조회로 새 근거를 얻으면 판정을 다시 계산하고, 검증된 관찰값과 모델의 해석을 각각 보존해야 한다(SHALL).
+시스템은 확인한 규칙 결과와 근거 요약을 바탕으로 다음 조치를 평가해야 한다(SHALL). 추가 확인이나 해석이 필요한 때 모델은 허용된 조회 한 건 또는 근거를 인용한 권고를 제안할 수 있어야 한다(SHALL). 시스템은 승인된 조회로 새 근거를 얻으면 판정을 다시 계산하고, 검증된 관찰값과 모델의 해석을 각각 보존해야 한다(SHALL). 조회 결과를 후속 판단에 사용할 때는 승인된 제안 ID와 일치하는 관찰값만 사용해야 한다(SHALL).
 
 #### Scenario: Deterministic result and next action
 
@@ -65,6 +70,11 @@ description: HMDA 적재 전후 조사, 근거에 따른 후속 조치, 운영�
 - **WHEN** 준비 판정은 확정됐지만 다음 조치를 정하려면 해석이 필요할 때
 - **THEN** 모델 조사를 수행할 수 있어야 하며 같은 규칙과 근거에서 준비 판정은 동일해야 함
 - **AND** 검증되지 않은 근거 ID를 인용한 권고는 채택 전에 보류해야 함
+
+#### Scenario: Observation does not match the approved proposal
+
+- **WHEN** 반환된 관찰값의 제안 ID가 승인된 조회와 다를 때
+- **THEN** 불일치 사유를 기록하고 해당 관찰값을 판정이나 후속 모델 입력에 사용하지 않아야 함
 
 ### Requirement: Run scoped execution evidence
 
@@ -97,13 +107,13 @@ description: HMDA 적재 전후 조사, 근거에 따른 후속 조치, 운영�
 
 ### Requirement: Local investigation evidence and offline replay
 
-시스템은 조사 ID에 입력·그래프·정책 버전, 사용한 모델·프롬프트, 도구 선택과 결과, 호출 시각·예산, 응답과 종료 사유를 로컬에 연결해야 한다(SHALL). 재현은 원 조사 ID를 참조하고, 저장된 호출 결과와 시간을 사용해 판정·인계·종료 이유를 오프라인에서 다시 계산해야 한다(SHALL). 기록이 부족하거나 같은 버전을 사용할 수 없으면 누락 이유를 반환해야 한다(SHALL).
+시스템은 조사 ID에 입력과 실행 조건, 초기 검사·조회 결과, 사용한 프롬프트·모델과 각 호출 결과를 연결해야 한다(SHALL). 재현은 원 조사 ID와 저장된 근거·상대 시각·종료에 영향을 준 저장 결과를 사용해 판정·인계·종료 사유를 다시 계산해야 한다(SHALL). 필요한 관찰값이 누락·손상됐거나 버전이 다르면 재현 불가 사유를 반환해야 한다(SHALL).
 
-#### Scenario: Replay a completed investigation
+#### Scenario: Replay a successful or failed investigation
 
-- **WHEN** 원 조사 기록과 사용 버전이 모두 존재할 때
+- **WHEN** 성공 또는 실패한 원 조사의 필수 기록과 사용 버전이 모두 존재할 때
 - **THEN** 새 재현 ID에서 같은 판정·인계·종료 사유를 계산해야 함
-- **AND** 외부 모델 호출, Airflow 조회 재실행과 데이터 변경은 모두 0건이어야 함
+- **AND** 실제 모델·프롬프트 호출, 원천·Airflow 조회 재실행, 원격 관측과 데이터 변경은 모두 0건이어야 함
 
 #### Scenario: Recovery after process interruption
 
