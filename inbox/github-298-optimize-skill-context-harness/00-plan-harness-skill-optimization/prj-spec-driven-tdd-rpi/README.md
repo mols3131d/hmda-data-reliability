@@ -1,13 +1,13 @@
 ---
 type: plan
-title: "Spec-Driven TDD RPI Review Plan"
+title: "Spec-Driven TDD RPI Optimization Work Plan"
 description: "OpenSpec 전용 제어 책임을 유지하고 일반 루프 및 스키마 복제를 검토한다."
 ---
 
-# Spec-Driven TDD RPI Review Plan
+# Spec-Driven TDD RPI Optimization Work Plan
 
 > [!NOTE]
-> **검토 가설 및 작업 인계.** 실제 수정은 아직 수행하지 않았다. 공통 목적·검증 방식은 [bundle](../README.md)을 따른다.
+> **초기 검토 가설.** 이 PR의 목표는 검토에 그치지 않고 실제 최적화와 검증을 완료하는 것이다. 공통 목표·완료 조건은 [bundle](../README.md)을 따른다.
 
 ## Baseline
 
@@ -31,8 +31,14 @@ description: "OpenSpec 전용 제어 책임을 유지하고 일반 루프 및 �
 1. active OpenSpec 구현과 일반 조사/문서/agent asset 요청을 비교해 activation을 확인한다.
 2. schema와 generic loop의 owner를 대조하고 **전용 controller만 담당해야 할 delta**를 추출한다. 둘을 병렬 실행하지 않는다.
 3. 간단한 `skip_specs: true` 구현과 변경된 Spec을 수반한 구현에서 terminal/Apply gate를 검증한다.
-4. 상태·scope·권한의 필수 제약은 유지하면서 재진술과 불필요한 조합만 줄이는 후보를 만든다.
+4. 상태·scope·권한의 필수 제약은 유지하면서 재진술과 불필요한 조합만 줄이는 최소 변경을 구현하고 검증한다.
 
 ## Acceptance
 
 OpenSpec의 실제 lifecycle·ownership·허가 경계가 유지되며, 일반 작업에 217줄짜리 controller가 주입되지 않는다. 단지 길다는 이유로 무조건 삭제하지 않는다.
+
+## Work Status
+
+- **Initial review:** 준비됨. `Review Candidates`는 검증 전 가설이다.
+- **Optimization:** 미완료. 검토 후 실제 변경 또는 근거 있는 유지 결정을 기록한다.
+- **Verification:** 미완료. 관련 로딩·라우팅·행동 검증과 결과를 이 문서에 남긴다.

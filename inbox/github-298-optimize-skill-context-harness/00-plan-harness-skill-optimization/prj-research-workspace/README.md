@@ -1,13 +1,13 @@
 ---
 type: plan
-title: "Research Workspace Review Plan"
+title: "Research Workspace Optimization Work Plan"
 description: "근거와 템플릿 라우팅의 실제 가치를 유지하며 범용 조사 절차를 검토한다."
 ---
 
-# Research Workspace Review Plan
+# Research Workspace Optimization Work Plan
 
 > [!NOTE]
-> **검토 가설 및 작업 인계.** 실제 수정은 아직 수행하지 않았다. 공통 목적·검증 방식은 [bundle](../README.md)을 따른다.
+> **초기 검토 가설.** 이 PR의 목표는 검토에 그치지 않고 실제 최적화와 검증을 완료하는 것이다. 공통 목표·완료 조건은 [bundle](../README.md)을 따른다.
 
 ## Baseline
 
@@ -30,8 +30,14 @@ description: "근거와 템플릿 라우팅의 실제 가치를 유지하며 범
 
 1. 간단한 코드 사실 조사와 템플릿을 요구하는 근거 조사에서 로딩 경로를 비교한다. 구현 요청에서는 이 스킬이 불필요하게 선택되지 않는지도 확인한다.
 2. 세 reference가 실제로 조건부 로드되는지, 어느 정도로 독립적인 가치가 있는지 검토한다.
-3. 불필요한 argument·ceremony만 최소화하고, 선택적 근거/템플릿 주입이 사라지지 않게 조정안을 설계한다.
+3. 중복되거나 근거 없는 argument·ceremony가 확인되면 최소 변경을 구현하고, 선택적 근거/템플릿 주입이 유지되는지 검증한다.
 
 ## Acceptance
 
 필요한 Evidence·Template 컨텍스트는 선택되고, 작은 조사에는 과도한 워크플로를 요구하지 않는다. 스킬 삭제를 결정하려면 같은 라우팅 기능이 검증된 대체 경로에 있어야 한다.
+
+## Work Status
+
+- **Initial review:** 준비됨. `Review Candidates`는 검증 전 가설이다.
+- **Optimization:** 미완료. 검토 후 실제 변경 또는 근거 있는 유지 결정을 기록한다.
+- **Verification:** 미완료. 관련 로딩·라우팅·행동 검증과 결과를 이 문서에 남긴다.

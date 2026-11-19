@@ -1,13 +1,13 @@
 ---
 type: plan
-title: "Testing Context Review Plan"
+title: "Testing Context Optimization Work Plan"
 description: "작은 테스트 컨텍스트 라우터가 실제로 필요한 문서만 로드하는지 확인한다."
 ---
 
-# Testing Context Review Plan
+# Testing Context Optimization Work Plan
 
 > [!NOTE]
-> **검토 가설 및 작업 인계.** 실제 수정은 아직 수행하지 않았다. 공통 목적·검증 방식은 [bundle](../README.md)을 따른다.
+> **초기 검토 가설.** 이 PR의 목표는 검토에 그치지 않고 실제 최적화와 검증을 완료하는 것이다. 공통 목표·완료 조건은 [bundle](../README.md)을 따른다.
 
 ## Baseline
 
@@ -34,3 +34,9 @@ description: "작은 테스트 컨텍스트 라우터가 실제로 필요한 문
 ## Acceptance
 
 필요한 테스트 문서는 발견되고, 무관한 가이드가 로드되지 않는다. 짧다는 이유로 또는 스킬 수를 줄이려는 목적만으로 삭제하지 않는다.
+
+## Work Status
+
+- **Initial review:** 준비됨. `Review Candidates`는 검증 전 가설이다.
+- **Optimization:** 미완료. 검토 후 실제 변경 또는 근거 있는 유지 결정을 기록한다.
+- **Verification:** 미완료. 관련 로딩·라우팅·행동 검증과 결과를 이 문서에 남긴다.

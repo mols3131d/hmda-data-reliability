@@ -1,13 +1,13 @@
 ---
 type: plan
-title: "Development Context Review Plan"
+title: "Development Context Optimization Work Plan"
 description: "개발 컨텍스트 주입과 독립 리뷰 절차를 분리한다."
 ---
 
-# Development Context Review Plan
+# Development Context Optimization Work Plan
 
 > [!NOTE]
-> **검토 가설 및 작업 인계.** 실제 수정은 아직 수행하지 않았다. 공통 목적·검증 방식은 [bundle](../README.md)을 따른다.
+> **초기 검토 가설.** 이 PR의 목표는 검토에 그치지 않고 실제 최적화와 검증을 완료하는 것이다. 공통 목표·완료 조건은 [bundle](../README.md)을 따른다.
 
 ## Baseline
 
@@ -28,9 +28,15 @@ description: "개발 컨텍스트 주입과 독립 리뷰 절차를 분리한다
 ## Tasks
 
 1. Development-only 구현 작업과 review-only 작업에서 실제 Skill 선택과 `DEVELOPMENT.md`·architecture·MVP 로딩을 비교한다.
-2. 리뷰 gate를 유지하면서 중복된 상세 판단을 단일 owner로 이동 또는 링크할 수 있는지 검토한다. 지원하지 않는 subagent를 무조건 요구하지 않는다.
+2. 리뷰 gate를 유지하면서 중복된 상세 판단의 실제 owner를 확인하고 필요한 최소 변경을 구현한다. 지원하지 않는 subagent를 무조건 요구하지 않는다.
 3. 작은 수정 전후에 개발 시 필수 route가 유지되고 review-only에서 오활성화되지 않는지 확인한다.
 
 ## Acceptance
 
 Development의 **문서 라우터 가치**가 유지된다. 독립 리뷰 판단의 owner가 하나이며, context와 절차가 중복 주입되지 않는다. 삭제는 별도 결론이지 기본값이 아니다.
+
+## Work Status
+
+- **Initial review:** 준비됨. `Review Candidates`는 검증 전 가설이다.
+- **Optimization:** 미완료. 검토 후 실제 변경 또는 근거 있는 유지 결정을 기록한다.
+- **Verification:** 미완료. 관련 로딩·라우팅·행동 검증과 결과를 이 문서에 남긴다.

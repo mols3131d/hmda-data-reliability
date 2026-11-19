@@ -1,13 +1,13 @@
 ---
 type: plan
-title: "Review Context Review Plan"
+title: "Review Context Optimization Work Plan"
 description: "독립 리뷰의 프로젝트 판정 계약을 보존하고 중복 orchestration을 검토한다."
 ---
 
-# Review Context Review Plan
+# Review Context Optimization Work Plan
 
 > [!NOTE]
-> **검토 가설 및 작업 인계.** 실제 수정은 아직 수행하지 않았다. 공통 목적·검증 방식은 [bundle](../README.md)을 따른다.
+> **초기 검토 가설.** 이 PR의 목표는 검토에 그치지 않고 실제 최적화와 검증을 완료하는 것이다. 공통 목표·완료 조건은 [bundle](../README.md)을 따른다.
 
 ## Baseline
 
@@ -30,9 +30,15 @@ description: "독립 리뷰의 프로젝트 판정 계약을 보존하고 중복
 
 1. 독립 PR 리뷰와 구현 self-review를 near-miss로 비교해 trigger와 필수 context 차이를 확인한다.
 2. 사용 가능한 runtime과 subagent에서 실제 delegation 가능성, fallback의 보증 수준을 구분한다.
-3. 프로젝트-specific review admission·assessment를 하나의 owner에 남기고, 중복 실행 절차만 줄이는 후보를 작성한다.
+3. 프로젝트-specific review admission·assessment를 하나의 owner에 남기고, 중복 실행 절차만 줄이는 최소 변경을 구현한다.
 4. `scope_decision`, `unknown`, `follow_up`이 실제 변경 권한으로 잘못 승격되지 않는지 검증한다.
 
 ## Acceptance
 
 프로젝트 리뷰 기준이 손실 없이 전달되고, 미지원 런타임을 독립 리뷰 성공으로 오인하지 않는다. 새로운 검토가 모든 PR에서 불필요하게 연쇄 호출되지 않는다.
+
+## Work Status
+
+- **Initial review:** 준비됨. `Review Candidates`는 검증 전 가설이다.
+- **Optimization:** 미완료. 검토 후 실제 변경 또는 근거 있는 유지 결정을 기록한다.
+- **Verification:** 미완료. 관련 로딩·라우팅·행동 검증과 결과를 이 문서에 남긴다.
