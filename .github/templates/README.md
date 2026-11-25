@@ -72,7 +72,7 @@ revision:
   head: <full-head-commit-sha>
 ```
 
-Template에서는 기본 읽기 흐름을 방해하지 않도록 optional metadata 예시를 HTML comment 안에 둔다. 실제 사용할 때는 comment를 제거하고 필요한 field만 본문 마지막에 둔다.
+Template의 괄호형 작성 안내와 optional metadata 예시는 렌더링된 화면에서 확인할 수 있다. 제출 전 작성 안내와 미사용 예시를 제거하고 필요한 field만 본문 마지막에 둔다.
 
 ## Writing Rules
 
